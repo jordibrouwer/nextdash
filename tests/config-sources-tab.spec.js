@@ -97,7 +97,21 @@ test.describe('the Sources tab', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
         await page.click('[data-db-tab="sources"]');
-        await expect(page.locator('#config-stars-token')).toBeVisible({ timeout: 15_000 });
+        /*
+         * The panels are folded shut now, so every field below is in the DOM
+         * and not on screen. These tests are about what the fields do, not
+         * about the fold, so all of them are opened here — polled, because the
+         * tab finishes loading after the click and a repaint would shut them
+         * again.
+         */
+        await page.waitForSelector('.config-source-panel', { timeout: 15_000 });
+        await expect.poll(async () => page.evaluate(() => {
+            document.querySelectorAll('.config-source-panel').forEach((panel) => {
+                panel.setAttribute('open', '');
+            });
+            const token = document.getElementById('config-stars-token');
+            return !!token?.offsetParent;
+        }), { timeout: 15_000 }).toBe(true);
     });
 
     test('its controls carry the same styling as the ones beside them', async ({ page }) => {
@@ -125,11 +139,23 @@ test.describe('the Sources tab', () => {
         // Taken from the Backups tab: the Sources tab holds nothing but source
         // panels, so there is no older control on it to compare against.
         await page.click('[data-db-tab="backups"]');
-        await expect(page.locator('[data-backup-action="csv-export"]')).toBeVisible({ timeout: 10_000 });
+        // That tab folds too, and this button lives inside one of its panels.
+        await expect.poll(async () => page.evaluate(() => {
+            document.querySelectorAll('.config-source-panel').forEach((panel) => {
+                panel.setAttribute('open', '');
+            });
+            return !!document.querySelector('[data-backup-action="csv-export"]')?.offsetParent;
+        }), { timeout: 10_000 }).toBe(true);
         const reference = await readButton();
         expect(reference).not.toBe('MISSING');
         await page.click('[data-db-tab="sources"]');
-        await expect(page.locator('#config-stars-token')).toBeVisible({ timeout: 10_000 });
+        // Navigating back here redraws the tab, which folds the panels again.
+        await expect.poll(async () => page.evaluate(() => {
+            document.querySelectorAll('.config-source-panel').forEach((panel) => {
+                panel.setAttribute('open', '');
+            });
+            return !!document.getElementById('config-stars-token')?.offsetParent;
+        }), { timeout: 10_000 }).toBe(true);
         expect(await styleOf('[data-source-action="save"][data-source-id="github:stars"]', BUTTON)).toBe(reference);
         expect(await styleOf('[data-source-action="run"][data-source-id="github:stars"]', BUTTON)).toBe(reference);
 

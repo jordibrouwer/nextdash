@@ -5910,4 +5910,110 @@ button.config-bm-shortcut-pill {
     }
 }
 
+/*
+   The sources tab, folded.
+
+   Seven services stacked open is a wall to scroll past before reaching the one
+   you came for, and every one of them shows a token box. Native <details>
+   carries the keyboard behaviour and the screen-reader semantics; what is added
+   here is only what it looks like.
+*/
+.config-source-panel > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.config-source-panel > summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-source-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* The marker, drawn rather than inherited so it turns with the panel and sits
+   where the eye expects it in a left-to-right list. */
+.config-source-summary::before {
+    content: "›";
+    flex: none;
+    order: -1;
+    margin-top: 1px;
+    font-size: 1.1em;
+    line-height: 1.2;
+    color: var(--text-muted, #888);
+    transition: transform 0.15s ease;
+}
+
+.config-source-panel[open] > .config-source-summary::before {
+    transform: rotate(90deg);
+}
+
+.config-source-summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.config-source-summary .config-panel-title {
+    margin: 0;
+}
+
+/* Shown while shut, so a closed row still says what the service is. Clamped
+   rather than truncated mid-word: two lines is enough to recognise one. */
+.config-source-summary-note {
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.config-source-panel[open] > .config-source-summary .config-source-summary-note {
+    /* Open, the same words appear nowhere else, so the clamp comes off. */
+    -webkit-line-clamp: unset;
+}
+
+/* The one fact that decides whether to open a panel: never used, ready, or the
+   last attempt failed. */
+.config-source-chip {
+    flex: none;
+    align-self: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    font-size: calc(var(--font-size-text) * 0.78);
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+
+.config-source-chip:empty {
+    display: none;
+}
+
+.config-source-chip.is-ready {
+    border-color: var(--status-success, rgba(128, 128, 128, 0.5));
+    color: var(--status-success, var(--text-muted, #888));
+}
+
+.config-source-chip.is-failed {
+    border-color: var(--status-error, rgba(128, 128, 128, 0.5));
+    color: var(--status-error, var(--text-muted, #888));
+}
+
+/* Everything after the summary gets the room the summary does not need. */
+.config-source-panel[open] > *:not(summary) {
+    margin-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-source-summary::before {
+        transition: none;
+    }
 }

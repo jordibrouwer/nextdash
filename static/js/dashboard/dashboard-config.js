@@ -30,6 +30,7 @@ class DashboardConfig {
         'pages-tags',
         'behavior',
         'data-backups',
+        'widgets',
         'stats',
         'help',
         'about',
@@ -1258,10 +1259,10 @@ class DashboardConfig {
                 }
                 break;
             }
-            case 'stats':
             case 'widgets':
                 this.repaintWidgetsBody();
                 break;
+            case 'stats':
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 break;
@@ -1376,8 +1377,8 @@ class DashboardConfig {
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
-            stats: ['config.sectionStats', 'Statistics'],
             widgets: ['config.sectionWidgets', 'Widgets'],
+            stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             about: ['config.sectionAbout', 'About'],
         };
@@ -1489,13 +1490,13 @@ class DashboardConfig {
         } else if (this.section === 'data-backups') {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
-        } else if (this.section === 'appearance') {
         } else if (this.section === 'widgets') {
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
             void this.loadCredentialNames();
+        } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
             // The custom-themes tile counts what is in the colour document, so
@@ -2310,9 +2311,9 @@ class DashboardConfig {
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'display' },
         { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
-    ];
         { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
         { field: 'backupExcludeSecrets', labelKey: 'backupIncludeSecretsLabel', fallback: 'Tokens and passwords', section: 'data-backups', subTab: 'backups' },
+    ];
 
     /**
      * Extra words a setting should be findable by, beyond its visible label.
@@ -2369,6 +2370,8 @@ class DashboardConfig {
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
+        backupExcludeArchives: ['backup', 'archive', 'capture', 'saved page', 'size'],
+        backupExcludeSecrets: ['backup', 'token', 'password', 'key', 'credential', 'secret'],
         weatherLocation: ['weather', 'location', 'city'],
         weatherSource: ['weather', 'source', 'ip'],
         weatherUnit: ['weather', 'celsius', 'fahrenheit', 'temperature'],
@@ -2968,14 +2971,14 @@ class DashboardConfig {
         if (this.section === 'pages-tags') {
             return this.renderPagesTags();
         }
+        if (this.section === 'widgets') {
+            return this.renderWidgetsSection();
+        }
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
         }
         if (this.section === 'stats') {
             return this.renderStats();
-        if (this.section === 'widgets') {
-            return this.renderWidgetsSection();
-        }
         }
         if (this.section === 'help') {
             return this.renderHelp();
@@ -4414,10 +4417,15 @@ class DashboardConfig {
     renderLocalArchivePanel() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
-            <div class="config-panel" data-local-archive-panel>
-                <h3 class="config-panel-title">${esc(this.t('config.localArchiveTitle', 'Local copies'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.localArchiveDescription',
-                    'Save a whole page — text, styling and images — as one file in your data directory, so it stays readable even if the site and the Web Archive are both gone.'))}</p>
+            <details class="config-panel config-source-panel" data-local-archive-panel
+                data-fold="local-archive" ${this.foldIsOpen('local-archive') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.localArchiveTitle', 'Local copies'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.localArchiveDescription',
+                            'Save a whole page — text, styling and images — as one file in your data directory, so it stays readable even if the site and the Web Archive are both gone.'))}</span>
+                    </span>
+                </summary>
                 <p class="config-panel-note" id="config-local-archive-state"></p>
                 <div class="config-field">
                     <label class="config-field-label" for="config-local-archive-url">${esc(this.t('config.localArchiveUrlLabel', 'Page to save'))}</label>
@@ -4431,7 +4439,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-local-archive-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
                 </div>
                 <div id="config-local-archive-list" class="config-local-archives"></div>
-            </div>
+            </details>
         `;
     }
 
@@ -4450,10 +4458,15 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
-            <div class="config-panel" data-archive-panel>
-                <h3 class="config-panel-title">${esc(this.t('config.archiveSectionTitle', 'Web Archive'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.archiveDescription',
-                    'Ask the Internet Archive to keep a copy of a page the day you save it, so the bookmark outlives the site. Around 4 in 10 pages from ten years ago are already gone.'))}</p>
+            <details class="config-panel config-source-panel" data-archive-panel
+                data-fold="archive" ${this.foldIsOpen('archive') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.archiveSectionTitle', 'Web Archive'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.archiveDescription',
+                            'Ask the Internet Archive to keep a copy of a page the day you save it, so the bookmark outlives the site. Around 4 in 10 pages from ten years ago are already gone.'))}</span>
+                    </span>
+                </summary>
                 <label class="config-toggle">
                     <input type="checkbox" data-archive-toggle="archiveSaveEnabled" ${s.archiveSaveEnabled ? 'checked' : ''}>
                     <span>${esc(this.t('config.archiveSaveEnabledLabel', 'Archive every new bookmark'))}</span>
@@ -4475,7 +4488,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--danger" data-archive-action="forget">${esc(this.t('config.archiveForgetBtn', 'Forget keys'))}</button>
                 </div>
                 <p class="config-panel-note" id="config-archive-status"></p>
-            </div>
+            </details>
         `;
     }
 
@@ -4518,10 +4531,26 @@ class DashboardConfig {
                 <p class="config-field-hint">${esc(this.t('config.sourceAsRowsHint',
                     'Off: one bookmark to the source itself, which Fresh can then count new items on.'))}</p>` : '';
 
+        /*
+         * Folded shut, as <details> rather than a panel of our own.
+         *
+         * Seven services stacked open is a wall to scroll past before the one
+         * you came for, and every one of them shows a token box. Native details
+         * carries the keyboard behaviour, the screen-reader semantics and the
+         * open state without any of it being reimplemented — and the contents
+         * stay in the DOM while closed, so everything that fills these fields
+         * goes on working whether or not anyone has opened them.
+         */
         return `
-            <div class="config-panel" data-source-panel="${esc(def.id)}">
-                <h3 class="config-panel-title">${esc(this.t(`config.${def.titleKey}`, def.titleFallback))}</h3>
-                <p class="config-panel-note">${esc(this.t(`config.${def.descKey}`, def.descFallback))}</p>
+            <details class="config-panel config-source-panel" data-source-panel="${esc(def.id)}"
+                data-fold="source:${esc(def.id)}" ${this.foldIsOpen(`source:${def.id}`) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t(`config.${def.titleKey}`, def.titleFallback))}</span>
+                        <span class="config-source-summary-note">${esc(this.t(`config.${def.descKey}`, def.descFallback))}</span>
+                    </span>
+                    <span class="config-source-chip" id="config-${esc(slug)}-chip"></span>
+                </summary>
                 ${handleField}
                 ${tokenFields}
                 <div class="config-field" data-source-page-field="${esc(def.id)}">
@@ -4541,7 +4570,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--danger" data-source-action="forget" data-source-id="${esc(def.id)}">${esc(this.t(needsToken ? 'config.sourceForgetBtn' : 'config.sourceForgetSettingsBtn', needsToken ? 'Forget token' : 'Forget'))}</button>
                 </div>
                 <p class="config-panel-note" id="config-${esc(slug)}-status"></p>
-            </div>
+            </details>
         `;
     }
 
@@ -4614,8 +4643,15 @@ class DashboardConfig {
         return `
             ${tiles}
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</h3>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:create" ${this.foldIsOpen('backup:create', true) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupCreateSummary',
+                            'Make one now, or have one made on a schedule — and choose what it carries.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownload', 'Download backup'))}</button>
                     <button type="button" class="config-btn" data-backup-action="run">${esc(this.t('config.backupRunNow', 'Make a backup now'))}</button>
@@ -4628,24 +4664,60 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}</span>
                     <select class="config-select" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>
                 </div>
-            </div>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</h3>
+                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupContentsTitle',
+                    'What a backup carries'))}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="backupIncludeArchives"
+                        ${s.backupExcludeArchives ? '' : 'checked'}>
+                    <span>${esc(this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'))}</span>
+                </label>
+                <p class="config-field-note">${esc(this.t('config.backupIncludeArchivesNote',
+                    'A saved page may be the only copy left, and these are by far the largest thing in a backup.'))}</p>
+                <label class="config-toggle" style="margin-top:10px">
+                    <input type="checkbox" data-backup-toggle="backupIncludeSecrets"
+                        ${s.backupExcludeSecrets ? '' : 'checked'}>
+                    <span>${esc(this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'))}</span>
+                </label>
+                <p class="config-field-note">${esc(this.t('config.backupIncludeSecretsNote',
+                    'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again — and that the backup file itself is a secret.'))}</p>
+            </details>
+
+            <details class="config-panel config-source-panel"
+                data-fold="backup:stored" ${this.foldIsOpen('backup:stored', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupStoredSummary',
+                            'The copies already on this machine, newest first.'))}</span>
+                    </span>
+                </summary>
                 <div id="config-backup-list">${this.renderBackupList()}</div>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</h3>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:zip" ${this.foldIsOpen('backup:zip', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupsZipSummary',
+                            'Put an earlier backup back. What it contains replaces what is here.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="import">${esc(this.t('config.backupImport', 'Import backup…'))}</button>
                 </div>
                 <input type="file" id="config-import-input" accept=".zip" hidden>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</p>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:bookmarks" ${this.foldIsOpen('backup:bookmarks', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="html-export">${esc(this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
@@ -4654,17 +4726,22 @@ class DashboardConfig {
                 </div>
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</p>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:settings" ${this.foldIsOpen('backup:settings', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="settings-export">${esc(this.t('config.settingsExportBtn', 'Export settings (JSON)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
                 </div>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
-            </div>
+            </details>
 
 
         `;
@@ -5635,6 +5712,10 @@ class DashboardConfig {
     }
 
     bindDataBackupsActions(container) {
+        // The folds on this section remember whether they were open, so a
+        // repaint after a backup or an import does not shut the panel someone
+        // is working in.
+        this.bindFolds(container);
         // A deep link straight to the trash tab renders before anything has been
         // fetched, so the first paint would stay on "Loading…" forever without
         // this.
@@ -5832,6 +5913,22 @@ class DashboardConfig {
 
     setBackupToggle(name, value) {
         const d = this.dash;
+        /*
+         * The two content switches read as "include" and are stored as
+         * "exclude".
+         *
+         * A settings file written before these existed has neither key, and an
+         * absent boolean is false — which on the exclude spelling means the
+         * fuller backup, exactly what that install already made. Spelling them
+         * as "include" would have every older install quietly start writing
+         * thinner backups the day it upgraded.
+         */
+        if (name === 'backupIncludeArchives' || name === 'backupIncludeSecrets') {
+            const field = name === 'backupIncludeArchives' ? 'backupExcludeArchives' : 'backupExcludeSecrets';
+            d.settings[field] = !value;
+            void this.saveSettingsWithFeedback();
+            return;
+        }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
@@ -5913,22 +6010,6 @@ class DashboardConfig {
         let total = 0;
         let refreshed = 0;
         try {
-        /*
-         * The two content switches read as "include" and are stored as
-         * "exclude".
-         *
-         * A settings file written before these existed has neither key, and an
-         * absent boolean is false — which on the exclude spelling means the
-         * fuller backup, exactly what that install already made. Spelling them
-         * as "include" would have every older install quietly start writing
-         * thinner backups the day it upgraded.
-         */
-        if (name === 'backupIncludeArchives' || name === 'backupIncludeSecrets') {
-            const field = name === 'backupIncludeArchives' ? 'backupExcludeArchives' : 'backupExcludeSecrets';
-            d.settings[field] = !value;
-            void this.saveSettingsWithFeedback();
-            return;
-        }
             // Walks until the server says it is done rather than counting
             // rounds here: the collection can change under a long run, and the
             // server's own position is the only one that stays true.
@@ -6700,7 +6781,6 @@ class DashboardConfig {
         const status = document.getElementById(`config-${def.slug}-status`);
         const category = document.getElementById(`config-${def.slug}-category`);
         const pageSelect = document.getElementById(`config-${def.slug}-page`);
-        if (!note) return;
 
         if (pageSelect && source?.targetPage) {
             this.fillSourcePageSelect(pageSelect, source.targetPage);
@@ -6713,12 +6793,47 @@ class DashboardConfig {
         const rows = document.querySelector(`[data-source-rows="${CSS.escape(def.id)}"]`);
         if (rows && source) rows.checked = Boolean(source.asRows);
 
-        note.textContent = source?.hasToken
-            ? this.t('config.sourceTokenSet', 'A token is saved. Leave this empty to keep it.')
-            : this.t('config.sourceTokenMissing', 'No token saved yet.');
+        /*
+         * Only the panels that ask for a token have a line about one.
+         *
+         * This used to be an early return covering the whole function, so the
+         * two sources that need no token -- Hacker News favourites and a
+         * YouTube channel -- never had their handle, their page or their last
+         * result restored either. The comment above says a panel that forgot
+         * which account it points at is a panel nobody trusts; those were
+         * exactly the two that forgot.
+         */
+        if (note) {
+            note.textContent = source?.hasToken
+                ? this.t('config.sourceTokenSet', 'A token is saved. Leave this empty to keep it.')
+                : this.t('config.sourceTokenMissing', 'No token saved yet.');
+        }
         if (category && source?.targetCategory && !category.value) {
             category.value = source.targetCategory;
         }
+        /*
+         * What the folded summary says.
+         *
+         * A row of seven identical headings tells you nothing about which one
+         * you already set up, so the chip carries the one fact that decides
+         * whether to open it: never used, ready, or the last attempt failed.
+         */
+        const chip = document.getElementById(`config-${def.slug}-chip`);
+        if (chip) {
+            chip.classList.remove('is-ready', 'is-failed');
+            if (source?.lastError) {
+                chip.classList.add('is-failed');
+                chip.textContent = this.t('config.sourceChipFailed', 'last import failed');
+            } else if (source?.hasToken || source?.handle) {
+                chip.classList.add('is-ready');
+                chip.textContent = source?.lastRun
+                    ? this.t('config.sourceChipReady', 'set up')
+                    : this.t('config.sourceChipNotRunYet', 'set up, never run');
+            } else {
+                chip.textContent = this.t('config.sourceChipUnused', 'not set up');
+            }
+        }
+
         if (!status) return;
         if (source?.lastError) {
             status.textContent = this.t('config.sourceLastError', 'Last attempt failed: {e}')
@@ -12296,6 +12411,33 @@ class DashboardConfig {
         return this.t(key, fallback);
     }
 
+    /**
+     * Widgets, as a section rather than a tab.
+     *
+     * The editor is the one that was under Pages & tags; what it gains here is
+     * room and a heading of its own. Where a widget *sits* is still arranged on
+     * the categories tab, together with the categories it sits between — one
+     * order, one place to change it — so that is said here rather than left for
+     * someone to discover.
+     */
+    renderWidgetsSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
+                'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
+            <div id="config-widgets-body" tabindex="0">${this.renderWidgetsEditor()}</div>
+        `;
+    }
+
+    /** Redraw the widgets section without refetching what it already has. */
+    repaintWidgetsBody() {
+        const body = document.getElementById('config-widgets-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderWidgetsEditor();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindWidgetsEditor(container);
+    }
+
     renderPagesTags() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.PT_TABS.map((tab) => {
@@ -12428,33 +12570,6 @@ class DashboardConfig {
      * For categories and pages that order is not a display preference — it is
      * the order they appear in on the dashboard, and the ↑ ↓ buttons are how
      * you set it. So sorting here is a way of looking at the list, never a way
-    /**
-     * Widgets, as a section rather than a tab.
-     *
-     * The editor is the one that was under Pages & tags; what it gains here is
-     * room and a heading of its own. Where a widget *sits* is still arranged on
-     * the categories tab, together with the categories it sits between — one
-     * order, one place to change it — so that is said here rather than left for
-     * someone to discover.
-     */
-    renderWidgetsSection() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
-                'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
-            <div id="config-widgets-body" tabindex="0">${this.renderWidgetsEditor()}</div>
-        `;
-    }
-
-    /** Redraw the widgets section without refetching what it already has. */
-    repaintWidgetsBody() {
-        const body = document.getElementById('config-widgets-body');
-        if (!body) { this.render(); return; }
-        body.innerHTML = this.renderWidgetsEditor();
-        const container = document.getElementById('dashboard-layout');
-        if (container) this.bindWidgetsEditor(container);
-    }
-
      * of changing it: nothing is written, and the move buttons come off the
      * rows entirely while it is on. Hidden rather than disabled, because a
      * greyed-out arrow beside a row still says "this row is here, in this
@@ -14035,120 +14150,6 @@ class DashboardConfig {
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
-    };
-
-    /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
-    renderWidgetSettings(widget, index) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const fields = DashboardConfig.WIDGET_SETTINGS[widget.type] || [];
-        // No early return for a type with no fields of its own: width applies to
-        // every widget, so the panel is never empty.
-
-        const config = widget.config || {};
-        const rows = fields.map((field) => {
-            const label = esc(this.t(field.label[0], field.label[1]));
-            const id = `widget-${index}-${esc(field.key)}`;
-            if (field.kind === 'bool') {
-                return `
-                    <label class="config-toggle config-toggle--inline">
-                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="bool"
-                            ${config[field.key] ? 'checked' : ''}>
-                        <span>${label}</span>
-                    </label>`;
-            }
-            if (field.kind === 'int') {
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
-                        <input type="number" id="${id}" class="config-text config-text--number"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="int" min="${field.min}" max="${field.max}"
-                            value="${esc(config[field.key] ?? '')}"
-                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
-                    </div>`;
-            }
-            if (field.kind === 'tags') {
-                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
-                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
-                    </div>`;
-            }
-            // checkset: an absent list means all, which is the default for the
-            // health widget's figures and reads better than every box ticked.
-            const chosen = Array.isArray(config[field.key]) ? config[field.key] : null;
-            const boxes = (field.options || []).map(([value, text]) => `
-                <label class="config-toggle config-toggle--inline">
-                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
-                        data-widget-index="${index}" data-widget-kind="checkset"
-                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
-                    <span>${esc(this.t(text[0], text[1]))}</span>
-                </label>`).join('');
-            return `
-                <div class="config-widget-field">
-                    <span class="config-widget-field-label">${label}</span>
-                    <div class="config-widget-checkset">${boxes}</div>
-                </div>`;
-        }).join('');
-        if (widget.type === 'custom') {
-            /*
-             * Two groups rather than one grid of six unrelated boxes.
-             *
-             * Where to read from and what to show are different questions, and
-             * a flat panel made the address, the credential and a dotted path
-             * read as equally weighted neighbours. The figures need the full
-             * width regardless: their rows are four controls wide, and in a
-             * third of the panel they overlapped each other.
-             */
-            return `<div class="config-widget-settings-body is-custom">
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
-                        'Where to read from'))}</h4>
-                    <div class="config-custom-grid">${rows}</div>
-                </div>
-                ${this.renderCustomWidgetFields(widget, index)}
-                <div class="config-custom-group">
-                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
-                        'On the dashboard'))}</h4>
-                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
-                </div>
-            </div>`;
-        }
-        return `<div class="config-widget-settings-body">${
-            this.renderWidgetWidth(widget, index)}${rows}</div>`;
-    }
-
-    /**
-     * How wide the widget is drawn, for every type.
-     *
-     * Outside WIDGET_SETTINGS for the same reason the shown toggle is: it
-     * belongs to every widget, and declaring it eight times would be eight
-     * copies of one line. Two is the ceiling — a widget is a summary, and one
-     * needing three columns is a view that has not admitted it yet.
-     */
-    renderWidgetWidth(widget, index) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const current = Number(widget?.config?.columns) === 2 ? 2 : 1;
-        const id = `widget-${index}-columns`;
-        const option = (value, key, fallback) =>
-            `<option value="${value}" ${current === value ? 'selected' : ''}>${esc(this.t(key, fallback))}</option>`;
-        return `
-            <div class="config-widget-field">
-                <label for="${id}">${esc(this.t('config.widgetColumns', 'Width'))}</label>
-                <select id="${id}" class="config-select" data-widget-setting="columns"
-                    data-widget-index="${index}" data-widget-kind="int">
-                    ${option(1, 'config.widgetColumnsOne', 'One column')}
-                    ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
-                </select>
-                <span class="config-widget-note">${esc(this.t('config.widgetColumnsNote',
-                    'A dashboard showing one column draws the widget in that one column.'))}</span>
-            </div>`;
-    }
         /*
          * The custom widget's scalars. Its fields[] is a list of objects, which
          * this table cannot describe, so renderCustomWidgetFields draws that
@@ -14167,8 +14168,8 @@ class DashboardConfig {
               label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
               placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
         ],
+    };
 
-    /**
     /** The formats a value may be shown in — the server accepts these and no others. */
     static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
 
@@ -14301,6 +14302,145 @@ class DashboardConfig {
         ).join('');
     }
 
+    /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
+    renderWidgetSettings(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const fields = DashboardConfig.WIDGET_SETTINGS[widget.type] || [];
+        // No early return for a type with no fields of its own: width applies to
+        // every widget, so the panel is never empty.
+
+        const config = widget.config || {};
+        const rows = fields.map((field) => {
+            const label = esc(this.t(field.label[0], field.label[1]));
+            const id = `widget-${index}-${esc(field.key)}`;
+            if (field.kind === 'bool') {
+                return `
+                    <label class="config-toggle config-toggle--inline">
+                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="bool"
+                            ${config[field.key] ? 'checked' : ''}>
+                        <span>${label}</span>
+                    </label>`;
+            }
+            if (field.kind === 'int') {
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="number" id="${id}" class="config-text config-text--number"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="int" min="${field.min}" max="${field.max}"
+                            value="${esc(config[field.key] ?? '')}"
+                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                    </div>`;
+            }
+            if (field.kind === 'text') {
+                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
+                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                    </div>`;
+            }
+            if (field.kind === 'credential') {
+                // The same store the health checks use: the widget names one,
+                // and never holds it.
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="text">
+                            <option value="">${esc(this.t('config.healthCredentialNone',
+                                'Nothing — check anonymously'))}</option>
+                            ${this.renderCredentialOptionsFor(config[field.key])}
+                        </select>
+                    </div>`;
+            }
+            if (field.kind === 'tags') {
+                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
+                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    </div>`;
+            }
+            // checkset: an absent list means all, which is the default for the
+            // health widget's figures and reads better than every box ticked.
+            const chosen = Array.isArray(config[field.key]) ? config[field.key] : null;
+            const boxes = (field.options || []).map(([value, text]) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="checkset"
+                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                    <span>${esc(this.t(text[0], text[1]))}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${label}</span>
+                    <div class="config-widget-checkset">${boxes}</div>
+                </div>`;
+        }).join('');
+        if (widget.type === 'custom') {
+            /*
+             * Two groups rather than one grid of six unrelated boxes.
+             *
+             * Where to read from and what to show are different questions, and
+             * a flat panel made the address, the credential and a dotted path
+             * read as equally weighted neighbours. The figures need the full
+             * width regardless: their rows are four controls wide, and in a
+             * third of the panel they overlapped each other.
+             */
+            return `<div class="config-widget-settings-body is-custom">
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
+                        'Where to read from'))}</h4>
+                    <div class="config-custom-grid">${rows}</div>
+                </div>
+                ${this.renderCustomWidgetFields(widget, index)}
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
+                        'On the dashboard'))}</h4>
+                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
+                </div>
+            </div>`;
+        }
+        return `<div class="config-widget-settings-body">${
+            this.renderWidgetWidth(widget, index)}${rows}</div>`;
+    }
+
+    /**
+     * How wide the widget is drawn, for every type.
+     *
+     * Outside WIDGET_SETTINGS for the same reason the shown toggle is: it
+     * belongs to every widget, and declaring it eight times would be eight
+     * copies of one line. Two is the ceiling — a widget is a summary, and one
+     * needing three columns is a view that has not admitted it yet.
+     */
+    renderWidgetWidth(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = Number(widget?.config?.columns) === 2 ? 2 : 1;
+        const id = `widget-${index}-columns`;
+        const option = (value, key, fallback) =>
+            `<option value="${value}" ${current === value ? 'selected' : ''}>${esc(this.t(key, fallback))}</option>`;
+        return `
+            <div class="config-widget-field">
+                <label for="${id}">${esc(this.t('config.widgetColumns', 'Width'))}</label>
+                <select id="${id}" class="config-select" data-widget-setting="columns"
+                    data-widget-index="${index}" data-widget-kind="int">
+                    ${option(1, 'config.widgetColumnsOne', 'One column')}
+                    ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
+                </select>
+                <span class="config-widget-note">${esc(this.t('config.widgetColumnsNote',
+                    'A dashboard showing one column draws the widget in that one column.'))}</span>
+            </div>`;
+    }
+
+    /**
      * One line on what a widget puts on the dashboard.
      *
      * Beside the name rather than behind a help icon: eight types is past the
@@ -14333,31 +14473,6 @@ class DashboardConfig {
      * Read the page's blocks and lay them out as one list.
      *
      * Widgets and categories together, in blockOrder, because that is the order
-            if (field.kind === 'text') {
-                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
-                        <input type="text" id="${id}" class="config-text"
-                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
-                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
-                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
-                    </div>`;
-            }
-            if (field.kind === 'credential') {
-                // The same store the health checks use: the widget names one,
-                // and never holds it.
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
-                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="text">
-                            <option value="">${esc(this.t('config.healthCredentialNone',
-                                'Nothing — check anonymously'))}</option>
-                            ${this.renderCredentialOptionsFor(config[field.key])}
-                        </select>
-                    </div>`;
-            }
      * being edited. Two lists side by side would make "up" ambiguous.
      */
     async loadWidgetsEditor() {
@@ -14403,7 +14518,7 @@ class DashboardConfig {
             this._widgetOrder = [];
         }
         this._widgetLoadedFor = this._widgetPageId;
-        this.repaintPtBody();
+        this.repaintWidgetsBody();
     }
 
     bindWidgetsEditor(container) {
@@ -14411,7 +14526,7 @@ class DashboardConfig {
             this._widgetPageId = Number(event.target.value);
             this._widgetBlocks = null;
             this._widgetLoadedFor = null;
-            this.repaintPtBody();
+            this.repaintWidgetsBody();
             void this.loadWidgetsEditor();
         });
 
@@ -14613,6 +14728,55 @@ class DashboardConfig {
         await this.setWidgetConfig(index, { [key]: value });
     }
 
+    /** The fields a custom widget reads, as stored. */
+    customFieldsOf(index) {
+        const config = (this._widgetBlocks || [])[index]?.config || {};
+        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
+    }
+
+    async addCustomWidgetField(index) {
+        const fields = this.customFieldsOf(index);
+        if (fields.length >= 8) return;
+        /*
+         * Added empty rather than with a guess.
+         *
+         * The server drops a field with no path — a row that named nothing
+         * would be an empty figure on the tile — so this row exists only in the
+         * editor until it has one. That is why the panel is redrawn from local
+         * state rather than from what came back.
+         */
+        fields.push({ path: '', label: '', format: 'text' });
+        this.setCustomFieldsLocally(index, fields);
+        this.repaintWidgetsBody();
+    }
+
+    async removeCustomWidgetField(index, row) {
+        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
+        this.setCustomFieldsLocally(index, fields);
+        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
+        this.repaintWidgetsBody();
+    }
+
+    async setCustomWidgetField(index, row, key, value) {
+        const fields = this.customFieldsOf(index);
+        if (!fields[row]) return;
+        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        this.setCustomFieldsLocally(index, fields);
+        // Only worth storing once a row names something; until then the server
+        // would drop it and the editor would lose the row being typed into.
+        if (fields.some((field) => String(field.path || '').trim())) {
+            await this.setWidgetConfig(index, { fields });
+        }
+    }
+
+    /** Keep the editor's copy in step, including rows the server would drop. */
+    setCustomFieldsLocally(index, fields) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
+        this._widgetBlocks = blocks;
+    }
+
     async renameWidget(index, title) {
         const blocks = [...(this._widgetBlocks || [])];
         if (!blocks[index]?.isWidget) return;
@@ -14728,55 +14892,6 @@ class DashboardConfig {
             const withWidgets = locked || visible.length !== this._categories.length
                 ? rows
                 : this.interleaveWidgetRows(rows);
-    /** The fields a custom widget reads, as stored. */
-    customFieldsOf(index) {
-        const config = (this._widgetBlocks || [])[index]?.config || {};
-        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
-    }
-
-    async addCustomWidgetField(index) {
-        const fields = this.customFieldsOf(index);
-        if (fields.length >= 8) return;
-        /*
-         * Added empty rather than with a guess.
-         *
-         * The server drops a field with no path — a row that named nothing
-         * would be an empty figure on the tile — so this row exists only in the
-         * editor until it has one. That is why the panel is redrawn from local
-         * state rather than from what came back.
-         */
-        fields.push({ path: '', label: '', format: 'text' });
-        this.setCustomFieldsLocally(index, fields);
-        this.repaintWidgetsBody();
-    }
-
-    async removeCustomWidgetField(index, row) {
-        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
-        this.setCustomFieldsLocally(index, fields);
-        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
-        this.repaintWidgetsBody();
-    }
-
-    async setCustomWidgetField(index, row, key, value) {
-        const fields = this.customFieldsOf(index);
-        if (!fields[row]) return;
-        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
-        this.setCustomFieldsLocally(index, fields);
-        // Only worth storing once a row names something; until then the server
-        // would drop it and the editor would lose the row being typed into.
-        if (fields.some((field) => String(field.path || '').trim())) {
-            await this.setWidgetConfig(index, { fields });
-        }
-    }
-
-    /** Keep the editor's copy in step, including rows the server would drop. */
-    setCustomFieldsLocally(index, fields) {
-        const blocks = [...(this._widgetBlocks || [])];
-        if (!blocks[index]?.isWidget) return;
-        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
-        this._widgetBlocks = blocks;
-    }
-
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
                 ? `<ul class="config-crud-list">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
@@ -14872,7 +14987,7 @@ class DashboardConfig {
 
         [order[from], order[to]] = [order[to], order[from]];
         this._catBlockOrder = order;
-        this.repaintWidgetsBody();
+        this.repaintPtBody();
 
         try {
             const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
@@ -15001,7 +15116,7 @@ class DashboardConfig {
             // off the object entirely when it is the plain single column.
             const spread = this.dash.settings?.defaultCategorySpread === true;
             this._categories.push(spread ? { id, name, spread: true } : { id, name });
-            this.repaintWidgetsBody();
+            this.repaintPtBody();
             void this.saveCategories(this._catPageId);
         });
         container.querySelectorAll('[data-cat-duplicate]').forEach((btn) => {

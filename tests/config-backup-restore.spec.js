@@ -11,6 +11,15 @@ async function openBackups(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+    /*
+     * The panels on this tab are <details> and shut by default. Their contents
+     * stay in the DOM either way, but a click needs them on screen — so this
+     * opens them all, which is what a person does to the one they came for.
+     */
+    await page.waitForSelector('.config-source-panel', { timeout: 15_000 });
+    await page.evaluate(() => {
+        document.querySelectorAll('.config-source-panel').forEach((panel) => panel.setAttribute('open', ''));
+    });
     await expect(page.locator('[data-backup-action="download"]')).toBeVisible();
 }
 

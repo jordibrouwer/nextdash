@@ -25,6 +25,20 @@ async function openBackups(page) {
         window.dashboardInstance.config._backupData != null), { timeout: 15_000 }).toBe(true);
 }
 
+/**
+ * Open the Stored backups fold.
+ *
+ * The panels on this tab are <details> and shut by default; their contents stay
+ * in the DOM, so a test asserting on what a person can see has to open the one
+ * it is asking about.
+ */
+async function openStoredBackups(page) {
+    await page.waitForSelector('.config-source-panel', { timeout: 15_000 });
+    await page.evaluate(() => {
+        document.querySelectorAll('.config-source-panel').forEach((panel) => panel.setAttribute('open', ''));
+    });
+}
+
 test.describe('a relative time that can face forwards', () => {
     test('the future reads as the future, not as "just now"', async ({ page }) => {
         await openBackups(page);
@@ -76,7 +90,13 @@ test.describe('what the rotation will do', () => {
         const backups = await page.evaluate(() =>
             window.dashboardInstance.config._backupData?.backups?.length || 0);
         test.skip(backups === 0, 'no stored backups on this install');
-        await expect(page.locator('#config-db-body .config-panel-note').first())
+        /*
+         * The list is behind a fold now, so this opens the panel it lives in —
+         * which is what a person does. The rotation note is inside that list,
+         * and the tile above the panels carries the count for a glance.
+         */
+        await openStoredBackups(page);
+        await expect(page.locator('#config-backup-list .config-panel-note').first())
             .toContainText(String(keep));
     });
 
@@ -100,6 +120,7 @@ test.describe('what the rotation will do', () => {
         const backups = await page.evaluate(() =>
             window.dashboardInstance.config._backupData?.backups?.length || 0);
         test.skip(backups === 0, 'no stored backups on this install');
+        await openStoredBackups(page);
         await expect(page.locator('[data-backup-action="download-all"]')).toBeVisible();
     });
 });
