@@ -107,6 +107,10 @@ func main() {
 	r.HandleFunc("/api/categories", handlers.SaveCategories).Methods("POST")
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
+	// A page's widgets and the order every block on it is drawn in -- category
+	// ids and widget ids in one list, so a widget can sit between categories.
+	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.SavePageBlocksHandler).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")

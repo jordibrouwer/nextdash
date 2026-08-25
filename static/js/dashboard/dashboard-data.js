@@ -472,10 +472,11 @@ class DashboardData {
         return {
             bookmarks: this.clonePageBookmarks(entry.bookmarks),
             categories: entry.categories.map((cat) => ({ ...cat })),
+            blocks: entry.blocks ? { widgets: [...(entry.blocks.widgets || [])], order: [...(entry.blocks.order || [])] } : null,
         };
     }
 
-    setPageDataCache(pageId, bookmarks, categories) {
+    setPageDataCache(pageId, bookmarks, categories, blocks = null) {
         const d = this.dash;
         if (!d._pageDataCache) {
             d._pageDataCache = new Map();
@@ -483,6 +484,9 @@ class DashboardData {
         d._pageDataCache.set(Number(pageId), {
             bookmarks: this.clonePageBookmarks(bookmarks),
             categories: (Array.isArray(categories) ? categories : []).map((cat) => ({ ...cat, name: cat.name })),
+            // Cached with the rest, or returning to a page would draw it with
+            // no widgets and in the wrong order until something refetched.
+            blocks: blocks ? { widgets: blocks.widgets || [], order: blocks.order || [] } : null,
             cachedAt: Date.now(),
         });
     }
@@ -867,6 +871,16 @@ class DashboardData {
 
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
+        /*
+         * The page's widgets and the order its blocks are drawn in.
+         *
+         * Both replaced together, and both cleared when the answer did not
+         * arrive: an order left over from the previous page would arrange this
+         * one's categories by ids that mean nothing here.
+         */
+        const blocks = options.blocks;
+        d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
+        d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
         d.currentPageId = targetPageId;
         if (!preserveView) {
             d.setActiveView('bookmarks');
@@ -974,6 +988,7 @@ class DashboardData {
 
             let bookmarks;
             let categories;
+            let blocks = null;
             let cached = !useForceFetch ? this.getCachedPageData(targetPageId) : null;
             if (cached && this.isPageBookmarksStale(targetPageId, cached.bookmarks)) {
                 this.invalidatePageDataCache(targetPageId);
@@ -982,10 +997,15 @@ class DashboardData {
             if (cached) {
                 bookmarks = cached.bookmarks;
                 categories = cached.categories;
+                blocks = cached.blocks;
             } else {
-                const [bookmarksRes, categoriesRes] = await Promise.all([
+                const [bookmarksRes, categoriesRes, blocksRes] = await Promise.all([
                     fetch(`/api/bookmarks?page=${targetPageId}`),
                     fetch(`/api/categories?page=${targetPageId}`),
+                    // In the same round rather than after it: the blocks decide
+                    // what is drawn and in what order, so fetching them later
+                    // would mean rendering once without them and again with.
+                    fetch(`/api/pages/${targetPageId}/blocks`),
                 ]);
 
                 if (!this.isCurrentPageBookmarksLoad(loadId)) {
@@ -997,14 +1017,19 @@ class DashboardData {
 
                 bookmarks = await bookmarksRes.json();
                 categories = await categoriesRes.json();
+                // A failure here is not a failure of the page: widgets are an
+                // addition, and a dashboard that will not load because a block
+                // list could not be read is a worse trade than one without its
+                // widgets for a moment.
+                blocks = blocksRes.ok ? await blocksRes.json().catch(() => null) : null;
                 if (!this.isCurrentPageBookmarksLoad(loadId)) {
                     return false;
                 }
-                this.setPageDataCache(targetPageId, bookmarks, categories);
+                this.setPageDataCache(targetPageId, bookmarks, categories, blocks);
             }
             await this.fetchAndStoreDataRevision();
 
-            this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate });
+            this._applyLoadedPageData(targetPageId, bookmarks, categories, { skipRender, animate, blocks });
             return true;
         } catch (error) {
             if (!this.isCurrentPageBookmarksLoad(loadId)) {

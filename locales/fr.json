@@ -549,6 +549,8 @@
     "recentModalOpenCount": "{count}×",
     "close": "Fermer",
     "defaultPageTitle": "tableau de bord",
+    "widgetUnknown": "Ce widget n’est pas disponible.",
+    "widgetType.health": "Health",
     "uncategorized": "Autres",
     "unknownCategory": "Catégorie inconnue",
     "categorySortAZ": "A–Z",

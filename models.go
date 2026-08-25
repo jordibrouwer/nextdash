@@ -193,6 +193,24 @@ type Page struct {
 type PageWithBookmarks struct {
 	Page       Page       `json:"page"`
 	Categories []Category `json:"categories,omitempty"`
+	// Widgets are blocks on this page that hold something other than bookmarks.
+	// Beside the categories rather than in a file of their own, because the two
+	// share one ordering -- see BlockOrder.
+	Widgets []Widget `json:"widgets,omitempty"`
+	/*
+	 * BlockOrder is the order the dashboard draws blocks in: category ids and
+	 * widget ids in one list.
+	 *
+	 * One list rather than a number on each, because two numbered lists drift
+	 * the moment something is inserted between them -- every other number has to
+	 * shift, and a single missed write leaves the order scrambled. This is the
+	 * same shape `categories` already has, where the array order is the order.
+	 *
+	 * Absent means "as they come": resolveBlockOrder falls back to the existing
+	 * category order, so a file written before this field renders exactly as it
+	 * did.
+	 */
+	BlockOrder []string   `json:"blockOrder,omitempty"`
 	Bookmarks  []Bookmark `json:"bookmarks"`
 }
 
@@ -624,6 +642,10 @@ type Store interface {
 	SaveFinders(finders []Finder) error
 	// Pages
 	GetPages() []Page
+	// Widgets and the order every block on a page is drawn in. One pair,
+	// because an order is only meaningful beside the things it orders.
+	GetPageBlocks(pageID int) ([]Widget, []string)
+	SavePageBlocks(pageID int, widgets []Widget, order []string) error
 	SavePage(page Page) error
 	DeletePage(pageID int) error
 	GetPageOrder() []int

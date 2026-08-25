@@ -552,6 +552,8 @@
     "recentModalOpenCount": "{count}×",
     "close": "Sluiten",
     "defaultPageTitle": "dashboard",
+    "widgetUnknown": "Deze widget is niet beschikbaar.",
+    "widgetType.health": "Health",
     "uncategorized": "Overig",
     "unknownCategory": "Onbekende categorie",
     "categorySortAZ": "A–Z",

@@ -275,6 +275,26 @@ class DashboardRenderCore {
             });
         });
 
+        /*
+         * Widgets are blocks like any other, so they go in this same list.
+         *
+         * Pushed before the categories rather than after, because the stored
+         * order sorts everything at the end -- and what happens to a widget the
+         * order does not name should be "it appears", not "it appears last for
+         * ever". Anything not in the order keeps the position it is pushed in.
+         */
+        (d.widgets || []).forEach((widget) => {
+            columnBlocks.push({
+                widget,
+                category: {
+                    id: widget.id,
+                    name: widget.title || '',
+                    isWidget: true,
+                },
+                bookmarks: [],
+            });
+        });
+
         d.categories.forEach((category) => {
             const id = String(category.id);
             const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || [], category);
@@ -328,7 +348,101 @@ class DashboardRenderCore {
             });
         });
 
-        return columnBlocks;
+        return this.applyBlockOrder(columnBlocks);
+    }
+
+    /*
+     * One widget, as a block in the grid.
+     *
+     * Built with the same outer element and classes a category block uses, for
+     * two reasons that are really one: the masonry layout measures blocks by
+     * those classes, and DragReorder finds them by them. A widget that looked
+     * different from the outside would need its own answer to both.
+     *
+     * The body is rendered by whatever handles that type, or left as a notice
+     * when nothing does -- a block that draws nothing at all is a hole in the
+     * grid with no way to select or remove it.
+     */
+    createWidgetElement(widget) {
+        const d = this.dash;
+        const block = document.createElement('div');
+        // `.category` deliberately: the masonry layout measures blocks by that
+        // class and DragReorder selects by it, so a widget that called itself
+        // something else would need its own answer to both. The second class is
+        // what the styling and the block builder tell them apart by.
+        block.className = 'category dashboard-widget';
+        block.dataset.categoryId = widget.id;
+        block.dataset.widgetId = widget.id;
+        block.dataset.widgetType = widget.type || '';
+
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        // The same handle the category headers carry, so the shared drag module
+        // picks this up without knowing what a widget is.
+        // The same handle a category header carries, so the shared drag module
+        // picks this up without knowing what a widget is.
+        header.innerHTML = `<span class="category-reorder-handle" aria-hidden="true">⠿</span>`
+            + `<span class="category-title"><span class="category-prefix" aria-hidden="true">//</span> `
+            + `${d.escapeHtml(widget.title || this.widgetTypeLabel(widget.type))}</span>`;
+        block.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'dashboard-widget-body';
+        const renderer = window.DashboardWidgets?.[widget.type];
+        if (typeof renderer === 'function') {
+            renderer(body, widget, d);
+        } else {
+            body.textContent = d.language?.t?.('dashboard.widgetUnknown') || 'This widget is not available.';
+            body.classList.add('dashboard-widget-body--empty');
+        }
+        block.appendChild(body);
+        return block;
+    }
+
+    /** A readable name for a type, for a widget with no title of its own. */
+    widgetTypeLabel(type) {
+        const d = this.dash;
+        const key = `dashboard.widgetType.${type}`;
+        const label = d.language?.t?.(key);
+        return label && label !== key ? label : String(type || 'widget');
+    }
+
+    /*
+     * Put the blocks in the order the reader arranged them.
+     *
+     * The stored order is a single list of ids -- categories and widgets
+     * together -- because a widget that could only be ordered among widgets
+     * could never sit between two categories, which is the whole point of it
+     * being a block.
+     *
+     * Three things this must not do, each of which would be worse than an
+     * unordered grid: lose a block the order does not mention, draw one twice,
+     * or move the smart collections, which have no handle and belong at the top.
+     */
+    applyBlockOrder(blocks) {
+        const order = this.dash.blockOrder;
+        if (!Array.isArray(order) || order.length === 0) return blocks;
+
+        // Smart collections and the virtual categories keep their position:
+        // they are not the reader's to arrange.
+        const fixed = blocks.filter((b) => b.category?.isSmartCollection || b.category?.isVirtualCategory);
+        const movable = blocks.filter((b) => !b.category?.isSmartCollection && !b.category?.isVirtualCategory);
+
+        const byId = new Map();
+        movable.forEach((block) => byId.set(String(block.category?.id ?? ''), block));
+
+        const sorted = [];
+        order.forEach((id) => {
+            const block = byId.get(String(id));
+            if (!block) return;
+            byId.delete(String(id));
+            sorted.push(block);
+        });
+        // Whatever the order did not name keeps its own order, after the rest --
+        // a category added since the last drag appears rather than vanishing.
+        byId.forEach((block) => sorted.push(block));
+
+        return [...fixed, ...sorted];
     }
 
 
@@ -498,7 +612,9 @@ class DashboardRenderCore {
         }
 
         const columnBlocks = this.buildCategoryColumnBlocks().map((block) => (
-            this.createCategoryElement(block.category, block.bookmarks)
+            block.widget
+                ? this.createWidgetElement(block.widget)
+                : this.createCategoryElement(block.category, block.bookmarks)
         ));
 
         const gridLayout = this.syncDashboardGridLayout();
@@ -1062,9 +1178,22 @@ class DashboardRenderCore {
         // two are different, and document order is the wrong one.
         const els = this.readCategoryElementsInOrder(grid)
             .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
-        const newIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+        // Every block that moved, widgets included -- this is what blockOrder is
+        // built from below.
+        const blockIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+        /*
+         * Categories only, for the category array.
+         *
+         * A widget id landing in d.categories would be written back to
+         * /api/categories as a category that does not exist, and the next load
+         * would find a bookmark-less category with a w_ slug in it.
+         */
+        const newIds = els
+            .filter((el) => !el.classList.contains('dashboard-widget'))
+            .map((el) => el.getAttribute('data-category-id'))
+            .filter(Boolean);
 
-        if (!newIds.length) return;
+        if (!blockIds.length) return;
 
         const byId = new Map(d.categories.map((c) => [String(c.id), c]));
         const renderedSet = new Set(newIds);
@@ -1082,11 +1211,61 @@ class DashboardRenderCore {
             return;
         }
         if (newCategories.length === 0 && Array.isArray(d.categories) && d.categories.length > 0) {
+            // No categories moved -- a widget did. Save that and leave the
+            // category array alone rather than returning and losing the drag.
+            d.blockOrder = blockIds;
+            this.scheduleBlockOrderSave();
             return;
         }
 
         d.categories = newCategories;
+        /*
+         * The block order, which is what actually moved.
+         *
+         * Categories keep their own array order for everything that reads it,
+         * but a widget cannot live in that array -- so the order the reader
+         * dragged into is stored separately, as ids. Read straight off the DOM
+         * that the drag just rearranged, including the widgets, because that is
+         * the only place the new arrangement exists at this moment.
+         */
+        d.blockOrder = blockIds;
         this.scheduleCategoryOrderSave();
+        this.scheduleBlockOrderSave();
+    }
+
+    /*
+     * Persist the block order, debounced like the category order beside it.
+     *
+     * Its own timer rather than riding along with the category save: the two
+     * write different files' worth of state through different routes, and a
+     * failure in one should not swallow the other.
+     */
+    scheduleBlockOrderSave() {
+        const d = this.dash;
+        if (d._pendingBlockOrderSave) clearTimeout(d._pendingBlockOrderSave);
+        d._pendingBlockOrderSave = setTimeout(() => {
+            d._pendingBlockOrderSave = null;
+            void this.saveBlockOrder(Number(d.currentPageId), [...(d.blockOrder || [])]);
+        }, 1000);
+    }
+
+    async saveBlockOrder(pageId, order) {
+        if (!Number.isFinite(pageId) || !Array.isArray(order) || order.length === 0) return;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+            // Only the order: the widgets themselves did not change, and sending
+            // a stale copy of them would undo an edit made while this was
+            // waiting out its debounce.
+            await fetcher(`/api/pages/${pageId}/blocks`, {
+                method: 'PUT', headers, body: JSON.stringify({ order }),
+            });
+        } catch {
+            // The order on screen is what the reader arranged; a failed save
+            // means the next load reverts it, which is visible and recoverable.
+            // Interrupting a drag with an error is not.
+        }
     }
 
 

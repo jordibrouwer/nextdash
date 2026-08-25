@@ -5325,3 +5325,31 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .move-popover-check--drawn svg {
     display: block;
 }
+
+
+/*
+ * A widget block.
+ *
+ * Carries `.category` as well, so the masonry layout measures it and the drag
+ * module selects it exactly as it does a category -- see the note in
+ * createWidgetElement. These rules only cover what is different: a widget has a
+ * body instead of a bookmark list.
+ */
+.dashboard-widget .dashboard-widget-body {
+    padding: 4px 0 2px;
+    font-size: var(--font-size-small, 0.9rem);
+    color: var(--text-secondary);
+    /*
+     * A minimum height reserved before the data arrives.
+     *
+     * The packed layout measures block heights to place columns; a widget that
+     * grows once its data loads would shift every column after it. It takes its
+     * space first and fills it second.
+     */
+    min-height: 3.5rem;
+}
+
+.dashboard-widget .dashboard-widget-body--empty {
+    color: var(--text-tertiary);
+    font-style: italic;
+}

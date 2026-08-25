@@ -549,6 +549,8 @@
     "recentModalOpenCount": "{count}×",
     "close": "Schließen",
     "defaultPageTitle": "dashboard",
+    "widgetUnknown": "Dieses Widget ist nicht verfügbar.",
+    "widgetType.health": "Health",
     "uncategorized": "Sonstiges",
     "unknownCategory": "Unbekannte Kategorie",
     "categorySortAZ": "A–Z",
