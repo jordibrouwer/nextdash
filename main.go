@@ -177,6 +177,12 @@ func main() {
 	r.HandleFunc("/api/health/archive-save-status", handlers.ArchiveCaptureStatusHandler).Methods("GET", "OPTIONS")
 	// The keys, on a route that never hands them back.
 	r.HandleFunc("/api/health/archive-settings", handlers.ArchiveSettingsHandler).Methods("GET", "PUT", "OPTIONS")
+	// A copy on this disk, through monolith. Behind the write token, captures
+	// included: a stored page is the whole content of something the reader chose
+	// to keep, which /data/'s unauthenticated allowlist is no place for.
+	r.HandleFunc("/api/archives", handlers.LocalArchivesHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/archives/capture", handlers.CaptureLocallyHandler).Methods("POST", "OPTIONS")
+	r.PathPrefix("/api/archives/").HandlerFunc(handlers.ServeLocalArchive).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")
