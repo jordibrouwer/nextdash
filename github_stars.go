@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -35,7 +36,18 @@ stop. A first run reads everything; every run after it usually reads one page.
 
 // githubAPIBase is a var so a test can point the walk at a stub server; the
 // update check does the same with its release URL, for the same reason.
-var githubAPIBase = "https://api.github.com"
+//
+// NEXTDASH_GITHUB_API_BASE overrides it, which is what lets an end-to-end test
+// exercise the real path -- browser, server, importer -- without reaching
+// GitHub. Read once at startup rather than per request: this is a test seam,
+// not a setting, and a setting is what it would become if it could change while
+// running.
+var githubAPIBase = func() string {
+	if base := strings.TrimSpace(os.Getenv("NEXTDASH_GITHUB_API_BASE")); base != "" {
+		return strings.TrimSuffix(base, "/")
+	}
+	return "https://api.github.com"
+}()
 
 // githubStarsMaxPages bounds one round. Ten thousand stars is far beyond any
 // real account, and an API that stopped honouring `page` must not become an

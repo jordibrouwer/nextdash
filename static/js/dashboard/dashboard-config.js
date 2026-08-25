@@ -5925,7 +5925,15 @@ class DashboardConfig {
             const result = await res.json();
             this.notify(this.t('config.starsImported', 'Imported {n} repositories.')
                 .replace('{n}', String(result.imported ?? preview.new)), 'success');
-            await this.dash.loadBookmarks?.();
+            // The shell holds its own copy of every page's bookmarks, so a
+            // server-side import is invisible until that copy is refreshed --
+            // this was `loadBookmarks?.()`, a method that does not exist, and
+            // the optional call swallowed it: the import worked and the screen
+            // kept showing the collection from before it. This is the same
+            // refresh every other write in config goes through, and it
+            // re-fetches the page rather than merging, so a category the import
+            // created arrives with it.
+            await this.refreshBookmarksAfterWrite();
         } catch {
             this.notify(this.t('config.starsRunError', 'Could not reach GitHub.'), 'error');
         }
