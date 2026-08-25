@@ -156,3 +156,85 @@ test.describe('local copies', () => {
         expect(file.suggestedFilename()).toBe('https---example-com-20260301-120000.html');
     });
 });
+
+/*
+ * The saved-pages tab under Bookmarks.
+ *
+ * A list of copies belongs with the collection, not with the settings that
+ * produce them -- which is why it is here and not only in Data & backups.
+ */
+test.describe('the local copies tab', () => {
+    const CAPTURES = {
+        available: true,
+        totalBytes: 2_500_000,
+        captures: [
+            {
+                url: '/api/archives/https---example-com-20260825-120000.html', bytes: 1_000_000,
+                at: Date.now() - 3600_000, bookmarkName: 'Example site', bookmarkUrl: 'https://example.com/',
+            },
+            {
+                url: '/api/archives/https---example-com-20260301-120000.html', bytes: 900_000,
+                at: Date.parse('2026-03-01T12:00:00Z'), bookmarkName: 'Example site', bookmarkUrl: 'https://example.com/',
+            },
+            // A page nothing points at any more.
+            { url: '/api/archives/https---gone-example-20260101-120000.html', bytes: 600_000, at: Date.parse('2026-01-01T12:00:00Z') },
+        ],
+    };
+
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.route('**/api/archives', (route) => route.fulfill({
+            status: 200, contentType: 'application/json', body: JSON.stringify(CAPTURES),
+        }));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.click('[data-bm-tab="local-copies"]');
+        await expect(page.locator('#config-copies-list')).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('copies are grouped under the bookmark they belong to', async ({ page }) => {
+        const groups = page.locator('.config-copies-group');
+        await expect(groups).toHaveCount(2, { timeout: 10_000 });
+
+        // Two captures of one page are one group, not two rows in a flat list --
+        // the question is "what do I have of this page".
+        const named = page.locator('.config-copies-group').filter({ hasText: 'Example site' });
+        await expect(named.locator('.config-local-archive-row')).toHaveCount(2);
+        await expect(named).toContainText('https://example.com/');
+
+        /*
+         * The orphan gets its own group and is marked as one. These are the
+         * copies worth reviewing: no bookmark leads back to them, so without a
+         * place to see them they sit on disk unnoticed for ever.
+         */
+        const orphan = page.locator('.config-copies-group--orphan');
+        await expect(orphan).toHaveCount(1);
+        await expect(orphan).toContainText(/No longer bookmarked/i);
+    });
+
+    test('the time a copy was saved reads as a time, not a timestamp', async ({ page }) => {
+        const rows = page.locator('.config-copies-group').filter({ hasText: 'Example site' })
+            .locator('.config-local-archive-name');
+        // An hour ago is "today HH:MM"; months back is a date, because "180
+        // days ago" is arithmetic homework.
+        await expect(rows.first()).toContainText(/today/i);
+        await expect(rows.nth(1)).not.toContainText(/today|yesterday/i);
+        // The exact moment is never lost, only moved to the title.
+        const title = await page.locator('.config-copies-group .config-local-archive-meta').first().getAttribute('title');
+        expect(title).toMatch(/\d/);
+    });
+
+    test('search narrows to one page', async ({ page }) => {
+        await page.fill('#config-copies-search', 'example.com');
+        await expect(page.locator('.config-copies-group')).toHaveCount(1, { timeout: 10_000 });
+
+        await page.fill('#config-copies-search', 'nothing matches this');
+        await expect(page.locator('#config-copies-list')).toContainText(/No saved page matches/i);
+
+        await page.fill('#config-copies-search', '');
+        await expect(page.locator('.config-copies-group')).toHaveCount(2);
+    });
+});

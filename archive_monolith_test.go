@@ -423,3 +423,87 @@ func TestServeLocalArchiveRefusesToLeaveTheDirectory(t *testing.T) {
 		}
 	}
 }
+
+/*
+Captures know which bookmark they belong to.
+
+Without it the tab is a list of filenames: the reader sees "https---example-com"
+and has to work out which of their bookmarks that is. Matched on the filename
+stem, so this costs one pass over the bookmarks rather than opening any file.
+*/
+func TestCapturesAreMatchedToTheirBookmark(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `echo "<html>ok</html>" > "$2"`)
+
+	bookmarks := append(h.store.GetBookmarksByPage(1), Bookmark{
+		Name: "Example site", URL: "https://example.com/", PageID: 1,
+	})
+	if err := h.store.SaveBookmarksByPage(1, bookmarks); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	for _, target := range []string{"https://example.com/", "https://nobody.example/"} {
+		if _, err := h.CaptureLocally(context.Background(), target); err != nil {
+			t.Fatalf("capture %s: %v", target, err)
+		}
+		time.Sleep(1100 * time.Millisecond)
+	}
+
+	captures := listLocalArchives("")
+	h.attachBookmarkNames(captures)
+
+	var named, orphan int
+	for _, capture := range captures {
+		switch capture.BookmarkName {
+		case "Example site":
+			named++
+			if capture.BookmarkURL != "https://example.com/" {
+				t.Errorf("bookmarkUrl = %q", capture.BookmarkURL)
+			}
+		case "":
+			// A page nothing points at any more: shown rather than hidden,
+			// since nothing else would ever lead anyone back to it.
+			orphan++
+		default:
+			t.Errorf("capture attributed to %q", capture.BookmarkName)
+		}
+	}
+	if named != 1 || orphan != 1 {
+		t.Errorf("named=%d orphan=%d, want one of each", named, orphan)
+	}
+}
+
+/*
+The health report counts copies once, not once per row.
+
+It draws every failing bookmark in a loop; a request per row to answer "is there
+a copy of this" would be a hundred round trips to paint one screen.
+*/
+func TestLocalCopyIndexCountsPerPage(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `echo "<html>ok</html>" > "$2"`)
+
+	for _, target := range []string{
+		"https://example.com/", "https://example.com/", "https://other.example/",
+	} {
+		if _, err := h.CaptureLocally(context.Background(), target); err != nil {
+			t.Fatalf("capture: %v", err)
+		}
+		time.Sleep(1100 * time.Millisecond)
+	}
+
+	index := localCopyIndex()
+	if got := index[localArchiveSlug("https://example.com/")].Count; got != 2 {
+		t.Errorf("counted %d copies of that page, want 2", got)
+	}
+	if got := index[localArchiveSlug("https://other.example/")].Count; got != 1 {
+		t.Errorf("counted %d copies of the other page, want 1", got)
+	}
+	if got := index[localArchiveSlug("https://never.example/")].Count; got != 0 {
+		t.Errorf("counted %d copies of a page never captured", got)
+	}
+	// The newest stamp, so a row can say how fresh the fallback is.
+	if index[localArchiveSlug("https://example.com/")].Newest == 0 {
+		t.Error("no timestamp recorded for the newest copy")
+	}
+}

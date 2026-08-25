@@ -185,6 +185,11 @@ type LocalCapture struct {
 	 */
 	URL string `json:"url"`
 	At  int64  `json:"at"`
+	// BookmarkName and BookmarkURL are the bookmark this is a copy of, when one
+	// still exists. Empty means nothing in the dashboard points at this page any
+	// more, which is worth showing rather than hiding.
+	BookmarkName string `json:"bookmarkName,omitempty"`
+	BookmarkURL  string `json:"bookmarkUrl,omitempty"`
 }
 
 /*
@@ -391,6 +396,7 @@ func (h *Handlers) LocalArchivesHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	captures := listLocalArchives(prefix)
+	h.attachBookmarkNames(captures)
 	writeJSON(w, map[string]any{
 		"available": MonolithAvailable(),
 		"captures":  captures,
@@ -398,6 +404,54 @@ func (h *Handlers) LocalArchivesHandler(w http.ResponseWriter, r *http.Request) 
 		// can still say what the whole archive costs.
 		"totalBytes": totalArchiveBytes(),
 	})
+}
+
+/*
+attachBookmarkNames says which bookmark each capture belongs to.
+
+Matched on the filename stem, which is built from the canonical URL key -- so
+this costs one pass over the bookmarks rather than opening any file. A capture
+whose page is no longer bookmarked keeps an empty Bookmark, which is not a gap
+to hide: those are exactly the copies worth reviewing, since nothing in the
+dashboard points at them any more.
+*/
+func (h *Handlers) attachBookmarkNames(captures []LocalCapture) {
+	if len(captures) == 0 {
+		return
+	}
+	type owner struct {
+		name string
+		url  string
+	}
+	bySlug := map[string]owner{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if strings.TrimSpace(bm.URL) == "" {
+				continue
+			}
+			slug := localArchiveSlug(bm.URL)
+			if _, taken := bySlug[slug]; taken {
+				continue
+			}
+			bySlug[slug] = owner{name: bm.Name, url: bm.URL}
+		}
+	}
+
+	for i := range captures {
+		name := filepath.Base(captures[i].URL)
+		// Strip the "-YYYYMMDD-HHMMSS.html" the capture time added.
+		stem := strings.TrimSuffix(name, ".html")
+		if cut := strings.LastIndex(stem, "-"); cut > 0 {
+			stem = stem[:cut]
+		}
+		if cut := strings.LastIndex(stem, "-"); cut > 0 {
+			stem = stem[:cut]
+		}
+		if found, ok := bySlug[stem]; ok {
+			captures[i].BookmarkName = found.name
+			captures[i].BookmarkURL = found.url
+		}
+	}
 }
 
 // listLocalArchives reads the directory, newest first, optionally narrowed to
@@ -466,4 +520,37 @@ func (h *Handlers) DeleteLocalArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+/*
+localCopyIndex counts the stored captures per page, in one directory read.
+
+For the health report, which draws every failing bookmark in a loop: asking per
+row would be one round trip each to answer "is there a copy of this". Keyed by
+the filename stem, which is what a capture and a URL have in common.
+*/
+func localCopyIndex() map[string]struct {
+	Count  int
+	Newest int64
+} {
+	index := map[string]struct {
+		Count  int
+		Newest int64
+	}{}
+	for _, capture := range listLocalArchives("") {
+		stem := strings.TrimSuffix(filepath.Base(capture.URL), ".html")
+		// Drop the "-YYYYMMDD-HHMMSS" the capture time appended.
+		for i := 0; i < 2; i++ {
+			if cut := strings.LastIndex(stem, "-"); cut > 0 {
+				stem = stem[:cut]
+			}
+		}
+		entry := index[stem]
+		entry.Count++
+		if capture.At > entry.Newest {
+			entry.Newest = capture.At
+		}
+		index[stem] = entry
+	}
+	return index
 }

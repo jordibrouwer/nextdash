@@ -3655,11 +3655,22 @@ type HealthIssue struct {
 	 * rule decides it here, so the row, the archive backfill and anything
 	 * counting rot cannot disagree about what a 403 means.
 	 */
-	FailureUncertain bool   `json:"failureUncertain,omitempty"`
-	PreviewTitle     string `json:"previewTitle,omitempty"`
-	PreviewDesc      string `json:"previewDesc,omitempty"`
-	PreviewImage     string `json:"previewImage,omitempty"`
-	Icon             string `json:"icon,omitempty"`
+	FailureUncertain bool `json:"failureUncertain,omitempty"`
+	/*
+	 * LocalCopies is how many whole-page copies are stored here for this URL.
+	 *
+	 * Counted once for the whole report rather than asked per row: the health
+	 * view renders in a loop, and a request per row to answer "is there a copy"
+	 * would be a hundred round trips to draw one screen.
+	 */
+	LocalCopies int `json:"localCopies,omitempty"`
+	// LocalCopyAt is when the newest of them was saved, so a row can say how
+	// fresh the fallback is rather than only that one exists.
+	LocalCopyAt  int64  `json:"localCopyAt,omitempty"`
+	PreviewTitle string `json:"previewTitle,omitempty"`
+	PreviewDesc  string `json:"previewDesc,omitempty"`
+	PreviewImage string `json:"previewImage,omitempty"`
+	Icon         string `json:"icon,omitempty"`
 	// Status is the single worst thing about this bookmark, picked by priority.
 	// It drives how the row is presented — colour band, sort rank, headline
 	// reason — so it stays one value.

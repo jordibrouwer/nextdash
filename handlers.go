@@ -582,6 +582,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		return strings.TrimSpace(bm.PreviewTitle) == "" && strings.TrimSpace(bm.PreviewDesc) == "" && strings.TrimSpace(bm.PreviewImage) == ""
 	}
 
+	// One directory read for the whole report: asking per row whether a copy
+	// exists would be a round trip each to draw one screen.
+	localCopies := localCopyIndex()
+
 	for _, page := range pages {
 		for _, entry := range bookmarksByPage[page.ID] {
 			bm := entry.bookmark
@@ -826,6 +830,8 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				BrokenSince:            bm.BrokenSince,
 				ArchiveDiedAt:          bm.ArchiveDiedAt,
 				FailureUncertain:       failureIsUncertain(bm.LastError),
+				LocalCopies:            localCopies[localArchiveSlug(bm.URL)].Count,
+				LocalCopyAt:            localCopies[localArchiveSlug(bm.URL)].Newest,
 				PreviewTitle:           bm.PreviewTitle,
 				PreviewDesc:            bm.PreviewDesc,
 				PreviewImage:           bm.PreviewImage,

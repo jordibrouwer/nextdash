@@ -5578,3 +5578,65 @@ button.config-bm-shortcut-pill {
         grid-column: 1 / -1;
     }
 }
+
+
+/*
+ * The saved-pages tab, grouped by bookmark.
+ *
+ * Grouping is the layout's whole job here: successive captures of one page are
+ * the normal case, and a flat date-ordered list would interleave them with
+ * everything else and bury the answer to "what do I have of this page".
+ */
+.config-copies {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 14px;
+}
+
+.config-copies-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.config-copies-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.config-copies-count {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-secondary) 15%, transparent);
+    font-size: var(--font-size-small);
+    font-weight: normal;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.config-copies-group-url {
+    margin: 0 0 4px;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * Copies of a page nothing points at any more.
+ *
+ * Dimmed rather than hidden: these are the ones worth reviewing, since no
+ * bookmark will ever lead anyone back to them, and a folder that only grows in
+ * the dark is how disk fills up unnoticed.
+ */
+.config-copies-group--orphan .config-copies-group-title {
+    color: var(--text-tertiary);
+    font-style: italic;
+}

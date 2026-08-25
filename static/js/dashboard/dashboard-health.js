@@ -186,6 +186,20 @@ class DashboardHealth {
     }
 
     formatUrlDisplay(url) {
+        /*
+         * A bookmark pointed at the Web Archive shows the page it is a copy of.
+         *
+         * "Use the last archived copy" rewrites the address to
+         * web.archive.org/web/20160926060646/https://github.com/, which is
+         * correct and unreadable: the row filled with a wayback timestamp and
+         * the real site buried in the middle, looking like two URLs run
+         * together. The original is the part that identifies the bookmark, so
+         * that is what is shown, with a marker saying where it now points.
+         */
+        const archived = this.archivedOriginalUrl(url);
+        if (archived) {
+            return `${this.formatUrlDisplay(archived)} ${this.t('dashboard.healthArchivedMarker', '(archived copy)')}`;
+        }
         try {
             const parsed = new URL(url);
             const path = parsed.pathname + parsed.search;
@@ -195,6 +209,19 @@ class DashboardHealth {
             const raw = String(url || '');
             return raw.length > 72 ? `${raw.slice(0, 69)}…` : raw;
         }
+    }
+
+    /**
+     * The page a wayback URL is a capture of, or "" when it is not one.
+     *
+     * The shape is /web/<timestamp>/<original>, where the original keeps its own
+     * scheme -- so the second "https://" in the string is the start of the real
+     * address rather than a mistake.
+     */
+    archivedOriginalUrl(url) {
+        const raw = String(url || '');
+        const match = raw.match(/^https?:\/\/web\.archive\.org\/web\/[^/]*\/(https?:\/\/.+)$/i);
+        return match ? match[1] : '';
     }
 
     /* ── Data ──────────────────────────────────────────────────────────── */
@@ -1310,7 +1337,38 @@ class DashboardHealth {
             date: new Date(since).toLocaleString(),
         });
         return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`
-            + this.renderArchiveDied(issue);
+            + this.renderArchiveDied(issue)
+            + this.renderLocalCopies(issue);
+    }
+
+    /*
+     * Whether there is a copy of this page on this disk, and how old it is.
+     *
+     * On a failing row this is the most useful thing the view can say: the link
+     * is gone and the content is not. Without it a reader has to remember
+     * whether they ever saved this one, and the answer is a menu click away in
+     * a menu they have no reason to open.
+     *
+     * The count comes with the report, not from a request per row.
+     */
+    renderLocalCopies(issue) {
+        const count = Number(issue?.localCopies) || 0;
+        if (!count) return '';
+
+        const at = Number(issue?.localCopyAt) || 0;
+        const when = at
+            ? new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+            : '';
+        const label = count === 1
+            ? this.t('dashboard.healthLocalCopyOne', 'copy saved here')
+            : this.t('dashboard.healthLocalCopyMany', '{n} copies saved here', { n: String(count) });
+        const title = when
+            ? this.t('dashboard.healthLocalCopyTitle', 'Newest copy on this disk: {date}. Open it from this row\u2019s menu.', { date: when })
+            : this.t('dashboard.healthLocalCopies', 'Copies on this disk');
+
+        // A statement of fact about what is recoverable, so it reads as the
+        // reassurance it is rather than as another warning on a failing row.
+        return ` <span class="health-view-item-local-copy" title="${this.escape(title)}">${this.escape(label)}</span>`;
     }
 
     /*
@@ -1883,11 +1941,22 @@ class DashboardHealth {
         const d = this.dash;
         this._busyKeys.add(key);
         this.syncRowBusy(key, true);
+        /*
+         * The overlay, because this is genuinely slow: monolith fetches every
+         * asset on the page -- go.dev took eleven seconds -- and a busy row on
+         * its own reads as the app having frozen. The same overlay config shows
+         * for an import, for the same reason.
+         */
+        window.ProgressOverlay?.show(
+            this.t('dashboard.healthLocalCopySaving', 'Saving a copy…'),
+            this.t('dashboard.healthLocalCopySavingStatus', 'Fetching the page and everything on it')
+        );
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
             const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(url)}`, { method: 'POST' });
             const body = await res.json().catch(() => ({}));
             if (!res.ok) {
+                window.ProgressOverlay?.hide();
                 // 412 is monolith not being installed, which is a setup step
                 // rather than a failure of this page.
                 const message = res.status === 412
@@ -1896,11 +1965,16 @@ class DashboardHealth {
                 d.showNotification(message, 'error');
                 return;
             }
+            window.ProgressOverlay?.finish(
+                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'));
             d.showNotification(
                 this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'),
                 'success'
             );
+            // The row can now say a copy exists, which it reads off the report.
+            await this.loadAndRender({ refresh: true });
         } catch {
+            window.ProgressOverlay?.hide();
             d.showNotification(this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), 'error');
         } finally {
             this._busyKeys.delete(key);

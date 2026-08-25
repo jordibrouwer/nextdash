@@ -1126,6 +1126,18 @@ button.health-view-tile:hover {
  * rather than an alarm colour -- the row is already marked as failing, and a
  * second red thing would compete with the first.
  */
+/*
+ * "copy saved here" — the one hopeful thing on a failing row.
+ *
+ * Given the accent rather than the muted grey its neighbours use: it is not
+ * another symptom, it is what can be done about them, and a row full of
+ * identical grey labels buries exactly the one worth spotting.
+ */
+.health-view-item-local-copy {
+    color: var(--accent-color, var(--text-secondary));
+    white-space: nowrap;
+}
+
 .health-view-item-gone-since {
     color: var(--text-tertiary);
     white-space: nowrap;

@@ -4153,6 +4153,37 @@ class DashboardConfig {
         return this.t('config.backupDaysAgo', '{n}d ago').replace('{n}', String(days));
     }
 
+    /*
+     * When a copy was saved, in the terms someone actually asks it in.
+     *
+     * "today 13:56" and "yesterday 09:12" answer "is this fresh?" at a glance,
+     * which is the question about a recent capture. Past a week that stops being
+     * useful -- "42d ago" is arithmetic homework -- so it becomes the date, which
+     * is the question about an old one: not how long ago, but when.
+     *
+     * The full timestamp goes in the title either way, because the exact moment
+     * is occasionally what you need and should never be lost to a friendlier
+     * phrasing.
+     */
+    formatCaptureWhen(at) {
+        const stamp = Number(at) || 0;
+        if (!stamp) return { label: '', title: '' };
+        const when = new Date(stamp);
+        const title = when.toLocaleString();
+
+        const time = when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const days = Math.round((startOfDay(new Date()) - startOfDay(when)) / 86400000);
+
+        if (days === 0) return { label: this.t('config.captureToday', 'today {time}').replace('{time}', time), title };
+        if (days === 1) return { label: this.t('config.captureYesterday', 'yesterday {time}').replace('{time}', time), title };
+        if (days > 1 && days < 7) {
+            return { label: this.t('config.captureDaysAgo', '{n} days ago').replace('{n}', String(days)), title };
+        }
+        // Older than a week: the date says more than the distance does.
+        return { label: when.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }), title };
+    }
+
     /** The future half of formatRelative, in the same steps. */
     formatRelativeAhead(mins) {
         if (mins < 1) return this.t('config.backupInAMoment', 'in a moment');
@@ -4436,6 +4467,7 @@ class DashboardConfig {
         const map = {
             list: ['config.bmTabList', 'List'],
             settings: ['config.bmTabSettings', 'Settings'],
+            'local-copies': ['config.bmTabLocalCopies', 'Local copies'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -6328,13 +6360,11 @@ class DashboardConfig {
         }
         list.innerHTML = captures.map((capture) => {
             const name = String(capture.url || '').split('/').pop();
-            const when = capture.at
-                ? new Date(capture.at).toLocaleString()
-                : '';
+            const when = this.formatCaptureWhen(capture.at);
             return `
                 <div class="config-local-archive-row">
                     <a class="config-local-archive-name" href="${esc(capture.url)}" target="_blank" rel="noopener noreferrer">${esc(this.localArchiveLabel(name))}</a>
-                    <span class="config-local-archive-meta">${esc(when)} · ${esc(this.formatBytes(capture.bytes || 0))}</span>
+                    <span class="config-local-archive-meta" title="${esc(when.title)}">${esc(when.label)} · ${esc(this.formatBytes(capture.bytes || 0))}</span>
                     <span class="config-local-archive-actions">
                         <button type="button" class="config-btn config-btn--small"
                             data-local-archive-download="${esc(name)}">${esc(this.t('config.localArchiveDownloadBtn', 'Download'))}</button>
@@ -6554,64 +6584,21 @@ class DashboardConfig {
     /*
      * The blocking overlay a long-running config action shows.
      *
-     * The same element and the same look as the favicon prefetch, because it is
-     * the same message: nextDash is working through something, wait. It is
-     * indeterminate here on purpose -- an import is one request that walks a
-     * service's API for as many pages as it takes and answers once, so there is
-     * no honest number to put on it, and a bar frozen at zero reads as broken.
+     * The markup and the behaviour moved to window.ProgressOverlay so the health
+     * view can show the same thing while it saves a page -- two overlays that
+     * are almost the same is how two surfaces drift apart. These three stay as
+     * the names the rest of this file already calls.
      */
     showProgressOverlay(title, status) {
-        let overlay = document.getElementById('config-progress-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'config-progress-overlay';
-            overlay.className = 'progress-overlay';
-            overlay.setAttribute('role', 'status');
-            overlay.setAttribute('aria-live', 'polite');
-            overlay.innerHTML = `
-                <div class="progress-overlay-panel">
-                    <p class="progress-overlay-title" data-progress-title></p>
-                    <div class="progress-overlay-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-overlay-fill progress-overlay-fill--indeterminate" data-progress-fill></div>
-                    </div>
-                    <p class="progress-overlay-status" data-progress-status></p>
-                </div>`;
-            document.body.appendChild(overlay);
-        }
-        const fill = overlay.querySelector('[data-progress-fill]');
-        // Reset: the element is reused, and a second run must not open already
-        // showing the finished state of the first.
-        if (fill) {
-            fill.classList.add('progress-overlay-fill--indeterminate');
-            fill.style.removeProperty('width');
-        }
-        // An indeterminate bar has no value, and saying it is at zero would be
-        // read aloud as no progress rather than as unknown progress.
-        overlay.querySelector('[role="progressbar"]')?.removeAttribute('aria-valuenow');
-        overlay.querySelector('[data-progress-title]').textContent = title || '';
-        overlay.querySelector('[data-progress-status]').textContent = status || '';
-        overlay.hidden = false;
-        return overlay;
+        return window.ProgressOverlay?.show(title, status);
     }
 
-    /** Fill the bar and say what happened, briefly, before it goes. */
     finishProgressOverlay(status) {
-        const overlay = document.getElementById('config-progress-overlay');
-        if (!overlay || overlay.hidden) return;
-        const fill = overlay.querySelector('[data-progress-fill]');
-        if (fill) {
-            fill.classList.remove('progress-overlay-fill--indeterminate');
-            fill.style.width = '100%';
-        }
-        const bar = overlay.querySelector('[role="progressbar"]');
-        bar?.setAttribute('aria-valuenow', '100');
-        if (status) overlay.querySelector('[data-progress-status]').textContent = status;
-        setTimeout(() => { overlay.hidden = true; }, 600);
+        window.ProgressOverlay?.finish(status);
     }
 
     hideProgressOverlay() {
-        const overlay = document.getElementById('config-progress-overlay');
-        if (overlay) overlay.hidden = true;
+        window.ProgressOverlay?.hide();
     }
 
     async runSource(id) {
@@ -12051,7 +12038,12 @@ class DashboardConfig {
      * loads more, which also means you cannot reach them by jumping to the
      * bottom: the bottom moves. One strip, the same one five other sections use.
      */
-    static BM_TABS = ['list', 'settings'];
+    /*
+     * Local copies is a tab here rather than only in Data & backups because it
+     * is a list of bookmarks, not a setting. Where the copies come from is
+     * configuration; which pages you have kept is part of the collection.
+     */
+    static BM_TABS = ['list', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -14234,7 +14226,161 @@ class DashboardConfig {
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
+        if (this.bmTab === 'local-copies') {
+            return this.renderBookmarkCopiesTab();
+        }
         return this.renderBookmarksListTab();
+    }
+
+    /*
+     * Every page kept on this disk, grouped by the bookmark it belongs to.
+     *
+     * Grouped rather than a flat list because the question is almost always
+     * "what do I have of this page", and successive captures of one page are
+     * the normal case -- a flat list would interleave them with everything else
+     * by date and bury the answer.
+     *
+     * Copies whose page is no longer bookmarked get a group of their own. They
+     * are the ones worth reviewing: nothing in the dashboard points at them, so
+     * without a place to see them they would sit on disk for ever unnoticed.
+     */
+    renderBookmarkCopiesTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.bmCopiesIntro',
+                'Pages saved whole on this disk, so they stay readable if the site goes. Saved from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.'))}</p>
+            <div class="config-crud-toolbar">
+                <input type="search" id="config-copies-search" class="config-text"
+                    placeholder="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}"
+                    aria-label="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}">
+                <button type="button" class="config-btn config-btn--small" data-copies-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+            </div>
+            <p class="config-panel-note" id="config-copies-state"></p>
+            <div id="config-copies-list" class="config-copies"></div>
+        `;
+    }
+
+    /*
+     * Wire the tab's search and refresh.
+     *
+     * Its own method because the tab is reached two ways -- as the section's
+     * first render and by clicking the strip -- and the second path replaces
+     * only the body, so it has to bind that body rather than the container the
+     * section was drawn into. Binding the wrong one is how this shipped
+     * throwing on a null element.
+     */
+    bindBookmarkCopiesTab(root) {
+        const scope = root || document;
+        void this.loadBookmarkCopies();
+        scope.querySelector('#config-copies-search')
+            ?.addEventListener('input', () => this.renderBookmarkCopiesList());
+        scope.querySelectorAll('[data-copies-action="refresh"]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.loadBookmarkCopies());
+        });
+    }
+
+    /** Read the captures once and draw them grouped. */
+    async loadBookmarkCopies() {
+        const state = document.getElementById('config-copies-state');
+        const list = document.getElementById('config-copies-list');
+        if (!state || !list) return;
+
+        try {
+            const res = await this.writeFetch('/api/archives');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this._copiesData = await res.json();
+        } catch {
+            state.textContent = this.t('config.localArchiveLoadError', 'Could not read the stored copies.');
+            return;
+        }
+        this.renderBookmarkCopiesList();
+    }
+
+    renderBookmarkCopiesList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = document.getElementById('config-copies-state');
+        const list = document.getElementById('config-copies-list');
+        if (!state || !list) return;
+
+        const data = this._copiesData || {};
+        const query = (document.getElementById('config-copies-search')?.value || '').trim().toLowerCase();
+
+        if (!data.available) {
+            state.textContent = this.t('config.localArchiveMissing',
+                'monolith is not installed. Install it (brew install monolith, or your package manager) and restart nextDash.');
+            list.replaceChildren();
+            return;
+        }
+
+        const all = data.captures || [];
+        // Matched on what the reader can see: the bookmark's name, its address,
+        // and the label the filename reduces to.
+        const captures = query
+            ? all.filter((c) => [c.bookmarkName, c.bookmarkUrl, this.localArchiveLabel(String(c.url || '').split('/').pop())]
+                .some((v) => String(v || '').toLowerCase().includes(query)))
+            : all;
+
+        state.textContent = all.length
+            ? this.t('config.bmCopiesSummary', '{n} saved pages, {size} on disk')
+                .replace('{n}', String(all.length))
+                .replace('{size}', this.formatBytes(data.totalBytes || 0))
+            : this.t('config.bmCopiesEmpty', 'Nothing saved yet. Save a page from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.');
+
+        if (!captures.length) {
+            list.innerHTML = all.length
+                ? `<p class="config-panel-note">${esc(this.t('config.bmCopiesNoMatch', 'No saved page matches that.'))}</p>`
+                : '';
+            return;
+        }
+
+        // Group by bookmark, keeping the newest capture's order.
+        const groups = new Map();
+        captures.forEach((capture) => {
+            const key = capture.bookmarkUrl || '';
+            if (!groups.has(key)) {
+                groups.set(key, { name: capture.bookmarkName, url: capture.bookmarkUrl, captures: [] });
+            }
+            groups.get(key).captures.push(capture);
+        });
+
+        list.innerHTML = [...groups.values()].map((group) => {
+            const orphan = !group.url;
+            const title = orphan
+                ? this.t('config.bmCopiesOrphan', 'No longer bookmarked')
+                : (group.name || group.url);
+            const rows = group.captures.map((capture) => {
+                const name = String(capture.url || '').split('/').pop();
+                const when = this.formatCaptureWhen(capture.at);
+                return `
+                    <div class="config-local-archive-row">
+                        <a class="config-local-archive-name" href="${esc(capture.url)}" target="_blank" rel="noopener noreferrer">${esc(when.label)}</a>
+                        <span class="config-local-archive-meta" title="${esc(when.title)}">${esc(this.formatBytes(capture.bytes || 0))}</span>
+                        <span class="config-local-archive-actions">
+                            <button type="button" class="config-btn config-btn--small"
+                                data-local-archive-download="${esc(name)}">${esc(this.t('config.localArchiveDownloadBtn', 'Download'))}</button>
+                            <button type="button" class="config-btn config-btn--small config-btn--danger"
+                                data-local-archive-delete="${esc(name)}">${esc(this.t('config.localArchiveDeleteBtn', 'Delete'))}</button>
+                        </span>
+                    </div>`;
+            }).join('');
+            return `
+                <div class="config-copies-group${orphan ? ' config-copies-group--orphan' : ''}">
+                    <h4 class="config-copies-group-title">${esc(title)}
+                        <span class="config-copies-count">${esc(String(group.captures.length))}</span></h4>
+                    ${group.url ? `<p class="config-copies-group-url">${esc(group.url)}</p>` : ''}
+                    ${rows}
+                </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-local-archive-delete]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                await this.deleteLocalArchive(btn.getAttribute('data-local-archive-delete'));
+                void this.loadBookmarkCopies();
+            });
+        });
+        list.querySelectorAll('[data-local-archive-download]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.downloadLocalArchive(btn.getAttribute('data-local-archive-download')));
+        });
     }
 
 
@@ -16006,6 +16152,8 @@ class DashboardConfig {
             // a second listener on every tab button.
             if (tab === 'settings') {
                 this.bindControlPanels(body, 'behavior');
+            } else if (tab === 'local-copies') {
+                this.bindBookmarkCopiesTab(body);
             } else {
                 this.bindBookmarksListTab(body);
             }
@@ -16014,6 +16162,10 @@ class DashboardConfig {
             this.syncSubTabStrip('data-bm-tab', tab);
         });
         if (this.bmTab === 'settings') {
+            return;
+        }
+        if (this.bmTab === 'local-copies') {
+            this.bindBookmarkCopiesTab(container);
             return;
         }
         this.bindBookmarksListTab(container);
