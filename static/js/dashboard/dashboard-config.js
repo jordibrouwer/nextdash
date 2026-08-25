@@ -14149,7 +14149,16 @@ class DashboardConfig {
 
         container.querySelectorAll('[data-widget-delete]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                void this.deleteWidget(Number(btn.getAttribute('data-index')));
+                /*
+                 * The index is on data-widget-delete, not on data-index.
+                 *
+                 * This read data-index, which the button does not carry:
+                 * Number(null) is 0, so every Delete asked to remove block 0 —
+                 * normally a category, where the isWidget check refuses and
+                 * returns without a word. Delete has therefore never worked,
+                 * since the tab shipped.
+                 */
+                void this.deleteWidget(Number(btn.getAttribute('data-widget-delete')));
             });
         });
 
