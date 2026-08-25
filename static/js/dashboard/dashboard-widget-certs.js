@@ -102,7 +102,7 @@
 
             row.append(name, detail);
             row.addEventListener('click', () => {
-                dash.health?.openWithFilter?.('certificates') ?? dash.showView?.('health');
+                window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates');
             });
             list.appendChild(row);
         });

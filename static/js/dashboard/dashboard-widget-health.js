@@ -90,7 +90,7 @@
             row.addEventListener('click', () => {
                 // Straight to the rows behind the number: a count you cannot act
                 // on is a decoration.
-                dash.health?.openWithFilter?.(figure.filter) ?? dash.showView?.('health');
+                window.DashboardWidgetUtils?.openHealthFiltered(dash, figure.filter);
             });
             list.appendChild(row);
         });
