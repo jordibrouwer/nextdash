@@ -521,6 +521,10 @@ class DashboardVisual {
              */
             d.healthSummary = summary;
             d.renderCore?.refreshWidgets?.('health');
+            // The same response carries the certificates map, kept by
+            // HealthFacts; the certificates widget reads it from there rather
+            // than fetching a report of its own.
+            d.renderCore?.refreshWidgets?.('certs');
             // keepHref: the icon opens the view; its href is only the middle-click path.
             utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
                 keepHref: true,
