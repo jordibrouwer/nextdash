@@ -244,7 +244,25 @@ class DashboardPreview {
             checked: this.bookmarkCheckState(bookmark),
             fresh: this.bookmarkFreshState(bookmark),
             health: this.bookmarkHealthState(bookmark),
+            archive: this.bookmarkArchiveState(bookmark),
         };
+    }
+
+    /*
+     * When the web lost this page, and where the last working copy is.
+     *
+     * Read off the bookmark, never fetched: the card is drawn on hover and must
+     * not make a request. The server fills these in while checking links.
+     *
+     * Separate from `health.brokenSince`, which is when this install started
+     * seeing failures. For a bookmark added last week to a page that died in
+     * 2019 those differ by six years, and only this one describes the page.
+     */
+    bookmarkArchiveState(bookmark) {
+        const diedAt = Number(bookmark?.archiveDiedAt || 0) || 0;
+        const snapshot = String(bookmark?.archiveSnapshotUrl || '').trim();
+        if (!diedAt && !snapshot) return null;
+        return { diedAt, snapshot };
     }
 
     /** "Work › Reference", from the page and category the bookmark sits in. */
@@ -549,6 +567,24 @@ class DashboardPreview {
             },
         });
         return never ? '' : label;
+    }
+
+    /*
+     * "March 2019", for something that happened long ago.
+     *
+     * Not formatPreviewAgo: "6 years ago" is a worse answer than a date when the
+     * question is when a page stopped existing. Month and year rather than a
+     * full date because the archive's precision is a sampling interval, not a
+     * moment -- claiming a day would be claiming more than is known.
+     */
+    formatPreviewDate(timestamp) {
+        const at = Number(timestamp || 0);
+        if (!at) return '';
+        try {
+            return new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+        } catch {
+            return new Date(at).toISOString().slice(0, 7);
+        }
     }
 
     /** "2 min ago" / "just now", for a timestamp the card reports on. */
@@ -922,6 +958,26 @@ class DashboardPreview {
                 });
             }
         }
+        /*
+         * When the web lost this page, beside how long it has been failing here.
+         *
+         * Only for a link that is actually failing: a working page has no death
+         * to report, and the archive's view of a page that briefly 500'd is not
+         * news. It sits directly under the failure it explains, because "failing
+         * since Tuesday" and "gone since 2019" only make sense together.
+         */
+        const archive = want.has('status') ? preview?.archive : null;
+        if (archive?.diedAt && checked?.state === 'offline') {
+            rows.push({
+                label: d.formatDashboardLabel('previewFactGoneSince', {}, 'Gone from the web'),
+                value: this.formatPreviewDate(archive.diedAt),
+                muted: archive.snapshot
+                    ? d.formatDashboardLabel('previewFactArchiveHasCopy', {}, 'the archive has a copy')
+                    : '',
+                tone: 'bad',
+            });
+        }
+
         const health = want.has('status') ? preview?.health : null;
         if (health?.uptime30d !== null && health?.uptime30d !== undefined && health?.uptimeSamples) {
             rows.push({

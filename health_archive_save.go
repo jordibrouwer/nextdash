@@ -379,3 +379,83 @@ func (h *Handlers) archiveNewBookmark(target string) {
 func logArchiveCaptureFailure(target string, err error) {
 	log.Printf("archive: could not queue a capture for %s: %v", target, err)
 }
+
+/*
+ArchiveKeysStatus is what the config panel is told: whether keys are stored,
+never what they are.
+
+A route of its own rather than reading them off /api/settings, which hands back
+every credential it holds -- the Pushover token has travelled in that payload
+since monitoring shipped. That is existing behaviour and not this feature's to
+change, but there is no reason for a second pair of keys to inherit it.
+*/
+type ArchiveKeysStatus struct {
+	Enabled   bool   `json:"enabled"`
+	HasKeys   bool   `json:"hasKeys"`
+	LastJob   string `json:"lastJob,omitempty"`
+	LastError string `json:"lastError,omitempty"`
+}
+
+// ArchiveSettingsHandler answers GET and PUT on /api/health/archive-settings.
+func (h *Handlers) ArchiveSettingsHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		settings := h.store.GetSettings()
+		accessKey, secret := archiveKeys(settings)
+		writeJSON(w, ArchiveKeysStatus{
+			Enabled: settings.ArchiveSaveEnabled,
+			HasKeys: accessKey != "" && secret != "",
+		})
+		return
+	}
+
+	var body struct {
+		Enabled   *bool   `json:"enabled"`
+		AccessKey *string `json:"accessKey"`
+		Secret    *string `json:"secret"`
+		// Forget clears both keys and switches archiving off, which cannot
+		// happen by submitting an empty field.
+		Forget bool `json:"forget"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	settings := h.store.GetSettings()
+	if body.Forget {
+		settings.ArchiveSaveAccessKey = ""
+		settings.ArchiveSaveSecret = ""
+		settings.ArchiveSaveEnabled = false
+	} else {
+		// An empty field means "keep what is stored". The panel never receives
+		// the keys, so it submits blanks for anything the reader did not
+		// retype -- and that must not erase them.
+		if body.AccessKey != nil && strings.TrimSpace(*body.AccessKey) != "" {
+			settings.ArchiveSaveAccessKey = strings.TrimSpace(*body.AccessKey)
+		}
+		if body.Secret != nil && strings.TrimSpace(*body.Secret) != "" {
+			settings.ArchiveSaveSecret = strings.TrimSpace(*body.Secret)
+		}
+		if body.Enabled != nil {
+			settings.ArchiveSaveEnabled = *body.Enabled
+		}
+	}
+
+	if err := h.store.SaveSettings(settings); err != nil {
+		http.Error(w, "Could not save", http.StatusInternalServerError)
+		return
+	}
+	accessKey, secret := archiveKeys(settings)
+	writeJSON(w, ArchiveKeysStatus{
+		Enabled: settings.ArchiveSaveEnabled,
+		HasKeys: accessKey != "" && secret != "",
+	})
+}

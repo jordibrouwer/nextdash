@@ -1118,6 +1118,20 @@ button.health-view-tile:hover {
     white-space: nowrap;
 }
 
+/*
+ * "gone from the web since March 2019".
+ *
+ * Stronger than the failing-for label beside it, because it says something
+ * heavier: the page is not slow or misconfigured, it is over. Same muted family
+ * rather than an alarm colour -- the row is already marked as failing, and a
+ * second red thing would compete with the first.
+ */
+.health-view-item-gone-since {
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    font-style: italic;
+}
+
 /* A row you have acted on that no longer matches the filter. It keeps its
    place in the list until the filter, sort or search changes, or the report is
    reloaded on purpose — a list you are working through should not close the gap

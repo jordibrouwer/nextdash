@@ -1292,7 +1292,34 @@ class DashboardHealth {
         const title = this.t('dashboard.healthBrokenSinceTitle', 'First failed on {date}', {
             date: new Date(since).toLocaleString(),
         });
-        return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`;
+        return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`
+            + this.renderArchiveDied(issue);
+    }
+
+    /*
+     * When the web lost the page, beside how long it has been failing here.
+     *
+     * These are different facts and the difference matters: a bookmark added
+     * last week to a page that died in 2019 reads "failing for 6 days", which is
+     * true about this install and says nothing about the page. The archive knows
+     * the page has been gone for six years, which is what turns "I should look
+     * into this" into "this is not coming back".
+     *
+     * Read off the issue, never fetched: the row is rendered in a loop.
+     */
+    renderArchiveDied(issue) {
+        const diedAt = Number(issue?.archiveDiedAt) || 0;
+        if (!diedAt) return '';
+        // A death the archive dates to after we started seeing failures is the
+        // archive catching up with us, not new information.
+        const since = Number(issue?.brokenSince) || 0;
+        if (since && diedAt >= since) return '';
+
+        const when = new Date(diedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+        const label = this.t('dashboard.healthArchiveGoneSince', 'gone from the web since {date}', { date: when });
+        const title = this.t('dashboard.healthArchiveGoneSinceTitle',
+            'The Web Archive last captured a working copy before {date}', { date: when });
+        return ` <span class="health-view-item-gone-since" title="${this.escape(title)}">${this.escape(label)}</span>`;
     }
 
     /**

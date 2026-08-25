@@ -85,7 +85,27 @@ type Bookmark struct {
 	// checks so a link that died months ago does not read like one that broke
 	// this morning. Cleared the moment a check succeeds, so it is always "how
 	// long has it been failing", never "when did it last fail".
-	BrokenSince      int64  `json:"brokenSince,omitempty"`
+	BrokenSince int64 `json:"brokenSince,omitempty"`
+	/*
+	 * ArchiveDiedAt is when the web lost the page, as the Wayback index sees it
+	 * -- the first capture after the last one that answered 200.
+	 *
+	 * A different fact from BrokenSince, which is when *this install* started
+	 * seeing failures. A bookmark added last week to a page that died in 2019
+	 * has a BrokenSince of last week and an ArchiveDiedAt of 2019, and only the
+	 * second one tells the reader what actually happened.
+	 *
+	 * Stored on the bookmark rather than fetched on demand because the preview
+	 * card is drawn from memory and never makes a request: hovering a row has
+	 * to stay free.
+	 */
+	ArchiveDiedAt int64 `json:"archiveDiedAt,omitempty"`
+	// ArchiveSnapshotURL is the last capture that worked, so a card can offer it
+	// without asking the index again.
+	ArchiveSnapshotURL string `json:"archiveSnapshotUrl,omitempty"`
+	// ArchiveCheckedAt is when the index was last asked, so it is not asked
+	// again for every check.
+	ArchiveCheckedAt int64  `json:"archiveCheckedAt,omitempty"`
 	DriftTitle       string `json:"driftTitle,omitempty"`
 	DriftFingerprint string `json:"driftFingerprint,omitempty"`
 	// DriftNoticed is what the last check found, as one of the kinds in
@@ -3604,11 +3624,15 @@ type HealthIssue struct {
 	LastError   string `json:"lastError,omitempty"`
 	// BrokenSince is when this run of failures started, so the row can say how
 	// long it has been down rather than only that it is.
-	BrokenSince  int64  `json:"brokenSince,omitempty"`
-	PreviewTitle string `json:"previewTitle,omitempty"`
-	PreviewDesc  string `json:"previewDesc,omitempty"`
-	PreviewImage string `json:"previewImage,omitempty"`
-	Icon         string `json:"icon,omitempty"`
+	BrokenSince int64 `json:"brokenSince,omitempty"`
+	// ArchiveDiedAt is when the web lost the page, which is a different fact
+	// from when this install started seeing failures -- see the field of the
+	// same name on Bookmark.
+	ArchiveDiedAt int64  `json:"archiveDiedAt,omitempty"`
+	PreviewTitle  string `json:"previewTitle,omitempty"`
+	PreviewDesc   string `json:"previewDesc,omitempty"`
+	PreviewImage  string `json:"previewImage,omitempty"`
+	Icon          string `json:"icon,omitempty"`
 	// Status is the single worst thing about this bookmark, picked by priority.
 	// It drives how the row is presented — colour band, sort rank, headline
 	// reason — so it stays one value.

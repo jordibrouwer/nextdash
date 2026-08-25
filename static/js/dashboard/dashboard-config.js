@@ -4295,6 +4295,51 @@ class DashboardConfig {
             <p class="config-view-intro">${esc(this.t('config.sourcesIntro',
                 'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
             ${panels}
+            ${this.renderArchivePanel()}
+        `;
+    }
+
+    /*
+     * Archiving, which is the only outbound source on this tab.
+     *
+     * It sits here rather than with the importers because it is the same kind
+     * of setting -- a third party, a key, something that runs on its own -- but
+     * it has no page and no category to choose: nothing arrives, a copy leaves.
+     *
+     * The keys are archive.org's S3-style pair. Write-only in the same way the
+     * import tokens are: the server answers with whether one is stored, never
+     * with the value.
+     */
+    renderArchivePanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
+            <div class="config-panel" data-archive-panel>
+                <h3 class="config-panel-title">${esc(this.t('config.archiveSectionTitle', 'Web Archive'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.archiveDescription',
+                    'Ask the Internet Archive to keep a copy of a page the day you save it, so the bookmark outlives the site. Around 4 in 10 pages from ten years ago are already gone.'))}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-archive-toggle="archiveSaveEnabled" ${s.archiveSaveEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.archiveSaveEnabledLabel', 'Archive every new bookmark'))}</span>
+                </label>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-archive-key">${esc(this.t('config.archiveAccessKeyLabel', 'Access key'))}</label>
+                    <input type="password" id="config-archive-key" class="config-text" autocomplete="off" spellcheck="false">
+                    <p class="config-field-hint">${esc(this.t('config.archiveKeysHelp',
+                        'archive.org/account/s3.php — sign in and copy the pair. Without them captures still work, at a far smaller daily allowance.'))}</p>
+                    <p class="config-field-hint" id="config-archive-key-note"></p>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-archive-secret">${esc(this.t('config.archiveSecretLabel', 'Secret key'))}</label>
+                    <input type="password" id="config-archive-secret" class="config-text" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-archive-action="save">${esc(this.t('config.archiveSaveKeysBtn', 'Save keys'))}</button>
+                    <button type="button" class="config-btn" data-archive-action="test">${esc(this.t('config.archiveTestBtn', 'Archive a page now…'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-archive-action="forget">${esc(this.t('config.archiveForgetBtn', 'Forget keys'))}</button>
+                </div>
+                <p class="config-panel-note" id="config-archive-status"></p>
+            </div>
         `;
     }
 
@@ -5506,6 +5551,24 @@ class DashboardConfig {
         // rather than rendered into the panels, because they are built from
         // settings the browser already has and this is the one thing on them
         // that only the server knows.
+        if (container.querySelector('[data-archive-panel]')) {
+            void this.loadArchiveSettings();
+            container.querySelector('[data-archive-toggle="archiveSaveEnabled"]')
+                ?.addEventListener('change', (event) => {
+                    void this.saveArchiveSettings({ enabled: event.target.checked });
+                });
+            container.querySelectorAll('[data-archive-action]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    switch (btn.getAttribute('data-archive-action')) {
+                        case 'save': void this.saveArchiveSettings(); break;
+                        case 'test': void this.testArchiveCapture(); break;
+                        case 'forget': void this.forgetArchiveKeys(); break;
+                        default: break;
+                    }
+                });
+            });
+        }
+
         if (container.querySelector('[data-source-panel]')) {
             this.bindSourceTokenDrafts(container);
             this.bindSourcePageSelects(container);
@@ -6058,6 +6121,115 @@ class DashboardConfig {
                 row.input.focus({ preventScroll: true });
             });
         });
+    }
+
+    /*
+     * The archive panel: keys in, never out.
+     *
+     * Read from /api/health/archive-settings rather than from the settings
+     * payload, which carries every credential it holds. Same write-only rule as
+     * the import tokens -- an empty field means "keep what is stored", so
+     * flipping the switch cannot wipe the keys.
+     */
+    async loadArchiveSettings() {
+        const note = document.getElementById('config-archive-key-note');
+        if (!note) return;
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const state = await res.json();
+            note.textContent = state.hasKeys
+                ? this.t('config.archiveKeysSet', 'Keys are saved. Leave these empty to keep them.')
+                : this.t('config.archiveKeysMissing', 'No keys saved yet.');
+            const toggle = document.querySelector('[data-archive-toggle="archiveSaveEnabled"]');
+            if (toggle) toggle.checked = Boolean(state.enabled);
+        } catch {
+            note.textContent = '';
+        }
+    }
+
+    async saveArchiveSettings({ enabled } = {}) {
+        const key = document.getElementById('config-archive-key');
+        const secret = document.getElementById('config-archive-secret');
+        const toggle = document.querySelector('[data-archive-toggle="archiveSaveEnabled"]');
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enabled: enabled !== undefined ? enabled : Boolean(toggle?.checked),
+                    accessKey: key?.value || '',
+                    secret: secret?.value || '',
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const state = await res.json();
+            // Cleared once stored: a key sitting in a form field is one
+            // screenshot away from being shared.
+            if (key) key.value = '';
+            if (secret) secret.value = '';
+            if (enabled === undefined) {
+                this.notify(this.t('config.archiveSaved', 'Archive keys saved.'), 'success');
+            }
+            // Switching it on without keys works, at a much smaller daily
+            // allowance -- worth saying rather than letting it look broken.
+            if (state.enabled && !state.hasKeys) {
+                this.notify(this.t('config.archiveNoKeysWarning',
+                    'Archiving is on without keys, which the archive allows at a far smaller daily limit.'), 'info');
+            }
+            void this.loadArchiveSettings();
+        } catch {
+            this.notify(this.t('config.archiveSaveError', 'Could not save the archive settings.'), 'error');
+        }
+    }
+
+    async forgetArchiveKeys() {
+        const ok = await this.confirmAction(
+            this.t('config.archiveForgetConfirm', 'Forget the archive keys? Pages already captured stay in the archive.'),
+            { confirmLabel: this.t('config.archiveForgetBtn', 'Forget keys'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ forget: true }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.archiveForgotten', 'Archive keys forgotten.'), 'success');
+            void this.loadArchiveSettings();
+        } catch {
+            this.notify(this.t('config.archiveSaveError', 'Could not save the archive settings.'), 'error');
+        }
+    }
+
+    /** Capture one page now, so the keys can be proved before they are relied on. */
+    async testArchiveCapture() {
+        const target = (this.dash.allBookmarks || [])[0]?.url || 'https://example.com/';
+        const status = document.getElementById('config-archive-status');
+        this.showProgressOverlay(
+            this.t('config.archiveTestingTitle', 'Asking the archive…'),
+            this.t('config.archiveTestingStatus', 'Queueing a capture'));
+        try {
+            const res = await this.writeFetch(`/api/health/archive-save?url=${encodeURIComponent(target)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            this.hideProgressOverlay();
+            if (!res.ok) {
+                // The archive's own sentence, which says what to do about it --
+                // add keys, wait for the allowance, pick another page.
+                const message = body.error || this.t('config.archiveTestError', 'The archive refused that.');
+                if (status) status.textContent = message;
+                this.notify(message, 'error');
+                return;
+            }
+            const message = body.skipped
+                ? this.t('config.archiveTestSkipped', 'That page was already sent to the archive today.')
+                : this.t('config.archiveTestQueued', 'Queued. The archive is capturing {u} now.').replace('{u}', target);
+            if (status) status.textContent = message;
+            this.notify(message, 'success');
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.archiveTestError', 'The archive refused that.'), 'error');
+        }
     }
 
     /** Whether the server is holding a token for this source. */

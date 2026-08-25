@@ -175,6 +175,8 @@ func main() {
 	// did. Behind the write token: it spends a shared daily budget.
 	r.HandleFunc("/api/health/archive-save", handlers.SaveArchiveCapture).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/archive-save-status", handlers.ArchiveCaptureStatusHandler).Methods("GET", "OPTIONS")
+	// The keys, on a route that never hands them back.
+	r.HandleFunc("/api/health/archive-settings", handlers.ArchiveSettingsHandler).Methods("GET", "PUT", "OPTIONS")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")
@@ -283,6 +285,9 @@ func main() {
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
 	// as the background recheck).
 	handlers.StartFeedPollScheduler(schedulerStop)
+	// Dates the links that are already failing, so a row can say the page has
+	// been gone for years rather than only that it broke here on Tuesday.
+	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
 
 	go func() {
