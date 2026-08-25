@@ -367,8 +367,18 @@ func (h *Handlers) archiveNewBookmark(target string) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), spnRequestTimeout+5*time.Second)
 		defer cancel()
-		if _, err := h.SubmitArchiveCapture(ctx, target); err != nil && !errors.Is(err, errSPNNoCredentials) {
-			logArchiveCaptureFailure(target, err)
+		result, err := h.SubmitArchiveCapture(ctx, target)
+		if err != nil {
+			if !errors.Is(err, errSPNNoCredentials) {
+				logArchiveCaptureFailure(target, err)
+			}
+			return
+		}
+		// The receipt, kept on the bookmark. Without it the status route has
+		// nothing to look up, and a capture that was queued is indistinguishable
+		// from one the archive quietly refused.
+		if result.Queued && result.JobID != "" {
+			h.recordArchiveJob(target, result.JobID)
 		}
 	}()
 }
@@ -458,4 +468,33 @@ func (h *Handlers) ArchiveSettingsHandler(w http.ResponseWriter, r *http.Request
 		Enabled: settings.ArchiveSaveEnabled,
 		HasKeys: accessKey != "" && secret != "",
 	})
+}
+
+/*
+recordArchiveJob writes the receipt onto every bookmark with this address.
+
+Across pages, because the same URL can be bookmarked on more than one and the
+capture was asked for once on behalf of all of them.
+*/
+func (h *Handlers) recordArchiveJob(target, jobID string) {
+	key := canonicalBookmarkURLKey(target)
+	if key == "" || jobID == "" {
+		return
+	}
+	now := time.Now().UnixMilli()
+	for _, page := range h.store.GetPages() {
+		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		changed := false
+		for i := range bookmarks {
+			if canonicalBookmarkURLKey(bookmarks[i].URL) != key {
+				continue
+			}
+			bookmarks[i].ArchiveJobID = jobID
+			bookmarks[i].ArchiveJobAt = now
+			changed = true
+		}
+		if changed {
+			_ = h.store.SaveBookmarksByPage(page.ID, bookmarks)
+		}
+	}
 }

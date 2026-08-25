@@ -216,6 +216,15 @@ func TestArchiveNewBookmarkDoesNotBlockTheSave(t *testing.T) {
 	h := newTestHandlers(t)
 	withArchiveKeys(t, h, true)
 
+	// A bookmark for the capture to record its receipt on, so the wait below has
+	// something to wait for rather than timing out.
+	bookmarks := append(h.store.GetBookmarksByPage(1), Bookmark{
+		Name: "Slow", URL: "https://example.com/slow", PageID: 1,
+	})
+	if err := h.store.SaveBookmarksByPage(1, bookmarks); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	release := make(chan struct{})
@@ -233,6 +242,30 @@ func TestArchiveNewBookmarkDoesNotBlockTheSave(t *testing.T) {
 
 	close(release)
 	wg.Wait()
+	/*
+	 * Let the goroutine finish before the test's temp directory is removed.
+	 *
+	 * The request returning is not the end of the work: recording the job id is
+	 * a write, and a write racing t.TempDir's cleanup fails the test with
+	 * "directory not empty" -- which says nothing about the behaviour under
+	 * test and everything about the teardown.
+	 */
+	waitForArchiveJob(t, h, "https://example.com/slow")
+}
+
+// waitForArchiveJob blocks until the background capture has recorded its
+// receipt, or gives up. Used to keep a test's teardown from racing the write.
+func waitForArchiveJob(t *testing.T, h *Handlers, url string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		for _, bm := range h.store.GetBookmarksByPage(1) {
+			if bm.URL == url && bm.ArchiveJobID != "" {
+				return
+			}
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
 }
 
 // Switched off means no outbound request at all, which is the promise a
@@ -253,4 +286,47 @@ func TestArchiveNewBookmarkStaysOffWhenDisabled(t *testing.T) {
 	if called != 0 {
 		t.Error("asked the archive while the setting was off")
 	}
+}
+
+/*
+The job id is the receipt, and it has to survive the request.
+
+Save Page Now answers with an id and does the capture over the following seconds
+to minutes, so the id is the only way to find out afterwards whether it
+happened. It was thrown away at first: the status route had nothing to look up,
+and a queued capture looked exactly like one the archive quietly refused.
+*/
+func TestArchiveNewBookmarkKeepsTheJobID(t *testing.T) {
+	resetSPNRecent(t)
+	h := newTestHandlers(t)
+	withArchiveKeys(t, h, true)
+	withSPN(t, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"job_id":"spn2-receipt-9"}`)
+	})
+
+	bookmarks := append(h.store.GetBookmarksByPage(1), Bookmark{
+		Name: "Kept", URL: "https://example.com/kept", PageID: 1,
+	})
+	if err := h.store.SaveBookmarksByPage(1, bookmarks); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	h.archiveNewBookmark("https://example.com/kept")
+
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		for _, bm := range h.store.GetBookmarksByPage(1) {
+			if bm.URL != "https://example.com/kept" {
+				continue
+			}
+			if bm.ArchiveJobID == "spn2-receipt-9" {
+				if bm.ArchiveJobAt == 0 {
+					t.Error("job recorded without a time, so it can never be called stale")
+				}
+				return
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatal("the job id was never recorded; the status route has nothing to look up")
 }
