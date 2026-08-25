@@ -275,7 +275,13 @@ class DashboardHealth {
             this.render();
         }
         try {
-            await this.fetchReport({ refresh });
+            /*
+             * The credential names ride along with the report rather than being
+             * fetched when a panel opens: syncExpectPanel is synchronous and
+             * called from a dozen places, and the names are two dozen bytes of
+             * labels — cheaper to have than to wait for.
+             */
+            await Promise.all([this.fetchReport({ refresh }), this.loadHealthCredentials()]);
         } catch {
             if (this.report) {
                 this.dash.showNotification?.(
@@ -1225,11 +1231,99 @@ class DashboardHealth {
      * be a control that governs nothing.
      */
     renderExpectPanel(issue) {
-        if (this.checkModeOf(issue) !== window.CheckMode.MONITOR) return '';
         const esc = (v) => this.escape(v);
+        const monitored = this.checkModeOf(issue) === window.CheckMode.MONITOR;
+        /*
+         * Reaching the service comes first, and is not gated on monitoring.
+         *
+         * Everything below it says what a good answer looks like, which only
+         * means something on a monitored bookmark. These three say how to get
+         * an answer at all — and "Retest all" and a manual re-check run on
+         * unmonitored bookmarks too, where a service behind a key answers 401
+         * just the same.
+         */
         return `
             <div class="health-expect-form" role="group"
                  aria-label="${esc(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="check-url-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCheckUrlLabel', 'Address to check instead'))}</label>
+                    <input type="url" id="check-url-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-check-url maxlength="2000"
+                        placeholder="${esc(this.t('dashboard.healthCheckUrlPlaceholder', 'https://service.example/ping'))}"
+                        value="${esc(issue.checkUrl || '')}">
+                    <span class="health-expect-note">${esc(this.t(
+                        'dashboard.healthCheckUrlNote',
+                        'The bookmark still opens its own address. Useful when a service has a status endpoint but its front page needs a login.'
+                    ))}</span>
+                </div>
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="credential-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCredentialLabel', 'Sign in with'))}</label>
+                    <select id="credential-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-credential-id>
+                        <option value="">${esc(this.t('dashboard.healthCredentialNone', 'Nothing — check anonymously'))}</option>
+                        ${this.renderCredentialOptions(issue.credentialId)}
+                    </select>
+                    <span class="health-expect-note">${esc(this.t(
+                        'dashboard.healthCredentialNote',
+                        'Keys and passwords are kept in their own file, outside your backups. Manage them under Config → Health.'
+                    ))}</span>
+                </div>
+
+                <div class="health-expect-toggles">
+                    <label class="health-expect-check">
+                        <input type="checkbox" data-allow-insecure ${issue.allowInsecureTls ? 'checked' : ''}>
+                        <span>${esc(this.t('dashboard.healthAllowInsecure',
+                            'Accept a certificate this machine does not trust'))}</span>
+                    </label>
+                </div>
+
+                ${monitored ? this.renderExpectFields(issue) : ''}
+
+                <div class="health-expect-actions">
+                    <button type="button" class="health-expect-save" data-expect-save>${esc(
+                        this.t('dashboard.healthExpectSave', 'Save'))}</button>
+                    <button type="button" class="health-expect-cancel" data-expect-cancel>${esc(
+                        this.t('dashboard.healthExpectCancel', 'Cancel'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * The names of the stored credentials, fetched once per view.
+     *
+     * Names only: the values live in their own file and no route hands them
+     * back, so this can be cached without holding a secret in the page.
+     */
+    async loadHealthCredentials() {
+        if (this.dash.healthCredentials) return this.dash.healthCredentials;
+        try {
+            const res = await fetch('/api/health/credentials');
+            if (!res.ok) return {};
+            const data = await res.json();
+            this.dash.healthCredentials = data?.credentials || {};
+        } catch (_error) {
+            this.dash.healthCredentials = {};
+        }
+        return this.dash.healthCredentials;
+    }
+
+    /** The names of the stored credentials — never their values. */
+    renderCredentialOptions(selected) {
+        const esc = (v) => this.escape(v);
+        const list = this.dash.healthCredentials || {};
+        return Object.keys(list).sort().map((id) => `
+            <option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>
+        `).join('');
+    }
+
+    /** What a good answer looks like — only meaningful on a monitored bookmark. */
+    renderExpectFields(issue) {
+        const esc = (v) => this.escape(v);
+        return `
                 <p class="health-expect-intro">${esc(this.t(
                     'dashboard.healthExpectIntro',
                     'A reachability check only asks whether the host answered. These say what a good answer looks like for this page.'
@@ -1272,13 +1366,7 @@ class DashboardHealth {
                     </label>
                 </div>
 
-                <div class="health-expect-actions">
-                    <button type="button" class="health-expect-save" data-expect-save>${esc(
-                        this.t('dashboard.healthExpectSave', 'Save'))}</button>
-                    <button type="button" class="health-expect-cancel" data-expect-cancel>${esc(
-                        this.t('dashboard.healthExpectCancel', 'Cancel'))}</button>
-                </div>
-            </div>`;
+        `;
     }
 
     /* ── Actions ───────────────────────────────────────────────────────── */
@@ -2504,6 +2592,11 @@ class DashboardHealth {
         const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
         const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
         const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
+        // Reachability: present whether or not the bookmark is monitored, so
+        // these are read unconditionally rather than from the monitored block.
+        const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();
+        const credentialId = String(wrap.querySelector('[data-credential-id]')?.value || '').trim();
+        const allowInsecureTls = Boolean(wrap.querySelector('[data-allow-insecure]')?.checked);
 
         this.closeAllMenus();
         window.nextdashTrack?.('health:expectations');
@@ -2519,6 +2612,7 @@ class DashboardHealth {
                     pageId, index: issue.index, url,
                     expectText: text, expectTextAbsent: absent, expectStatus: status,
                     watchDrift, notifyMuted,
+                    checkUrl, credentialId, allowInsecureTls,
                 }),
             });
             if (res.status === 409) {

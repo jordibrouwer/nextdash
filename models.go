@@ -72,6 +72,40 @@ type Bookmark struct {
 	// for bookmarks generally, but unable to tell an endpoint that *should* return
 	// 401 from one that just started to.
 	ExpectStatus string `json:"expectStatus,omitempty"`
+	/*
+	 * CheckURL is what to request instead of the bookmark's own address.
+	 *
+	 * A self-hosted service is bookmarked at its web interface, which answers
+	 * 401 to anyone not logged in; the same service usually offers a /ping or
+	 * /health endpoint that answers 200 to nobody in particular. Without this
+	 * the only way to stop such a bookmark reading as broken is to stop
+	 * monitoring it -- which is exactly the bookmark worth monitoring.
+	 *
+	 * Empty means the bookmark's own URL, which is what every existing
+	 * bookmark does and keeps doing.
+	 */
+	CheckURL string `json:"checkUrl,omitempty"`
+	/*
+	 * CredentialID names an entry in health-credentials.json to send with the
+	 * check -- an API key header, or a username and password.
+	 *
+	 * An id rather than the secret itself: bookmarks-N.json is in the backup
+	 * allowlist and in every export, so a key stored here would travel in a ZIP
+	 * to wherever that backup goes. The id is meaningless without the file it
+	 * points at, and that file is deliberately not backed up.
+	 */
+	CredentialID string `json:"credentialId,omitempty"`
+	/*
+	 * AllowInsecureTLS accepts a certificate the machine does not trust, for
+	 * this bookmark only.
+	 *
+	 * A service on a home network commonly has a self-signed certificate, and
+	 * the check then fails on the certificate rather than on the service --
+	 * indistinguishable, on the row, from being down. Per bookmark and never
+	 * global: someone who accepts their own NAS's certificate has not said
+	 * anything about the rest of the web.
+	 */
+	AllowInsecureTLS bool `json:"allowInsecureTls,omitempty"`
 	// WatchDrift opts a monitored bookmark into rot detection: where the check
 	// lands after redirects, what the page is titled, and roughly what it says.
 	// Off by default and separate from the expectations above, because it reads
@@ -3739,6 +3773,17 @@ type HealthIssue struct {
 	// post-redirect host a check actually saw, which can differ from this
 	// bookmark's own URL. Empty until a check has recorded one.
 	CertHost string `json:"certHost,omitempty"`
+	/*
+	 * How this bookmark is reached, so the panel can show and edit it.
+	 *
+	 * Unlike the expectation fields above, these are not gated on Monitor: they
+	 * apply to every check, and the panel that edits them is open on unmonitored
+	 * rows too. CredentialID names an entry, never a secret — the values live in
+	 * their own file and no route hands them back.
+	 */
+	CheckURL         string `json:"checkUrl,omitempty"`
+	CredentialID     string `json:"credentialId,omitempty"`
+	AllowInsecureTLS bool   `json:"allowInsecureTls,omitempty"`
 }
 
 type BookmarkHealthReport struct {

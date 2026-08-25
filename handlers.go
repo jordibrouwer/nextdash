@@ -860,6 +860,12 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				// would render a control that governs nothing.
 				NotifyMuted: bm.Monitor && bm.NotifyMuted,
 				CertHost:    bm.CertHost,
+				// Not gated on Monitor, unlike the block above: these say how to
+				// reach the service rather than what to expect back, and every
+				// check uses them.
+				CheckURL:         bm.CheckURL,
+				CredentialID:     bm.CredentialID,
+				AllowInsecureTLS: bm.AllowInsecureTLS,
 			})
 		}
 	}

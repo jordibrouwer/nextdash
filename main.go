@@ -167,6 +167,8 @@ func main() {
 	r.HandleFunc("/api/health/retest-all", handlers.RetestAll).Methods("POST")
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
+	// The secrets a check sends, in their own file outside the backup.
+	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
 	// The same fields for a list of bookmarks, so muting a dozen during a known
 	// outage is one request rather than a dozen dialogs.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -64,6 +65,17 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 	if urlStr == "" {
 		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
 	}
+	/*
+	 * A separate address to check, when the bookmark points at something that
+	 * cannot answer for itself -- a web interface behind a login, where the
+	 * service also offers /ping. Substituted here, before validation, so it
+	 * passes exactly the same host checks the bookmark's own URL does: this
+	 * value comes from a form, and a check that skipped validateHTTPURL would
+	 * be a way to ask the server to fetch anything.
+	 */
+	if probe := strings.TrimSpace(expect.CheckURL); probe != "" {
+		urlStr = probe
+	}
 
 	parsed, err := url.Parse(urlStr)
 	if err != nil || parsed.Host == "" {
@@ -75,12 +87,36 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 
 	start := time.Now()
 	allowLocal := h.allowLocalBookmarks()
+	transport := newSSRFSafeTransport(allowLocal, dialTimeoutFor(timeout))
+	if expect.AllowInsecureTLS {
+		/*
+		 * Trust this one certificate, for this one check.
+		 *
+		 * A service on a home network commonly presents a self-signed
+		 * certificate, and the check then fails on the certificate rather than
+		 * on the service -- which reads on the row as being down, with nothing
+		 * saying otherwise. Cloned rather than mutated: the transport helper
+		 * returns a fresh value today, and a future version returning a shared
+		 * one would otherwise turn a single bookmark's choice into everyone's.
+		 *
+		 * The dialer's own address checks are untouched, so this relaxes who
+		 * the certificate must prove to be, never which hosts may be reached.
+		 */
+		relaxed := transport.Clone()
+		if relaxed.TLSClientConfig == nil {
+			relaxed.TLSClientConfig = &tls.Config{}
+		} else {
+			relaxed.TLSClientConfig = relaxed.TLSClientConfig.Clone()
+		}
+		relaxed.TLSClientConfig.InsecureSkipVerify = true
+		transport = relaxed
+	}
 	client := &http.Client{
 		Timeout: timeout,
 		// The dial budget stays a fraction of the whole: a connection that
 		// cannot be opened should fail well before the body has a chance to be
 		// read, whatever the total allows.
-		Transport:     newSSRFSafeTransport(allowLocal, dialTimeoutFor(timeout)),
+		Transport:     transport,
 		CheckRedirect: safeRedirectCheck(allowLocal, 5),
 	}
 
@@ -89,6 +125,10 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 		return PingResult{Status: "offline", ErrorDetail: "Invalid URL"}
 	}
 	req.Header.Set("User-Agent", "nextDash-Health/1.0")
+	// The credential last, so a stored Authorization header beats the default
+	// User-Agent line above but nothing here can quietly replace the checks
+	// already made against the address.
+	applyHealthCredential(req, expect.Credential)
 
 	resp, err := client.Do(req)
 	elapsed := int(time.Since(start).Milliseconds())
