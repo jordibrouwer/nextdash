@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	neturl "net/url"
 	"strings"
 )
 
@@ -42,6 +43,11 @@ const (
 	widgetMaxDays = 730
 	// widgetMaxColumns is how wide a widget may ever be drawn.
 	widgetMaxColumns = 2
+	// widgetMaxURLLen bounds a custom widget's address. Long enough for a query
+	// string a service actually uses, short of anything being smuggled.
+	widgetMaxURLLen = 2000
+	// widgetMaxPathLen bounds a dotted path into a response.
+	widgetMaxPathLen = 200
 )
 
 /*
@@ -62,6 +68,11 @@ type widgetField struct {
 	// Allowed, when set, is the complete set of values a string or list entry
 	// may take. Anything else is dropped.
 	Allowed []string
+	// MaxLen overrides the default cap for a string. A widget setting is
+	// usually an identifier and 64 characters is plenty, but a URL is not an
+	// identifier -- and silently truncating one produces an address that looks
+	// configured and fetches nothing.
+	MaxLen int
 }
 
 // widgetFields is what each type accepts. A type absent from here accepts
@@ -104,6 +115,21 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "errorsOnly", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	/*
+	 * The custom widget's config is shaped rather than flat: fields[] is a list
+	 * of objects, which the table below cannot describe.
+	 *
+	 * So it declares the scalars here and sanitiseCustomWidgetConfig handles
+	 * the list -- rather than growing the table a nested-object kind that only
+	 * one type would ever use.
+	 */
+	WidgetTypeCustom: {
+		{Key: "url", Kind: "url"},
+		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
+		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
+	},
 	WidgetTypeNeglected: {
 		{Key: "pageId", Kind: "int", Min: 0, Max: 1 << 20},
 		{Key: "tags", Kind: "list"},
@@ -137,7 +163,6 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			clean["enabled"] = enabled
 		}
 	}
-
 	/*
 	 * columns is shared for the same reason enabled is: every type can be one
 	 * or two columns wide, and declaring it eight times would be eight copies
@@ -151,6 +176,13 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 	if raw, ok := config["columns"]; ok {
 		if columns, valid := widgetConfigInt(raw); valid && columns >= 1 && columns <= widgetMaxColumns {
 			clean["columns"] = columns
+		}
+	}
+
+	// The one nested setting, handled before the flat ones below.
+	if widgetType == WidgetTypeCustom {
+		if fields := sanitizeCustomWidgetFields(config["fields"]); fields != nil {
+			clean["fields"] = fields
 		}
 	}
 
@@ -170,9 +202,22 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			}
 		case "string":
 			if value, isString := raw.(string); isString {
-				if value = trimToLength(strings.TrimSpace(value), widgetMaxIDLen); value != "" &&
+				limit := field.MaxLen
+				if limit <= 0 {
+					limit = widgetMaxIDLen
+				}
+				if value = trimToLength(strings.TrimSpace(value), limit); value != "" &&
 					widgetValueAllowed(value, field.Allowed) {
 					clean[field.Key] = value
+				}
+			}
+		case "url":
+			// Checked rather than trimmed: an address that is not http(s) would
+			// be refused at fetch time anyway, and a stored one reads as
+			// configured while never working.
+			if value, isString := raw.(string); isString {
+				if address := sanitizeWidgetURL(value); address != "" {
+					clean[field.Key] = address
 				}
 			}
 		case "list":
@@ -257,6 +302,7 @@ func widgetTypeNames() []string {
 	ordered := []WidgetType{
 		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeTrend,
 		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
+		WidgetTypeCustom,
 	}
 	names := make([]string, 0, len(ordered))
 	for _, widgetType := range ordered {
@@ -272,4 +318,70 @@ func widgetTypeNames() []string {
 			len(names), len(knownWidgetTypes)))
 	}
 	return names
+}
+
+/*
+sanitizeWidgetURL keeps an address only if it could ever be fetched.
+
+http and https only, and a host that is actually there. Where the request may
+*go* is not decided here -- validateHTTPURL does that at fetch time, against the
+same "allow local bookmarks" setting every other outbound request obeys, so this
+feature does not get a second opinion about the LAN.
+*/
+func sanitizeWidgetURL(raw string) string {
+	address := trimToLength(strings.TrimSpace(raw), widgetMaxURLLen)
+	if address == "" {
+		return ""
+	}
+	parsed, err := neturl.Parse(address)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return ""
+	}
+	return address
+}
+
+/*
+sanitizeCustomWidgetFields narrows the one setting that is a list of objects.
+
+Handled beside the table rather than in it: fields[] is the only nested shape
+any widget has, and teaching the table about nested objects would be a general
+mechanism built for a single caller.
+*/
+func sanitizeCustomWidgetFields(raw any) []any {
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]any, 0, len(items))
+	for _, item := range items {
+		if len(out) >= customWidgetMaxFields {
+			break
+		}
+		entry, isObject := item.(map[string]any)
+		if !isObject {
+			continue
+		}
+		path := trimToLength(strings.TrimSpace(stringOr(entry["path"])), widgetMaxPathLen)
+		if path == "" {
+			// A field with no path names nothing, and an empty row on a tile
+			// reads as a value that failed rather than one never asked for.
+			continue
+		}
+		format := strings.TrimSpace(stringOr(entry["format"]))
+		if !customWidgetFormats[format] {
+			format = "text"
+		}
+		clean := map[string]any{"path": path, "format": format}
+		if label := trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60); label != "" {
+			clean["label"] = label
+		}
+		out = append(out, clean)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }

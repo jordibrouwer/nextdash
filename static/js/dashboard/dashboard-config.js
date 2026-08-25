@@ -13974,7 +13974,7 @@ class DashboardConfig {
     }
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources', 'neglected'];
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources', 'neglected', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -14041,10 +14041,9 @@ class DashboardConfig {
     renderWidgetSettings(widget, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = DashboardConfig.WIDGET_SETTINGS[widget.type] || [];
-        if (!fields.length) {
-            return `<p class="config-widget-settings-empty">${esc(this.t(
-                'config.widgetNoSettings', 'This widget has nothing to set.'))}</p>`;
-        }
+        // No early return for a type with no fields of its own: width applies to
+        // every widget, so the panel is never empty.
+
         const config = widget.config || {};
         const rows = fields.map((field) => {
             const label = esc(this.t(field.label[0], field.label[1]));
@@ -14150,8 +14149,158 @@ class DashboardConfig {
                     'A dashboard showing one column draws the widget in that one column.'))}</span>
             </div>`;
     }
+        /*
+         * The custom widget's scalars. Its fields[] is a list of objects, which
+         * this table cannot describe, so renderCustomWidgetFields draws that
+         * half — rather than teaching the table a nested kind only one type
+         * would ever use.
+         */
+        custom: [
+            { key: 'url', kind: 'text', maxlength: 2000,
+              label: ['config.widgetCustomUrl', 'Address to read'],
+              placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
+            { key: 'credentialId', kind: 'credential',
+              label: ['config.widgetCustomCredential', 'Sign in with'] },
+            { key: 'ttl', kind: 'int', min: 30, max: 86400,
+              label: ['config.widgetCustomTtl', 'Ask again after (seconds)'] },
+            { key: 'itemsPath', kind: 'text', maxlength: 200,
+              label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
+              placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
+        ],
 
     /**
+    /** The formats a value may be shown in — the server accepts these and no others. */
+    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
+
+    /**
+     * The fields a custom widget reads, as rows that can be added and removed.
+     *
+     * A path, what to call it, and how to show it. No expression box: the
+     * moment a config can compute, it is a second product with its own bugs and
+     * no debugger — and a widget only ever needs a number out of a response.
+     */
+    renderCustomWidgetFields(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const fields = Array.isArray(widget?.config?.fields) ? widget.config.fields : [];
+        const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
+            `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
+                this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+
+        /*
+         * A header row, because three unlabelled boxes side by side is a puzzle.
+         *
+         * Placeholders alone were not enough: they vanish the moment a row has
+         * a value, and the second row then has nothing saying which box is the
+         * path and which the label.
+         */
+        const head = fields.length ? `
+                <div class="config-custom-head" aria-hidden="true">
+                    <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
+                    <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
+                    <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span></span>
+                </div>` : '';
+
+        const rows = fields.map((field, row) => `
+            <div class="config-custom-field" data-custom-row="${row}">
+                <input type="text" class="config-text" data-custom-field="path" data-custom-index="${index}"
+                    data-custom-row="${row}" maxlength="200" value="${esc(field?.path || '')}"
+                    placeholder="${esc(this.t('config.widgetCustomPathPlaceholder', 'server.recent[0].name'))}"
+                    aria-label="${esc(this.t('config.widgetCustomPath', 'Path'))}">
+                <input type="text" class="config-text" data-custom-field="label" data-custom-index="${index}"
+                    data-custom-row="${row}" maxlength="60" value="${esc(field?.label || '')}"
+                    placeholder="${esc(this.t('config.widgetCustomLabelPlaceholder', 'What to call it'))}"
+                    aria-label="${esc(this.t('config.widgetCustomLabel', 'Label'))}">
+                <select class="config-select" data-custom-field="format" data-custom-index="${index}"
+                    data-custom-row="${row}"
+                    aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
+                    formatOptions(field?.format || 'text')}</select>
+                <button type="button" class="config-btn config-btn--small config-btn--danger"
+                    data-custom-remove="${row}" data-custom-index="${index}"
+                    aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
+                    this.t('config.backupDelete', 'Delete'))}</button>
+            </div>`).join('');
+
+        return `
+            <div class="config-custom-group">
+                <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomFields',
+                    'Figures to read'))}</h4>
+                <p class="config-widget-note">${esc(this.t('config.widgetCustomFieldsNote',
+                    'A path into the answer, what to call it, and how to show it. "server.disk[0].used" reads that one value.'))}</p>
+                ${head}${rows || `<p class="config-widget-settings-empty">${esc(this.t(
+                    'config.widgetCustomNoFields', 'No figures yet.'))}</p>`}
+                <div>
+                    <button type="button" class="config-btn config-btn--small" data-custom-add="${index}"
+                        ${fields.length >= 8 ? 'disabled' : ''}>${esc(
+                        this.t('config.widgetCustomAddField', 'Add a figure'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** Fetch the credential names once, so a picker can offer them. */
+    async loadCredentialNames() {
+        if (this.dash.healthCredentials) return this.dash.healthCredentials;
+        try {
+            const res = await fetch('/api/health/credentials');
+            if (!res.ok) return {};
+            const data = await res.json();
+            this.dash.healthCredentials = data?.credentials || {};
+        } catch (_error) {
+            this.dash.healthCredentials = {};
+        }
+        // Redrawn once they arrive: the panel is built synchronously and would
+        // otherwise offer an empty picker until something else repainted it.
+        if (this.section === 'widgets') this.repaintWidgetsBody();
+        return this.dash.healthCredentials;
+    }
+
+    /**
+     * The stored credential names, for a picker in the widgets tab.
+     *
+     * Names only. The values live in their own file and no route hands them
+     * back, so this can be read without holding a secret in the page.
+     */
+    /*
+     * Which folds are open, across a repaint.
+     *
+     * <details> keeps its open state in the DOM, and these tabs redraw their
+     * whole body -- after a backup runs, after a source imports. Without this
+     * the panel someone was working in snapped shut the moment they pressed a
+     * button inside it.
+     */
+    foldIsOpen(key, fallback = false) {
+        this._openFolds = this._openFolds || new Set();
+        // A deliberate close is remembered too, or a panel that opens by
+        // default could never be shut for longer than one repaint.
+        if (this._openFolds.has(`!${key}`)) return false;
+        return this._openFolds.has(key) || fallback;
+    }
+
+    rememberFold(key, open) {
+        this._openFolds = this._openFolds || new Set();
+        this._openFolds.delete(open ? `!${key}` : key);
+        this._openFolds.add(open ? key : `!${key}`);
+    }
+
+    /** Wire every fold on a container so it remembers itself. */
+    bindFolds(container) {
+        (container || document).querySelectorAll('[data-fold]').forEach((panel) => {
+            if (panel.dataset.foldBound === 'true') return;
+            panel.dataset.foldBound = 'true';
+            panel.addEventListener('toggle', () => {
+                this.rememberFold(panel.getAttribute('data-fold'), panel.open);
+            });
+        });
+    }
+
+    renderCredentialOptionsFor(selected) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const list = this.dash.healthCredentials || {};
+        return Object.keys(list).sort().map((id) =>
+            `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>`
+        ).join('');
+    }
+
      * One line on what a widget puts on the dashboard.
      *
      * Beside the name rather than behind a help icon: eight types is past the
@@ -14184,6 +14333,31 @@ class DashboardConfig {
      * Read the page's blocks and lay them out as one list.
      *
      * Widgets and categories together, in blockOrder, because that is the order
+            if (field.kind === 'text') {
+                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
+                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                    </div>`;
+            }
+            if (field.kind === 'credential') {
+                // The same store the health checks use: the widget names one,
+                // and never holds it.
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="text">
+                            <option value="">${esc(this.t('config.healthCredentialNone',
+                                'Nothing — check anonymously'))}</option>
+                            ${this.renderCredentialOptionsFor(config[field.key])}
+                        </select>
+                    </div>`;
+            }
      * being edited. Two lists side by side would make "up" ambiguous.
      */
     async loadWidgetsEditor() {
@@ -14294,7 +14468,33 @@ class DashboardConfig {
                  * tab before a click can land. The blocks are already in hand;
                  * only the markup has to change.
                  */
-                this.repaintPtBody();
+                this.repaintWidgetsBody();
+            });
+        });
+
+        // The custom widget's fields[] — its own rows, because a list of objects
+        // is not something the settings table can describe.
+        container.querySelectorAll('[data-custom-add]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.addCustomWidgetField(Number(btn.getAttribute('data-custom-add')));
+            });
+        });
+        container.querySelectorAll('[data-custom-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.removeCustomWidgetField(
+                    Number(btn.getAttribute('data-custom-index')),
+                    Number(btn.getAttribute('data-custom-remove')));
+            });
+        });
+        container.querySelectorAll('[data-custom-field]').forEach((input) => {
+            // change, not input: a path typed character by character would be a
+            // write per character, and every intermediate value names nothing.
+            input.addEventListener('change', () => {
+                void this.setCustomWidgetField(
+                    Number(input.getAttribute('data-custom-index')),
+                    Number(input.getAttribute('data-custom-row')),
+                    input.getAttribute('data-custom-field'),
+                    input.value);
             });
         });
 
@@ -14528,6 +14728,55 @@ class DashboardConfig {
             const withWidgets = locked || visible.length !== this._categories.length
                 ? rows
                 : this.interleaveWidgetRows(rows);
+    /** The fields a custom widget reads, as stored. */
+    customFieldsOf(index) {
+        const config = (this._widgetBlocks || [])[index]?.config || {};
+        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
+    }
+
+    async addCustomWidgetField(index) {
+        const fields = this.customFieldsOf(index);
+        if (fields.length >= 8) return;
+        /*
+         * Added empty rather than with a guess.
+         *
+         * The server drops a field with no path — a row that named nothing
+         * would be an empty figure on the tile — so this row exists only in the
+         * editor until it has one. That is why the panel is redrawn from local
+         * state rather than from what came back.
+         */
+        fields.push({ path: '', label: '', format: 'text' });
+        this.setCustomFieldsLocally(index, fields);
+        this.repaintWidgetsBody();
+    }
+
+    async removeCustomWidgetField(index, row) {
+        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
+        this.setCustomFieldsLocally(index, fields);
+        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
+        this.repaintWidgetsBody();
+    }
+
+    async setCustomWidgetField(index, row, key, value) {
+        const fields = this.customFieldsOf(index);
+        if (!fields[row]) return;
+        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        this.setCustomFieldsLocally(index, fields);
+        // Only worth storing once a row names something; until then the server
+        // would drop it and the editor would lose the row being typed into.
+        if (fields.some((field) => String(field.path || '').trim())) {
+            await this.setWidgetConfig(index, { fields });
+        }
+    }
+
+    /** Keep the editor's copy in step, including rows the server would drop. */
+    setCustomFieldsLocally(index, fields) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
+        this._widgetBlocks = blocks;
+    }
+
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
                 ? `<ul class="config-crud-list">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
@@ -14686,33 +14935,7 @@ class DashboardConfig {
             pageSelect.addEventListener('change', () => {
                 this._catPageId = Number(pageSelect.value);
                 this._categories = null;
-                this.repaintWidgetsBody();
-            });
-        });
-
-        // The custom widget's fields[] — its own rows, because a list of objects
-        // is not something the settings table can describe.
-        container.querySelectorAll('[data-custom-add]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.addCustomWidgetField(Number(btn.getAttribute('data-custom-add')));
-            });
-        });
-        container.querySelectorAll('[data-custom-remove]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.removeCustomWidgetField(
-                    Number(btn.getAttribute('data-custom-index')),
-                    Number(btn.getAttribute('data-custom-remove')));
-            });
-        });
-        container.querySelectorAll('[data-custom-field]').forEach((input) => {
-            // change, not input: a path typed character by character would be a
-            // write per character, and every intermediate value names nothing.
-            input.addEventListener('change', () => {
-                void this.setCustomWidgetField(
-                    Number(input.getAttribute('data-custom-index')),
-                    Number(input.getAttribute('data-custom-row')),
-                    input.getAttribute('data-custom-field'),
-                    input.value);
+                this.repaintPtBody();
                 void this.loadCategoriesEditor();
             });
         }
@@ -14798,55 +15021,6 @@ class DashboardConfig {
                 const message = n > 0
                     ? this.t('config.categoryDeleteWithBookmarks',
                         'Delete “{name}”? Its {n} bookmarks are kept but lose their category.')
-    /** The fields a custom widget reads, as stored. */
-    customFieldsOf(index) {
-        const config = (this._widgetBlocks || [])[index]?.config || {};
-        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
-    }
-
-    async addCustomWidgetField(index) {
-        const fields = this.customFieldsOf(index);
-        if (fields.length >= 8) return;
-        /*
-         * Added empty rather than with a guess.
-         *
-         * The server drops a field with no path — a row that named nothing
-         * would be an empty figure on the tile — so this row exists only in the
-         * editor until it has one. That is why the panel is redrawn from local
-         * state rather than from what came back.
-         */
-        fields.push({ path: '', label: '', format: 'text' });
-        this.setCustomFieldsLocally(index, fields);
-        this.repaintWidgetsBody();
-    }
-
-    async removeCustomWidgetField(index, row) {
-        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
-        this.setCustomFieldsLocally(index, fields);
-        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
-        this.repaintWidgetsBody();
-    }
-
-    async setCustomWidgetField(index, row, key, value) {
-        const fields = this.customFieldsOf(index);
-        if (!fields[row]) return;
-        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
-        this.setCustomFieldsLocally(index, fields);
-        // Only worth storing once a row names something; until then the server
-        // would drop it and the editor would lose the row being typed into.
-        if (fields.some((field) => String(field.path || '').trim())) {
-            await this.setWidgetConfig(index, { fields });
-        }
-    }
-
-    /** Keep the editor's copy in step, including rows the server would drop. */
-    setCustomFieldsLocally(index, fields) {
-        const blocks = [...(this._widgetBlocks || [])];
-        if (!blocks[index]?.isWidget) return;
-        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
-        this._widgetBlocks = blocks;
-    }
-
                         .replace('{name}', String(cat.name || cat.id || ''))
                         .replace('{n}', String(n))
                     : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')

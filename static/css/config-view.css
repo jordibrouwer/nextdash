@@ -5830,3 +5830,84 @@ button.config-bm-shortcut-pill {
         width: 100%;
     }
 }
+
+/* A note under a setting, for the one that needs a word about what the grid
+   does with it. */
+.config-widget-note {
+    font-size: calc(var(--font-size-text) * 0.82);
+    color: var(--text-muted, #888);
+    line-height: 1.4;
+}
+
+/*
+   The custom widget's panel, which asks more than any other type.
+
+   Grouped rather than laid out as one grid of six boxes: where to read from and
+   what to show are different questions, and the figures need the full width —
+   their rows are four controls wide, and in a third of the panel the path and
+   the label overlapped each other by sixty pixels.
+*/
+.config-widget-settings-body.is-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    /* The grid rule this overrides also sets align-items: start, which in a
+       column flex box is the horizontal axis -- so every group shrank to its
+       content and sat in a third of the panel it had been given. */
+    align-items: stretch;
+}
+
+.config-custom-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-custom-group-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+/* The scalars inside a group still share a row where there is room. */
+.config-custom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 12px 18px;
+    align-items: start;
+}
+
+/* Path, label, format, remove — the same track sizes for the header and every
+   row, so the columns line up down the list. */
+.config-custom-head,
+.config-custom-field {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(7rem, auto) auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.config-custom-head > span {
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+/* A row of four controls has nowhere to go on a narrow window, so it stacks and
+   each control keeps its own label through aria-label. */
+@media (max-width: 720px) {
+    .config-custom-head {
+        display: none;
+    }
+
+    .config-custom-field {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    }
+}
+
+}

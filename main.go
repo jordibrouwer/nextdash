@@ -168,6 +168,8 @@ func main() {
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
 	// The secrets a check sends, in their own file outside the backup.
+	// The one widget that reads from outside, by widget id rather than by URL.
+	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
 	// The same fields for a list of bookmarks, so muting a dozen during a known

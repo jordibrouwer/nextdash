@@ -56,6 +56,15 @@ const (
 	// WidgetTypeNeglected asks the graveyard question in reverse: not which link
 	// died, but which one you stopped opening.
 	WidgetTypeNeglected WidgetType = "neglected"
+	/*
+	 * WidgetTypeCustom reads a figure out of any JSON endpoint.
+	 *
+	 * The one escape hatch, and the only widget that talks to anything outside.
+	 * A dashboard that grows a widget per service ends up maintaining one thing
+	 * per upstream release it does not control; this answers "my service is not
+	 * in the list" without adding a codepath per service.
+	 */
+	WidgetTypeCustom WidgetType = "custom"
 )
 
 // knownWidgetTypes is the register. A type not in here is refused rather than
@@ -70,6 +79,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeFeeds:     {},
 	WidgetTypeSources:   {},
 	WidgetTypeNeglected: {},
+	WidgetTypeCustom:    {},
 }
 
 var errUnknownWidgetType = errors.New("unknown widget type")

@@ -5626,3 +5626,40 @@ a.dashboard-widget-row:focus-visible {
 button.dashboard-widget-row--more {
     cursor: pointer;
 }
+
+/* The custom widget's figures: a value with its name under it, side by side.
+   Two or three numbers is the common case, so they wrap rather than scroll. */
+.dashboard-widget-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+}
+
+.dashboard-widget-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dashboard-widget-figure-value {
+    font-size: 1.4em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-widget-figure-label {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+/* A path that stopped matching is marked rather than blank — a blank reads as a
+   zero, and zero is a fact. */
+.dashboard-widget-figure.is-missing .dashboard-widget-figure-value {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-asof {
+    margin: 8px 0 0;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-small) * 0.92);
+}
