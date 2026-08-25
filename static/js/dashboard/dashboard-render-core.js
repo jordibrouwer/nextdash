@@ -437,6 +437,28 @@ class DashboardRenderCore {
      * rebuilt for one block. A full render here would also throw away the
      * DragReorder instances mid-drag.
      */
+    /*
+     * Forget what the widgets cached, so the next draw asks again.
+     *
+     * The tiles that fetch keep their answer on the dashboard object: sources
+     * runs hourly, the trend is a day's granularity, and re-fetching per render
+     * would be traffic for figures that cannot have changed. That is right
+     * while nothing changes and wrong the moment someone adds or edits a widget
+     * in config — the tile would redraw from the answer it had before the
+     * settings existed, and read as though the change did nothing.
+     *
+     * Cleared by name rather than by a general "clear everything": each of
+     * these belongs to one tile, and a tile that starts caching something else
+     * has to say so here.
+     */
+    forgetWidgetCaches() {
+        const d = this.dash;
+        delete d._widgetSources;
+        delete d._widgetFeeds;
+        delete d._widgetTrend;
+        delete d._widgetInbox;
+    }
+
     refreshWidgets(type) {
         const d = this.dash;
         document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)

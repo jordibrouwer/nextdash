@@ -14333,6 +14333,13 @@ class DashboardConfig {
             const summary = this.renderStatSummary([
                 [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
                 [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
+        /*
+         * Editing another page's widgets leaves this page alone — but the
+         * cached answers are the dashboard's, not the page's, so they go either
+         * way. Otherwise switching to the page that was edited draws its new
+         * tiles from data fetched before the edit.
+         */
+        d.renderCore?.forgetWidgetCaches?.();
             ]);
             /*
              * The widgets that live between these categories.
