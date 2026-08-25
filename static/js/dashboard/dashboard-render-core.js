@@ -1266,23 +1266,80 @@ class DashboardRenderCore {
         }
 
         d.categories = newCategories;
-        /*
-         * The block order, which is what actually moved.
-         *
-         * Categories keep their own array order for everything that reads it,
-         * but a widget cannot live in that array -- so the order the reader
-         * dragged into is stored separately, as ids. Read straight off the DOM
-         * that the drag just rearranged, including the widgets, because that is
-         * the only place the new arrangement exists at this moment.
-         */
-        d.blockOrder = blockIds;
-        this.scheduleCategoryOrderSave();
+        d.blockOrder = this.mergeBlockOrderFromDom(blockIds);
         this.scheduleBlockOrderSave();
     }
 
     /*
-     * Persist the block order, debounced like the category order beside it.
+     * The new order, with the blocks that are not on screen kept in place.
      *
+     * The DOM is the right source for what moved -- it is where the drag
+     * happened -- but it is not the whole list. A category with no bookmarks in
+     * it is not rendered at all under "hide empty categories", and a smart
+     * collection is rendered but is not the reader's to arrange. Writing the
+     * DOM order as the complete order therefore did two wrong things at once:
+     * it dropped the unrendered categories to the end, and every block after
+     * them shifted -- which is why a widget dropped in second place came back
+     * fourth.
+     *
+     * So the DOM decides the order of what it holds, and everything else keeps
+     * its position relative to the block it used to follow.
+     */
+    mergeBlockOrderFromDom(domIds) {
+        const previous = Array.isArray(this.dash.blockOrder) ? this.dash.blockOrder : [];
+        if (!domIds.length) return previous;
+
+        const onScreen = new Set(domIds);
+        const merged = [];
+        let cursor = 0;
+
+        previous.forEach((id) => {
+            if (onScreen.has(id)) {
+                // Take the next one the DOM has, which is what the drag decided.
+                if (cursor < domIds.length) merged.push(domIds[cursor++]);
+                return;
+            }
+            // Not rendered -- an empty category, say. It keeps the slot it had
+            // rather than being pushed to the end.
+            merged.push(id);
+        });
+
+        // Anything the DOM holds that the previous order did not know about,
+        // and anything left over: appended rather than lost.
+        while (cursor < domIds.length) merged.push(domIds[cursor++]);
+
+        const seen = new Set();
+        return merged.filter((id) => {
+            if (!id || seen.has(id)) return false;
+            seen.add(id);
+            return true;
+        });
+    }
+
+    /*
+     * Move one block one place, for the keyboard.
+     *
+     * Works on blockOrder rather than on the category array, so a keyboard move
+     * and a drag write the same thing. Steps over the blocks the reader cannot
+     * arrange -- a smart collection is drawn at the top whatever the order says,
+     * so swapping with one would look like the key did nothing.
+     */
+    moveBlockInOrder(id, direction) {
+        const d = this.dash;
+        const order = [...(d.blockOrder || [])];
+        const from = order.indexOf(String(id));
+        if (from < 0) return false;
+        const to = from + (direction < 0 ? -1 : 1);
+        if (to < 0 || to >= order.length) return false;
+
+        [order[from], order[to]] = [order[to], order[from]];
+        d.blockOrder = order;
+        this.scheduleBlockOrderSave();
+        return true;
+    }
+
+    /*
+     * Persist the block order, debounced like the category order beside it.     *
      * Its own timer rather than riding along with the category save: the two
      * write different files' worth of state through different routes, and a
      * failure in one should not swallow the other.

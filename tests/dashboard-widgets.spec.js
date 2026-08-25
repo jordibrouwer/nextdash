@@ -347,3 +347,103 @@ test.describe('widget appearance', () => {
         expect(body.fontSize).toBeGreaterThanOrEqual(body.gridFontSize);
     });
 });
+
+/*
+ * One order, one write.
+ *
+ * Widgets and categories used to have separate lists: the category array's own
+ * order decided where categories went, blockOrder decided where widgets went,
+ * and a single drag wrote both. Two lists saying where something sits is two
+ * lists that disagree the moment one is written and the other is not -- and it
+ * really did disagree: a widget dropped in second place came back fourth.
+ */
+test.describe('one order for widgets and categories', () => {
+    async function order(page) {
+        return page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            return (await (await f('/api/pages/1/blocks')).json()).order;
+        });
+    }
+
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
+    });
+
+    test('a move writes the block order and nothing else', async ({ page }) => {
+        const writes = [];
+        page.on('request', (r) => {
+            if (r.method() !== 'GET' && /\/api\/(categories|pages\/\d+\/blocks)/.test(r.url())) {
+                writes.push(`${r.method()} ${r.url().replace(/^https?:\/\/[^/]+/, '').split('?')[0]}`);
+            }
+        });
+
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.renderCore.moveBlockInOrder(d.widgets[0].id, -1);
+        });
+        await expect.poll(async () => writes.length, { timeout: 15_000 }).toBeGreaterThan(0);
+        await page.waitForTimeout(1500);
+
+        // The category array is not where the order lives any more, so moving a
+        // block must not touch it.
+        expect(writes.filter((w) => w.includes('/api/categories'))).toEqual([]);
+        expect(writes.filter((w) => w.includes('/blocks'))).not.toEqual([]);
+    });
+
+    /*
+     * A category with nothing in it is not rendered under "hide empty
+     * categories", so the DOM is not the whole list. Writing the DOM order as
+     * the complete order dropped those to the end and shifted everything after
+     * them -- which is exactly how a widget dropped second came back fourth.
+     */
+    test('a block that is not on screen keeps its place', async ({ page }) => {
+        const before = await order(page);
+        const offScreen = await page.evaluate(() => {
+            const rendered = new Set([...document.querySelectorAll('.category')]
+                .map((el) => el.getAttribute('data-category-id')));
+            return (window.dashboardInstance.blockOrder || []).filter((id) => !rendered.has(id));
+        });
+        test.skip(offScreen.length === 0, 'no unrendered block on this page to protect');
+
+        await page.evaluate(() => window.dashboardInstance.renderCore.syncCategoriesFromDom());
+        await page.waitForTimeout(1800);
+
+        const after = await order(page);
+        // Same members, and the unrendered one did not fall to the end.
+        expect([...after].sort()).toEqual([...before].sort());
+        offScreen.forEach((id) => {
+            expect(after.indexOf(id)).toBe(before.indexOf(id));
+        });
+    });
+
+    test('the keyboard moves a block through the same order', async ({ page }) => {
+        const before = await order(page);
+        const widgetId = before.find((id) => String(id).startsWith('w_'));
+        const from = before.indexOf(widgetId);
+        test.skip(from === 0, 'already first; nothing to move up into');
+
+        await page.evaluate((id) => {
+            window.dashboardInstance.renderCore.moveBlockInOrder(id, -1);
+        }, widgetId);
+
+        await expect.poll(async () => (await order(page)).indexOf(widgetId), { timeout: 15_000 })
+            .toBe(from - 1);
+        // Exactly one place, not to the end and not past a neighbour.
+        const after = await order(page);
+        expect(after.length).toBe(before.length);
+    });
+});
