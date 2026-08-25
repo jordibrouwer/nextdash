@@ -7145,9 +7145,9 @@ class DashboardConfig {
         const s = this.dash.settings || {};
 
         // These five are the only values the server accepts; it silently
-        // rewrites anything else to 'bottom'. See models.go.
+        // rewrites anything else to 'bottom-right'. See models.go.
         const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
-            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom';
+            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom-right';
         // Short labels: the full ones carry "(default)" and "corner", which is
         // more than a button in a five-up group can show.
         const barPositions = [
@@ -9153,7 +9153,7 @@ class DashboardConfig {
         showSearchButton: { def: true },
         showFindersButton: { def: true },
         showCommandsButton: { def: true },
-        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom' },
+        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },

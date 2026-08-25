@@ -880,7 +880,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// install nobody had touched.
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
-			ButtonBarPosition:              "bottom",
+			ButtonBarPosition:              "bottom-right",
 			ShowDockLayoutSelector:         true,
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
@@ -2992,8 +2992,12 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"
 		}
+		// The corner dock rather than the centred bar: it keeps the buttons out
+		// of the bookmarks instead of floating over them. Only for a file that
+		// does not name a position -- anyone who chose one has the key, and
+		// this leaves their choice alone.
 		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
-			settings.ButtonBarPosition = "bottom"
+			settings.ButtonBarPosition = "bottom-right"
 		}
 		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {
 			settings.ShowDockLayoutSelector = true

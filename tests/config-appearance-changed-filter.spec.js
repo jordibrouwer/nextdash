@@ -66,7 +66,7 @@ test.describe('appearance only-changed filter', () => {
     }
 
     test('the count covers hand-written controls, not just schema panels', async ({ page }) => {
-        await openAppearance(page, 'buttonbar', [['buttonBarPosition', 'bottom']]);
+        await openAppearance(page, 'buttonbar', [['buttonBarPosition', 'bottom-right']]);
 
         const before = await page.locator('.config-changed-count').innerText();
 
@@ -77,12 +77,12 @@ test.describe('appearance only-changed filter', () => {
             .not.toBe(before);
         await expect(page.locator('.config-changed-count')).toContainText('differ from the default');
 
-        await resetField(page, 'buttonBarPosition', 'bottom');
+        await resetField(page, 'buttonBarPosition', 'bottom-right');
     });
 
     test('turning it on hides the unchanged hand-written rows', async ({ page }) => {
         await openAppearance(page, 'buttonbar', [
-            ['buttonBarPosition', 'bottom'],
+            ['buttonBarPosition', 'bottom-right'],
             ['showSearchButton', true],
         ]);
 
@@ -100,7 +100,7 @@ test.describe('appearance only-changed filter', () => {
         await page.locator(toggle).click();
         await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeVisible();
 
-        await resetField(page, 'buttonBarPosition', 'bottom');
+        await resetField(page, 'buttonBarPosition', 'bottom-right');
     });
 
     /**
@@ -151,8 +151,10 @@ test.describe('appearance only-changed filter', () => {
     });
 
     test('the filter survives a tab switch and still hides the right rows', async ({ page }) => {
+        // From the default, so the change below is the only thing the filter
+        // has to find -- starting from another position would already count.
         await openAppearance(page, 'buttonbar', [
-            ['buttonBarPosition', 'bottom'],
+            ['buttonBarPosition', 'bottom-right'],
             ['showIcons', true],
         ]);
 
@@ -172,6 +174,6 @@ test.describe('appearance only-changed filter', () => {
         await page.locator('[data-appearance-tab="buttonbar"]').click();
         await expect(page.locator('[data-appearance-barpos="side-left"]')).toBeVisible();
 
-        await resetField(page, 'buttonBarPosition', 'bottom');
+        await resetField(page, 'buttonBarPosition', 'bottom-right');
     });
 });
