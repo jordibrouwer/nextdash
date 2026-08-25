@@ -389,6 +389,14 @@ type Settings struct {
 	// (api.pushover.net) and delivery is keyed on these two values instead.
 	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
 	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	// Archiving a bookmark the day it is saved, rather than looking for a copy
+	// the day it dies. The keys are archive.org's S3-style pair from
+	// archive.org/account/s3.php; without them the archive still accepts
+	// captures but at a far smaller daily budget, so this is opt-in by having
+	// keys rather than by a separate switch.
+	ArchiveSaveEnabled   bool   `json:"archiveSaveEnabled,omitempty"`
+	ArchiveSaveAccessKey string `json:"archiveSaveAccessKey,omitempty"`
+	ArchiveSaveSecret    string `json:"archiveSaveSecret,omitempty"`
 	// MaintenanceWindows are recurring periods when downtime is expected. Checks
 	// still run and samples are still recorded — the heartbeat stays honest — but
 	// failures inside a window raise no alert and do not count against uptime.
@@ -3092,6 +3100,10 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	// Through the same normaliser as every other credential, so a pasted key
+	// with a stray newline is the same key.
+	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)
+	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 

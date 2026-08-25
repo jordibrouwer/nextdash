@@ -1291,6 +1291,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 	request.Bookmark.PageID = request.Page
 	logBookmarkAdd(request.Bookmark, r)
+	// Ask the archive to keep a copy, if that is switched on. In the background
+	// and after the write: the bookmark is already saved, and a page captured
+	// today is a page that outlives its own site.
+	h.archiveNewBookmark(request.Bookmark.URL)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
