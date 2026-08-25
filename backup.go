@@ -376,7 +376,7 @@ where they are preserved.
 */
 func importFileMode(relPath string) os.FileMode {
 	switch relPath {
-	case "sources.json", "health-credentials.json":
+	case "sources.json", "health-credentials.json", "webhooks.json":
 		return 0600
 	}
 	return 0644
@@ -501,6 +501,10 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 		 */
 		"sources.json",
 		"health-credentials.json",
+		// webhooks.json holds the keys deliveries are signed with. Same trade:
+		// a restore that has them is complete, and a backup that has them is
+		// enough to forge a delivery to somebody's automation.
+		"webhooks.json",
 	}
 
 	// Check if it's one of the specific files
@@ -737,11 +741,13 @@ type backupSkips struct {
 	secrets  bool
 }
 
-// backupSecretFilenames are the two files that hold credentials rather than
-// data: import tokens, and the keys and passwords a health check sends.
+// backupSecretFilenames are the files that hold credentials rather than data:
+// import tokens, the keys and passwords a health check sends, and the keys
+// outgoing deliveries are signed with.
 var backupSecretFilenames = map[string]bool{
 	"sources.json":            true,
 	"health-credentials.json": true,
+	"webhooks.json":           true,
 }
 
 func (s backupSkips) skip(relPath string) bool {

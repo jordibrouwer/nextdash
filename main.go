@@ -173,6 +173,8 @@ func main() {
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/webhooks/test", handlers.TestWebhookHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
 	// The same fields for a list of bookmarks, so muting a dozen during a known
 	// outage is one request rather than a dozen dialogs.

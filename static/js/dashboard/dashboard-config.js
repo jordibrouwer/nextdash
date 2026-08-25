@@ -4407,6 +4407,120 @@ class DashboardConfig {
     }
 
     /*
+     * Where nextDash pushes to, as opposed to where it pulls from.
+     *
+     * Sources answer "what did that service add"; a webhook answers the same
+     * question the other way round, for whatever somebody built around this
+     * install -- an n8n flow, a Home Assistant automation, a script. Without
+     * it, anything downstream has to poll, which is the reason this sits
+     * beside Sources rather than under the alert settings: those send a
+     * message to a person, these send an event to a program.
+     */
+    renderDataWebhooks() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = (this._webhookEndpoints || []).map((e) => this.renderWebhookRow(e)).join('');
+        const empty = `<p class="config-view-loading">${esc(this.t('config.webhooksEmpty',
+            'Nothing is listening yet.'))}</p>`;
+        return `
+            <p class="config-view-intro">${esc(this.t('config.webhooksIntro',
+                'Push an event to another program the moment it happens here — a bookmark added, changed or removed, a monitored bookmark going down or coming back. Every delivery is signed, so the receiver can tell it came from this install.'))}</p>
+            <div class="config-webhook-list">${rows || empty}</div>
+            <details class="config-panel config-source-panel"
+                data-fold="webhook-new" ${this.foldIsOpen('webhook-new') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.webhookAddTitle', 'Add a receiver'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.webhookAddNote',
+                            'The address to post to, and what it should hear about.'))}</span>
+                    </span>
+                </summary>
+                ${this.renderWebhookForm(null)}
+            </details>
+        `;
+    }
+
+    /*
+     * One saved receiver, folded shut.
+     *
+     * The signing key is not in here. It travelled back once, in the answer to
+     * the save that generated it, because that is the only moment it can be
+     * copied into the far side -- a screen that redisplays it turns every
+     * screenshot and every shoulder into a leak.
+     */
+    renderWebhookRow(endpoint) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const name = endpoint.label || endpoint.id;
+        const state = endpoint.enabled
+            ? this.t('config.webhookStateOn', 'Sending')
+            : this.t('config.webhookStateOff', 'Paused');
+        return `
+            <details class="config-panel config-source-panel" data-webhook-id="${esc(endpoint.id)}"
+                data-fold="webhook:${esc(endpoint.id)}" ${this.foldIsOpen(`webhook:${endpoint.id}`) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(name)}</span>
+                        <span class="config-source-summary-note">${esc(state)} — ${esc(endpoint.url)}</span>
+                    </span>
+                </summary>
+                ${this.renderWebhookForm(endpoint)}
+            </details>
+        `;
+    }
+
+    renderWebhookForm(endpoint) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const existing = !!endpoint;
+        const id = endpoint?.id || '';
+        const selected = endpoint?.events || [];
+        const labels = {
+            'bookmark.added': this.t('config.webhookEventBookmarkAdded', 'A bookmark is added'),
+            'bookmark.updated': this.t('config.webhookEventBookmarkUpdated', 'A bookmark changes'),
+            'bookmark.deleted': this.t('config.webhookEventBookmarkDeleted', 'A bookmark is removed'),
+            'health.down': this.t('config.webhookEventHealthDown', 'A monitored bookmark goes down'),
+            'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
+        };
+        const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
+            <label class="config-check">
+                <input type="checkbox" data-webhook-event="${esc(name)}" ${selected.includes(name) ? 'checked' : ''}>
+                <span>${esc(labels[name] || name)}</span>
+            </label>`).join('');
+        return `
+            <div class="config-webhook-form" data-webhook-form="${esc(id)}">
+                <div class="config-field">
+                    <label class="config-field-label">${esc(this.t('config.webhookIdLabel', 'Name'))}</label>
+                    <input type="text" class="config-text" data-webhook-field="id" value="${esc(id)}"
+                        ${existing ? 'readonly' : ''} autocomplete="off" spellcheck="false" placeholder="n8n">
+                    <p class="config-field-hint">${esc(this.t('config.webhookIdHint',
+                        'Letters, digits, dash, underscore, dot and colon. Fixed once saved.'))}</p>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label">${esc(this.t('config.webhookUrlLabel', 'Address to post to'))}</label>
+                    <input type="url" class="config-text" data-webhook-field="url" value="${esc(endpoint?.url || '')}"
+                        autocomplete="off" spellcheck="false" placeholder="https://…">
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.webhookEventsLabel', 'Send when'))}</span>
+                    <div class="config-checkset" role="group">${boxes}</div>
+                    <p class="config-field-hint">${esc(this.t('config.webhookEventsHint',
+                        'Nothing ticked means everything.'))}</p>
+                </div>
+                <label class="config-check">
+                    <input type="checkbox" data-webhook-field="enabled" ${endpoint?.enabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.webhookEnabledLabel', 'Send to this receiver'))}</span>
+                </label>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-webhook-action="save">${esc(this.t('config.webhookSave', 'Save'))}</button>
+                    ${existing ? `
+                        <button type="button" class="config-btn" data-webhook-action="test">${esc(this.t('config.webhookTest', 'Send a test'))}</button>
+                        <button type="button" class="config-btn config-btn--danger" data-webhook-action="delete">${esc(this.t('config.webhookDelete', 'Remove'))}</button>` : ''}
+                    <span class="config-field-hint" data-webhook-status></span>
+                </div>
+                <p class="config-field-hint" data-webhook-secret hidden></p>
+            </div>
+        `;
+    }
+
+    /*
      * Copies on this disk, through monolith.
      *
      * Beside the Web Archive panel because they answer the same question and
@@ -4586,6 +4700,9 @@ class DashboardConfig {
         if (this.dbTab === 'sources') {
             return this.renderDataSources();
         }
+        if (this.dbTab === 'webhooks') {
+            return this.renderDataWebhooks();
+        }
         if (this.dbTab === 'icons') {
             return this.renderDataIcons();
         }
@@ -4609,6 +4726,7 @@ class DashboardConfig {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
             sources: ['config.dbTabSources', 'Sources'],
+            webhooks: ['config.dbTabWebhooks', 'Webhooks'],
             icons: ['config.dbTabIcons', 'Icons & previews'],
             logs: ['config.dbTabLogs', 'Server log'],
             trash: ['config.dbTabTrash', 'Trash'],
@@ -5712,6 +5830,134 @@ class DashboardConfig {
         if (container) this.bindDataBackupsActions(container);
     }
 
+    async loadWebhooks() {
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher('/api/webhooks');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this._webhookEndpoints = Array.isArray(data?.endpoints) ? data.endpoints : [];
+            this._webhookEvents = Array.isArray(data?.events) ? data.events : null;
+        } catch (err) {
+            this._webhookEndpoints = [];
+        }
+        this.repaintWebhooks();
+    }
+
+    /*
+     * Only this tab's body is repainted, and only while it is the one on
+     * screen: a fetch that lands after the reader has moved on must not
+     * replace whatever they opened instead.
+     */
+    repaintWebhooks() {
+        if (this.section !== 'data-backups' || this.dbTab !== 'webhooks') return;
+        const body = document.getElementById('config-db-body');
+        if (!body) return;
+        body.innerHTML = this.renderDbTab();
+        this.bindDataBackupsActions(body);
+    }
+
+    bindWebhookControls(container) {
+        container.querySelectorAll('[data-webhook-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const form = btn.closest('[data-webhook-form]');
+                void this.handleWebhookAction(btn.getAttribute('data-webhook-action'), form);
+            });
+        });
+    }
+
+    async handleWebhookAction(action, form) {
+        if (!form) return;
+        // Every call below writes, so it has to carry the write token an
+        // install can be configured to demand. Plain fetch does not.
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const status = form.querySelector('[data-webhook-status]');
+        const say = (text) => { if (status) status.textContent = text; };
+        const field = (name) => form.querySelector(`[data-webhook-field="${name}"]`);
+        const id = String(field('id')?.value || '').trim();
+        if (!id) {
+            say(this.t('config.webhookNeedsName', 'Give it a name first.'));
+            return;
+        }
+
+        if (action === 'delete') {
+            const ok = await this.confirmAction(
+                this.t('config.webhookDeleteConfirm',
+                    'Remove this receiver? Its signing key goes with it, so adding it back means configuring the far side again.'),
+                { confirmLabel: this.t('config.webhookDelete', 'Remove'), danger: true }
+            );
+            if (!ok) return;
+            await fetcher(`/api/webhooks?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+            await this.loadWebhooks();
+            return;
+        }
+
+        if (action === 'test') {
+            say(this.t('config.webhookTesting', 'Sending…'));
+            try {
+                const res = await fetcher(`/api/webhooks/test?id=${encodeURIComponent(id)}`, { method: 'POST' });
+                const data = await res.json();
+                // The receiver's own status code, not ours: "it answered 404"
+                // is the answer to why nothing arrived, and a bare "failed"
+                // is not.
+                say(data?.ok
+                    ? this.t('config.webhookTestSent', 'Delivered — the receiver accepted it.')
+                    : (data?.status
+                        ? this.t('config.webhookTestRefused', 'The receiver answered HTTP {n}.').replace('{n}', String(data.status))
+                        : (data?.error || this.t('config.webhookTestFailed', 'Could not reach it.'))));
+            } catch (err) {
+                say(this.t('config.webhookTestFailed', 'Could not reach it.'));
+            }
+            return;
+        }
+
+        const events = Array.from(form.querySelectorAll('[data-webhook-event]'))
+            .filter((box) => box.checked)
+            .map((box) => box.getAttribute('data-webhook-event'));
+        say(this.t('config.webhookSaving', 'Saving…'));
+        try {
+            const res = await fetcher('/api/webhooks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    url: String(field('url')?.value || '').trim(),
+                    events,
+                    enabled: field('enabled')?.checked === true,
+                }),
+            });
+            if (!res.ok) {
+                say((await res.text()).trim() || this.t('config.webhookSaveFailed', 'Could not save it.'));
+                return;
+            }
+            const data = await res.json();
+            this._webhookEndpoints = Array.isArray(data?.endpoints) ? data.endpoints : this._webhookEndpoints;
+            // The one moment the key is readable. Shown here rather than in a
+            // toast because it has to survive long enough to be copied, and
+            // it will never be shown again.
+            if (data?.secret) {
+                this._webhookNewSecret = { id, secret: data.secret };
+            }
+            this.repaintWebhooks();
+            this.showWebhookSecret();
+        } catch (err) {
+            say(this.t('config.webhookSaveFailed', 'Could not save it.'));
+        }
+    }
+
+    showWebhookSecret() {
+        const pending = this._webhookNewSecret;
+        if (!pending) return;
+        const panel = document.querySelector(`[data-webhook-id="${CSS.escape(pending.id)}"]`);
+        const line = panel?.querySelector('[data-webhook-secret]');
+        if (!line) return;
+        panel.open = true;
+        line.hidden = false;
+        line.textContent = this.t('config.webhookSecretOnce',
+            'Signing key (shown once — copy it into the receiver now): {key}').replace('{key}', pending.secret);
+        this._webhookNewSecret = null;
+    }
+
     bindDataBackupsActions(container) {
         // The folds on this section remember whether they were open, so a
         // repaint after a backup or an import does not shut the panel someone
@@ -5727,6 +5973,12 @@ class DashboardConfig {
             this.bindServerLogControls(container);
             void this.loadServerLog({ reset: true });
             this.updateServerLogTimer();
+        }
+        if (this.dbTab === 'webhooks') {
+            this.bindWebhookControls(container);
+            // Fetched on open rather than with the section: the other tabs
+            // should not pay for a list they never show.
+            if (this._webhookEndpoints == null) void this.loadWebhooks();
         }
         this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
             if (tab === this.dbTab) return;
@@ -12378,7 +12630,7 @@ class DashboardConfig {
      * these are places bookmarks come from and keep coming from. It is also what
      * the register underneath already calls them -- sources.json, /api/sources.
      */
-    static DB_TABS = ['backups', 'sources', 'icons', 'logs', 'trash', 'reset'];
+    static DB_TABS = ['backups', 'sources', 'webhooks', 'icons', 'logs', 'trash', 'reset'];
 
     /**
      * Bookmarks is a list section, so its settings used to sit after the list —

@@ -302,6 +302,20 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 		return
 	}
 
+	// Outgoing webhooks get the events before the collapse below, and whether or
+	// not a notify target is configured at all. The collapse exists so a chat
+	// channel is not flooded and a rate limit not tripped; a receiver reading
+	// JSON has neither problem, and would rather have the bookmark that failed
+	// than a summary saying five of them did.
+	for _, n := range notifications {
+		switch n.Event {
+		case "down":
+			emitWebhookEvent(webhookEventHealthDown, monitorNotificationFields(n))
+		case "up":
+			emitWebhookEvent(webhookEventHealthUp, monitorNotificationFields(n))
+		}
+	}
+
 	// One upstream failing takes every bookmark behind it down in the same
 	// sweep. Collapsed here, at the single point both sinks pass through, so the
 	// webhook and the browser both get the summary rather than one of them

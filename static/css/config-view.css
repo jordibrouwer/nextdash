@@ -6017,3 +6017,29 @@ button.config-bm-shortcut-pill {
         transition: none;
     }
 }
+
+/* The saved receivers on Data & backups → Webhooks. A list of folded panels
+   like Sources above it, so the two read as the same kind of thing — where
+   bookmarks come from, and where events go. */
+.config-webhook-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.config-webhook-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* The signing key, shown exactly once, in the answer to the save that made it.
+   Monospaced and selectable because the only thing anyone does with it is copy
+   it into the far side, and a key that wraps mid-character is a key that gets
+   pasted wrong. */
+.config-webhook-form [data-webhook-secret] {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    user-select: all;
+}

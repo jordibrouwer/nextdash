@@ -25,7 +25,7 @@ test.describe('Data & backups → Icons & previews', () => {
         await openData(page);
         await expect.poll(() => page.evaluate(() =>
             [...document.querySelectorAll('[data-db-tab]')].map((b) => b.getAttribute('data-db-tab'))
-        )).toEqual(['backups', 'icons', 'logs', 'trash', 'reset']);
+        )).toEqual(['backups', 'sources', 'webhooks', 'icons', 'logs', 'trash', 'reset']);
         await expect(page.locator('[data-db-tab="icons"]')).toHaveText('Icons & previews');
     });
 
