@@ -238,3 +238,85 @@ test.describe('the local copies tab', () => {
         await expect(page.locator('.config-copies-group')).toHaveCount(2);
     });
 });
+
+/*
+ * The progress bar on the heavy config actions.
+ *
+ * Refreshing previews is one page fetch per bookmark -- 1.3 seconds for eight,
+ * so minutes for a real collection. It used to be a single request with no
+ * feedback: the button sat there and the app looked hung.
+ */
+test.describe('progress on long config actions', () => {
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+    });
+
+    test('refreshing previews shows how far it has got', async ({ page }) => {
+        // Batches slow enough to observe, answering the way the route does.
+        let offset = 0;
+        await page.route('**/api/previews/refresh**', async (route) => {
+            const url = new URL(route.request().url());
+            const from = Number(url.searchParams.get('offset') || 0);
+            const limit = Number(url.searchParams.get('limit') || 5);
+            offset = Math.min(from + limit, 20);
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            await route.fulfill({
+                status: 200, contentType: 'application/json',
+                body: JSON.stringify({ total: 20, offset: from, next: offset, done: offset >= 20, refreshed: limit, skipped: 0 }),
+            });
+        });
+
+        await page.evaluate(() => { window.dashboardInstance.config.refreshAllPreviews(); });
+        const modal = page.locator('#config-confirm-modal');
+        await modal.waitFor({ timeout: 10_000 });
+        await modal.locator('[data-confirm="ok"]').click();
+
+        const overlay = page.locator('#nextdash-progress-overlay');
+        await expect(overlay).toBeVisible({ timeout: 10_000 });
+
+        /*
+         * Determinate, not a sweep: the first response says how many there are,
+         * and an indeterminate bar would be throwing away a number we already
+         * have. "8 of 20" is the difference between waiting and knowing how long.
+         */
+        await expect(overlay).toContainText(/\d+ of 20/, { timeout: 10_000 });
+        const sweeping = await page.evaluate(() =>
+            document.querySelector('[data-progress-fill]')?.classList.contains('progress-overlay-fill--indeterminate'));
+        expect(sweeping).toBe(false);
+
+        // And the bar really moves rather than sitting at one position.
+        const first = await page.evaluate(() => document.querySelector('[data-progress-fill]')?.style.width);
+        await expect.poll(async () =>
+            page.evaluate(() => document.querySelector('[data-progress-fill]')?.style.width),
+        { timeout: 10_000 }).not.toBe(first);
+    });
+
+    test('a run that fails part way says how far it got', async ({ page }) => {
+        let calls = 0;
+        await page.route('**/api/previews/refresh**', async (route) => {
+            calls += 1;
+            if (calls > 2) {
+                await route.fulfill({ status: 500, body: 'nope' });
+                return;
+            }
+            await route.fulfill({
+                status: 200, contentType: 'application/json',
+                body: JSON.stringify({ total: 50, offset: (calls - 1) * 5, next: calls * 5, done: false, refreshed: 5, skipped: 0 }),
+            });
+        });
+
+        await page.evaluate(() => { window.dashboardInstance.config.refreshAllPreviews(); });
+        const modal = page.locator('#config-confirm-modal');
+        await modal.waitFor({ timeout: 10_000 });
+        await modal.locator('[data-confirm="ok"]').click();
+
+        // The ten it did refresh are genuinely refreshed; saying only "failed"
+        // would suggest starting over is required.
+        await expect(page.locator('#app-notification.show')).toContainText(/10 of 50/, { timeout: 15_000 });
+        await expect(page.locator('#nextdash-progress-overlay')).toBeHidden();
+    });
+});

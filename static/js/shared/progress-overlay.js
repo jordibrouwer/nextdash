@@ -62,6 +62,33 @@
         return overlay;
     }
 
+    /*
+     * Move the bar to a known position.
+     *
+     * For work whose size is known up front -- a collection walked in batches --
+     * where an indeterminate sweep would be throwing away a number the caller
+     * already has. "120 of 500" is the difference between waiting and knowing
+     * how long you are waiting.
+     */
+    function update(done, total, status) {
+        const overlay = document.getElementById(OVERLAY_ID);
+        if (!overlay || overlay.hidden) return;
+        const fill = overlay.querySelector('[data-progress-fill]');
+        const bar = overlay.querySelector('[role="progressbar"]');
+        const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+        if (fill) {
+            fill.classList.remove('progress-overlay-fill--indeterminate');
+            fill.style.width = `${pct}%`;
+        }
+        if (bar) {
+            bar.setAttribute('aria-valuenow', String(pct));
+            bar.setAttribute('aria-valuetext', `${pct}%`);
+        }
+        if (status !== undefined) {
+            overlay.querySelector('[data-progress-status]').textContent = status;
+        }
+    }
+
     /** Fill the bar, say what happened, and go. */
     function finish(status) {
         const overlay = document.getElementById(OVERLAY_ID);
@@ -81,5 +108,5 @@
         if (overlay) overlay.hidden = true;
     }
 
-    window.ProgressOverlay = { show, finish, hide };
+    window.ProgressOverlay = { show, update, finish, hide };
 })();

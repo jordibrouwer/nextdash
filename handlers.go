@@ -2463,32 +2463,80 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
-	refreshed := 0
-	skipped := 0
-
+	/*
+	 * Refreshed in batches, because this is one page fetch per bookmark.
+	 *
+	 * It used to do the whole collection inside a single request: measured
+	 * against eight seeded bookmarks that was 1.3 seconds, so a real collection
+	 * of five hundred is well over a minute with nothing moving on screen and a
+	 * proxy free to time the request out halfway through. Neither the browser
+	 * nor the reader had any way to know how far it had got.
+	 *
+	 * With an offset and a total the caller can walk the collection and draw a
+	 * real bar -- "120 of 500" -- the same shape the favicon prefetch already
+	 * uses, and each round trip is short enough to survive any proxy.
+	 *
+	 * No offset means the old behaviour: the whole collection at once, which is
+	 * what the extension and any existing script still expect.
+	 */
+	type previewTarget struct {
+		pageID int
+		url    string
+	}
+	var targets []previewTarget
 	for _, page := range h.store.GetPages() {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		previewByKey := make(map[string]BookmarkPreview)
-		for _, bm := range bookmarks {
-			rawURL := strings.TrimSpace(bm.URL)
-			if rawURL == "" {
-				skipped++
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if strings.TrimSpace(bm.URL) == "" {
 				continue
 			}
-			preview := h.fetchBookmarkPreview(r.Context(), rawURL, &cache, false)
-			key := canonicalBookmarkURLKey(rawURL)
-			if key != "" {
-				previewByKey[key] = preview
-			}
-			refreshed++
+			targets = append(targets, previewTarget{pageID: page.ID, url: strings.TrimSpace(bm.URL)})
 		}
+	}
 
-		if len(previewByKey) == 0 {
+	total := len(targets)
+	offset := 0
+	if raw := strings.TrimSpace(r.URL.Query().Get("offset")); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			offset = parsed
+		}
+	}
+	limit := total
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	slice := targets[offset:end]
+
+	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
+	refreshed := 0
+	skipped := total - len(targets)
+
+	// Grouped by page so each page is written once rather than per bookmark.
+	byPage := map[int]map[string]BookmarkPreview{}
+	for _, target := range slice {
+		preview := h.fetchBookmarkPreview(r.Context(), target.url, &cache, false)
+		key := canonicalBookmarkURLKey(target.url)
+		if key == "" {
+			skipped++
 			continue
 		}
+		if byPage[target.pageID] == nil {
+			byPage[target.pageID] = map[string]BookmarkPreview{}
+		}
+		byPage[target.pageID][key] = preview
+		refreshed++
+	}
 
-		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
+	for pageID, previewByKey := range byPage {
+		err := h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
 				key := canonicalBookmarkURLKey(current[i].URL)
 				if key == "" {
@@ -2517,6 +2565,10 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":    "completed",
+		"total":     total,
+		"offset":    offset,
+		"next":      end,
+		"done":      end >= total,
 		"refreshed": refreshed,
 		"skipped":   skipped,
 	})

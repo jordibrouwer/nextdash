@@ -5787,18 +5787,65 @@ class DashboardConfig {
     }
 
     /** Re-fetch the link-preview card for every bookmark that has one. */
+    /*
+     * Re-fetch every link preview, in batches, with a real bar.
+     *
+     * One page fetch per bookmark: measured at 1.3 seconds for eight, so a real
+     * collection is minutes. It used to be a single request with no feedback at
+     * all -- the button sat there and the app looked hung, and a proxy was free
+     * to time the whole thing out halfway through with nothing saved.
+     *
+     * The bar is determinate because the size is known: the first response says
+     * how many there are. An indeterminate sweep here would be throwing away a
+     * number we already have.
+     */
     async refreshAllPreviews() {
         if (!await this.confirmAction(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
+
+        const BATCH = 5;
+        this.showProgressOverlay(
+            this.t('config.refreshAllPreviewsTitle', 'Refreshing link previews…'),
+            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'));
+
+        let offset = 0;
+        let total = 0;
+        let refreshed = 0;
         try {
-            const res = await this.writeFetch('/api/previews/refresh', { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Walks until the server says it is done rather than counting
+            // rounds here: the collection can change under a long run, and the
+            // server's own position is the only one that stays true.
+            for (let round = 0; round < 2000; round++) {
+                const res = await this.writeFetch(
+                    `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const body = await res.json();
+
+                total = Number(body.total) || total;
+                refreshed += Number(body.refreshed) || 0;
+                offset = Number(body.next) || offset + BATCH;
+
+                window.ProgressOverlay?.update(Math.min(offset, total), total,
+                    this.t('config.refreshAllPreviewsProgress', '{done} of {total}')
+                        .replace('{done}', String(Math.min(offset, total)))
+                        .replace('{total}', String(total)));
+
+                if (body.done || offset >= total) break;
+            }
+            this.finishProgressOverlay(
+                this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
             this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
         } catch {
-            this.notify(this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.'), 'error');
+            this.hideProgressOverlay();
+            // Says how far it got: a run that stopped at 300 of 500 left 300
+            // previews genuinely refreshed, and starting over is not required.
+            const partial = total
+                ? this.t('config.refreshAllPreviewsPartial', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(refreshed)).replace('{total}', String(total))
+                : this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.');
+            this.notify(partial, 'error');
         }
     }
 
-    /** Drop every cached link-preview card. */
     async clearAllPreviews() {
         if (!await this.confirmAction(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'), { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
         try {
@@ -5931,11 +5978,17 @@ class DashboardConfig {
         try {
             const form = new FormData();
             form.append('file', file);
+            // Indeterminate: unpacking a ZIP and writing every file back is one
+            // request whose length depends on what is in the archive.
+            this.showProgressOverlay(
+                this.t('config.backupImportTitle', 'Importing the backup…'),
+                this.t('config.backupImportStatus', 'Replacing your data'));
             const res = await this.writeFetch('/api/import', { method: 'POST', body: form });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.backupImportSuccess', 'Backup imported. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.backupImportError', 'Could not import the backup.'), 'error');
         }
     }
@@ -5952,6 +6005,9 @@ class DashboardConfig {
         if (!typed) return;
         try {
             // The server rejects a reset without an explicit confirmation flag.
+            this.showProgressOverlay(
+                this.t('config.backupResetTitle', 'Deleting everything…'),
+                this.t('config.backupResetStatus', 'Clearing the data directory'));
             const res = await this.writeFetch('/api/reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -6805,6 +6861,11 @@ class DashboardConfig {
         if (!ok) return;
 
         try {
+            // After the confirm, so the overlay never covers the question it
+            // was asked to answer.
+            this.showProgressOverlay(
+                this.t('config.csvImportTitle', 'Importing bookmarks…'),
+                this.t('config.csvImportStatus', 'Writing them to the page'));
             const res = await this.writeFetch('/api/bookmarks/import-browser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -6820,6 +6881,7 @@ class DashboardConfig {
             );
             setTimeout(() => window.location.reload(), 1000);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.csvImportError', 'Could not import the bookmarks.'), 'error');
         }
     }
