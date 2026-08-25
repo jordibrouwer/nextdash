@@ -13962,6 +13962,7 @@ class DashboardConfig {
             return `<p class="config-widget-settings-empty">${esc(this.t(
                 'config.widgetNoSettings', 'This widget has nothing to set.'))}</p>`;
         }
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         const config = widget.config || {};
         const rows = fields.map((field) => {
             const label = esc(this.t(field.label[0], field.label[1]));

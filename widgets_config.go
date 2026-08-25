@@ -100,6 +100,7 @@ var widgetFields = map[WidgetType][]widgetField{
 	},
 	WidgetTypeSources: {
 		{Key: "errorsOnly", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
 	WidgetTypeNeglected: {
 		{Key: "pageId", Kind: "int", Min: 0, Max: 1 << 20},

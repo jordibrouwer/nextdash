@@ -107,6 +107,10 @@
             list.appendChild(row);
         });
 
+        // What did not fit is stated rather than dropped: five rows out of
+        // twelve otherwise looks exactly like five out of five.
+        window.DashboardWidgetUtils?.appendOverflowRow(
+            list, dash, expiring.length - rows, () => { window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates'); });
         body.appendChild(list);
     }
 

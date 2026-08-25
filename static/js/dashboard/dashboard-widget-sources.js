@@ -71,10 +71,12 @@
             return;
         }
 
+        const rows = window.DashboardWidgetUtils?.rowLimit(widget, 6) ?? 6;
+
         const list = document.createElement('div');
         list.className = 'dashboard-widget-rows';
 
-        shown.forEach((source) => {
+        shown.slice(0, rows).forEach((source) => {
             const error = String(source?.lastError || '').trim();
             const row = document.createElement('button');
             row.type = 'button';
@@ -97,6 +99,9 @@
             });
             list.appendChild(row);
         });
+
+        window.DashboardWidgetUtils?.appendOverflowRow(list, dash, shown.length - rows,
+            () => { dash.config?.openConfigView?.('sources') ?? dash.showView?.('config'); });
 
         body.appendChild(list);
     }

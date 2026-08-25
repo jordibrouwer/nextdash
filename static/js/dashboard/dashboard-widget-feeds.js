@@ -90,7 +90,8 @@
             list.appendChild(row);
         });
 
-        fresh.slice(0, Math.max(rows - retired.length, 0)).forEach((feed) => {
+        const freshRoom = Math.max(rows - retired.length, 0);
+        fresh.slice(0, freshRoom).forEach((feed) => {
             const count = Number(feed?.newCount) || 0;
             const row = document.createElement('div');
             row.className = 'dashboard-widget-row';
@@ -105,6 +106,11 @@
             row.append(name, detail);
             list.appendChild(row);
         });
+
+        // Both halves count toward what did not fit: a retired feed pushed off
+        // the tile is exactly the one worth knowing about.
+        window.DashboardWidgetUtils?.appendOverflowRow(list, dash,
+            Math.max(retired.length - rows, 0) + Math.max(fresh.length - freshRoom, 0), null);
 
         body.appendChild(list);
     }
