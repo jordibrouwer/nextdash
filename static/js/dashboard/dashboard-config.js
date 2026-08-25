@@ -4296,6 +4296,40 @@ class DashboardConfig {
                 'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
             ${panels}
             ${this.renderArchivePanel()}
+            ${this.renderLocalArchivePanel()}
+        `;
+    }
+
+    /*
+     * Copies on this disk, through monolith.
+     *
+     * Beside the Web Archive panel because they answer the same question and
+     * answer it differently: one asks a third party to keep a copy for decades,
+     * the other keeps one here that nobody else has to stay online for. Neither
+     * replaces the other, which is why both are offered rather than a single
+     * "archiving" switch.
+     */
+    renderLocalArchivePanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-panel" data-local-archive-panel>
+                <h3 class="config-panel-title">${esc(this.t('config.localArchiveTitle', 'Local copies'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.localArchiveDescription',
+                    'Save a whole page — text, styling and images — as one file in your data directory, so it stays readable even if the site and the Web Archive are both gone.'))}</p>
+                <p class="config-panel-note" id="config-local-archive-state"></p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-local-archive-url">${esc(this.t('config.localArchiveUrlLabel', 'Page to save'))}</label>
+                    <input type="url" id="config-local-archive-url" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="https://…">
+                    <p class="config-field-hint">${esc(this.t('config.localArchiveUrlHint',
+                        'Any bookmark can also be saved from its own menu; this is for a page you have in hand.'))}</p>
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-local-archive-action="capture">${esc(this.t('config.localArchiveCaptureBtn', 'Save a copy…'))}</button>
+                    <button type="button" class="config-btn" data-local-archive-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+                </div>
+                <div id="config-local-archive-list" class="config-local-archives"></div>
+            </div>
         `;
     }
 
@@ -5551,6 +5585,19 @@ class DashboardConfig {
         // rather than rendered into the panels, because they are built from
         // settings the browser already has and this is the one thing on them
         // that only the server knows.
+        if (container.querySelector('[data-local-archive-panel]')) {
+            void this.loadLocalArchives();
+            container.querySelectorAll('[data-local-archive-action]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    switch (btn.getAttribute('data-local-archive-action')) {
+                        case 'capture': void this.captureLocalArchive(); break;
+                        case 'refresh': void this.loadLocalArchives(); break;
+                        default: break;
+                    }
+                });
+            });
+        }
+
         if (container.querySelector('[data-archive-panel]')) {
             void this.loadArchiveSettings();
             container.querySelector('[data-archive-toggle="archiveSaveEnabled"]')
@@ -6229,6 +6276,172 @@ class DashboardConfig {
         } catch {
             this.hideProgressOverlay();
             this.notify(this.t('config.archiveTestError', 'The archive refused that.'), 'error');
+        }
+    }
+
+    /*
+     * The stored copies, and what they cost.
+     *
+     * Size is shown per capture and as a total, because these are whole pages
+     * with their images inlined: a hundred of them is a gigabyte, and an archive
+     * whose cost is invisible is one that surprises somebody later.
+     */
+    async loadLocalArchives() {
+        const state = document.getElementById('config-local-archive-state');
+        const list = document.getElementById('config-local-archive-list');
+        if (!state || !list) return;
+
+        let data;
+        try {
+            const res = await this.writeFetch('/api/archives');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
+        } catch {
+            state.textContent = this.t('config.localArchiveLoadError', 'Could not read the stored copies.');
+            return;
+        }
+
+        // Not installed is the common case, and it is a setup step rather than
+        // a fault: say what to do instead of showing an empty list.
+        if (!data.available) {
+            state.textContent = this.t('config.localArchiveMissing',
+                'monolith is not installed. Install it (brew install monolith, or your package manager) and restart nextDash.');
+            state.classList.add('config-note--warn');
+        } else {
+            state.classList.remove('config-note--warn');
+            const captures = data.captures || [];
+            state.textContent = captures.length
+                ? this.t('config.localArchiveSummary', '{n} copies, {size} on disk')
+                    .replace('{n}', String(captures.length))
+                    .replace('{size}', this.formatBytes(data.totalBytes || 0))
+                : this.t('config.localArchiveEmpty', 'No copies saved yet.');
+        }
+
+        this.renderLocalArchiveList(list, data.captures || []);
+    }
+
+    renderLocalArchiveList(list, captures) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!captures.length) {
+            list.replaceChildren();
+            return;
+        }
+        list.innerHTML = captures.map((capture) => {
+            const name = String(capture.url || '').split('/').pop();
+            const when = capture.at
+                ? new Date(capture.at).toLocaleString()
+                : '';
+            return `
+                <div class="config-local-archive-row">
+                    <a class="config-local-archive-name" href="${esc(capture.url)}" target="_blank" rel="noopener noreferrer">${esc(this.localArchiveLabel(name))}</a>
+                    <span class="config-local-archive-meta">${esc(when)} · ${esc(this.formatBytes(capture.bytes || 0))}</span>
+                    <span class="config-local-archive-actions">
+                        <button type="button" class="config-btn config-btn--small"
+                            data-local-archive-download="${esc(name)}">${esc(this.t('config.localArchiveDownloadBtn', 'Download'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger"
+                            data-local-archive-delete="${esc(name)}">${esc(this.t('config.localArchiveDeleteBtn', 'Delete'))}</button>
+                    </span>
+                </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-local-archive-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deleteLocalArchive(btn.getAttribute('data-local-archive-delete')));
+        });
+        list.querySelectorAll('[data-local-archive-download]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.downloadLocalArchive(btn.getAttribute('data-local-archive-download')));
+        });
+    }
+
+    /*
+     * A filename back into something readable.
+     *
+     * The stored name is the canonical key with every unusual character turned
+     * into a dash plus a timestamp -- an identifier, never meant to be read. The
+     * host is the part worth showing.
+     */
+    localArchiveLabel(name) {
+        const stem = String(name || '').replace(/-\d{8}-\d{6}\.html$/, '');
+        return stem.replace(/^https?---/, '').replace(/-+/g, ' ').trim() || name;
+    }
+
+    formatBytes(bytes) {
+        const n = Number(bytes) || 0;
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    async captureLocalArchive(url) {
+        const field = document.getElementById('config-local-archive-url');
+        const target = String(url || field?.value || '').trim();
+        if (!target) {
+            this.notify(this.t('config.localArchiveNeedsUrl', 'Paste the address of the page to save.'), 'error');
+            field?.focus();
+            return;
+        }
+
+        // A capture fetches every asset on the page, which is genuinely slow --
+        // go.dev took eleven seconds. The overlay says so rather than leaving
+        // the button looking stuck.
+        this.showProgressOverlay(
+            this.t('config.localArchiveCapturingTitle', 'Saving a copy…'),
+            this.t('config.localArchiveCapturingStatus', 'Fetching the page and everything on it'));
+        try {
+            const res = await this.writeFetch(`/api/archives/capture?url=${encodeURIComponent(target)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            this.hideProgressOverlay();
+            if (!res.ok) {
+                // monolith's own sentence: it says which asset or which flag
+                // went wrong, which is more use than "capture failed".
+                this.notify(body.error || this.t('config.localArchiveError', 'Could not save that page.'), 'error');
+                return;
+            }
+            this.notify(this.t('config.localArchiveSaved', 'Saved {size}.')
+                .replace('{size}', this.formatBytes(body.bytes || 0)), 'success');
+            if (field) field.value = '';
+            void this.loadLocalArchives();
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.localArchiveError', 'Could not save that page.'), 'error');
+        }
+    }
+
+    /*
+     * Take a copy out of nextDash and onto the machine.
+     *
+     * Through writeFetch and a blob rather than a plain link: the route sits
+     * behind the write token, and an <a download> carries no header -- on an
+     * install that has a token set it would save a 401 page under the name of
+     * an archive. The same reason the HTML export does it this way.
+     *
+     * The point of the button is that a stored page should not be trapped in
+     * nextDash: it is one self-contained HTML file, and it should be openable
+     * from a Downloads folder in ten years without this app running at all.
+     */
+    async downloadLocalArchive(name) {
+        if (!name) return;
+        try {
+            const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.triggerDownload(await res.blob(), name);
+        } catch {
+            this.notify(this.t('config.localArchiveDownloadError', 'Could not download that copy.'), 'error');
+        }
+    }
+
+    async deleteLocalArchive(name) {
+        if (!name) return;
+        const ok = await this.confirmAction(
+            this.t('config.localArchiveDeleteConfirm', 'Delete this copy? The page it came from is not affected.'),
+            { confirmLabel: this.t('config.localArchiveDeleteBtn', 'Delete'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.localArchiveDeleted', 'Copy deleted.'), 'success');
+            void this.loadLocalArchives();
+        } catch {
+            this.notify(this.t('config.localArchiveError', 'Could not save that page.'), 'error');
         }
     }
 

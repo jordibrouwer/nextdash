@@ -183,6 +183,7 @@ func main() {
 	r.HandleFunc("/api/archives", handlers.LocalArchivesHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/archives/capture", handlers.CaptureLocallyHandler).Methods("POST", "OPTIONS")
 	r.PathPrefix("/api/archives/").HandlerFunc(handlers.ServeLocalArchive).Methods("GET")
+	r.PathPrefix("/api/archives/").HandlerFunc(handlers.DeleteLocalArchive).Methods("DELETE")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")

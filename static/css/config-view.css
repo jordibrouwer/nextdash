@@ -5501,3 +5501,80 @@ button.config-bm-shortcut-pill {
     width: 100%;
     justify-content: center;
 }
+
+
+/*
+ * The list of stored page copies.
+ *
+ * A row per capture: what it is, when it was taken and what it costs, then the
+ * way to remove it. The size is on every row and not only in the total because
+ * these are whole pages with their images inlined -- one heavy page can be
+ * larger than fifty light ones, and an average hides that.
+ */
+.config-local-archives {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.config-local-archive-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+/*
+ * The link to a stored copy.
+ *
+ * Styled explicitly because nothing else in this panel is an <a>: without these
+ * three lines it rendered as the browser default -- #0000EE and a full
+ * underline -- which is the one colour on the page that belongs to no theme and
+ * looks broken in every one of them.
+ */
+.config-local-archive-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent-color, #4a90d9);
+    text-decoration: none;
+    font-size: calc(var(--font-size-text) * 0.914);
+}
+
+.config-local-archive-name:hover,
+.config-local-archive-name:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* The two ways to take a copy away with you, side by side. */
+.config-local-archive-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.config-local-archive-meta {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    /* Sizes and dates read as columns when their digits line up. */
+    font-variant-numeric: tabular-nums;
+}
+
+/* A setup step the reader has to take, not an error in what they just did. */
+.config-note--warn {
+    color: var(--text-warning, var(--text-secondary));
+}
+
+@media (max-width: 560px) {
+    .config-local-archive-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .config-local-archive-meta {
+        grid-column: 1 / -1;
+    }
+}

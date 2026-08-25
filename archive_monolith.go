@@ -69,6 +69,41 @@ var (
 	monolithRun sync.Mutex
 )
 
+/*
+monolithQuietFlag finds this build's spelling of "be quiet", or "" if neither.
+
+The flag was renamed between releases: 2.8, which is what Alpine ships and
+therefore what the Docker image has, spells it -s; 2.10, which Homebrew ships,
+spells it -q and rejects -s outright. Hardcoding either means every capture dies
+in the argument parser on half the installs -- which is exactly what happened
+with -s against 2.10, and would have happened again in the container with -q.
+
+Read from --help once and remembered, because this cannot change while the
+process runs. Neither flag is fatal: quiet is a courtesy to the log, so a build
+with a third spelling simply gets a chattier run rather than no run at all.
+*/
+var monolithQuietOnce sync.Once
+var monolithQuietCached string
+
+func monolithQuietFlag(binary string) string {
+	monolithQuietOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, binary, "--help").CombinedOutput()
+		if err != nil && len(out) == 0 {
+			return
+		}
+		help := string(out)
+		switch {
+		case strings.Contains(help, "--quiet"):
+			monolithQuietCached = "-q"
+		case strings.Contains(help, "--silent"):
+			monolithQuietCached = "-s"
+		}
+	})
+	return monolithQuietCached
+}
+
 // MonolithAvailable reports whether the binary can be found.
 func MonolithAvailable() bool {
 	path, err := monolithLookup()
@@ -116,10 +151,28 @@ func localArchiveName(target string, at time.Time) string {
 	return fmt.Sprintf("%s-%s.html", trimmed, at.UTC().Format("20060102-150405"))
 }
 
+/*
+localArchiveSlug is the filename stem for a URL, without the timestamp.
+
+The same transformation localArchiveName applies, exposed on its own so a
+listing can group the captures of one page together and a bookmark can find its
+own. Two different URLs can in principle collapse to the same slug -- everything
+unusual becomes a dash -- so a match is a strong hint rather than proof, which is
+why the stored capture also carries the key it was made for.
+*/
+func localArchiveSlug(target string) string {
+	name := localArchiveName(target, time.Unix(0, 0).UTC())
+	return strings.TrimSuffix(strings.TrimSuffix(name, ".html"), "-19700101-000000")
+}
+
 // LocalCapture is one stored copy.
 type LocalCapture struct {
-	Path  string `json:"path"`
-	Bytes int64  `json:"bytes"`
+	Path string `json:"path"`
+	// URLKey is the canonical key of the page this is a copy of, so a capture
+	// can be matched back to the bookmarks that point at it. Without it the
+	// archive is a folder of files nobody can connect to anything.
+	URLKey string `json:"urlKey,omitempty"`
+	Bytes  int64  `json:"bytes"`
 	/*
 	 * URL is where the browser can open it: /api/archives/{name}, behind the
 	 * write token.
@@ -173,27 +226,27 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 	 * The flags, each of them a decision:
 	 *
 	 *   -o   write to the path chosen here, never one derived from the address
-	 *   -q   quiet; anything non-fatal on stderr is not this caller's business
 	 *   -I   isolate -- a CSP meta tag that stops the saved page reaching the
 	 *        network when it is opened. An archive that phones home years later
 	 *        is not an archive, and combined with the header the route sets it
 	 *        means a capture cannot become a tracking beacon.
 	 *   -t   network timeout per request, below the whole-run budget so a single
 	 *        stuck asset cannot eat it
+	 *   quiet, whichever letter this build spells it with -- see below
 	 *
 	 * No -j or -i: stripping scripts and images would save something that is not
 	 * what the reader saw, which is the one thing an archive must not do.
-	 * Verified against monolith 2.10, whose flags these are -- an earlier
-	 * version of this passed -s, which that release does not have, and every
-	 * capture failed on the argument parser.
 	 */
-	cmd := exec.CommandContext(runCtx, binary,
+	args := []string{
 		"-o", path,
-		"-q",
 		"-I",
 		"-t", fmt.Sprint(int(monolithPerRequestTimeout.Seconds())),
-		target,
-	)
+	}
+	if quiet := monolithQuietFlag(binary); quiet != "" {
+		args = append(args, quiet)
+	}
+	args = append(args, target)
+	cmd := exec.CommandContext(runCtx, binary, args...)
 	// No inherited environment: this is a network fetch on the reader's behalf
 	// and has no business seeing the server's variables.
 	cmd.Env = []string{}
@@ -244,10 +297,11 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 	}
 
 	return LocalCapture{
-		Path:  path,
-		Bytes: info.Size(),
-		URL:   "/api/archives/" + filepath.Base(path),
-		At:    at.UnixMilli(),
+		Path:   path,
+		URLKey: canonicalBookmarkURLKey(target),
+		Bytes:  info.Size(),
+		URL:    "/api/archives/" + filepath.Base(path),
+		At:     at.UnixMilli(),
 	}, nil
 }
 
@@ -313,7 +367,14 @@ func (h *Handlers) ServeLocalArchive(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 }
 
-// LocalArchivesHandler answers GET /api/archives — what is stored, newest first.
+/*
+LocalArchivesHandler answers GET /api/archives — what is stored, newest first.
+
+With ?url= it answers only the captures of that page, which is what a bookmark's
+own panel asks for. Matching is on the filename stem rather than by reading every
+file: the name is derived from the canonical key, so this costs a directory
+listing instead of opening a hundred megabytes of HTML.
+*/
 func (h *Handlers) LocalArchivesHandler(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
@@ -323,15 +384,36 @@ func (h *Handlers) LocalArchivesHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	target := strings.TrimSpace(r.URL.Query().Get("url"))
+	prefix := ""
+	if target != "" {
+		prefix = localArchiveSlug(target) + "-"
+	}
+
+	captures := listLocalArchives(prefix)
+	writeJSON(w, map[string]any{
+		"available": MonolithAvailable(),
+		"captures":  captures,
+		// The total across every page, so a panel showing one bookmark's copies
+		// can still say what the whole archive costs.
+		"totalBytes": totalArchiveBytes(),
+	})
+}
+
+// listLocalArchives reads the directory, newest first, optionally narrowed to
+// one page's captures.
+func listLocalArchives(prefix string) []LocalCapture {
 	entries, err := os.ReadDir(localArchiveDir())
 	if err != nil {
 		// No directory yet is not a failure: nothing has been captured.
-		writeJSON(w, map[string]any{"available": MonolithAvailable(), "captures": []LocalCapture{}})
-		return
+		return []LocalCapture{}
 	}
 	captures := make([]LocalCapture, 0, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".html") {
+			continue
+		}
+		if prefix != "" && !strings.HasPrefix(entry.Name(), prefix) {
 			continue
 		}
 		info, err := entry.Info()
@@ -346,5 +428,42 @@ func (h *Handlers) LocalArchivesHandler(w http.ResponseWriter, r *http.Request) 
 		})
 	}
 	sort.Slice(captures, func(i, j int) bool { return captures[i].At > captures[j].At })
-	writeJSON(w, map[string]any{"available": MonolithAvailable(), "captures": captures})
+	return captures
+}
+
+func totalArchiveBytes() int64 {
+	var total int64
+	for _, capture := range listLocalArchives("") {
+		total += capture.Bytes
+	}
+	return total
+}
+
+/*
+DeleteLocalArchive answers DELETE /api/archives/{name}.
+
+An archive nobody can prune is one that only grows, and these are whole pages
+with their images inlined -- a hundred captures is a gigabyte. The name is
+reduced to its base first, so nothing in a request can reach a file outside the
+archive directory.
+*/
+func (h *Handlers) DeleteLocalArchive(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	name := filepath.Base(strings.TrimPrefix(r.URL.Path, "/api/archives/"))
+	if name == "" || name == "." || name == ".." || !strings.HasSuffix(name, ".html") {
+		http.NotFound(w, r)
+		return
+	}
+	path := filepath.Join(localArchiveDir(), name)
+	if info, err := os.Stat(path); err != nil || info.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+	if err := os.Remove(path); err != nil {
+		http.Error(w, "Could not delete that capture", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

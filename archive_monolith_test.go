@@ -3,10 +3,15 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+
+	"github.com/gorilla/mux"
 	"time"
 )
 
@@ -164,6 +169,40 @@ nothing here noticed. This asserts the flags rather than the behaviour, which is
 usually the wrong test to write -- but the flags are an interface with a program
 outside this repo, and getting them wrong fails every capture at once.
 */
+/*
+The quiet flag is whichever letter this build spells it with.
+
+It was renamed between releases: 2.8 -- what Alpine ships, and therefore what the
+Docker image has -- takes -s and rejects -q; 2.10, from Homebrew, is the other
+way round. Hardcoding either kills every capture on half the installs, and both
+halves of that were verified against real binaries before this was written.
+*/
+func TestMonolithQuietFlagFollowsTheBuild(t *testing.T) {
+	cases := map[string]string{
+		`  -q, --quiet   Suppress verbosity`: "-q",
+		`  -s, --silent  Suppress verbosity`: "-s",
+		`  -o, --output  Write output to`:    "",
+	}
+	for help, want := range cases {
+		resetMonolithQuiet()
+		dir := t.TempDir()
+		binary := filepath.Join(dir, "monolith")
+		if err := os.WriteFile(binary, []byte("#!/bin/sh\ncat <<'EOF'\n"+help+"\nEOF\n"), 0755); err != nil {
+			t.Fatalf("write stub: %v", err)
+		}
+		if got := monolithQuietFlag(binary); got != want {
+			t.Errorf("help %q gave %q, want %q", help, got, want)
+		}
+	}
+	resetMonolithQuiet()
+}
+
+// resetMonolithQuiet clears the once-only lookup so a test can ask again.
+func resetMonolithQuiet() {
+	monolithQuietOnce = sync.Once{}
+	monolithQuietCached = ""
+}
+
 func TestCaptureLocallyPassesTheFlagsMonolithHas(t *testing.T) {
 	h := newTestHandlers(t)
 	argsFile := filepath.Join(t.TempDir(), "args.txt")
@@ -185,21 +224,202 @@ done`)
 	}
 	args := string(raw)
 
-	// -q quiet, -I isolate (the saved page must not reach the network when it
-	// is opened years later), -t a per-request timeout.
-	for _, want := range []string{"-o", "-q", "-I", "-t", "https://example.com/page"} {
+	// -I isolate (the saved page must not reach the network when it is opened
+	// years later) and -t a per-request timeout. The quiet flag is not asserted
+	// here: which letter it is depends on the build, and its own test covers
+	// that.
+	for _, want := range []string{"-o", "-I", "-t", "https://example.com/page"} {
 		if !strings.Contains(args, want) {
 			t.Errorf("monolith called without %q; got: %s", want, args)
 		}
-	}
-	// -s was the flag that did not exist. Its absence is the regression.
-	if strings.Contains(args, " -s") {
-		t.Errorf("passed -s, which monolith 2.10 refuses: %s", args)
 	}
 	// Stripping content would archive something the reader never saw.
 	for _, unwanted := range []string{"-j", "-i", "--no-js", "--no-images"} {
 		if strings.Contains(args, " "+unwanted) {
 			t.Errorf("passed %q, which saves less than the page: %s", unwanted, args)
+		}
+	}
+}
+
+/*
+Captures can be found per page.
+
+An archive whose files nobody can connect to a bookmark is a folder of
+identifiers. The filename stem is the canonical key, so one page's copies can be
+picked out with a directory listing rather than by opening a hundred megabytes
+of HTML.
+*/
+func TestListLocalArchivesFiltersByPage(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `echo "<html>ok</html>" > "$2"`)
+
+	for _, target := range []string{
+		"https://example.com/one",
+		"https://example.com/one",
+		"https://other.example/two",
+	} {
+		if _, err := h.CaptureLocally(context.Background(), target); err != nil {
+			t.Fatalf("capture %s: %v", target, err)
+		}
+		// The name carries a whole-second timestamp, so two captures of the
+		// same page in the same second would be one file.
+		time.Sleep(1100 * time.Millisecond)
+	}
+
+	all := listLocalArchives("")
+	if len(all) != 3 {
+		t.Fatalf("stored %d captures, want 3", len(all))
+	}
+	// Newest first, so a panel can offer the latest without sorting again.
+	if len(all) > 1 && all[0].At < all[len(all)-1].At {
+		t.Error("captures are not newest-first")
+	}
+
+	one := listLocalArchives(localArchiveSlug("https://example.com/one") + "-")
+	if len(one) != 2 {
+		t.Errorf("found %d captures for that page, want its 2", len(one))
+	}
+	for _, capture := range one {
+		if strings.Contains(capture.URL, "other-example") {
+			t.Errorf("another page's capture came back: %s", capture.URL)
+		}
+	}
+}
+
+// The slug is the same identity the filename is built from, so a page can find
+// its own captures without knowing how the name was made.
+func TestLocalArchiveSlugMatchesTheFilename(t *testing.T) {
+	target := "https://example.com/one"
+	name := localArchiveName(target, time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC))
+	if !strings.HasPrefix(name, localArchiveSlug(target)+"-") {
+		t.Errorf("name %q does not start with slug %q", name, localArchiveSlug(target))
+	}
+}
+
+/*
+A capture can be deleted.
+
+These are whole pages with their images inlined -- a hundred of them is a
+gigabyte -- so an archive nobody can prune is one that only grows.
+*/
+func TestDeleteLocalArchiveRemovesOnlyThatFile(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `echo "<html>ok</html>" > "$2"`)
+
+	first, err := h.CaptureLocally(context.Background(), "https://example.com/one")
+	if err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+	time.Sleep(1100 * time.Millisecond)
+	if _, err := h.CaptureLocally(context.Background(), "https://example.com/two"); err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+
+	router := mux.NewRouter()
+	router.PathPrefix("/api/archives/").HandlerFunc(h.DeleteLocalArchive).Methods(http.MethodDelete)
+	req := httptest.NewRequest(http.MethodDelete, "/api/archives/"+filepath.Base(first.Path), nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("delete = %d", rec.Code)
+	}
+
+	if _, err := os.Stat(first.Path); !os.IsNotExist(err) {
+		t.Error("the capture is still on disk")
+	}
+	if len(listLocalArchives("")) != 1 {
+		t.Error("the other capture went with it")
+	}
+}
+
+/*
+Nothing in a request may reach a file outside the archive directory.
+
+Called without a router, deliberately. mux normalises "../settings.json" to
+"settings.json" before a handler ever sees it, so routing the request would test
+mux rather than this code -- and a first version of this test passed with the
+guard removed for exactly that reason. The handler is called directly with the
+path it would have to survive on its own.
+*/
+func TestDeleteLocalArchiveRefusesToLeaveTheDirectory(t *testing.T) {
+	h := newTestHandlers(t)
+	outside := filepath.Join(ResolveDataDir(), "settings.json")
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(outside, []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	// A real capture, so a traversal that resolved would have something beside
+	// it to reach past.
+	withFakeMonolith(t, `echo "<html>ok</html>" > "$2"`)
+	if _, err := h.CaptureLocally(context.Background(), "https://example.com/one"); err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+
+	for _, name := range []string{
+		"../settings.json",
+		"../../settings.json",
+		"settings.json",
+		"..%2Fsettings.json",
+		"subdir/../../settings.json",
+	} {
+		req := httptest.NewRequest(http.MethodDelete, "/api/archives/x", nil)
+		// Set the path directly: this is what the guard has to hold against,
+		// with nothing in front of it having cleaned the value up first.
+		req.URL.Path = "/api/archives/" + name
+		rec := httptest.NewRecorder()
+		h.DeleteLocalArchive(rec, req)
+		if rec.Code == http.StatusNoContent {
+			t.Errorf("deleting %q was allowed", name)
+		}
+	}
+	if _, err := os.Stat(outside); err != nil {
+		t.Error("settings.json was deleted through the archive route")
+	}
+	if len(listLocalArchives("")) != 1 {
+		t.Error("the real capture was removed by one of these")
+	}
+}
+
+/*
+The same guard on the read route: a capture is served only from inside the
+archive directory.
+
+Worth knowing about this one: it holds for two independent reasons. filepath.Base
+reduces the name, and filepath.Join would resolve away a "../" even without it,
+so removing either alone still leaves the route safe. That makes this test
+unable to pin the failure on one line -- it asserts the property rather than the
+mechanism, which is the right thing to assert and worth saying out loud so
+nobody reads a passing run as proof that both halves are load-bearing.
+*/
+func TestServeLocalArchiveRefusesToLeaveTheDirectory(t *testing.T) {
+	h := newTestHandlers(t)
+	outside := filepath.Join(ResolveDataDir(), "settings.json")
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(outside, []byte(`{"secret":"in settings"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Also an .html file outside the archive directory: without the base-name
+	// guard the suffix check alone would let this through, so this is the case
+	// that actually distinguishes the two.
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "elsewhere.html"), []byte("<html>not an archive</html>"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, name := range []string{
+		"../settings.json", "settings.json", "../../settings.json",
+		"../elsewhere.html", "subdir/../../elsewhere.html",
+	} {
+		req := httptest.NewRequest(http.MethodGet, "/api/archives/x", nil)
+		req.URL.Path = "/api/archives/" + name
+		rec := httptest.NewRecorder()
+		h.ServeLocalArchive(rec, req)
+		if rec.Code == http.StatusOK {
+			t.Errorf("served %q: %s", name, rec.Body.String())
 		}
 	}
 }

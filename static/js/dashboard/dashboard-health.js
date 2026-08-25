@@ -1862,6 +1862,94 @@ class DashboardHealth {
      * the archive for the closest capture, says when it was taken, and offers to
      * make it the bookmark's URL. What was a dead end becomes a decision.
      */
+    /*
+     * Save a copy of this page on this disk.
+     *
+     * The Web Archive answers "did somebody keep a copy"; this answers "keep
+     * one". They are needed at different moments: by the time a link is dead it
+     * is too late to capture it, and the pages most worth keeping are often the
+     * ones nobody else archived.
+     *
+     * A capture fetches every asset on the page and takes seconds, so the row is
+     * marked busy for the duration rather than looking frozen.
+     */
+    async captureLocalCopy(issue) {
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return;
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        this.closeAllMenus();
+
+        const d = this.dash;
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(url)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                // 412 is monolith not being installed, which is a setup step
+                // rather than a failure of this page.
+                const message = res.status === 412
+                    ? this.t('dashboard.healthLocalCopyMissing', 'monolith is not installed — see Config → Data & backups → Sources.')
+                    : (body.error || this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'));
+                d.showNotification(message, 'error');
+                return;
+            }
+            d.showNotification(
+                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'),
+                'success'
+            );
+        } catch {
+            d.showNotification(this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), 'error');
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
+    /** What has been kept for this page, with a way to open each one. */
+    async showLocalCopies(issue) {
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        this.closeAllMenus();
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+
+        let captures = [];
+        try {
+            const res = await fetcher(`/api/archives?url=${encodeURIComponent(url)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            captures = body.captures || [];
+        } catch {
+            d.showNotification(this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), 'error');
+            return;
+        }
+
+        if (!captures.length) {
+            d.showNotification(
+                this.t('dashboard.healthLocalCopiesNone', 'No copies of this page are stored here yet.'),
+                'info'
+            );
+            return;
+        }
+
+        // Newest first, and opening one is the point -- so the newest is offered
+        // directly rather than behind a list of one.
+        const newest = captures[0];
+        const when = newest.at ? new Date(newest.at).toLocaleString() : '';
+        const open = await this.confirm(
+            this.t('dashboard.healthLocalCopiesTitle', 'Copies on this disk'),
+            this.t('dashboard.healthLocalCopiesBody',
+                '{n} stored for this page. The newest is from {date}.\n\nOpen it?',
+                { n: String(captures.length), date: when })
+        );
+        if (open) {
+            window.open(newest.url, '_blank', 'noopener,noreferrer');
+        }
+    }
+
     async recoverFromArchive(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
@@ -5832,6 +5920,10 @@ class DashboardHealth {
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        // A copy on this disk, for the case the Web Archive cannot help with:
+        // a page nobody else archived, or one still up today that will not be.
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copy">${this.escape(this.t('dashboard.healthLocalCopy', 'Save a copy on this disk…'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
         // Same two entries the dashboard's right-click menu carries, under the
         // same labels. A row here is a bookmark like any other, and having to go
         // back to the dashboard to copy or send one is the kind of detour this
@@ -6024,6 +6116,8 @@ class DashboardHealth {
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
             'archive-recover': () => void this.recoverFromArchive(issue),
+            'local-copy': () => void this.captureLocalCopy(issue),
+            'local-copies': () => void this.showLocalCopies(issue),
             'copy-url': () => this.copyIssueUrl(issue),
             share: () => void this.shareIssue(issue),
             delete: () => void this.deleteIssue(issue),

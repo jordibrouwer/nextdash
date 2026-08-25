@@ -20,7 +20,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
 # Final stage — binary only; static/templates/locales come from go:embed.
 FROM alpine:3.21
 
-RUN apk --no-cache add ca-certificates tzdata su-exec \
+# monolith saves a whole page as one file, for Config -> Data & backups ->
+# Sources -> Local copies. Included because a container is not a place anyone
+# can install something into afterwards: without it that feature is present in
+# the UI and permanently unavailable, which is worse than not offering it.
+# Around 6 MB. Alpine ships 2.8, whose quiet flag is -s where 2.10's is -q --
+# archive_monolith.go reads --help and uses whichever this build has.
+RUN apk --no-cache add ca-certificates tzdata su-exec monolith \
     && addgroup -S nextdash \
     && adduser -S nextdash -G nextdash
 
