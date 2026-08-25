@@ -501,6 +501,12 @@ class DashboardData {
         if (Array.isArray(partial.bookmarks)) {
             entry.bookmarks = this.clonePageBookmarks(partial.bookmarks);
         }
+        if (partial.blocks) {
+            entry.blocks = {
+                widgets: [...(partial.blocks.widgets || [])],
+                order: [...(partial.blocks.order || [])],
+            };
+        }
         if (Array.isArray(partial.categories)) {
             entry.categories = partial.categories.map((cat) => ({ ...cat }));
         }

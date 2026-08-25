@@ -5327,29 +5327,94 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 
+
+
 /*
- * A widget block.
+ * A widget's body: a card inside an otherwise frameless grid.
  *
- * Carries `.category` as well, so the masonry layout measures it and the drag
- * module selects it exactly as it does a category -- see the note in
- * createWidgetElement. These rules only cover what is different: a widget has a
- * body instead of a bookmark list.
+ * Categories are deliberately unframed -- they are lists of links, and a box
+ * around each would turn the page into a grid of boxes. A widget is the
+ * exception that earns one: it is a panel of figures, not a list, and without
+ * an edge it reads as loose text that happens to sit under a heading.
+ *
+ * The heading stays outside the card, so a widget's title lines up with every
+ * category title beside it.
  */
 .dashboard-widget .dashboard-widget-body {
-    padding: 4px 0 2px;
-    font-size: var(--font-size-small, 0.9rem);
-    color: var(--text-secondary);
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
     /*
-     * A minimum height reserved before the data arrives.
+     * Reserved before the data arrives.
      *
      * The packed layout measures block heights to place columns; a widget that
-     * grows once its data loads would shift every column after it. It takes its
-     * space first and fills it second.
+     * grew once its figures loaded would shift every column after it.
      */
     min-height: 3.5rem;
+    /* The grid's own text size, not the smaller one used for meta lines: these
+       are the widget's content, not a note about it. */
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
 }
 
 .dashboard-widget .dashboard-widget-body--empty {
     color: var(--text-tertiary);
     font-style: italic;
+}
+
+/* The health widget: a figure and what it counts, per row. */
+.dashboard-widget-health {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dashboard-widget-health-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.25rem 0.35rem;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.dashboard-widget-health-row:hover,
+.dashboard-widget-health-row:focus-visible {
+    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+}
+
+.dashboard-widget-health-value {
+    min-width: 2.2em;
+    font-weight: var(--font-weight-semibold);
+    /* Figures read as a column when their digits line up. */
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Tone by what the figure means, not by its size.
+ *
+ * A zero in the broken row is the best news on the widget and still reads as
+ * the broken row -- colouring by value would make "0 broken" green and
+ * indistinguishable from "12 healthy".
+ */
+.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--status-error, var(--text-primary)); }
+.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--status-warning, var(--text-primary)); }
+.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--status-success, var(--text-primary)); }
+
+.dashboard-widget-health-label { color: var(--text-secondary); }
+.dashboard-widget-health-waiting { margin: 0; color: var(--text-tertiary); font-style: italic; }
+
+/* Config: the widgets tab lists categories too, greyed, to be moved past. */
+.config-widget-row--category .config-widget-category-name { color: var(--text-tertiary); }
+.config-widget-kind {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+    margin-left: 8px;
 }

@@ -375,16 +375,42 @@ class DashboardRenderCore {
         block.dataset.widgetId = widget.id;
         block.dataset.widgetType = widget.type || '';
 
-        const header = document.createElement('div');
-        header.className = 'category-header';
-        // The same handle the category headers carry, so the shared drag module
-        // picks this up without knowing what a widget is.
-        // The same handle a category header carries, so the shared drag module
-        // picks this up without knowing what a widget is.
-        header.innerHTML = `<span class="category-reorder-handle" aria-hidden="true">⠿</span>`
-            + `<span class="category-title"><span class="category-prefix" aria-hidden="true">//</span> `
-            + `${d.escapeHtml(widget.title || this.widgetTypeLabel(widget.type))}</span>`;
-        block.appendChild(header);
+        /*
+         * The header, built exactly as a category's is.
+         *
+         * Not approximately: an h2.category-title holding a
+         * .category-title-label, whose "// " prefix is itself the drag handle --
+         * that is what DragReorder's handleSelector grabs, and it is what makes
+         * a widget feel like the blocks beside it rather than something bolted
+         * on. A div with the right class name looked similar and inherited none
+         * of the type, the spacing or the grab cursor.
+         */
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+
+        const labelWrap = document.createElement('span');
+        labelWrap.className = 'category-title-label';
+
+        const prefix = document.createElement('span');
+        prefix.className = 'category-reorder-handle';
+        prefix.textContent = '// ';
+        prefix.setAttribute('aria-hidden', 'true');
+        // Dragging the handle must not do whatever clicking the header does.
+        prefix.addEventListener('click', (e) => e.stopPropagation());
+        prefix.addEventListener('mousedown', (e) => e.stopPropagation());
+        labelWrap.appendChild(prefix);
+
+        const name = document.createElement('span');
+        name.className = 'category-title-name';
+        const label = widget.title || this.widgetTypeLabel(widget.type);
+        // Lower-cased like every other block title, so one heading in the grid
+        // does not shout.
+        name.textContent = String(label).toLowerCase();
+        name.title = label;
+        labelWrap.appendChild(name);
+
+        title.appendChild(labelWrap);
+        block.appendChild(title);
 
         const body = document.createElement('div');
         body.className = 'dashboard-widget-body';
@@ -397,6 +423,27 @@ class DashboardRenderCore {
         }
         block.appendChild(body);
         return block;
+    }
+
+    /*
+     * Redraw the widgets of one type, in place.
+     *
+     * Called when the data behind a widget arrives -- the health report lands
+     * after the first paint -- so it fills in rather than the whole grid being
+     * rebuilt for one block. A full render here would also throw away the
+     * DragReorder instances mid-drag.
+     */
+    refreshWidgets(type) {
+        const d = this.dash;
+        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
+            .forEach((block) => {
+                const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
+                const body = block.querySelector('.dashboard-widget-body');
+                const renderer = window.DashboardWidgets?.[type];
+                if (!widget || !body || typeof renderer !== 'function') return;
+                body.classList.remove('dashboard-widget-body--empty');
+                renderer(body, widget, d);
+            });
     }
 
     /** A readable name for a type, for a widget with no title of its own. */

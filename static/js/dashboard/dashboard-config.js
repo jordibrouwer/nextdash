@@ -12075,7 +12075,12 @@ class DashboardConfig {
 
     /* ── Pages & tags ──────────────────────────────────────────────────────── */
 
-    static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
+    /*
+     * Widgets sits beside Categories because it is the same kind of thing: both
+     * are blocks on a page, arranged in one order. Its own tab rather than rows
+     * mixed into Categories, so a list of categories stays a list of categories.
+     */
+    static PT_TABS = ['categories', 'widgets', 'tags', 'pages', 'finders', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
@@ -12126,6 +12131,7 @@ class DashboardConfig {
             collections: ['config.collectionsTab', 'Collections'],
             pages: ['config.pagesTab', 'Pages'],
             categories: ['config.categoriesTab', 'Categories'],
+            widgets: ['config.widgetsTab', 'Widgets'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -12151,6 +12157,7 @@ class DashboardConfig {
             case 'collections': return this.renderCollections();
             case 'pages': return this.renderPagesEditor();
             case 'categories': return this.renderCategoriesEditor();
+            case 'widgets': return this.renderWidgetsEditor();
             default: return '';
         }
     }
@@ -12187,6 +12194,7 @@ class DashboardConfig {
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
+        else if (this.ptTab === 'widgets') { this.bindWidgetsEditor(container); void this.loadWidgetsEditor(); }
         this.bindPtToolbar(container);
         this.bindListKeyboard(container);
     }
@@ -13682,6 +13690,283 @@ class DashboardConfig {
     }
 
     /* ── Categories (native, per page) ─────────────────────────────────────── */
+
+    /*
+     * The widgets on a page, in the order the dashboard draws them.
+     *
+     * Moving one here moves it on the dashboard, because both write the same
+     * blockOrder -- the alternative is two orders that agree until they do not.
+     * The list shows every block, categories included but not editable here, so
+     * "move up" means something: a widget between two categories has to be able
+     * to be put there without dragging on the dashboard.
+     */
+    renderWidgetsEditor() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        const pageOptions = pages.map((p) =>
+            `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
+        ).join('');
+
+        let body;
+        if (this._widgetBlocks == null) {
+            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        } else {
+            const blocks = this._widgetBlocks;
+            if (!blocks.some((b) => b.isWidget)) {
+                body = `<p class="config-panel-empty">${esc(this.t('config.widgetsEmpty',
+                    'No widgets on this page yet. Add one to put a block beside your categories.'))}</p>`;
+            } else {
+                const last = blocks.length - 1;
+                const rows = blocks.map((block, i) => {
+                    const label = block.isWidget
+                        ? (block.title || this.widgetTypeName(block.type))
+                        : block.name;
+                    /*
+                     * Categories are listed but greyed: they are here to be
+                     * moved past, not edited. Renaming and deleting them belongs
+                     * on the Categories tab, and offering it twice is two places
+                     * to keep in step.
+                     */
+                    return `
+                <li class="config-crud-row${block.isWidget ? '' : ' config-widget-row--category'}" data-widget-row="${i}">
+                    <div class="config-crud-fields">
+                        ${block.isWidget
+                            ? `<input type="text" class="config-text" data-widget="title" data-index="${i}"
+                                   value="${esc(block.title || '')}"
+                                   placeholder="${esc(this.widgetTypeName(block.type))}">`
+                            : `<span class="config-widget-category-name">${esc(label)}</span>`}
+                        <span class="config-widget-kind">${esc(block.isWidget
+                            ? this.widgetTypeName(block.type)
+                            : this.t('config.widgetsRowCategory', 'category'))}</span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-widget-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
+                        <button type="button" class="config-btn config-btn--small" data-widget-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                        ${block.isWidget
+                            ? `<button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>`
+                            : ''}
+                    </div>
+                </li>`;
+                }).join('');
+                body = `<ul class="config-crud-list">${rows}</ul>`;
+            }
+        }
+
+        const typeOptions = DashboardConfig.WIDGET_TYPES.map((type) =>
+            `<option value="${esc(type)}">${esc(this.widgetTypeName(type))}</option>`).join('');
+
+        return `
+            <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
+                'Widgets are blocks on a page that hold something other than bookmarks. Your categories are listed too, so a widget can be moved between them.'))}</p>
+            <div class="config-crud-toolbar">
+                <select class="config-select" data-widget-page aria-label="${esc(this.t('config.categoriesPageLabel', 'Page'))}">${pageOptions}</select>
+                <select class="config-select" data-widget-type aria-label="${esc(this.t('config.widgetsTypeLabel', 'Widget type'))}">${typeOptions}</select>
+                <button type="button" class="config-btn config-btn--small" data-widget-add>${esc(this.t('config.widgetsAdd', 'Add widget'))}</button>
+            </div>
+            ${body}
+        `;
+    }
+
+    /** The types a reader may add. Mirrors the server's register. */
+    static WIDGET_TYPES = ['health'];
+
+    widgetTypeName(type) {
+        const key = `dashboard.widgetType.${type}`;
+        const label = this.dash.language?.t?.(key);
+        return label && label !== key ? label : String(type || 'widget');
+    }
+
+    /*
+     * Read the page's blocks and lay them out as one list.
+     *
+     * Widgets and categories together, in blockOrder, because that is the order
+     * being edited. Two lists side by side would make "up" ambiguous.
+     */
+    async loadWidgetsEditor() {
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        if (!pageId) return;
+        this._widgetPageId = Number(pageId);
+
+        /*
+         * Already loaded for this page: do not refetch and repaint.
+         *
+         * The repaint at the end of this rebinds the tab, which calls this
+         * again -- so without the guard it is an endless loop that detaches
+         * every control on the tab before a click can land on it. The
+         * categories editor beside this one carries the same guard for the same
+         * reason.
+         */
+        if (this._widgetBlocks != null && this._widgetLoadedFor === this._widgetPageId) return;
+
+        try {
+            const [blocksRes, catsRes] = await Promise.all([
+                this.writeFetch(`/api/pages/${this._widgetPageId}/blocks`),
+                fetch(`/api/categories?page=${this._widgetPageId}`),
+            ]);
+            if (!blocksRes.ok) throw new Error(`HTTP ${blocksRes.status}`);
+            const blocks = await blocksRes.json();
+            const categories = catsRes.ok ? await catsRes.json() : [];
+
+            const widgetById = new Map((blocks.widgets || []).map((w) => [w.id, w]));
+            const categoryById = new Map((categories || []).map((c) => [String(c.id), c]));
+
+            this._widgetOrder = blocks.order || [];
+            this._widgetBlocks = (blocks.order || []).map((id) => {
+                const widget = widgetById.get(id);
+                if (widget) {
+                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {} };
+                }
+                const category = categoryById.get(String(id));
+                return { id, isWidget: false, name: category?.name || id };
+            });
+        } catch {
+            this._widgetBlocks = [];
+            this._widgetOrder = [];
+        }
+        this._widgetLoadedFor = this._widgetPageId;
+        this.repaintPtBody();
+    }
+
+    bindWidgetsEditor(container) {
+        container.querySelector('[data-widget-page]')?.addEventListener('change', (event) => {
+            this._widgetPageId = Number(event.target.value);
+            this._widgetBlocks = null;
+            this._widgetLoadedFor = null;
+            this.repaintPtBody();
+            void this.loadWidgetsEditor();
+        });
+
+        container.querySelector('[data-widget-add]')?.addEventListener('click', () => {
+            const type = container.querySelector('[data-widget-type]')?.value || 'health';
+            void this.addWidget(type);
+        });
+
+        container.querySelectorAll('[data-widget-move]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const index = Number(btn.getAttribute('data-index'));
+                const direction = btn.getAttribute('data-widget-move') === 'up' ? -1 : 1;
+                void this.moveWidgetBlock(index, direction);
+            });
+        });
+
+        container.querySelectorAll('[data-widget-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.deleteWidget(Number(btn.getAttribute('data-index')));
+            });
+        });
+
+        container.querySelectorAll('[data-widget="title"]').forEach((input) => {
+            // On change rather than on every keystroke: a title is a whole
+            // thought, and a write per character would be a write per character.
+            input.addEventListener('change', () => {
+                void this.renameWidget(Number(input.getAttribute('data-index')), input.value);
+            });
+        });
+    }
+
+    /** Everything the server needs to store, from what is on screen. */
+    widgetPayloadFromBlocks() {
+        const blocks = this._widgetBlocks || [];
+        return {
+            widgets: blocks.filter((b) => b.isWidget).map((b) => ({
+                id: b.id, type: b.type, title: b.title, config: b.config || {},
+            })),
+            order: blocks.map((b) => b.id),
+        };
+    }
+
+    async saveWidgetBlocks(payload) {
+        const pageId = this._widgetPageId;
+        if (!pageId) return false;
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return true;
+        } catch {
+            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+            return false;
+        }
+    }
+
+    async addWidget(type) {
+        const payload = this.widgetPayloadFromBlocks();
+        payload.widgets.push({ type, title: '', config: {} });
+        // No id: the server mints one. Inventing one here would be a second
+        // place that decides what a widget id looks like.
+        if (!await this.saveWidgetBlocks(payload)) return;
+        this.notify(this.t('config.widgetsAdded', 'Widget added.'), 'success');
+        this._widgetLoadedFor = null;
+        await this.loadWidgetsEditor();
+        await this.refreshDashboardBlocks();
+    }
+
+    async moveWidgetBlock(index, direction) {
+        const blocks = [...(this._widgetBlocks || [])];
+        const target = index + direction;
+        if (index < 0 || target < 0 || index >= blocks.length || target >= blocks.length) return;
+        [blocks[index], blocks[target]] = [blocks[target], blocks[index]];
+        this._widgetBlocks = blocks;
+        // Repaint first: the reader sees the move land rather than waiting on a
+        // round trip to find out whether their click did anything.
+        this.repaintPtBody();
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        await this.refreshDashboardBlocks();
+    }
+
+    async renameWidget(index, title) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        blocks[index] = { ...blocks[index], title: String(title || '').trim() };
+        this._widgetBlocks = blocks;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        await this.refreshDashboardBlocks();
+    }
+
+    async deleteWidget(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return;
+        const ok = await this.confirmAction(
+            this.t('config.widgetsDeleteConfirm', 'Remove this widget? Its settings go with it.'),
+            { confirmLabel: this.t('config.backupDelete', 'Delete'), danger: true });
+        if (!ok) return;
+
+        this._widgetBlocks = (this._widgetBlocks || []).filter((_, i) => i !== index);
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
+        this._widgetLoadedFor = null;
+        await this.loadWidgetsEditor();
+        await this.refreshDashboardBlocks();
+    }
+
+    /*
+     * Put the dashboard in step with what was just changed here.
+     *
+     * Without this the grid keeps the blocks it loaded with, so a widget added
+     * in config appears only after a reload -- and the reader has no way to know
+     * that is why.
+     */
+    async refreshDashboardBlocks() {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId);
+        if (!Number.isFinite(pageId) || pageId !== Number(this._widgetPageId)) return;
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/blocks`);
+            if (!res.ok) return;
+            const blocks = await res.json();
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            d.renderDashboard?.({ animate: false, forceFull: true });
+        } catch {
+            // The dashboard keeps what it had; the next load corrects it.
+        }
+    }
 
     renderCategoriesEditor() {
         const esc = (v) => this.dash.escapeHtml(v);

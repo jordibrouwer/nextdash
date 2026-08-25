@@ -37,7 +37,10 @@ test.describe('dashboard widgets', () => {
 
         const widget = page.locator('.dashboard-widget').first();
         await expect(widget).toBeVisible({ timeout: 10_000 });
-        await expect(widget).toContainText('Status');
+        // Lower-cased like every other block title, so one heading in the grid
+        // does not shout. The typed title is kept in the tooltip.
+        await expect(widget.locator('.category-title-name')).toHaveText('status');
+        await expect(widget.locator('.category-title-name')).toHaveAttribute('title', 'Status');
 
         /*
          * It carries `.category` as well. The masonry layout measures blocks by
@@ -142,5 +145,205 @@ test.describe('dashboard widgets', () => {
             return (await (await f('/api/categories?page=1')).json()).map((c) => c.id);
         });
         expect(categories.some((id) => String(id).startsWith('w_'))).toBe(false);
+    });
+});
+
+/*
+ * The Widgets tab in Config, and the health widget itself.
+ */
+test.describe('the widgets tab', () => {
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.click('[data-pt-tab="widgets"]');
+        await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('adding a widget lists it among the categories', async ({ page }) => {
+        /*
+         * Cleared first: the store is reset per spec file, not per test, so an
+         * earlier test's widget would still be here and the empty state would
+         * be a claim about running order rather than about this code.
+         */
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({ widgets: [] }) });
+        });
+        await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            c._widgetLoadedFor = null;
+            c._widgetBlocks = null;
+            return c.loadWidgetsEditor();
+        });
+        await expect(page.locator('.config-panel-empty')).toContainText(/No widgets/i, { timeout: 10_000 });
+
+        await page.click('[data-widget-add]');
+        await expect(page.locator('[data-widget-row]').first()).toBeVisible({ timeout: 15_000 });
+
+        const rows = await page.evaluate(() => [...document.querySelectorAll('[data-widget-row]')].map((r) => ({
+            isCategory: r.classList.contains('config-widget-row--category'),
+        })));
+        // Categories are listed too, so a widget can be moved between them --
+        // "move up" is meaningless in a list of widgets alone.
+        expect(rows.some((r) => r.isCategory)).toBe(true);
+        expect(rows.some((r) => !r.isCategory)).toBe(true);
+
+        // Only the widget can be deleted here; renaming a category belongs on
+        // the Categories tab, and offering it twice is two places to keep right.
+        expect(await page.locator('[data-widget-delete]').count()).toBe(1);
+    });
+
+    test('moving a widget here moves it on the dashboard', async ({ page }) => {
+        await page.click('[data-widget-add]');
+        await expect(page.locator('[data-widget-delete]')).toHaveCount(1, { timeout: 15_000 });
+
+        const before = await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            return (await (await f('/api/pages/1/blocks')).json()).order;
+        });
+        const widgetIndex = before.findIndex((id) => String(id).startsWith('w_'));
+        expect(widgetIndex).toBeGreaterThan(0);
+
+        await page.click(`[data-widget-row="${widgetIndex}"] [data-widget-move="up"]`);
+
+        // The same blockOrder the dashboard draws from: one order, not two that
+        // agree until they do not.
+        await expect.poll(async () => page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const order = (await (await f('/api/pages/1/blocks')).json()).order;
+            return order.findIndex((id) => String(id).startsWith('w_'));
+        }), { timeout: 15_000 }).toBe(widgetIndex - 1);
+    });
+});
+
+test.describe('the health widget', () => {
+    test('it reports the same figures as the header badge', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
+
+        // Filled in from the report the badge already fetched, so the two cannot
+        // disagree about how many links are broken while sharing a screen.
+        await expect.poll(async () =>
+            page.locator('.dashboard-widget-health-row').count(), { timeout: 15_000 }).toBeGreaterThan(0);
+
+        const agreed = await page.evaluate(() => {
+            const summary = window.dashboardInstance.healthSummary || {};
+            const row = document.querySelector('[data-health-filter="broken"] .dashboard-widget-health-value');
+            return { widget: row?.textContent, badge: String(summary.brokenCount ?? '') };
+        });
+        expect(agreed.widget).toBe(agreed.badge);
+
+        // Every figure is a way into the rows behind it: a count you cannot act
+        // on is a decoration.
+        const filters = await page.evaluate(() =>
+            [...document.querySelectorAll('.dashboard-widget-health-row')].map((r) => r.dataset.healthFilter));
+        expect(filters).toContain('broken');
+        expect(filters.every(Boolean)).toBe(true);
+    });
+});
+
+/*
+ * How a widget looks beside the categories it sits among.
+ *
+ * It shipped once as a plain div with a smaller font and no edge, which read as
+ * loose text under a heading rather than a block. These assert the three things
+ * that were wrong, against the categories themselves rather than against fixed
+ * values -- a widget should follow the grid, not a number written down here.
+ */
+test.describe('widget appearance', () => {
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('.dashboard-widget')).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('its title is a category title, not a smaller heading of its own', async ({ page }) => {
+        const measured = await page.evaluate(() => {
+            const widgetTitle = document.querySelector('.dashboard-widget .category-title');
+            const categoryTitle = document.querySelector('.category:not(.dashboard-widget) .category-title');
+            if (!widgetTitle || !categoryTitle) return null;
+            const a = getComputedStyle(widgetTitle);
+            const b = getComputedStyle(categoryTitle);
+            return {
+                sameSize: a.fontSize === b.fontSize,
+                sameWeight: a.fontWeight === b.fontWeight,
+                size: a.fontSize,
+            };
+        });
+        expect(measured, 'no category to compare against').not.toBeNull();
+        expect(measured.sameSize).toBe(true);
+        expect(measured.sameWeight).toBe(true);
+    });
+
+    test('it has the same drag handle a category has', async ({ page }) => {
+        const handle = page.locator('.dashboard-widget .category-reorder-handle');
+        await expect(handle).toHaveCount(1);
+        // The "//" prefix is the handle -- that is what DragReorder grabs, and
+        // the grab cursor is how a reader knows it can be moved.
+        await expect(handle).toHaveText(/\/\//);
+        expect(await handle.evaluate((el) => getComputedStyle(el).cursor)).toBe('grab');
+    });
+
+    test('its body is a card, at the grid\u2019s own text size', async ({ page }) => {
+        const body = await page.evaluate(() => {
+            const el = document.querySelector('.dashboard-widget .dashboard-widget-body');
+            const grid = document.querySelector('.category:not(.dashboard-widget)');
+            if (!el) return null;
+            const c = getComputedStyle(el);
+            return {
+                borderWidth: parseFloat(c.borderTopWidth),
+                transparent: c.backgroundColor === 'rgba(0, 0, 0, 0)' || c.backgroundColor === 'transparent',
+                fontSize: parseFloat(c.fontSize),
+                // The blocks beside it, which is the size to match rather than
+                // a number written down here.
+                gridFontSize: grid ? parseFloat(getComputedStyle(grid).fontSize) : null,
+            };
+        });
+        expect(body, 'no widget body').not.toBeNull();
+        // An edge, because a panel of figures without one reads as loose text.
+        expect(body.borderWidth).toBeGreaterThan(0);
+        expect(body.transparent).toBe(false);
+        /*
+         * Its content at the size the grid uses, not the smaller one meant for
+         * meta lines: these figures are the widget's content.
+         *
+         * Compared with a neighbouring category rather than a fixed pixel
+         * value, so this follows a theme that changes the scale instead of
+         * pinning the widget to one.
+         */
+        expect(body.gridFontSize, 'no category to compare against').not.toBeNull();
+        expect(body.fontSize).toBeGreaterThanOrEqual(body.gridFontSize);
     });
 });
