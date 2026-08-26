@@ -26,21 +26,25 @@ import (
 )
 
 type Handlers struct {
-	store                 Store
-	files                 embed.FS
-	pageTemplates         map[string]*template.Template
-	pageTemplatesMu       sync.RWMutex
-	previewCacheMu        sync.RWMutex
-	previewCache          PreviewCacheFile
-	previewLoaded         bool
-	previewCacheDirty     bool
-	healthCacheMu         sync.RWMutex
-	healthHistoryMu       sync.Mutex
-	healthTrendMu         sync.Mutex
-	healthReportMu        sync.RWMutex
-	healthReport          BookmarkHealthReport
-	healthReportAt        time.Time
-	healthReportOK        bool
+	store             Store
+	files             embed.FS
+	pageTemplates     map[string]*template.Template
+	pageTemplatesMu   sync.RWMutex
+	previewCacheMu    sync.RWMutex
+	previewCache      PreviewCacheFile
+	previewLoaded     bool
+	previewCacheDirty bool
+	healthCacheMu     sync.RWMutex
+	healthHistoryMu   sync.Mutex
+	healthTrendMu     sync.Mutex
+	healthReportMu    sync.RWMutex
+	healthReport      BookmarkHealthReport
+	healthReportAt    time.Time
+	healthReportOK    bool
+	// healthReportGen is the store's write count when this report was built.
+	// A cached report whose generation no longer matches describes bookmarks
+	// that have since changed, however recently it was built.
+	healthReportGen       uint64
 	healthReportBuildMu   sync.Mutex
 	healthReportBuildCond *sync.Cond
 	healthReportBuilding  bool
@@ -348,13 +352,32 @@ func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(report)
 }
 
+/*
+healthReportFresh reports whether the cached report still describes the data.
+
+Two conditions, and the second is the one that was missing. The three-minute
+window bounds how long a report may be reused when nothing has happened; the
+generation bounds it by whether anything has. Time alone meant that adding a
+broken bookmark left the header badge and the health widget quoting figures
+from before it existed, for up to three minutes -- and a dozen write paths each
+had to remember to say so, which the one that adds a bookmark did not.
+
+Called with healthReportMu held for reading.
+*/
+func (h *Handlers) healthReportFreshLocked() bool {
+	if !h.healthReportOK || time.Since(h.healthReportAt) >= healthReportCacheTTL {
+		return false
+	}
+	return h.healthReportGen == h.store.DataGeneration()
+}
+
 func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthReport {
 	if h.healthReportBuildCond == nil {
 		h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
 	}
 	if !forceRefresh {
 		h.healthReportMu.RLock()
-		if h.healthReportOK && time.Since(h.healthReportAt) < healthReportCacheTTL {
+		if h.healthReportFreshLocked() {
 			report := h.healthReport
 			h.healthReportMu.RUnlock()
 			return report
@@ -367,7 +390,7 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 		h.healthReportBuildCond.Wait()
 		if !forceRefresh {
 			h.healthReportMu.RLock()
-			cached := h.healthReportOK && time.Since(h.healthReportAt) < healthReportCacheTTL
+			cached := h.healthReportFreshLocked()
 			var report BookmarkHealthReport
 			if cached {
 				report = h.healthReport
@@ -384,10 +407,29 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 
 	report := h.buildBookmarkHealthReport()
 
+	/*
+		Read after the build, and it has to be.
+
+		Reading is not free of writing here: walking the pages settles the page
+		order file if it was not already settled, so a build bumps the store's
+		count by itself. Stamped with the count from before, every report would
+		be born stale and each request would rebuild the lot -- which is the
+		opposite of what a cache is for, and measurably worse than the staleness
+		this was meant to fix.
+
+		What that costs is a write landing during a build: it is not in the
+		report, and the stamp says it is, so it goes unseen until the three
+		minutes are up. A build is milliseconds against a window of minutes, and
+		the write paths that invalidate by hand still do. The alternative is no
+		cache at all.
+	*/
+	generation := h.store.DataGeneration()
+
 	h.healthReportMu.Lock()
 	h.healthReport = report
 	h.healthReportOK = true
 	h.healthReportAt = time.Now()
+	h.healthReportGen = generation
 	h.healthReportMu.Unlock()
 
 	h.healthReportBuildMu.Lock()

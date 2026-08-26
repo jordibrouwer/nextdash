@@ -358,11 +358,42 @@ test.describe('the health widget', () => {
                 method: 'PUT', headers: h,
                 body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
             });
+            /*
+             * Ask for the report to be rebuilt before reading it.
+             *
+             * The server keeps the health report for three minutes, and adding
+             * a bookmark does not throw that away -- so a report built by an
+             * earlier test on this page is still the answer, and it was built
+             * before the dead links above existed. Alone this test is the
+             * first to ask and sees its own bookmarks; after anything else it
+             * saw a report of noughts. `refresh=1` is the route's own way of
+             * saying build it again, and what it stores is what the badge
+             * fetch below then reads.
+             */
+            await f('/api/bookmark-health?view=facts&refresh=1');
         });
 
         await page.reload({ waitUntil: 'networkidle' });
-        await expect.poll(async () =>
-            page.locator('.dashboard-widget-health-row').count(), { timeout: 20_000 }).toBeGreaterThan(0);
+
+        /*
+         * Waited on by its figures, not by its rows.
+         *
+         * The tile draws its four rows as soon as it is built and fills the
+         * numbers in when the summary the header badge fetches arrives. A poll
+         * on the rows existing therefore succeeds while every figure still
+         * reads nought, and the comparison below then runs against a tile that
+         * has not been told anything yet -- which is why this passed alone and
+         * failed after the tests that put more in the collection to load.
+         *
+         * Waited on by the report arriving rather than by any figure in it:
+         * the widget redraws in the same turn the summary is stored, and
+         * `totalBookmarks` is non-zero whatever the report says about
+         * failures -- so the assertion about broken links below stays a real
+         * one instead of waiting for the answer it then checks.
+         */
+        await expect.poll(async () => page.evaluate(() =>
+            Number(window.dashboardInstance?.healthSummary?.totalBookmarks) || 0),
+        { timeout: 20_000 }).toBeGreaterThan(0);
 
         const widget = await page.evaluate(() => {
             const rows = {};
