@@ -485,6 +485,27 @@
             // Remove default theme classes
             document.body.classList.remove('dark', 'light');
 
+            /*
+             * The theme that was applied last, taken off by name.
+             *
+             * The two sweeps below do not cover a plain built-in: the custom
+             * list holds only custom ids, and the fallback that would have
+             * caught the rest sits in its else, so the moment an install has
+             * one custom theme the fallback stops running for everybody.
+             * Switching between two built-ins then left both classes on the
+             * body -- "retro-crt-dark moss-stone-dark" -- and every rule
+             * written against the old theme kept matching.
+             *
+             * Read off the element rather than from a list, because the
+             * element is the one place that always knows what was applied,
+             * and a list has to be kept in step with the themes.
+             */
+            const applied = document.body.getAttribute('data-theme')
+                || document.documentElement.getAttribute('data-theme');
+            if (applied && applied !== theme) {
+                try { document.body.classList.remove(applied); } catch (e) {}
+            }
+
             // Remove any known custom theme classes if provided by config
             if (window.CustomThemeIds && Array.isArray(window.CustomThemeIds)) {
                 window.CustomThemeIds.forEach(id => {

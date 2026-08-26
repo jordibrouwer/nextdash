@@ -291,6 +291,24 @@
         // and four filter buttons has a lot of routes.
         let picked = false;
 
+        /*
+         * Show a theme on the real dashboard, but never after one was chosen.
+         *
+         * Choosing is not instant: it posts the settings and only then paints,
+         * and the modal is torn down without waiting for that. Focus and the
+         * pointer both land somewhere during the teardown, and whatever card
+         * they land on used to fire its own preview -- which arrived while the
+         * choice was still in flight and won. Choose Moss & Stone, get
+         * Marigold Dusk, until the page is reloaded.
+         *
+         * Gated here rather than at the three call sites, so a preview added
+         * later cannot reintroduce it.
+         */
+        const preview = (id) => {
+            if (picked || !id) return;
+            opts.onPreview?.(id);
+        };
+
         const repaint = () => {
             const root = document.querySelector('[data-theme-browser]');
             if (!root) return;
@@ -364,7 +382,7 @@
                     // it — and keep the keyboard where the click left it.
                     const family = families.find((f) => f.key === key);
                     const shown = family?.variants[state.variantFor(key)];
-                    if (shown) opts.onPreview?.(shown.id);
+                    if (shown) preview(shown.id);
                     const sameButton = replacement?.querySelector(
                         `[data-theme-variant="${button.getAttribute('data-theme-variant')}"]`);
                     if (sameButton && document.activeElement === document.body) sameButton.focus();
@@ -412,8 +430,8 @@
                 });
             });
 
-            card.addEventListener('mouseenter', () => opts.onPreview?.(id()));
-            card.addEventListener('focus', () => opts.onPreview?.(id()));
+            card.addEventListener('mouseenter', () => preview(id()));
+            card.addEventListener('focus', () => preview(id()));
             card.addEventListener('click', () => {
                 picked = true;
                 opts.onPick?.(id());
