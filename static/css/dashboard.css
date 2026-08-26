@@ -4739,7 +4739,29 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
    has to repeat the full :has() chain — the shorter .modal.whats-new-modal in
    modal.css loses to it on specificity. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    width: min(40rem, calc(100vw - 2.5rem));
+    width: min(36rem, calc(100vw - 2.5rem));
+}
+
+/*
+ * Room above the modal as well as below it.
+ *
+ * The block above leaves 2rem under the modal and nothing over it, and caps the
+ * height at 100vh - 2rem — so a modal tall enough to reach its own limit runs
+ * into the top edge of the window while sitting a comfortable distance off the
+ * bottom. Measured on a 900px window: 868 tall, 32px below, 0 above.
+ *
+ * The padding is symmetric and the height leaves room for both. Scoped to
+ * what's new; recent bookmarks and the cheat sheet share the block above and
+ * the same lopsidedness, but neither was what anybody was looking at.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
+    padding-top: max(2rem, env(safe-area-inset-top, 0px));
+}
+
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    max-height: calc(100vh - 4rem);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
