@@ -260,6 +260,34 @@ test.describe('the widgets tab', () => {
         await expect(page.locator('[data-widget-move]')).toHaveCount(0);
     });
 
+    /*
+     * A widget in the list is a card, like the panel that makes one.
+     *
+     * It had a border and no fill, which on a page that is itself a surface
+     * reads as an outline drawn on the page rather than as a block sitting on
+     * it — and left the list looking unstyled directly beneath the Add widget
+     * panel, which does carry one. Same fill for both, so they read as the same
+     * kind of thing.
+     */
+    test('a row carries the same surface as the panel that adds one', async ({ page }) => {
+        await expect(page.locator('.config-widget-row')).toHaveCount(1, { timeout: 10_000 });
+        const fills = await page.evaluate(() => {
+            const read = (sel) => {
+                const el = document.querySelector(sel);
+                return el ? getComputedStyle(el).backgroundColor : null;
+            };
+            return {
+                row: read('.config-widget-row'),
+                add: read('.config-widget-add'),
+                page: getComputedStyle(document.body).backgroundColor,
+            };
+        });
+        expect(fills.row).toBe(fills.add);
+        // And it is a fill, not the page showing through.
+        expect(fills.row).not.toBe('rgba(0, 0, 0, 0)');
+        expect(fills.row).not.toBe(fills.page);
+    });
+
     test('switching a widget off takes it off the grid but keeps its place', async ({ page }) => {
         const orderBefore = await page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;

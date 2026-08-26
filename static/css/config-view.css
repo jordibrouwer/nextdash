@@ -5697,6 +5697,13 @@ button.config-bm-shortcut-pill {
     list-style: none;
 }
 
+/* A row is a card, the same as the Add widget panel above it.
+
+   It had a border and no background, which on a page that is itself a surface
+   makes a widget read as an outline drawn on the page rather than as a thing
+   sitting on it — and left the list looking unstyled beside the panel directly
+   above, which does carry one. Same fill, so the two read as the same kind of
+   block: one to make a widget with, the rest of them made. */
 .config-widget-row {
     display: flex;
     flex-direction: column;
@@ -5704,11 +5711,15 @@ button.config-bm-shortcut-pill {
     padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: 10px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
-/* An open row is the one being worked on, so it reads as the foreground. */
+/* An open row is the one being worked on, so it reads as the foreground: a step
+   further up the surface ladder as well as an accented edge, since a border
+   alone is a weak way to say "this one" once every row has a fill. */
 .config-widget-row.is-open {
     border-color: var(--accent-primary, rgba(128, 128, 128, 0.5));
+    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
 }
 
 /* Switched off is a state worth seeing in the list, not only in the checkbox. */
