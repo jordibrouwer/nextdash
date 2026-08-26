@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3.5 — 25 August 2026](#v1335--25-august-2026)
 - [v1.3.3.4 — 25 August 2026](#v1334--25-august-2026)
 - [v1.3.3.3 — 25 August 2026](#v1333--25-august-2026)
 - [v1.3.3.2 — 24 August 2026](#v1332--24-august-2026)
@@ -177,6 +178,18 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3.5 — 25 August 2026
+
+A modal that had thirteen CSS rules written for it, on a page that never loaded any of them.
+
+### Saving a link
+
+- **fix** — **the paste-choice modal is styled on the dashboard, where it appears.** Pasting a URL opens *Save this link*, and it drew as raw markup: `.paste-choice-url` printing over `.paste-choice-lead`, and the two `.paste-choice-card` buttons collapsed onto a single line with their `<kbd>` shortcuts stranded below. The rules existed — thirteen of them — but lived in `static/css/dashboard-inbox.css`, which sits inside the `bundle:css-views` markers in `templates/dashboard.html` and is therefore fetched only when Inbox, Health or Config is opened. This modal opens on the dashboard itself, on paste, so on a fresh load not one of them had arrived; measured against the running app, zero `paste-choice` rules were reachable from `document.styleSheets`. Moved to `static/css/dashboard.css`, which rides in the main bundle. The inbox sheet keeps its own half of the shared 520px media query, which the two files had been sharing. The spec counts the reachable rules and then measures the geometry the modal actually produces — the URL's bottom edge against the question's top, and the two cards sharing a *y* but not an *x* — because a stylesheet reaching the page is not something the markup can assert about itself.
+
+### Docs
+
+- `static/data/whats-new/v1.3.3.5.json`, `index.json`, `static/js/whats-new-stub.js` (both tokens), `tests/whats-new-hidden-release.spec.js`, `CHANGELOG.md`, `MANUAL.md`, `README.md` and the `helpVersionBody` prose in all four locales.
 
 ## v1.3.3.4 — 25 August 2026
 
