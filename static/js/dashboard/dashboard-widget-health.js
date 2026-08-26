@@ -76,6 +76,9 @@
             const row = document.createElement('button');
             row.type = 'button';
             row.className = `dashboard-widget-health-row dashboard-widget-health-row--${figure.tone}`;
+            // Nought is dimmed rather than painted in the row's colour: see
+            // the note on .is-quiet. The label still says which row it is.
+            if (count === 0) row.classList.add('is-quiet');
             row.dataset.healthFilter = figure.filter;
 
             const value = document.createElement('span');

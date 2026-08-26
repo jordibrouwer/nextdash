@@ -149,12 +149,27 @@
     function statGrid(stats) {
         const grid = document.createElement('div');
         grid.className = 'dashboard-widget-stats';
-        (stats || []).forEach((stat) => {
-            if (!stat) return;
+        const cells = (stats || []).filter(Boolean);
+        // Four abreast is only worth offering when there are four; three
+        // figures across a wide tile would leave a gap where a fourth is not.
+        if (cells.length >= 4 && cells.length % 4 === 0) {
+            grid.classList.add('dashboard-widget-stats--wide');
+        }
+        cells.forEach((stat) => {
             const cell = document.createElement(stat.onOpen ? 'button' : 'div');
             if (stat.onOpen) cell.type = 'button';
             cell.className = 'dashboard-widget-stat';
             if (stat.tone) cell.classList.add(`dashboard-widget-stat--${stat.tone}`);
+            /*
+             * Nought is marked so the stylesheet can quieten it.
+             *
+             * Decided here rather than in CSS because CSS cannot read a value.
+             * What it buys is the tile's whole legibility: a readout of "0
+             * kept, 4 lost, 0 died" was three figures in alarm colours, and
+             * the reader had to check each one to find the single number that
+             * wanted them.
+             */
+            if (Number(stat.value) === 0) cell.classList.add('is-quiet');
 
             const value = document.createElement('span');
             value.className = 'dashboard-widget-stat-value';

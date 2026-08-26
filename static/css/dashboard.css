@@ -5493,10 +5493,32 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * The heading stays outside the card, so a widget's title lines up with every
  * category title beside it.
  */
+/*
+ * The two surfaces a readout is built from, and both are translucent on purpose.
+ *
+ * Mixed with `transparent` rather than with a named background, so they
+ * composite over whatever the card turned out to be. Deriving them from
+ * --background-primary was the first attempt and it does not survive contact
+ * with the themes: measured across four, the cell came out lighter than the
+ * card on two and darker on the other two, and on two of them the difference
+ * was under 1% -- invisible. The card is not mixed from --background-primary,
+ * so anything mixed from it lands wherever it lands.
+ *
+ * A tint of the text colour always moves away from the card in the same
+ * direction the text does: lighter on a dark theme, darker on a light one.
+ * That is one step towards the reader on every theme, which is the whole
+ * relationship a readout needs.
+ */
+.dashboard-widget {
+    --dashboard-widget-rule: color-mix(in srgb, var(--text-secondary) 13%, transparent);
+    --dashboard-widget-cell: color-mix(in srgb, var(--text-secondary) 7%, transparent);
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+}
+
 .dashboard-widget .dashboard-widget-body {
-    padding: 0.7rem 0.85rem;
+    padding: 0.75rem 0.85rem;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    border-radius: 9px;
     background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
     /*
      * Reserved before the data arrives.
@@ -5511,41 +5533,79 @@ body[data-grid-keys="shown"] .dashboard-legend {
     color: var(--text-primary);
 }
 
-.dashboard-widget .dashboard-widget-body--empty {
+/*
+ * Nothing to report is a result, and it is the quietest one.
+ *
+ * These used to be an italic sentence at the tile's own text size, which on a
+ * dashboard of thirteen tiles meant the ones with nothing to say were as loud
+ * as the ones with something. Smaller, dimmer, and centred in the height the
+ * tile reserves anyway -- so an empty tile reads as calm rather than as broken.
+ *
+ * Not italic: the grid is set in a monospaced face, and a slanted monospace at
+ * small sizes is measurably harder to read than an upright one.
+ */
+.dashboard-widget .dashboard-widget-body--empty,
+.dashboard-widget-waiting,
+.dashboard-widget-empty,
+.dashboard-widget-health-waiting {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    min-height: 2rem;
     color: var(--text-tertiary);
-    font-style: italic;
+    font-size: var(--font-size-small);
+    font-style: normal;
+    line-height: 1.45;
+    text-wrap: pretty;
 }
 
 /* The health widget: a figure and what it counts, per row. */
 .dashboard-widget-health {
     display: flex;
     flex-direction: column;
+    /* The hairline between rows is the gap showing through -- see
+       .dashboard-widget-stats, which is bound the same way and for the same
+       reason. */
     gap: 1px;
+    padding: 1px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: var(--dashboard-widget-rule);
 }
 
 .dashboard-widget-health-row {
     display: flex;
     align-items: baseline;
-    gap: 0.6rem;
+    gap: 0.65rem;
     width: 100%;
-    padding: 0.25rem 0.35rem;
+    padding: 0.34rem 0.55rem;
     border: none;
-    background: none;
+    background: var(--dashboard-widget-cell);
     color: inherit;
     font: inherit;
     text-align: left;
     cursor: pointer;
-    border-radius: 5px;
 }
 
 .dashboard-widget-health-row:hover,
 .dashboard-widget-health-row:focus-visible {
-    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+    background: var(--dashboard-widget-cell-hover);
 }
 
+/*
+ * The figure at the size the figures on every other tile are set.
+ *
+ * This is a list rather than a grid because each row is a filter to click, but
+ * it is the same instrument: a number that carries, and a word that explains
+ * it. Sized and tracked to match .dashboard-widget-stat-value so a dashboard
+ * holding health beside archive reads as one product.
+ */
 .dashboard-widget-health-value {
-    min-width: 2.2em;
+    min-width: 2.4em;
+    font-size: 1.35em;
+    line-height: 1.05;
     font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.015em;
     /* Figures read as a column when their digits line up. */
     font-variant-numeric: tabular-nums;
 }
@@ -5557,11 +5617,15 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * the broken row -- colouring by value would make "0 broken" green and
  * indistinguishable from "12 healthy".
  */
-.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--status-error, var(--text-primary)); }
-.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--status-warning, var(--text-primary)); }
-.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--status-success, var(--text-primary)); }
+.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
+.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
 
-.dashboard-widget-health-label { color: var(--text-secondary); }
+.dashboard-widget-health-label {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+    letter-spacing: 0.03em;
+}
 .dashboard-widget-health-waiting { margin: 0; color: var(--text-tertiary); font-style: italic; }
 
 /* Config: the widgets tab lists categories too, greyed, to be moved past. */
@@ -5579,7 +5643,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-rows {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
 }
 
 .dashboard-widget-row {
@@ -5588,7 +5652,10 @@ body[data-grid-keys="shown"] .dashboard-legend {
     justify-content: space-between;
     gap: 10px;
     width: 100%;
-    padding: 3px 6px;
+    /* Taller than it was: these rows sit under a block of figures now, and a
+       three-pixel row against a 1.5em number reads as an afterthought. It is
+       also a click target on most of the tiles that use it. */
+    padding: 0.28rem 0.45rem;
     border: 0;
     border-radius: var(--layout-radius-sm, 5px);
     background: transparent;
@@ -5620,19 +5687,14 @@ button.dashboard-widget-row:focus-visible {
 }
 
 .dashboard-widget-row--bad .dashboard-widget-row-detail {
-    color: var(--status-error, var(--text-primary));
+    color: var(--status-error, var(--accent-error, var(--text-primary)));
 }
 
 .dashboard-widget-row--warn .dashboard-widget-row-detail {
-    color: var(--status-warning, var(--text-primary));
+    color: var(--status-warning, var(--accent-warning, var(--text-primary)));
 }
 
-.dashboard-widget-waiting,
-.dashboard-widget-empty {
-    margin: 0;
-    color: var(--text-tertiary);
-    font-style: italic;
-}
+
 
 /* A figure with its qualifier beside it — the inbox count and how old the
    oldest is, the neglected count and the threshold that produced it. The
@@ -5641,19 +5703,30 @@ button.dashboard-widget-row:focus-visible {
 .dashboard-widget-headline {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 2px 9px;
+    margin-bottom: 8px;
 }
 
 .dashboard-widget-headline-value {
-    font-size: 1.5em;
+    font-size: 1.75em;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
     line-height: 1;
 }
 
+/*
+ * The qualifier, and it is load-bearing rather than decorative: "eleven
+ * neglected" is a different claim at thirty days than at a year. Allowed to
+ * wrap under the number on a narrow tile instead of being clipped -- a
+ * half-shown condition is worse than a second line.
+ */
 .dashboard-widget-headline-note {
     color: var(--text-tertiary);
     font-size: var(--font-size-small);
+    line-height: 1.4;
+    text-wrap: pretty;
 }
 
 /* The heartbeat, as a row of ticks rather than a chart: what it has to show is
@@ -5674,17 +5747,17 @@ button.dashboard-widget-row:focus-visible {
 }
 
 .dashboard-widget-spark-tick--up {
-    background: var(--status-success, var(--text-secondary));
+    background: var(--status-success, var(--accent-success, var(--text-secondary)));
 }
 
 .dashboard-widget-spark-tick--down {
-    background: var(--status-error, var(--text-primary));
+    background: var(--status-error, var(--accent-error, var(--text-primary)));
 }
 
 /* degraded, as health_uptime.go names it: a bucket where some samples answered
    and some did not. */
 .dashboard-widget-spark-tick--degraded {
-    background: var(--status-warning, var(--text-secondary));
+    background: var(--status-warning, var(--accent-warning, var(--text-secondary)));
 }
 
 .dashboard-widget-trend {
@@ -5708,11 +5781,11 @@ button.dashboard-widget-row:focus-visible {
 /* Fewer broken links is good news even when the number is still high, so the
    direction carries the colour and the value stays neutral. */
 .dashboard-widget-trend-change.is-better {
-    color: var(--status-success, var(--text-secondary));
+    color: var(--status-success, var(--accent-success, var(--text-secondary)));
 }
 
 .dashboard-widget-trend-change.is-worse {
-    color: var(--status-error, var(--text-primary));
+    color: var(--status-error, var(--accent-error, var(--text-primary)));
 }
 
 .dashboard-widget-trend-change.is-level {
@@ -5813,19 +5886,49 @@ button.dashboard-widget-row--more {
 .dashboard-widget-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem 0.9rem;
+    /*
+     * Bound as one readout rather than spaced as four facts.
+     *
+     * The figures sat in open space with a generous gap, and four numbers
+     * floating on a card read as four unrelated things -- which on a tile whose
+     * whole job is a comparison ("0 kept against 4 lost") is the one reading
+     * that must not happen. An inset surface with hairlines between the cells
+     * says they belong to each other, and it separates the figures from the
+     * list of rows that several of these tiles put underneath.
+     */
+    gap: 1px;
+    padding: 1px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: var(--dashboard-widget-rule);
 }
 
+/*
+ * Four abreast once there is room for it.
+ *
+ * Answering to the container and not the viewport: a widget is drawn one or
+ * two columns wide and narrowed back to one whenever the dashboard is showing
+ * one, so the width that matters is the width this tile actually got.
+ */
+@container (min-width: 22rem) {
+    .dashboard-widget-stats--wide {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/*
+ * Each cell paints the tile's own ground, so the 1px grid gap behind them is
+ * what draws the hairlines -- one background instead of eight borders that
+ * would double up wherever two cells meet.
+ */
 .dashboard-widget-stat {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 3px;
     min-width: 0;
-    padding: 2px 4px;
-    margin: -2px -4px;
+    padding: 0.45rem 0.55rem;
     border: 0;
-    border-radius: var(--layout-radius-sm, 5px);
-    background: transparent;
+    background: var(--dashboard-widget-cell);
     color: inherit;
     font: inherit;
     text-align: left;
@@ -5837,12 +5940,22 @@ button.dashboard-widget-stat {
 
 button.dashboard-widget-stat:hover,
 button.dashboard-widget-stat:focus-visible {
-    background: rgba(127, 127, 127, 0.09);
+    background: color-mix(in srgb, var(--text-secondary) 10%, var(--background-primary, #111));
 }
 
+/*
+ * The figure, and the whole point of a tile.
+ *
+ * Large, tight and lined up: a dashboard is scanned rather than read, so the
+ * number has to carry at a glance and the word under it only has to survive a
+ * second look. These were within a hair of the same size before, which is what
+ * made a tile read as a paragraph of digits.
+ */
 .dashboard-widget-stat-value {
-    font-size: 1.25em;
-    line-height: 1.1;
+    font-size: 1.5em;
+    line-height: 1.05;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.015em;
     font-variant-numeric: tabular-nums;
     /* Long values -- a size, a version, a date -- shrink rather than push the
        cell beside them out of the grid. */
@@ -5854,6 +5967,9 @@ button.dashboard-widget-stat:focus-visible {
 .dashboard-widget-stat-label {
     color: var(--text-tertiary);
     font-size: var(--font-size-small);
+    /* Tracked out a little: a short dim word under a large number needs the
+       width to read as a caption rather than as a smudge. */
+    letter-spacing: 0.03em;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -5862,9 +5978,30 @@ button.dashboard-widget-stat:focus-visible {
 /* Tone by what the figure means, never by how large it is -- the same rule the
    health widget follows, and for the same reason: nought lost is the best news
    the tile can carry and still belongs in the lost cell. */
-.dashboard-widget-stat--bad .dashboard-widget-stat-value { color: var(--status-error, var(--text-primary)); }
-.dashboard-widget-stat--warn .dashboard-widget-stat-value { color: var(--status-warning, var(--text-primary)); }
-.dashboard-widget-stat--good .dashboard-widget-stat-value { color: var(--status-success, var(--text-primary)); }
+.dashboard-widget-stat--bad .dashboard-widget-stat-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.dashboard-widget-stat--warn .dashboard-widget-stat-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
+.dashboard-widget-stat--good .dashboard-widget-stat-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
+
+/*
+ * A nought is not an alarm.
+ *
+ * Tone says which figure this is; it should not also shout when the figure is
+ * the good one. Every value used to be painted its row's colour, so a tile
+ * reading "0 lost, 0 died, 4 broken" was three reds and the reader had to
+ * check all three to find the one that wanted them. Dimming the noughts leaves
+ * exactly the numbers that need someone coloured, and the label still says
+ * which row it is -- so "0 broken" is still plainly the broken figure.
+ *
+ * Every tone, the good one included. Painting "0 healthy" in the success
+ * colour was the worst case of all: green is the screen's word for "this is
+ * fine", and no healthy links is not fine. A nought is dim whatever row it is
+ * in, and the colours are left to mean what they say.
+ */
+.dashboard-widget-stat.is-quiet .dashboard-widget-stat-value,
+.dashboard-widget-health-row.is-quiet .dashboard-widget-health-value {
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal, 400);
+}
 
 /*
  * A proportion as a bar, beside the figure and never instead of it.
@@ -5873,10 +6010,13 @@ button.dashboard-widget-stat:focus-visible {
  * a person repeats to themselves afterwards.
  */
 .dashboard-widget-meter {
-    height: 4px;
-    border-radius: 2px;
+    height: 6px;
+    border-radius: 3px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+    /* A track that can be seen when the fill is short: at four pixels on a
+       16%-tint ground the empty part of the bar was invisible, so a bar at 5%
+       looked like a stray mark rather than like a bar that is nearly empty. */
+    background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
 }
 
 .dashboard-widget-meter-fill {
@@ -5886,9 +6026,9 @@ button.dashboard-widget-stat:focus-visible {
     transition: width 240ms ease;
 }
 
-.dashboard-widget-meter-fill--good { background: var(--status-success, var(--text-secondary)); }
-.dashboard-widget-meter-fill--warn { background: var(--status-warning, var(--text-secondary)); }
-.dashboard-widget-meter-fill--bad { background: var(--status-error, var(--text-secondary)); }
+.dashboard-widget-meter-fill--good { background: var(--status-success, var(--accent-success, var(--text-secondary))); }
+.dashboard-widget-meter-fill--warn { background: var(--status-warning, var(--accent-warning, var(--text-secondary))); }
+.dashboard-widget-meter-fill--bad { background: var(--status-error, var(--accent-error, var(--text-secondary))); }
 
 /* What the tile assumed, or what happens next. Quieter than a row, because it
    is a condition on the figures rather than one of them. */
@@ -5898,9 +6038,9 @@ button.dashboard-widget-stat:focus-visible {
     font-size: var(--font-size-small);
 }
 
-.dashboard-widget-footnote--bad { color: var(--status-error, var(--text-primary)); }
-.dashboard-widget-footnote--warn { color: var(--status-warning, var(--text-primary)); }
-.dashboard-widget-footnote--good { color: var(--status-success, var(--text-secondary)); }
+.dashboard-widget-footnote--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.dashboard-widget-footnote--warn { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
+.dashboard-widget-footnote--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
 
 .dashboard-widget-panel .dashboard-widget-headline {
     margin-bottom: 0;
