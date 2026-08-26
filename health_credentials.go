@@ -287,9 +287,16 @@ was misconfigured, or because somebody arranged it -- receives this install's
 API key at whatever address it named. The address itself is already checked by
 the wrapper below; this is about what the request carries once it gets there.
 
+Host and port, not the hostname alone. On the machines this runs on, every
+service is the same hostname on a different port: a key for Sonarr on :8989 has
+no business arriving at whatever answers :9999, and a rule that compared only
+names would have called those the same place. The cost is that a redirect which
+changes an explicit port -- http://nas:5000 to https://nas:5001 -- strips too,
+and the check then reports what an anonymous request sees. That is the safe
+direction to be wrong in.
+
 Stripped rather than refused, so a service that legitimately redirects to a
-login host is still reachable: it simply gets an anonymous request and the check
-reports what an anonymous request sees.
+login host is still reachable.
 */
 func credentialRedirectCheck(credential HealthCredential, next func(*http.Request, []*http.Request) error) func(*http.Request, []*http.Request) error {
 	names := credentialHeaderNames(credential)
@@ -302,14 +309,14 @@ func credentialRedirectCheck(credential HealthCredential, next func(*http.Reques
 		if len(names) == 0 || len(via) == 0 || req.URL == nil || via[0].URL == nil {
 			return nil
 		}
-		if strings.EqualFold(req.URL.Hostname(), via[0].URL.Hostname()) {
+		if strings.EqualFold(req.URL.Host, via[0].URL.Host) {
 			return nil
 		}
 		for _, name := range names {
 			req.Header.Del(name)
 		}
 		log.Printf("health: %s redirected to %s; the stored credential was not sent on",
-			via[0].URL.Hostname(), req.URL.Hostname())
+			via[0].URL.Host, req.URL.Host)
 		return nil
 	}
 }

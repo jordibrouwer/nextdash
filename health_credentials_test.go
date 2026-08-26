@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -323,5 +324,102 @@ func TestAnUntrustedCertificateIsAcceptedOnlyWhenAsked(t *testing.T) {
 	if relaxed.Status != "online" {
 		t.Errorf("status = %q (%s), want online with the certificate accepted",
 			relaxed.Status, relaxed.ErrorDetail)
+	}
+}
+
+/*
+A credential does not follow a redirect to another service.
+
+net/http copies a request's headers onto the redirect it follows, and it drops
+only Authorization and Cookie -- and only on a domain change. A stored API key
+travels in a header of the service's own choosing, so nothing in the standard
+library stops it arriving wherever a 302 points.
+
+Two stub servers, which on this machine differ only in port. That is the case
+worth proving: on the hosts nextDash runs on, Sonarr and Radarr are the same
+name with two numbers after it, so a rule comparing hostnames alone would have
+called this the same place and sent the key on.
+*/
+func TestACredentialDoesNotFollowARedirectToAnotherService(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := newTestHandlers(t)
+
+	var (
+		mu      sync.Mutex
+		sawKey  string
+		sawAuth string
+		arrived bool
+	)
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		arrived = true
+		sawKey = r.Header.Get("X-Api-Key")
+		sawAuth = r.Header.Get("Authorization")
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer elsewhere.Close()
+
+	origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, elsewhere.URL+"/landed", http.StatusFound)
+	}))
+	defer origin.Close()
+
+	result := h.pingURLExpecting(context.Background(), origin.URL, expectation{
+		Credential: HealthCredential{
+			Headers:       map[string]string{"X-Api-Key": "the-key"},
+			BasicUser:     "me",
+			BasicPassword: "pw",
+		},
+	})
+
+	mu.Lock()
+	defer mu.Unlock()
+	if !arrived {
+		t.Fatalf("the redirect was never followed (%q, %s), so this proves nothing",
+			result.Status, result.ErrorDetail)
+	}
+	if sawKey != "" {
+		t.Errorf("X-Api-Key = %q at the redirect target, want it stripped", sawKey)
+	}
+	if sawAuth != "" {
+		t.Errorf("Authorization = %q at the redirect target, want it stripped", sawAuth)
+	}
+}
+
+/*
+A redirect that stays on the same service keeps the credential.
+
+The strip has to be narrow, or every service that redirects / to /login is a
+check that reports its own login page.
+*/
+func TestACredentialSurvivesARedirectOnTheSameService(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := newTestHandlers(t)
+
+	var (
+		mu     sync.Mutex
+		sawKey string
+	)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/landed" {
+			http.Redirect(w, r, "/landed", http.StatusFound)
+			return
+		}
+		mu.Lock()
+		sawKey = r.Header.Get("X-Api-Key")
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	h.pingURLExpecting(context.Background(), server.URL, expectation{
+		Credential: HealthCredential{Headers: map[string]string{"X-Api-Key": "the-key"}},
+	})
+
+	mu.Lock()
+	defer mu.Unlock()
+	if sawKey != "the-key" {
+		t.Errorf("X-Api-Key = %q after a redirect within the service, want it kept", sawKey)
 	}
 }
