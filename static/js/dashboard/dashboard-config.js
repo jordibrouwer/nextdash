@@ -21502,6 +21502,10 @@ class DashboardConfig {
             </div>`)
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
                 'config.helpBookmarksBody', '')
+            // A widget is a block on a page beside a category, which is where
+            // the reader of this tab is already standing.
+            + this.helpPanel('config.helpWidgetsTitle', 'Widgets',
+                'config.helpWidgetsBody', '')
             + this.helpPanel('config.helpTagsTitle', 'Tags & collections',
                 'config.helpTagsBody', '');
     }
@@ -21714,6 +21718,15 @@ class DashboardConfig {
     renderHelpData() {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
+            // Where bookmarks come from, where copies of them are kept, and what
+            // this install tells the outside — the three subjects the Data &
+            // backups section grew in v1.4.0, in the order its tabs carry them.
+            + this.helpPanel('config.helpSourcesTitle', 'Sources — where bookmarks come from',
+                'config.helpSourcesBody', '')
+            + this.helpPanel('config.helpArchiveTitle', 'Keeping a copy of a page',
+                'config.helpArchiveBody', '')
+            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks & assistants',
+                'config.helpIntegrationsBody', '')
             + this.helpPanel('config.helpServerLogTitle', 'Server log',
                 'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
