@@ -55,7 +55,44 @@ func (h *Handlers) GetPageBlocksHandler(w http.ResponseWriter, r *http.Request) 
 	if widgets == nil {
 		widgets = []Widget{}
 	}
+	// Not behind the token, because the dashboard has to draw these. Narrowed
+	// instead: see redactWidgetAddresses.
+	if !hasWriteAccess(r) {
+		widgets = redactWidgetAddresses(widgets)
+	}
 	writeJSON(w, PageBlocksResponse{PageID: pageID, Widgets: widgets, Order: order})
+}
+
+/*
+redactWidgetAddresses drops the settings that are addresses rather than layout.
+
+A custom widget's url is usually a LAN address and often carries a key in its
+query string, and this route answers with Access-Control-Allow-Origin: * -- so
+handing it back meant any page open in the reader's browser could ask for it.
+
+Nothing on screen needs it. The tile fetches through /api/widgets/custom by
+widget id precisely so the browser never holds the address, and the config
+editor reads this route through writeFetch, which carries the token.
+
+Copied rather than blanked in place: Config is the store's own map, and editing
+it here would edit it for every later read as well.
+*/
+func redactWidgetAddresses(widgets []Widget) []Widget {
+	out := make([]Widget, 0, len(widgets))
+	for _, widget := range widgets {
+		if widget.Type == WidgetTypeCustom && len(widget.Config) > 0 {
+			narrowed := make(map[string]any, len(widget.Config))
+			for key, value := range widget.Config {
+				if key == "url" || key == "credentialId" {
+					continue
+				}
+				narrowed[key] = value
+			}
+			widget.Config = narrowed
+		}
+		out = append(out, widget)
+	}
+	return out
 }
 
 /*
@@ -77,6 +114,14 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 	pageID, ok := pageIDFromRequest(r)
 	if !ok {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
+		return
+	}
+	// Checked here rather than left to the store, which answers a missing file
+	// with the same error a broken one gets: without this, a request naming a
+	// page that was never created reads as a server fault, and every such
+	// request would mint a block list nothing can ever draw.
+	if !h.pageExists(pageID) {
+		http.Error(w, "No such page", http.StatusNotFound)
 		return
 	}
 
@@ -102,10 +147,7 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 		order = *body.Order
 	}
 
-	if err := h.store.SavePageBlocks(pageID, widgets, order); err != nil {
-		if !respondStorePersistError(w, err) {
-			return
-		}
+	if !respondStorePersistError(w, h.store.SavePageBlocks(pageID, widgets, order)) {
 		return
 	}
 

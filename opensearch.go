@@ -119,10 +119,21 @@ func (h *Handlers) OpenSearchDescription(w http.ResponseWriter, r *http.Request)
 			Template: base + "/#search?q={searchTerms}",
 		}},
 	}
-	if base != "" {
+	/*
+	 * This install's own icon, whichever one that is.
+	 *
+	 * The address named here was /data/icons/favicon.png, which is not a path
+	 * nextDash ever writes: an uploaded favicon lands at /data/favicon<ext> and
+	 * the default is /static/favicon.ico. So the browser was pointed at a file
+	 * that is not there and drew the search entry without an icon.
+	 *
+	 * manifestIcons already answers "what is this install's icon", for the app
+	 * manifest; asking it here means the two cannot drift apart.
+	 */
+	if icons := manifestIcons(settings); base != "" && len(icons) > 0 {
 		description.Image = &openSearchImage{
-			Width: 32, Height: 32, Type: "image/png",
-			URL: base + "/data/icons/favicon.png",
+			Width: 48, Height: 48, Type: icons[0].Type,
+			URL: base + icons[0].Src,
 		}
 	}
 
@@ -130,6 +141,17 @@ func (h *Handlers) OpenSearchDescription(w http.ResponseWriter, r *http.Request)
 	// A browser reads this once when the site is first seen, and again only
 	// when it is refetched; an hour keeps a renamed install from being stuck.
 	w.Header().Set("Cache-Control", "public, max-age=3600")
+	/*
+	 * Both the template and the icon are built from the address this request
+	 * arrived on, proxy headers included -- so the document is not the same for
+	 * every caller, and a shared cache that treated it as one would hand a
+	 * neighbour's browser a template pointing at whatever host the previous
+	 * request claimed to be.
+	 *
+	 * Add, not Set: the gzip middleware has already put Accept-Encoding in Vary
+	 * on this header map, and replacing it would undo that.
+	 */
+	w.Header().Add("Vary", "X-Forwarded-Host, X-Forwarded-Proto")
 
 	_, _ = w.Write([]byte(xml.Header))
 	encoder := xml.NewEncoder(w)

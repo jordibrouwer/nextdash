@@ -161,8 +161,12 @@ localArchiveSlug is the filename stem for a URL, without the timestamp.
 The same transformation localArchiveName applies, exposed on its own so a
 listing can group the captures of one page together and a bookmark can find its
 own. Two different URLs can in principle collapse to the same slug -- everything
-unusual becomes a dash -- so a match is a strong hint rather than proof, which is
-why the stored capture also carries the key it was made for.
+unusual becomes a dash -- so a match is a hint rather than proof, and nothing on
+disk resolves the doubt: a capture is a bare HTML file, and the key
+CaptureLocally hands back with a fresh one is not written anywhere a later
+listing could read it. Two URLs have to differ only in punctuation to collide,
+which is why this stays a documented limit rather than a sidecar file per
+capture.
 */
 func localArchiveSlug(target string) string {
 	name := localArchiveName(target, time.Unix(0, 0).UTC())
@@ -172,9 +176,10 @@ func localArchiveSlug(target string) string {
 // LocalCapture is one stored copy.
 type LocalCapture struct {
 	Path string `json:"path"`
-	// URLKey is the canonical key of the page this is a copy of, so a capture
-	// can be matched back to the bookmarks that point at it. Without it the
-	// archive is a folder of files nobody can connect to anything.
+	// URLKey is the canonical key of the page this is a copy of. Filled on a
+	// capture that was just made, where the URL is still in hand; a listing
+	// reads the directory rather than the files, so there it is empty and the
+	// filename stem is what connects a capture to a bookmark.
 	URLKey string `json:"urlKey,omitempty"`
 	Bytes  int64  `json:"bytes"`
 	/*

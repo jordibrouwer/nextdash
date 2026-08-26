@@ -223,6 +223,19 @@ func writeAccessToken() string {
 	return strings.TrimSpace(os.Getenv("NEXTDASH_WRITE_TOKEN"))
 }
 
+/*
+hasWriteAccess reports what requireWriteAccess enforces, without answering the
+request.
+
+For a route that narrows what it returns rather than refusing it outright: the
+dashboard has to be able to read a page's blocks to draw them, and only the
+settings that are addresses need withholding.
+*/
+func hasWriteAccess(r *http.Request) bool {
+	token := writeAccessToken()
+	return token == "" || r.Header.Get("X-NextDash-Token") == token
+}
+
 func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bool {
 	token := writeAccessToken()
 	if token == "" {

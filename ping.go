@@ -116,8 +116,11 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 		// The dial budget stays a fraction of the whole: a connection that
 		// cannot be opened should fail well before the body has a chance to be
 		// read, whatever the total allows.
-		Transport:     transport,
-		CheckRedirect: safeRedirectCheck(allowLocal, 5),
+		Transport: transport,
+		// The address rule and the secret rule, in that order: a redirect has
+		// to be somewhere this install may reach, and a credential stored for
+		// one host does not travel to another that answered with a 302.
+		CheckRedirect: credentialRedirectCheck(expect.Credential, safeRedirectCheck(allowLocal, 5)),
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)

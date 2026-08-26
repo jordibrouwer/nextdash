@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -255,6 +256,62 @@ func listHealthCredentials() map[string]string {
 		labels[id] = label
 	}
 	return labels
+}
+
+/*
+credentialHeaderNames lists the headers this credential puts on a request.
+
+Authorization is in the list whenever basic auth is set, even though net/http
+drops it on a redirect of its own accord: its rule is a domain match, so a
+redirect to a sibling host under the same domain keeps it. The rule here is the
+host, exactly, and saying so in one place beats relying on two rules that nearly
+agree.
+*/
+func credentialHeaderNames(credential HealthCredential) []string {
+	names := make([]string, 0, len(credential.Headers)+1)
+	for name := range credential.Headers {
+		names = append(names, name)
+	}
+	if credential.BasicUser != "" {
+		names = append(names, "Authorization")
+	}
+	return names
+}
+
+/*
+credentialRedirectCheck keeps a secret from following a redirect off its host.
+
+A credential is stored for one service. net/http copies the headers of a request
+onto the redirect it follows, so a monitored host that answers 302 -- because it
+was misconfigured, or because somebody arranged it -- receives this install's
+API key at whatever address it named. The address itself is already checked by
+the wrapper below; this is about what the request carries once it gets there.
+
+Stripped rather than refused, so a service that legitimately redirects to a
+login host is still reachable: it simply gets an anonymous request and the check
+reports what an anonymous request sees.
+*/
+func credentialRedirectCheck(credential HealthCredential, next func(*http.Request, []*http.Request) error) func(*http.Request, []*http.Request) error {
+	names := credentialHeaderNames(credential)
+	return func(req *http.Request, via []*http.Request) error {
+		if next != nil {
+			if err := next(req, via); err != nil {
+				return err
+			}
+		}
+		if len(names) == 0 || len(via) == 0 || req.URL == nil || via[0].URL == nil {
+			return nil
+		}
+		if strings.EqualFold(req.URL.Hostname(), via[0].URL.Hostname()) {
+			return nil
+		}
+		for _, name := range names {
+			req.Header.Del(name)
+		}
+		log.Printf("health: %s redirected to %s; the stored credential was not sent on",
+			via[0].URL.Hostname(), req.URL.Hostname())
+		return nil
+	}
 }
 
 /*

@@ -206,6 +206,10 @@ func TestEmitReachesOnlySubscribedEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// httptest listens on loopback, which delivery now refuses unless this
+	// install allows local addresses.
+	defer webhookAllowLocalForTest(true)()
+
 	emitWebhookEvent(webhookEventBookmarkAdded, map[string]any{"name": "Sonarr"})
 	select {
 	case path := <-done:
@@ -269,6 +273,7 @@ func TestOnlyServerErrorsAreRetried(t *testing.T) {
 			// retry behaviour can be tested without the wait.
 			restore := webhookRetryDelayForTest(time.Millisecond)
 			defer restore()
+			defer webhookAllowLocalForTest(true)()
 
 			deliverWebhook(WebhookEndpoint{URL: server.URL, Secret: "k", Enabled: true},
 				webhookEventBookmarkAdded, map[string]any{})
@@ -295,6 +300,7 @@ func TestASuccessfulDeliveryIsSentOnce(t *testing.T) {
 
 	restore := webhookRetryDelayForTest(time.Millisecond)
 	defer restore()
+	defer webhookAllowLocalForTest(true)()
 	deliverWebhook(WebhookEndpoint{URL: server.URL, Secret: "k", Enabled: true},
 		webhookEventBookmarkAdded, map[string]any{})
 
@@ -317,6 +323,9 @@ func TestBookmarkChangesReachWebhooksWithTheActivityLogOff(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	resetActivityLogForTest(activityLogConfig{disabled: true})
 	defer clearActivityLogTestOverride()
+	// httptest listens on loopback, which delivery now refuses unless this
+	// install allows local addresses.
+	defer webhookAllowLocalForTest(true)()
 
 	delivered := make(chan string, 8)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

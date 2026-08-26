@@ -222,11 +222,20 @@ func resolveBlockOrder(stored []string, categories []Category, widgets []Widget)
 	return out
 }
 
-// normalizeWidgets cleans a page's widgets, dropping the ones nothing renders.
-//
-// Dropping rather than refusing the whole write: a file that arrived from an
-// older or newer version should still open, minus the block that cannot be
-// drawn.
+// widgetMaxPerPage bounds a page. Twenty-four is two columns of a screenful:
+// past that a widget is no longer a summary of the page, it is the page. The
+// body limit on the save route is not a substitute -- it bounds the bytes, not
+// the number of blocks the grid then has to draw on every render.
+const widgetMaxPerPage = 24
+
+/*
+normalizeWidgets cleans a page's widgets, dropping the ones nothing renders.
+
+Dropping rather than refusing the whole write: a file that arrived from an older
+or newer version should still open, minus the block that cannot be drawn. The
+cap is applied on the way out for the same reason -- a file that somehow holds
+more is read as its first twenty-four rather than refused entirely.
+*/
 func normalizeWidgets(widgets []Widget) []Widget {
 	if len(widgets) == 0 {
 		return nil
@@ -234,6 +243,9 @@ func normalizeWidgets(widgets []Widget) []Widget {
 	out := make([]Widget, 0, len(widgets))
 	seen := make(map[string]struct{}, len(widgets))
 	for _, widget := range widgets {
+		if len(out) >= widgetMaxPerPage {
+			break
+		}
 		normalized, err := normalizeWidget(widget)
 		if err != nil {
 			continue

@@ -407,17 +407,45 @@ func buildWebhookRequest(ctx context.Context, endpoint WebhookEndpoint, event st
 }
 
 /*
-webhookHTTPClient carries no local-address guard, because the guard has already
-run: an endpoint URL is checked against the same SSRF rules as a bookmark ping
-when it is saved, not when it is delivered to.
+webhookAllowLocal reports whether this install may deliver to a local address.
 
-Checking at save time rather than here is what lets the screen say "this address
-is refused" while somebody is looking at the field. The alternative — accepting
-the URL and refusing it on every delivery — produces an endpoint that appears
-configured and silently never fires.
+A function rather than a value, because the setting can be changed while the
+process runs and a copy taken at startup would keep answering with whatever it
+was then. It defaults to refusing, so a build that never registers a handler
+gets the stricter answer rather than the looser one by accident.
+*/
+var webhookAllowLocal = func() bool { return false }
+
+// RegisterWebhookDelivery wires delivery to this install's settings, the way
+// registerHandlerSources wires the importers.
+func (h *Handlers) RegisterWebhookDelivery() {
+	webhookAllowLocal = h.allowLocalBookmarks
+}
+
+// webhookAllowLocalForTest lets a test deliver to httptest's loopback server,
+// the same way webhookRetryDelayForTest lets it watch a retry in milliseconds.
+func webhookAllowLocalForTest(allow bool) func() {
+	previous := webhookAllowLocal
+	webhookAllowLocal = func() bool { return allow }
+	return func() { webhookAllowLocal = previous }
+}
+
+/*
+webhookHTTPClient is the guarded client every other outbound request uses.
+
+An endpoint URL is checked against the SSRF rules when it is saved, which is
+what lets the screen say "this address is refused" while somebody is looking at
+the field. That check cannot be the only one, though: it ran against what the
+name answered then, and a name is resolved again at delivery. Without a guard
+here, a receiver that answers 302 -- or one whose DNS points somewhere else by
+the time an event fires -- reaches an address the save had already refused.
+
+Zero redirects, because a webhook receiver has nowhere to send us. The contract
+is to acknowledge a POST; a 3xx is either a misconfiguration worth seeing in the
+log or somebody steering the delivery, and neither is worth following.
 */
 func webhookHTTPClient() *http.Client {
-	return &http.Client{Timeout: webhookTimeout}
+	return newOutboundHTTPClient(webhookAllowLocal(), webhookTimeout, 0)
 }
 
 /*
@@ -541,15 +569,29 @@ func (h *Handlers) WebhooksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
+	/*
+	 * The token first, GET included.
+	 *
+	 * An endpoint URL is not a description of a webhook, it is the webhook: a
+	 * receiver acts on whatever posts to it, which is the whole reason the body
+	 * is signed at all. Answering the list before the check made that address
+	 * readable by anything that can reach this route -- and since the default
+	 * Access-Control-Allow-Origin is *, that includes any page open in the
+	 * reader's browser.
+	 *
+	 * Nothing on screen loses by it: the config panel fetches this through
+	 * nextDashFetch, which carries the token already, and an install with no
+	 * token set is unaffected.
+	 */
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"endpoints": listWebhookEndpoints(),
 			"events":    webhookEventNames,
 		})
-		return
-	}
-
-	if !h.requireWriteAccess(w, r) {
 		return
 	}
 

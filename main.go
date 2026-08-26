@@ -72,6 +72,10 @@ func main() {
 	// they inherit the SSRF checks and the rate limiting rather than each
 	// arranging their own.
 	handlers.registerHandlerSources()
+	// Same wiring for outgoing deliveries: whether a webhook may reach a local
+	// address is this install's setting, not a decision webhooks.go can make on
+	// its own.
+	handlers.RegisterWebhookDelivery()
 
 	// Create router
 	r := mux.NewRouter()

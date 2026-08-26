@@ -466,16 +466,21 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "nextDash Widget/1.0")
+	var credential HealthCredential
 	if spec.CredentialID != "" {
 		// The same store the health checks use: kept in its own file, 0600, and
 		// never handed back to a browser. The widget names one; it never holds
 		// one.
-		if credential, ok := lookupHealthCredential(spec.CredentialID); ok {
+		if found, ok := lookupHealthCredential(spec.CredentialID); ok {
+			credential = found
 			applyHealthCredential(req, credential)
 		}
 	}
 
 	client := h.outboundHTTPClient(customWidgetTimeout, 3)
+	// And the same rule a health check follows: a secret stored for one host
+	// does not travel to another because that host answered with a redirect.
+	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
 	resp, err := client.Do(req)
 	if err != nil {
 		result.Error = "no answer from that address"
@@ -589,7 +594,21 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now()
 	cacheKey := strconv.Itoa(pageID) + ":" + widgetID
-	if cached, ok := customWidgetCached(cacheKey, now); ok && r.URL.Query().Get("refresh") != "1" {
+	/*
+	 * refresh=1 is the one parameter here that costs a request at somebody
+	 * else's service, with this install's stored credential on it -- it skips
+	 * the cache, including the short TTL a failure gets so that an open
+	 * dashboard cannot become a retry loop against a service that is down.
+	 *
+	 * So it is behind the token, while the ordinary read is not. Whoever is
+	 * pressing refresh is the reader in front of the config screen; everything
+	 * else drawing the tile is content with the answer the cache already has.
+	 */
+	forced := r.URL.Query().Get("refresh") == "1"
+	if forced && !h.requireWriteAccess(w, r) {
+		return
+	}
+	if cached, ok := customWidgetCached(cacheKey, now); ok && !forced {
 		_ = json.NewEncoder(w).Encode(cached)
 		return
 	}
