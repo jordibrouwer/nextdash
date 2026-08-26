@@ -1546,7 +1546,7 @@ If a dashboard tab is open on the same server, it may toast and refresh.
 ### Write token & CORS
 
 - If the server sets `NEXTDASH_WRITE_TOKEN`, paste the same value in extension **Settings → Write token**.  
-- If you set `NEXTDASH_CORS_ORIGINS` on the server, add your extension ID (`chrome-extension://…`) to the allowlist or cross-origin saves will fail.
+- The extension needs no CORS entry: its origin is allowed by default, whatever `NEXTDASH_CORS_ORIGINS` is set to.
 
 See `extension/README.md` for development notes.
 
@@ -1699,13 +1699,13 @@ Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/dupl
 
 ### Optional `NEXTDASH_CORS_ORIGINS`
 
-Default API responses use `Access-Control-Allow-Origin: *` so the browser extension works without extra config. On a shared LAN/VPS, set a comma-separated allowlist:
+By default only an installed extension's origin receives `Access-Control-Allow-Origin`; a web page on another origin gets none and cannot read the API. Before 1.4 the default was `*`, which let any site open in a tab read your bookmarks from a nextDash it could guess the address of. To allow a page of your own, set a comma-separated allowlist:
 
 ```bash
 NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
 ```
 
-Only matching `Origin` headers receive CORS headers. Include your extension origin when restricting CORS.
+Only matching `Origin` headers receive CORS headers; extension origins are always allowed and need no entry. Set `NEXTDASH_CORS_ORIGINS=*` to restore the pre-1.4 behaviour of answering every origin.
 
 ### Activity log
 
@@ -1864,7 +1864,7 @@ Set manual city or browser location permission; save general settings; check ref
 
 - Verify server URL, network, and that nextDash is running.  
 - If `NEXTDASH_WRITE_TOKEN` is set, paste it in extension **Settings → Write token**.  
-- If `NEXTDASH_CORS_ORIGINS` is set, include `chrome-extension://your-extension-id` in the allowlist.  
+- The extension's origin is allowed by default; `NEXTDASH_CORS_ORIGINS` does not need an entry for it.  
 - **401** = missing/wrong write token; **403** = CORS origin not allowed; **409** = duplicate shortcut on that page.  
 - Check browser console and server logs (enable `NEXTDASH_ACTIVITY_LOG=security` for auth/rate-limit lines).
 

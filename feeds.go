@@ -622,6 +622,19 @@ type FeedFresh struct {
 	NewCount   int    `json:"newCount"`
 	LastItemAt int64  `json:"lastItemAt,omitempty"`
 	CheckedAt  int64  `json:"checkedAt,omitempty"`
+	/*
+	 * Retired reports that this feed stopped being polled after repeated
+	 * failures -- see the feedMaxFailures check in pollFeeds.
+	 *
+	 * A retired feed simply goes quiet: it is skipped on every round, so it
+	 * produces no items and no error, and nothing on screen says why. Until now
+	 * that state existed only in the state file, which is where a fact goes to
+	 * be true and unread.
+	 */
+	Retired bool `json:"retired,omitempty"`
+	// Failures is how many consecutive rounds failed, so a feed on its way out
+	// can be seen before it is gone.
+	Failures int `json:"failures,omitempty"`
 }
 
 // freshnessForBookmarks counts, per bookmark, the entries published since that
@@ -654,6 +667,8 @@ func freshnessForBookmarks(state FeedStateFile, bookmarks []Bookmark) map[string
 			NewCount:   count,
 			LastItemAt: feed.LastItemAt,
 			CheckedAt:  feed.CheckedAt,
+			Failures:   feed.Failures,
+			Retired:    feed.Failures >= feedMaxFailures,
 		}
 	}
 	return out

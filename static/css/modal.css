@@ -40,15 +40,16 @@
     opacity: 1;
 }
 
-/* 40rem, not the 52rem the cheat sheet uses: this modal is one column of prose,
+/* 36rem, not the 52rem the cheat sheet uses: this modal is one column of prose,
    and at 52rem its lines ran to ~84 characters — well past the 45–75 where the
-   eye still finds the next line reliably. Narrowing is the readability fix, not
-   just a size fix. The cheat sheet keeps 52rem because it is a two-column key
-   table that needs the width. */
+   eye still finds the next line reliably. It sat at 40rem (~61 characters) and
+   came down again once the release stopped competing with three panels above
+   it; 36rem puts a line at ~58. The cheat sheet keeps 52rem because it is a
+   two-column key table that needs the width. */
 .modal.whats-new-modal {
     max-height: 90vh;
-    max-width: min(40rem, calc(100vw - 2.5rem));
-    width: min(40rem, calc(100vw - 2.5rem));
+    max-width: min(36rem, calc(100vw - 2.5rem));
+    width: min(36rem, calc(100vw - 2.5rem));
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -72,7 +73,7 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) {
 }
 
 body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    width: min(40rem, calc(100vw - 2.5rem));
+    width: min(36rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
@@ -114,19 +115,6 @@ body.no-animations:has(#config-main) #app-modal.modal-overlay:has(.whats-new-mod
     width: 62%;
 }
 
-.wn-lazy-sentinel {
-    height: 1px;
-    width: 100%;
-    pointer-events: none;
-}
-
-.wn-load-more-hint {
-    margin: 1rem 0 0.5rem;
-    font-size: calc(var(--font-size-controls) * 0.9);
-    color: var(--text-secondary);
-    text-align: center;
-}
-
 .wn-empty {
     margin: 0.5rem 0;
     color: var(--text-secondary);
@@ -157,68 +145,18 @@ body.no-animations .wn-skeleton-line {
    The two blocks are fixed overhead on every open, sitting in the most valuable
    space in the modal, so the spacing around them is kept tight — 1rem + 1.5rem
    pushed the first actual release item below the fold. */
-.wn-top-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-    align-items: stretch;
-}
-
 @media (max-width: 42rem) {
     .modal.whats-new-modal .modal-header {
         flex-wrap: wrap;
         align-items: flex-start;
     }
 
-    .modal.whats-new-modal .modal-header .wn-update-check-header {
-        width: 100%;
-        justify-content: flex-start;
+    /* The footer's two halves stop fitting side by side long before the modal
+       runs out of room; stacked they still read in the same order. */
+    .wn-foot {
+        flex-direction: column;
+        align-items: flex-start;
     }
-
-    .modal.whats-new-modal .modal-header .wn-update-check-status {
-        text-align: left;
-        white-space: normal;
-    }
-}
-
-.wn-feature-lead {
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0;
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
-    border-radius: var(--layout-radius-sm, 8px);
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
-    min-width: 0;
-}
-
-.wn-feature-lead-text {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-primary);
-    line-height: 1.5;
-}
-
-.wn-intro {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.6rem;
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-.wn-intro-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    line-height: 1.5;
 }
 
 .modal.whats-new-modal .modal-header {
@@ -235,43 +173,40 @@ body.no-animations .wn-skeleton-line {
     margin-right: 0;
 }
 
+/* Lives in the footer now, so it reads from the left like the text above it
+   rather than right-aligned across the header. */
 .wn-update-check-header {
-    width: auto;
-    flex: 1 1 auto;
-    flex-shrink: 1;
+    width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.65rem;
+    justify-content: flex-start;
+    gap: 0.55rem;
     min-width: 0;
 }
 
-.wn-update-check-header--warn {
-    padding: 0.45rem 0.65rem;
-    border-radius: var(--layout-radius-sm, 8px);
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
+/* An available update is worth marking, but a tinted bordered box in the
+   footer would put back exactly the panel this redesign removed from the top.
+   A dot in the accent is enough to catch the eye of somebody who has finished
+   reading. */
+.wn-update-check-header--warn::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--accent-primary);
 }
 
 .wn-update-check-meta {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     flex-wrap: wrap;
     gap: 0.35rem 0.45rem;
     min-width: 0;
     flex: 1 1 auto;
-}
-
-.wn-feature-lead--skeleton {
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-    justify-content: center;
-    background: var(--background-secondary);
-    border-color: var(--border-primary);
 }
 
 .wn-update-check-dismiss {
@@ -291,16 +226,20 @@ body.no-animations .wn-skeleton-line {
     color: var(--text-primary);
 }
 
+/* Wraps rather than truncates.
+
+   It was one nowrap line with an ellipsis, which fitted while it had the whole
+   header to itself. Beside the Ko-fi button in a narrower modal it started
+   cutting off mid-sentence — and "Could not reach GitHub. Try again lat…" is a
+   message nobody can act on. */
 .wn-update-check-status {
     margin: 0;
-    font-size: var(--font-size-controls);
+    font-size: calc(var(--font-size-controls) * 0.94);
     color: var(--text-secondary);
     line-height: 1.45;
-    text-align: right;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: min(100%, 28rem);
+    text-align: left;
+    white-space: normal;
+    max-width: 100%;
 }
 
 .wn-update-check-status--warn { color: var(--accent-primary); }
@@ -496,72 +435,158 @@ body.no-animations .wn-kofi-star {
 }
 
 /* ── What's New release blocks ─────────────────────────────────── */
-.wn-release {
-    margin-bottom: 1.75rem;
-    padding-left: 0.9rem;
-    border-left: 2px solid var(--accent-primary);
-}
-.wn-release:last-child { margin-bottom: 0; }
+/* ===========================================================================
+   The release itself.
 
-.wn-release-header {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: nowrap;
-    gap: 0.55rem;
-    margin-bottom: 0.9rem;
+   Rewritten from a run of near-identical rows into three levels the eye can
+   tell apart without reading: one release headline, a group per area, and an
+   entry that is a title with an explanation under it.
+
+   The measurement that drove it: 283px of the 918px modal was spent before the
+   first release, on three bordered panels that were not about the release —
+   and six separate elements shared the accent colour, so nothing it marked
+   stood out. Panels are gone; the accent now marks two things.
+   =========================================================================== */
+
+.wn-hero {
+    padding-bottom: 1.1rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-primary);
 }
-.wn-release-tag {
-    font-size: var(--font-size-controls);
+
+/* The version, set as the headline it is. Nothing else in the modal is this
+   size, which is what makes "which release am I reading" answerable at a
+   glance rather than by finding a small chip. */
+.wn-hero-version {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.75);
     font-weight: var(--font-weight-semibold);
-    color: var(--accent-primary);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 38%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
-    padding: 0.1rem 0.42rem;
-    white-space: nowrap;
-    flex-shrink: 0;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
 }
-.wn-release-date {
+
+.wn-hero-meta {
+    margin: 0.2rem 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
-    white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 
-/* Sections get more air than items do, so the four groups read as groups while
-   scrolling. The extra height that costs is more than paid back by the narrower
-   column: shorter lines mean fewer wrapped rows per item. */
-.wn-section { margin-bottom: 1.1rem; }
-.wn-section:last-child { margin-bottom: 0; }
-
-.wn-section-title {
-    font-size: var(--font-size-category);
-    font-weight: var(--font-weight-semibold);
+/* modalLead, written per release and previously boxed. A subtitle is what it
+   always was. */
+.wn-hero-lead {
+    margin: 0.75rem 0 0;
+    font-size: var(--font-size-text);
+    line-height: 1.55;
     color: var(--text-primary);
-    margin-bottom: 0.45rem;
-    letter-spacing: 0.01em;
+    max-width: 46ch;
 }
 
-.wn-list {
+.wn-group { margin-top: 1.5rem; }
+
+/* An eyebrow rather than a heading: the group name is a label on what follows,
+   and at heading weight it competed with the entry titles it introduces. */
+.wn-group-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border-primary);
+    font-size: calc(var(--font-size-controls) * 0.86);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+.wn-group-count {
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+}
+
+.wn-entries {
     list-style: none;
     padding: 0;
     margin: 0;
+}
+
+.wn-entry {
     display: grid;
-    gap: 0.55rem;
+    grid-template-columns: 0.65rem 1fr;
+    gap: 0 0.6rem;
+    padding: 0.5rem 0;
+    align-items: start;
 }
-.wn-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    /* 1.5 rather than 1.55: at ~63 characters a line needs less leading than it
-       did at ~84 to stay trackable. */
-    line-height: 1.5;
+.wn-entry + .wn-entry {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
 }
-.wn-item-text {
-    flex: 1;
+
+/* Filled for new, hollow for a fix.
+
+   This replaces a bordered uppercase chip that cost about seven characters of
+   a column deliberately kept to ~63, and whose "new" tint was drawn from
+   --accent-success — the same value as --accent-primary on a green accent, so
+   the badge and the version tag beside it were literally the same colour. The
+   word itself is still in the markup for a screen reader. */
+.wn-dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    margin-top: 0.48rem;
+    background: var(--accent-primary);
+}
+.wn-dot--fix {
+    background: transparent;
+    border: 1px solid var(--text-tertiary);
+    opacity: 0.7;
+}
+
+.wn-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.wn-entry-main { min-width: 0; }
+
+/* The lead sentence, on its own line. It was bold-inside-a-paragraph before —
+   ten to twenty bold words, which is long enough that bold stops reading as
+   emphasis and the explanation behind it ran straight on. */
+.wn-entry-title {
     font-size: var(--font-size-text);
-    color: var(--text-secondary);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.45;
+    color: var(--text-primary);
 }
-.wn-item-text strong { color: var(--text-primary); }
-.wn-item-text code {
+
+.wn-entry-body {
+    margin-top: 0.15rem;
+    font-size: calc(var(--font-size-text) * 0.95);
+    line-height: 1.55;
+    color: var(--text-secondary);
+    opacity: 0.92;
+}
+/* Folded at three lines. A release of 110 items is one long scroll however it
+   is set; this makes the scroll a list of headlines with detail on request. */
+.wn-entry-body.is-folded {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.wn-entry-body strong { color: var(--text-primary); }
+.wn-entry-body code,
+.wn-entry-title code {
     font-family: var(--font-family-main);
     font-size: 0.88em;
     background: var(--background-secondary);
@@ -569,45 +594,29 @@ body.no-animations .wn-kofi-star {
     padding: 0.05rem 0.28rem;
     color: var(--text-primary);
 }
-.wn-badge {
-    flex-shrink: 0;
-    font-size: 0.68em;
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0.12rem 0.38rem;
-    border: 1px solid;
-    margin-top: 0.18rem;
-    white-space: nowrap;
-}
-.wn-badge-new {
-    color: var(--accent-success);
-    border-color: color-mix(in srgb, var(--accent-success) 40%, transparent);
-    background: color-mix(in srgb, var(--accent-success) 9%, transparent);
-}
-.wn-badge-fix {
+
+.wn-entry-more {
+    margin-top: 0.2rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-bottom: 1px dotted currentColor;
+    font-family: inherit;
+    font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-tertiary);
-    border-color: var(--border-primary);
-    background: var(--background-secondary);
+    cursor: pointer;
 }
+.wn-entry-more:hover { color: var(--accent-primary); }
 
-/* "New shortcuts" section — tinted with --accent-warning so it reads as a
-   distinct kind of content next to the green new / grey fix rundown. */
-.wn-section-keys {
-    border-left: 3px solid color-mix(in srgb, var(--accent-warning) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-warning) 6%, transparent);
-    padding: 0.6rem 0.75rem 0.65rem;
-    border-radius: 0 var(--layout-radius-sm, 6px) var(--layout-radius-sm, 6px) 0;
-}
-
-.wn-section-keys .wn-section-title {
-    color: var(--accent-warning);
-}
-
-.wn-item-keys {
+/* Shortcuts keep the warning accent, which is the one place a second colour
+   still earns its keep: a key you can press is a different kind of thing from
+   a change you can read about. */
+.wn-group--keys .wn-group-title { color: var(--accent-warning); }
+.wn-entry--keys {
+    grid-template-columns: auto 1fr;
     align-items: baseline;
+    gap: 0 0.55rem;
 }
-
 .wn-keycap {
     flex-shrink: 0;
     font-family: var(--font-family-main);
@@ -622,6 +631,127 @@ body.no-animations .wn-kofi-star {
     min-width: 2.2rem;
     text-align: center;
 }
+.wn-entry--keys .wn-entry-title { font-weight: var(--font-weight-normal, 400); }
+
+/* ---- Everything older, one row each ------------------------------------- */
+
+.wn-earlier {
+    margin-top: 2rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.wn-earlier-title {
+    margin: 0 0 0.4rem;
+    font-size: calc(var(--font-size-controls) * 0.86);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.wn-earlier-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wn-earlier-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.45rem 0;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
+    font-family: inherit;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    text-align: left;
+    cursor: pointer;
+}
+.wn-earlier-row:hover { color: var(--text-primary); }
+.wn-earlier-tag {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.wn-earlier-date {
+    flex: 1;
+    color: var(--text-tertiary);
+    min-width: 0;
+}
+.wn-earlier-chevron {
+    color: var(--text-tertiary);
+    transition: transform 0.15s ease;
+}
+.wn-earlier-row[aria-expanded="true"] .wn-earlier-chevron {
+    transform: rotate(90deg);
+}
+body.no-animations .wn-earlier-chevron { transition: none; }
+
+/* An opened release is indented behind a rule, so where it starts and where
+   the next row begins is a matter of looking rather than counting. This is the
+   one place the old left-hand accent rule still earns its keep: it marks a
+   containment that is really there. */
+.wn-earlier-body {
+    padding: 0.1rem 0 1rem 0.9rem;
+    margin-left: 0.15rem;
+    border-left: 2px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+.wn-earlier-body .wn-group:first-child { margin-top: 0.8rem; }
+.wn-earlier-body .wn-group-title { border-bottom-color: color-mix(in srgb, var(--border-primary) 70%, transparent); }
+
+/* ---- The footer, where the asking happens ------------------------------- */
+
+/* Sticky so it is always reachable without ever being the first thing read.
+   Both halves used to be bordered panels above the first release: the update
+   status across the header in the accent colour, and the support request
+   directly under it. */
+.wn-foot {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.6rem;
+    padding: 0.6rem 0 0.2rem;
+    border-top: 1px solid var(--border-primary);
+    background: var(--background-primary);
+}
+.wn-foot-update { min-width: 0; flex: 1 1 12rem; }
+.wn-foot-update:empty { display: none; }
+
+/* Room for the sparkles.
+
+   The stars are drawn 0.75rem outside the button on every side, which used to
+   fall inside the padding of the panel the button sat in. Flush against the
+   right edge of the footer that overhang became eight pixels of scrollable
+   width -- a horizontal scrollbar under a modal that has nothing to scroll
+   sideways to. The gap is where the decoration lives, so it does not read as
+   a misalignment. */
+.wn-foot .wn-kofi-btn { margin-right: 0.75rem; }
+
+/* Smaller here than in the Config panels that share this class.
+
+   There the button is the point of the panel it sits in. Here it is the last
+   line of a modal somebody opened to read release notes: still present, still
+   reachable, but sized like the footnote it now is rather than like the
+   heaviest thing on screen. */
+.wn-foot .wn-kofi-btn {
+    gap: 0.3rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 0.3rem;
+    font-size: calc(var(--font-size-controls) * 0.88);
+}
+.wn-foot .wn-kofi-icon {
+    width: 13px;
+    height: 13px;
+}
+
 
 .modal.keyboard-cheat-sheet-modal {
     max-width: min(52rem, calc(100vw - 2.5rem));

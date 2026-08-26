@@ -26,9 +26,24 @@ const DEFAULT_DISCOVERABILITY_KEYS = [
 ];
 
 /** Env vars for the Playwright-managed `go run .` server. */
+/**
+ * Where the GitHub stars importer looks for its API.
+ *
+ * Pointed at a stub the stars spec starts, so that one spec can drive the whole
+ * path -- browser, server, importer -- without a token and without reaching
+ * GitHub. Harmless for every other spec: nothing reads this unless a source of
+ * that kind is configured, and none of them configure one.
+ */
+const GITHUB_STUB_PORT = 18077;
+
+/** Same idea for Raindrop's API. */
+const RAINDROP_STUB_PORT = 18076;
+
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
+    NEXTDASH_GITHUB_API_BASE: `http://127.0.0.1:${GITHUB_STUB_PORT}`,
+    NEXTDASH_RAINDROP_API_BASE: `http://127.0.0.1:${RAINDROP_STUB_PORT}`,
     ...(process.env.NEXTDASH_DATA_DIR ? { NEXTDASH_DATA_DIR: process.env.NEXTDASH_DATA_DIR } : {}),
 };
 
@@ -472,6 +487,8 @@ async function resetDashboardData(page) {
 }
 
 module.exports = {
+    GITHUB_STUB_PORT,
+    RAINDROP_STUB_PORT,
     resetDashboardData,
     WRITE_TOKEN,
     DASHBOARD_WHATS_NEW_RELEASE,

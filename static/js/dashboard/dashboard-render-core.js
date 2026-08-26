@@ -275,6 +275,30 @@ class DashboardRenderCore {
             });
         });
 
+        /*
+         * Widgets are blocks like any other, so they go in this same list.
+         *
+         * Pushed before the categories rather than after, because the stored
+         * order sorts everything at the end -- and what happens to a widget the
+         * order does not name should be "it appears", not "it appears last for
+         * ever". Anything not in the order keeps the position it is pushed in.
+         */
+        (d.widgets || []).forEach((widget) => {
+            // Switched off: kept in the order and out of the grid, so turning it
+            // back on returns it to the place the reader put it rather than to
+            // the end.
+            if (widget?.config?.enabled === false) return;
+            columnBlocks.push({
+                widget,
+                category: {
+                    id: widget.id,
+                    name: widget.title || '',
+                    isWidget: true,
+                },
+                bookmarks: [],
+            });
+        });
+
         d.categories.forEach((category) => {
             const id = String(category.id);
             const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || [], category);
@@ -328,7 +352,204 @@ class DashboardRenderCore {
             });
         });
 
-        return columnBlocks;
+        return this.applyBlockOrder(columnBlocks);
+    }
+
+    /*
+     * One widget, as a block in the grid.
+     *
+     * Built with the same outer element and classes a category block uses, for
+     * two reasons that are really one: the masonry layout measures blocks by
+     * those classes, and DragReorder finds them by them. A widget that looked
+     * different from the outside would need its own answer to both.
+     *
+     * The body is rendered by whatever handles that type, or left as a notice
+     * when nothing does -- a block that draws nothing at all is a hole in the
+     * grid with no way to select or remove it.
+     */
+    createWidgetElement(widget) {
+        const d = this.dash;
+        const block = document.createElement('div');
+        // `.category` deliberately: the masonry layout measures blocks by that
+        // class and DragReorder selects by it, so a widget that called itself
+        // something else would need its own answer to both. The second class is
+        // what the styling and the block builder tell them apart by.
+        block.className = 'category dashboard-widget';
+        block.dataset.categoryId = widget.id;
+        block.dataset.widgetId = widget.id;
+        block.dataset.widgetType = widget.type || '';
+
+        /*
+         * How wide this widget is drawn.
+         *
+         * Two at most: a widget is a summary, and one wide enough to need three
+         * columns is a view that has not admitted it yet. The block already
+         * carries the `category` class, so it reuses the span rule the grid has
+         * for a wide category rather than growing a second way to be wide.
+         *
+         * A dashboard showing one column has nothing to spread into, so the
+         * widget falls back to that one column rather than disappearing —
+         * which is what a category does in the same situation, and the setting
+         * lives on a screen nobody opens on the phone where it would bite.
+         */
+        const span = this.widgetColumnSpan(widget);
+        block.classList.toggle('category--wide', span > 1);
+        if (span > 1) {
+            block.style.setProperty('--category-span', String(span));
+        } else {
+            block.style.removeProperty('--category-span');
+        }
+
+        /*
+         * The header, built exactly as a category's is.
+         *
+         * Not approximately: an h2.category-title holding a
+         * .category-title-label, whose "// " prefix is itself the drag handle --
+         * that is what DragReorder's handleSelector grabs, and it is what makes
+         * a widget feel like the blocks beside it rather than something bolted
+         * on. A div with the right class name looked similar and inherited none
+         * of the type, the spacing or the grab cursor.
+         */
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+
+        const labelWrap = document.createElement('span');
+        labelWrap.className = 'category-title-label';
+
+        const prefix = document.createElement('span');
+        prefix.className = 'category-reorder-handle';
+        prefix.textContent = '// ';
+        prefix.setAttribute('aria-hidden', 'true');
+        // Dragging the handle must not do whatever clicking the header does.
+        prefix.addEventListener('click', (e) => e.stopPropagation());
+        prefix.addEventListener('mousedown', (e) => e.stopPropagation());
+        labelWrap.appendChild(prefix);
+
+        const name = document.createElement('span');
+        name.className = 'category-title-name';
+        const label = widget.title || this.widgetTypeLabel(widget.type);
+        // Lower-cased like every other block title, so one heading in the grid
+        // does not shout.
+        name.textContent = String(label).toLowerCase();
+        name.title = label;
+        labelWrap.appendChild(name);
+
+        title.appendChild(labelWrap);
+        block.appendChild(title);
+
+        const body = document.createElement('div');
+        body.className = 'dashboard-widget-body';
+        const renderer = window.DashboardWidgets?.[widget.type];
+        if (typeof renderer === 'function') {
+            renderer(body, widget, d);
+        } else {
+            body.textContent = d.language?.t?.('dashboard.widgetUnknown') || 'This widget is not available.';
+            body.classList.add('dashboard-widget-body--empty');
+        }
+        block.appendChild(body);
+        return block;
+    }
+
+    /*
+     * Redraw the widgets of one type, in place.
+     *
+     * Called when the data behind a widget arrives -- the health report lands
+     * after the first paint -- so it fills in rather than the whole grid being
+     * rebuilt for one block. A full render here would also throw away the
+     * DragReorder instances mid-drag.
+     */
+    /*
+     * Forget what the widgets cached, so the next draw asks again.
+     *
+     * The tiles that fetch keep their answer on the dashboard object: sources
+     * runs hourly, the trend is a day's granularity, and re-fetching per render
+     * would be traffic for figures that cannot have changed. That is right
+     * while nothing changes and wrong the moment someone adds or edits a widget
+     * in config — the tile would redraw from the answer it had before the
+     * settings existed, and read as though the change did nothing.
+     *
+     * Cleared by name rather than by a general "clear everything": each of
+     * these belongs to one tile, and a tile that starts caching something else
+     * has to say so here.
+     */
+    forgetWidgetCaches() {
+        const d = this.dash;
+        delete d._widgetSources;
+        delete d._widgetFeeds;
+        delete d._widgetTrend;
+        delete d._widgetInbox;
+    }
+
+    refreshWidgets(type) {
+        const d = this.dash;
+        document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
+            .forEach((block) => {
+                const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
+                const body = block.querySelector('.dashboard-widget-body');
+                const renderer = window.DashboardWidgets?.[type];
+                if (!widget || !body || typeof renderer !== 'function') return;
+                body.classList.remove('dashboard-widget-body--empty');
+                renderer(body, widget, d);
+            });
+    }
+
+    /**
+     * The columns this widget may occupy, bounded by what the grid has.
+     *
+     * Never more than two, and never more than the dashboard is showing: at one
+     * column the answer is one, so the widget narrows instead of vanishing.
+     */
+    widgetColumnSpan(widget) {
+        const asked = Number(widget?.config?.columns);
+        if (!Number.isFinite(asked) || asked <= 1) return 1;
+        const available = Number(this.getEffectiveColumnsPerRow?.()) || 1;
+        return Math.max(1, Math.min(2, Math.trunc(asked), available));
+    }
+
+    /** A readable name for a type, for a widget with no title of its own. */
+    widgetTypeLabel(type) {
+        const d = this.dash;
+        const key = `dashboard.widgetType.${type}`;
+        const label = d.language?.t?.(key);
+        return label && label !== key ? label : String(type || 'widget');
+    }
+
+    /*
+     * Put the blocks in the order the reader arranged them.
+     *
+     * The stored order is a single list of ids -- categories and widgets
+     * together -- because a widget that could only be ordered among widgets
+     * could never sit between two categories, which is the whole point of it
+     * being a block.
+     *
+     * Three things this must not do, each of which would be worse than an
+     * unordered grid: lose a block the order does not mention, draw one twice,
+     * or move the smart collections, which have no handle and belong at the top.
+     */
+    applyBlockOrder(blocks) {
+        const order = this.dash.blockOrder;
+        if (!Array.isArray(order) || order.length === 0) return blocks;
+
+        // Smart collections and the virtual categories keep their position:
+        // they are not the reader's to arrange.
+        const fixed = blocks.filter((b) => b.category?.isSmartCollection || b.category?.isVirtualCategory);
+        const movable = blocks.filter((b) => !b.category?.isSmartCollection && !b.category?.isVirtualCategory);
+
+        const byId = new Map();
+        movable.forEach((block) => byId.set(String(block.category?.id ?? ''), block));
+
+        const sorted = [];
+        order.forEach((id) => {
+            const block = byId.get(String(id));
+            if (!block) return;
+            byId.delete(String(id));
+            sorted.push(block);
+        });
+        // Whatever the order did not name keeps its own order, after the rest --
+        // a category added since the last drag appears rather than vanishing.
+        byId.forEach((block) => sorted.push(block));
+
+        return [...fixed, ...sorted];
     }
 
 
@@ -498,7 +719,9 @@ class DashboardRenderCore {
         }
 
         const columnBlocks = this.buildCategoryColumnBlocks().map((block) => (
-            this.createCategoryElement(block.category, block.bookmarks)
+            block.widget
+                ? this.createWidgetElement(block.widget)
+                : this.createCategoryElement(block.category, block.bookmarks)
         ));
 
         const gridLayout = this.syncDashboardGridLayout();
@@ -1062,9 +1285,22 @@ class DashboardRenderCore {
         // two are different, and document order is the wrong one.
         const els = this.readCategoryElementsInOrder(grid)
             .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
-        const newIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+        // Every block that moved, widgets included -- this is what blockOrder is
+        // built from below.
+        const blockIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+        /*
+         * Categories only, for the category array.
+         *
+         * A widget id landing in d.categories would be written back to
+         * /api/categories as a category that does not exist, and the next load
+         * would find a bookmark-less category with a w_ slug in it.
+         */
+        const newIds = els
+            .filter((el) => !el.classList.contains('dashboard-widget'))
+            .map((el) => el.getAttribute('data-category-id'))
+            .filter(Boolean);
 
-        if (!newIds.length) return;
+        if (!blockIds.length) return;
 
         const byId = new Map(d.categories.map((c) => [String(c.id), c]));
         const renderedSet = new Set(newIds);
@@ -1082,11 +1318,118 @@ class DashboardRenderCore {
             return;
         }
         if (newCategories.length === 0 && Array.isArray(d.categories) && d.categories.length > 0) {
+            // No categories moved -- a widget did. Save that and leave the
+            // category array alone rather than returning and losing the drag.
+            d.blockOrder = blockIds;
+            this.scheduleBlockOrderSave();
             return;
         }
 
         d.categories = newCategories;
-        this.scheduleCategoryOrderSave();
+        d.blockOrder = this.mergeBlockOrderFromDom(blockIds);
+        this.scheduleBlockOrderSave();
+    }
+
+    /*
+     * The new order, with the blocks that are not on screen kept in place.
+     *
+     * The DOM is the right source for what moved -- it is where the drag
+     * happened -- but it is not the whole list. A category with no bookmarks in
+     * it is not rendered at all under "hide empty categories", and a smart
+     * collection is rendered but is not the reader's to arrange. Writing the
+     * DOM order as the complete order therefore did two wrong things at once:
+     * it dropped the unrendered categories to the end, and every block after
+     * them shifted -- which is why a widget dropped in second place came back
+     * fourth.
+     *
+     * So the DOM decides the order of what it holds, and everything else keeps
+     * its position relative to the block it used to follow.
+     */
+    mergeBlockOrderFromDom(domIds) {
+        const previous = Array.isArray(this.dash.blockOrder) ? this.dash.blockOrder : [];
+        if (!domIds.length) return previous;
+
+        const onScreen = new Set(domIds);
+        const merged = [];
+        let cursor = 0;
+
+        previous.forEach((id) => {
+            if (onScreen.has(id)) {
+                // Take the next one the DOM has, which is what the drag decided.
+                if (cursor < domIds.length) merged.push(domIds[cursor++]);
+                return;
+            }
+            // Not rendered -- an empty category, say. It keeps the slot it had
+            // rather than being pushed to the end.
+            merged.push(id);
+        });
+
+        // Anything the DOM holds that the previous order did not know about,
+        // and anything left over: appended rather than lost.
+        while (cursor < domIds.length) merged.push(domIds[cursor++]);
+
+        const seen = new Set();
+        return merged.filter((id) => {
+            if (!id || seen.has(id)) return false;
+            seen.add(id);
+            return true;
+        });
+    }
+
+    /*
+     * Move one block one place, for the keyboard.
+     *
+     * Works on blockOrder rather than on the category array, so a keyboard move
+     * and a drag write the same thing. Steps over the blocks the reader cannot
+     * arrange -- a smart collection is drawn at the top whatever the order says,
+     * so swapping with one would look like the key did nothing.
+     */
+    moveBlockInOrder(id, direction) {
+        const d = this.dash;
+        const order = [...(d.blockOrder || [])];
+        const from = order.indexOf(String(id));
+        if (from < 0) return false;
+        const to = from + (direction < 0 ? -1 : 1);
+        if (to < 0 || to >= order.length) return false;
+
+        [order[from], order[to]] = [order[to], order[from]];
+        d.blockOrder = order;
+        this.scheduleBlockOrderSave();
+        return true;
+    }
+
+    /*
+     * Persist the block order, debounced like the category order beside it.     *
+     * Its own timer rather than riding along with the category save: the two
+     * write different files' worth of state through different routes, and a
+     * failure in one should not swallow the other.
+     */
+    scheduleBlockOrderSave() {
+        const d = this.dash;
+        if (d._pendingBlockOrderSave) clearTimeout(d._pendingBlockOrderSave);
+        d._pendingBlockOrderSave = setTimeout(() => {
+            d._pendingBlockOrderSave = null;
+            void this.saveBlockOrder(Number(d.currentPageId), [...(d.blockOrder || [])]);
+        }, 1000);
+    }
+
+    async saveBlockOrder(pageId, order) {
+        if (!Number.isFinite(pageId) || !Array.isArray(order) || order.length === 0) return;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+            // Only the order: the widgets themselves did not change, and sending
+            // a stale copy of them would undo an edit made while this was
+            // waiting out its debounce.
+            await fetcher(`/api/pages/${pageId}/blocks`, {
+                method: 'PUT', headers, body: JSON.stringify({ order }),
+            });
+        } catch {
+            // The order on screen is what the reader arranged; a failed save
+            // means the next load reverts it, which is visible and recoverable.
+            // Interrupting a drag with an error is not.
+        }
     }
 
 

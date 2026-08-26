@@ -133,10 +133,40 @@ func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(contex
 }
 
 func newSSRFSafeTransport(allowLocal bool, dialTimeout time.Duration) *http.Transport {
+	return newSSRFSafeTransportWithHeaderTimeout(allowLocal, dialTimeout, 10*time.Second)
+}
+
+// newSSRFSafeTransportWithHeaderTimeout is the same transport with a caller-set
+// wait for the first response byte.
+//
+// Ten seconds is right for fetching a web page: a site that has not started
+// answering by then is not going to. It is wrong for an API that computes
+// before it answers -- the Wayback CDX index routinely takes thirteen seconds
+// to start replying for a heavily captured URL, and the shared limit turned
+// that into an intermittent failure that looked like the feature not working.
+func newSSRFSafeTransportWithHeaderTimeout(allowLocal bool, dialTimeout, headerTimeout time.Duration) *http.Transport {
+	if headerTimeout <= 0 {
+		headerTimeout = 10 * time.Second
+	}
 	return &http.Transport{
 		DialContext:           ssrfSafeDialContext(allowLocal, dialTimeout),
 		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
+		ResponseHeaderTimeout: headerTimeout,
+	}
+}
+
+// newOutboundHTTPClientWithHeaderTimeout builds the ordinary safe client but
+// lets a slow-by-design API have longer to start answering.
+func newOutboundHTTPClientWithHeaderTimeout(allowLocal bool, timeout, headerTimeout time.Duration, maxRedirects int) *http.Client {
+	baseTransport := newSSRFSafeTransportWithHeaderTimeout(allowLocal, 0, headerTimeout)
+	transport := http.RoundTripper(&rateLimitedTransport{
+		base:    baseTransport,
+		limiter: globalOutboundLimiter,
+	})
+	return &http.Client{
+		Timeout:       timeout,
+		Transport:     transport,
+		CheckRedirect: safeRedirectCheck(allowLocal, maxRedirects),
 	}
 }
 

@@ -511,6 +511,20 @@ class DashboardVisual {
             // A null summary is a non-ok response, not an empty report — the
             // same thing a thrown error means for the backoff.
             if (!summary) return false;
+            /*
+             * Kept, so a health widget on the grid can read the same numbers.
+             *
+             * This request already happens on every dashboard load for the
+             * header badge, and it is the light `?view=facts` shape. A widget
+             * fetching for itself would double it, and counting for itself would
+             * eventually disagree with the badge two centimetres away.
+             */
+            d.healthSummary = summary;
+            d.renderCore?.refreshWidgets?.('health');
+            // The same response carries the certificates map, kept by
+            // HealthFacts; the certificates widget reads it from there rather
+            // than fetching a report of its own.
+            d.renderCore?.refreshWidgets?.('certs');
             // keepHref: the icon opens the view; its href is only the middle-click path.
             utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
                 keepHref: true,

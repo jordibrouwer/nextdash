@@ -72,6 +72,40 @@ type Bookmark struct {
 	// for bookmarks generally, but unable to tell an endpoint that *should* return
 	// 401 from one that just started to.
 	ExpectStatus string `json:"expectStatus,omitempty"`
+	/*
+	 * CheckURL is what to request instead of the bookmark's own address.
+	 *
+	 * A self-hosted service is bookmarked at its web interface, which answers
+	 * 401 to anyone not logged in; the same service usually offers a /ping or
+	 * /health endpoint that answers 200 to nobody in particular. Without this
+	 * the only way to stop such a bookmark reading as broken is to stop
+	 * monitoring it -- which is exactly the bookmark worth monitoring.
+	 *
+	 * Empty means the bookmark's own URL, which is what every existing
+	 * bookmark does and keeps doing.
+	 */
+	CheckURL string `json:"checkUrl,omitempty"`
+	/*
+	 * CredentialID names an entry in health-credentials.json to send with the
+	 * check -- an API key header, or a username and password.
+	 *
+	 * An id rather than the secret itself: bookmarks-N.json is in the backup
+	 * allowlist and in every export, so a key stored here would travel in a ZIP
+	 * to wherever that backup goes. The id is meaningless without the file it
+	 * points at, and that file is deliberately not backed up.
+	 */
+	CredentialID string `json:"credentialId,omitempty"`
+	/*
+	 * AllowInsecureTLS accepts a certificate the machine does not trust, for
+	 * this bookmark only.
+	 *
+	 * A service on a home network commonly has a self-signed certificate, and
+	 * the check then fails on the certificate rather than on the service --
+	 * indistinguishable, on the row, from being down. Per bookmark and never
+	 * global: someone who accepts their own NAS's certificate has not said
+	 * anything about the rest of the web.
+	 */
+	AllowInsecureTLS bool `json:"allowInsecureTls,omitempty"`
 	// WatchDrift opts a monitored bookmark into rot detection: where the check
 	// lands after redirects, what the page is titled, and roughly what it says.
 	// Off by default and separate from the expectations above, because it reads
@@ -85,7 +119,40 @@ type Bookmark struct {
 	// checks so a link that died months ago does not read like one that broke
 	// this morning. Cleared the moment a check succeeds, so it is always "how
 	// long has it been failing", never "when did it last fail".
-	BrokenSince      int64  `json:"brokenSince,omitempty"`
+	BrokenSince int64 `json:"brokenSince,omitempty"`
+	/*
+	 * ArchiveDiedAt is when the web lost the page, as the Wayback index sees it
+	 * -- the first capture after the last one that answered 200.
+	 *
+	 * A different fact from BrokenSince, which is when *this install* started
+	 * seeing failures. A bookmark added last week to a page that died in 2019
+	 * has a BrokenSince of last week and an ArchiveDiedAt of 2019, and only the
+	 * second one tells the reader what actually happened.
+	 *
+	 * Stored on the bookmark rather than fetched on demand because the preview
+	 * card is drawn from memory and never makes a request: hovering a row has
+	 * to stay free.
+	 */
+	ArchiveDiedAt int64 `json:"archiveDiedAt,omitempty"`
+	// ArchiveSnapshotURL is the last capture that worked, so a card can offer it
+	// without asking the index again.
+	ArchiveSnapshotURL string `json:"archiveSnapshotUrl,omitempty"`
+	// ArchiveCheckedAt is when the index was last asked, so it is not asked
+	// again for every check.
+	ArchiveCheckedAt int64 `json:"archiveCheckedAt,omitempty"`
+	/*
+	 * ArchiveJobID is the receipt for a capture that was asked for.
+	 *
+	 * Save Page Now answers with a job id and does the work over the following
+	 * seconds to minutes, so the id is the only way to find out afterwards
+	 * whether the capture happened. Thrown away, as it was at first, the status
+	 * route had nothing to look up and a reader had no way to tell a queued
+	 * capture from one the archive quietly refused.
+	 */
+	ArchiveJobID string `json:"archiveJobId,omitempty"`
+	// ArchiveJobAt is when that capture was asked for, so a job id that never
+	// finished can be recognised as stale rather than pending for ever.
+	ArchiveJobAt     int64  `json:"archiveJobAt,omitempty"`
 	DriftTitle       string `json:"driftTitle,omitempty"`
 	DriftFingerprint string `json:"driftFingerprint,omitempty"`
 	// DriftNoticed is what the last check found, as one of the kinds in
@@ -160,6 +227,24 @@ type Page struct {
 type PageWithBookmarks struct {
 	Page       Page       `json:"page"`
 	Categories []Category `json:"categories,omitempty"`
+	// Widgets are blocks on this page that hold something other than bookmarks.
+	// Beside the categories rather than in a file of their own, because the two
+	// share one ordering -- see BlockOrder.
+	Widgets []Widget `json:"widgets,omitempty"`
+	/*
+	 * BlockOrder is the order the dashboard draws blocks in: category ids and
+	 * widget ids in one list.
+	 *
+	 * One list rather than a number on each, because two numbered lists drift
+	 * the moment something is inserted between them -- every other number has to
+	 * shift, and a single missed write leaves the order scrambled. This is the
+	 * same shape `categories` already has, where the array order is the order.
+	 *
+	 * Absent means "as they come": resolveBlockOrder falls back to the existing
+	 * category order, so a file written before this field renders exactly as it
+	 * did.
+	 */
+	BlockOrder []string   `json:"blockOrder,omitempty"`
 	Bookmarks  []Bookmark `json:"bookmarks"`
 }
 
@@ -343,12 +428,44 @@ type Settings struct {
 	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`       // Automatically create a local backup (keeps the latest few)
+	/*
+	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
+	 *
+	 * Off unless switched on, and deliberately so: that endpoint answers
+	 * questions about every bookmark in the install, and "anyone who can reach
+	 * this server can read the whole dashboard" is not a thing to add to a
+	 * default install quietly.
+	 */
+	MCPEnabled        bool `json:"mcpEnabled"`
+	AutoBackupEnabled bool `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
 	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as
 	// "never".
-	AutoBackupIntervalDays         int  `json:"autoBackupIntervalDays,omitempty"`
+	AutoBackupIntervalDays int `json:"autoBackupIntervalDays,omitempty"`
+	/*
+	 * What a backup carries beyond the bookmarks themselves.
+	 *
+	 * Both are inverted -- "exclude" rather than "include" -- so that an absent
+	 * key means the fuller backup. A settings file written before these existed
+	 * therefore keeps carrying everything, which is what it already did; the
+	 * alternative would have every older install quietly start writing thinner
+	 * backups the day it upgraded.
+	 *
+	 * Archives are local captures: a page as it was, which may be the only copy
+	 * left. They are also by far the largest thing in the data directory --
+	 * measured on one install, two captures took a 24 KB backup to 13.7 MB --
+	 * so someone moving backups over a slow link has a real reason to leave
+	 * them out.
+	 *
+	 * Secrets are the import tokens in sources.json and the API keys and
+	 * passwords in health-credentials.json. Including them makes a restore
+	 * complete; it also makes every backup file a secret in its own right,
+	 * since a ZIP carries no permissions and travels to a NAS, a laptop, a
+	 * Downloads folder.
+	 */
+	BackupExcludeArchives          bool `json:"backupExcludeArchives,omitempty"`
+	BackupExcludeSecrets           bool `json:"backupExcludeSecrets,omitempty"`
 	HealthAutoRecheckEnabled       bool `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int  `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
@@ -389,6 +506,27 @@ type Settings struct {
 	// (api.pushover.net) and delivery is keyed on these two values instead.
 	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
 	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	/*
+	 * MonitorNotifyDashboardURL is where this install can be reached from a
+	 * phone, for the buttons an ntfy notification carries.
+	 *
+	 * Nothing else needs it: every other notification says what happened and
+	 * stops there. A button has to lead somewhere, and a server has no reliable
+	 * way to know its own public address -- behind a proxy the Host header is
+	 * whatever the proxy was told, and on a LAN it is one of several. So it is
+	 * asked for, and when it is absent the buttons that would need it are left
+	 * off rather than pointing somewhere wrong.
+	 */
+	MonitorNotifyDashboardURL string `json:"monitorNotifyDashboardUrl,omitempty"`
+
+	// Archiving a bookmark the day it is saved, rather than looking for a copy
+	// the day it dies. The keys are archive.org's S3-style pair from
+	// archive.org/account/s3.php; without them the archive still accepts
+	// captures but at a far smaller daily budget, so this is opt-in by having
+	// keys rather than by a separate switch.
+	ArchiveSaveEnabled   bool   `json:"archiveSaveEnabled,omitempty"`
+	ArchiveSaveAccessKey string `json:"archiveSaveAccessKey,omitempty"`
+	ArchiveSaveSecret    string `json:"archiveSaveSecret,omitempty"`
 	// MaintenanceWindows are recurring periods when downtime is expected. Checks
 	// still run and samples are still recorded — the heartbeat stays honest — but
 	// failures inside a window raise no alert and do not count against uptime.
@@ -583,6 +721,10 @@ type Store interface {
 	SaveFinders(finders []Finder) error
 	// Pages
 	GetPages() []Page
+	// Widgets and the order every block on a page is drawn in. One pair,
+	// because an order is only meaningful beside the things it orders.
+	GetPageBlocks(pageID int) ([]Widget, []string)
+	SavePageBlocks(pageID int, widgets []Widget, order []string) error
 	SavePage(page Page) error
 	DeletePage(pageID int) error
 	GetPageOrder() []int
@@ -852,7 +994,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// install nobody had touched.
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
-			ButtonBarPosition:              "bottom",
+			ButtonBarPosition:              "bottom-right",
 			ShowDockLayoutSelector:         true,
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
@@ -2964,8 +3106,12 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"
 		}
+		// The corner dock rather than the centred bar: it keeps the buttons out
+		// of the bookmarks instead of floating over them. Only for a file that
+		// does not name a position -- anyone who chose one has the key, and
+		// this leaves their choice alone.
 		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
-			settings.ButtonBarPosition = "bottom"
+			settings.ButtonBarPosition = "bottom-right"
 		}
 		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {
 			settings.ShowDockLayoutSelector = true
@@ -3092,6 +3238,10 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
 	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
 	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	// Through the same normaliser as every other credential, so a pasted key
+	// with a stray newline is the same key.
+	settings.ArchiveSaveAccessKey = normalizeMonitorNotifyCredential(settings.ArchiveSaveAccessKey)
+	settings.ArchiveSaveSecret = normalizeMonitorNotifyCredential(settings.ArchiveSaveSecret)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
@@ -3592,7 +3742,32 @@ type HealthIssue struct {
 	LastError   string `json:"lastError,omitempty"`
 	// BrokenSince is when this run of failures started, so the row can say how
 	// long it has been down rather than only that it is.
-	BrokenSince  int64  `json:"brokenSince,omitempty"`
+	BrokenSince int64 `json:"brokenSince,omitempty"`
+	// ArchiveDiedAt is when the web lost the page, which is a different fact
+	// from when this install started seeing failures -- see the field of the
+	// same name on Bookmark.
+	ArchiveDiedAt int64 `json:"archiveDiedAt,omitempty"`
+	/*
+	 * FailureUncertain marks a failure that says nothing about whether the page
+	 * still exists -- a bot check, a rate limit, a timeout.
+	 *
+	 * Derived per report rather than stored on the bookmark: it is a reading of
+	 * LastError, and a second copy would be one more thing to keep in step. One
+	 * rule decides it here, so the row, the archive backfill and anything
+	 * counting rot cannot disagree about what a 403 means.
+	 */
+	FailureUncertain bool `json:"failureUncertain,omitempty"`
+	/*
+	 * LocalCopies is how many whole-page copies are stored here for this URL.
+	 *
+	 * Counted once for the whole report rather than asked per row: the health
+	 * view renders in a loop, and a request per row to answer "is there a copy"
+	 * would be a hundred round trips to draw one screen.
+	 */
+	LocalCopies int `json:"localCopies,omitempty"`
+	// LocalCopyAt is when the newest of them was saved, so a row can say how
+	// fresh the fallback is rather than only that one exists.
+	LocalCopyAt  int64  `json:"localCopyAt,omitempty"`
 	PreviewTitle string `json:"previewTitle,omitempty"`
 	PreviewDesc  string `json:"previewDesc,omitempty"`
 	PreviewImage string `json:"previewImage,omitempty"`
@@ -3643,6 +3818,17 @@ type HealthIssue struct {
 	// post-redirect host a check actually saw, which can differ from this
 	// bookmark's own URL. Empty until a check has recorded one.
 	CertHost string `json:"certHost,omitempty"`
+	/*
+	 * How this bookmark is reached, so the panel can show and edit it.
+	 *
+	 * Unlike the expectation fields above, these are not gated on Monitor: they
+	 * apply to every check, and the panel that edits them is open on unmonitored
+	 * rows too. CredentialID names an entry, never a secret — the values live in
+	 * their own file and no route hands them back.
+	 */
+	CheckURL         string `json:"checkUrl,omitempty"`
+	CredentialID     string `json:"credentialId,omitempty"`
+	AllowInsecureTLS bool   `json:"allowInsecureTls,omitempty"`
 }
 
 type BookmarkHealthReport struct {
@@ -3854,7 +4040,34 @@ type BookmarkPreview struct {
 	Image       string `json:"image"`
 	Domain      string `json:"domain"`
 	Icon        string `json:"icon"`
-	FetchedAt   int64  `json:"fetchedAt"`
+	/*
+	 * SiteName is og:site_name -- what the publisher calls itself.
+	 *
+	 * Worth its own field because a domain is not a name: "arstechnica.com"
+	 * beside "Ars Technica" reads as an address beside a masthead, and on a card
+	 * the second one is what a reader recognises. Absent on most pages, so every
+	 * caller has to treat it as optional rather than as the domain's replacement.
+	 */
+	SiteName string `json:"siteName,omitempty"`
+	/*
+	 * ContentLength is how much readable text the page carried, from
+	 * go-readability.
+	 *
+	 * Kept because it is the second, independent soft-404 signal: a page that
+	 * still answers 200 but has shrunk from four thousand characters to two
+	 * hundred has been replaced by something that is not the article. The
+	 * phrase-matching in health_soft404.go only sees pages that say so in
+	 * words; this sees the ones that do not.
+	 */
+	ContentLength int `json:"contentLength,omitempty"`
+	// Author and PublishedAt, when the page states them. Both are common in
+	// Open Graph and in article markup, and both are things a reader looking at
+	// a saved page wants without opening it.
+	Author      string `json:"author,omitempty"`
+	PublishedAt int64  `json:"publishedAt,omitempty"`
+	// EmbedHTML is an oEmbed player, for the providers that offer one.
+	EmbedHTML string `json:"embedHtml,omitempty"`
+	FetchedAt int64  `json:"fetchedAt"`
 }
 
 // GetDataRevision fingerprints bookmark, category, finder, page, and settings files.

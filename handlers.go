@@ -582,6 +582,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		return strings.TrimSpace(bm.PreviewTitle) == "" && strings.TrimSpace(bm.PreviewDesc) == "" && strings.TrimSpace(bm.PreviewImage) == ""
 	}
 
+	// One directory read for the whole report: asking per row whether a copy
+	// exists would be a round trip each to draw one screen.
+	localCopies := localCopyIndex()
+
 	for _, page := range pages {
 		for _, entry := range bookmarksByPage[page.ID] {
 			bm := entry.bookmark
@@ -824,6 +828,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				LastChecked:            bm.LastChecked,
 				LastError:              bm.LastError,
 				BrokenSince:            bm.BrokenSince,
+				ArchiveDiedAt:          bm.ArchiveDiedAt,
+				FailureUncertain:       failureIsUncertain(bm.LastError),
+				LocalCopies:            localCopies[localArchiveSlug(bm.URL)].Count,
+				LocalCopyAt:            localCopies[localArchiveSlug(bm.URL)].Newest,
 				PreviewTitle:           bm.PreviewTitle,
 				PreviewDesc:            bm.PreviewDesc,
 				PreviewImage:           bm.PreviewImage,
@@ -852,6 +860,12 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				// would render a control that governs nothing.
 				NotifyMuted: bm.Monitor && bm.NotifyMuted,
 				CertHost:    bm.CertHost,
+				// Not gated on Monitor, unlike the block above: these say how to
+				// reach the service rather than what to expect back, and every
+				// check uses them.
+				CheckURL:         bm.CheckURL,
+				CredentialID:     bm.CredentialID,
+				AllowInsecureTLS: bm.AllowInsecureTLS,
 			})
 		}
 	}
@@ -1291,6 +1305,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 	request.Bookmark.PageID = request.Page
 	logBookmarkAdd(request.Bookmark, r)
+	// Ask the archive to keep a copy, if that is switched on. In the background
+	// and after the write: the bookmark is already saved, and a page captured
+	// today is a page that outlives its own site.
+	h.archiveNewBookmark(request.Bookmark.URL)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1334,6 +1352,91 @@ func slugify(s string) string {
 	return strings.Trim(result.String(), "-")
 }
 
+/*
+resolveImportCategories decides which category each imported name belongs to.
+
+Every importer funnels through here -- the browser file, the CSV, the extension
+and every source on the register -- so this is the one place that decides what a
+category name coming from outside becomes.
+
+Two things it must get right, both learned from real collections:
+
+A name that slugifies to nothing still needs a category. slugify keeps only
+a-z0-9, so a folder called "📚" or "读书" or "Ünïcode" produced an empty id, and
+the old code skipped it: no category was created and every bookmark in it landed
+uncategorised, with the name it came with gone for good. The name is kept as the
+display name and the id falls back to a generated one, because an id is a key
+and a name is what the reader reads -- they were never required to match.
+
+Two different names must not collapse into one category. Raindrop allows the
+same collection name under different parents, and any two names differing only
+in punctuation slugify identically. Those get a numbered id -- reading,
+reading-2 -- so both survive as separate, editable categories rather than
+merging silently.
+
+An existing category is reused when its id matches and it is plainly the same
+one, so importing "Development" into a page that already has Development adds to
+it rather than making a second.
+*/
+func resolveImportCategories(existing []Category, rows []ImportedRow) (map[string]string, []Category) {
+	byID := make(map[string]Category, len(existing))
+	for _, c := range existing {
+		byID[c.ID] = c
+	}
+	taken := make(map[string]struct{}, len(existing))
+	for id := range byID {
+		taken[id] = struct{}{}
+	}
+
+	nameToID := map[string]string{}
+	var created []Category
+
+	for _, row := range rows {
+		name := strings.TrimSpace(row.Category)
+		if name == "" {
+			continue
+		}
+		if _, done := nameToID[name]; done {
+			continue
+		}
+
+		base := slugify(name)
+		if base == "" {
+			// A name with nothing sluggable in it. "category" rather than a
+			// hash: the reader sees the name, and the id only has to be stable
+			// and unique.
+			base = "category"
+		}
+
+		// Reuse an existing category when the id matches and the name agrees --
+		// case and surrounding space are not a different category.
+		if found, ok := byID[base]; ok && strings.EqualFold(strings.TrimSpace(found.Name), name) {
+			nameToID[name] = base
+			continue
+		}
+
+		id := base
+		for n := 2; ; n++ {
+			if _, clash := taken[id]; !clash {
+				break
+			}
+			if found, ok := byID[id]; ok && strings.EqualFold(strings.TrimSpace(found.Name), name) {
+				// A numbered id that is already this very category.
+				break
+			}
+			id = fmt.Sprintf("%s-%d", base, n)
+		}
+
+		nameToID[name] = id
+		if _, exists := byID[id]; !exists {
+			created = append(created, Category{ID: id, Name: name})
+		}
+		taken[id] = struct{}{}
+	}
+
+	return nameToID, created
+}
+
 func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
@@ -1343,13 +1446,14 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Tags, note and shortcut are part of the request because the CSV import
+	// sends them and always has. They were not part of this struct, so
+	// encoding/json dropped them on the floor: a spreadsheet round-trip lost
+	// every tag and every note it was meant to carry -- which is the reason
+	// MANUAL gives for using the CSV route over the browser file at all.
 	var request struct {
-		PageID    int `json:"pageId"`
-		Bookmarks []struct {
-			Name     string `json:"name"`
-			URL      string `json:"url"`
-			Category string `json:"category"`
-		} `json:"bookmarks"`
+		PageID    int           `json:"pageId"`
+		Bookmarks []ImportedRow `json:"bookmarks"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1361,6 +1465,36 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+
+	h.importRows(w, r, request.PageID, request.Bookmarks)
+}
+
+// ImportedRow is one bookmark on its way in, from any importer.
+//
+// The JSON tags are the shape the browser has posted since the CSV import
+// existed; the HTML importer fills the same struct from a parsed file, so both
+// routes get the same category creation, the same de-duplication and the same
+// normalisers rather than a second implementation of each.
+type ImportedRow struct {
+	Name     string   `json:"name"`
+	URL      string   `json:"url"`
+	Category string   `json:"category"`
+	Shortcut string   `json:"shortcut"`
+	Note     string   `json:"note"`
+	Tags     []string `json:"tags"`
+	// CreatedAt and UpdatedAt are milliseconds, and are only ever set by an
+	// importer that read them from a file. A row without them is stamped by the
+	// store, as a typed bookmark is.
+	CreatedAt int64 `json:"createdAt,omitempty"`
+	UpdatedAt int64 `json:"updatedAt,omitempty"`
+}
+
+// importRows writes a batch onto a page and answers with the tally.
+func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int, rows []ImportedRow) {
+	request := struct {
+		PageID    int
+		Bookmarks []ImportedRow
+	}{PageID: pageID, Bookmarks: rows}
 
 	for _, bm := range request.Bookmarks {
 		if err := h.validateBookmarkURL(bm.URL); err != nil {
@@ -1381,28 +1515,11 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		knownCatIDs[c.ID] = struct{}{}
 	}
 
-	newCatNames := make(map[string]string)
-	var newCatOrder []string
-	for _, bm := range request.Bookmarks {
-		if bm.Category == "" {
-			continue
-		}
-		id := slugify(bm.Category)
-		if id == "" {
-			continue
-		}
-		if _, exists := knownCatIDs[id]; !exists {
-			if _, already := newCatNames[bm.Category]; !already {
-				newCatNames[bm.Category] = id
-				newCatOrder = append(newCatOrder, bm.Category)
-				knownCatIDs[id] = struct{}{}
-			}
-		}
-	}
-	if len(newCatOrder) > 0 {
-		for _, name := range newCatOrder {
-			categories = append(categories, Category{ID: newCatNames[name], Name: name})
-		}
+	// Every distinct category name an import carries gets a real category on
+	// the page, and the id it is written under.
+	nameToID, newCategories := resolveImportCategories(categories, request.Bookmarks)
+	if len(newCategories) > 0 {
+		categories = append(categories, newCategories...)
 		if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
 			return
 		}
@@ -1416,15 +1533,22 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 			skipped++
 			continue
 		}
-		catID := ""
-		if bm.Category != "" {
-			catID = slugify(bm.Category)
-		}
+		catID := nameToID[strings.TrimSpace(bm.Category)]
 		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
 			Category: catID,
 			PageID:   request.PageID,
+			// Through the same normalisers every other write uses, so an
+			// imported row cannot hold a shape a typed one could not.
+			Shortcut: normalizeShortcut(bm.Shortcut),
+			Note:     strings.TrimSpace(bm.Note),
+			Tags:     normalizeTags(bm.Tags),
+			// Only what a file actually carried. Zero leaves the store to stamp
+			// it, so a bookmark with no ADD_DATE is dated on arrival rather than
+			// in 1970.
+			CreatedAt: bm.CreatedAt,
+			UpdatedAt: bm.UpdatedAt,
 		})) {
 			return
 		}
@@ -2186,12 +2310,19 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		preview.Domain = extractDomain(preview.URL)
 	}
 
-	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	/*
+	 * Read to </head> rather than to a fixed byte count. Metadata lives in the
+	 * head, and where that ends varies by three orders of magnitude across real
+	 * pages -- see readDocumentHead. A further previewBodySample is taken for
+	 * ContentLength, which measures prose rather than tags.
+	 */
+	headBytes, err := readDocumentHead(resp.Body, previewMaxHead)
 	if err != nil {
 		return preview
 	}
+	bodySample, _ := io.ReadAll(io.LimitReader(resp.Body, previewBodySample))
 
-	htmlBody := string(bodyBytes)
+	htmlBody := string(headBytes)
 	preview.Title = h.extractTitleFromHTML(htmlBody)
 	if preview.Title == "" {
 		preview.Title = h.extractMetaFromHTML(htmlBody, "property", "og:title")
@@ -2215,6 +2346,33 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	// re-fetch every page before it can say anything.
 	if feedURL := extractFeedFromHTML(htmlBody); feedURL != "" {
 		recordDiscoveredFeed(rawURL, h.resolveRelativeURL(preview.URL, feedURL))
+	}
+
+	/*
+	 * What else the page says about itself.
+	 *
+	 * All of it read from the document already in hand: no extra request, no
+	 * extra host contacted. The publisher's own name rather than its domain,
+	 * a byline and a date where the page states them, and the length of the
+	 * readable text -- which is not for display but is the second soft-404
+	 * signal, the one that sees pages that lost their article without saying so.
+	 */
+	preview.SiteName = extractSiteName(htmlBody, preview.Title)
+	preview.Author = extractAuthor(htmlBody)
+	preview.PublishedAt = extractPublishedAt(htmlBody)
+	preview.ContentLength = readableTextLength(string(bodySample))
+
+	/*
+	 * oEmbed, when the page advertises it.
+	 *
+	 * One more request, and only for the pages that offer one -- which is the
+	 * providers with a player worth showing. Discovered from the document
+	 * rather than matched against a bundled provider list; see preview_oembed.go.
+	 */
+	if endpoint := discoverOEmbedURL(htmlBody, preview.URL); endpoint != "" {
+		if data, ok := h.fetchOEmbed(ctx, endpoint); ok {
+			applyOEmbed(&preview, data)
+		}
 	}
 
 	if cache != nil {
@@ -2345,32 +2503,80 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
-	refreshed := 0
-	skipped := 0
-
+	/*
+	 * Refreshed in batches, because this is one page fetch per bookmark.
+	 *
+	 * It used to do the whole collection inside a single request: measured
+	 * against eight seeded bookmarks that was 1.3 seconds, so a real collection
+	 * of five hundred is well over a minute with nothing moving on screen and a
+	 * proxy free to time the request out halfway through. Neither the browser
+	 * nor the reader had any way to know how far it had got.
+	 *
+	 * With an offset and a total the caller can walk the collection and draw a
+	 * real bar -- "120 of 500" -- the same shape the favicon prefetch already
+	 * uses, and each round trip is short enough to survive any proxy.
+	 *
+	 * No offset means the old behaviour: the whole collection at once, which is
+	 * what the extension and any existing script still expect.
+	 */
+	type previewTarget struct {
+		pageID int
+		url    string
+	}
+	var targets []previewTarget
 	for _, page := range h.store.GetPages() {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		previewByKey := make(map[string]BookmarkPreview)
-		for _, bm := range bookmarks {
-			rawURL := strings.TrimSpace(bm.URL)
-			if rawURL == "" {
-				skipped++
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if strings.TrimSpace(bm.URL) == "" {
 				continue
 			}
-			preview := h.fetchBookmarkPreview(r.Context(), rawURL, &cache, false)
-			key := canonicalBookmarkURLKey(rawURL)
-			if key != "" {
-				previewByKey[key] = preview
-			}
-			refreshed++
+			targets = append(targets, previewTarget{pageID: page.ID, url: strings.TrimSpace(bm.URL)})
 		}
+	}
 
-		if len(previewByKey) == 0 {
+	total := len(targets)
+	offset := 0
+	if raw := strings.TrimSpace(r.URL.Query().Get("offset")); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			offset = parsed
+		}
+	}
+	limit := total
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	slice := targets[offset:end]
+
+	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
+	refreshed := 0
+	skipped := total - len(targets)
+
+	// Grouped by page so each page is written once rather than per bookmark.
+	byPage := map[int]map[string]BookmarkPreview{}
+	for _, target := range slice {
+		preview := h.fetchBookmarkPreview(r.Context(), target.url, &cache, false)
+		key := canonicalBookmarkURLKey(target.url)
+		if key == "" {
+			skipped++
 			continue
 		}
+		if byPage[target.pageID] == nil {
+			byPage[target.pageID] = map[string]BookmarkPreview{}
+		}
+		byPage[target.pageID][key] = preview
+		refreshed++
+	}
 
-		err := h.store.MutateBookmarksOnPage(page.ID, func(current []Bookmark) ([]Bookmark, error) {
+	for pageID, previewByKey := range byPage {
+		err := h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
 			for i := range current {
 				key := canonicalBookmarkURLKey(current[i].URL)
 				if key == "" {
@@ -2399,6 +2605,10 @@ func (h *Handlers) RefreshAllBookmarkPreviews(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":    "completed",
+		"total":     total,
+		"offset":    offset,
+		"next":      end,
+		"done":      end >= total,
 		"refreshed": refreshed,
 		"skipped":   skipped,
 	})

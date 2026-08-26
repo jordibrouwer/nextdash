@@ -4185,6 +4185,39 @@ body.no-animations .bookmarks-list.reorder-container::after {
     text-overflow: ellipsis;
 }
 
+/* The byline sits with the address, not in the facts list below: publisher,
+   author and date read as one sentence, and three labelled rows would make a
+   paragraph out of a glance. Set apart from the address by weight, not colour,
+   so the mono address stays the anchor. */
+.bookmark-preview-card-byline {
+    margin-top: 3px;
+    font-size: calc(var(--font-size-controls) * 0.78);
+    color: var(--text-secondary);
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* The provider's player, in a sandboxed frame. 16:9 is what video oEmbed
+   returns almost without exception, and letting the frame size itself would
+   collapse it to nothing -- srcdoc content has no intrinsic height. */
+.bookmark-preview-card-embed {
+    margin-top: 10px;
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16 / 9;
+}
+
+.bookmark-preview-card-embed-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
 /* "Is this link still alive" is the question the rest of the app exists to
    answer, so it is the first thing on the card. */
 .bookmark-preview-card-pill {
@@ -4706,7 +4739,29 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
    has to repeat the full :has() chain — the shorter .modal.whats-new-modal in
    modal.css loses to it on specificity. */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    width: min(40rem, calc(100vw - 2.5rem));
+    width: min(36rem, calc(100vw - 2.5rem));
+}
+
+/*
+ * Room above the modal as well as below it.
+ *
+ * The block above leaves 2rem under the modal and nothing over it, and caps the
+ * height at 100vh - 2rem — so a modal tall enough to reach its own limit runs
+ * into the top edge of the window while sitting a comfortable distance off the
+ * bottom. Measured on a 900px window: 868 tall, 32px below, 0 above.
+ *
+ * The padding is symmetric and the height leaves room for both. Scoped to
+ * what's new; recent bookmarks and the cheat sheet share the block above and
+ * the same lopsidedness, but neither was what anybody was looking at.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
+    padding-top: max(2rem, env(safe-area-inset-top, 0px));
+}
+
+body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
+body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    max-height: calc(100vh - 4rem);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
@@ -5422,4 +5477,309 @@ body[data-grid-keys="shown"] .dashboard-legend {
     .paste-choice-options {
         grid-template-columns: 1fr;
     }
+}
+
+
+
+
+/*
+ * A widget's body: a card inside an otherwise frameless grid.
+ *
+ * Categories are deliberately unframed -- they are lists of links, and a box
+ * around each would turn the page into a grid of boxes. A widget is the
+ * exception that earns one: it is a panel of figures, not a list, and without
+ * an edge it reads as loose text that happens to sit under a heading.
+ *
+ * The heading stays outside the card, so a widget's title lines up with every
+ * category title beside it.
+ */
+.dashboard-widget .dashboard-widget-body {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
+    /*
+     * Reserved before the data arrives.
+     *
+     * The packed layout measures block heights to place columns; a widget that
+     * grew once its figures loaded would shift every column after it.
+     */
+    min-height: 3.5rem;
+    /* The grid's own text size, not the smaller one used for meta lines: these
+       are the widget's content, not a note about it. */
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+}
+
+.dashboard-widget .dashboard-widget-body--empty {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* The health widget: a figure and what it counts, per row. */
+.dashboard-widget-health {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dashboard-widget-health-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.25rem 0.35rem;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.dashboard-widget-health-row:hover,
+.dashboard-widget-health-row:focus-visible {
+    background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+}
+
+.dashboard-widget-health-value {
+    min-width: 2.2em;
+    font-weight: var(--font-weight-semibold);
+    /* Figures read as a column when their digits line up. */
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Tone by what the figure means, not by its size.
+ *
+ * A zero in the broken row is the best news on the widget and still reads as
+ * the broken row -- colouring by value would make "0 broken" green and
+ * indistinguishable from "12 healthy".
+ */
+.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--status-error, var(--text-primary)); }
+.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--status-warning, var(--text-primary)); }
+.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--status-success, var(--text-primary)); }
+
+.dashboard-widget-health-label { color: var(--text-secondary); }
+.dashboard-widget-health-waiting { margin: 0; color: var(--text-tertiary); font-style: italic; }
+
+/* Config: the widgets tab lists categories too, greyed, to be moved past. */
+.config-widget-row--category .config-widget-category-name { color: var(--text-tertiary); }
+.config-widget-kind {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+    margin-left: 8px;
+}
+
+/* ─── Widget rows ────────────────────────────────────────────────────────── */
+/* Shared by the widgets that list rows — sources, feeds, certificates. One set
+   of rules rather than three near-copies: they differ in what they say, not in
+   how a row looks. */
+.dashboard-widget-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dashboard-widget-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 3px 6px;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 5px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.dashboard-widget-row {
+    cursor: pointer;
+}
+
+button.dashboard-widget-row:hover,
+button.dashboard-widget-row:focus-visible {
+    background: rgba(127, 127, 127, 0.09);
+}
+
+.dashboard-widget-row-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The number or the verdict, kept on one line and lined up down the column. */
+.dashboard-widget-row-detail {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-row--bad .dashboard-widget-row-detail {
+    color: var(--status-error, var(--text-primary));
+}
+
+.dashboard-widget-row--warn .dashboard-widget-row-detail {
+    color: var(--status-warning, var(--text-primary));
+}
+
+.dashboard-widget-waiting,
+.dashboard-widget-empty {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* A figure with its qualifier beside it — the inbox count and how old the
+   oldest is, the neglected count and the threshold that produced it. The
+   qualifier is load-bearing: "eleven neglected" is a different claim at thirty
+   days than at a year. */
+.dashboard-widget-headline {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.dashboard-widget-headline-value {
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.dashboard-widget-headline-note {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+/* The heartbeat, as a row of ticks rather than a chart: what it has to show is
+   a pattern of good and bad, not a value per moment. */
+.dashboard-widget-spark {
+    display: flex;
+    flex: none;
+    gap: 1px;
+    align-items: flex-end;
+    margin-left: 8px;
+}
+
+.dashboard-widget-spark-tick {
+    width: 2px;
+    height: 10px;
+    border-radius: 1px;
+    background: var(--border-secondary);
+}
+
+.dashboard-widget-spark-tick--up {
+    background: var(--status-success, var(--text-secondary));
+}
+
+.dashboard-widget-spark-tick--down {
+    background: var(--status-error, var(--text-primary));
+}
+
+/* degraded, as health_uptime.go names it: a bucket where some samples answered
+   and some did not. */
+.dashboard-widget-spark-tick--degraded {
+    background: var(--status-warning, var(--text-secondary));
+}
+
+.dashboard-widget-trend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.dashboard-widget-trend-value {
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.dashboard-widget-trend-change {
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Fewer broken links is good news even when the number is still high, so the
+   direction carries the colour and the value stays neutral. */
+.dashboard-widget-trend-change.is-better {
+    color: var(--status-success, var(--text-secondary));
+}
+
+.dashboard-widget-trend-change.is-worse {
+    color: var(--status-error, var(--text-primary));
+}
+
+.dashboard-widget-trend-change.is-level {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-trend-line {
+    display: block;
+    width: 100%;
+    height: 40px;
+    margin-top: 4px;
+}
+
+a.dashboard-widget-row {
+    text-decoration: none;
+}
+
+a.dashboard-widget-row:hover,
+a.dashboard-widget-row:focus-visible {
+    background: rgba(127, 127, 127, 0.09);
+}
+
+/* The row that says what did not fit. Quieter than the rows above it — it is a
+   pointer, not a finding — but present, because a list that cuts itself off in
+   silence answers a different question than the one it appears to answer. */
+.dashboard-widget-row--more .dashboard-widget-row-name {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+button.dashboard-widget-row--more {
+    cursor: pointer;
+}
+
+/* The custom widget's figures: a value with its name under it, side by side.
+   Two or three numbers is the common case, so they wrap rather than scroll. */
+.dashboard-widget-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+}
+
+.dashboard-widget-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dashboard-widget-figure-value {
+    font-size: 1.4em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-widget-figure-label {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+/* A path that stopped matching is marked rather than blank — a blank reads as a
+   zero, and zero is a fact. */
+.dashboard-widget-figure.is-missing .dashboard-widget-figure-value {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-asof {
+    margin: 8px 0 0;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-small) * 0.92);
 }

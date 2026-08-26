@@ -25,7 +25,7 @@ test.describe('Data & backups → Icons & previews', () => {
         await openData(page);
         await expect.poll(() => page.evaluate(() =>
             [...document.querySelectorAll('[data-db-tab]')].map((b) => b.getAttribute('data-db-tab'))
-        )).toEqual(['backups', 'icons', 'logs', 'trash', 'reset']);
+        )).toEqual(['backups', 'sources', 'webhooks', 'icons', 'logs', 'trash', 'reset']);
         await expect(page.locator('[data-db-tab="icons"]')).toHaveText('Icons & previews');
     });
 
@@ -48,7 +48,10 @@ test.describe('Data & backups → Icons & previews', () => {
         await expect(page.locator('[data-backup-select="faviconRefreshPolicy"]')).toHaveCount(0);
         await expect(page.locator('[data-backup-action="refresh-favicons"]')).toHaveCount(0);
         await expect(page.locator('[data-backup-action="download"]')).toBeVisible();
-        await expect(page.locator('[data-backup-action="csv-export"]')).toBeVisible();
+        // Present rather than visible: the export buttons sit in a fold that
+        // opens on a click, which is what the accordion is for. What this
+        // guards is that they stayed on this tab, not how far open it starts.
+        await expect(page.locator('[data-backup-action="csv-export"]')).toHaveCount(1);
     });
 
     test('the favicon select is still wired up after the move', async ({ page }) => {

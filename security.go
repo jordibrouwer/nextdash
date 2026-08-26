@@ -182,6 +182,21 @@ func contentSecurityPolicy() string {
 		"connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://stats.nextdash.cc",
 		"manifest-src 'self'",
 		"child-src 'self' blob:",
+		/*
+		 * The oEmbed players, and nothing else.
+		 *
+		 * child-src alone would block every one of them, which is why a video
+		 * card drew a black rectangle. Rather than open framing to https: at
+		 * large, this names the providers that actually answer an oEmbed
+		 * discovery request with a player. A page that is not on this list still
+		 * gets its title, byline and thumbnail -- only the player is withheld.
+		 *
+		 * The frames are sandboxed without allow-same-origin on top of this, so
+		 * a provider that turned hostile still has no reach into the dashboard.
+		 */
+		"frame-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com " +
+			"https://player.vimeo.com https://w.soundcloud.com https://open.spotify.com " +
+			"https://embed.music.apple.com https://platform.twitter.com",
 		"worker-src 'self' blob:",
 	}, "; ")
 }
@@ -206,6 +221,19 @@ func securityHeaders(next http.Handler) http.Handler {
 
 func writeAccessToken() string {
 	return strings.TrimSpace(os.Getenv("NEXTDASH_WRITE_TOKEN"))
+}
+
+/*
+hasWriteAccess reports what requireWriteAccess enforces, without answering the
+request.
+
+For a route that narrows what it returns rather than refusing it outright: the
+dashboard has to be able to read a page's blocks to draw them, and only the
+settings that are addresses need withholding.
+*/
+func hasWriteAccess(r *http.Request) bool {
+	token := writeAccessToken()
+	return token == "" || r.Header.Get("X-NextDash-Token") == token
 }
 
 func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bool {

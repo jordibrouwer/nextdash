@@ -129,7 +129,9 @@ Outbound fetches (preview, ping, icons, auto-heal, the health view's check-a-URL
 
 ### Optional CORS allowlist (LAN / VPS / extension)
 
-By default, bookmark API responses send `Access-Control-Allow-Origin: *` so the browser extension and cross-origin tools work without extra config.
+By default, only an installed browser extension's origin (`chrome-extension://…`, `moz-extension://…`, `safari-web-extension://…`) receives `Access-Control-Allow-Origin`. A web page on another origin gets no CORS header and cannot read the API.
+
+Before 1.4 the default was `Access-Control-Allow-Origin: *`, which meant any site open in a tab could read your bookmarks from a nextDash whose address it could guess — the read routes need no token. The extension is unaffected by the change: a Manifest V3 extension with host permissions is granted cross-origin access by the browser itself, without CORS.
 
 Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to restrict cross-origin reads/writes, for example:
 
@@ -137,7 +139,7 @@ Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to rest
 NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
 ```
 
-Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response. Unset or empty keeps the default `*`.
+Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response; extension origins are always allowed. Set `NEXTDASH_CORS_ORIGINS=*` to restore the pre-1.4 behaviour of answering every origin.
 
 ### Activity log (bookmark events)
 
@@ -285,7 +287,7 @@ environment:
 | `PORT` | `8080` | HTTP listen port (validated 1–65535) |
 | `NEXTDASH_DATA_DIR` | `./data` | Pages, bookmarks, settings, uploads |
 | `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
-| `NEXTDASH_CORS_ORIGINS` | `*` | Comma-separated `Origin` allowlist for API CORS |
+| `NEXTDASH_CORS_ORIGINS` | *(unset)* | Extra `Origin` allowlist for API CORS, comma-separated. Extension origins always allowed; `*` answers everyone |
 | `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security` (comma-separated) |
 | `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
 | `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
@@ -619,7 +621,7 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 - Duplicate URL warning; **409** when the shortcut is already taken on that page
 - If a dashboard tab is open on the same server, it may toast and refresh
 
-When you restrict CORS with `NEXTDASH_CORS_ORIGINS`, include your extension origin (`chrome-extension://…` from `chrome://extensions`).
+The extension needs no CORS configuration: its origin is allowed by default, and its host permissions let the browser grant the request regardless. `NEXTDASH_CORS_ORIGINS` is only for pages of your own.
 
 See `extension/README.md` for full usage and development notes.
 

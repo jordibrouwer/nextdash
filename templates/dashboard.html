@@ -25,6 +25,10 @@
     <script src="{{asset "js/theme-loader.js"}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
+    <!-- Offers this install to the browser as a search engine, so the address
+         bar can search your bookmarks. See opensearch.go. -->
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}" href="/opensearch.xml">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
     <!-- First-paint fallback only; theme-loader.js syncs this to the resolved --background-primary for every theme. -->
     <meta name="theme-color" content="{{.ThemeColorMeta}}">
@@ -420,6 +424,17 @@
     <script src="{{asset "js/shared/config-favicon-prefetch.js"}}" defer></script>
     <script src="{{asset "js/shared/bookmark-feed-row.js"}}" defer></script>
     <script src="{{asset "js/shared/inline-create-row.js"}}" defer></script>
+    <script src="{{asset "js/shared/progress-overlay.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-utils.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-health.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-sources.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-feeds.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-certs.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-uptime.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-trend.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-inbox.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-neglected.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-custom.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>

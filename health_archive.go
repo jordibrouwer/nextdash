@@ -67,14 +67,40 @@ func (h *Handlers) ArchiveSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshot, err := h.lookupArchiveSnapshot(r.Context(), target)
-	if err != nil {
-		// A lookup that fails is not an error the user can act on — the answer
-		// is simply "nothing to offer" — so it reads the same as no capture.
-		_ = json.NewEncoder(w).Encode(archiveSnapshot{})
+	/*
+	 * The index first, the availability API as the fallback.
+	 *
+	 * The index knows which captures actually worked, so it can offer the last
+	 * good one rather than the most recent -- which for a dead link is usually
+	 * a capture of the error page -- and say when the page stopped answering.
+	 * The availability API can do neither, but it is the simpler service and
+	 * stays up when the index is slow, so it still answers the smaller question
+	 * when the index cannot.
+	 */
+	history, err := h.lookupArchiveHistory(r.Context(), target)
+	if err == nil && history.Snapshot.Available {
+		_ = json.NewEncoder(w).Encode(history)
 		return
 	}
-	_ = json.NewEncoder(w).Encode(snapshot)
+
+	snapshot, availErr := h.lookupArchiveSnapshot(r.Context(), target)
+	if availErr != nil {
+		// A lookup that fails is not an error the user can act on — the answer
+		// is simply "nothing to offer" — so it reads the same as no capture.
+		_ = json.NewEncoder(w).Encode(ArchiveHistory{})
+		return
+	}
+	// Carried through from the index even when it had no capture to offer: it
+	// still counted what it saw, and "captured 12 times, never successfully" is
+	// worth more than an empty answer.
+	if err == nil {
+		history.setSnapshot(snapshot)
+		_ = json.NewEncoder(w).Encode(history)
+		return
+	}
+	fallback := ArchiveHistory{}
+	fallback.setSnapshot(snapshot)
+	_ = json.NewEncoder(w).Encode(fallback)
 }
 
 func (h *Handlers) lookupArchiveSnapshot(ctx context.Context, target string) (archiveSnapshot, error) {

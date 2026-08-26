@@ -68,6 +68,14 @@ func main() {
 
 	// Initialize handlers
 	handlers := NewHandlers(store, embeddedFiles)
+	// The sources that reach the network through the handler's own client, so
+	// they inherit the SSRF checks and the rate limiting rather than each
+	// arranging their own.
+	handlers.registerHandlerSources()
+	// Same wiring for outgoing deliveries: whether a webhook may reach a local
+	// address is this install's setting, not a decision webhooks.go can make on
+	// its own.
+	handlers.RegisterWebhookDelivery()
 
 	// Create router
 	r := mux.NewRouter()
@@ -75,6 +83,8 @@ func main() {
 	// Routes
 	r.HandleFunc("/version", Version).Methods("GET")
 	r.HandleFunc("/manifest.webmanifest", handlers.WebAppManifest).Methods("GET")
+	// The address bar as a search box; see opensearch.go.
+	r.HandleFunc("/opensearch.xml", handlers.OpenSearchDescription).Methods("GET")
 	// Served from the root because a service worker's scope cannot rise above its
 	// own path; from /static/ it could not control the dashboard.
 	r.HandleFunc("/push-service-worker.js", handlers.PushServiceWorker).Methods("GET")
@@ -87,6 +97,18 @@ func main() {
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
+	// The file itself rather than the browser's reading of it, so an import
+	// keeps the tags, notes and dates every export has always carried.
+	r.HandleFunc("/api/bookmarks/import-html", handlers.ImportBookmarksHTML).Methods("POST")
+	r.HandleFunc("/api/bookmarks/export-html", handlers.ExportBookmarksHTML).Methods("GET")
+	// The source register: where bookmarks come from, and what the last round
+	// did. Every route is behind the write token -- a source can hold one.
+	r.HandleFunc("/api/sources", handlers.ListSourcesHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/sources/{id}", handlers.SaveSourceHandler).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/api/sources/{id}", handlers.DeleteSourceHandler).Methods("DELETE", "OPTIONS")
+	// GET previews, POST imports. Two calls on purpose: a source that writes on
+	// the first click is one nobody clicks twice.
+	r.HandleFunc("/api/sources/{id}/run", handlers.RunSourceHandler).Methods("GET", "POST", "OPTIONS")
 	r.HandleFunc("/api/bookmarks/prefetch-icons", handlers.PrefetchBookmarkIcons).Methods("POST")
 	r.HandleFunc("/api/bookmarks/delete-all", handlers.DeleteAllBookmarks).Methods("POST")
 	r.HandleFunc("/api/finders", handlers.GetFinders).Methods("GET")
@@ -95,6 +117,10 @@ func main() {
 	r.HandleFunc("/api/categories", handlers.SaveCategories).Methods("POST")
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
+	// A page's widgets and the order every block on it is drawn in -- category
+	// ids and widget ids in one list, so a widget can sit between categories.
+	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.SavePageBlocksHandler).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")
@@ -147,6 +173,15 @@ func main() {
 	r.HandleFunc("/api/health/retest-all", handlers.RetestAll).Methods("POST")
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
+	// The secrets a check sends, in their own file outside the backup.
+	// The one widget that reads from outside, by widget id rather than by URL.
+	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/webhooks/test", handlers.TestWebhookHandler).Methods("POST", "OPTIONS")
+	// Not under /api: an MCP endpoint is a published address that goes into a
+	// client's config file, and /mcp is where every client looks first.
+	r.HandleFunc("/mcp", handlers.MCPHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
 	// The same fields for a list of bookmarks, so muting a dozen during a known
 	// outage is one request rather than a dozen dialogs.
@@ -159,6 +194,21 @@ func main() {
 	r.HandleFunc("/api/health/delete-bookmarks", handlers.DeleteHealthBookmarksBulk).Methods("POST")
 	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
+	// Asking the archive to keep a copy, rather than hoping someone already
+	// did. Behind the write token: it spends a shared daily budget.
+	// The second archive, which keeps what the first was not allowed to.
+	r.HandleFunc("/api/health/archive-today", handlers.ArchiveTodayHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/health/archive-save", handlers.SaveArchiveCapture).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/health/archive-save-status", handlers.ArchiveCaptureStatusHandler).Methods("GET", "OPTIONS")
+	// The keys, on a route that never hands them back.
+	r.HandleFunc("/api/health/archive-settings", handlers.ArchiveSettingsHandler).Methods("GET", "PUT", "OPTIONS")
+	// A copy on this disk, through monolith. Behind the write token, captures
+	// included: a stored page is the whole content of something the reader chose
+	// to keep, which /data/'s unauthenticated allowlist is no place for.
+	r.HandleFunc("/api/archives", handlers.LocalArchivesHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/archives/capture", handlers.CaptureLocallyHandler).Methods("POST", "OPTIONS")
+	r.PathPrefix("/api/archives/").HandlerFunc(handlers.ServeLocalArchive).Methods("GET")
+	r.PathPrefix("/api/archives/").HandlerFunc(handlers.DeleteLocalArchive).Methods("DELETE")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")
@@ -267,6 +317,9 @@ func main() {
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
 	// as the background recheck).
 	handlers.StartFeedPollScheduler(schedulerStop)
+	// Dates the links that are already failing, so a row can say the page has
+	// been gone for years rather than only that it broke here on Tuesday.
+	handlers.StartArchiveBackfillScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
 
 	go func() {

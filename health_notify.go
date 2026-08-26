@@ -302,6 +302,20 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 		return
 	}
 
+	// Outgoing webhooks get the events before the collapse below, and whether or
+	// not a notify target is configured at all. The collapse exists so a chat
+	// channel is not flooded and a rate limit not tripped; a receiver reading
+	// JSON has neither problem, and would rather have the bookmark that failed
+	// than a summary saying five of them did.
+	for _, n := range notifications {
+		switch n.Event {
+		case "down":
+			emitWebhookEvent(webhookEventHealthDown, monitorNotificationFields(n))
+		case "up":
+			emitWebhookEvent(webhookEventHealthUp, monitorNotificationFields(n))
+		}
+	}
+
 	// One upstream failing takes every bookmark behind it down in the same
 	// sweep. Collapsed here, at the single point both sinks pass through, so the
 	// webhook and the browser both get the summary rather than one of them
@@ -341,11 +355,27 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 // path and the synchronous test-send path, so the two can never drift apart
 // on headers or content type.
 func buildMonitorNotificationRequest(ctx context.Context, target string, settings Settings, n monitorNotification) (*http.Request, error) {
-	payload, err := formatMonitorNotification(
-		settings.MonitorNotifyPreset, n,
-		settings.MonitorNotifyTelegramChatID,
-		settings.MonitorNotifyPushoverToken, settings.MonitorNotifyPushoverUserKey,
-	)
+	var payload notificationPayload
+	var err error
+	// ntfy only carries buttons in its JSON form, which is posted to the server
+	// root with the topic in the body. When the configured address cannot be
+	// split that way the plain-text form that has always been sent still goes
+	// out, rather than nothing.
+	if settings.MonitorNotifyPreset == "ntfy" {
+		if root, topic := ntfyTopicFromURL(target); topic != "" {
+			payload, err = formatNtfyJSONNotification(n, topic, settings.MonitorNotifyDashboardURL)
+			if err == nil {
+				target = root
+			}
+		}
+	}
+	if payload.body == nil {
+		payload, err = formatMonitorNotification(
+			settings.MonitorNotifyPreset, n,
+			settings.MonitorNotifyTelegramChatID,
+			settings.MonitorNotifyPushoverToken, settings.MonitorNotifyPushoverUserKey,
+		)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +391,10 @@ func buildMonitorNotificationRequest(ctx context.Context, target string, setting
 	// ntfy and the raw-JSON default render/accept these; the other presets
 	// ignore unrecognised headers, so setting them unconditionally costs
 	// nothing and keeps this one line simple rather than preset-gated.
-	if settings.MonitorNotifyPreset == "" || settings.MonitorNotifyPreset == "ntfy" {
+	// The JSON form carries its own title field, and ntfy rejects a request that
+	// sets both.
+	if settings.MonitorNotifyPreset == "" ||
+		(settings.MonitorNotifyPreset == "ntfy" && payload.contentType != "application/json") {
 		req.Header.Set("Title", monitorNotificationTitle(n))
 		req.Header.Set("X-Title", monitorNotificationTitle(n))
 	}

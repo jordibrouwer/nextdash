@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -49,6 +50,17 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		// this handler already documents. A caller that omits it un-mutes, which
 		// is the same wholesale-replace semantics as every other field above.
 		NotifyMuted bool `json:"notifyMuted"`
+		/*
+		 * How to reach the service, as opposed to what to expect back.
+		 *
+		 * Sent from the same panel and stored the same wholesale way, but they
+		 * apply whether or not the bookmark is monitored: "Retest all" and a
+		 * manual re-check run on unmonitored bookmarks, and a service behind an
+		 * API key answers 401 to those too.
+		 */
+		CheckURL         string `json:"checkUrl"`
+		CredentialID     string `json:"credentialId"`
+		AllowInsecureTLS bool   `json:"allowInsecureTls"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -99,6 +111,31 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		bm.ExpectTextAbsent = req.ExpectTextAbsent && text != ""
 		bm.ExpectStatus = status
 		bm.NotifyMuted = req.NotifyMuted
+		/*
+		 * An address that is not http(s) is refused rather than stored: the
+		 * check would refuse it later anyway, and a field that silently keeps
+		 * an unusable value reads as configured when it is not.
+		 */
+		if probe := strings.TrimSpace(req.CheckURL); probe == "" {
+			bm.CheckURL = ""
+		} else if parsed, parseErr := url.Parse(probe); parseErr == nil &&
+			(parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != "" {
+			bm.CheckURL = probe
+		} else {
+			bm.CheckURL = ""
+		}
+		// An id naming nothing is dropped, so the panel never offers a choice
+		// that quietly does not exist.
+		if id := normalizeCredentialID(req.CredentialID); id != "" {
+			if _, ok := lookupHealthCredential(id); ok {
+				bm.CredentialID = id
+			} else {
+				bm.CredentialID = ""
+			}
+		} else {
+			bm.CredentialID = ""
+		}
+		bm.AllowInsecureTLS = req.AllowInsecureTLS
 		// Clearing the expectation clears the failure it caused. Without this a
 		// bookmark marked down for a missing keyword would stay down until its
 		// next check, with no visible reason left to explain it.
@@ -142,6 +179,9 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		"expectStatus":     applied.ExpectStatus,
 		"watchDrift":       applied.WatchDrift,
 		"notifyMuted":      applied.NotifyMuted,
+		"checkUrl":         applied.CheckURL,
+		"credentialId":     applied.CredentialID,
+		"allowInsecureTls": applied.AllowInsecureTLS,
 	})
 }
 

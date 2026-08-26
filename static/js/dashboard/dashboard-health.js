@@ -186,6 +186,20 @@ class DashboardHealth {
     }
 
     formatUrlDisplay(url) {
+        /*
+         * A bookmark pointed at the Web Archive shows the page it is a copy of.
+         *
+         * "Use the last archived copy" rewrites the address to
+         * web.archive.org/web/20160926060646/https://github.com/, which is
+         * correct and unreadable: the row filled with a wayback timestamp and
+         * the real site buried in the middle, looking like two URLs run
+         * together. The original is the part that identifies the bookmark, so
+         * that is what is shown, with a marker saying where it now points.
+         */
+        const archived = this.archivedOriginalUrl(url);
+        if (archived) {
+            return `${this.formatUrlDisplay(archived)} ${this.t('dashboard.healthArchivedMarker', '(archived copy)')}`;
+        }
         try {
             const parsed = new URL(url);
             const path = parsed.pathname + parsed.search;
@@ -195,6 +209,19 @@ class DashboardHealth {
             const raw = String(url || '');
             return raw.length > 72 ? `${raw.slice(0, 69)}…` : raw;
         }
+    }
+
+    /**
+     * The page a wayback URL is a capture of, or "" when it is not one.
+     *
+     * The shape is /web/<timestamp>/<original>, where the original keeps its own
+     * scheme -- so the second "https://" in the string is the start of the real
+     * address rather than a mistake.
+     */
+    archivedOriginalUrl(url) {
+        const raw = String(url || '');
+        const match = raw.match(/^https?:\/\/web\.archive\.org\/web\/[^/]*\/(https?:\/\/.+)$/i);
+        return match ? match[1] : '';
     }
 
     /* ── Data ──────────────────────────────────────────────────────────── */
@@ -248,7 +275,13 @@ class DashboardHealth {
             this.render();
         }
         try {
-            await this.fetchReport({ refresh });
+            /*
+             * The credential names ride along with the report rather than being
+             * fetched when a panel opens: syncExpectPanel is synchronous and
+             * called from a dozen places, and the names are two dozen bytes of
+             * labels — cheaper to have than to wait for.
+             */
+            await Promise.all([this.fetchReport({ refresh }), this.loadHealthCredentials()]);
         } catch {
             if (this.report) {
                 this.dash.showNotification?.(
@@ -1198,11 +1231,99 @@ class DashboardHealth {
      * be a control that governs nothing.
      */
     renderExpectPanel(issue) {
-        if (this.checkModeOf(issue) !== window.CheckMode.MONITOR) return '';
         const esc = (v) => this.escape(v);
+        const monitored = this.checkModeOf(issue) === window.CheckMode.MONITOR;
+        /*
+         * Reaching the service comes first, and is not gated on monitoring.
+         *
+         * Everything below it says what a good answer looks like, which only
+         * means something on a monitored bookmark. These three say how to get
+         * an answer at all — and "Retest all" and a manual re-check run on
+         * unmonitored bookmarks too, where a service behind a key answers 401
+         * just the same.
+         */
         return `
             <div class="health-expect-form" role="group"
                  aria-label="${esc(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="check-url-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCheckUrlLabel', 'Address to check instead'))}</label>
+                    <input type="url" id="check-url-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-check-url maxlength="2000"
+                        placeholder="${esc(this.t('dashboard.healthCheckUrlPlaceholder', 'https://service.example/ping'))}"
+                        value="${esc(issue.checkUrl || '')}">
+                    <span class="health-expect-note">${esc(this.t(
+                        'dashboard.healthCheckUrlNote',
+                        'The bookmark still opens its own address. Useful when a service has a status endpoint but its front page needs a login.'
+                    ))}</span>
+                </div>
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="credential-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthCredentialLabel', 'Sign in with'))}</label>
+                    <select id="credential-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-credential-id>
+                        <option value="">${esc(this.t('dashboard.healthCredentialNone', 'Nothing — check anonymously'))}</option>
+                        ${this.renderCredentialOptions(issue.credentialId)}
+                    </select>
+                    <span class="health-expect-note">${esc(this.t(
+                        'dashboard.healthCredentialNote',
+                        'Keys and passwords are kept in their own file, outside your backups. Manage them under Config → Health.'
+                    ))}</span>
+                </div>
+
+                <div class="health-expect-toggles">
+                    <label class="health-expect-check">
+                        <input type="checkbox" data-allow-insecure ${issue.allowInsecureTls ? 'checked' : ''}>
+                        <span>${esc(this.t('dashboard.healthAllowInsecure',
+                            'Accept a certificate this machine does not trust'))}</span>
+                    </label>
+                </div>
+
+                ${monitored ? this.renderExpectFields(issue) : ''}
+
+                <div class="health-expect-actions">
+                    <button type="button" class="health-expect-save" data-expect-save>${esc(
+                        this.t('dashboard.healthExpectSave', 'Save'))}</button>
+                    <button type="button" class="health-expect-cancel" data-expect-cancel>${esc(
+                        this.t('dashboard.healthExpectCancel', 'Cancel'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * The names of the stored credentials, fetched once per view.
+     *
+     * Names only: the values live in their own file and no route hands them
+     * back, so this can be cached without holding a secret in the page.
+     */
+    async loadHealthCredentials() {
+        if (this.dash.healthCredentials) return this.dash.healthCredentials;
+        try {
+            const res = await fetch('/api/health/credentials');
+            if (!res.ok) return {};
+            const data = await res.json();
+            this.dash.healthCredentials = data?.credentials || {};
+        } catch (_error) {
+            this.dash.healthCredentials = {};
+        }
+        return this.dash.healthCredentials;
+    }
+
+    /** The names of the stored credentials — never their values. */
+    renderCredentialOptions(selected) {
+        const esc = (v) => this.escape(v);
+        const list = this.dash.healthCredentials || {};
+        return Object.keys(list).sort().map((id) => `
+            <option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>
+        `).join('');
+    }
+
+    /** What a good answer looks like — only meaningful on a monitored bookmark. */
+    renderExpectFields(issue) {
+        const esc = (v) => this.escape(v);
+        return `
                 <p class="health-expect-intro">${esc(this.t(
                     'dashboard.healthExpectIntro',
                     'A reachability check only asks whether the host answered. These say what a good answer looks like for this page.'
@@ -1245,13 +1366,7 @@ class DashboardHealth {
                     </label>
                 </div>
 
-                <div class="health-expect-actions">
-                    <button type="button" class="health-expect-save" data-expect-save>${esc(
-                        this.t('dashboard.healthExpectSave', 'Save'))}</button>
-                    <button type="button" class="health-expect-cancel" data-expect-cancel>${esc(
-                        this.t('dashboard.healthExpectCancel', 'Cancel'))}</button>
-                </div>
-            </div>`;
+        `;
     }
 
     /* ── Actions ───────────────────────────────────────────────────────── */
@@ -1284,6 +1399,23 @@ class DashboardHealth {
     renderBrokenSince(issue) {
         const since = Number(issue?.brokenSince) || 0;
         if (!since || !String(issue?.lastError || '').trim()) return '';
+        /*
+         * A failure that only describes the request gets a softer sentence.
+         *
+         * "failing for 40 days" beside a 403 reads as a dead link, and it is
+         * how a dashboard of working bookmarks comes to look half dead --
+         * after which the reader stops believing any of the warnings, and the
+         * real 404s go unnoticed with them. The row still shows the failure and
+         * the code; what it stops claiming is that the page is rotting.
+         */
+        if (issue?.failureUncertain) {
+            const blockedLabel = this.t('dashboard.healthBlockedFor',
+                'not answering us for {duration}', { duration: this.formatDuration(Date.now() - since) });
+            const blockedTitle = this.t('dashboard.healthBlockedTitle',
+                'The site refused or could not answer our checks since {date}. It may load fine in a browser.',
+                { date: new Date(since).toLocaleString() });
+            return `<span class="health-view-item-broken-since" title="${this.escape(blockedTitle)}">${this.escape(blockedLabel)}</span>`;
+        }
         // A monitor already says it, in its own strip and with its own record.
         if (Number(issue?.monitorStats?.downSince) > 0) return '';
         const label = this.t('dashboard.healthBrokenFor', 'failing for {duration}', {
@@ -1292,7 +1424,69 @@ class DashboardHealth {
         const title = this.t('dashboard.healthBrokenSinceTitle', 'First failed on {date}', {
             date: new Date(since).toLocaleString(),
         });
-        return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`;
+        return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`
+            + this.renderArchiveDied(issue)
+            + this.renderLocalCopies(issue);
+    }
+
+    /*
+     * Whether there is a copy of this page on this disk, and how old it is.
+     *
+     * On a failing row this is the most useful thing the view can say: the link
+     * is gone and the content is not. Without it a reader has to remember
+     * whether they ever saved this one, and the answer is a menu click away in
+     * a menu they have no reason to open.
+     *
+     * The count comes with the report, not from a request per row.
+     */
+    renderLocalCopies(issue) {
+        const count = Number(issue?.localCopies) || 0;
+        if (!count) return '';
+
+        const at = Number(issue?.localCopyAt) || 0;
+        const when = at
+            ? new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+            : '';
+        const label = count === 1
+            ? this.t('dashboard.healthLocalCopyOne', 'copy saved here')
+            : this.t('dashboard.healthLocalCopyMany', '{n} copies saved here', { n: String(count) });
+        const title = when
+            ? this.t('dashboard.healthLocalCopyTitle', 'Newest copy on this disk: {date}. Open it from this row\u2019s menu.', { date: when })
+            : this.t('dashboard.healthLocalCopies', 'Copies on this disk');
+
+        // A statement of fact about what is recoverable, so it reads as the
+        // reassurance it is rather than as another warning on a failing row.
+        return ` <span class="health-view-item-local-copy" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /*
+     * When the web lost the page, beside how long it has been failing here.
+     *
+     * These are different facts and the difference matters: a bookmark added
+     * last week to a page that died in 2019 reads "failing for 6 days", which is
+     * true about this install and says nothing about the page. The archive knows
+     * the page has been gone for six years, which is what turns "I should look
+     * into this" into "this is not coming back".
+     *
+     * Read off the issue, never fetched: the row is rendered in a loop.
+     */
+    renderArchiveDied(issue) {
+        const diedAt = Number(issue?.archiveDiedAt) || 0;
+        if (!diedAt) return '';
+        // A failure that says nothing about the page says nothing about when it
+        // died either: "gone from the web since 2019" beside a bot check is
+        // confidently wrong about a page that opens fine in a browser.
+        if (issue?.failureUncertain) return '';
+        // A death the archive dates to after we started seeing failures is the
+        // archive catching up with us, not new information.
+        const since = Number(issue?.brokenSince) || 0;
+        if (since && diedAt >= since) return '';
+
+        const when = new Date(diedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+        const label = this.t('dashboard.healthArchiveGoneSince', 'gone from the web since {date}', { date: when });
+        const title = this.t('dashboard.healthArchiveGoneSinceTitle',
+            'The Web Archive last captured a working copy before {date}', { date: when });
+        return ` <span class="health-view-item-gone-since" title="${this.escape(title)}">${this.escape(label)}</span>`;
     }
 
     /**
@@ -1814,6 +2008,110 @@ class DashboardHealth {
      * the archive for the closest capture, says when it was taken, and offers to
      * make it the bookmark's URL. What was a dead end becomes a decision.
      */
+    /*
+     * Save a copy of this page on this disk.
+     *
+     * The Web Archive answers "did somebody keep a copy"; this answers "keep
+     * one". They are needed at different moments: by the time a link is dead it
+     * is too late to capture it, and the pages most worth keeping are often the
+     * ones nobody else archived.
+     *
+     * A capture fetches every asset on the page and takes seconds, so the row is
+     * marked busy for the duration rather than looking frozen.
+     */
+    async captureLocalCopy(issue) {
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return;
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        this.closeAllMenus();
+
+        const d = this.dash;
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+        /*
+         * The overlay, because this is genuinely slow: monolith fetches every
+         * asset on the page -- go.dev took eleven seconds -- and a busy row on
+         * its own reads as the app having frozen. The same overlay config shows
+         * for an import, for the same reason.
+         */
+        window.ProgressOverlay?.show(
+            this.t('dashboard.healthLocalCopySaving', 'Saving a copy…'),
+            this.t('dashboard.healthLocalCopySavingStatus', 'Fetching the page and everything on it')
+        );
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(url)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                window.ProgressOverlay?.hide();
+                // 412 is monolith not being installed, which is a setup step
+                // rather than a failure of this page.
+                const message = res.status === 412
+                    ? this.t('dashboard.healthLocalCopyMissing', 'monolith is not installed — see Config → Data & backups → Sources.')
+                    : (body.error || this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'));
+                d.showNotification(message, 'error');
+                return;
+            }
+            window.ProgressOverlay?.finish(
+                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'));
+            d.showNotification(
+                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'),
+                'success'
+            );
+            // The row can now say a copy exists, which it reads off the report.
+            await this.loadAndRender({ refresh: true });
+        } catch {
+            window.ProgressOverlay?.hide();
+            d.showNotification(this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), 'error');
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
+    /** What has been kept for this page, with a way to open each one. */
+    async showLocalCopies(issue) {
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        this.closeAllMenus();
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+
+        let captures = [];
+        try {
+            const res = await fetcher(`/api/archives?url=${encodeURIComponent(url)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            captures = body.captures || [];
+        } catch {
+            d.showNotification(this.t('dashboard.healthLocalCopyError', 'Could not save a copy of that page.'), 'error');
+            return;
+        }
+
+        if (!captures.length) {
+            d.showNotification(
+                this.t('dashboard.healthLocalCopiesNone', 'No copies of this page are stored here yet.'),
+                'info'
+            );
+            return;
+        }
+
+        // Newest first, and opening one is the point -- so the newest is offered
+        // directly rather than behind a list of one.
+        const newest = captures[0];
+        const when = newest.at ? new Date(newest.at).toLocaleString() : '';
+        const open = await this.confirm(
+            this.t('dashboard.healthLocalCopiesTitle', 'Copies on this disk'),
+            this.t('dashboard.healthLocalCopiesBody',
+                '{n} stored for this page. The newest is from {date}.\n\nOpen it?',
+                { n: String(captures.length), date: when })
+        );
+        if (open) {
+            window.open(newest.url, '_blank', 'noopener,noreferrer');
+        }
+    }
+
     async recoverFromArchive(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
@@ -1829,11 +2127,37 @@ class DashboardHealth {
         try {
             const res = await fetch(`/api/health/archive-snapshot?url=${encodeURIComponent(url)}`);
             if (!res.ok) throw new Error(`archive HTTP ${res.status}`);
-            const snapshot = await res.json();
-            const snapshotUrl = String(snapshot?.url || '').trim();
+            let snapshot = await res.json();
+            let snapshotUrl = String(snapshot?.url || '').trim();
+            let source = this.t('dashboard.healthArchiveSourceWayback', 'the Web Archive');
+
+            /*
+             * The second archive, when the first has nothing.
+             *
+             * These two disagree by design: the Web Archive honours a
+             * robots.txt that turns it away and drops what a site later
+             * withdraws, while archive.today captures on request and keeps what
+             * it captured. So "no copy" from one is not "no copy" -- and for a
+             * link that died behind a paywall or a takedown it is usually the
+             * second one that has it. Asked only on the way to an empty answer,
+             * so a page the first archive holds costs no extra request.
+             */
+            if (!snapshot?.available || !snapshotUrl) {
+                const second = await fetch(`/api/health/archive-today?url=${encodeURIComponent(url)}`);
+                if (second.ok) {
+                    const other = await second.json();
+                    const otherUrl = String(other?.url || '').trim();
+                    if (other?.available && otherUrl) {
+                        snapshot = other;
+                        snapshotUrl = otherUrl;
+                        source = this.t('dashboard.healthArchiveSourceToday', 'archive.today');
+                    }
+                }
+            }
+
             if (!snapshot?.available || !snapshotUrl) {
                 d.showNotification(
-                    this.t('dashboard.healthArchiveNone', 'The Web Archive has no copy of this page'),
+                    this.t('dashboard.healthArchiveNone', 'Neither archive has a copy of this page'),
                     'info'
                 );
                 return;
@@ -1847,8 +2171,8 @@ class DashboardHealth {
                 this.t('dashboard.healthArchiveFoundTitle', 'Use the archived copy?'),
                 this.t(
                     'dashboard.healthArchiveFoundBody',
-                    'The Web Archive has a copy from {date}. Point this bookmark at it?\n\n{url}\n\nThe original address is kept in the note, so nothing is lost.',
-                    { date: when, url: snapshotUrl }
+                    '{source} has a copy from {date}. Point this bookmark at it?\n\n{url}\n\nThe original address is kept in the note, so nothing is lost.',
+                    { date: when, url: snapshotUrl, source }
                 )
             );
             // Not keeping it is still an answer, and the capture is worth seeing.
@@ -1872,12 +2196,13 @@ class DashboardHealth {
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(
-                this.t('dashboard.healthArchiveApplied', 'Now pointing at the archived copy from {date}', { date: when }),
+                this.t('dashboard.healthArchiveApplied', 'Now pointing at the copy {source} took on {date}',
+                    { date: when, source }),
                 'success',
                 { duration: 4000 }
             );
         } catch {
-            d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach the Web Archive'), 'error');
+            d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach either archive'), 'error');
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
@@ -2267,6 +2592,11 @@ class DashboardHealth {
         const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
         const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
         const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
+        // Reachability: present whether or not the bookmark is monitored, so
+        // these are read unconditionally rather than from the monitored block.
+        const checkUrl = String(wrap.querySelector('[data-check-url]')?.value || '').trim();
+        const credentialId = String(wrap.querySelector('[data-credential-id]')?.value || '').trim();
+        const allowInsecureTls = Boolean(wrap.querySelector('[data-allow-insecure]')?.checked);
 
         this.closeAllMenus();
         window.nextdashTrack?.('health:expectations');
@@ -2282,6 +2612,7 @@ class DashboardHealth {
                     pageId, index: issue.index, url,
                     expectText: text, expectTextAbsent: absent, expectStatus: status,
                     watchDrift, notifyMuted,
+                    checkUrl, credentialId, allowInsecureTls,
                 }),
             });
             if (res.status === 409) {
@@ -5784,6 +6115,10 @@ class DashboardHealth {
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        // A copy on this disk, for the case the Web Archive cannot help with:
+        // a page nobody else archived, or one still up today that will not be.
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copy">${this.escape(this.t('dashboard.healthLocalCopy', 'Save a copy on this disk…'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
         // Same two entries the dashboard's right-click menu carries, under the
         // same labels. A row here is a bookmark like any other, and having to go
         // back to the dashboard to copy or send one is the kind of detour this
@@ -5976,6 +6311,8 @@ class DashboardHealth {
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
             'archive-recover': () => void this.recoverFromArchive(issue),
+            'local-copy': () => void this.captureLocalCopy(issue),
+            'local-copies': () => void this.showLocalCopies(issue),
             'copy-url': () => this.copyIssueUrl(issue),
             share: () => void this.shareIssue(issue),
             delete: () => void this.deleteIssue(issue),

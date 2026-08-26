@@ -141,6 +141,127 @@ func formatRawJSONNotification(n monitorNotification) (notificationPayload, erro
 // (see postMonitorNotification); posting the raw JSON body alongside them
 // used to show the whole struct dump under the title, which this replaces
 // with just the one line a reader actually wants.
+/*
+ntfyMessage is ntfy's JSON shape, which is what a notification has to be sent
+as for it to carry buttons.
+
+The plain-text form below works and can do nothing the reader can press. A
+bookmark going down is a notification you want to act on, and acting on it
+meant finding a laptop.
+*/
+type ntfyMessage struct {
+	Topic    string       `json:"topic"`
+	Title    string       `json:"title,omitempty"`
+	Message  string       `json:"message"`
+	Priority int          `json:"priority,omitempty"`
+	Tags     []string     `json:"tags,omitempty"`
+	Click    string       `json:"click,omitempty"`
+	Actions  []ntfyAction `json:"actions,omitempty"`
+}
+
+// ntfyAction is one button. Only the "view" type is ever built here: an
+// "http" action would have to carry whatever credential the request needs
+// inside a notification that travels through someone else's ntfy server.
+type ntfyAction struct {
+	Action string `json:"action"`
+	Label  string `json:"label"`
+	URL    string `json:"url"`
+	Clear  bool   `json:"clear,omitempty"`
+}
+
+/*
+ntfyTopicFromURL splits a configured address into the server root to post to
+and the topic to name in the body, or returns empty strings when it cannot.
+
+The plain-text form posts the message to https://server/topic. JSON is posted
+to the root with the topic in the body instead, so the topic has to be pulled
+back out of the address the user already configured rather than asked for
+again.
+
+A nested path is left alone. It may well be a reverse-proxy prefix, and
+guessing which segment is the topic would quietly publish to the wrong one.
+*/
+func ntfyTopicFromURL(raw string) (root, topic string) {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return "", ""
+	}
+	parts := strings.FieldsFunc(parsed.Path, func(r rune) bool { return r == '/' })
+	if len(parts) != 1 || parts[0] == "" {
+		return "", ""
+	}
+	rootURL := *parsed
+	rootURL.Path = "/"
+	rootURL.RawQuery = ""
+	rootURL.Fragment = ""
+	return rootURL.String(), parts[0]
+}
+
+// ntfyPriority maps an event onto ntfy's 1-5 scale. A failure is raised above
+// default so it breaks through a quiet-hours rule; a recovery is lowered below
+// it, because good news at full volume is what trains people to mute a channel.
+func ntfyPriority(event string) int {
+	switch event {
+	case "down":
+		return 4
+	case "up":
+		return 2
+	}
+	return 3
+}
+
+// ntfyTags are rendered as emoji in front of the title by every ntfy client,
+// which is the cheapest way to make the three kinds of message distinguishable
+// at a glance on a lock screen.
+func ntfyTags(event string) []string {
+	switch event {
+	case "down":
+		return []string{"rotating_light"}
+	case "up":
+		return []string{"white_check_mark"}
+	}
+	return []string{"warning"}
+}
+
+/*
+formatNtfyJSONNotification builds the same message as the plain-text form, plus
+the buttons.
+
+dashboardURL may be empty: nothing forces an install to know its own public
+address, and a button pointing at a guess is worse than one that is not there,
+so the buttons that need it are simply left off.
+*/
+func formatNtfyJSONNotification(n monitorNotification, topic, dashboardURL string) (notificationPayload, error) {
+	message := n.Error
+	if message == "" {
+		message = monitorNotificationTitle(n)
+	}
+	body := ntfyMessage{
+		Topic:    topic,
+		Title:    monitorNotificationTitle(n),
+		Message:  message,
+		Priority: ntfyPriority(n.Event),
+		Tags:     ntfyTags(n.Event),
+	}
+	if link := strings.TrimSpace(n.URL); link != "" {
+		body.Actions = append(body.Actions, ntfyAction{
+			Action: "view", Label: "Open link", URL: link, Clear: true,
+		})
+	}
+	if dash := strings.TrimRight(strings.TrimSpace(dashboardURL), "/"); dash != "" {
+		health := dash + "/#health"
+		body.Click = health
+		body.Actions = append(body.Actions, ntfyAction{
+			Action: "view", Label: "Health", URL: health,
+		})
+	}
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return notificationPayload{}, err
+	}
+	return notificationPayload{body: encoded, contentType: "application/json"}, nil
+}
+
 func formatNtfyNotification(n monitorNotification) (notificationPayload, error) {
 	body := n.Error
 	if body == "" {

@@ -604,7 +604,16 @@ class KeyboardNavigation {
         const [moved] = next.splice(from, 1);
         next.splice(to, 0, moved);
         d.categories = next;
-        d.renderCore?.scheduleCategoryOrderSave?.();
+        /*
+         * Through blockOrder, the one list that decides what is drawn where.
+         *
+         * The category array's own order used to be the order, and this wrote
+         * that. Now that widgets share the arrangement, two lists saying where
+         * something sits is two lists that disagree the moment one is written
+         * and the other is not -- so moving with the keyboard writes the same
+         * order dragging does.
+         */
+        d.renderCore?.moveBlockInOrder?.(String(moved.id), direction);
         d.renderDashboard?.({ animate: false });
 
         // The header element is rebuilt by the render, so focus follows the

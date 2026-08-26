@@ -202,6 +202,18 @@ type expectation struct {
 	// The per-bookmark fields can all be empty on one — that is the ordinary
 	// case — so "did anything ask for a check" cannot stand in for it.
 	Monitored bool
+	/*
+	 * How to reach the service, as opposed to what to expect back.
+	 *
+	 * These three sit outside the Monitor gate below, unlike everything above
+	 * them: they do not evaluate anything, they say which address to request
+	 * and how to be let in. A bookmark that is not monitored still gets checked
+	 * by "Retest all" and by a manual re-check, and answering 401 there is the
+	 * same wrong answer it would be on a schedule.
+	 */
+	CheckURL         string
+	Credential       HealthCredential
+	AllowInsecureTLS bool
 }
 
 // wantsBody reports whether this check needs the response body read.
@@ -236,16 +248,29 @@ func expectFieldsFor(b Bookmark) expectation {
 // scheduled path — only the unconditional call sites that previously skipped
 // the check.
 func expectationFor(b Bookmark) expectation {
+	// Reachability first, because it applies whether or not anyone asked for
+	// monitoring: an unmonitored bookmark is still checked by "Retest all".
+	reach := expectation{
+		CheckURL:         strings.TrimSpace(b.CheckURL),
+		AllowInsecureTLS: b.AllowInsecureTLS,
+	}
+	if id := strings.TrimSpace(b.CredentialID); id != "" {
+		// A bookmark pointing at a credential that was deleted checks
+		// anonymously rather than failing -- the same answer it gave before
+		// the credential existed.
+		if credential, ok := lookupHealthCredential(id); ok {
+			reach.Credential = credential
+		}
+	}
 	if !b.Monitor {
-		return expectation{}
+		return reach
 	}
-	return expectation{
-		Text:       strings.TrimSpace(b.ExpectText),
-		TextAbsent: b.ExpectTextAbsent,
-		Status:     normalizeExpectStatus(b.ExpectStatus),
-		WatchDrift: b.WatchDrift,
-		Monitored:  true,
-	}
+	reach.Text = strings.TrimSpace(b.ExpectText)
+	reach.TextAbsent = b.ExpectTextAbsent
+	reach.Status = normalizeExpectStatus(b.ExpectStatus)
+	reach.WatchDrift = b.WatchDrift
+	reach.Monitored = true
+	return reach
 }
 
 // withSoftNotFound layers the one expectation that is a setting rather than a

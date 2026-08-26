@@ -362,13 +362,33 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 	return nil
 }
 
+/*
+importFileMode is the permission a restored file gets.
+
+Most of the data directory is 0644 and always has been. Two files are not:
+sources.json and health-credentials.json hold tokens, API keys and passwords,
+and are written 0600 so that on a multi-user host the account next door cannot
+read them. A restore that wrote them 0644 would undo that quietly — the file
+would be back, and the protection would not.
+
+A ZIP carries no permissions, so this is where they are put back rather than
+where they are preserved.
+*/
+func importFileMode(relPath string) os.FileMode {
+	switch relPath {
+	case "sources.json", "health-credentials.json", "webhooks.json":
+		return 0600
+	}
+	return 0644
+}
+
 func writePreparedImportStaging(stagingDataDir string, prepared []preparedImportFile) error {
 	for _, file := range prepared {
 		dest := filepath.Join(stagingDataDir, file.relPath)
 		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, file.content, 0644); err != nil {
+		if err := os.WriteFile(dest, file.content, importFileMode(file.relPath)); err != nil {
 			return err
 		}
 	}
@@ -401,7 +421,7 @@ func commitPreparedImport(dataDir string, prepared []preparedImportFile) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, content, 0644); err != nil {
+		if err := os.WriteFile(dest, content, importFileMode(file.relPath)); err != nil {
 			return err
 		}
 	}
@@ -422,8 +442,9 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 	if strings.Contains(filename, "\\") {
 		return false
 	}
-	// Allow / only in icons/ prefix
-	if strings.Contains(filename, "/") && !strings.HasPrefix(filename, "icons/") {
+	// Allow / only in the two directories a backup carries.
+	if strings.Contains(filename, "/") &&
+		!strings.HasPrefix(filename, "icons/") && !strings.HasPrefix(filename, archiveDirName+"/") {
 		return false
 	}
 
@@ -452,6 +473,38 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 		"font.woff2",
 		"font.ttf",
 		"font.otf",
+		/*
+		 * The rest of the data directory.
+		 *
+		 * These were left out one at a time, each for a reason that made sense
+		 * alone: a trend is re-recorded daily, a feed re-polls, a cache
+		 * regenerates. Together they meant a restored install lost its history
+		 * and its counters and had to earn them back over weeks — health-trend
+		 * needs three days before its chart appears at all, and thirty before
+		 * the window it claims is real.
+		 */
+		"health-trend.json",
+		"feeds.json",
+		"inbox-stats.json",
+		"site-news.json",
+		"push-subscriptions.json",
+		/*
+		 * Credentials, at the owner's explicit instruction.
+		 *
+		 * sources.json holds import tokens and health-credentials.json holds API
+		 * keys and passwords, and both were deliberately kept out of the backup:
+		 * a ZIP travels to a NAS, to a laptop, into a Downloads folder, and a
+		 * token is worth more than the cursor beside it. Including them makes a
+		 * restore complete — nothing to type in again — and makes every backup
+		 * file a secret in its own right. Both files are 0600 on disk; a backup
+		 * has no permissions to carry, so that protection ends at the ZIP.
+		 */
+		"sources.json",
+		"health-credentials.json",
+		// webhooks.json holds the keys deliveries are signed with. Same trade:
+		// a restore that has them is complete, and a backup that has them is
+		// enough to forge a delivery to somebody's automation.
+		"webhooks.json",
 	}
 
 	// Check if it's one of the specific files
@@ -483,6 +536,19 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 				return true
 			}
 		}
+	}
+
+	/*
+	 * Local captures, which are the one thing here that cannot be re-fetched.
+	 *
+	 * A monolith capture is a copy of a page as it was; the page it came from
+	 * may be gone. Any file under archives/ is carried, because a capture is a
+	 * single HTML file whose name is the archive's own and whose extension it
+	 * chose.
+	 */
+	if strings.HasPrefix(filename, archiveDirName+"/") {
+		rest := strings.TrimPrefix(filename, archiveDirName+"/")
+		return rest != "" && !strings.Contains(rest, "/")
 	}
 
 	// Check if it's an icon file (icons/ followed by filename with image extension)
@@ -657,9 +723,48 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 // buildBackupZip assembles the full data-directory backup as a ZIP archive in memory.
 // It is shared by the download handler (Backup) and the automatic backup scheduler so
 // both produce identical archives.
+
+/*
+backupSkips reports what this install has chosen to leave out of a backup.
+
+Read once per backup rather than per file: the settings do not change halfway
+through a walk, and asking the store for every icon would be thousands of reads
+for two booleans.
+
+The filtering lives here and not in isValidImportFilename, which both the backup
+and the import consult: leaving a file out of the ZIP is a choice about what to
+write, while refusing it on the way back in would mean a backup that contains
+archives could not restore them.
+*/
+type backupSkips struct {
+	archives bool
+	secrets  bool
+}
+
+// backupSecretFilenames are the files that hold credentials rather than data:
+// import tokens, the keys and passwords a health check sends, and the keys
+// outgoing deliveries are signed with.
+var backupSecretFilenames = map[string]bool{
+	"sources.json":            true,
+	"health-credentials.json": true,
+	"webhooks.json":           true,
+}
+
+func (s backupSkips) skip(relPath string) bool {
+	if s.archives && strings.HasPrefix(relPath, archiveDirName+"/") {
+		return true
+	}
+	return s.secrets && backupSecretFilenames[relPath]
+}
+
 func (h *Handlers) buildBackupZip() ([]byte, error) {
 	// Ensure base data directory exists so backup works on first run.
 	dataDir := ResolveDataDir()
+	settings := h.store.GetSettings()
+	skips := backupSkips{
+		archives: settings.BackupExcludeArchives,
+		secrets:  settings.BackupExcludeSecrets,
+	}
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return nil, err
 	}
@@ -679,6 +784,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 		// Never include the auto-backup store itself (avoid backup-in-backup).
 		if info.IsDir() {
 			if info.Name() == autoBackupDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
+			// Refused whole rather than a file at a time: an archive of a few
+			// hundred captures is a few hundred pointless stats otherwise.
+			if skips.archives && info.Name() == archiveDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
 			return nil
@@ -704,6 +814,10 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 		}
 
 		if shouldSkipBackupRootImageDuplicate(dataDir, relPath) {
+			return nil
+		}
+
+		if skips.skip(relPath) {
 			return nil
 		}
 

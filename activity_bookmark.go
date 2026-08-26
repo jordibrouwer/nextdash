@@ -98,6 +98,7 @@ func isBookmarkReorderOnly(before, after []Bookmark) bool {
 }
 
 func logBookmarkAdd(bm Bookmark, r *http.Request) {
+	emitWebhookEvent(webhookEventBookmarkAdded, bookmarkActivitySnapshot(bm))
 	if !activityEnabled(activityCategoryMutate) {
 		return
 	}
@@ -106,6 +107,7 @@ func logBookmarkAdd(bm Bookmark, r *http.Request) {
 }
 
 func logBookmarkDelete(bm Bookmark, r *http.Request) {
+	emitWebhookEvent(webhookEventBookmarkDeleted, bookmarkActivitySnapshot(bm))
 	if !activityEnabled(activityCategoryMutate) {
 		return
 	}
@@ -147,7 +149,12 @@ func logCategoryRestore(item TrashedBookmark, r *http.Request) {
 }
 
 func logBookmarkUpdate(bm Bookmark, changed []string, r *http.Request) {
-	if !activityEnabled(activityCategoryMutate) || len(changed) == 0 {
+	if len(changed) == 0 {
+		return
+	}
+	emitWebhookEvent(webhookEventBookmarkUpdated,
+		mergeActivityFields(bookmarkActivitySnapshot(bm), map[string]any{"changed": changed}))
+	if !activityEnabled(activityCategoryMutate) {
 		return
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
@@ -178,7 +185,10 @@ func logBookmarkSaveFailed(pageID int, reason string, r *http.Request) {
 }
 
 func logBookmarkSaveDiff(pageID int, before, after []Bookmark, r *http.Request) {
-	if !activityEnabled(activityCategoryMutate) {
+	// The diff is what feeds the webhooks too, so it is skipped only when
+	// nothing at all is listening -- gating it on the activity log alone would
+	// silently stop deliveries the moment someone turned that log off.
+	if !activityEnabled(activityCategoryMutate) && !webhooksConfigured() {
 		return
 	}
 	if isBookmarkReorderOnly(before, after) {
