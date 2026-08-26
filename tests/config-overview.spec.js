@@ -268,8 +268,9 @@ test.describe('config overview', () => {
                 news: measure(document.querySelector('.config-news-panel')),
                 about: measure(document.querySelector('.config-about-panel')),
                 glance: measure(find('At a glance')),
-                changed: measure(document.querySelector('.config-overview-changed')
-                    || find('Not stock')),
+                // The panel, not the flex row inside it: the blocks in the side
+                // column line up with one another, and a panel has padding.
+                changed: measure(find('Not stock')),
                 installRule: measure(document.querySelector('.config-overview-side .config-zone-rule')),
                 act: measure(document.querySelector('.config-overview-act')),
                 tips: measure(document.querySelector('.config-overview-tips-row')),

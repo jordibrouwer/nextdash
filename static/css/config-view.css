@@ -1532,6 +1532,12 @@
     gap: 8px;
 }
 
+/* A row in a list is a block, so it carries the same fill a panel does.
+
+   It had a border and nothing behind it, which on a page that is itself a
+   surface reads as an outline drawn on the page. Only the modern layout gave it
+   a background, so on Classic every list — pages, categories, tags, finders —
+   was a column of empty rectangles. One fill here reaches all four. */
 .config-crud-row {
     display: flex;
     align-items: center;
@@ -1539,6 +1545,7 @@
     padding: 10px 12px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: 9px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
 .config-crud-fields {
@@ -1800,11 +1807,21 @@
  * box. Removing five of the seven borders is what makes the update bar and
  * Needs attention read as the priorities they are.
  */
+/* The overview and About blocks.
+
+   `--plain` was written to strip the panel down to nothing, which left the
+   whole of Config → Overview floating on the page: About the developer, At a
+   glance, Not stock and the news stream were all bare text between hairlines
+   while every other section is made of cards.
+
+   It keeps the tighter padding that made it worth having — these blocks sit in
+   a narrow side column and an 18px inset costs a line of text — and takes the
+   fill back, so the overview reads as the same material as the rest of config. */
 .config-panel--plain {
-    padding: 0;
-    border: 0;
-    background: none;
-    border-radius: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    border-radius: 10px;
 }
 
 .config-panel-empty--action {
