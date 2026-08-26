@@ -311,6 +311,38 @@
         }
     }
 
+    /**
+     * Mirrors the depth choice onto <html> and <body>.
+     *
+     * The server writes it on both for the first paint, so this exists for the
+     * moment it changes and for the device-specific path, where the server's
+     * copy is not the one that counts.
+     */
+    function applyThemeDepth(depth) {
+        const value = ['flat', 'soft', 'rich'].includes(depth) ? depth : 'rich';
+        document.documentElement.setAttribute('data-depth', value);
+        if (document.body) {
+            document.body.setAttribute('data-depth', value);
+        }
+        return value;
+    }
+
+    /**
+     * Mirrors the backdrop pattern onto <html> and <body>.
+     *
+     * Unknown values fall back to auto rather than to nothing: an install that
+     * has never heard of this setting should get whatever its theme asks for,
+     * and a typo should not be the thing that takes the backdrop away.
+     */
+    function applyBackgroundPattern(pattern) {
+        const value = ['auto', 'dots', 'grid', 'lines', 'hatch', 'none'].includes(pattern) ? pattern : 'auto';
+        document.documentElement.setAttribute('data-pattern', value);
+        if (document.body) {
+            document.body.setAttribute('data-pattern', value);
+        }
+        return value;
+    }
+
     function syncBackgroundDots(showBackgroundDots) {
         const show = showBackgroundDots !== false;
         document.documentElement.setAttribute('data-show-background-dots', show ? 'true' : 'false');
@@ -513,6 +545,8 @@
         getLayoutVersion: getLayoutVersion,
         applyTheme: applyTheme,
         applyLayoutVersion: applyLayoutVersion,
+        applyThemeDepth: applyThemeDepth,
+        applyBackgroundPattern: applyBackgroundPattern,
         syncBackgroundDots: syncBackgroundDots,
         syncThemeColorMeta: syncThemeColorMeta,
         onThemeChange: function(cb) {

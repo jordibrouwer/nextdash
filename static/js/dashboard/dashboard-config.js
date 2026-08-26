@@ -7842,7 +7842,11 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
-                    ${this.renderThemePicker()}
+                    <div class="config-theme-row">
+                        ${this.renderThemePicker()}
+                        <button type="button" class="config-btn config-theme-browse"
+                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Browse…'))}</button>
+                    </div>
                     ${this.appearanceAff('theme')}
                 </div>
                 ${randomShowingHint}
@@ -7859,6 +7863,22 @@ class DashboardConfig {
                         <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
+                    <select class="config-select" data-appearance-select="themeDepth">
+                        ${['flat', 'soft', 'rich'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
+                    ${this.appearanceAff('themeDepth')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
+                    <select class="config-select" data-appearance-select="backgroundPattern">
+                        ${[['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']].map(([option, label]) => `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${esc(this.t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
+                    ${this.appearanceAff('backgroundPattern')}
                 </div>
                 <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
                     <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
@@ -8101,6 +8121,47 @@ class DashboardConfig {
         return modes.map(([value, labelKey, fallback]) =>
             `<button type="button" class="config-choice${value === current ? ' is-active' : ''}" data-appearance-randommode="${esc(value)}" aria-pressed="${value === current}">${esc(this.t(labelKey, fallback))}</button>`
         ).join('');
+    }
+
+    /**
+     * The theme browser, over the config view.
+     *
+     * Preview and revert are the config view's own — the same pair the inline
+     * picker uses — so browsing here can no more strand a theme than browsing
+     * there can. _themePickerPrevious is what revert restores to, and it has to
+     * be set before the first preview rather than by the browser itself.
+     */
+    async openThemeBrowser() {
+        if (!window.ThemeBrowser?.open) return;
+        const [colors] = await Promise.all([this.loadColorsData(), this.loadThemeList()]);
+        const palettes = {
+            light: colors?.light || {},
+            dark: colors?.dark || {},
+            ...(colors?.builtIn || {}),
+            ...(colors?.custom || {}),
+        };
+        this._themePickerPrevious = this.dash.settings?.theme || 'dark';
+        window.ThemeBrowser.open({
+            palettes,
+            current: this.dash.settings?.theme || 'dark',
+            favorites: Array.isArray(this.dash.settings?.favoriteThemes)
+                ? this.dash.settings.favoriteThemes
+                : [],
+            t: (key, fallback) => this.t(key, fallback),
+            displayName: (id, name) => this.themeDisplayName(id, name),
+            onPreview: (id) => this.previewThemeChoice(id),
+            onRevert: () => this.revertThemePreview(),
+            onFavorites: (favorites) => {
+                this.dash.settings.favoriteThemes = favorites;
+                this.persistAppearance();
+            },
+            onPick: async (id) => {
+                this.clearThemePreview();
+                this._themePickerPrevious = null;
+                await this.applyThemeChoice(id);
+                this.repaintAppearanceBody();
+            },
+        });
     }
 
     renderThemeOptions() {
@@ -9762,6 +9823,22 @@ class DashboardConfig {
         }
         if (name === 'randomThemeMode') {
             this.setRandomThemeMode(value);
+            return;
+        }
+        if (name === 'backgroundPattern') {
+            const pattern = ['auto', 'dots', 'grid', 'lines', 'hatch', 'none'].includes(value) ? value : 'auto';
+            this.dash.settings.backgroundPattern = pattern;
+            window.ThemeLoader?.applyBackgroundPattern?.(pattern);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'themeDepth') {
+            const depth = ['flat', 'soft', 'rich'].includes(value) ? value : 'rich';
+            this.dash.settings.themeDepth = depth;
+            // Applied before it is saved: the point of the control is seeing the
+            // difference, and a round trip to the server is a second of nothing.
+            window.ThemeLoader?.applyThemeDepth?.(depth);
+            this.persistAppearance();
         }
     }
 
@@ -9809,6 +9886,7 @@ class DashboardConfig {
 
     handleAppearanceAction(action) {
         switch (action) {
+            case 'browse-themes': void this.openThemeBrowser(); break;
             case 'edit-colors': this.openThemeEditorTab(); break;
             case 'upload-font': document.getElementById('config-font-input')?.click(); break;
             case 'upload-favicon': document.getElementById('config-favicon-input')?.click(); break;

@@ -2110,6 +2110,18 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 
 func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	s := sanitizeThemeColors(tc)
+	/*
+	 * The theme's own colour, or the success colour when it has none.
+	 *
+	 * Resolved here rather than at the call site so every path that renders a
+	 * theme — built-in, custom, light, dark — gets the same answer, and so a
+	 * theme file written before AccentPrimary existed keeps the accent it has
+	 * always had instead of losing it.
+	 */
+	accentPrimary := s.AccentPrimary
+	if accentPrimary == "" {
+		accentPrimary = s.AccentSuccess
+	}
 	return `html[data-theme="` + selector + `"] {
     --text-primary: ` + s.TextPrimary + `;
     --text-secondary: ` + s.TextSecondary + `;
@@ -2121,7 +2133,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --border-primary: ` + s.BorderPrimary + `;
     --border-secondary: ` + s.BorderSecondary + `;
     --accent-success: ` + s.AccentSuccess + `;
-    --accent-primary: ` + s.AccentSuccess + `;
+    --accent-primary: ` + accentPrimary + `;
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
 }

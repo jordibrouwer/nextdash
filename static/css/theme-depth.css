@@ -1,0 +1,521 @@
+/* Depth tokens — a second layer, derived from the thirteen a theme declares.
+
+   A theme is thirteen colours (see ThemeColors in models.go), of which two are
+   surfaces: background-primary and background-secondary. Two surfaces cannot
+   express depth, which is why every view ends up flat — a card, a panel and a
+   control are all painted the same, and only a border says where one stops and
+   the next begins.
+
+   Rather than ask every theme for more colours, this derives them. Three
+   reasons that is the right trade:
+
+     - There are 148 built-in themes. Adding a field means editing all of them,
+       plus every custom theme somebody already made, plus a migration for
+       colors.json.
+     - A theme's colours cannot hold a gradient anyway: sanitizeCSSColor
+       (security.go) accepts hex, rgb(), hsl() and colour names, so a
+       linear-gradient() in a theme field arrives as "transparent".
+     - layout-modern-tokens.css already works this way and has proven it holds
+       up across the whole set.
+
+   Nothing here paints anything on its own. These are tokens for view CSS to
+   consume, so this file can land without changing a single pixel, and each
+   surface can be moved over one at a time. */
+
+/* ── Depth scale ────────────────────────────────────────────────────────────
+   The two scalars every token below is built from, set per depth choice.
+
+   On <body> rather than <html> because that is where data-depth lands, and a
+   variable cannot read an attribute from an element below it. Everything
+   derived from them lives on body too, so a descendant inherits both. */
+
+body[data-depth="flat"] body {
+    --theme-tint: 0%;
+    --theme-depth: 0;
+}
+
+body,
+body[data-depth="soft"] body {
+    --theme-tint: 3%;
+    --theme-depth: 1;
+}
+
+body[data-depth="rich"] body {
+    --theme-tint: 5%;
+    --theme-depth: 1.5;
+}
+
+html[data-theme] body {
+    /*
+     * How much of the theme's own colour bleeds into its greys.
+     *
+     * This is what separates a palette that looks designed from one that looks
+     * like grey with coloured text on it: in Catppuccin, Tokyo Night and Night
+     * Owl the backgrounds are not neutral, they are heavily desaturated
+     * versions of the accent. Three percent is enough to read as intent and
+     * little enough to keep contrast where it was.
+     *
+     * Set above per depth choice, and overridden per theme at the bottom of
+     * this file: a paper theme wants 0, a neon one can carry more.
+     */
+
+    /*
+     * The surface ladder.
+     *
+     * Mixed with text-primary rather than with white or black, because
+     * text-primary is the one colour that moves the right way in both light
+     * and dark themes: toward the reader, away from the page. A hard-coded
+     * rgba(255,255,255,…) would lighten a light theme into nothing.
+     *
+     * surface-0 is the page. Each step above it is a card on a card.
+     */
+    --surface-0: var(--background-primary);
+    --surface-1: color-mix(in srgb,
+        var(--accent-primary) var(--theme-tint),
+        color-mix(in srgb, var(--text-primary) calc(3% * var(--theme-depth)), var(--background-primary)));
+    --surface-2: color-mix(in srgb,
+        var(--accent-primary) var(--theme-tint),
+        color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth)), var(--background-primary)));
+    --surface-3: color-mix(in srgb,
+        var(--accent-primary) var(--theme-tint),
+        color-mix(in srgb, var(--text-primary) calc(9% * var(--theme-depth)), var(--background-primary)));
+
+    /*
+     * Hairlines.
+     *
+     * border-primary is used at full opacity today, which draws a line around
+     * everything and makes a dashboard read as a form. At 45% it separates
+     * without announcing itself; the strong variant is for what should be
+     * announced.
+     */
+    --hairline: color-mix(in srgb, var(--border-primary) 45%, transparent);
+    --hairline-strong: color-mix(in srgb, var(--border-primary) 70%, transparent);
+
+    /*
+     * The lit top edge of a raised surface. One inset line, and a flat
+     * rectangle starts reading as something sitting on the page rather than
+     * printed on it. This is the cheapest depth cue there is.
+     */
+    --edge-light: inset 0 1px 0 color-mix(in srgb,
+        var(--text-primary) calc(6% * var(--theme-depth)), transparent);
+
+    /*
+     * A very slight vertical wash for a card to carry. Two and a half percent:
+     * invisible when you look for it, and the reason a large surface stops
+     * looking like a swatch.
+     */
+    --surface-sheen: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--text-primary) calc(2.5% * var(--theme-depth)), transparent) 0%,
+        transparent 40%
+    );
+
+    /*
+     * Accent washes, for what is selected, hovered or currently true. Named by
+     * strength rather than by use, so a badge and a row can share one scale.
+     */
+    --accent-wash-weak: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    --accent-wash: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    --accent-wash-strong: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+/*
+ * Contrast comes first.
+ *
+ * Every mix above moves a text background, and the tint moves it toward a
+ * colour rather than along the grey axis — which is exactly the direction that
+ * costs contrast on a light theme. A reader who has asked for more contrast is
+ * asking for the flat version.
+ */
+@media (prefers-contrast: more) {
+    html[data-theme] body {
+        --theme-tint: 0%;
+        --theme-depth: 0.5;
+        --hairline: var(--border-primary);
+        --hairline-strong: var(--border-primary);
+    }
+}
+
+/* Per-theme character ------------------------------------------------------
+   Only the themes whose whole point is a texture the default would flatten or
+   overstate. Everything else inherits the values above. */
+
+/* Paper is paper: no tint, and barely any lift. */
+html[data-theme="paper-ink-light"] body,
+html[data-theme="paper-ink-dark"] body,
+html[data-theme="bone-china-light"] body,
+html[data-theme="bone-china-dark"] body,
+html[data-theme="salt-flat-light"] body,
+html[data-theme="salt-flat-dark"] body {
+    --theme-tint: 0%;
+    --theme-depth: 0.4;
+}
+
+/* A CRT and a neon grid are the one place where more is the point. */
+html[data-theme="neon-grid-dark"] body,
+html[data-theme="midnight-neon-dark"] body,
+html[data-theme="retro-crt-dark"] body,
+html[data-theme="cold-cathode-dark"] body {
+    --theme-tint: 6%;
+    --theme-depth: 1.4;
+}
+
+/* Monochrome themes have no hue to bleed; tinting them would invent one. */
+html[data-theme="monochrome-mist-dark"] body,
+html[data-theme="monochrome-mist-light"] body,
+html[data-theme="graphite-prism-dark"] body,
+html[data-theme="graphite-prism-light"] body {
+    --theme-tint: 0%;
+}
+
+/* ── Painting ──────────────────────────────────────────────────────────────
+   Everything above is definitions. Below is the first set of surfaces moved
+   over to them.
+
+   Kept in this file rather than spread through the view stylesheets, so the
+   whole visual change is one <link> in dashboard.html: remove it and the
+   dashboard is byte-for-byte what it was. When this settles it belongs behind
+   an Appearance setting (Flat / Soft / Rich) rather than behind a link tag. */
+
+/*
+ * Two accent washes behind the page.
+ *
+ * On the body itself rather than on a pseudo-element: ::before already draws
+ * the dot grid and switches off with it, and ::after belongs to the custom
+ * background. Painting here means the glow survives both, and costs no extra
+ * layer to composite.
+ *
+ * Large, soft and low: at 7% and 5% this is not a visible gradient, it is the
+ * page no longer being one flat rectangle. The warning colour in the second
+ * one is deliberate — a single hue looks like a mistake, two related hues look
+ * like light.
+ */
+html[data-theme] body:not([data-depth="flat"]) {
+    background-image:
+        radial-gradient(65rem 45rem at 12% -12%,
+            color-mix(in srgb, var(--accent-primary) calc(7% * var(--theme-depth)), transparent),
+            transparent 70%),
+        radial-gradient(55rem 38rem at 96% 6%,
+            color-mix(in srgb, var(--accent-warning) calc(5% * var(--theme-depth)), transparent),
+            transparent 70%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/*
+ * A reader who chose their own background chose it instead of this, not on top
+ * of it. Two sets of colour fighting over the same pixels is worse than either.
+ */
+html[data-theme] body.has-custom-background {
+    background-image: none;
+}
+
+/*
+ * The card presets, on the ladder.
+ *
+ * Both already mixed a surface by hand — 92% and 94% of the page colour with a
+ * little text mixed in — which is the same idea as surface-2 and surface-1
+ * without the tint or a name. Swapping them keeps the two presets distinct and
+ * gives them the theme's own colour, the lit top edge, and a border that stops
+ * outlining every card at full strength.
+ */
+body:not([data-depth="flat"]) .dashboard-grid.layout-cards .category {
+    background-color: var(--surface-2);
+    background-image: var(--surface-sheen);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--edge-light);
+}
+
+body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
+    background-color: var(--surface-1);
+    background-image: var(--surface-sheen);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--edge-light);
+}
+
+/*
+ * The widget body.
+ *
+ * A tile is the one block on the dashboard that is nothing but a surface with
+ * figures on it, so it is where a flat palette shows most. It mixed 5% of the
+ * secondary text colour into nothing, which is a surface without being on the
+ * ladder — surface-2 puts it a step above the card it sits in.
+ */
+body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
+    background: var(--surface-2);
+    background-image: var(--surface-sheen);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--edge-light);
+}
+
+/*
+ * A modal keeps its own background.
+ *
+ * background-modal is deliberately translucent and the modern layout blurs what
+ * is behind it; replacing that with an opaque surface would trade a good effect
+ * for a smaller one. What it gets from the ladder is the edge — the lit top
+ * line and a border that has stopped being a full-strength outline.
+ */
+body:not([data-depth="flat"]) .modal {
+    border: 1px solid var(--hairline-strong);
+    box-shadow:
+        var(--edge-light),
+        0 24px 64px rgba(0, 0, 0, 0.28),
+        0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Selection, scrollbars ─────────────────────────────────────────────────
+   Two things no theme has ever touched, both visible on every screen. */
+
+/*
+ * Selected text was browser blue on all 148 themes.
+ *
+ * Nothing in the stylesheets ever set ::selection, so a reader dragging over a
+ * bookmark name got the operating system's idea of a highlight on top of a
+ * carefully chosen palette. This is one rule and it applies everywhere,
+ * including at flat: it is not depth, it is a colour the theme already owns.
+ */
+html[data-theme] ::selection {
+    background: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    color: var(--text-primary);
+}
+
+/*
+ * The same argument for scrollbars. A few view stylesheets styled their own;
+ * the page itself did not, so the one piece of chrome that is on screen the
+ * whole time stayed the browser default.
+ *
+ * scrollbar-color is the standard property and covers Firefox and current
+ * Chromium; the -webkit rules below carry the ones that do not have it yet.
+ */
+html[data-theme] {
+    scrollbar-color: var(--hairline-strong) transparent;
+    scrollbar-width: thin;
+}
+
+html[data-theme] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+html[data-theme] ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb {
+    background: var(--hairline-strong);
+    border-radius: 999px;
+    /* Inset by a border rather than by width, so the thumb keeps the full
+       track's hit area while looking narrower than it is. */
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    background-clip: padding-box;
+}
+
+/* ── The backdrop pattern ──────────────────────────────────────────────────
+   The dot grid was the only texture in the app, and it was the same texture in
+   all of them. It is two things now: what a theme asks for, and what the reader
+   asks for instead.
+
+   Left alone (the "auto" default), a theme picks the texture that suits it — a
+   blueprint gets a grid, a CRT gets rules, paper gets nothing. Choose anything
+   else in Appearance and that wins everywhere, on every theme.
+
+   The line patterns are drawn weaker than the dots deliberately: see
+   --theme-pattern-line below. */
+
+html[data-theme] body {
+    --theme-pattern-image: radial-gradient(var(--background-dots) 1px, transparent 1px);
+    --theme-pattern-size: 15px 15px;
+    /*
+     * Line patterns are drawn from a weakened copy of the dot colour.
+     *
+     * background-dots was picked to read as a sparse speckle. A rule or a hatch
+     * at that same value puts twenty times as much ink on the page and starts
+     * competing with the text — legible on a dark theme, heavy on a light one.
+     * Forty-five percent is where a texture stays a texture.
+     */
+    --theme-pattern-line: color-mix(in srgb, var(--background-dots) 45%, transparent);
+}
+
+html[data-theme] body:not(.no-background-dots)::before {
+    background-image: var(--theme-pattern-image);
+    background-size: var(--theme-pattern-size);
+}
+
+/* ── What a theme asks for ─────────────────────────────────────────────────
+   Only where the texture is part of what the theme is. Everything not named
+   here keeps the dots. These lose to an explicit choice, which carries one more
+   attribute and therefore more specificity — order in this file is not what
+   decides it. */
+
+/* A ruled grid, for the themes that are drawings. */
+html[data-theme="blueprint-dark"] body,
+html[data-theme="blueprint-light"] body,
+html[data-theme="graphite-prism-dark"] body,
+html[data-theme="graphite-prism-light"] body {
+    --theme-pattern-image:
+        linear-gradient(var(--theme-pattern-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--theme-pattern-line) 1px, transparent 1px);
+    --theme-pattern-size: 32px 32px, 32px 32px;
+}
+
+/* Horizontal rules, for the ones pretending to be a screen. Eight pixels, not
+   four: at four it moirés on a HiDPI display and the page shimmers as it
+   scrolls. */
+html[data-theme="retro-crt-dark"] body,
+html[data-theme="neon-grid-dark"] body,
+html[data-theme="cold-cathode-dark"] body,
+html[data-theme="static-noise-dark"] body {
+    --theme-pattern-image: linear-gradient(var(--theme-pattern-line) 1px, transparent 1px);
+    --theme-pattern-size: 100% 8px;
+}
+
+/* Diagonal hatch, widely spaced, for the paper and fabric ones. */
+html[data-theme="sumi-ink-dark"] body,
+html[data-theme="sumi-ink-light"] body,
+html[data-theme="moss-stone-dark"] body,
+html[data-theme="moss-stone-light"] body,
+html[data-theme="desert-rose-dark"] body,
+html[data-theme="desert-rose-light"] body {
+    --theme-pattern-image: repeating-linear-gradient(
+        45deg,
+        var(--theme-pattern-line) 0 1px,
+        transparent 1px 14px
+    );
+    --theme-pattern-size: auto;
+}
+
+/* ── What the reader asks for ──────────────────────────────────────────────
+   Anything but "auto" overrides whatever the theme wanted, on every theme. */
+
+html[data-theme] body[data-pattern="dots"] {
+    --theme-pattern-image: radial-gradient(var(--background-dots) 1px, transparent 1px);
+    --theme-pattern-size: 15px 15px;
+}
+
+html[data-theme] body[data-pattern="grid"] {
+    --theme-pattern-image:
+        linear-gradient(var(--theme-pattern-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--theme-pattern-line) 1px, transparent 1px);
+    --theme-pattern-size: 32px 32px, 32px 32px;
+}
+
+html[data-theme] body[data-pattern="lines"] {
+    --theme-pattern-image: linear-gradient(var(--theme-pattern-line) 1px, transparent 1px);
+    --theme-pattern-size: 100% 8px;
+}
+
+html[data-theme] body[data-pattern="hatch"] {
+    --theme-pattern-image: repeating-linear-gradient(
+        45deg,
+        var(--theme-pattern-line) 0 1px,
+        transparent 1px 14px
+    );
+    --theme-pattern-size: auto;
+}
+
+/* Nothing at all, without touching the dots toggle's other behaviour. */
+html[data-theme] body[data-pattern="none"]::before {
+    background-image: none;
+}
+
+/* ── Status colours as a family ────────────────────────────────────────────
+   accent-success, -warning and -error are used at full saturation for every
+   badge and pill, which is right for a dot and loud for a filled shape. These
+   are the quiet halves of the same three colours, for backgrounds and borders,
+   so the health view can carry a hundred rows without shouting a hundred
+   times. */
+
+html[data-theme] body {
+    --success-wash: color-mix(in srgb, var(--accent-success) 14%, transparent);
+    --success-edge: color-mix(in srgb, var(--accent-success) 45%, transparent);
+    --warning-wash: color-mix(in srgb, var(--accent-warning) 14%, transparent);
+    --warning-edge: color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    --error-wash: color-mix(in srgb, var(--accent-error) 14%, transparent);
+    --error-edge: color-mix(in srgb, var(--accent-error) 45%, transparent);
+}
+
+/* ── Grain ─────────────────────────────────────────────────────────────────
+   Large soft gradients band on 8-bit displays: the wash behind the page shows
+   as rings rather than as a wash. Two percent of noise over the top breaks the
+   steps up, and gives every surface a texture that a flat fill cannot have.
+
+   On body::after, which is free unless a custom background is set — that rule
+   in theme.css owns the same pseudo-element, and its backdrop is the reader's
+   own choice rather than something to sprinkle over. */
+
+html[data-theme] body:not(.has-custom-background):not([data-depth="flat"])::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: calc(0.022 * var(--theme-depth));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── The category header ───────────────────────────────────────────────────
+   On the default preset a category has no surface at all — it is a title and a
+   list, and the glow behind the page is the only thing that changed for the
+   readers who use it. This gives the title a start without turning the list
+   into a card: a rule under it that carries the theme's colour and fades. */
+
+body:not([data-depth="flat"]) .dashboard-grid:not(.layout-cards):not(.layout-widgets) .category-title {
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 55%, transparent) 0%,
+        var(--hairline) 35%,
+        transparent 85%
+    ) 1;
+    padding-bottom: 0.35rem;
+}
+
+/* ── Typographic character ─────────────────────────────────────────────────
+   A theme is a palette today. These two variables let it also be a voice.
+
+   Deliberately narrow: the font stack stays whatever the reader chose in
+   Appearance, because a theme silently replacing a chosen typeface is a theme
+   overstepping. What a theme may do is the spacing and the case of the one
+   element that names it — the category title — which is where a terminal reads
+   as a terminal and a library reads as a library. */
+
+html[data-theme] body {
+    --theme-title-spacing: normal;
+    --theme-title-transform: none;
+}
+
+body:not([data-depth="flat"]) .category-title-label {
+    letter-spacing: var(--theme-title-spacing);
+    text-transform: var(--theme-title-transform);
+}
+
+/* The terminals: wide, upper, like a status line. */
+html[data-theme="retro-crt-dark"] body,
+html[data-theme="retro-crt-light"] body,
+html[data-theme="terminal-amber-dark"] body,
+html[data-theme="terminal-amber-light"] body,
+html[data-theme="neon-grid-dark"] body,
+html[data-theme="cold-cathode-dark"] body,
+html[data-theme="static-noise-dark"] body,
+html[data-theme="static-noise-light"] body {
+    --theme-title-spacing: 0.09em;
+    --theme-title-transform: uppercase;
+}
+
+/* The printed ones: a little air, no shouting. */
+html[data-theme="paper-ink-dark"] body,
+html[data-theme="paper-ink-light"] body,
+html[data-theme="library-mahogany-dark"] body,
+html[data-theme="library-mahogany-light"] body,
+html[data-theme="sumi-ink-dark"] body,
+html[data-theme="sumi-ink-light"] body,
+html[data-theme="bone-china-dark"] body,
+html[data-theme="bone-china-light"] body {
+    --theme-title-spacing: 0.02em;
+}

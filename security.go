@@ -129,6 +129,22 @@ func sanitizeCSSIdent(value string) string {
 }
 
 // sanitizeThemeColors returns a copy of tc with every color field run through sanitizeCSSColor.
+/*
+sanitizeOptionalCSSColor keeps an absent colour absent.
+
+sanitizeCSSColor answers "transparent" for anything it does not recognise, an
+empty string included — which is right for a field that must always paint
+something, and wrong for one whose emptiness means "fall back to another
+value". Without this, an unset AccentPrimary would arrive at the stylesheet as
+a real colour: transparent, and every accent in the theme would vanish.
+*/
+func sanitizeOptionalCSSColor(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return ""
+	}
+	return sanitizeCSSColor(value)
+}
+
 func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 	return ThemeColors{
 		Name:                tc.Name,
@@ -141,6 +157,7 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		BackgroundModal:     sanitizeCSSColor(tc.BackgroundModal),
 		BorderPrimary:       sanitizeCSSColor(tc.BorderPrimary),
 		BorderSecondary:     sanitizeCSSColor(tc.BorderSecondary),
+		AccentPrimary:       sanitizeOptionalCSSColor(tc.AccentPrimary),
 		AccentSuccess:       sanitizeCSSColor(tc.AccentSuccess),
 		AccentWarning:       sanitizeCSSColor(tc.AccentWarning),
 		AccentError:         sanitizeCSSColor(tc.AccentError),

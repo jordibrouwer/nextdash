@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,6 +51,10 @@
          after the CSS bundle had downloaded and parsed. -->
     <!-- bundle:css -->
     <link rel="stylesheet" href="{{asset "css/theme.css"}}">
+    <!-- Depth tokens, derived from the thirteen colours a theme declares. Ahead
+         of layout-modern-tokens.css, which may consume them. -->
+    <link rel="stylesheet" href="{{asset "css/theme-depth.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-browser.css"}}">
     <!-- Modern design tokens load ahead of every view stylesheet, so view CSS
          that carries its own modern rules can read --layout-* directly. The
          override files below (layout-modern, overlays-modern) consume these. -->
@@ -123,7 +127,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-show-title="{{.ShowTitle}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-show-title="{{.ShowTitle}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
         <div class="dashboard-noscript" role="alert">
@@ -358,6 +362,8 @@
     <!-- Before modal.js and every other overlay: they all take scroll locks. -->
     <script src="{{asset "js/scroll-lock.js"}}" defer></script>
     <script src="{{asset "js/modal.js"}}" defer></script>
+    <!-- The theme browser: reads AppModal, so it loads after it. -->
+    <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
     <script src="{{asset "js/layout-version-utils.js"}}" defer></script>
