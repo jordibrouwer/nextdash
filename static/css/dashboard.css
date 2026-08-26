@@ -5783,3 +5783,166 @@ button.dashboard-widget-row--more {
     color: var(--text-tertiary);
     font-size: calc(var(--font-size-small) * 0.92);
 }
+
+/* ─── Widgets that answer to their own width ─────────────────────────────── */
+/*
+ * A widget is drawn one or two columns wide, and `widgetColumnSpan` narrows a
+ * two-column widget back to one whenever the dashboard is only showing one --
+ * so config.columns records what was asked for and never what was given. A
+ * container query reads the width that actually happened, which is also the
+ * right answer on a phone, where the width setting cannot be reached at all.
+ *
+ * Scoped to this element rather than to .dashboard-widget-body: the nine tiles
+ * that shipped before this were laid out in a plain block and should stay in
+ * one.
+ */
+.dashboard-widget-panel {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/*
+ * The figures: two abreast when narrow, four when there is room.
+ *
+ * A grid rather than a wrapping flex row, so the labels line up in columns
+ * instead of drifting with the width of the number above them -- four figures
+ * that do not share a baseline read as four unrelated facts.
+ */
+.dashboard-widget-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 0.9rem;
+}
+
+.dashboard-widget-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 5px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.dashboard-widget-stat {
+    cursor: pointer;
+}
+
+button.dashboard-widget-stat:hover,
+button.dashboard-widget-stat:focus-visible {
+    background: rgba(127, 127, 127, 0.09);
+}
+
+.dashboard-widget-stat-value {
+    font-size: 1.25em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    /* Long values -- a size, a version, a date -- shrink rather than push the
+       cell beside them out of the grid. */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dashboard-widget-stat-label {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Tone by what the figure means, never by how large it is -- the same rule the
+   health widget follows, and for the same reason: nought lost is the best news
+   the tile can carry and still belongs in the lost cell. */
+.dashboard-widget-stat--bad .dashboard-widget-stat-value { color: var(--status-error, var(--text-primary)); }
+.dashboard-widget-stat--warn .dashboard-widget-stat-value { color: var(--status-warning, var(--text-primary)); }
+.dashboard-widget-stat--good .dashboard-widget-stat-value { color: var(--status-success, var(--text-primary)); }
+
+/*
+ * A proportion as a bar, beside the figure and never instead of it.
+ *
+ * It says how full at a glance and cannot say of what; "42 of 118" is the part
+ * a person repeats to themselves afterwards.
+ */
+.dashboard-widget-meter {
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+}
+
+.dashboard-widget-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 240ms ease;
+}
+
+.dashboard-widget-meter-fill--good { background: var(--status-success, var(--text-secondary)); }
+.dashboard-widget-meter-fill--warn { background: var(--status-warning, var(--text-secondary)); }
+.dashboard-widget-meter-fill--bad { background: var(--status-error, var(--text-secondary)); }
+
+/* What the tile assumed, or what happens next. Quieter than a row, because it
+   is a condition on the figures rather than one of them. */
+.dashboard-widget-footnote {
+    margin: 2px 0 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+.dashboard-widget-footnote--bad { color: var(--status-error, var(--text-primary)); }
+.dashboard-widget-footnote--warn { color: var(--status-warning, var(--text-primary)); }
+.dashboard-widget-footnote--good { color: var(--status-success, var(--text-secondary)); }
+
+.dashboard-widget-panel .dashboard-widget-headline {
+    margin-bottom: 0;
+}
+
+/*
+ * Where the two widths actually fall, since the numbers are not arbitrary.
+ *
+ * A grid column is bounded at 250px..360px (--dashboard-column-min/max), and
+ * the body takes 1.7rem of padding plus its border off that -- so a one-column
+ * widget's panel is 221px..331px, and a two-column one is that doubled plus a
+ * 1.5rem gap: 487px at its narrowest, on a wide screen carrying six columns.
+ *
+ * 24rem and 28rem therefore sit in the gap between the two, with room on both
+ * sides: no one-column widget can reach them and no two-column widget can miss
+ * them. rem is safe here because nothing in this app changes the root size --
+ * the font-size setting scales its own variables against a fixed root.
+ */
+@container (min-width: 24rem) {
+    .dashboard-widget-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/*
+ * The rows, paired when the tile is wide.
+ *
+ * The second column of a two-column widget was otherwise white space beside a
+ * single file of short rows, and a row is a name with a figure at the end --
+ * exactly the shape that pairs without becoming a table.
+ */
+@container (min-width: 28rem) {
+    .dashboard-widget-rows--pairs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 1.4rem;
+        align-content: start;
+    }
+
+    /* The count of what did not fit belongs to the whole list, not to whichever
+       column it happened to land in. */
+    .dashboard-widget-rows--pairs .dashboard-widget-row--more {
+        grid-column: 1 / -1;
+    }
+}

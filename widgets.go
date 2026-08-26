@@ -57,6 +57,33 @@ const (
 	// died, but which one you stopped opening.
 	WidgetTypeNeglected WidgetType = "neglected"
 	/*
+	 * WidgetTypeArchive reports how much of the collection survives the page
+	 * it points at.
+	 *
+	 * The release that learned to keep copies never said how many links have
+	 * one. And the figure worth showing is not the count of copies: it is the
+	 * links that are already broken and have nothing to fall back on, which is
+	 * the moment the page is actually lost.
+	 */
+	WidgetTypeArchive WidgetType = "archive"
+	// WidgetTypeTrash reports what is waiting in the trash and when it leaves.
+	// Retention deletes on a timer, and a timer nothing displays is a deletion
+	// nobody agreed to.
+	WidgetTypeTrash WidgetType = "trash"
+	// WidgetTypeUnchecked counts the blind spots: bookmarks never checked,
+	// checked long ago, or with checking switched off. The health widget
+	// reports what the checks found, which says nothing about what they never
+	// looked at.
+	WidgetTypeUnchecked WidgetType = "unchecked"
+	// WidgetTypeDuplicates reports the same address stored more than once. The
+	// server already computes this for the health view; without a tile it is
+	// only found by going looking.
+	WidgetTypeDuplicates WidgetType = "duplicates"
+	// WidgetTypeBackups reports how old the newest automatic backup is, and
+	// whether the last run failed -- the one figure that is worth nothing
+	// until the day it is worth everything.
+	WidgetTypeBackups WidgetType = "backups"
+	/*
 	 * WidgetTypeCustom reads a figure out of any JSON endpoint.
 	 *
 	 * The one escape hatch, and the only widget that talks to anything outside.
@@ -71,15 +98,20 @@ const (
 // stored: a widget whose type nothing renders is an invisible block that still
 // takes a place in the order.
 var knownWidgetTypes = map[WidgetType]struct{}{
-	WidgetTypeHealth:    {},
-	WidgetTypeUptime:    {},
-	WidgetTypeCerts:     {},
-	WidgetTypeTrend:     {},
-	WidgetTypeInbox:     {},
-	WidgetTypeFeeds:     {},
-	WidgetTypeSources:   {},
-	WidgetTypeNeglected: {},
-	WidgetTypeCustom:    {},
+	WidgetTypeHealth:     {},
+	WidgetTypeUptime:     {},
+	WidgetTypeCerts:      {},
+	WidgetTypeTrend:      {},
+	WidgetTypeInbox:      {},
+	WidgetTypeFeeds:      {},
+	WidgetTypeSources:    {},
+	WidgetTypeNeglected:  {},
+	WidgetTypeArchive:    {},
+	WidgetTypeTrash:      {},
+	WidgetTypeUnchecked:  {},
+	WidgetTypeDuplicates: {},
+	WidgetTypeBackups:    {},
+	WidgetTypeCustom:     {},
 }
 
 var errUnknownWidgetType = errors.New("unknown widget type")

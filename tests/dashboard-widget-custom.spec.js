@@ -33,9 +33,15 @@ test.describe('the custom widget', () => {
         });
         expect(state.offered).toContain('custom');
         expect(state.renderer).toBe('function');
-        // url, credential, ttl and the list path — the fields[] editor is drawn
-        // separately, because a list of objects is not a row in that table.
-        expect(state.settings).toEqual(['url', 'credentialId', 'ttl', 'itemsPath']);
+        /*
+         * The address, how long an answer keeps, and the list path. The
+         * fields[] editor is drawn separately, because a list of objects is
+         * not a row in that table -- and so is the credential, which used to
+         * be `credentialId` here: a text box asking for the name of an entry
+         * made on another screen. It is a sign-in block of its own now, so the
+         * key is typed where the widget is, and this table never sees it.
+         */
+        expect(state.settings).toEqual(['url', 'ttl', 'itemsPath']);
     });
 
     test('it draws the figures the server extracted', async ({ page }) => {
@@ -155,6 +161,16 @@ test.describe('the custom widget', () => {
         await page.locator('[data-custom-field="path"]').fill('server.disk[0].used');
         await page.locator('[data-custom-field="path"]').dispatchEvent('change');
 
+        /*
+         * And then Save, which is the part that writes.
+         *
+         * The panel holds a draft: it used to write every field as it changed,
+         * which meant a half-typed path was stored and a widget could be left
+         * pointing at nonsense by walking away from the screen. Nothing leaves
+         * the panel now until this is pressed.
+         */
+        await page.locator('[data-widget-save]').first().click();
+
         await expect.poll(async () => page.evaluate(async () => {
             const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const blocks = await (await send('/api/pages/1/blocks')).json();
@@ -220,8 +236,13 @@ test.describe('the custom widget', () => {
         expect(geometry.rows).toBe(2);
         expect(geometry.overflowing).toBe(0);
         expect(geometry.overlapping).toBe(0);
-        // Three questions, said out loud rather than left as six adjacent boxes.
-        expect(geometry.groups).toHaveLength(3);
+        /*
+         * Four questions, said out loud rather than left as six adjacent
+         * boxes. The fourth is "Start from a service", above the rest: it is
+         * the one that fills the other three in, so it comes before them.
+         */
+        expect(geometry.groups).toHaveLength(4);
+        expect(geometry.groups[0]).toBe('Start from a service');
         // Placeholders vanish once a row has a value; the header does not.
         expect(geometry.hasHeader).toBe(true);
     });

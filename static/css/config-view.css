@@ -930,6 +930,63 @@
     border-color: color-mix(in srgb, #d1493f 45%, transparent);
 }
 
+/*
+ * The one button on a panel that writes. Marked, because a panel with a Save
+ * and a Discard beside each other should not make the reader work out which is
+ * which from the labels alone.
+ */
+.config-btn--primary {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--accent-color, #4a90d9);
+}
+
+.config-btn--primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 14%, transparent);
+}
+
+.config-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.config-btn:disabled:hover {
+    background: var(--button-bg, transparent);
+    border-color: var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-btn--primary:disabled:hover {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+/*
+ * The Save bar closes every widget panel.
+ *
+ * Set off by a rule above it rather than floated or stuck to the bottom: the
+ * panel is short, and a bar that follows the scroll would cover the figures
+ * table it is meant to be saving.
+ */
+.config-widget-savebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* Unsaved is stated in words as well as colour, because the whole reason this
+   bar exists is that silence could not tell "written" from "ignored". */
+.config-widget-savebar-state {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+}
+
+.config-widget-savebar.is-dirty .config-widget-savebar-state {
+    color: var(--status-warning, var(--text-secondary));
+}
+
 .config-btn--danger:hover {
     background: color-mix(in srgb, #d1493f 12%, transparent);
     border-color: #d1493f;
@@ -5906,6 +5963,39 @@ button.config-bm-shortcut-pill {
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     gap: 12px 18px;
     align-items: start;
+}
+
+/*
+ * The sign-in, under the address it belongs to.
+ *
+ * Its own block rather than another cell in the grid above: the address, the
+ * credential and the cache time are three unrelated settings only while the
+ * credential is one dropdown. The moment it grows a header name and a key it
+ * is a small form, and a form wedged into a third of a row reads as three
+ * boxes nobody explained.
+ */
+.config-widget-auth {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 12px 18px;
+    align-items: start;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* The button, its status and the note run under the fields rather than beside
+   them: each is about the block as a whole, not about one box in it. */
+.config-widget-auth-actions,
+.config-widget-auth > .config-widget-note {
+    grid-column: 1 / -1;
+}
+
+.config-widget-auth-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 /* Path, label, format, remove — the same track sizes for the header and every

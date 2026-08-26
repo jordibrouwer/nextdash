@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -259,6 +260,61 @@ func listHealthCredentials() map[string]string {
 }
 
 /*
+CredentialSummary describes one entry without describing what is in it.
+
+The list route hands back labels and nothing else, which is right for a picker
+and not enough for a screen that edits: a row reading only "Sonarr" cannot say
+whether it carries a header or a username, and someone about to replace it has
+no way to check they are replacing the right kind of thing.
+
+Header names, never values. A name is what the service documents publicly --
+X-Api-Key is written on Sonarr's own settings page -- and the value is the part
+that is worth stealing. Basic auth is reported as a flag and a username for the
+same reason: the username is on the login screen, the password is not.
+*/
+type CredentialSummary struct {
+	Label string `json:"label"`
+	// Headers are the header names this entry sets, sorted so the list does not
+	// reshuffle itself between two reads of the same file.
+	Headers []string `json:"headers,omitempty"`
+	Basic   bool     `json:"basic,omitempty"`
+	// BasicUser is shown so a row can say which account it signs in as. The
+	// password has no counterpart here and never will.
+	BasicUser string `json:"basicUser,omitempty"`
+}
+
+/*
+listHealthCredentialDetails describes each entry, still without a secret.
+
+Beside listHealthCredentials rather than replacing it: the bookmark form and the
+widget panel want a name for a dropdown and should not start receiving a
+structure they have no use for.
+*/
+func listHealthCredentialDetails() map[string]CredentialSummary {
+	healthCredentialMu.Lock()
+	defer healthCredentialMu.Unlock()
+	file := readHealthCredentialFile()
+	out := make(map[string]CredentialSummary, len(file.Credentials))
+	for id, credential := range file.Credentials {
+		label := credential.Label
+		if label == "" {
+			label = id
+		}
+		summary := CredentialSummary{
+			Label:     label,
+			Basic:     credential.BasicUser != "" || credential.BasicPassword != "",
+			BasicUser: credential.BasicUser,
+		}
+		for name := range credential.Headers {
+			summary.Headers = append(summary.Headers, name)
+		}
+		sort.Strings(summary.Headers)
+		out[id] = summary
+	}
+	return out
+}
+
+/*
 credentialHeaderNames lists the headers this credential puts on a request.
 
 Authorization is in the list whenever basic auth is set, even though net/http
@@ -358,7 +414,12 @@ func (h *Handlers) HealthCredentialsHandler(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method == http.MethodGet {
-		_ = json.NewEncoder(w).Encode(map[string]any{"credentials": listHealthCredentials()})
+		// credentials stays exactly what it was, for the two pickers that read
+		// it; details is beside it for the screen that edits.
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"credentials": listHealthCredentials(),
+			"details":     listHealthCredentialDetails(),
+		})
 		return
 	}
 
@@ -380,14 +441,20 @@ func (h *Handlers) HealthCredentialsHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, "Invalid credential id", http.StatusBadRequest)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"credentials": listHealthCredentials()})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"credentials": listHealthCredentials(),
+			"details":     listHealthCredentialDetails(),
+		})
 
 	case http.MethodDelete:
 		if err := deleteHealthCredential(r.URL.Query().Get("id")); err != nil {
 			http.Error(w, "Invalid credential id", http.StatusBadRequest)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"credentials": listHealthCredentials()})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"credentials": listHealthCredentials(),
+			"details":     listHealthCredentialDetails(),
+		})
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

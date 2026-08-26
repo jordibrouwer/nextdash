@@ -14496,7 +14496,8 @@ class DashboardConfig {
     }
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources', 'neglected', 'custom'];
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
+        'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -14557,6 +14558,32 @@ class DashboardConfig {
             { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
+        archive: [
+            { key: 'brokenOnly', kind: 'bool',
+              label: ['config.widgetArchiveBrokenOnly', 'Count only the links that are already broken'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        unchecked: [
+            { key: 'staleDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetStaleDays', 'Count as stale after (days)'] },
+            { key: 'includeDisabled', kind: 'bool',
+              label: ['config.widgetIncludeDisabled', 'Count bookmarks with checking switched off'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        duplicates: [
+            { key: 'minCount', kind: 'int', min: 2, max: 20,
+              label: ['config.widgetMinCount', 'Report from this many copies'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        trash: [
+            { key: 'warnDays', kind: 'int', min: 1, max: 30,
+              label: ['config.widgetWarnDays', 'Mark as urgent within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        backups: [
+            { key: 'showList', kind: 'bool', label: ['config.widgetShowList', 'List the backups themselves'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
         /*
          * The custom widget's scalars. Its fields[] is a list of objects, which
          * this table cannot describe, so renderCustomWidgetFields draws that
@@ -14567,8 +14594,6 @@ class DashboardConfig {
             { key: 'url', kind: 'text', maxlength: 2000,
               label: ['config.widgetCustomUrl', 'Address to read'],
               placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
-            { key: 'credentialId', kind: 'credential',
-              label: ['config.widgetCustomCredential', 'Sign in with'] },
             { key: 'ttl', kind: 'int', min: 30, max: 86400,
               label: ['config.widgetCustomTtl', 'Ask again after (seconds)'] },
             { key: 'itemsPath', kind: 'text', maxlength: 200,
@@ -14579,6 +14604,249 @@ class DashboardConfig {
 
     /** The formats a value may be shown in — the server accepts these and no others. */
     static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
+
+    /*
+     * The id this widget's own key is filed under.
+     *
+     * Derived from the widget rather than typed, because naming a secret is a
+     * question nobody asked to be asked: the reader is filling in a Sonarr
+     * widget, and "give this credential a name" is a step between them and the
+     * thing they came to do.
+     *
+     * The colon is deliberate -- normalizeCredentialID allows it -- and marks
+     * the entry as belonging to a widget rather than being a shared one
+     * somebody made on purpose.
+     */
+    widgetCredentialId(widget) {
+        return widget?.id ? `widget:${widget.id}` : '';
+    }
+
+    /*
+     * What the credential file says is filed for this widget -- never the secret.
+     *
+     * The value does not come back from the server and never will, so this
+     * reads the shape around it: a header name means an API key, a username
+     * means basic auth. Enough to draw the right form with the right box
+     * already labelled, and to say that something is set without showing it.
+     */
+    storedCredentialState(widget) {
+        const own = this.widgetCredentialId(widget);
+        const chosen = String(widget?.config?.credentialId || '');
+        const details = this.dash.healthCredentialDetails || {};
+        if (chosen && chosen !== own) return { kind: 'shared', shared: chosen };
+        const stored = details[own];
+        if (!stored) return { kind: 'none' };
+        if (stored.headers?.length) {
+            return { kind: 'header', headerName: stored.headers[0], saved: true };
+        }
+        if (stored.basic) return { kind: 'basic', basicUser: stored.basicUser || '', saved: true };
+        return { kind: 'none' };
+    }
+
+    /*
+     * What is on screen for one widget, before it is saved.
+     *
+     * Every control in the panel writes here and nowhere else, and one Save
+     * button writes the whole thing out. The alternative -- a listener per
+     * input, each writing to the server on its own change -- is what this
+     * replaces, and it failed in the one way that leaves no trace: the panel is
+     * redrawn by several paths (opening it, a preset landing, the credential
+     * names arriving from their own fetch), a listener does not survive its
+     * element being replaced, and a box nobody is listening to still accepts
+     * typing. It looks saved and is not.
+     *
+     * Keyed on the widget id rather than the index, because the index shifts
+     * when a block above it is removed and a draft must not follow it.
+     */
+    widgetDraft(index, { create = true } = {}) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return null;
+        this._widgetDrafts = this._widgetDrafts || {};
+        if (!this._widgetDrafts[block.id]) {
+            if (!create) return null;
+            this._widgetDrafts[block.id] = {
+                // A copy, deep enough for the one nested shape a config has.
+                // Editing the stored object directly would mean a Revert had
+                // nothing left to revert to.
+                config: {
+                    ...(block.config || {}),
+                    fields: Array.isArray(block.config?.fields)
+                        ? block.config.fields.map((field) => ({ ...field }))
+                        : undefined,
+                },
+                auth: this.storedCredentialState(block),
+            };
+        }
+        return this._widgetDrafts[block.id];
+    }
+
+    widgetCredentialState(widget, index) {
+        return this.widgetDraft(index)?.auth || { kind: 'none' };
+    }
+
+    /*
+     * Whether this panel holds anything not yet written.
+     *
+     * Compared against what is stored rather than tracked with a flag: a value
+     * typed and then typed back is not a change, and a flag would keep saying
+     * it was.
+     */
+    widgetDraftDirty(index) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index, { create: false });
+        if (!block || !draft) return false;
+        const clean = (config) => JSON.stringify(config || {}, Object.keys(config || {}).sort());
+        if (clean(draft.config) !== clean(block.config)) return true;
+        const before = this.storedCredentialState(block);
+        const now = draft.auth || {};
+        // A secret that was typed is a change even when nothing else moved.
+        if (String(now.secret || '')) return true;
+        return before.kind !== now.kind
+            || String(before.headerName || '') !== String(now.headerName || '')
+            || String(before.basicUser || '') !== String(now.basicUser || '')
+            || String(before.shared || '') !== String(now.shared || '');
+    }
+
+    /*
+     * Where the API key is typed: here, in the widget, and nowhere else.
+     *
+     * The value does not go into the widget's config. bookmarks-N.json is in
+     * the backup allowlist and in every export, so a key stored there would
+     * travel in a ZIP to wherever that backup goes; it is written to the
+     * credential file instead and the widget keeps only the id. That is a
+     * storage decision and not a reason to send anyone to another screen --
+     * whoever is filling in a Sonarr widget is holding the Sonarr key.
+     */
+    renderWidgetCredential(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = this.widgetCredentialState(widget, index);
+        const own = this.widgetCredentialId(widget);
+        const shared = Object.entries(this.dash.healthCredentials || {})
+            .filter(([id]) => id !== own)
+            .sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+        const id = `widget-${index}-auth`;
+        const pick = (value, key, fallback) =>
+            `<option value="${esc(value)}" ${state.kind === value ? 'selected' : ''}>${
+                esc(this.t(key, fallback))}</option>`;
+
+        /*
+         * A saved key is shown as the fact that it is set, never as itself.
+         *
+         * An empty box over a stored key reads as "no key", and the reader
+         * pastes it again for no reason; a box holding the key is a key on a
+         * screen, in a screenshot, over a shoulder.
+         */
+        const secretPlaceholder = state.saved
+            ? this.t('config.widgetAuthKept', 'Set — type to replace')
+            : this.t('config.widgetAuthPaste', 'Paste it here');
+
+        const header = state.kind !== 'header' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-name">${esc(this.t('config.widgetAuthHeaderName', 'Header'))}</label>
+                <input type="text" id="${id}-name" class="config-text" data-widget-auth="headerName"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.headerName || '')}" placeholder="X-Api-Key">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-key">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
+                <input type="password" id="${id}-key" class="config-text" data-widget-auth="secret"
+                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
+                    placeholder="${esc(secretPlaceholder)}">
+            </div>`;
+
+        const basic = state.kind !== 'basic' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-user">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
+                <input type="text" id="${id}-user" class="config-text" data-widget-auth="basicUser"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.basicUser || '')}">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-pass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
+                <input type="password" id="${id}-pass" class="config-text" data-widget-auth="secret"
+                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
+                    placeholder="${esc(secretPlaceholder)}">
+            </div>`;
+
+        const sharedPick = state.kind !== 'shared' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-shared">${esc(this.t('config.widgetAuthSharedPick', 'Which one'))}</label>
+                <select id="${id}-shared" class="config-select" data-widget-auth="shared"
+                    data-widget-index="${index}">
+                    ${shared.map(([sid, label]) =>
+                        `<option value="${esc(sid)}" ${sid === state.shared ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+                </select>
+            </div>`;
+
+        const explains = state.kind === 'header' || state.kind === 'basic';
+        return `
+            <div class="config-widget-auth" data-widget-auth-form="${index}">
+                <div class="config-widget-field">
+                    <label for="${id}">${esc(this.t('config.widgetCustomCredential', 'Sign in with'))}</label>
+                    <select id="${id}" class="config-select" data-widget-auth="kind" data-widget-index="${index}">
+                        ${pick('none', 'config.widgetAuthNone', 'Nothing — ask anonymously')}
+                        ${pick('header', 'config.widgetAuthHeader', 'An API key')}
+                        ${pick('basic', 'config.widgetAuthBasic', 'A username and password')}
+                        ${shared.length ? pick('shared', 'config.widgetAuthShared', 'A sign-in saved elsewhere') : ''}
+                    </select>
+                </div>
+                ${header}${basic}${sharedPick}
+                ${explains ? `
+                    <p class="config-widget-note">${esc(this.t('config.widgetAuthNote',
+                        'Kept in a separate file that stays out of your backups and exports, so a key never travels in a ZIP. The widget itself stores only a reference.'))}</p>` : ''}
+            </div>`;
+    }
+
+    /**
+     * A starting position for the Custom widget, per service.
+     *
+     * This is the answer to "why is there no Sonarr widget". Everything a
+     * dedicated widget would need already exists — a server that fetches, a
+     * credential store that keeps the key out of the browser, a cache, a path
+     * reader, a formatter — so what was missing was never code. It was knowing
+     * that Sonarr keeps the queue size at `totalCount` under
+     * `/api/v3/queue/status`, which is knowledge, and knowledge belongs in a
+     * data file rather than in a handler that has to be released.
+     *
+     * It fills the form and then gets out of the way: the address stays
+     * editable and the figures become ordinary rows, so a service that moves a
+     * field is a thing the reader can fix without waiting for a version.
+     */
+    renderWidgetPresets(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const catalogue = window.DashboardWidgetPresets;
+        // The picker is drawn from a script that may not have loaded; without
+        // it the panel is exactly what it was before presets existed.
+        if (!catalogue?.PRESETS?.length) return '';
+
+        const id = `widget-${index}-preset`;
+        const groups = catalogue.GROUPS.map(([group, title]) => {
+            const options = catalogue.PRESETS
+                .filter((preset) => preset.group === group)
+                .map((preset) => `<option value="${esc(preset.id)}">${esc(preset.name)}</option>`)
+                .join('');
+            return options
+                ? `<optgroup label="${esc(this.t(`config.widgetPresetGroup.${group}`, title))}">${options}</optgroup>`
+                : '';
+        }).join('');
+
+        return `
+            <div class="config-custom-group">
+                <h4 class="config-custom-group-title">${esc(this.t('config.widgetPresets',
+                    'Start from a service'))}</h4>
+                <p class="config-widget-note">${esc(this.t('config.widgetPresetsNote',
+                    'Fills in the address and the figures for a service that is already known. '
+                    + 'Everything stays editable afterwards.'))}</p>
+                <div class="config-widget-field">
+                    <label for="${id}">${esc(this.t('config.widgetPresetPick', 'Service'))}</label>
+                    <select id="${id}" class="config-select" data-widget-preset="${index}">
+                        <option value="">${esc(this.t('config.widgetPresetNone',
+                            'Choose a service…'))}</option>
+                        ${groups}
+                    </select>
+                </div>
+            </div>`;
+    }
 
     /**
      * The fields a custom widget reads, as rows that can be added and removed.
@@ -14653,8 +14921,14 @@ class DashboardConfig {
             if (!res.ok) return {};
             const data = await res.json();
             this.dash.healthCredentials = data?.credentials || {};
+            // Names are enough for a dropdown; the widget's own sign-in block
+            // needs to know what an entry actually holds, so it can say "an
+            // X-Api-Key is set" rather than showing an empty box over a key
+            // that is very much there.
+            this.dash.healthCredentialDetails = data?.details || {};
         } catch (_error) {
             this.dash.healthCredentials = {};
+            this.dash.healthCredentialDetails = {};
         }
         // Redrawn once they arrive: the panel is built synchronously and would
         // otherwise offer an empty picker until something else repainted it.
@@ -14710,12 +14984,21 @@ class DashboardConfig {
     }
 
     /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
-    renderWidgetSettings(widget, index) {
+    renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const fields = DashboardConfig.WIDGET_SETTINGS[widget.type] || [];
+        const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
         // No early return for a type with no fields of its own: width applies to
         // every widget, so the panel is never empty.
 
+        /*
+         * Drawn from the draft, not from what is stored.
+         *
+         * A shadow of the block with the draft's config on it, so every
+         * render* below keeps reading `widget.config` and none of them has to
+         * know a draft exists.
+         */
+        const draft = this.widgetDraft(index);
+        const widget = { ...stored, config: draft?.config || stored.config || {} };
         const config = widget.config || {};
         const rows = fields.map((field) => {
             const label = esc(this.t(field.label[0], field.label[1]));
@@ -14749,20 +15032,6 @@ class DashboardConfig {
                             data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                             data-widget-kind="text" maxlength="${field.maxlength || 200}"
                             value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
-                    </div>`;
-            }
-            if (field.kind === 'credential') {
-                // The same store the health checks use: the widget names one,
-                // and never holds it.
-                return `
-                    <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
-                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
-                            data-widget-index="${index}" data-widget-kind="text">
-                            <option value="">${esc(this.t('config.healthCredentialNone',
-                                'Nothing — check anonymously'))}</option>
-                            ${this.renderCredentialOptionsFor(config[field.key])}
-                        </select>
                     </div>`;
             }
             if (field.kind === 'tags') {
@@ -14803,10 +15072,12 @@ class DashboardConfig {
              * third of the panel they overlapped each other.
              */
             return `<div class="config-widget-settings-body is-custom">
+                ${this.renderWidgetPresets(widget, index)}
                 <div class="config-custom-group">
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
                         'Where to read from'))}</h4>
                     <div class="config-custom-grid">${rows}</div>
+                    ${this.renderWidgetCredential(widget, index)}
                 </div>
                 ${this.renderCustomWidgetFields(widget, index)}
                 <div class="config-custom-group">
@@ -14814,10 +15085,43 @@ class DashboardConfig {
                         'On the dashboard'))}</h4>
                     <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
                 </div>
+                ${this.renderWidgetSaveBar(index)}
             </div>`;
         }
         return `<div class="config-widget-settings-body">${
-            this.renderWidgetWidth(widget, index)}${rows}</div>`;
+            this.renderWidgetWidth(widget, index)}${rows}${this.renderWidgetSaveBar(index)}</div>`;
+    }
+
+    /*
+     * One Save for the whole panel, and a Revert beside it.
+     *
+     * Every setting here is written by the same button, including the sign-in
+     * -- even though that one lands in a different file. Two buttons would ask
+     * the reader to know which control belongs to which store, which is a
+     * detail of where things are kept and not a question anybody came here to
+     * answer.
+     *
+     * The state line is the point: a panel that saves silently cannot tell the
+     * difference between "written" and "ignored", and that is exactly the
+     * failure this replaced.
+     */
+    renderWidgetSaveBar(index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const dirty = this.widgetDraftDirty(index);
+        const saved = this._widgetJustSaved === index;
+        return `
+            <div class="config-widget-savebar${dirty ? ' is-dirty' : ''}">
+                <button type="button" class="config-btn config-btn--primary"
+                    data-widget-save="${index}" ${dirty ? '' : 'disabled'}>${esc(
+                    this.t('config.widgetSave', 'Save changes'))}</button>
+                <button type="button" class="config-btn config-btn--small"
+                    data-widget-revert="${index}" ${dirty ? '' : 'disabled'}>${esc(
+                    this.t('config.widgetRevert', 'Discard'))}</button>
+                <span class="config-widget-savebar-state" data-widget-save-state>${esc(
+                    dirty ? this.t('config.widgetUnsaved', 'Not saved yet')
+                    : saved ? this.t('config.widgetSaved', 'Saved.')
+                    : '')}</span>
+            </div>`;
     }
 
     /**
@@ -14872,6 +15176,11 @@ class DashboardConfig {
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',
             neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',
+            archive: 'How many bookmarks have a copy kept, and which broken ones have none.',
+            unchecked: 'The blind spots: never checked, checked long ago, or not watched at all.',
+            duplicates: 'The same address stored more than once, and how many copies could go.',
+            trash: 'What is waiting in the trash, and when retention removes it for good.',
+            backups: 'How old the newest automatic backup is, and whether the last run failed.',
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
@@ -14935,116 +15244,171 @@ class DashboardConfig {
         this.repaintWidgetsBody();
     }
 
+    /*
+     * Every control on this tab, through one listener per event type.
+     *
+     * Delegated rather than bound per element, because the panel is redrawn by
+     * several paths -- opening a widget's settings, a preset landing, the
+     * credential names arriving from their own fetch -- and a listener bound to
+     * an input does not survive its element being replaced. Whichever paint
+     * lands last then leaves controls nothing is listening to, and that failure
+     * is silent: typing works, the value is simply never read, so a setting
+     * looks accepted and is gone on the next load.
+     *
+     * The body element is never replaced, only its innerHTML, so listeners
+     * there outlive every repaint. The guard stops a second call from stacking
+     * a duplicate, which would act twice on one click.
+     */
     bindWidgetsEditor(container) {
-        container.querySelector('[data-widget-page]')?.addEventListener('change', (event) => {
-            this._widgetPageId = Number(event.target.value);
-            this._widgetBlocks = null;
-            this._widgetLoadedFor = null;
-            this.repaintWidgetsBody();
-            void this.loadWidgetsEditor();
-        });
+        const body = document.getElementById('config-widgets-body') || container;
+        if (!body || body.dataset.widgetsDelegated === 'true') return;
+        body.dataset.widgetsDelegated = 'true';
 
-        container.querySelector('[data-widget-add]')?.addEventListener('click', () => {
-            const type = container.querySelector('[data-widget-type]')?.value || 'health';
-            void this.addWidget(type);
-        });
+        const indexOn = (el, attr) => Number(el.getAttribute(attr));
 
-        // The line under the picker follows the picker, so what you are about
-        // to add is described before you add it rather than after.
-        const typePicker = container.querySelector('[data-widget-type]');
-        typePicker?.addEventListener('change', () => {
-            const about = container.querySelector('[data-widget-add-about]');
-            if (about) about.textContent = this.widgetTypeAbout(typePicker.value);
-        });
+        body.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!target?.closest) return;
 
-        // Whether a widget is drawn at all, and what it counts. Where it sits is
-        // the Categories tab's business.
-        container.querySelectorAll('[data-widget-enabled]').forEach((box) => {
-            box.addEventListener('change', () => {
-                void this.setWidgetConfig(Number(box.getAttribute('data-widget-enabled')), { enabled: box.checked });
-            });
-        });
+            const add = target.closest('[data-widget-add]');
+            if (add) {
+                const type = body.querySelector('[data-widget-type]')?.value || 'health';
+                void this.addWidget(type);
+                return;
+            }
 
-        container.querySelectorAll('[data-widget-delete]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                /*
-                 * The index is on data-widget-delete, not on data-index.
-                 *
-                 * This read data-index, which the button does not carry:
-                 * Number(null) is 0, so every Delete asked to remove block 0 —
-                 * normally a category, where the isWidget check refuses and
-                 * returns without a word. Delete has therefore never worked,
-                 * since the tab shipped.
-                 */
-                void this.deleteWidget(Number(btn.getAttribute('data-widget-delete')));
-            });
-        });
+            const remove = target.closest('[data-widget-delete]');
+            if (remove) { void this.deleteWidget(indexOn(remove, 'data-widget-delete')); return; }
 
-        // Opening the settings redraws the tab, so which row is open is state
-        // rather than a class toggle: a rename or a save elsewhere must not
-        // close a panel someone is working in.
-        container.querySelectorAll('[data-widget-settings]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const index = Number(btn.getAttribute('data-widget-settings'));
+            /*
+             * Opening the settings redraws the tab, so which row is open is
+             * state rather than a class toggle: a rename or a save elsewhere
+             * must not close a panel someone is working in.
+             */
+            const toggle = target.closest('[data-widget-settings]');
+            if (toggle) {
+                const index = indexOn(toggle, 'data-widget-settings');
                 this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
-                /*
-                 * Repaint, not reload.
-                 *
-                 * loadWidgetsEditor refetches and is guarded against being
-                 * called from its own repaint -- clearing _widgetLoadedFor to
-                 * force it through that guard is exactly the endless loop the
-                 * guard exists to stop, and it detaches every control on the
-                 * tab before a click can land. The blocks are already in hand;
-                 * only the markup has to change.
-                 */
+                this._widgetJustSaved = null;
                 this.repaintWidgetsBody();
-            });
+                return;
+            }
+
+            const save = target.closest('[data-widget-save]');
+            if (save) { void this.saveWidgetDraft(indexOn(save, 'data-widget-save')); return; }
+
+            const revert = target.closest('[data-widget-revert]');
+            if (revert) { this.revertWidgetDraft(indexOn(revert, 'data-widget-revert')); return; }
+
+            const addField = target.closest('[data-custom-add]');
+            if (addField) { this.addWidgetDraftField(indexOn(addField, 'data-custom-add')); return; }
+
+            const dropField = target.closest('[data-custom-remove]');
+            if (dropField) {
+                this.removeWidgetDraftField(
+                    indexOn(dropField, 'data-custom-index'),
+                    indexOn(dropField, 'data-custom-remove'));
+            }
         });
 
-        // The custom widget's fields[] — its own rows, because a list of objects
-        // is not something the settings table can describe.
-        container.querySelectorAll('[data-custom-add]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.addCustomWidgetField(Number(btn.getAttribute('data-custom-add')));
-            });
-        });
-        container.querySelectorAll('[data-custom-remove]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.removeCustomWidgetField(
-                    Number(btn.getAttribute('data-custom-index')),
-                    Number(btn.getAttribute('data-custom-remove')));
-            });
-        });
-        container.querySelectorAll('[data-custom-field]').forEach((input) => {
-            // change, not input: a path typed character by character would be a
-            // write per character, and every intermediate value names nothing.
-            input.addEventListener('change', () => {
-                void this.setCustomWidgetField(
-                    Number(input.getAttribute('data-custom-index')),
-                    Number(input.getAttribute('data-custom-row')),
-                    input.getAttribute('data-custom-field'),
-                    input.value);
-            });
+        body.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!target?.closest) return;
+
+            const page = target.closest('[data-widget-page]');
+            if (page) {
+                this._widgetPageId = Number(page.value);
+                this._widgetBlocks = null;
+                this._widgetLoadedFor = null;
+                this._widgetDrafts = {};
+                this.repaintWidgetsBody();
+                void this.loadWidgetsEditor();
+                return;
+            }
+
+            // Whether a widget is drawn at all. Written straight through rather
+            // than into the draft: it is a property of the list, not of the
+            // panel, and it has its own control on the row.
+            const shown = target.closest('[data-widget-enabled]');
+            if (shown) {
+                void this.setWidgetConfig(indexOn(shown, 'data-widget-enabled'),
+                    { enabled: shown.checked });
+                return;
+            }
+
+            const preset = target.closest('[data-widget-preset]');
+            if (preset) {
+                const chosen = preset.value;
+                // Reset immediately: the picker is an action, not a setting.
+                // Left showing the last choice it would read as "this widget is
+                // a Sonarr widget", which is exactly what presets are not.
+                preset.value = '';
+                if (chosen) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), chosen);
+                return;
+            }
+
+            const auth = target.closest('[data-widget-auth]');
+            if (auth) {
+                const field = auth.getAttribute('data-widget-auth');
+                const index = indexOn(auth, 'data-widget-index');
+                if (field === 'kind' || field === 'shared') this.setWidgetAuthKind(index, field, auth.value);
+                else this.updateWidgetAuthField(index, field, auth.value);
+                return;
+            }
+
+            const field = target.closest('[data-custom-field]');
+            if (field) {
+                this.updateWidgetDraftField(
+                    indexOn(field, 'data-custom-index'),
+                    indexOn(field, 'data-custom-row'),
+                    field.getAttribute('data-custom-field'),
+                    field.value);
+                this.refreshWidgetSaveBar(indexOn(field, 'data-custom-index'));
+                return;
+            }
+
+            const setting = target.closest('[data-widget-setting]');
+            if (setting) {
+                const index = indexOn(setting, 'data-widget-index');
+                this.updateWidgetDraft(index, setting);
+                this.refreshWidgetSaveBar(index);
+                return;
+            }
+
+            const title = target.closest('[data-widget="title"]');
+            if (title) void this.renameWidget(Number(title.getAttribute('data-index')), title.value);
         });
 
-        container.querySelectorAll('[data-widget-setting]').forEach((input) => {
-            const kind = input.getAttribute('data-widget-kind');
-            const key = input.getAttribute('data-widget-setting');
-            const index = Number(input.getAttribute('data-widget-index'));
-            // change, not input: a number typed digit by digit would write once
-            // per digit, and 5 on the way to 15 is a value the server accepts.
-            input.addEventListener('change', () => {
-                void this.saveWidgetSetting(index, key, kind, input);
-            });
+        /*
+         * The line under the type picker follows the picker, so what you are
+         * about to add is described before you add it rather than after.
+         */
+        body.addEventListener('input', (event) => {
+            const picker = event.target?.closest?.('[data-widget-type]');
+            if (!picker) return;
+            const about = body.querySelector('[data-widget-add-about]');
+            if (about) about.textContent = this.widgetTypeAbout(picker.value);
         });
+    }
 
-        container.querySelectorAll('[data-widget="title"]').forEach((input) => {
-            // On change rather than on every keystroke: a title is a whole
-            // thought, and a write per character would be a write per character.
-            input.addEventListener('change', () => {
-                void this.renameWidget(Number(input.getAttribute('data-index')), input.value);
-            });
-        });
+    /*
+     * Bring the Save bar in step without redrawing the panel.
+     *
+     * A full repaint on every keystroke-ending change would take away the box
+     * the reader just left and put the caret somewhere else; this touches only
+     * the three things that can change.
+     */
+    refreshWidgetSaveBar(index) {
+        const save = document.querySelector(`[data-widget-save="${index}"]`);
+        const bar = save?.closest('.config-widget-savebar');
+        if (!bar) return;
+        const dirty = this.widgetDraftDirty(index);
+        bar.classList.toggle('is-dirty', dirty);
+        save.disabled = !dirty;
+        const revert = bar.querySelector('[data-widget-revert]');
+        if (revert) revert.disabled = !dirty;
+        const state = bar.querySelector('[data-widget-save-state]');
+        if (state) state.textContent = dirty ? this.t('config.widgetUnsaved', 'Not saved yet') : '';
     }
 
     /** Everything the server needs to store, from what is on screen. */
@@ -15116,8 +15480,20 @@ class DashboardConfig {
      * being absent — the same thing the server does with a value it cannot
      * accept, and what every renderer already reads as the default.
      */
-    async saveWidgetSetting(index, key, kind, input) {
+    /*
+     * One control changed: write it into the draft and nothing else.
+     *
+     * No server call, no repaint. A repaint here would replace the box the
+     * reader is typing in, and a server call would be the per-field write this
+     * whole panel was rebuilt to get rid of.
+     */
+    updateWidgetDraft(index, input) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const key = input.getAttribute('data-widget-setting');
+        const kind = input.getAttribute('data-widget-kind');
         const container = input.closest('.config-widget-settings') || document;
+
         let value;
         if (kind === 'bool') {
             value = input.checked;
@@ -15129,84 +15505,260 @@ class DashboardConfig {
             const list = String(input.value || '').split(',')
                 .map((tag) => tag.trim()).filter(Boolean);
             value = list.length ? list : undefined;
+        } else if (kind === 'text') {
+            const text = String(input.value || '').trim();
+            value = text === '' ? undefined : text;
         } else {
             // checkset: every box for this key, so unticking one sends the rest
-            // rather than sending the one that changed.
+            // rather than the one that changed. All ticked is the same as
+            // saying nothing, and storing nothing keeps a later addition to the
+            // list included by default.
             const boxes = [...container.querySelectorAll(
                 `[data-widget-setting="${CSS.escape(key)}"][data-widget-kind="checkset"]`)];
             const chosen = boxes.filter((box) => box.checked).map((box) => box.value);
-            // All ticked is the same as saying nothing, and storing nothing
-            // keeps a later addition to the list included by default.
             value = chosen.length === boxes.length ? undefined : chosen;
         }
-        await this.setWidgetConfig(index, { [key]: value });
+
+        if (value === undefined) delete draft.config[key];
+        else draft.config[key] = value;
     }
 
-    /** The fields a custom widget reads, as stored. */
-    customFieldsOf(index) {
-        const config = (this._widgetBlocks || [])[index]?.config || {};
-        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
-    }
-
-    async addCustomWidgetField(index) {
-        const fields = this.customFieldsOf(index);
-        if (fields.length >= 8) return;
-        /*
-         * Added empty rather than with a guess.
-         *
-         * The server drops a field with no path — a row that named nothing
-         * would be an empty figure on the tile — so this row exists only in the
-         * editor until it has one. That is why the panel is redrawn from local
-         * state rather than from what came back.
-         */
-        fields.push({ path: '', label: '', format: 'text' });
-        this.setCustomFieldsLocally(index, fields);
-        this.repaintWidgetsBody();
-    }
-
-    async removeCustomWidgetField(index, row) {
-        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
-        this.setCustomFieldsLocally(index, fields);
-        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
-        this.repaintWidgetsBody();
-    }
-
-    async setCustomWidgetField(index, row, key, value) {
-        const fields = this.customFieldsOf(index);
+    /** One cell of the custom widget's figures table, into the draft. */
+    updateWidgetDraftField(index, row, key, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = Array.isArray(draft.config.fields) ? draft.config.fields : [];
         if (!fields[row]) return;
         fields[row] = { ...fields[row], [key]: String(value || '').trim() };
-        this.setCustomFieldsLocally(index, fields);
-        // Only worth storing once a row names something; until then the server
-        // would drop it and the editor would lose the row being typed into.
-        if (fields.some((field) => String(field.path || '').trim())) {
-            await this.setWidgetConfig(index, { fields });
+        draft.config.fields = fields;
+    }
+
+    addWidgetDraftField(index) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = Array.isArray(draft.config.fields) ? [...draft.config.fields] : [];
+        if (fields.length >= 8) return;
+        // Added empty rather than with a guess: the server drops a field with
+        // no path, so a row that names nothing exists only in this panel.
+        fields.push({ path: '', label: '', format: 'text' });
+        draft.config.fields = fields;
+        this.repaintWidgetsBody();
+    }
+
+    removeWidgetDraftField(index, row) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = (Array.isArray(draft.config.fields) ? draft.config.fields : [])
+            .filter((_, i) => i !== row);
+        draft.config.fields = fields.length ? fields : undefined;
+        this.repaintWidgetsBody();
+    }
+
+    /*
+     * Which kind of sign-in, into the draft.
+     *
+     * Redraws, because the choice changes which boxes are on screen -- but it
+     * writes nothing. Choosing "an API key" is the start of typing one, not a
+     * decision worth storing, and an empty credential written at that moment
+     * would be an entry that signs in with nothing.
+     */
+    setWidgetAuthKind(index, field, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        if (field === 'shared') {
+            draft.auth = { kind: 'shared', shared: value };
+        } else if (value === 'shared') {
+            const own = this.widgetCredentialId((this._widgetBlocks || [])[index]);
+            const first = Object.keys(this.dash.healthCredentials || {})
+                .filter((id) => id !== own).sort()[0] || '';
+            draft.auth = { kind: 'shared', shared: first };
+        } else if (value === 'none') {
+            draft.auth = { kind: 'none' };
+        } else {
+            // Keep what the stored entry already tells us, so switching away
+            // and back does not blank a header name that is right.
+            const before = draft.auth || {};
+            draft.auth = {
+                kind: value,
+                headerName: before.headerName || '',
+                basicUser: before.basicUser || '',
+                saved: before.saved === true && before.kind === value,
+            };
         }
+        this.repaintWidgetsBody();
     }
 
-    /** Keep the editor's copy in step, including rows the server would drop. */
-    setCustomFieldsLocally(index, fields) {
-        const blocks = [...(this._widgetBlocks || [])];
-        if (!blocks[index]?.isWidget) return;
-        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
-        this._widgetBlocks = blocks;
+    /** A typed key or username, into the draft. Never to the server per keystroke. */
+    updateWidgetAuthField(index, field, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
     }
 
-    async renameWidget(index, title) {
+    /*
+     * A preset fills the form and stops there.
+     *
+     * Applied on Save like everything else in this panel, so choosing a service
+     * to see what it would set is not itself a change to the widget. The
+     * address someone already typed keeps its host and only the path is
+     * replaced -- that is what makes moving from Sonarr to Radarr on the same
+     * box one choice rather than a retype.
+     *
+     * The credential is filled in as far as it can be: a preset knows which
+     * header its service wants, and X-Api-Key is printed on Sonarr's own
+     * settings page. The key itself is nobody's business but the reader's.
+     */
+    applyWidgetPreset(index, presetId) {
+        const catalogue = window.DashboardWidgetPresets;
+        const preset = catalogue?.byId?.(presetId);
+        const draft = this.widgetDraft(index);
+        if (!preset || !draft) return;
+
+        Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
+        if (preset.auth === 'header') {
+            draft.auth = { kind: 'header', headerName: preset.authName || '', basicUser: '' };
+        } else if (preset.auth === 'basic') {
+            draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
+        } else {
+            // none, or a service that carries its key in the address itself.
+            draft.auth = { kind: 'none' };
+        }
+        this.repaintWidgetsBody();
+
+        const note = preset.auth === 'none'
+            ? this.t('config.widgetPresetNoAuth', '{name} is ready — no credential needed.')
+                .replace('{name}', preset.name)
+            : this.t('config.widgetPresetApplied', '{name} filled in. Still to do: {note}')
+                .replace('{name}', preset.name)
+                .replace('{note}', preset.note);
+        this.notify(note, 'info');
+    }
+
+    /** Throw the draft away and draw what is stored. */
+    revertWidgetDraft(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (block) delete (this._widgetDrafts || {})[block.id];
+        this._widgetJustSaved = null;
+        this.repaintWidgetsBody();
+    }
+
+    /*
+     * Write the whole panel out, in the order that survives a failure.
+     *
+     * The credential first, then the config that names it: a widget pointing at
+     * an entry that does not exist yet fetches anonymously, and that reads as
+     * "the key is wrong" rather than "the key has not been saved". The other
+     * order is recoverable; this one is confusing.
+     */
+    async saveWidgetDraft(index) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index, { create: false });
+        if (!block?.isWidget || !draft) return;
+        const say = (text) => {
+            const state = document.querySelector(
+                `[data-widget-save="${index}"]`)?.closest('.config-widget-savebar')
+                ?.querySelector('[data-widget-save-state]');
+            if (state) state.textContent = text;
+        };
+
+        const auth = draft.auth || { kind: 'none' };
+        const own = this.widgetCredentialId(block);
+        const secret = String(auth.secret || '').trim();
+        const stored = this.storedCredentialState(block);
+        const config = { ...draft.config };
+
+        if (auth.kind === 'header' || auth.kind === 'basic') {
+            const payload = { id: own, label: block.title || block.type || own };
+            if (auth.kind === 'header') {
+                const name = String(auth.headerName || '').trim();
+                if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
+                if (!secret && !(stored.kind === 'header' && stored.headerName === name)) {
+                    say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
+                    return;
+                }
+                if (secret) payload.headers = { [name]: secret };
+            } else {
+                const user = String(auth.basicUser || '').trim();
+                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                if (!secret && !(stored.kind === 'basic' && stored.basicUser === user)) {
+                    say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
+                    return;
+                }
+                if (secret) { payload.basicUser = user; payload.basicPassword = secret; }
+            }
+            // Nothing to write when only the label changed and the secret is
+            // already filed: the value never comes back from the server, so
+            // re-filing it is not something this panel can do.
+            if (payload.headers || payload.basicPassword) {
+                say(this.t('config.widgetAuthSaving', 'Saving…'));
+                try {
+                    const res = await this.writeFetch('/api/health/credentials', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    this.dash.healthCredentials = data?.credentials || {};
+                    this.dash.healthCredentialDetails = data?.details || {};
+                } catch (_error) {
+                    say(this.t('config.widgetAuthFailed', 'Could not save the sign-in.'));
+                    return;
+                }
+            }
+            config.credentialId = own;
+        } else if (auth.kind === 'shared') {
+            config.credentialId = auth.shared || undefined;
+        } else {
+            delete config.credentialId;
+            await this.forgetWidgetCredential(block);
+        }
+
         const blocks = [...(this._widgetBlocks || [])];
-        if (!blocks[index]?.isWidget) return;
-        blocks[index] = { ...blocks[index], title: String(title || '').trim() };
+        blocks[index] = { ...block, config };
         this._widgetBlocks = blocks;
-        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+            say(this.t('config.widgetsSaveError', 'Could not save the widgets.'));
+            return;
+        }
+
+        delete (this._widgetDrafts || {})[block.id];
+        this._widgetJustSaved = index;
+        // The tile is holding an answer it fetched under the old settings.
+        this.dash.renderCore?.forgetWidgetCaches?.();
+        this.repaintWidgetsBody();
         await this.refreshDashboardBlocks();
+        this.notify(this.t('config.widgetSavedNotice', 'Widget saved.'), 'success');
+    }
+
+    /** Remove the entry a widget minted for itself, leaving shared ones alone. */
+    async forgetWidgetCredential(block) {
+        const id = this.widgetCredentialId(block);
+        if (!id) return;
+        if (!((this.dash.healthCredentials || {})[id])) return;
+        try {
+            await this.writeFetch(`/api/health/credentials?id=${encodeURIComponent(id)}`,
+                { method: 'DELETE' });
+        } catch (_error) {
+            // A key that could not be removed is no reason to leave the widget
+            // pointing at it; the config change goes ahead either way.
+        }
+        await this.loadCredentialNames();
     }
 
     async deleteWidget(index) {
         const block = (this._widgetBlocks || [])[index];
         if (!block?.isWidget) return;
         const ok = await this.confirmAction(
-            this.t('config.widgetsDeleteConfirm', 'Remove this widget? Its settings go with it.'),
+            this.t('config.widgetsDeleteConfirm',
+                'Remove this widget? Its settings and any sign-in you gave it go with it.'),
             { confirmLabel: this.t('config.backupDelete', 'Delete'), danger: true });
         if (!ok) return;
+
+        // Before the block goes: the id is derived from it, and without it
+        // there is no way to name the entry this widget minted for itself.
+        await this.forgetWidgetCredential(block);
+        delete (this._widgetDrafts || {})[block.id];
 
         this._widgetBlocks = (this._widgetBlocks || []).filter((_, i) => i !== index);
         if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
