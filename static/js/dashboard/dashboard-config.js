@@ -4399,9 +4399,25 @@ class DashboardConfig {
     renderDataSources() {
         const esc = (v) => this.dash.escapeHtml(v);
         const panels = DashboardConfig.SOURCE_DEFS.map((def) => this.renderSourcePanel(def)).join('');
+        /*
+         * The promise this tab makes, drawn once at the top.
+         *
+         * "Previews what it would do before it writes" is the sentence people
+         * need to believe before pasting a token into a box, and a sentence is
+         * a poor place to make that argument. Three chips and two arrows say it
+         * in the shape it happens in.
+         */
+        const flow = window.SettingArt?.render?.('flow', [
+            this.t('config.sourcesArtService', 'A service'),
+            this.t('config.sourcesArtPreview', 'Preview'),
+            this.t('config.sourcesArtPage', 'Your page'),
+        ], 'config-view-intro-art') || '';
         return `
-            <p class="config-view-intro">${esc(this.t('config.sourcesIntro',
-                'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
+            <div class="config-view-intro-row">
+                <p class="config-view-intro">${esc(this.t('config.sourcesIntro',
+                    'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
+                ${flow}
+            </div>
             ${panels}
             ${this.renderArchivePanel()}
             ${this.renderLocalArchivePanel()}
@@ -4424,8 +4440,15 @@ class DashboardConfig {
         const empty = `<p class="config-view-loading">${esc(this.t('config.webhooksEmpty',
             'Nothing is listening yet.'))}</p>`;
         return `
-            <p class="config-view-intro">${esc(this.t('config.webhooksIntro',
-                'Push an event to another program the moment it happens here — a bookmark added, changed or removed, a monitored bookmark going down or coming back. Every delivery is signed, so the receiver can tell it came from this install.'))}</p>
+            <div class="config-view-intro-row">
+                <p class="config-view-intro">${esc(this.t('config.webhooksIntro',
+                    'Push an event to another program the moment it happens here — a bookmark added, changed or removed, a monitored bookmark going down or coming back. Every delivery is signed, so the receiver can tell it came from this install.'))}</p>
+                ${window.SettingArt?.render?.('boundary', {
+                    label: 'nextDash',
+                    inside: [this.t('config.webhooksArtAdded', 'Added'), this.t('config.webhooksArtDown', 'Down')],
+                    out: this.t('config.webhooksArtReceiver', 'Your receiver'),
+                }, 'config-view-intro-art') || ''}
+            </div>
             <div class="config-webhook-list">${rows || empty}</div>
             ${this.renderMCPPanel()}
             <details class="config-panel config-source-panel"
@@ -14811,14 +14834,21 @@ class DashboardConfig {
         const id = `widget-${index}-columns`;
         const option = (value, key, fallback) =>
             `<option value="${value}" ${current === value ? 'selected' : ''}>${esc(this.t(key, fallback))}</option>`;
+        // Drawn beside the choice, because the question is not how big the
+        // widget is but what it does to the blocks next to it — and that is a
+        // shape rather than a number.
+        const art = window.SettingArt?.render?.('widgetSpan', current) || '';
         return `
             <div class="config-widget-field">
                 <label for="${id}">${esc(this.t('config.widgetColumns', 'Width'))}</label>
-                <select id="${id}" class="config-select" data-widget-setting="columns"
-                    data-widget-index="${index}" data-widget-kind="int">
-                    ${option(1, 'config.widgetColumnsOne', 'One column')}
-                    ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
-                </select>
+                <span class="config-widget-choice">
+                    <select id="${id}" class="config-select" data-widget-setting="columns"
+                        data-widget-index="${index}" data-widget-kind="int">
+                        ${option(1, 'config.widgetColumnsOne', 'One column')}
+                        ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
+                    </select>
+                    ${art}
+                </span>
                 <span class="config-widget-note">${esc(this.t('config.widgetColumnsNote',
                     'A dashboard showing one column draws the widget in that one column.'))}</span>
             </div>`;
@@ -21155,7 +21185,69 @@ class DashboardConfig {
             { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
             { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
         ],
+        // ── v1.4.0 topics ──────────────────────────────────────────────────
+        'config.helpWidgetsTitle': [
+            {
+                kind: 'widgetSpan', value: 2,
+                captionKey: 'config.helpArtWidgetWide', caption: 'A block beside your categories',
+            },
+            {
+                kind: 'bars', value: { values: [0.9, 0.7, 0.95, 0.4, 0.8], mark: 3, tone: 'bad' },
+                captionKey: 'config.helpArtWidgetFigures', caption: 'Figures it already keeps',
+            },
+        ],
+        'config.helpSourcesTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtSourceService', d: 'A service' },
+                    { k: 'config.helpArtSourcePreview', d: 'Preview' },
+                    { k: 'config.helpArtSourcePage', d: 'Your page' },
+                ],
+                captionKey: 'config.helpArtSourceFlow', caption: 'Nothing is written unseen',
+            },
+        ],
+        'config.helpArchiveTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtArchiveSave', d: 'You save it' },
+                    { k: 'config.helpArtArchiveCopy', d: 'A copy is kept' },
+                    { k: 'config.helpArtArchiveGone', d: 'The page dies' },
+                ],
+                captionKey: 'config.helpArtArchiveFlow', caption: 'The copy is made first',
+            },
+        ],
+        'config.helpIntegrationsTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtOutLabel', d: 'nextDash' },
+                    inside: [
+                        { k: 'config.helpArtOutAdded', d: 'Added' },
+                        { k: 'config.helpArtOutDown', d: 'Down' },
+                    ],
+                    out: { k: 'config.helpArtOutReceiver', d: 'Your receiver' },
+                },
+                captionKey: 'config.helpArtOutFlow', caption: 'Pushed, and signed',
+            },
+        ],
         'config.helpThemesTitle': [
+            // The browser first, because it is the change: what was a list of
+            // 214 names is a grid you can see. Then the two things every theme
+            // gained behind it.
+            {
+                kind: 'themeGrid', value: ['a', 'b', 'c', 'd', 'e', 'f'],
+                captionKey: 'config.helpArtThemeBrowser', caption: 'A grid, not a list of names',
+            },
+            {
+                kind: 'depth', value: 'rich',
+                captionKey: 'config.helpArtThemeDepth', caption: 'A card on a surface',
+            },
+            {
+                kind: 'pattern', value: 'grid',
+                captionKey: 'config.helpArtThemePattern', caption: 'Dots, grid, lines or hatch',
+            },
             {
                 kind: 'swatches', value: ['light', 'dark'],
                 captionKey: 'config.helpArtThemePair', caption: 'A light and a dark half',

@@ -727,3 +727,193 @@
     align-items: flex-start;
     gap: 0.2rem;
 }
+
+/* ─── v1.4.0 drawings ───────────────────────────────────────────────────────
+   Four subjects that arrived with the theme engine and the widgets, each one a
+   relationship rather than a value: how far a card sits off the page, what
+   shape the backdrop is, how wide a block is beside its neighbours, and what a
+   grid of themes looks like next to a list of names. */
+
+/* Depth: the same card at three distances from the page behind it.
+
+   Drawn structurally rather than tonally. The first attempt used a tint, a soft
+   shadow and a wash — all three real, all three invisible at 3.4rem on a dark
+   theme, so flat, soft and rich came out as three identical squares. A drawing
+   that cannot be told apart is worse than no drawing: it says the settings do
+   not differ.
+
+   So the elevation is a plate offset behind the card, which reads at any size
+   and in any palette: none at flat, one at soft, two at rich. */
+.setting-art-frame--depth { padding: 0; }
+
+.setting-art-depth {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.4rem;
+    height: 2.2rem;
+    border-radius: 0.3rem;
+    overflow: hidden;
+    background: var(--background-primary);
+    /* Its own stacking context, so the plates below can sit behind the card
+       without falling behind the panel the whole drawing is painted on. */
+    isolation: isolate;
+}
+.setting-art-depth.is-soft { background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)); }
+.setting-art-depth.is-rich { background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-primary)); }
+
+/* The wash behind the page, which only rich really has. */
+.setting-art-depth-wash {
+    position: absolute;
+    inset: -50% -30% auto -30%;
+    height: 150%;
+    background: radial-gradient(
+        closest-side,
+        color-mix(in srgb, var(--accent-primary) 55%, transparent),
+        transparent 70%);
+    opacity: 0;
+}
+.setting-art-depth.is-soft .setting-art-depth-wash { opacity: 0.35; }
+.setting-art-depth.is-rich .setting-art-depth-wash { opacity: 0.85; }
+
+.setting-art-depth-card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.18rem;
+    padding: 0.28rem 0.32rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.22rem;
+    background: var(--background-secondary);
+}
+
+/* The plates. ::before is the near one, ::after the far one — so soft shows a
+   single step off the page and rich shows a stack. */
+.setting-art-depth-card::before,
+.setting-art-depth-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 55%, transparent);
+    border-radius: inherit;
+    background: var(--background-secondary);
+    /* Behind the card, in front of the page: zero rather than a negative,
+       which would leave the drawing's own container. */
+    z-index: 0;
+    opacity: 0;
+}
+.setting-art-depth-card::before { transform: translate(3px, 3px); }
+.setting-art-depth-card::after { transform: translate(6px, 6px); }
+
+/* The rows sit above the plates: a positioned pseudo paints over ordinary
+   content, so without this the card's own contents disappear the moment it is
+   given any elevation at all. */
+.setting-art-depth-card .setting-art-col {
+    position: relative;
+    z-index: 2;
+}
+
+.setting-art-depth.is-flat .setting-art-depth-card {
+    background: var(--background-primary);
+}
+.setting-art-depth.is-soft .setting-art-depth-card::before { opacity: 1; }
+.setting-art-depth.is-rich .setting-art-depth-card::before,
+.setting-art-depth.is-rich .setting-art-depth-card::after { opacity: 1; }
+
+/* The backdrop, in each of its five shapes. */
+.setting-art-frame--pattern { padding: 0; }
+
+.setting-art-pattern {
+    display: block;
+    width: 3.4rem;
+    height: 2.2rem;
+    border-radius: 0.3rem;
+    background-color: var(--background-primary);
+    --art-ink: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+}
+.setting-art-pattern.is-dots {
+    background-image: radial-gradient(var(--art-ink) 1px, transparent 1px);
+    background-size: 6px 6px;
+}
+.setting-art-pattern.is-grid {
+    background-image:
+        linear-gradient(var(--art-ink) 1px, transparent 1px),
+        linear-gradient(90deg, var(--art-ink) 1px, transparent 1px);
+    background-size: 7px 7px;
+}
+.setting-art-pattern.is-lines {
+    background-image: linear-gradient(var(--art-ink) 1px, transparent 1px);
+    background-size: 100% 6px;
+}
+.setting-art-pattern.is-hatch {
+    background-image: repeating-linear-gradient(
+        45deg, var(--art-ink) 0 1px, transparent 1px 6px);
+}
+.setting-art-pattern.is-auto {
+    background-image: radial-gradient(var(--art-ink) 1px, transparent 1px);
+    background-size: 6px 6px;
+    opacity: 0.6;
+}
+/* "None" is drawn as the empty frame it is, not as a missing picture. */
+.setting-art-pattern.is-none { background-image: none; }
+
+/* A widget beside its neighbours, at one column or two. */
+.setting-art-blocks {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.setting-art-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 0.85rem;
+    padding: 0.2rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    border-radius: 0.2rem;
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+.setting-art-block.is-wide { width: 1.95rem; }
+.setting-art-block .setting-art-band {
+    height: 3px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+/* Cards of themes, which is what replaced a list of their names. */
+.setting-art-themes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.2rem;
+}
+
+.setting-art-theme {
+    display: flex;
+    align-items: flex-end;
+    width: 0.95rem;
+    height: 0.7rem;
+    padding: 0.12rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.15rem;
+}
+.setting-art-theme-bar {
+    width: 100%;
+    height: 2px;
+    border-radius: 1px;
+}
+/* Six plates that differ from one another rather than naming real themes: the
+   argument is that you can see them, not which ones they are. */
+.setting-art-theme.is-a { background: #15171c; }
+.setting-art-theme.is-a .setting-art-theme-bar { background: #7aa2f7; }
+.setting-art-theme.is-b { background: #faf4ed; }
+.setting-art-theme.is-b .setting-art-theme-bar { background: #b4637a; }
+.setting-art-theme.is-c { background: #1b1e28; }
+.setting-art-theme.is-c .setting-art-theme-bar { background: #a6e3a1; }
+.setting-art-theme.is-d { background: #fdf6e3; }
+.setting-art-theme.is-d .setting-art-theme-bar { background: #cb4b16; }
+.setting-art-theme.is-e { background: #101a28; }
+.setting-art-theme.is-e .setting-art-theme-bar { background: #f5c2e7; }
+.setting-art-theme.is-f { background: #eef2f7; }
+.setting-art-theme.is-f .setting-art-theme-bar { background: #2f6f9f; }

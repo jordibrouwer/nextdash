@@ -6063,3 +6063,37 @@ button.config-bm-shortcut-pill {
     word-break: break-all;
     user-select: all;
 }
+
+/* A widget setting whose value has a drawing beside it. */
+.config-widget-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+/* A tab's opening sentence with the drawing that makes its claim.
+
+   Side by side on a wide screen and stacked below 52rem: the drawing is the
+   argument, not an ornament, so it wraps under the sentence rather than being
+   squeezed beside it. */
+.config-view-intro-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.config-view-intro-row .config-view-intro {
+    flex: 1 1 24rem;
+    min-width: 0;
+}
+
+.config-view-intro-art {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 52rem) {
+    .config-view-intro-row { flex-direction: column; align-items: flex-start; }
+}
