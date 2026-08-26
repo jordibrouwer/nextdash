@@ -46,12 +46,14 @@ class DashboardConfig {
      * literals scattered through the render methods. Moving the mark then meant
      * finding all of them, and a half-moved trail points at nothing.
      *
-     * Cleared (set to `{}`) once the setting is no longer new — which is where
-     * it stands: the trail pointed at Appearance → Layout for the categories
-     * -across-columns setting of v1.3.0, two releases ago, and a mark that
-     * outlives its release trains people to ignore the mark.
+     * Cleared (set to `{}`) once the setting is no longer new — a mark that
+     * outlives its release trains people to ignore the mark. It stood empty
+     * from v1.3.0, whose Appearance → Layout trail had gone stale, until
+     * v1.4.0 added a whole section rather than a setting: Widgets is the one
+     * place in the rail a reader has no reason to look, because it was not
+     * there the last time they opened config.
      */
-    static NEW_THIS_RELEASE = {};
+    static NEW_THIS_RELEASE = { section: 'widgets' };
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
