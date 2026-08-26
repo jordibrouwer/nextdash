@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.0 — 27 August 2026](#v140--27-august-2026)
 - [v1.3.3.5 — 25 August 2026](#v1335--25-august-2026)
 - [v1.3.3.4 — 25 August 2026](#v1334--25-august-2026)
 - [v1.3.3.3 — 25 August 2026](#v1333--25-august-2026)
@@ -176,6 +177,117 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.0 — 27 August 2026
+
+Three questions this release answers that nextDash could not answer before. Where do bookmarks come from — a register of services that keep sending them, and the thirty-year-old file format every browser and every read-later tool still speaks. Where does a copy of a page live when the page dies — the Web Archive, archive.today, or a file on your own disk. And what can nextDash tell the rest of your machine — signed webhooks out, and an endpoint an assistant can search.
+
+Alongside them, the dashboard learned to show something other than links. Eight widget types read data the install already keeps and had nowhere to show: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, what you saved and never opened, which import failed, which feed went quiet, which certificate is running out. A ninth points at any address that answers with JSON, so a service that is not in the list needs no code.
+
+And a security pass over all of it, after the features were in: seven findings, every one an address or a secret reaching somewhere it was never meant to.
+
+### Widgets
+
+- **new** — **a page block can hold something other than bookmarks.** A widget is drawn among the categories, dragged into place like one, and stored in the same order they are: `blockOrder` is one array of ids for both. `widgets.go` holds the register, `GET`/`PUT /api/pages/{id}/blocks` the routes, and each type gets a renderer under `static/js/widgets/`.
+- **new** — **eight types, each reading data nextDash already keeps.** *Health* and *Uptime* from the health report and the sample history, *Trend* from `health-trend.json`, *Inbox* from the inbox store, *Neglected* from `lastOpened`, and *Sources*, *Feeds* and *Certificates* from the three registers whose failures were previously visible only by going looking for them.
+- **new** — **a custom widget** (`widgets_custom.go`, `GET /api/widgets/custom`). It fetches an address that answers with JSON and draws the fields named in its settings, through the server rather than the browser: the address and any stored credential never reach the page. The alternative was a codepath per service — Homepage ships about a hundred and sixty of those and felt Pi-hole v6 rewrite its API underneath them.
+- **new** — **settings per type.** The register carries a schema, and `Widget.Config` is a `map[string]any` the editor fills: which page to count, how many rows, the title, the width. Before this the health widget had read `config.show` since the day it shipped and nothing in the app could write it.
+- **new** — **a widget can be two columns wide**, at most. It reuses the span rule the grid already has for a wide category rather than growing a second way to be wide, and narrows itself again on a single-column dashboard.
+- **new** — **a tile says how many rows it left out.** Six of them cut their list to a chosen row count and every one cut it silently — five of twelve looked exactly like five of five.
+- **new** — **Widgets is a section of its own** in the config rail, under *Data & backups*. It had sat as a tab under *Pages & tags* when it was a list of names; it is a settings panel per type now.
+- **fix** — **a figure on a tile opens the rows behind it.** The tiles called `dash.health.openWithFilter()`, which exists nowhere; the optional call swallowed it, so clicking a count did nothing at all. It is `openHealthFiltered()` with `?hv_filter=`.
+- **fix** — **delete deletes the widget you pressed it on.** The button carries its index on `data-widget-delete` and the handler read `data-index`, so `Number(null)` made every delete ask for block 0 — normally a category, where the `isWidget` check refused without a word. Broken since widgets shipped.
+- **fix** — **one order, not two.** The category array's own order placed categories and `blockOrder` placed widgets, and a single drag wrote both: a widget dropped into second place came back fourth. The arrows on the *Categories* tab were reordering an array nothing reads for placement.
+- **fix** — **the per-page count read a field that was not there.** `summary.rows` sits beside `summary`, not in it, so the health widget always fell through to the collection's figures under a setting that said *this page*.
+- **fix** — **a tile redraws from fresh data when its settings change.** The fetching tiles cache their answer on the dashboard object, which is right while nothing changes and wrong the moment a widget is edited. The cache clear had also landed below `refreshDashboardBlocks`' early return, so editing another page's widgets left its stale answers in place.
+- **fix** — `refreshAllCategorySpans` stopped stomping widget widths. It sweeps `.category[data-category-id]`, and a widget block carries both.
+
+### Where bookmarks come from
+
+- **new** — **`sources.json`, one register for every service that sends bookmarks.** Modelled on `feeds.json`, with two differences: it is written `0600` because it holds tokens, and it is not in the backup allowlist. Each entry records its cursor, its last result and where its bookmarks land, so a later source is only a parser. `GET /api/sources`, `PUT`/`DELETE /api/sources/{id}`, `POST /api/sources/{id}/run`.
+- **new** — **GitHub stars.** Pages through `GET /user/starred`, resumes from its cursor, and previews what it would write before writing it. The star date needs `Accept: application/vnd.github.star+json`, which changes the response shape, so the parser reads both.
+- **new** — **Raindrop.io**, and a *Sources* tab of its own between *Backups* and *Icons*. Named Sources rather than Import because *Backups & data* already has import buttons: those read a file once, these are places bookmarks keep coming from.
+- **new** — **Hacker News, YouTube and Mastodon**, none of which needs a token: `hnrss.org`, `youtube.com/feeds/videos.xml` and a Mastodon account's own RSS are public XML at a predictable address.
+- **fix** — **an import the screen never showed.** After writing stars the config called `this.dash.loadBookmarks?.()`, a method that exists nowhere in the codebase, and the optional call swallowed it. It is `refreshBookmarksAfterWrite()`, the path every other write in config takes.
+
+### Import and export
+
+- **new** — **the Netscape bookmark file, read and written in Go** (`bookmarks_netscape.go`). One format, thirty years old, that Chrome, Firefox, Safari and Edge all export, and that Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep all speak. `POST /api/bookmarks/import-html` takes the file itself and `GET /api/bookmarks/export-html` hands the collection back in it; folders become categories, and `ADD_DATE`, `TAGS` and the description survive the trip.
+- **new** — `parseBrowserBookmarks()` is gone from the config module. The browser posts the file whole, which is what lets the tags, notes and dates in an export arrive at all — reading them in the browser was pointless while the browser was still deciding what to send.
+- **new** — **Export bookmarks (HTML)** beside the CSV pair, through `writeFetch` rather than a plain `<a href>` so it carries the write token.
+- **fix** — **the CSV route dropped the tags and notes it promised.** The manual named that as the reason to prefer it over the browser file. `parseBookmarksCSV` had built rows with tags, note and shortcut since v1.0.2, but the request struct on `/api/bookmarks/import-browser` declared three fields and the rest fell on the floor.
+- **fix** — **the browser-import confirmation asked nothing.** *Are you sure? Import* — `browserImportConfirm` held the bare word in all four languages, and has since the initial commit, on the one dialog between a reader and two thousand rows. Its sibling `csvImportConfirm` had always carried `{n}`.
+- **fix** — **a folder whose name has no letters in it keeps its name.** `slugify` keeps `a-z0-9`, so 📚 or 读书 produced an empty id and the folder was skipped: no category, every bookmark inside uncategorised, and — because the edit form matches a bookmark's category against the page's list — uneditable afterwards.
+
+### Keeping a copy of a page
+
+- **new** — **Save Page Now** (`archive_save.go`). `POST /save` with an archive.org S3 key pair captures a page the day the bookmark is saved, rather than hoping somebody else captured it before it died. The job id is kept, so `archive_status.go` can answer what became of a capture.
+- **new** — **the CDX index** (`archive_cdx.go`), which answers with a row per capture and its status code. The availability API answers about any capture including the ones that archived a 404, which for a dead link is usually exactly what comes back. Reading CDX gives the health view the last capture that was a real page, and the date the web lost it.
+- **new** — **archive.today** (`archive_today.go`), through its Memento TimeMap. The two archives disagree by design: the Web Archive honours a `robots.txt` that turns it away and drops what a site later withdraws, archive.today keeps what it captured. For a link that died behind a paywall, *no copy* from the first is routinely not *no copy*. Its mirrors are not interchangeable and its capture URLs sit on a fourth domain over plain HTTP, both of which the client now expects.
+- **new** — **local copies through monolith** (`archive_monolith.go`): a whole page — text, styling and images — as one file in the data directory, so it stays readable when the site and the Web Archive are both gone.
+- **new** — **three surfaces for all of it.** *Config → Data & backups → Sources* gets a Web Archive panel with the switch, the key pair and a one-page test capture; a Local copies panel beside it; and *Config → Bookmarks → Local copies* lists what is on disk, grouped by the bookmark it belongs to. Copies whose bookmark is gone get a group of their own rather than disappearing.
+- **fix** — **the capture the health view could not find.** Reading CDX moved `url`, `timestamp` and `available` under a `snapshot` object while the health view still read them off the top level, so *recover from archive* stopped working without failing: HTTP 200, fields somewhere else.
+- **fix** — **the capture receipt was thrown away.** `archiveNewBookmark` discarded the job id, so a queued capture was indistinguishable from one the archive quietly refused.
+- **fix** — **what archive.org actually says.** Measured against the real service rather than a stub: no keys answers `401` with a JSON message, and keys it does not accept answer `403`. Both now reach the reader, with a retry.
+- **fix** — **a spent daily allowance arrives as HTTP 200.** A sixth capture of the same page in a day comes back looking like success. It reads as the refusal it is now.
+
+### Health
+
+- **new** — **check a service that wants you signed in** (`health_credentials.go`). A self-hosted service bookmarked at its web interface answers `401` to an anonymous check, so the row read broken while the service was fine, and the only way to stop that was to stop monitoring the bookmark most worth monitoring. Credentials are named and reusable, kept in their own `0600` file outside the backup allowlist, never handed back to a browser; the bookmark stores only an id.
+- **new** — **buttons on a downtime alert.** ntfy is the one configured service that can carry them, and only in its JSON form, so the topic is split back out of the configured address and the message is posted to the server root. Every button is a `view` action: an `http` one would carry a credential through a notification travelling over someone else's server. Priority follows the event — a failure above default so it breaks a quiet-hours rule, a recovery below it. An address for this install can be given under *Downtime alerts*; without it the button that would need it is left off.
+- **fix** — **a bot check is not a dead link.** Pew's linkrot study counts a page as gone only on the codes that say the page or the host no longer exists and treats the rest as unknown. That is the difference between a monitor people trust and one they switch off.
+
+### Cards and previews
+
+- **new** — **what a page says about itself.** The fetcher read a title, a description and an image; pages state a good deal more in their `<head>`. Publisher, author and publication date now reach the card, and the video providers' oEmbed discovery link gives a player that can be started from it. Third-party players are bounded with a named `frame-src` rather than a sandboxed `srcdoc`: the sandbox gives a null origin, which is why the first attempt drew a black rectangle.
+
+### Finding things
+
+- **new** — **the browser's address bar as a nextDash search box.** `#search?q=` runs the query the search overlay would run, and `/opensearch.xml` describes it to the browser. The query is captured at script load rather than read when the router runs: restoring the bookmarks view rewrites the hash to the page index during bootstrap, so a search arrived at from the address bar was gone by the time anything looked. The template is absolute and honours `X-Forwarded-Proto` and `X-Forwarded-Host`; a browser refuses a relative one, and an install behind a proxy would otherwise describe an address only the container can reach.
+
+### Telling other programs
+
+- **new** — **outgoing webhooks** (`webhooks.go`). A bookmark added, changed or removed, and a monitored bookmark going down or coming back, are pushed once to whoever subscribed. Signed with the Standard Webhooks scheme rather than one of our own — the receivers this is aimed at already verify it — over `{id}.{timestamp}.{payload}`, so a redelivery can be recognised and a replay refused. Keys live in `webhooks.json` at `0600` beside the health credentials, and travel back to the screen exactly once, in the answer to the save that generated them. A failure is retried twice with a growing gap; a 4xx is not retried at all.
+- **new** — **an MCP endpoint** (`mcp.go`), off unless switched on. One `POST /mcp` carrying JSON-RPC 2.0, four tools — search the collection, look one bookmark up, list the tags in use, add a bookmark. Adding delegates to the handler the browser posts to, so the duplicate check, the URL validation, the activity entry and the outgoing webhook cannot be forgotten in a second write path. `Origin` is checked, because a browser will POST to localhost from any site on the internet. Written against the standard library: what is needed is a JSON envelope, four tool descriptions and a switch.
+
+### Backups
+
+- **new** — **a backup carries the whole data directory.** Files had been left out one at a time, each for a reason that held alone — a trend re-records daily, a feed re-polls, a cache regenerates — until together they made a restore an install that had lost its history and had to earn it back over weeks. `health-trend.json` needs three days before its chart appears and thirty before the window it claims is real.
+- **new** — **two switches under *What a backup carries***: local copies, by far the largest thing in a backup, and the files that hold tokens. They read as *include* and are stored as *exclude*, so a settings file written before they existed keeps making the fuller backup rather than quietly thinning it. `importFileMode` restores `sources.json`, `health-credentials.json` and `webhooks.json` at `0600`, since a ZIP carries no permissions.
+
+### Config and the dashboard
+
+- **new** — **What's new opens on the release.** Measured at 1440×950: 283px of a 918px modal and 32% of the visible scroll area went to three bordered panels before the first word. The version is a headline, `modalLead` its subtitle, sections are an eyebrow with a count, and an item is a title with an explanation that folds at three lines. The `new`/`fix` chips are a filled and a hollow dot — they cost seven characters of a narrow column, and drew their tint from `--accent-success`, which equals `--accent-primary` on a green accent. Older releases are one row each, opened on request, which replaced a lazy loader that appended whole releases as you scrolled and a "scroll for 49 more releases" hint sitting between two that were already on screen. The 50-release cap went with it.
+- **new** — **the panels on *Sources* and *Backups & data* fold.** Native `<details>`, so the keyboard behaviour comes for free; sources all shut, backups with the Backup panel open since that is why the tab gets opened. Fold state is remembered, because `<details>` state is DOM state and a repaint would otherwise shut what somebody is working in.
+- **new** — **progress on the actions that take time.** Refreshing link previews is one page fetch per bookmark — 1.3 seconds against eight seeded bookmarks, so well over a minute for a real collection — and it ran as one request with no feedback and a proxy free to time it out halfway.
+- **fix** — **the Widgets tab is laid out.** It was built on the shared `.config-crud-row`, a flex line with no wrap, and the settings panel carried `grid-column`, which does nothing there: the type name landed on the shown toggle and the panel opened beside the row instead of under it. Also `this.escape` does not exist on `DashboardConfig` — it is `this.dash.escapeHtml` — so the settings panel threw and the whole tab render died silently.
+- **fix** — **one list arranges the page.** The second category list in config still reordered the category array, which nothing has read for placement since `blockOrder` became the single order.
+
+### Appearance
+
+- **new** — **a new install starts with the button bar in the bottom-right corner.** It began centred above the bookmarks, floating over the thing people open the dashboard to look at. Only for a settings file that never named a position; anyone who chose one keeps it.
+
+### Security
+
+A pass over the features above, after they were in. Seven findings, all of them an address or a secret reaching somewhere it was not meant to.
+
+- **fix** — **the API answers this dashboard, not every page on the internet.** `Access-Control-Allow-Origin: *` was the default, and the read routes need no token: any site open in a tab could ask a nextDash on a guessable LAN address for the whole collection. The default is now same-origin, with an exception for extension origins — a Manifest V3 extension with host permissions is granted cross-origin access by the browser with CORS never entering into it, so refusing the header would not stop one and allowing it does not enable one that lacks the permission. `NEXTDASH_CORS_ORIGINS=*` restores the old behaviour in one value, and a value that names nothing usable now means nothing rather than falling through to the wildcard.
+- **fix** — **the webhook list answered a GET before checking the write token.** An endpoint URL is not a description of a webhook, it is the webhook: a receiver acts on whatever posts to it.
+- **fix** — **webhook delivery goes through the guarded client**, with zero redirects. The URL is checked against the SSRF rules when it is saved, but a name is resolved again at delivery, so a receiver that answers `302` reached an address the save had refused.
+- **fix** — **a stored health credential does not follow a redirect off its host.** `net/http` copies headers onto the redirect it follows, so a monitored host answering `302` received the install's API key at whatever address it named. The headers are stripped at the host boundary rather than the redirect refused, so a service that legitimately redirects to a login host is still checked, anonymously. Custom widgets follow the same rule.
+- **fix** — **a custom widget's `url` and `credentialId` are withheld** from the page-blocks route unless the request carries the token. The route is open because the dashboard has to draw the tiles, and the tile fetches by widget id precisely so the browser never holds the address.
+- **fix** — **`refresh=1` on the custom-widget route is behind the token.** It skips the cache including the short TTL a failure gets, so an open dashboard could become a retry loop against somebody else's service with a stored credential on every request.
+- **fix** — **saving blocks to a page id that does not exist** minted a block list nothing could draw and reported a missing page as a server fault. A page's widgets are also capped at twenty-four on read: the body limit bounds the bytes, not the number of blocks the grid then draws on every render.
+- **fix** — **`/opensearch.xml` varies by proxy header and points at an icon that exists.** It named `/data/icons/favicon.png`, a path nextDash never writes, so browsers drew the search entry without one; it asks `manifestIcons` now. Without `Vary`, a shared cache would hand one browser a template built from another's claimed host.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.0.json`, the `index.json` entry, both hand-written tokens in `static/js/whats-new-stub.js` (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION`), the constants spec `tests/whats-new-hidden-release.spec.js`, this changelog, `README.md`, `MANUAL.md`, the Config → Help prose in all four locales, and the spotlight entries in `static/data/overview-features.json` that feed Config → Overview and About → News & features.
+- `v1.3.3.5` was released from `dev` while this branch was open; its changelog section, manual paragraph and README line were merged across rather than taken wholesale, since this branch had rewritten the CORS documentation in both.
+- The Unraid template points `<Registry>` at the package page rather than the source repository, and carries a `<Date>` the Community Applications feed can sort on.
+- `go generate ./...` for the changed CSS, JS and locales.
 
 ---
 
