@@ -1101,12 +1101,81 @@ Two things worth knowing:
 ### Themes
 
 - **A fresh install starts on Retro CRT** — green phosphor on near-black, with the light variant of the same pair for daytime, since auto dark mode is on out of the box. Existing dashboards keep whatever theme they already have; the default only decides where a brand-new install begins.
-- 74 built-in families (dark/light pairs), including twenty-three new pairs from **v2026.09.08.2** — Blueprint, Static Noise, Signal Flare, Bone China, Peacock, Tyrian, Absinthe, and sixteen more — and twenty from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
+- **107 built-in families (dark/light pairs), 214 variants** — thirty-three added in **v1.4.0**: Rosé Pine, City Lights, Tomorrow Dusk, Cobalt Ink, Iceberg Drift, Owl Hours, Polar Night, Zen Ember, Great Wave, Bamboo Panda, Synth Sunset, Andromeda Drift, Cosmic Editor, Deep Lagoon, Editor Default, Forest Everglade, Fox Night, Hermetic Teal, Horizon Glow, Jungle Neon, Mirage Sand, Moonlit Steel, Oceanic Steel, Pale Night, Pastel Mountain, Retro Groove, Slate One, Solar Flats, Vampire Castle, Velocity Ink, Violet Shades, Vivid Hyper and Commit Grey. Before them, twenty-three pairs from **v2026.09.08.2** — Blueprint, Static Noise, Signal Flare, Bone China, Peacock, Tyrian, Absinthe, and sixteen more — and twenty from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
 - **config → appearance → custom themes** — build, edit, and delete your own palettes. **Export** writes a palette to a `.json`; **Import** reads one back as a new theme (**v1.0.2**), so a palette built on one machine can be carried to another, or shared, without a full ZIP restore. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own). Since **v2026.09.08.2** the list previews as you move through it: arrow keys or the mouse apply each theme to the dashboard behind the config view, and nothing is saved until you press Enter or click one. **Esc**, a click elsewhere, or moving focus away puts back the theme you started with, so browsing the list can never leave you somewhere you did not choose.
 - **Random theme** (**v2026.07.26**) — under **config → appearance → Theme**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health, or when switching dashboard pages — tabs, `1`–`9`, swipe, or hash; **v2026.07.26.2**). Each rotate picks a different theme from the pool when more than one is eligible (**v2026.07.26.3**). A **Currently showing** hint names the active theme while random is on. If random is on and you pick a different saved theme, your choice is stored but the display keeps rotating until you turn random off — a toast confirms this (**v2026.07.26.3**), including from `:theme` in search. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. The first desktop visit to Appearance may show a one-time popover pointing at this control (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** — the button stays fixed while the card appears.
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
 - **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. Changes apply live on the bookmark grid without a reload; stays enabled when a custom theme is active; and with **Random theme** on, it is one shared setting for the whole rotation instead of resetting each time the pool picks a new theme (**v2026.07.26.3**). **New installs start with it on** (Muted, intensity 0.5) for both variants of the default theme; existing dashboards keep whatever they had.
+
+### The theme browser (v1.4.0)
+
+**Config → Appearance → Theme** opens a grid rather than a list. Until v1.4.0
+the 214 built-in themes arrived as a listbox of 214 alphabetically sorted lines
+— which puts *City Lights [dark]* twenty positions away from *City Lights
+[light]*, tells you nothing about what any of them look like, and cannot be
+searched. At that size a list stops being navigation.
+
+- **One card per family**, with a light/dark switch on the card. That turns 214
+  items into 107, and makes visible the pairing that *Follow system dark mode*
+  already relies on: a family is exactly what auto dark mode swaps between.
+- **Search** by name, and **segments** for *All*, *Favourites*, *Light* and
+  *Dark*.
+- **A star per family** builds your own shortlist, kept in the order you starred
+  them, so the handful you actually use are one click away rather than a scroll.
+- **The preview is unchanged.** Moving through the grid applies each theme to
+  the real dashboard behind the config view, and leaving without choosing puts
+  back the one you started on. Nothing is saved until you pick.
+
+### Depth and backdrop (v1.4.0)
+
+A theme declares thirteen colours, and only two of them are surfaces. Two
+surfaces cannot express depth, which is why every view used to end up flat: a
+card, a panel and a control were all painted the same colour, and only a border
+said where one stopped and the next began.
+
+Rather than ask 107 themes — and every custom theme anybody has ever made — for
+more colours, a second layer is *derived* from the ones a theme already
+declares.
+
+**Config → Appearance → Depth** decides how much of it is drawn:
+
+| Setting | What you get |
+|---|---|
+| **Flat** | The dashboard exactly as it was before any of this existed |
+| **Soft** | A slight tint in the greys, a surface ladder, a gentle sheen on cards |
+| **Rich** | The same, more of it — the default for a new install |
+
+*Flat* exists so that preferring the old look is one control rather than a
+reason not to upgrade.
+
+Two other things come with it:
+
+- **A wash of light behind the page.** Two large, soft radial gradients in the
+  theme's own accent and warning hues, at 7% and 5% scaled by the depth setting.
+  At that strength it is not a visible gradient — it is the page no longer being
+  one flat rectangle. Two related hues are used rather than one because a single
+  hue reads as a mistake and two read as light.
+- **A backdrop pattern**: **dots**, **grid**, **lines**, **hatch** or **none**,
+  set under **Config → Appearance → Display**. Left on **auto** the theme
+  decides — most ask for dots, and the handful whose texture is part of what
+  they are ask for something else.
+
+If you have set a **background image or gradient** of your own, it wins: the
+washes switch off entirely, because a background you chose was chosen *instead*
+of this rather than on top of it.
+
+### Every theme's own accent (v1.4.0)
+
+The accent colour — the focus ring, the active tab, the hovered row, the bar on
+a chart — used to be the theme's *success* colour, because there had only ever
+been one accent and that was it. The result was that every install accented
+green or teal whatever the theme was called: *this link answers* and *this is a
+Mulberry Silk install* were the same value.
+
+All 214 variants now carry an accent of their own. A custom theme made before
+v1.4.0 keeps accenting in its success colour rather than losing its accent
+altogether, so nothing you built changes underneath you.
 
 ### Config → pages & categories (list tabs)
 
@@ -1358,6 +1427,31 @@ rather than asking for the capture nearest to now — that one answers about *an
 capture, including one that archived a 404, which for a dead link is usually
 exactly what comes back. Reading the index gives the last capture that was a real
 page, and with it the date the page stopped being one.
+
+### Three slow jobs on a whole selection (v1.4.0)
+
+Tick rows in the health view and the bulk bar offers three actions that fetch a
+page rather than read the report:
+
+| Action | What it does |
+|---|---|
+| **Rebuild previews** | Asks each page again for its title, description, image and the rest |
+| **Refresh favicons** | Fetches each site's icon and stores it |
+| **Save a copy on this disk** | Keeps a full copy of each page locally (see §17) |
+
+Each was already on a single row's own menu, which is where the tedium was: a
+filter that finds forty bookmarks with no preview is exactly the case for doing
+them all at once.
+
+They run **one request at a time**, behind a bar that counts — *12 of 40*. That
+is not caution about nextDash's own load: each one fetches a page belonging to
+somebody else, and twenty simultaneous requests from one client is a burst a
+small server reads as an attack. One row failing never ends the run; the total
+at the end says how many were done and how many were not.
+
+Saving copies asks first and names the count, because it is minutes rather than
+seconds. If monolith is not installed the run stops on the first row and says so,
+rather than spending those minutes proving the same thing forty times.
 
 ### Browser notifications
 

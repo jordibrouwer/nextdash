@@ -2,8 +2,33 @@
   "tag": "v1.4.0",
   "date": "27 August 2026",
   "releasedAt": "2026-08-27",
-  "modalLead": "Where bookmarks come from, where copies of them are kept, and what nextDash can tell the rest of your machine — plus a dashboard that can show more than links.",
+  "modalLead": "A theme engine rebuilt from the ground up: a browser to find themes in rather than a list of 214 lines, every theme given its own accent, depth and backdrop, and thirty-three new ones. Alongside it — where bookmarks come from, where copies of them are kept, and what nextDash can tell the rest of your machine.",
   "sections": [
+    {
+      "title": "Themes, rebuilt",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme browser, instead of a list of 214 lines.</strong> The picker was a listbox sorted alphabetically, which puts a theme twenty positions away from its own other half, shows you nothing of what any of them look like, and cannot be searched. At that size a list is not navigation. It is a grid of cards now — one per family with a light/dark switch on it, so 214 becomes 107 — with a search box, filters for <em>light</em>, <em>dark</em> and <em>favourites</em>, and a star so the handful you actually use are one click away. The live preview on the real dashboard is unchanged: move through the grid and the page follows, leave without choosing and your old theme comes back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every theme has its own colour again.</strong> A theme's accent — the focus ring, the active tab, the hovered row — was its <em>success</em> colour, because there was only ever one accent and that was it. So every install accented green or teal whatever the theme was called: <em>this link answers</em> and <em>this is a Mulberry Silk install</em> were the same value. All 214 variants now carry an accent of their own."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The page is no longer one flat rectangle.</strong> A theme declares thirteen colours, two of which are surfaces — and two surfaces cannot express depth, so a card, a panel and a control were all painted the same and only a border said where one stopped. A second layer is now derived from what a theme already declares: a tint in its greys, a ladder of surfaces a card can sit on, and two large, soft washes of light behind the page in the theme's own colours. <em>Config → Appearance</em> offers <em>flat</em>, <em>soft</em> and <em>rich</em>; <em>flat</em> is the dashboard exactly as it was, so liking the old look is one control rather than not upgrading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Backdrops beyond dots.</strong> The texture behind your bookmarks can be dots, a grid, lines or hatching — or nothing at all. Left on <em>auto</em> the theme decides: most ask for dots, and the handful whose texture is part of what they are ask for something else. A background image of your own still wins over all of it, because a background you chose was chosen instead of this, not on top of it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Thirty-three new themes.</strong> <em>Rosé Pine</em>, <em>City Lights</em>, <em>Tomorrow Dusk</em>, <em>Cobalt Ink</em>, <em>Iceberg Drift</em>, <em>Owl Hours</em>, <em>Polar Night</em>, <em>Zen Ember</em>, <em>Great Wave</em>, <em>Bamboo Panda</em>, <em>Synth Sunset</em> and twenty-two more, each in a light and a dark variant. That brings it to 107 families, 214 variants."
+        }
+      ]
+    },
     {
       "title": "Widgets on the dashboard",
       "items": [
@@ -129,6 +154,10 @@
         {
           "badge": "fix",
           "text": "<strong>A bot check is not a dead link.</strong> A site asking <em>are you a robot</em> was counted as gone. Only the answers that actually say the page or the host no longer exists count now; the rest read as unknown."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Three slow jobs, done to a whole selection.</strong> Tick rows in the health view and <em>Rebuild previews</em>, <em>Refresh favicons</em> and <em>Save a copy on this disk</em> act on all of them. Each was already on a single row's menu, which is where the tedium was: a filter that finds forty bookmarks with no preview is exactly the case for doing them at once. They run one at a time with a bar that counts, since each one fetches a page belonging to somebody else."
         }
       ]
     },

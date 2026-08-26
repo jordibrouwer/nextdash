@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureThemeEngineTitle",
+      "titleFallback": "A theme browser, and every theme rebuilt",
+      "whatKey": "config.overviewNewFeatureThemeEngineWhat",
+      "whatFallback": "There are 214 built-in themes and they arrived as a listbox of 214 alphabetically sorted lines — which puts a theme twenty positions from its own other half, shows nothing of what any of them look like, and cannot be searched. At that size a list is not navigation.",
+      "howKey": "config.overviewNewFeatureThemeEngineHow",
+      "howFallback": "It is a grid of cards now: one per family with a light/dark switch on it, so 214 becomes 107, with search, segments for light, dark and favourites, and a star per family. Behind it every theme has been given an accent of its own instead of borrowing the success colour, a depth layer so a card sits on a surface rather than beside a border, and an improved backdrop you can set to dots, grid, lines or hatch. Thirty-three new families came with it.",
+      "enableKey": "config.overviewNewFeatureThemeEngineEnable",
+      "enableFallback": "Nothing to switch on. Depth starts on rich and flat is the dashboard exactly as it was, so the old look is one control away.",
+      "ctaKey": "config.overviewNewFeatureThemeEngineCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthBulkFetchTitle",
+      "titleFallback": "Three slow jobs, done to a whole selection",
+      "whatKey": "config.overviewNewFeatureHealthBulkFetchWhat",
+      "whatFallback": "Rebuilding a preview, refreshing a favicon and keeping a copy of a page on disk were each on a single row's menu. A filter that finds forty bookmarks with no preview is exactly the case for doing them at once.",
+      "howKey": "config.overviewNewFeatureHealthBulkFetchHow",
+      "howFallback": "Tick rows in the health view and the bulk bar offers all three. They run one request at a time behind a bar that counts, because each fetches a page belonging to somebody else. Saving copies asks first and names how many, since that one is minutes rather than seconds.",
+      "enableKey": "config.overviewNewFeatureHealthBulkFetchEnable",
+      "enableFallback": "Nothing to switch on. Saving a copy needs monolith installed; the run says so on the first row rather than failing forty times.",
+      "ctaKey": "config.overviewNewFeatureHealthBulkFetchCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.4.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWidgetsTitle",
       "titleFallback": "Your dashboard can show more than links",
       "whatKey": "config.overviewNewFeatureWidgetsWhat",
