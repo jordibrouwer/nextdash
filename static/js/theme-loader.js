@@ -3,6 +3,21 @@
 (function() {
     'use strict';
 
+    /*
+     * The theme a dashboard falls back to when nothing has said otherwise.
+     *
+     * The same id as defaultThemeID in models.go, and it has to be: this file
+     * runs synchronously in <head> to decide the first paint, so whenever it
+     * disagrees with the server the app has two defaults and shows whichever
+     * one got there first. It disagreed until now -- six places here reached
+     * for a bare 'dark', which is a real theme of its own and not the one a
+     * fresh install is given, so "the default is Retro CRT" was true of the
+     * server and false of the page in every case where the stored choice was
+     * missing: a device with device-specific settings on and no theme in them,
+     * or a shell served without the data-theme attribute filled in.
+     */
+    const DEFAULT_THEME = 'retro-crt-dark';
+
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
         cyberpunk: 'neon-grid-dark',
@@ -36,7 +51,7 @@
     let sessionRandomTheme = null;
 
     function normalizeTheme(theme) {
-        if (!theme) return 'dark';
+        if (!theme) return DEFAULT_THEME;
         return LEGACY_THEME_MAP[theme] || theme;
     }
 
@@ -93,7 +108,7 @@
             return sessionRandomTheme;
         }
         const effectivePool = filterPoolForAutoDark(pool, autoDarkMode);
-        sessionRandomTheme = pickRandomFromPool(effectivePool) || 'dark';
+        sessionRandomTheme = pickRandomFromPool(effectivePool) || DEFAULT_THEME;
         return sessionRandomTheme;
     }
 
@@ -110,7 +125,7 @@
         const effectivePool = filterPoolForAutoDark(pool, autoDarkMode);
         sessionRandomTheme = pickRandomFromPool(effectivePool, previous)
             || pickRandomFromPool(effectivePool)
-            || 'dark';
+            || DEFAULT_THEME;
         return sessionRandomTheme;
     }
 
@@ -130,7 +145,7 @@
      * on refresh is enabled. Does not apply auto-dark pairing.
      */
     function getEffectiveBaseTheme(parsedSettings, storedTheme) {
-        const normalizedStored = normalizeTheme(storedTheme || 'dark');
+        const normalizedStored = normalizeTheme(storedTheme || DEFAULT_THEME);
         const mode = themeUtils().normalizeRandomThemeMode(parsedSettings);
         if (mode === 'off') {
             return normalizedStored;
@@ -169,14 +184,14 @@
      */
     function getTheme() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let storedTheme = 'dark';
+        let storedTheme = DEFAULT_THEME;
         let parsedSettings = null;
         let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
         
         if (deviceSpecific) {
             parsedSettings = readDeviceLocalSettings();
             if (parsedSettings) {
-                const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
+                const normalizedTheme = normalizeTheme(parsedSettings.theme || DEFAULT_THEME);
                 storedTheme = normalizedTheme;
                 autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
 
