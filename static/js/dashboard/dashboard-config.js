@@ -15371,6 +15371,9 @@ class DashboardConfig {
             if (setting) {
                 const index = indexOn(setting, 'data-widget-index');
                 this.updateWidgetDraft(index, setting);
+                if (setting.getAttribute('data-widget-setting') === 'url') {
+                    this.restorePresetPath(index, setting);
+                }
                 this.refreshWidgetSaveBar(index);
                 return;
             }
@@ -15615,6 +15618,11 @@ class DashboardConfig {
         if (!preset || !draft) return;
 
         Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
+        // Remembered on the draft and never stored: it is not a property of
+        // the widget -- a preset is a starting position, not a kind -- but for
+        // as long as this panel is open it is what lets the address keep the
+        // path when the sample host is replaced.
+        draft.presetId = preset.id;
         if (preset.auth === 'header') {
             draft.auth = { kind: 'header', headerName: preset.authName || '', basicUser: '' };
         } else if (preset.auth === 'basic') {
@@ -15632,6 +15640,42 @@ class DashboardConfig {
                 .replace('{name}', preset.name)
                 .replace('{note}', preset.note);
         this.notify(note, 'info');
+    }
+
+    /*
+     * Put a preset's path back when the address was retyped without it.
+     *
+     * A preset fills in a whole address: a sample host, and the path its API
+     * actually answers on. Replacing the sample host is then the obvious next
+     * move -- and typing an address by hand ends at the host, so the path the
+     * preset contributed is the part that gets lost. The widget then asks the
+     * service for its front page, which answers 200 with HTML, and the failure
+     * reads as "not JSON" rather than as a path that is missing.
+     *
+     * Only while a preset is active on this draft, and only when what is there
+     * names no path of its own: an address deliberately pointed somewhere else
+     * is left exactly as it was typed.
+     */
+    restorePresetPath(index, input) {
+        const catalogue = window.DashboardWidgetPresets;
+        const draft = this.widgetDraft(index, { create: false });
+        const preset = draft?.presetId ? catalogue?.byId?.(draft.presetId) : null;
+        if (!preset || typeof catalogue.hasPath !== 'function') return;
+
+        const typed = String(draft.config.url || '').trim();
+        if (!typed || catalogue.hasPath(typed)) return;
+        const restored = catalogue.addressFor(preset, typed);
+        if (!restored || restored === typed) return;
+
+        draft.config.url = restored;
+        input.value = restored;
+        // Said rather than done quietly: the box someone just typed in has
+        // changed under them, and an unexplained edit reads as the field
+        // refusing what was entered.
+        this.notify(this.t('config.widgetPresetPathKept',
+            '{name} answers on {path}, so that was put back on the address.')
+            .replace('{name}', preset.name)
+            .replace('{path}', preset.path), 'info');
     }
 
     /** Throw the draft away and draw what is stored. */

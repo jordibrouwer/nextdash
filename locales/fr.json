@@ -5154,6 +5154,7 @@
     "widgetPresetGroup.apps": "Applications",
     "widgetPresetApplied": "{name} rempli. Reste à faire : {note}",
     "widgetPresetNoAuth": "{name} est prêt — aucun identifiant nécessaire.",
+    "widgetPresetPathKept": "{name} répond sur {path}, cela a donc été remis dans l'adresse.",
     "widgetAuthNone": "Rien — demander anonymement",
     "widgetAuthHeader": "Une clé d'API",
     "widgetAuthBasic": "Un nom d'utilisateur et un mot de passe",

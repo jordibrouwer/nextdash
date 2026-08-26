@@ -5154,6 +5154,7 @@
     "widgetPresetGroup.apps": "Apps",
     "widgetPresetApplied": "{name} filled in. Still to do: {note}",
     "widgetPresetNoAuth": "{name} is ready — no credential needed.",
+    "widgetPresetPathKept": "{name} answers on {path}, so that was put back on the address.",
     "widgetAuthNone": "Nothing — ask anonymously",
     "widgetAuthHeader": "An API key",
     "widgetAuthBasic": "A username and password",

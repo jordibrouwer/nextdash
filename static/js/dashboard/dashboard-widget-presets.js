@@ -393,16 +393,52 @@
      * makes moving a widget from Sonarr to Radarr on the same box a single
      * choice rather than a retype.
      */
+    /*
+     * The scheme and authority of an address, exactly as it was written.
+     *
+     * Not `new URL(x).origin`, which normalises a port away when it is the
+     * scheme's default: `http://box:80` comes back as `http://box`, and
+     * `https://box:443` as `https://box`. Both address the same service, so
+     * nothing breaks -- but a port typed on purpose disappearing from the box
+     * it was typed into reads as the field refusing what was entered. Taken
+     * from the text so what someone wrote is what they keep.
+     *
+     * Parsed with URL first all the same: this returns the literal authority,
+     * and it should only do so for something that is an address at all.
+     */
+    function originOf(raw) {
+        try {
+            new URL(raw);
+        } catch (_error) {
+            return null;
+        }
+        const match = /^([a-z][a-z0-9+.-]*:)\/\/([^/?#]+)/i.exec(raw);
+        return match ? `${match[1]}//${match[2]}` : null;
+    }
+
+    /*
+     * Whether an address already names something past its host.
+     *
+     * A bare trailing slash does not count: `http://box/` and `http://box`
+     * reach the same front page, and someone who typed either meant the host
+     * rather than a path. A query does count -- nobody types one by accident.
+     */
+    function hasPath(raw) {
+        try {
+            const parsed = new URL(raw);
+            return parsed.pathname !== '/' || parsed.search !== '';
+        } catch (_error) {
+            return false;
+        }
+    }
+
     function addressFor(preset, current) {
         const base = String(current || '').trim();
         if (base) {
-            try {
-                const parsed = new URL(base);
-                return `${parsed.origin}${preset.path}`;
-            } catch (_error) {
-                // Not a URL yet — fall through to the sample rather than
-                // pasting a path onto something that is not an address.
-            }
+            const origin = originOf(base);
+            if (origin) return `${origin}${preset.path}`;
+            // Not a URL yet — fall through to the sample rather than
+            // pasting a path onto something that is not an address.
         }
         return `${preset.sample}${preset.path}`;
     }
@@ -421,5 +457,5 @@
         return PRESETS.find((preset) => preset.id === String(id)) || null;
     }
 
-    window.DashboardWidgetPresets = { GROUPS, PRESETS, byId, configFor, addressFor };
+    window.DashboardWidgetPresets = { GROUPS, PRESETS, byId, configFor, addressFor, hasPath };
 })();

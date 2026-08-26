@@ -5154,6 +5154,7 @@
     "widgetPresetGroup.apps": "Apps",
     "widgetPresetApplied": "{name} ingevuld. Nog te doen: {note}",
     "widgetPresetNoAuth": "{name} is klaar — er is geen inlog nodig.",
+    "widgetPresetPathKept": "{name} antwoordt op {path}, dus dat is weer aan het adres toegevoegd.",
     "widgetAuthNone": "Niets — anoniem opvragen",
     "widgetAuthHeader": "Een API-sleutel",
     "widgetAuthBasic": "Een gebruikersnaam en wachtwoord",

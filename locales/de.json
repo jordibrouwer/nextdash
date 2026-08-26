@@ -5154,6 +5154,7 @@
     "widgetPresetGroup.apps": "Apps",
     "widgetPresetApplied": "{name} ausgefüllt. Noch zu tun: {note}",
     "widgetPresetNoAuth": "{name} ist bereit — keine Zugangsdaten nötig.",
+    "widgetPresetPathKept": "{name} antwortet auf {path}, daher wurde das wieder an die Adresse angehängt.",
     "widgetAuthNone": "Nichts — anonym abfragen",
     "widgetAuthHeader": "Ein API-Schlüssel",
     "widgetAuthBasic": "Ein Benutzername und Passwort",
