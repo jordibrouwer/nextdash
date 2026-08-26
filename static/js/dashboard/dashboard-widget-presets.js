@@ -446,6 +446,9 @@
     /** Everything a preset writes into a widget's config, in one object. */
     function configFor(preset, current) {
         return {
+            // Which service this was started from, kept so the panel can say
+            // so when it is opened again rather than looking untouched.
+            presetId: preset.id,
             url: addressFor(preset, current),
             method: 'GET',
             ttl: Number(preset.ttl) || 300,

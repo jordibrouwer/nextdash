@@ -159,6 +159,17 @@ var widgetFields = map[WidgetType][]widgetField{
 	WidgetTypeCustom: {
 		{Key: "url", Kind: "url"},
 		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
+		/*
+		 * presetId records which service this widget was started from.
+		 *
+		 * Nothing reads it to decide behaviour -- the address and the figures
+		 * are what the widget acts on, and they stay editable afterwards. It
+		 * is stored so the panel can say what it was started from when it is
+		 * opened again, and so the address keeps that service's path when the
+		 * sample host is replaced. Without it both are forgotten the moment
+		 * the panel closes.
+		 */
+		{Key: "presetId", Kind: "string"},
 		{Key: "credentialId", Kind: "string"},
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},

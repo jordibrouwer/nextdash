@@ -14820,10 +14820,17 @@ class DashboardConfig {
         if (!catalogue?.PRESETS?.length) return '';
 
         const id = `widget-${index}-preset`;
+        // What this widget was started from, if anything. Shown as the
+        // selection rather than reset to nothing: a panel that has clearly
+        // been filled in by Sonarr and says "Choose a service" reads as though
+        // the choice did not take.
+        const chosen = String(this.widgetDraft(index)?.config?.presetId
+            || widget?.config?.presetId || '');
         const groups = catalogue.GROUPS.map(([group, title]) => {
             const options = catalogue.PRESETS
                 .filter((preset) => preset.group === group)
-                .map((preset) => `<option value="${esc(preset.id)}">${esc(preset.name)}</option>`)
+                .map((preset) => `<option value="${esc(preset.id)}"${
+                    preset.id === chosen ? ' selected' : ''}>${esc(preset.name)}</option>`)
                 .join('');
             return options
                 ? `<optgroup label="${esc(this.t(`config.widgetPresetGroup.${group}`, title))}">${options}</optgroup>`
@@ -14840,8 +14847,8 @@ class DashboardConfig {
                 <div class="config-widget-field">
                     <label for="${id}">${esc(this.t('config.widgetPresetPick', 'Service'))}</label>
                     <select id="${id}" class="config-select" data-widget-preset="${index}">
-                        <option value="">${esc(this.t('config.widgetPresetNone',
-                            'Choose a service…'))}</option>
+                        <option value=""${chosen ? '' : ' selected'}>${esc(
+                            this.t('config.widgetPresetNone', 'Choose a service…'))}</option>
                         ${groups}
                     </select>
                 </div>
@@ -15338,12 +15345,20 @@ class DashboardConfig {
 
             const preset = target.closest('[data-widget-preset]');
             if (preset) {
-                const chosen = preset.value;
-                // Reset immediately: the picker is an action, not a setting.
-                // Left showing the last choice it would read as "this widget is
-                // a Sonarr widget", which is exactly what presets are not.
-                preset.value = '';
-                if (chosen) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), chosen);
+                /*
+                 * The choice stays on the picker.
+                 *
+                 * It was cleared here on the grounds that a preset is a
+                 * starting position rather than a kind of widget, which is
+                 * true of what the widget does and wrong about what the screen
+                 * says: a panel holding Sonarr's address, Sonarr's three
+                 * figures and Sonarr's header, above a picker reading "Choose
+                 * a service", reads as a choice that did not take. What it is
+                 * a record of is where this widget started, and the note above
+                 * it already says everything stays editable afterwards.
+                 */
+                const picked = preset.value;
+                if (picked) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), picked);
                 return;
             }
 
@@ -15617,12 +15632,9 @@ class DashboardConfig {
         const draft = this.widgetDraft(index);
         if (!preset || !draft) return;
 
+        // configFor writes presetId along with the address and the figures, so
+        // what the panel was started from survives being saved and reopened.
         Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
-        // Remembered on the draft and never stored: it is not a property of
-        // the widget -- a preset is a starting position, not a kind -- but for
-        // as long as this panel is open it is what lets the address keep the
-        // path when the sample host is replaced.
-        draft.presetId = preset.id;
         if (preset.auth === 'header') {
             draft.auth = { kind: 'header', headerName: preset.authName || '', basicUser: '' };
         } else if (preset.auth === 'basic') {
@@ -15659,7 +15671,11 @@ class DashboardConfig {
     restorePresetPath(index, input) {
         const catalogue = window.DashboardWidgetPresets;
         const draft = this.widgetDraft(index, { create: false });
-        const preset = draft?.presetId ? catalogue?.byId?.(draft.presetId) : null;
+        // Read from the config rather than from a field on the draft: stored
+        // there, it still knows the service after the panel has been closed
+        // and opened again, which is exactly when someone retypes an address.
+        const startedFrom = draft?.config?.presetId;
+        const preset = startedFrom ? catalogue?.byId?.(startedFrom) : null;
         if (!preset || typeof catalogue.hasPath !== 'function') return;
 
         const typed = String(draft.config.url || '').trim();
@@ -15773,6 +15789,30 @@ class DashboardConfig {
         this.repaintWidgetsBody();
         await this.refreshDashboardBlocks();
         this.notify(this.t('config.widgetSavedNotice', 'Widget saved.'), 'success');
+    }
+
+    /*
+     * Rename one widget.
+     *
+     * Written straight through rather than into the draft, for the same reason
+     * the Shown toggle is: a title is a property of the block in the list, not
+     * of the settings panel, and it has its own box on the row whether that
+     * panel is open or not. Holding it in the draft would mean a rename could
+     * only be saved by pressing Save on a panel the reader may never open.
+     *
+     * No repaint afterwards. The row is redrawn from _widgetBlocks the next
+     * time anything paints, and repainting here would replace the box the
+     * reader has just typed in while the caret is still in it.
+     */
+    async renameWidget(index, title) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        const next = String(title || '').trim();
+        if (next === String(blocks[index].title || '')) return;
+        blocks[index] = { ...blocks[index], title: next };
+        this._widgetBlocks = blocks;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        await this.refreshDashboardBlocks();
     }
 
     /** Remove the entry a widget minted for itself, leaving shared ones alone. */
