@@ -146,6 +146,9 @@ class DashboardConfig {
         this._bmCategoriesCache = new Map();
         // Statistics: undefined while the health fetch is in flight, null on failure.
         this._statsHealth = undefined;
+        // Same contract for the counts that are not bookmarks — widgets, feeds,
+        // sources, trash, backups.
+        this._statsLibrary = undefined;
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
@@ -626,11 +629,15 @@ class DashboardConfig {
     }
 
     loadStatsTabData(tab, { all = false } = {}) {
+        // Category names, for the panels and the CSV that label by name. Not
+        // gated on a tab: the export button sits in the foot of every one.
+        void this.prefetchAllBookmarkCategories();
         // History is cheap and every tab can use it, so it is not gated on one.
         if (this._statsTrend === undefined) void this.loadStatsTrend();
         if ((all || tab === 'inbox') && this._statsInboxItems === undefined) void this.loadStatsInbox();
         if ((all || tab === 'activity') && this._statsFinders === undefined) void this.loadStatsFinders();
         if ((all || tab === 'health') && this._statsHealth === undefined) void this.loadStatsHealth();
+        if ((all || tab === 'content') && this._statsLibrary === undefined) void this.loadStatsLibrary();
     }
 
     /**
@@ -4200,7 +4207,7 @@ class DashboardConfig {
         const when = new Date(stamp);
         const title = when.toLocaleString();
 
-        const time = when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        const time = window.NextDashClock.formatTime(when, this.dash.settings);
         const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
         const days = Math.round((startOfDay(new Date()) - startOfDay(when)) / 86400000);
 
@@ -5170,13 +5177,11 @@ class DashboardConfig {
         }).join('');
     }
 
-    /** Clock time for a log line, in the browser's locale like the other dates. */
+    /** Clock time for a log line, on the reader's own clock like every other. */
     formatLogTime(iso) {
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return '';
-        return d.toLocaleTimeString(undefined, {
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-        });
+        return window.NextDashClock.formatTime(d, this.dash.settings, { seconds: true });
     }
 
     /**
@@ -17548,12 +17553,29 @@ class DashboardConfig {
         return labels.get(composite) || `${this.pageLabel(b.pageId)} · ${id}`;
     }
 
+    /*
+     * Every page's categories, so a label can be a name rather than an id.
+     *
+     * Two sections need this, not one. The bookmarks list needs it for its
+     * filters; Statistics needs it because its category panels and its CSV
+     * export label by name, and knownCategories() falls back to the raw id for
+     * any page whose categories are not cached. That made the labels depend on
+     * where the reader had been: straight to Statistics gave "dev" and "docs",
+     * the same visit after opening Bookmarks gave "work · Development" and
+     * "Docs" -- and with the ids in play the page prefix that tells two
+     * same-named categories apart never appeared either.
+     *
+     * Repaints whichever of the two is on screen when the names land.
+     */
     async prefetchAllBookmarkCategories() {
         const pages = this.dash.pages || [];
         await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
-        if (this.isActiveView() && this.section === 'bookmarks') {
+        if (!this.isActiveView()) return;
+        if (this.section === 'bookmarks') {
             this.repaintBookmarksFilters();
             this.repaintBookmarksList();
+        } else if (this.section === 'stats') {
+            this.repaintStatsBody();
         }
     }
 
@@ -17622,6 +17644,19 @@ class DashboardConfig {
     bookmarkStaleDays() {
         const n = Number(this.dash?.settings?.bookmarkStaleDays);
         return Number.isFinite(n) && n >= 7 ? Math.min(365, Math.round(n)) : 90;
+    }
+
+    /**
+     * How many days before expiry a certificate starts to matter.
+     *
+     * Mirrors certWarnDaysFor in health_cert.go: 0 means the built-in 30, and
+     * anything else is clamped to 3..120. Read here so the statistics panel and
+     * the notification that fires agree on what "expiring soon" means.
+     */
+    certWarnDays() {
+        const n = Number(this.dash?.settings?.certWarnDays);
+        if (!Number.isFinite(n) || n <= 0) return 30;
+        return Math.min(120, Math.max(3, Math.round(n)));
     }
 
     /** Whether deleting `count` rows should ask first. */
@@ -20617,29 +20652,6 @@ class DashboardConfig {
     }
 
     /**
-     * When these numbers were worked out.
-     *
-     * They are recomputed from whatever is in memory at render time, not
-     * fetched, so nothing on the page said whether you were looking at a
-     * snapshot from ten seconds or ten minutes ago. It sits below the body
-     * rather than in the intro: it dates everything above it, including the
-     * panels that repaint on a tab switch.
-     */
-    /**
-     * Load the statistics renderers, once.
-     *
-     * Repaints when they land, so the section fills itself in rather than
-     * waiting for the next click. A failure leaves the placeholder, which says
-     * the numbers could not be drawn — better than an empty panel that looks
-     * like an install with no data.
-     */
-    /**
-     * The section body, or a placeholder while its renderers are on their way.
-     *
-     * One guard rather than a test at every call site: the renderers arrive as a
-     * batch, so the only question is whether the batch is here.
-     */
-    /**
      * The timestamp foot, or an empty one of the same shape.
      *
      * Empty *markup*, not nothing: repaintStatsBody replaces the foot by finding
@@ -20654,6 +20666,12 @@ class DashboardConfig {
         return '<div class="config-stats-foot"></div>';
     }
 
+    /**
+     * The section body, or a placeholder while its renderers are on their way.
+     *
+     * One guard rather than a test at every call site: the renderers arrive as a
+     * batch, so the only question is whether the batch is here.
+     */
     renderStatsBodySafe() {
         if (typeof this.renderStatsBody === 'function') {
             return this.renderStatsBody();
@@ -20662,6 +20680,14 @@ class DashboardConfig {
         return `<p class="config-panel-note">${esc(this.t('config.statsLoading', 'Working out the numbers…'))}</p>`;
     }
 
+    /**
+     * Load the statistics renderers, once.
+     *
+     * Repaints when they land, so the section fills itself in rather than
+     * waiting for the next click. A failure leaves the placeholder, which says
+     * the numbers could not be drawn — better than an empty panel that looks
+     * like an install with no data.
+     */
     ensureStatsRenderers() {
         if (window.DashboardConfigStatsReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
@@ -20716,12 +20742,76 @@ class DashboardConfig {
         }
     }
 
-    /**
-     * Conflicts & duplicates, with the offending values named.
+    /*
+     * Everything on a page that is not a bookmark.
      *
-     * "3 duplicate URLs" tells you there is a problem; naming them tells you
-     * which. The old config capped the list at eight and counted the rest, which
-     * keeps a badly duplicated install from filling the panel.
+     * Widgets, feeds, sources, the trash and the automatic backups are all
+     * things a reader has set up and can lose track of, and none of them were
+     * counted anywhere. Five small requests rather than one endpoint, because
+     * these are five features that were never meant to be reported together;
+     * each already answers this question for its own screen.
+     *
+     * Every one of them fails soft. A figure that cannot be fetched is left out
+     * of the panel rather than shown as zero, which would read as "you have
+     * none" for something that may well exist.
+     */
+    async loadStatsLibrary() {
+        const get = async (url) => {
+            try {
+                const res = await fetch(url);
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const pages = this.dash.pages || [];
+        const [feeds, sources, trash, backups, ...blocks] = await Promise.all([
+            get('/api/feeds'),
+            get('/api/sources'),
+            get('/api/trash'),
+            get('/api/auto-backups'),
+            ...pages.map((p) => get(`/api/pages/${encodeURIComponent(p.id)}/blocks`)),
+        ]);
+
+        const widgetTypes = new Map();
+        let widgetCount = null;
+        if (blocks.some(Boolean)) {
+            widgetCount = 0;
+            blocks.forEach((b) => {
+                (b?.widgets || []).forEach((w) => {
+                    widgetCount += 1;
+                    const type = String(w?.type || '').trim() || 'unknown';
+                    widgetTypes.set(type, (widgetTypes.get(type) || 0) + 1);
+                });
+            });
+        }
+
+        const feedMap = feeds?.feeds && typeof feeds.feeds === 'object' ? feeds.feeds : null;
+        this._statsLibrary = {
+            widgets: widgetCount,
+            widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
+            feedsEnabled: feeds ? feeds.enabled === true : null,
+            feeds: feedMap ? Object.keys(feedMap).length : null,
+            sources: Array.isArray(sources) ? sources.length : null,
+            trash: trash && Number.isFinite(Number(trash.count)) ? Number(trash.count) : null,
+            backups: Array.isArray(backups?.backups) ? backups.backups.length : null,
+            backupsEnabled: backups ? backups.enabled === true : null,
+            newestBackupAt: Array.isArray(backups?.backups) && backups.backups.length
+                ? backups.backups[0]?.createdAt || null
+                : null,
+        };
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'content') {
+            const host = document.getElementById('config-stats-library');
+            if (host) host.innerHTML = this.renderStatsLibraryBody();
+        }
+    }
+
+    /**
+     * The per-page category names, as one lookup.
+     *
+     * Keyed on page::category, so two pages that both have a "Development"
+     * are told apart rather than merged — and where the name really is used
+     * twice, the page is put in front of it.
      */
     statsCategoryLabeller() {
         const labels = new Map();
@@ -21062,8 +21152,15 @@ class DashboardConfig {
             details.push({
                 type: 'warn',
                 penalty: stalePenalty,
-                text: this.t('config.statsScoreStale90View', '{count} not opened in 90 days ({pct}%)')
-                    .replace('{count}', String(stale90)).replace('{pct}', String(Math.round(staleRatio * 100))),
+                // {days}, not a hardcoded 90: stale90 is counted with
+                // bookmarkStaleDays(), which a reader sets between 7 and 365.
+                // With it at 7 this line claimed "not opened in 90 days" about
+                // a seven-day count, four lines under a summary that had the
+                // same number and the right threshold.
+                text: this.t('config.statsScoreStaleView', '{count} not opened in {days} days ({pct}%)')
+                    .replace('{count}', String(stale90))
+                    .replace('{days}', String(this.bookmarkStaleDays()))
+                    .replace('{pct}', String(Math.round(staleRatio * 100))),
             });
         }
 
@@ -21247,9 +21344,31 @@ class DashboardConfig {
                 broken: sum.brokenCount || 0,
                 unchecked: sum.uncheckedCount || 0,
                 monitorDown: sum.monitorDownCount || 0,
+                // A host that answered while failing the bookmark's own
+                // expectation -- a required string, an expected status code.
+                // The server counts it apart from broken and monitorDown
+                // precisely so the three add up; this section never read it, so
+                // a whole class of failure was invisible here while the Health
+                // view, the health widget and the review notice all showed it.
+                content: sum.contentCount || 0,
                 duplicates: sum.duplicateCount || 0,
                 stale: sum.staleCount || 0,
                 shortcutConflicts: sum.shortcutConflictCount || 0,
+                // Layered on whatever status a bookmark already has -- a
+                // redirect or a title change under a page that still answers --
+                // so it is reported but never counted into the states.
+                drift: sum.driftCount || 0,
+                orphanedCategories: sum.orphanedCategoryCount || 0,
+                // Pooled uptime, response time and outage count across every
+                // monitor. Absent on an install that never enabled monitoring.
+                fleet: data?.fleet || null,
+                // TLS expiries seen while checking, keyed by host.
+                certificates: data?.certificates || {},
+                // Whole-page copies kept here, counted off the issue rows: the
+                // report carries one entry per bookmark, so this is the same
+                // walk the archive widget does without a second request.
+                archived: (data?.issues || []).filter((i) => Number(i?.localCopies) > 0).length,
+                tracked: (data?.issues || []).length,
                 // One point per day, recorded by the server whenever a report
                 // is built. It arrives with the report already; this section
                 // simply never read it, so every figure here was "now" with
@@ -21259,9 +21378,16 @@ class DashboardConfig {
         } catch {
             this._statsHealth = null;
         }
-        if (this.isActiveView() && this.section === 'stats') {
-            const host = document.getElementById('config-stats-health');
-            if (host) host.innerHTML = this.renderStatsHealth();
+        /*
+         * The whole body, not just the health div.
+         *
+         * Patching #config-stats-health was enough while the report only fed
+         * that one panel. It now also feeds the uptime, certificate and archive
+         * panels, which sit beside it — and those render to nothing while the
+         * fetch is in flight, so a partial repaint left them absent for good.
+         */
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+            this.repaintStatsBody();
         }
     }
 
@@ -21397,6 +21523,7 @@ class DashboardConfig {
                     this._statsInboxItems = undefined;
                     this._statsInboxAgg = undefined;
                     this._statsFinders = undefined;
+                    this._statsLibrary = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic

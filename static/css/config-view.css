@@ -2997,6 +2997,27 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/* The sample count beside an uptime percentage: how much the figure rests on,
+   which is what separates "100% over 10 checks" from "100% over 3,685". */
+.config-ratio-sub {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+/* A window nothing was recorded in. Not a percentage, so it does not get the
+   tabular alignment the numbers rely on. */
+.config-ratio-value--muted {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-style: italic;
+}
+
+/* The breakdown after a count — "Health 2 · Inbox 1" — kept quieter than the
+   label it follows so the row still reads as one line. */
+.config-stat-detail-note {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
 /* Distribution rows: label, bar, count — aligned in a grid so the bars line up. */
 .config-dist-list {
     list-style: none;

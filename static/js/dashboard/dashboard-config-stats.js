@@ -19,10 +19,18 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
+        /**
+         * When these numbers were worked out.
+         *
+         * They are recomputed from whatever is in memory at render time, not
+         * fetched, so nothing on the page said whether you were looking at a
+         * snapshot from ten seconds or ten minutes ago. It sits below the body
+         * rather than in the intro: it dates everything above it, including the
+         * panels that repaint on a tab switch.
+         */
         renderStatsTimestamp() {
             const esc = (v) => this.dash.escapeHtml(v);
-            const time = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
-                { hour: '2-digit', minute: '2-digit' }).format(new Date());
+            const time = window.NextDashClock.formatTime(new Date(), this.dash.settings);
             // The two controls sit with the stamp rather than in a tab of their
             // own. Refresh belongs next to the time it replaces, and the export
             // covers every tab's figures — offering it only on Overview, which is
@@ -36,7 +44,7 @@
                         <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
                     </div>
                 </div>`;
-        }
+        },
 
         /**
          * One explanation instead of a page of zeroes.
@@ -47,8 +55,7 @@
          * nobody has filled yet, so the whole body is replaced by a single line
          * saying what to do — except on Inbox, whose numbers come from the server
          * and mean something even with no bookmarks.
-         */,
-
+         */
         renderStatsEmpty() {
             const esc = (v) => this.dash.escapeHtml(v);
             return `
@@ -125,6 +132,7 @@
                         + this.renderStatsConcentration(s)
                         + this.renderStatsCategoryEffectiveness(s)
                         + this.renderStatsDistributions(s)
+                        + this.renderStatsLibrary()
                         + this.renderStatsCleanup(s);
                 case 'inbox':
                     return this.renderStatsInbox();
@@ -132,6 +140,9 @@
                     return this.renderStatsRot(s)
                         + this.renderStatsConflicts(s)
                         + this.renderStatsSearch(s)
+                        + this.renderStatsUptime()
+                        + this.renderStatsCertificates()
+                        + this.renderStatsArchive()
                         + `
                         <div class="config-panel">
                             <h3 class="config-panel-title">${esc(this.t('config.statsHealthTitle', 'Link health'))}</h3>
@@ -261,14 +272,13 @@
                     </div>
                     <ul class="config-stat-details">${rows}</ul>
                 </div>`;
-        }
+        },
 
         /**
          * Opens per bucket as an SVG bar chart. A screen-reader table carries the
          * same numbers, because a chart that only exists as shapes is unreadable to
          * anyone not looking at it.
-         */,
-
+         */
         renderStatsActivity(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const a = s.activity;
@@ -391,16 +401,15 @@
         statsRangeLabel(days) {
             if (days === 365) return this.t('config.statsRangeYear', '1 year');
             return this.t('config.statsRangeDays', '{n} days').replace('{n}', String(days));
-        }
+        },
 
-        /** The noun for one bucket, used in the tooltip's date line. */,
-
+        /** The noun for one bucket, used in the tooltip's date line. */
         statsActivityBucketUnit() {
             const days = this.statsRange || 30;
             if (days <= 30) return this.t('config.statsAxisUnitDay', 'day');
             if (days <= 90) return this.t('config.statsAxisUnitWeek', 'week');
             return this.t('config.statsAxisUnitMonth', 'month');
-        }
+        },
 
         /**
          * Dated ticks along the x-axis.
@@ -413,8 +422,7 @@
          * label is "Jul 6" but a weekly one is "Jul 29 – Aug 4", three times the
          * width. Six of those ran into each other and off the panel, so the cap is
          * derived from the longest label rather than fixed.
-         */,
-
+         */
         statsActivityTicks(a) {
             const esc = (v) => this.dash.escapeHtml(v);
             const dates = a.dateLabels || [];
@@ -442,7 +450,7 @@
                     : k === last ? ' config-chart-tick--last' : '';
                 return `<span class="config-chart-tick${edge}" style="left:${pct.toFixed(2)}%">${esc(dates[i])}</span>`;
             }).join('');
-        }
+        },
 
         /**
          * What one bar covers, which the selected range decides.
@@ -450,17 +458,15 @@
          * computeActivity() buckets by day, week or month depending on the range, so
          * a fixed "Date" would be wrong two times out of three — the whole reason to
          * name the axis is to say what a bar actually is.
-         */,
-
+         */
         statsActivityAxisXLabel() {
             const days = this.statsRange || 30;
             if (days <= 30) return this.t('config.statsAxisPerDay', 'Day (oldest → newest)');
             if (days <= 90) return this.t('config.statsAxisPerWeek', 'Week (oldest → newest)');
             return this.t('config.statsAxisPerMonth', 'Month (oldest → newest)');
-        }
+        },
 
-        /** Coverage bars: how much of the collection carries tags, shortcuts, notes. */,
-
+        /** Coverage bars: how much of the collection carries tags, shortcuts, notes. */
         renderStatsRatios(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const bar = (label, count, total, hint) => {
@@ -488,14 +494,13 @@
                     ${bar(this.t('config.statsWithIcon', 'With an icon'), s.withIcon, s.total)}
                     ${bar(this.t('config.statsChecked', 'Availability checked'), s.checked, s.total)}
                 </div>`;
-        }
+        },
 
         /**
          * Top lists: most opened, most tagged, and what has never been touched.
          * The ranked lists get the same bar as the distributions — a count is easier
          * to compare against its neighbours as a length than as a number.
-         */,
-
+         */
         renderStatsTopLists(s) {
             const esc = (v) => this.dash.escapeHtml(v);
 
@@ -584,7 +589,7 @@
                     this.t('config.statsAllOpened', 'Everything has been opened at least once.'),
                     this.t('config.statsNeverOpenedHint', 'Candidates to tidy up — they have never been used.'),
                     totals.neverOpened, 'never');
-        }
+        },
 
         /**
          * Column header for the bar lists, naming what the label column and the
@@ -601,11 +606,10 @@
          * For the panels where every bar shares one axis (coverage is 0–100% of the
          * collection), so the scale is stated once above them rather than repeated
          * on each row.
-         */,
-
+         */
         statsScaleCaption(text) {
             return `<p class="config-chart-scale" aria-hidden="true">${this.dash.escapeHtml(text)}</p>`;
-        }
+        },
 
         /**
          * The same caption pair for the label/value lists that have no bar column.
@@ -613,8 +617,7 @@
          * .config-stat-detail is a two-column flex row, not the three-column grid
          * .config-dist-row uses, so its header has to match that shape or the
          * measure name lands over the wrong column.
-         */,
-
+         */
         statsPairAxisHeader(labelText, valueText) {
             const esc = (v) => this.dash.escapeHtml(v);
             return `
@@ -622,7 +625,7 @@
                     <span>${esc(labelText)}</span>
                     <span>${esc(valueText)}</span>
                 </div>`;
-        }
+        },
 
         /**
          * "20 of 214 shown" under a list that had to cut off.
@@ -634,8 +637,7 @@
          *
          * Where a cleanup filter can reproduce the list in full, the note carries
          * the button that does it rather than leaving the rest unreachable.
-         */,
-
+         */
         statsListTruncationNote(shown, total, cleanupKey) {
             const count = Number(total) || 0;
             if (!shown || count <= shown) return '';
@@ -659,10 +661,9 @@
                     <span class="config-dist-axis-label">${esc(labelText)}</span>
                     <span class="config-dist-axis-value">${esc(valueText)}</span>
                 </div>`;
-        }
+        },
 
-        /** Where the bookmarks sit: per page, per category. */,
-
+        /** Where the bookmarks sit: per page, per category. */
         renderStatsDistributions(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const rows = (pairs) => pairs.map(([label, count]) => {
@@ -691,7 +692,7 @@
                         this.t('config.statsAxisBookmarks', 'Bookmarks'))}
                     <ul class="config-dist-list">${rows(s.perCategory)}</ul>
                 </div>`;
-        }
+        },
 
         /**
          * Opens per bookmark, per category — which shelves you actually reach for.
@@ -700,8 +701,7 @@
          * alone hides the interesting case: a category holding twenty links that
          * nobody opens looks healthy there and empty here. Sorted by the ratio
          * rather than the total for the same reason.
-         */,
-
+         */
         renderStatsCategoryEffectiveness(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const list = s.categoryEffectiveness || [];
@@ -734,7 +734,7 @@
                         this.t('config.statsAxisOpensPerBookmark', 'Opens per bookmark'))}
                     <ul class="config-dist-list">${rows}</ul>
                 </div>`;
-        }
+        },
 
         /**
          * What share of all opens the busiest bookmarks account for.
@@ -742,8 +742,7 @@
          * Answers a question none of the per-bookmark figures can: whether the
          * collection is used broadly or is really a handful of links surrounded by
          * everything else.
-         */,
-
+         */
         renderStatsConcentration(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const c = s.concentration || {};
@@ -779,7 +778,7 @@
                     </div>
                     <p class="config-panel-note">${esc(sentence)}${rest > 0 ? ` ${esc(restText)}` : ''}</p>
                 </div>`;
-        }
+        },
 
         /**
          * Cleanup candidates, each with a button that opens the list behind it.
@@ -788,8 +787,7 @@
          * let me fix them", and the bookmarks section already has bulk tagging and
          * deletion. Rows with nothing to fix are dropped rather than shown as a
          * zero, so the panel is a to-do list and not a scoreboard.
-         */,
-
+         */
         renderStatsCleanup(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const rows = [
@@ -823,10 +821,9 @@
                     <p class="config-panel-note">${esc(this.t('config.statsCleanupNote', 'Each opens the matching bookmarks, where they can be tagged or removed in bulk.'))}</p>
                     <ul class="config-stat-details">${items}</ul>
                 </div>`;
-        }
+        },
 
-        /** Link rot and clashes: stale, duplicates, shortcut conflicts. */,
-
+        /** Link rot and clashes: stale, duplicates, shortcut conflicts. */
         renderStatsRot(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const line = (label, n, hint) => `
@@ -844,7 +841,7 @@
                         ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
                     </ul>
                 </div>`;
-        }
+        },
 
         /**
          * How this collection is actually used, in one line.
@@ -857,8 +854,7 @@
          *
          * Deliberately one claim, not a second list: the insights panel underneath
          * already enumerates, and repeating it louder would not be a summary.
-         */,
-
+         */
         renderStatsHeadline(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const all = this.dash.allBookmarks || [];
@@ -900,7 +896,7 @@
                     <h3 class="config-panel-title">${esc(this.t('config.statsHeadlineTitle', 'How you use this collection'))}</h3>
                     <p class="config-stats-headline">${esc(text)}</p>
                 </div>`;
-        }
+        },
 
         /**
          * Personal usage insights: the numbers already on the page, read back as
@@ -909,8 +905,7 @@
          * Carried over from the old config, including its thresholds — most-active
          * page, top bookmark, never-opened share, status coverage, and whether
          * anything was opened in the last 48 hours.
-         */,
-
+         */
         renderStatsInsights(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const all = this.dash.allBookmarks || [];
@@ -983,10 +978,9 @@
                     <p class="config-panel-note">${esc(this.t('config.statsInsightsIntro', 'Quick interpretation of your usage patterns.'))}</p>
                     <ul class="config-stat-details">${rows}</ul>
                 </div>`;
-        }
+        },
 
-        /** Shortcut coverage, and which shortcuts actually earn their keystroke. */,
-
+        /** Shortcut coverage, and which shortcuts actually earn their keystroke. */
         renderStatsShortcuts(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const all = this.dash.allBookmarks || [];
@@ -1023,13 +1017,12 @@
                         <tbody>${rows}</tbody>
                     </table>` : `<p class="config-panel-empty">${esc(this.t('config.statsNoData', 'No data yet'))}</p>`}
                 </div>`;
-        }
+        },
 
         /**
          * Finders, with their use counts. Loaded separately because finders are not
          * part of the bookmark set the rest of the stats derive from.
-         */,
-
+         */
         renderStatsFinders() {
             const esc = (v) => this.dash.escapeHtml(v);
             if (this._statsFinders === undefined) {
@@ -1078,10 +1071,9 @@
                         <tbody>${rows}</tbody>
                     </table>` : `<p class="config-panel-empty">${esc(this.t('config.findersEmpty', 'No finders yet.'))}</p>`}
                 </div>`;
-        }
+        },
 
-        /** Finders are their own resource, so the stats view fetches them itself. */,
-
+        /** Finders are their own resource, so the stats view fetches them itself. */
         renderStatsConflicts(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const CAP = 8;
@@ -1132,14 +1124,13 @@
                         <button type="button" class="config-btn config-btn--small" data-stats-action="open-health">${esc(this.t('config.statsOpenInHealth', 'Open in Health'))}</button>
                     </div>` : ''}
                 </div>`;
-        }
+        },
 
         /**
          * Search & status: which search behaviours are on, and how much of the
          * collection opts into availability checking. These are settings rather
          * than derived counts, so they read from settings directly.
-         */,
-
+         */
         renderStatsSearch(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const set = this.dash.settings || {};
@@ -1169,7 +1160,7 @@
                         ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                     </ul>
                 </div>`;
-        }
+        },
 
         /**
          * Everything derivable from the shell's own bookmark/page copies, including
@@ -1183,8 +1174,7 @@
          * on. This walks every page instead, and only prefixes the page name when
          * the same category name exists on more than one page: without that, every
          * row on a single-page install would read "main · Development".
-         */,
-
+         */
         statsScopeNote() {
             const page = this.statsScopePage();
             if (!page) return '';
@@ -1195,10 +1185,9 @@
             return `<p class="config-panel-note config-stats-scope-note">${esc(
                 this.t('config.statsScopeWholeLibrary', 'These figures cover the whole library, not just {page}.')
                     .replace('{page}', page.name || `#${page.id}`))}</p>`;
-        }
+        },
 
-        /** The page the figures describe, or null for the whole library. */,
-
+        /** The page the figures describe, or null for the whole library. */
         renderStatsHealthTrend() {
             const esc = (v) => this.dash.escapeHtml(v);
             const points = Array.isArray(this._statsHealth?.trend) ? this._statsHealth.trend : [];
@@ -1283,7 +1272,21 @@
             if (h === null) {
                 return `<p class="config-panel-empty">${esc(this.t('config.statsHealthUnavailable', 'Health data is not available.'))}</p>`;
             }
-            const total = Math.max(1, h.healthy + h.broken + h.unchecked);
+            /*
+             * Every state a bookmark can be in, not three of them.
+             *
+             * The denominator was healthy + broken + unchecked, which left out
+             * monitorDown and content -- and those two are exactly the states
+             * the server splits out so the totals add up (see HealthSummary in
+             * models.go: "a bookmark is in exactly one of the three"). With 67
+             * healthy, nothing broken and two monitors down, this panel read
+             * "Healthy 100%" directly above a row saying "Monitors down 2".
+             *
+             * Drift is deliberately not in here. It sits on top of whatever
+             * status a bookmark already has, so adding it would count the same
+             * bookmark twice.
+             */
+            const total = Math.max(1, h.healthy + h.broken + h.monitorDown + h.content + h.unchecked);
             const pct = Math.round((h.healthy / total) * 100);
             const line = (label, n, tone) => `
                 <li class="config-stat-detail${tone ? ' config-stat-detail--' + tone : ''}">
@@ -1311,34 +1314,309 @@
                     ${line(this.t('config.statsHealthy', 'Healthy'), h.healthy, 'good')}
                     ${line(this.t('config.statsBroken', 'Broken'), h.broken, h.broken ? 'bad' : '')}
                     ${line(this.t('config.statsMonitorDown', 'Monitors down'), h.monitorDown, h.monitorDown ? 'bad' : '')}
+                    ${line(this.t('config.statsContentFailing', 'Answering, but not as expected'), h.content, h.content ? 'bad' : '')}
                     ${line(this.t('config.statsUnchecked', 'Unchecked'), h.unchecked)}
                     ${line(this.t('config.statsStale', 'Stale'), h.stale, h.stale ? 'warn' : '')}
+                    ${line(this.t('config.statsDrift', 'Changed since you looked'), h.drift, h.drift ? 'warn' : '')}
                     ${line(this.t('config.statsDuplicates', 'Duplicates'), h.duplicates, h.duplicates ? 'warn' : '')}
                     ${line(this.t('config.statsShortcutConflicts', 'Shortcut conflicts'), h.shortcutConflicts, h.shortcutConflicts ? 'warn' : '')}
+                    ${line(this.t('config.statsOrphanedCategories', 'In a category that no longer exists'), h.orphanedCategories, h.orphanedCategories ? 'warn' : '')}
                 </ul>`;
-        }
+        },
+
+        /*
+         * Monitoring, as one reading rather than a count of monitors.
+         *
+         * The Health tab said how many bookmarks are monitored and never how
+         * well they did, while the server had already pooled it: uptime over
+         * three windows, mean response, outages, and how many are failing right
+         * now. Pooled by sample rather than averaged per monitor, so a service
+         * checked every five minutes does not weigh the same as one checked
+         * hourly.
+         *
+         * Nothing is drawn for an install with no monitors -- there is no
+         * reading to report, and an empty panel reads as a broken one.
+         */
+        renderStatsUptime() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const fleet = this._statsHealth?.fleet;
+            if (!fleet || !Number(fleet.monitors)) return '';
+
+            const pct = (window) => {
+                const samples = Number(window?.samples) || 0;
+                if (!samples) return null;
+                return Math.round((Number(window.ratio) || 0) * 1000) / 10;
+            };
+            const windows = [
+                [this.t('config.statsUptime24h', 'Last 24 hours'), pct(fleet.uptime24h), fleet.uptime24h],
+                [this.t('config.statsUptime7d', 'Last 7 days'), pct(fleet.uptime7d), fleet.uptime7d],
+                [this.t('config.statsUptime30d', 'Last 30 days'), pct(fleet.uptime30d), fleet.uptime30d],
+            ];
+            // A window with no samples is a window nothing was recorded in,
+            // which is not the same as one that was down.
+            const bars = windows.map(([label, value, raw]) => {
+                if (value === null) {
+                    return `
+                    <div class="config-ratio">
+                        <div class="config-ratio-head">
+                            <span class="config-ratio-label">${esc(label)}</span>
+                            <span class="config-ratio-value config-ratio-value--muted">${esc(this.t('config.statsUptimeNoSamples', 'nothing recorded'))}</span>
+                        </div>
+                    </div>`;
+                }
+                const tone = value >= 99 ? 'good' : (value >= 95 ? 'warn' : 'crit');
+                return `
+                <div class="config-ratio">
+                    <div class="config-ratio-head">
+                        <span class="config-ratio-label">${esc(label)}</span>
+                        <span class="config-ratio-value">${esc(this.statsNumber(value))}% <span class="config-ratio-sub">${
+                            esc(this.t('config.statsUptimeSamples', '{n} checks')
+                                .replace('{n}', this.statsNumber(Number(raw?.samples) || 0)))}</span></span>
+                    </div>
+                    <div class="config-bar" role="img" aria-label="${esc(label)}: ${value}%">
+                        <span class="config-bar-fill config-bar-fill--${tone}" style="width:${value}%"></span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const facts = [
+                [this.t('config.statsMonitors', 'Monitors'), this.statsNumber(fleet.monitors), ''],
+                [this.t('config.statsMonitorDownNow', 'Failing right now'),
+                    this.statsNumber(Number(fleet.downNow) || 0), Number(fleet.downNow) ? 'bad' : ''],
+                ...(Number(fleet.avgResponseMs) ? [[this.t('config.statsAvgResponse', 'Average response'),
+                    `${this.statsNumber(fleet.avgResponseMs)} ms`, '']] : []),
+                ...(Number(fleet.totalIncidents) ? [[this.t('config.statsIncidents', 'Outages on record'),
+                    this.statsNumber(fleet.totalIncidents), 'warn']] : []),
+            ];
+
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsUptimeTitle', 'Uptime'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.statsUptimeHint',
+                        'Pooled across every monitor by check, so a service checked often does not outweigh one checked rarely.'))}</p>
+                    ${this.statsPairAxisHeader(
+                        this.t('config.statsAxisMeasure', 'Measure'),
+                        this.t('config.statsAxisValue', 'Value'))}
+                    <ul class="config-stat-details">
+                        ${facts.map(([label, value, tone]) => `
+                        <li class="config-stat-detail${tone ? ' config-stat-detail--' + tone : ''}">
+                            <span>${esc(label)}</span>
+                            <span class="config-stat-penalty">${esc(String(value))}</span>
+                        </li>`).join('')}
+                    </ul>
+                    ${this.statsScaleCaption(this.t('config.statsAxisUptime',
+                        'Share of checks that succeeded — 0% to 100%'))}
+                    ${bars}
+                </div>`;
+        },
+
+        /*
+         * Certificates worth knowing about, counted by host.
+         *
+         * Ten bookmarks on one domain share one certificate, and the server
+         * stores the expiry that way for exactly that reason -- counting per
+         * bookmark would report one renewal ten times.
+         *
+         * Only the ones close to expiry are here, because that is all the report
+         * carries: expiringCertificatesWith drops anything still "ok", so a
+         * total of certificates seen is not a figure this data can give. Nothing
+         * is drawn when the list is empty, which is the ordinary case and reads
+         * correctly as "nothing to do".
+         *
+         * The window is the reader's own certWarnDays, so this panel and the
+         * notification that fires agree on what "soon" means.
+         */
+        renderStatsCertificates() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const certs = Object.values(this._statsHealth?.certificates || {});
+            if (!certs.length) return '';
+
+            const warnDays = this.certWarnDays();
+            const now = Date.now();
+            const day = 86400000;
+            let expired = 0;
+            let soon = 0;
+            let nearest = null;
+            certs.forEach((c) => {
+                const at = Number(c?.expiresAt) || 0;
+                if (!at) return;
+                if (at < now) expired += 1;
+                else soon += 1;
+                if (!nearest || at < Number(nearest.expiresAt)) nearest = c;
+            });
+
+            // Days left rounds down -- two and a half days left is "2 days".
+            // Days since expiry has to round down on its own elapsed value, not
+            // on a negative: flooring -3.0001 gave "4 days ago" for a
+            // certificate that went three days ago.
+            const nearestAt = nearest ? Number(nearest.expiresAt) : 0;
+            const nearestDays = nearest
+                ? (nearestAt < now ? -Math.floor((now - nearestAt) / day) : Math.floor((nearestAt - now) / day))
+                : null;
+            const rows = [
+                [this.t('config.statsCertsExpired', 'Already expired'), this.statsNumber(expired),
+                    expired ? 'bad' : ''],
+                [this.t('config.statsCertsSoon', 'Expiring within {days} days').replace('{days}', String(warnDays)),
+                    this.statsNumber(soon), soon ? 'warn' : ''],
+            ];
+
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsCertsTitle', 'Certificates'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.statsCertsHint',
+                        'Only certificates near expiry are reported, one per host, and only for hosts reached over HTTPS. An empty panel means none are close.'))}</p>
+                    ${this.statsPairAxisHeader(
+                        this.t('config.statsAxisState', 'State'),
+                        this.t('config.statsAxisHosts', 'Hosts'))}
+                    <ul class="config-stat-details">
+                        ${rows.map(([label, value, tone]) => `
+                        <li class="config-stat-detail${tone ? ' config-stat-detail--' + tone : ''}">
+                            <span>${esc(label)}</span>
+                            <span class="config-stat-penalty">${esc(String(value))}</span>
+                        </li>`).join('')}
+                    </ul>
+                    ${nearest && nearestDays !== null ? `<p class="config-panel-note">${esc(
+                        nearestDays < 0
+                            ? this.t('config.statsCertsExpiredHost', 'Expired: {host}, {days} days ago.')
+                                .replace('{host}', String(nearest.host || ''))
+                                .replace('{days}', String(Math.abs(nearestDays)))
+                            : this.t('config.statsCertsNearest', 'Next to expire: {host}, in {days} days.')
+                                .replace('{host}', String(nearest.host || ''))
+                                .replace('{days}', String(nearestDays)))}</p>` : ''}
+                </div>`;
+        },
+
+        /*
+         * How much of the collection has a copy kept here.
+         *
+         * A broken link with a stored copy is an inconvenience; a broken link
+         * without one is gone. That difference is the whole point of the
+         * archive, and nothing in this section reported it -- the figure was
+         * only ever on a widget the reader has to have added.
+         *
+         * Counted off the report's own rows rather than with a second request:
+         * it carries one entry per bookmark and each says how many copies it
+         * has.
+         */
+        renderStatsArchive() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const h = this._statsHealth;
+            if (!h || !h.tracked) return '';
+            const pct = Math.round((h.archived / h.tracked) * 100);
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsArchiveTitle', 'Archive coverage'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.statsArchiveHint',
+                        'A dead link with a copy kept here is still readable. One without it is gone.'))}</p>
+                    ${this.statsScaleCaption(this.t('config.statsAxisShareArchived',
+                        'Share of {total} bookmarks with a copy kept — 0% to 100%')
+                        .replace('{total}', this.statsNumber(h.tracked)))}
+                    <div class="config-ratio">
+                        <div class="config-ratio-head">
+                            <span class="config-ratio-label">${esc(this.t('config.statsArchived', 'With a copy kept'))}</span>
+                            <span class="config-ratio-value">${esc(this.statsNumber(h.archived))} / ${
+                                esc(this.statsNumber(h.tracked))} · ${pct}%</span>
+                        </div>
+                        <div class="config-bar" role="img" aria-label="${esc(this.t('config.statsArchived', 'With a copy kept'))}: ${pct}%">
+                            <span class="config-bar-fill config-bar-fill--${pct >= 50 ? 'good' : 'warn'}" style="width:${pct}%"></span>
+                        </div>
+                    </div>
+                </div>`;
+        },
+
+        /*
+         * What is in the dashboard besides bookmarks.
+         *
+         * Widgets, feeds, sources, the trash and the automatic backups are each
+         * a feature a reader turns on and then stops thinking about, and no
+         * screen ever said how many of them there are. A widget on a page you
+         * rarely open, a feed that has stopped, thirty things in the trash: all
+         * knowable, none reported.
+         *
+         * The figures arrive on their own, so the panel is a shell the loader
+         * fills -- the same shape the health and inbox panels use.
+         */
+        renderStatsLibrary() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsLibraryTitle', 'Beyond bookmarks'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.statsLibraryHint',
+                        'The rest of what this install holds — blocks on your pages, what feeds them, and what it keeps.'))}</p>
+                    <div id="config-stats-library">${this.renderStatsLibraryBody()}</div>
+                </div>`;
+        },
+
+        renderStatsLibraryBody() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const lib = this._statsLibrary;
+            if (lib === undefined) {
+                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+            }
+            if (!lib) {
+                return `<p class="config-panel-empty">${esc(this.t('config.statsLibraryUnavailable',
+                    'These figures could not be read.'))}</p>`;
+            }
+
+            // A figure that could not be fetched is left out, not shown as zero:
+            // "0 feeds" and "we could not ask" are different answers.
+            const rows = [];
+            const add = (label, value, detail) => {
+                if (value === null || value === undefined) return;
+                rows.push([label, value, detail || '']);
+            };
+
+            const types = lib.widgetTypes || [];
+            add(this.t('config.statsLibraryWidgets', 'Widgets on your pages'),
+                this.statsNumber(lib.widgets),
+                types.length
+                    ? types.slice(0, 4).map(([type, n]) =>
+                        `${this.widgetTypeName(type)} ${this.statsNumber(n)}`).join(' · ')
+                    : '');
+            add(this.t('config.statsLibraryFeeds', 'Feeds'), this.statsNumber(lib.feeds),
+                lib.feedsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
+            add(this.t('config.statsLibrarySources', 'Import sources'), this.statsNumber(lib.sources));
+            add(this.t('config.statsLibraryTrash', 'Waiting in the trash'), this.statsNumber(lib.trash));
+            add(this.t('config.statsLibraryBackups', 'Automatic backups kept'), this.statsNumber(lib.backups),
+                lib.backupsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
+
+            if (!rows.length) {
+                return `<p class="config-panel-empty">${esc(this.t('config.statsLibraryUnavailable',
+                    'These figures could not be read.'))}</p>`;
+            }
+
+            return `
+                ${this.statsPairAxisHeader(
+                    this.t('config.statsAxisThing', 'Thing'),
+                    this.t('config.statsAxisCount', 'How many'))}
+                <ul class="config-stat-details">
+                    ${rows.map(([label, value, detail]) => `
+                    <li class="config-stat-detail">
+                        <span>${esc(label)}${detail ? ` <span class="config-stat-detail-note">${esc(detail)}</span>` : ''}</span>
+                        <span class="config-stat-penalty">${esc(String(value))}</span>
+                    </li>`).join('')}
+                </ul>`;
+        },
 
         /**
          * Inbox figures come from two places: /api/inbox is the current snapshot,
          * /api/inbox-stats the durable lifetime aggregate that survives items being
          * triaged away. Neither can be derived from the other, so both are fetched.
-         */,
-
+         */
         renderStatsInbox() {
             const esc = (v) => this.dash.escapeHtml(v);
             return `
                 <p class="config-view-intro">${esc(this.t('config.statsInboxIntro', 'What is waiting in the inbox, and how much of it you turn into bookmarks.'))}</p>
                 ${this.statsScopeNote()}
                 <div id="config-stats-inbox">${this.renderStatsInboxBody()}</div>`;
-        }
+        },
 
         /**
          * The snapshot and lifetime blocks, using the old config's own figures:
          * backlog is unread older than 30 days, and conversion is promoted against
          * everything triaged (promoted + discarded) rather than against everything
          * ever added, which would never reach 100%.
-         */,
-
+         */
         renderStatsInboxBody() {
             const esc = (v) => this.dash.escapeHtml(v);
             if (this._statsInboxItems === undefined) {
@@ -1455,7 +1733,7 @@
                         <tbody>${sourceRows}</tbody>
                     </table>
                 </div>` : ''}`;
-        }
+        },
 
         /**
          * Inbox throughput per day: what came in against what was dealt with.
@@ -1472,8 +1750,7 @@
          * Two series, so a legend is required rather than optional; triaged stacks
          * promoted and discarded, since together they are "dealt with" and the split
          * between them is secondary.
-         */,
-
+         */
         renderStatsInboxTrend(agg) {
             const esc = (v) => this.dash.escapeHtml(v);
             const daily = agg?.dailyBuckets && typeof agg.dailyBuckets === 'object' ? agg.dailyBuckets : null;
@@ -1582,11 +1859,6 @@
                 </div>`;
         }
 
-        /**
-         * The health endpoint already aggregates the counts, so read its summary
-         * rather than re-deriving them from the issue list (which only carries the
-         * bookmarks that have something wrong with them).
-         */,
     });
 
     global.DashboardConfigStatsReady = true;

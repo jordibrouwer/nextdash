@@ -2267,7 +2267,7 @@ class DashboardInbox {
         const sameDay = wake.getFullYear() === now.getFullYear()
             && wake.getMonth() === now.getMonth()
             && wake.getDate() === now.getDate();
-        const time = wake.toLocaleTimeString(this.localeTag(), { hour: '2-digit', minute: '2-digit' });
+        const time = window.NextDashClock.formatTime(wake, this.dash?.settings);
         if (sameDay) {
             return this.t('dashboard.inboxSnoozeWakeToday', 'today {time}', { time });
         }
