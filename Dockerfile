@@ -14,7 +14,7 @@ RUN go run scripts/gen-asset-hashes.go
 ARG VERSION=dev
 ARG COMMIT=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
-    -ldflags "-s -w -X main.buildVersion=${VERSION} -X main.buildCommit=${COMMIT}" \
+    -ldflags "-s -w -X github.com/jordibrouwer/nextDash/internal/app.buildVersion=${VERSION} -X github.com/jordibrouwer/nextDash/internal/app.buildCommit=${COMMIT}" \
     -o main .
 
 # Final stage — binary only; static/templates/locales come from go:embed.

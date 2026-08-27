@@ -160,14 +160,17 @@ if ! git merge dev --no-edit; then
     #                           index.json the modal and the version shown in
     #                           Config → Overview have nothing to read, even
     #                           though all 131 release files ship
-    #   asset_hashes_gen.go   — generated, but committed, and main has no
+    #   internal/app/asset_hashes_gen.go
+    #                         — generated, but committed, and main has no
     #                           scripts/ to regenerate it, so without it main
-    #                           does not compile at all
+    #                           does not compile at all. The path is matched
+    #                           literally, so it moves whenever the package
+    #                           does.
     #
     # None of these were in PRUNE_DIRS or the explicit git rm list, so they
     # were never deliberately dropped — they just fell through this case.
     case "$path" in
-      static/js/*|static/css/*|static/data/*|templates/*|locales/*|CHANGELOG.md|asset_hashes_gen.go)
+      static/js/*|static/css/*|static/data/*|templates/*|locales/*|CHANGELOG.md|internal/app/asset_hashes_gen.go)
         git checkout --theirs -- "$path" 2>/dev/null || true
         git add -- "$path" 2>/dev/null || true
         ;;
