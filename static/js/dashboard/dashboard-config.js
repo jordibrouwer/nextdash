@@ -2302,7 +2302,6 @@ class DashboardConfig {
         { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
         { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
-        { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
         { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
@@ -7953,16 +7952,6 @@ class DashboardConfig {
                     <span class="config-range-value">${Math.round(opacity * 100)}%</span>
                     ${this.appearanceAff('backgroundOpacity')}
                 </div>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
-                        <span>${esc(this.t('config.showBackgroundDots', 'Show background dots'))}</span>
-                    </label>
-                    ${this.appearanceAff('showBackgroundDots')}
-                </div>
-                <div class="config-field-art" data-appearance-art="showBackgroundDots" data-art-kind="dots">${
-                    window.SettingArt?.render?.('dots', s.showBackgroundDots !== false) || ''
-                }</div>
             </div>`);
     }
 
@@ -8733,11 +8722,7 @@ class DashboardConfig {
         if (this.dash.visual?.initializeAutoDarkMode) {
             this.dash.visual.initializeAutoDarkMode();
         } else {
-            window.ThemeLoader?.applyTheme?.(
-                this.displayTheme(),
-                s.showBackgroundDots !== false,
-                this.currentFontSize()
-            );
+            window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
         }
         this.reloadThemeCSS();
     }
@@ -9717,10 +9702,6 @@ class DashboardConfig {
                 d.settings.autoDarkMode = value;
                 this.applyThemeLive();
                 break;
-            case 'showBackgroundDots':
-                d.settings.showBackgroundDots = value;
-                this.applyThemeLive();
-                break;
             case 'showIcons':
                 d.settings.showIcons = value;
                 d.renderDashboard?.({ animate: false });
@@ -10101,7 +10082,6 @@ class DashboardConfig {
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: true },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
-        showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'], def: true },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },

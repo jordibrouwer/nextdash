@@ -76,9 +76,6 @@ class DashboardSetup {
             window.DashboardFont.applyMainFont(d.settings);
         }
 
-        // Apply background dots
-        d.applyBackgroundDots();
-
         // Apply animations
         d.applyAnimations();
 

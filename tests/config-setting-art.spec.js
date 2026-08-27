@@ -83,12 +83,6 @@ test.describe('a choice you can see before you make it', () => {
         const sizes = await letters.evaluateAll((els) =>
             els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
         expect(sizes[0]).toBeLessThan(sizes[sizes.length - 1]);
-
-        const dots = page.locator('[data-appearance-art="showBackgroundDots"] .setting-art-dots');
-        await expect(dots).toHaveCount(1);
-        const before = await dots.getAttribute('class');
-        await page.locator('[data-appearance-toggle="showBackgroundDots"]').click();
-        await expect.poll(() => dots.getAttribute('class'), { timeout: 5_000 }).not.toBe(before);
     });
 });
 

@@ -205,10 +205,9 @@
 
     function applyDisplayTheme(settings) {
         const displayTheme = resolveTheme(settings);
-        const showDots = settings?.showBackgroundDots !== false;
         const fontSize = settings?.fontSize || 'm';
         if (global.ThemeLoader?.applyTheme) {
-            global.ThemeLoader.applyTheme(displayTheme, showDots, fontSize);
+            global.ThemeLoader.applyTheme(displayTheme, fontSize);
         } else {
             document.documentElement.setAttribute('data-theme', displayTheme);
             if (document.body) {
@@ -226,16 +225,15 @@
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
         document.documentElement.style.removeProperty('--custom-background-image');
 
-        const showDots = settings ? settings.showBackgroundDots !== false : true;
-
         if (type === 'none') {
-            body.classList.toggle('no-background-dots', !showDots);
-            global.ThemeLoader?.syncBackgroundDots?.(showDots);
+            global.ThemeLoader?.syncBackgroundDots?.(true);
             return;
         }
 
-        const forceNoDots = type === 'image';
-        body.classList.toggle('no-background-dots', forceNoDots || !showDots);
+        // A photo is the one backdrop the texture has to give way to: a speckle
+        // over a picture is noise, whatever the theme would otherwise draw.
+        const hideDots = type === 'image';
+        global.ThemeLoader?.syncBackgroundDots?.(!hideDots);
 
         let presetName = '';
         if (type === 'auto') {
@@ -252,14 +250,14 @@
         }
 
         if (!customBackground) {
-            global.ThemeLoader?.syncBackgroundDots?.(showDots);
+            global.ThemeLoader?.syncBackgroundDots?.(true);
             return;
         }
 
         document.documentElement.style.setProperty('--custom-background-image', customBackground);
         body.classList.add('has-custom-background');
         body.classList.add(presetName ? 'bg-gradient' : 'bg-image');
-        global.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
+        global.ThemeLoader?.syncBackgroundDots?.(!hideDots);
     }
 
     function clampBackgroundOpacity(value) {
@@ -325,9 +323,8 @@
                 base,
                 settings.autoDarkMode === true
             );
-            const showDots = settings.showBackgroundDots !== false;
             const fontSize = settings.fontSize || 'm';
-            global.ThemeLoader.applyTheme(displayTheme, showDots, fontSize);
+            global.ThemeLoader.applyTheme(displayTheme, fontSize);
             autoDarkOnApply?.(displayTheme, settings);
             return;
         }

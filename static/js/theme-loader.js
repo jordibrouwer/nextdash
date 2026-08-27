@@ -217,30 +217,6 @@
     }
     
     /**
-     * Gets the showBackgroundDots setting
-     * @returns {boolean} Whether to show background dots
-     */
-    function getShowBackgroundDots() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let showBackgroundDots = true; // default
-        
-        if (deviceSpecific) {
-            const parsed = readDeviceLocalSettings();
-            if (parsed) {
-                showBackgroundDots = parsed.showBackgroundDots !== false;
-            }
-        } else {
-            // Use server-side setting from html element data attribute
-            const htmlAttr = document.documentElement.getAttribute('data-show-background-dots');
-            if (htmlAttr !== null) {
-                showBackgroundDots = htmlAttr !== 'false';
-            }
-        }
-        
-        return showBackgroundDots;
-    }
-    
-    /**
      * Gets the fontSize setting
      * @returns {string} The font size ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
      */
@@ -358,19 +334,25 @@
         return value;
     }
 
-    function syncBackgroundDots(showBackgroundDots) {
-        const show = showBackgroundDots !== false;
-        document.documentElement.setAttribute('data-show-background-dots', show ? 'true' : 'false');
+    /*
+     * Whether the page draws its texture behind the bookmarks.
+     *
+     * No longer a setting. "Show background dots" was a checkbox for something
+     * a theme already decides -- every theme names its own dot colour, and
+     * since the patterns landed it picks a rule, a hatch or a speckle too. The
+     * one case that still has to switch it off is a photo as the backdrop,
+     * where a speckle on top is noise, and that is not a preference either.
+     * So this is left as the mechanism and applyBackground is the only caller.
+     */
+    function syncBackgroundDots(show) {
         if (document.body) {
-            document.body.setAttribute('data-show-background-dots', show ? 'true' : 'false');
-            document.body.classList.toggle('no-background-dots', !show);
+            document.body.classList.toggle('no-background-dots', show === false);
         }
     }
 
     /**
      * Applies critical theme styles to prevent FOUC
      * @param {string} theme - The theme to apply ('dark' or 'light')
-     * @param {boolean} showBackgroundDots - Whether to show background dots
      * @param {string} fontSize - The font size to apply ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
      */
     function preserveBodyBackgroundDuringThemeSwitch() {
@@ -391,7 +373,7 @@
         });
     }
 
-    function applyTheme(theme, showBackgroundDots = true, fontSize = 'm') {
+    function applyTheme(theme, fontSize = 'm') {
         // Remove existing FOUC prevention style if present
         const existingStyle = document.head.querySelector('style[data-fouc-prevention]');
         if (existingStyle) {
@@ -402,7 +384,6 @@
 
         // Set data-theme on html element
         document.documentElement.setAttribute('data-theme', theme);
-        syncBackgroundDots(showBackgroundDots);
 
         // Create and inject critical CSS using CSS variables
         const style = document.createElement('style');
@@ -526,8 +507,6 @@
             document.body.classList.add(theme);
             document.body.setAttribute('data-theme', theme);
             
-            // Apply background dots class
-            syncBackgroundDots(showBackgroundDots);
             
             // Apply font size class
             document.body.classList.remove('font-size-xs', 'font-size-s', 'font-size-sm', 'font-size-m', 'font-size-lg', 'font-size-l', 'font-size-xl');
@@ -538,10 +517,9 @@
 
     // Apply theme, fontSize, and layout version immediately
     const theme = getTheme();
-    const showBackgroundDots = getShowBackgroundDots();
     const fontSize = getFontSize();
     const layoutVersion = getLayoutVersion();
-    applyTheme(theme, showBackgroundDots, fontSize);
+    applyTheme(theme, fontSize);
     applyLayoutVersion(layoutVersion);
     
     document.addEventListener('DOMContentLoaded', function() {
@@ -576,7 +554,6 @@
         getPairedThemeVariant: (themeId, wantsDark) =>
             themeUtils().getPairedThemeVariant(themeId, wantsDark),
         resolveDisplayTheme: resolveDisplayTheme,
-        getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,
         getLayoutVersion: getLayoutVersion,
         applyTheme: applyTheme,

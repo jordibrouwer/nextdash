@@ -75,7 +75,11 @@ test.describe('checkboxes use one row shape', () => {
     test('clicking a checkbox label toggles it', async ({ page }) => {
         await openAppearance(page);
 
-        for (const field of ['autoDarkMode', 'showBackgroundDots']) {
+        // One field, where there used to be two: the other was "Show
+        // background dots", a checkbox for something the theme already decides,
+        // and it went with the setting. What this guards is the row shape, not
+        // the count.
+        for (const field of ['autoDarkMode']) {
             const box = page.locator(`[data-appearance-toggle="${field}"]`);
             const before = await box.isChecked();
             await page.locator('.config-field-row', { has: box }).locator('label span').first().click();

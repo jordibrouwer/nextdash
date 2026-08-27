@@ -258,7 +258,6 @@ type Settings struct {
 	OpenInNewTab                    bool   `json:"openInNewTab"`
 	ColumnsPerRow                   int    `json:"columnsPerRow"`
 	FontSize                        string `json:"fontSize"` // xs, s, sm, m, lg, l, xl (legacy: small/medium/large normalized on load/save)
-	ShowBackgroundDots              bool   `json:"showBackgroundDots"`
 	ShowTitle                       bool   `json:"showTitle"`
 	ShowDate                        bool   `json:"showDate"`
 	ShowTime                        bool   `json:"showTime"`
@@ -357,8 +356,9 @@ type Settings struct {
 	 * BackgroundPattern is the shape of the backdrop texture: dots, grid,
 	 * lines, hatch or none.
 	 *
-	 * Separate from ShowBackgroundDots, which stays the on/off — two controls
-	 * that both switch the backdrop off would be one control too many.
+	 * The only control over the backdrop texture. There used to be a "Show
+	 * background dots" checkbox beside it, which is why this one carefully
+	 * called itself the shape rather than the switch; "none" is the off now.
 	 *
 	 * "auto", and empty, mean the theme decides: most themes ask for dots, and
 	 * the handful whose texture is part of what they are ask for something
@@ -944,7 +944,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DetectSoftNotFound:           true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
-			ShowBackgroundDots:           true,
 			ShowTitle:                    true,
 			ShowDate:                     true,
 			ShowTime:                     true,
@@ -2799,7 +2798,6 @@ func (fs *FileStore) GetSettings() Settings {
 			DetectSoftNotFound:             true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
-			ShowBackgroundDots:             true,
 			ShowTitle:                      true,
 			ShowDate:                       true,
 			ShowTime:                       true,

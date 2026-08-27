@@ -29,9 +29,9 @@ test.describe('a config change reaches the other device', () => {
             await d.data.fetchAndStoreDataRevision();
             d._serverSettingsRevision = d.data._lastSettingsRevision;
 
-            const before = d.settings.showBackgroundDots;
+            const before = d.settings.showTitle;
             const stored = await (await api('/api/settings')).json();
-            stored.showBackgroundDots = !before;
+            stored.showTitle = !before;
             await api('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,7 +41,7 @@ test.describe('a config change reaches the other device', () => {
             // The poll used to reload bookmarks, inbox and health and never
             // settings, so the chrome stayed as it was until a manual reload.
             await d.data.refreshIfDataRevisionChanged();
-            return { before, after: d.settings.showBackgroundDots };
+            return { before, after: d.settings.showTitle };
         });
         expect(applied.after).toBe(!applied.before);
     });

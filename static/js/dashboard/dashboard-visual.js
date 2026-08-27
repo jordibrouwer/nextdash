@@ -69,16 +69,17 @@ class DashboardVisual {
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
         document.documentElement.style.removeProperty('--custom-background-image');
 
-        const showDots = d.settings.showBackgroundDots !== false;
+
 
         if (type === 'none') {
-            body.classList.toggle('no-background-dots', !showDots);
-            window.ThemeLoader?.syncBackgroundDots?.(showDots);
+            window.ThemeLoader?.syncBackgroundDots?.(true);
             return;
         }
 
         const forceNoDots = (type === 'image');
-        body.classList.toggle('no-background-dots', forceNoDots || !showDots);
+        // A photo is the one backdrop the texture gives way to; a speckle over
+        // a picture is noise whatever the theme would otherwise draw.
+        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
 
         let presetName = '';
         if (type === 'auto') {
@@ -98,14 +99,14 @@ class DashboardVisual {
         }
 
         if (!customBackground) {
-            window.ThemeLoader?.syncBackgroundDots?.(showDots);
+            window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
             return;
         }
 
         document.documentElement.style.setProperty('--custom-background-image', customBackground);
         body.classList.add('has-custom-background');
         body.classList.add(presetName ? 'bg-gradient' : 'bg-image');
-        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
+        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
     }
 
 
@@ -140,7 +141,6 @@ class DashboardVisual {
         if (window.ThemeLoader?.applyTheme) {
             window.ThemeLoader.applyTheme(
                 displayTheme,
-                d.settings.showBackgroundDots !== false,
                 d.settings.fontSize || 'm'
             );
         }
@@ -211,16 +211,6 @@ class DashboardVisual {
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.();
     }
 
-
-    applyBackgroundDots() {
-        const d = this.dash;
-        // Toggle background dots class
-        if (d.settings.showBackgroundDots !== false) {
-            document.body.classList.remove('no-background-dots');
-        } else {
-            document.body.classList.add('no-background-dots');
-        }
-    }
 
 
     applyAnimations() {
