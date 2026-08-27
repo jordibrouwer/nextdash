@@ -49,13 +49,15 @@ async function openWidgets(page, { keep = false } = {}) {
     await page.waitForTimeout(6000);
     if (!keep) await clearWidgets(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
-    await expect(page.locator('.config-widget-add')).toBeVisible();
+    await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
 }
 
 /** Add a widget of one type and open its settings; returns the row index. */
 async function addWidget(page, type) {
     const before = await page.locator('[data-widget-settings]').count();
-    await page.locator(`[data-widget-add="${type}"]`).click();
+    // The catalogue is an overlay, so choosing a kind is: open it, pick.
+    await page.locator('[data-widget-catalogue]').click();
+    await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
     const index = await page.locator('[data-widget-settings]').last().getAttribute('data-widget-settings');
     await page.locator(`[data-widget-settings="${index}"]`).click();

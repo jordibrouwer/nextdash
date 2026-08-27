@@ -1679,7 +1679,8 @@
     "widgetType.unchecked": "Blinde vlekken",
     "widgetType.duplicates": "Duplicaten",
     "widgetType.trash": "Prullenbak",
-    "widgetType.backups": "Back-ups"
+    "widgetType.backups": "Back-ups",
+    "widgetType.custom": "Custom"
   },
   "health": {
     "kicker": "overzicht",
@@ -1949,9 +1950,8 @@
     "widgetAbout.sources": "Wat elke import het laatst deed, zodat een mislukte import niet alleen in config zichtbaar is.",
     "widgetAbout.neglected": "Bookmarks die je al lang niet geopend hebt — de kerkhofvraag omgedraaid.",
     "widgetsIntro": "Waar een widget staat regel je bij Pages & tags → categorieën, samen met de categorieën waartussen hij staat.",
-    "widgetsEmpty": "Nog geen widgets op deze pagina. Voeg er een toe om een blok naast je categorieën te zetten.",
+    "widgetsEmpty": "Nog geen widgets op deze pagina.",
     "widgetsRowCategory": "categorie",
-    "widgetsAdded": "Widget toegevoegd.",
     "widgetsDeleted": "Widget verwijderd.",
     "widgetsDeleteConfirm": "Deze widget verwijderen? De instellingen en een eventuele aanmelding gaan mee.",
     "widgetsSaveError": "Kon de widgets niet opslaan.",
@@ -4042,7 +4042,7 @@
     "widgetCustomRefLimits": "Wat hij niet doet is iets wijzigen. Een tegel leest, en de twee methoden die hij biedt zijn de twee die een vraag stellen. Een antwoord heeft acht seconden om aan te komen en wordt tot een megabyte gelezen.",
     "widgetsTabList": "Widgets",
     "widgetsTabTypes": "Soorten",
-    "widgetTypesIntro": "Elk soort widget dat nextDash kan tekenen. Toevoegen doe je op het tabblad Widgets.",
+    "widgetTypesIntro": "Elk soort widget dat nextDash kan tekenen. Voeg er een toe rechtstreeks uit deze lijst.",
     "sectionStats": "Statistieken",
     "sectionHelp": "Help",
     "behaviorTabGeneral": "Algemeen",
@@ -5200,7 +5200,10 @@
     "widgetRevert": "Ongedaan maken",
     "widgetUnsaved": "Nog niet opgeslagen",
     "widgetSaved": "Opgeslagen.",
-    "widgetSavedNotice": "Widget opgeslagen."
+    "widgetSavedNotice": "Widget opgeslagen.",
+    "widgetsEmptyHint": "Een widget is een blok naast je categorieën dat iets anders bevat dan bladwijzers.",
+    "widgetsAddShort": "Toevoegen",
+    "widgetsAddNamed": "{name} toevoegen"
   },
   "colors": {
     "title": "thema-aanpassing",

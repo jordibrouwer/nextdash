@@ -5742,43 +5742,74 @@ button.config-bm-shortcut-pill {
    A widget row is two stacked parts — what it is, and what it may be told — so
    it is laid out as one.
 */
-.config-widget-add {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 10px;
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
-}
+/* The head row: which page is being edited, and the one door to the catalogue.
 
-.config-widget-add-fields {
+   The page selector used to live inside the add panel, which made "which page
+   am I looking at" a property of adding rather than of the list it describes. */
+.config-widget-head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
+    justify-content: space-between;
     gap: 12px;
+    margin-bottom: 14px;
 }
 
-.config-widget-add-field {
+.config-widget-head-field {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 9rem;
 }
 
-.config-widget-add-field > span {
+.config-widget-head-field > span {
     font-size: calc(var(--font-size-text) * 0.86);
     color: var(--text-muted, #888);
 }
 
-/* The line that says what the picked type does, before it is added. */
-.config-widget-add-about {
+/* Nothing here yet, so the empty list is the invitation rather than a grey
+   line under a picker that filled the screen. */
+.config-widget-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 22px 18px;
+    border: 1px dashed var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: 10px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-empty-title {
     margin: 0;
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.config-widget-empty-hint {
+    margin: 0 0 8px;
     max-width: 62ch;
-    font-size: calc(var(--font-size-text) * 0.9);
-    color: var(--text-muted, #888);
-    line-height: 1.45;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+/* ── The catalogue, as an overlay ────────────────────────────────────────── */
+.config-widget-catalogue-note {
+    margin: 0 0 14px;
+    max-width: 62ch;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+/* The catalogue is the tall part of the dialog and the only part that scrolls,
+   so the close button stays reachable however many kinds there are. */
+.modal--widget-catalogue .config-widget-catalogue {
+    max-height: min(60vh, 34rem);
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .config-widget-list {
@@ -5810,6 +5841,15 @@ button.config-bm-shortcut-pill {
 /* An open row is the one being worked on, so it reads as the foreground: a step
    further up the surface ladder as well as an accented edge, since a border
    alone is a weak way to say "this one" once every row has a fill. */
+/* Just added: marked for a moment, not styled for good. The row is scrolled to
+   and its title focused, so this only has to catch the eye that is already
+   there -- reduced-motion is handled globally, so no transition is required
+   for it to read. */
+.config-widget-row.is-new {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
 .config-widget-row.is-open {
     border-color: var(--accent-primary, rgba(128, 128, 128, 0.5));
     background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
@@ -6307,13 +6347,6 @@ button.config-bm-shortcut-pill {
     line-height: 1.5;
 }
 
-.config-widget-add-body {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-top: 12px;
-}
-
 /* The reference: a name and a sentence, stacked rather than gridded — reading
    is a column, choosing is a grid. */
 .config-widget-type-list {
@@ -6325,14 +6358,39 @@ button.config-bm-shortcut-pill {
     padding: 0;
 }
 
+/* The name and the sentence read as a column; the button that adds the kind
+   sits beside them rather than under, so a list of thirteen stays a list of
+   thirteen rather than becoming thirteen rows with a button hanging off each. */
 .config-widget-type-row {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    column-gap: 12px;
+    row-gap: 3px;
     padding: 10px 12px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: 9px;
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-type-add {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+}
+
+/* Narrow: the button drops under the sentence rather than squeezing it. */
+@media (max-width: 30rem) {
+    .config-widget-type-row {
+        grid-template-columns: 1fr;
+    }
+
+    .config-widget-type-add {
+        grid-column: 1;
+        grid-row: auto;
+        justify-self: start;
+        margin-top: 6px;
+    }
 }
 
 .config-widget-type-name {
@@ -6354,6 +6412,14 @@ button.config-bm-shortcut-pill {
     line-height: 1.6;
     max-width: 70ch;
     text-wrap: pretty;
+}
+
+/* The Custom widget is explained at length rather than in a row, so its Add
+   button cannot sit beside a sentence the way the others do. It closes the
+   section instead — every kind on this tab is addable from where it is
+   described, and this one was the exception. */
+.config-widget-custom-add {
+    margin: 14px 0 0;
 }
 
 .config-widget-custom-ref .config-widget-custom-lead:last-child {

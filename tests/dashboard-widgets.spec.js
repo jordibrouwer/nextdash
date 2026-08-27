@@ -237,7 +237,7 @@ test.describe('the widgets tab', () => {
             });
         });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await expect(page.locator('[data-widget-add="health"]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-widget-catalogue]')).toBeVisible({ timeout: 15_000 });
     });
 
     test('it offers settings, not arrows', async ({ page }) => {
@@ -269,23 +269,31 @@ test.describe('the widgets tab', () => {
      * panel, which does carry one. Same fill for both, so they read as the same
      * kind of thing.
      */
-    test('a row carries the same surface as the panel that adds one', async ({ page }) => {
+    test('a row carries the same surface as the cards it is chosen from', async ({ page }) => {
         await expect(page.locator('.config-widget-row')).toHaveCount(1, { timeout: 10_000 });
+        // The reference row on the Types tab is the other card surface in this
+        // section; the two have to read as the same kind of block, one made and
+        // one on offer. It used to be compared against the add panel, which was
+        // on this tab until the catalogue moved into an overlay.
+        await page.locator('[data-widgets-tab="types"]').click();
+        await expect(page.locator('.config-widget-type-row').first()).toBeVisible();
         const fills = await page.evaluate(() => {
             const read = (sel) => {
                 const el = document.querySelector(sel);
                 return el ? getComputedStyle(el).backgroundColor : null;
             };
             return {
-                row: read('.config-widget-row'),
-                add: read('.config-widget-add'),
+                type: read('.config-widget-type-row'),
                 page: getComputedStyle(document.body).backgroundColor,
             };
         });
-        expect(fills.row).toBe(fills.add);
+        await page.locator('[data-widgets-tab="widgets"]').click();
+        const row = await page.evaluate(() =>
+            getComputedStyle(document.querySelector('.config-widget-row')).backgroundColor);
+        expect(row).toBe(fills.type);
         // And it is a fill, not the page showing through.
-        expect(fills.row).not.toBe('rgba(0, 0, 0, 0)');
-        expect(fills.row).not.toBe(fills.page);
+        expect(row).not.toBe('rgba(0, 0, 0, 0)');
+        expect(row).not.toBe(fills.page);
     });
 
     test('switching a widget off takes it off the grid but keeps its place', async ({ page }) => {

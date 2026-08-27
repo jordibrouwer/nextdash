@@ -1679,7 +1679,8 @@
     "widgetType.unchecked": "Angles morts",
     "widgetType.duplicates": "Doublons",
     "widgetType.trash": "Corbeille",
-    "widgetType.backups": "Sauvegardes"
+    "widgetType.backups": "Sauvegardes",
+    "widgetType.custom": "Personnalisé"
   },
   "health": {
     "kicker": "vue d'ensemble",
@@ -1949,9 +1950,8 @@
     "widgetAbout.sources": "Ce que chaque import a fait en dernier, pour qu’un échec ne soit pas visible qu’en config.",
     "widgetAbout.neglected": "Les signets que vous n’avez pas ouverts depuis longtemps — la question du cimetière inversée.",
     "widgetsIntro": "La place de chaque widget se règle sous Pages & tags → catégories, avec les catégories qui l’entourent.",
-    "widgetsEmpty": "Aucun widget sur cette page. Ajoutez-en un pour placer un bloc à côté de vos catégories.",
+    "widgetsEmpty": "Aucun widget sur cette page.",
     "widgetsRowCategory": "catégorie",
-    "widgetsAdded": "Widget ajouté.",
     "widgetsDeleted": "Widget supprimé.",
     "widgetsDeleteConfirm": "Supprimer ce widget ? Ses réglages et toute connexion associée partent avec.",
     "widgetsSaveError": "Impossible d’enregistrer les widgets.",
@@ -4042,7 +4042,7 @@
     "widgetCustomRefLimits": "What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.",
     "widgetsTabList": "Widgets",
     "widgetsTabTypes": "Types",
-    "widgetTypesIntro": "Chaque type de widget que nextDash peut dessiner. Ajoutez-en un depuis l’onglet Widgets.",
+    "widgetTypesIntro": "Chaque type de widget que nextDash peut dessiner. Ajoutez-en un directement depuis cette liste.",
     "sectionStats": "Statistiques",
     "sectionHelp": "Aide",
     "behaviorTabGeneral": "Général",
@@ -5200,7 +5200,10 @@
     "widgetRevert": "Annuler",
     "widgetUnsaved": "Pas encore enregistré",
     "widgetSaved": "Enregistré.",
-    "widgetSavedNotice": "Widget enregistré."
+    "widgetSavedNotice": "Widget enregistré.",
+    "widgetsEmptyHint": "Un widget est un bloc à côté de vos catégories qui contient autre chose que des signets.",
+    "widgetsAddShort": "Ajouter",
+    "widgetsAddNamed": "Ajouter {name}"
   },
   "colors": {
     "title": "personnalisation du thème",

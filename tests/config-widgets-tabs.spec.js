@@ -28,7 +28,7 @@ test.describe('the Widgets section has tabs', () => {
         await openWidgets(page);
         await expect(page.locator('[data-widgets-tab]')).toHaveCount(2);
         await expect(page.locator('[data-widgets-tab="widgets"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('.config-widget-add')).toBeVisible();
+        await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
     });
 
     test('Types accounts for every kind, with none left ungrouped', async ({ page }) => {
@@ -63,7 +63,8 @@ test.describe('the Widgets section has tabs', () => {
         // section that explains what it can do.
         await expect(page.locator('.config-widget-custom-ref')).toBeVisible();
         await expect(page.locator('.config-widget-custom-point')).not.toHaveCount(0);
-        await expect(page.locator('.config-widget-add')).toHaveCount(0);
+        // The list tab's door to the catalogue is not on this one.
+        await expect(page.locator('[data-widget-catalogue]')).toHaveCount(0);
     });
 
     test('the tab reaches the address bar, so it can be linked to', async ({ page }) => {
@@ -75,6 +76,6 @@ test.describe('the Widgets section has tabs', () => {
             .toBe('#config/widgets/types');
 
         await page.locator('[data-widgets-tab="widgets"]').click();
-        await expect(page.locator('.config-widget-add')).toBeVisible();
+        await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
     });
 });

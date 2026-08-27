@@ -12875,10 +12875,18 @@ class DashboardConfig {
 
     renderWidgetTypeReference() {
         const esc = (v) => this.dash.escapeHtml(v);
+        // Each row carries the button that adds it, so reading about a kind and
+        // choosing it are not two screens apart. Reference and catalogue were
+        // the same thirteen names and the same thirteen sentences, twice.
         const row = (type) => `
             <li class="config-widget-type-row">
                 <span class="config-widget-type-name">${esc(this.widgetTypeName(type))}</span>
                 <span class="config-widget-type-about">${esc(this.widgetTypeAbout(type))}</span>
+                <button type="button" class="config-btn config-btn--small config-widget-type-add"
+                    data-widget-add="${esc(type)}"
+                    aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}')
+                        .replace('{name}', this.widgetTypeName(type)))}">${
+                    esc(this.t('config.widgetsAddShort', 'Add'))}</button>
             </li>`;
         const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
             <section class="config-widget-type-group">
@@ -12888,7 +12896,7 @@ class DashboardConfig {
 
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetTypesIntro',
-                'Every kind of widget nextDash can draw. Add one from the Widgets tab.'))}</p>
+                'Every kind of widget nextDash can draw. Add one straight from this list.'))}</p>
             ${groups}
             ${this.renderCustomWidgetReference()}`;
     }
@@ -12963,6 +12971,11 @@ class DashboardConfig {
                 </ul>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
                     'What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.')}</p>
+                <p class="config-widget-custom-add">
+                    <button type="button" class="config-btn config-btn--small" data-widget-add="custom">${
+                        t('config.widgetsAddNamed', 'Add {name}')
+                            .replace('{name}', esc(this.widgetTypeName('custom')))}</button>
+                </p>
             </section>`;
     }
 
@@ -14571,8 +14584,17 @@ class DashboardConfig {
         } else {
             const widgets = this._widgetBlocks.filter((b) => b.isWidget);
             if (!widgets.length) {
-                body = `<p class="config-panel-empty">${esc(this.t('config.widgetsEmpty',
-                    'No widgets on this page yet. Add one to put a block beside your categories.'))}</p>`;
+                // The empty list is the invitation. It used to be one grey line
+                // under a picker that filled the screen, which made the picker
+                // the page and the list an afterthought.
+                body = `
+                <div class="config-widget-empty">
+                    <p class="config-widget-empty-title">${esc(this.t('config.widgetsEmpty',
+                        'No widgets on this page yet.'))}</p>
+                    <p class="config-widget-empty-hint">${esc(this.t('config.widgetsEmptyHint',
+                        'A widget is a block beside your categories that holds something other than bookmarks.'))}</p>
+                    ${this.renderWidgetAddButton()}
+                </div>`;
             } else {
                 const rows = widgets.map((widget) => {
                     const index = this._widgetBlocks.indexOf(widget);
@@ -14611,33 +14633,80 @@ class DashboardConfig {
             }
         }
 
+        const hasWidgets = Array.isArray(this._widgetBlocks)
+            && this._widgetBlocks.some((b) => b.isWidget);
+        const pagePicker = pages.length > 1 ? `
+            <label class="config-widget-head-field">
+                <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
+                <select class="config-select" data-widget-page>${pageOptions}</select>
+            </label>` : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
+
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
                 'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
-            ${this.renderWidgetPicker(pageOptions)}
+            <div class="config-widget-head">
+                ${pagePicker}
+                ${hasWidgets ? this.renderWidgetAddButton() : ''}
+            </div>
             ${body}
         `;
+    }
+
+    /** The one door to the catalogue. Same label wherever it appears. */
+    renderWidgetAddButton() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<button type="button" class="config-btn config-btn--primary" data-widget-catalogue>${
+            esc(this.t('config.widgetsAddTitle', 'Add a widget'))}</button>`;
     }
 
     /*
      * Choosing what to add: the kinds themselves, not a list of their names.
      *
-     * This was a dropdown, a button, and one line of description that changed
-     * as you scrolled the dropdown -- so the only way to compare two kinds was
-     * to look at them one at a time and remember. Every kind is on screen at
-     * once now, under the question it answers, and choosing one is the click
-     * that adds it. The button is gone because it was a second step that never
-     * asked anything: nothing between picking a kind and having it.
+     * Every kind is on screen at once, under the question it answers, and
+     * choosing one is the click that adds it -- no second step that asks
+     * nothing.
      *
-     * The page picker stays a select, and only appears where there is a choice
-     * to make -- on a single-page install every widget goes on that page.
+     * It opens as an overlay rather than sitting on the tab. Inline it was
+     * measured at 900px on a 900px viewport, which put the list of widgets you
+     * actually have 412px below the fold: clicking a card added something you
+     * could not see, and said so with a toast in the opposite corner. The
+     * theme browser answers the same question the same way, for the same
+     * reason.
      */
-    renderWidgetPicker(pageOptions) {
+    openWidgetCatalogue() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (!window.AppModal?.show) return;
+
+        window.AppModal.show({
+            title: this.t('config.widgetsAddTitle', 'Add a widget'),
+            htmlMessage: `
+                <p class="config-widget-catalogue-note">${esc(this.t('config.widgetsAddNote',
+                    'Choose a kind and it lands at the end of the page. Everything about it is editable afterwards.'))}</p>
+                ${this.renderWidgetCatalogue()}`,
+            showCancel: false,
+            confirmText: this.t('dashboard.close', 'Close'),
+            modalClass: 'modal--widget-catalogue',
+            modalMaxWidth: '52rem',
+            initialFocusSelector: '[data-widget-add]',
+        });
+
+        // The overlay lives outside #config-widgets-body, so the tab's
+        // delegated click handler never sees these.
+        const root = document.getElementById('modal-text');
+        if (!root) return;
+        root.addEventListener('click', (event) => {
+            const card = event.target?.closest?.('[data-widget-add]');
+            if (!card) return;
+            window.AppModal.hide();
+            void this.addWidget(card.getAttribute('data-widget-add') || 'health');
+        });
+    }
+
+    /** The catalogue itself: every kind, grouped under the question it answers. */
+    renderWidgetCatalogue() {
+        const esc = (v) => this.dash.escapeHtml(v);
         const card = (type) => `
-            <button type="button" class="config-widget-pick" data-widget-add="${esc(type)}"
-                title="${esc(this.widgetTypeAbout(type))}">
+            <button type="button" class="config-widget-pick" data-widget-add="${esc(type)}">
                 <span class="config-widget-pick-name">${esc(this.widgetTypeName(type))}</span>
                 <span class="config-widget-pick-about">${esc(this.widgetTypeAbout(type))}</span>
             </button>`;
@@ -14647,34 +14716,17 @@ class DashboardConfig {
                 <div class="config-widget-pick-grid">${types.map(card).join('')}</div>
             </section>`).join('');
 
-        const pagePicker = pages.length > 1 ? `
-            <label class="config-widget-add-field">
-                <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
-                <select class="config-select" data-widget-page>${pageOptions}</select>
-            </label>` : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
-
         return `
-            <details class="config-panel config-widget-add" data-fold="widget:add"
-                ${this.foldIsOpen('widget:add', true) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.widgetsAddTitle', 'Add a widget'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.widgetsAddNote',
-                            'Choose a kind and it lands at the end of the page. Everything about it is editable afterwards.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-widget-add-body">
-                    ${pagePicker}
-                    ${groups}
-                    <section class="config-widget-pick-group">
-                        <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
-                            'And anything else: the Custom widget'))}</h4>
-                        <div class="config-widget-pick-grid">${card('custom')}</div>
-                        <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
-                            'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
-                    </section>
-                </div>
-            </details>`;
+            <div class="config-widget-catalogue">
+                ${groups}
+                <section class="config-widget-pick-group">
+                    <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
+                        'And anything else: the Custom widget'))}</h4>
+                    <div class="config-widget-pick-grid">${card('custom')}</div>
+                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
+                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
+                </section>
+            </div>`;
     }
 
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
@@ -15463,11 +15515,15 @@ class DashboardConfig {
             const target = event.target;
             if (!target?.closest) return;
 
+            const catalogue = target.closest('[data-widget-catalogue]');
+            if (catalogue) { this.openWidgetCatalogue(); return; }
+
             const add = target.closest('[data-widget-add]');
             if (add) {
-                // The kind is on the card that was clicked. It used to be read
-                // from a dropdown beside a single Add button, which is what
-                // made choosing and adding two steps instead of one.
+                // The kind is on the control that was clicked -- a card in the
+                // catalogue overlay, or a row on the Types tab. It used to be
+                // read from a dropdown beside a single Add button, which is
+                // what made choosing and adding two steps instead of one.
                 void this.addWidget(add.getAttribute('data-widget-add') || 'health');
                 return;
             }
@@ -15634,16 +15690,50 @@ class DashboardConfig {
         }
     }
 
+    /*
+     * Add one, and land on it.
+     *
+     * The widget is appended, so it is the last row -- which used to be the
+     * problem: it arrived below a picker that filled the screen, and the only
+     * sign anything had happened was a toast in the opposite corner. The
+     * catalogue is an overlay now, so the list is what is on screen when it
+     * closes; this puts the new row in view, marks it for a moment, and puts
+     * the caret in its title, which is the next thing anyone does to it.
+     *
+     * The toast is gone with it. A row appearing under the pointer, named and
+     * focused, says it better than a message elsewhere saying it happened.
+     */
     async addWidget(type) {
         const payload = this.widgetPayloadFromBlocks();
         payload.widgets.push({ type, title: '', config: {} });
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
         if (!await this.saveWidgetBlocks(payload)) return;
-        this.notify(this.t('config.widgetsAdded', 'Widget added.'), 'success');
         this._widgetLoadedFor = null;
+        // Switch to the list before it redraws: adding from the Types tab must
+        // land somewhere the new row exists.
+        this.widgetsTab = 'widgets';
+        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
         await this.loadWidgetsEditor();
+        // After the dashboard redraw, not before: a full render replaces the
+        // elements this is about to mark and focus, so revealing first left the
+        // caret back on <body> and the mark gone within the same tick.
         await this.refreshDashboardBlocks();
+        this.revealNewWidget();
+    }
+
+    /** Bring the last row into view, mark it, and put the caret in its title. */
+    revealNewWidget() {
+        const rows = document.querySelectorAll('#config-widgets-body .config-widget-row');
+        const row = rows[rows.length - 1];
+        if (!row) return;
+        row.classList.add('is-new');
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const title = row.querySelector('[data-widget="title"]');
+        if (title) title.focus({ preventScroll: true });
+        // Removed rather than left on: it marks an arrival, not a state, and a
+        // redraw would otherwise carry it for the rest of the session.
+        window.setTimeout(() => row.classList.remove('is-new'), 1600);
     }
 
     /*

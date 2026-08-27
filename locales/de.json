@@ -1679,7 +1679,8 @@
     "widgetType.unchecked": "Blinde Flecken",
     "widgetType.duplicates": "Duplikate",
     "widgetType.trash": "Papierkorb",
-    "widgetType.backups": "Backups"
+    "widgetType.backups": "Backups",
+    "widgetType.custom": "Custom"
   },
   "health": {
     "kicker": "Übersicht",
@@ -1949,9 +1950,8 @@
     "widgetAbout.sources": "Was jeder Import zuletzt tat, damit ein fehlgeschlagener Import nicht nur in der Config sichtbar ist.",
     "widgetAbout.neglected": "Lesezeichen, die du lange nicht geöffnet hast — die Friedhofsfrage umgedreht.",
     "widgetsIntro": "Wo ein Widget sitzt, wird unter Pages & tags → kategorien festgelegt, zusammen mit den Kategorien daneben.",
-    "widgetsEmpty": "Noch keine Widgets auf dieser Seite. Füge eines hinzu, um einen Block neben deine Kategorien zu stellen.",
+    "widgetsEmpty": "Noch keine Widgets auf dieser Seite.",
     "widgetsRowCategory": "Kategorie",
-    "widgetsAdded": "Widget hinzugefügt.",
     "widgetsDeleted": "Widget entfernt.",
     "widgetsDeleteConfirm": "Dieses Widget entfernen? Seine Einstellungen und eine etwaige Anmeldung gehen mit.",
     "widgetsSaveError": "Die Widgets konnten nicht gespeichert werden.",
@@ -4042,7 +4042,7 @@
     "widgetCustomRefLimits": "What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.",
     "widgetsTabList": "Widgets",
     "widgetsTabTypes": "Arten",
-    "widgetTypesIntro": "Jede Art von Widget, die nextDash zeichnen kann. Hinzufügen im Tab Widgets.",
+    "widgetTypesIntro": "Jede Art von Widget, die nextDash zeichnen kann. Direkt aus dieser Liste hinzufügen.",
     "sectionStats": "Statistiken",
     "sectionHelp": "Hilfe",
     "behaviorTabGeneral": "Allgemein",
@@ -5200,7 +5200,10 @@
     "widgetRevert": "Verwerfen",
     "widgetUnsaved": "Noch nicht gespeichert",
     "widgetSaved": "Gespeichert.",
-    "widgetSavedNotice": "Widget gespeichert."
+    "widgetSavedNotice": "Widget gespeichert.",
+    "widgetsEmptyHint": "Ein Widget ist ein Block neben deinen Kategorien, der etwas anderes als Lesezeichen enthält.",
+    "widgetsAddShort": "Hinzufügen",
+    "widgetsAddNamed": "{name} hinzufügen"
   },
   "colors": {
     "title": "themenanpassung",

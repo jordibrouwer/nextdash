@@ -32,7 +32,7 @@ async function openWidgets(page) {
         });
     });
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
-    await expect(page.locator('.config-widget-add')).toBeVisible();
+    await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
 }
 
 /**
@@ -44,7 +44,8 @@ async function openWidgets(page) {
  */
 async function addCustom(page) {
     const before = await page.locator('[data-widget-settings]').count();
-    await page.locator('[data-widget-add="custom"]').click();
+    await page.locator('[data-widget-catalogue]').click();
+    await page.locator('.modal--widget-catalogue [data-widget-add="custom"]').click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
 
     const toggle = page.locator('[data-widget-settings]').last();

@@ -233,9 +233,11 @@ test.describe('widgets update as they are configured', () => {
         const before = await page.locator('.dashboard-widget').count();
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForSelector('[data-widget-add]', { timeout: 15_000 });
-        // The kind is the button: choosing one is what adds it.
-        await page.click('[data-widget-add="inbox"]');
+        await page.waitForSelector('[data-widget-catalogue]', { timeout: 15_000 });
+        // The kind is the button: choosing one is what adds it. The catalogue
+        // is an overlay, so it is opened first.
+        await page.click('[data-widget-catalogue]');
+        await page.click('.modal--widget-catalogue [data-widget-add="inbox"]');
 
         // No reload anywhere: the grid is redrawn in place.
         await expect.poll(async () => page.evaluate(() =>
@@ -663,7 +665,7 @@ test.describe('widgets as a section', () => {
         expect(widgets).toBe(backups + 1);
 
         // The editor is here, and it is the same one.
-        await expect(page.locator('[data-widget-add="health"]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-widget-catalogue]')).toBeVisible({ timeout: 15_000 });
     });
 
     test('it is no longer a tab under Pages & tags', async ({ page }) => {

@@ -1679,7 +1679,8 @@
     "widgetType.unchecked": "Blind spots",
     "widgetType.duplicates": "Duplicates",
     "widgetType.trash": "Trash",
-    "widgetType.backups": "Backups"
+    "widgetType.backups": "Backups",
+    "widgetType.custom": "Custom"
   },
   "health": {
     "kicker": "overview",
@@ -1949,9 +1950,8 @@
     "widgetAbout.sources": "What each import last did, so a failed import is not only visible in config.",
     "widgetAbout.neglected": "Bookmarks you have not opened in a long time — the graveyard question in reverse.",
     "widgetsIntro": "Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.",
-    "widgetsEmpty": "No widgets on this page yet. Add one to put a block beside your categories.",
+    "widgetsEmpty": "No widgets on this page yet.",
     "widgetsRowCategory": "category",
-    "widgetsAdded": "Widget added.",
     "widgetsDeleted": "Widget removed.",
     "widgetsDeleteConfirm": "Remove this widget? Its settings and any sign-in you gave it go with it.",
     "widgetsSaveError": "Could not save the widgets.",
@@ -4042,7 +4042,7 @@
     "widgetCustomRefLimits": "What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.",
     "widgetsTabList": "Widgets",
     "widgetsTabTypes": "Types",
-    "widgetTypesIntro": "Every kind of widget nextDash can draw. Add one from the Widgets tab.",
+    "widgetTypesIntro": "Every kind of widget nextDash can draw. Add one straight from this list.",
     "sectionStats": "Statistics",
     "sectionHelp": "Help",
     "behaviorTabGeneral": "General",
@@ -5200,7 +5200,10 @@
     "widgetRevert": "Discard",
     "widgetUnsaved": "Not saved yet",
     "widgetSaved": "Saved.",
-    "widgetSavedNotice": "Widget saved."
+    "widgetSavedNotice": "Widget saved.",
+    "widgetsEmptyHint": "A widget is a block beside your categories that holds something other than bookmarks.",
+    "widgetsAddShort": "Add",
+    "widgetsAddNamed": "Add {name}"
   },
   "colors": {
     "title": "theme customization",
