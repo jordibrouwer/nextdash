@@ -44,8 +44,7 @@ async function openWidgets(page) {
  */
 async function addCustom(page) {
     const before = await page.locator('[data-widget-settings]').count();
-    await page.locator('.config-widget-add select').nth(1).selectOption('custom');
-    await page.locator('[data-widget-add]').first().click();
+    await page.locator('[data-widget-add="custom"]').click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
 
     const toggle = page.locator('[data-widget-settings]').last();

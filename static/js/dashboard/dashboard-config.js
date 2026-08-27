@@ -151,6 +151,7 @@ class DashboardConfig {
         this.statsRange = DashboardConfig.readStoredStatsRange();
         // Statistics sub-tab.
         this.statsTab = 'overview';
+        this.widgetsTab = 'widgets';
         // Which page the figures describe; '' is the whole library. Deliberately
         // not persisted, unlike the activity range: a range reframes the numbers
         // while this one hides most of them, and a filter still in force from
@@ -337,6 +338,10 @@ class DashboardConfig {
             // news` opened the colophon and choosing the tab never reached the
             // address bar.
             about: DashboardConfig.ABOUT_TABS,
+            // The same trap About fell into: a section in SUB_TAB_STATE but not
+            // here has a tab that cannot be addressed, so the strip works and
+            // the address bar never follows it.
+            widgets: DashboardConfig.WIDGETS_TABS,
         };
     }
 
@@ -362,6 +367,7 @@ class DashboardConfig {
         'data-backups': 'dbTab',
         help: 'helpTab',
         bookmarks: 'bmTab',
+        widgets: 'widgetsTab',
     };
 
     /**
@@ -378,6 +384,7 @@ class DashboardConfig {
         'data-db-tab': 'data-backups',
         'data-help-tab': 'help',
         'data-bm-tab': 'bookmarks',
+        'data-widgets-tab': 'widgets',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -389,6 +396,7 @@ class DashboardConfig {
         'data-backups': 'data-db-tab',
         help: 'data-help-tab',
         bookmarks: 'data-bm-tab',
+        widgets: 'data-widgets-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -1493,6 +1501,7 @@ class DashboardConfig {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
         } else if (this.section === 'widgets') {
+            this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
@@ -12809,18 +12818,170 @@ class DashboardConfig {
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
+            const active = tab === this.widgetsTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
-            <div id="config-widgets-body" tabindex="0">${this.renderWidgetsEditor()}</div>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
         `;
+    }
+
+    renderWidgetsTab() {
+        return this.widgetsTab === 'types' ? this.renderWidgetTypeReference() : this.renderWidgetsEditor();
+    }
+
+    widgetsTabLabel(tab) {
+        const map = {
+            widgets: ['config.widgetsTabList', 'Widgets'],
+            types: ['config.widgetsTabTypes', 'Types'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /*
+     * What each kind of widget is for, all in one place.
+     *
+     * The add form names a type and says one line about it, which is the right
+     * amount while you are adding one and the wrong amount while you are
+     * deciding between fourteen. The same sentences the form uses -- one
+     * source, so a type cannot describe itself two ways.
+     *
+     * Grouped by the question a type answers rather than listed flat: thirteen
+     * names in one column is a list to read, four short groups is a thing to
+     * scan. Custom stands alone at the end because it is not one more tile, it
+     * is the way to build a tile nobody has written.
+     */
+    static WIDGET_TYPE_GROUPS = [
+        ['links', ['health', 'uptime', 'certs', 'trend']],
+        ['incoming', ['inbox', 'feeds', 'sources']],
+        ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
+    ];
+
+    widgetTypeGroupLabel(group) {
+        const map = {
+            links: ['config.widgetGroupLinks', 'Are the links still good?'],
+            incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
+            upkeep: ['config.widgetGroupUpkeep', 'What needs tidying?'],
+        };
+        const [key, fallback] = map[group] || [group, group];
+        return this.t(key, fallback);
+    }
+
+    renderWidgetTypeReference() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const row = (type) => `
+            <li class="config-widget-type-row">
+                <span class="config-widget-type-name">${esc(this.widgetTypeName(type))}</span>
+                <span class="config-widget-type-about">${esc(this.widgetTypeAbout(type))}</span>
+            </li>`;
+        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
+            <section class="config-widget-type-group">
+                <h4 class="config-widget-type-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
+                <ul class="config-widget-type-list">${types.map(row).join('')}</ul>
+            </section>`).join('');
+
+        return `
+            <p class="config-panel-note">${esc(this.t('config.widgetTypesIntro',
+                'Every kind of widget nextDash can draw. Add one from the Widgets tab.'))}</p>
+            ${groups}
+            ${this.renderCustomWidgetReference()}`;
+    }
+
+    /*
+     * The custom widget, at length.
+     *
+     * It is the only type that is a capability rather than a report, and the
+     * only one whose limits a reader has to know before they can judge whether
+     * their service will work. Everything here is a number the server actually
+     * enforces -- the timeout, the caps, the formats -- so this page and
+     * widgets_custom.go have to be read together when either changes.
+     */
+    renderCustomWidgetReference() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const t = (key, fallback) => esc(this.t(key, fallback));
+        const presets = window.DashboardWidgetPresets?.PRESETS?.length || 0;
+
+        /*
+         * Every string here is plain text and escaped; the examples are built
+         * as their own elements. Putting markup inside a translatable string
+         * means whichever half of it a translator drops is a broken tag.
+         */
+        const point = (title, body, aside) => `
+            <li class="config-widget-custom-point">
+                <span class="config-widget-custom-point-title">${title}</span>
+                <span class="config-widget-custom-point-body">${body}${aside ? ` ${aside}` : ''}</span>
+            </li>`;
+        const code = (sample) => `<code class="config-widget-custom-code">${esc(sample)}</code>`;
+        const formats = DashboardConfig.CUSTOM_FORMATS
+            .map((format) => code(this.t(`config.widgetFormat.${format}`, format)))
+            .join(' ');
+
+        return `
+            <section class="config-widget-type-group config-widget-custom-ref">
+                <h4 class="config-widget-type-group-title">${t('config.widgetGroupCustom',
+                    'And anything else: the Custom widget')}</h4>
+                <p class="config-widget-custom-lead">${t('config.widgetCustomRefLead',
+                    'Every widget above reads something nextDash already knows. The Custom widget reads a figure out of any service that answers JSON, so a tile can show what your own machines are doing without waiting for nextDash to grow a widget for them.')}</p>
+                <ul class="config-widget-custom-points">
+                    ${point(
+                        t('config.widgetCustomRefAddressTitle', 'An address that answers JSON'),
+                        t('config.widgetCustomRefAddressBody',
+                            'Any http or https endpoint, fetched by the server rather than by the browser — so a service on your own network works, and no key ever reaches the page. GET, or POST with a body for the services that insist.'))}
+                    ${point(
+                        t('config.widgetCustomRefPathsTitle', 'Paths into the answer'),
+                        t('config.widgetCustomRefPathsBody',
+                            'Name the value you want and nothing else — the path walks objects and arrays. Up to eight figures on one tile; more than that is a report rather than a glance.'),
+                        code('server.disk[0].used'))}
+                    ${point(
+                        t('config.widgetCustomRefFormatsTitle', 'A shape per figure'),
+                        t('config.widgetCustomRefFormatsBody',
+                            'The same number reads differently depending on what it is:'),
+                        formats)}
+                    ${point(
+                        t('config.widgetCustomRefListTitle', 'Or a list instead of figures'),
+                        t('config.widgetCustomRefListBody',
+                            'Point at an array and the tile draws its entries as rows, up to twenty — the downloads running now, the last few errors.'))}
+                    ${point(
+                        t('config.widgetCustomRefAuthTitle', 'A sign-in that stays out of your backups'),
+                        t('config.widgetCustomRefAuthBody',
+                            'An API key in a header, or a username and password. Kept in a separate file that no export or backup ZIP includes; the widget itself stores only a reference to it.'))}
+                    ${point(
+                        t('config.widgetCustomRefCacheTitle', 'Asked on a schedule you set'),
+                        t('config.widgetCustomRefCacheBody',
+                            'Anywhere between 30 seconds and a day, five minutes by default. One answer is shared by everyone looking at the dashboard, so a wall display costs the service nothing extra.'))}
+                    ${presets ? point(
+                        t('config.widgetCustomRefPresetsTitle', 'Or start from a service already known'),
+                        this.t('config.widgetCustomRefPresetsBody',
+                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in four groups, and everything stays editable afterwards.')
+                            .split('{count}').map(esc).join(`<strong>${esc(String(presets))}</strong>`)) : ''}
+                </ul>
+                <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
+                    'What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.')}</p>
+            </section>`;
+    }
+
+    bindWidgetsTabs(container) {
+        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => {
+            if (tab === this.widgetsTab) return;
+            this.widgetsTab = tab;
+            this.restoreConfigHash();
+            // Only the body changes. Repainting the strip as well would rebuild
+            // the buttons under the pointer that just clicked one.
+            this.repaintWidgetsBody();
+            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+        });
     }
 
     /** Redraw the widgets section without refetching what it already has. */
     repaintWidgetsBody() {
         const body = document.getElementById('config-widgets-body');
         if (!body) { this.render(); return; }
-        body.innerHTML = this.renderWidgetsEditor();
+        body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
     }
@@ -14449,31 +14610,74 @@ class DashboardConfig {
             }
         }
 
-        const typeOptions = DashboardConfig.WIDGET_TYPES.map((type) =>
-            `<option value="${esc(type)}">${esc(this.widgetTypeName(type))}</option>`).join('');
-
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
                 'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
-            <div class="config-widget-add">
-                <div class="config-widget-add-fields">
-                    <label class="config-widget-add-field">
-                        <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
-                        <select class="config-select" data-widget-page>${pageOptions}</select>
-                    </label>
-                    <label class="config-widget-add-field">
-                        <span>${esc(this.t('config.widgetsTypeLabel', 'Widget type'))}</span>
-                        <select class="config-select" data-widget-type>${typeOptions}</select>
-                    </label>
-                    <button type="button" class="config-btn" data-widget-add>${esc(
-                        this.t('config.widgetsAdd', 'Add widget'))}</button>
-                </div>
-                <p class="config-widget-add-about" data-widget-add-about>${esc(
-                    this.widgetTypeAbout(DashboardConfig.WIDGET_TYPES[0]))}</p>
-            </div>
+            ${this.renderWidgetPicker(pageOptions)}
             ${body}
         `;
     }
+
+    /*
+     * Choosing what to add: the kinds themselves, not a list of their names.
+     *
+     * This was a dropdown, a button, and one line of description that changed
+     * as you scrolled the dropdown -- so the only way to compare two kinds was
+     * to look at them one at a time and remember. Every kind is on screen at
+     * once now, under the question it answers, and choosing one is the click
+     * that adds it. The button is gone because it was a second step that never
+     * asked anything: nothing between picking a kind and having it.
+     *
+     * The page picker stays a select, and only appears where there is a choice
+     * to make -- on a single-page install every widget goes on that page.
+     */
+    renderWidgetPicker(pageOptions) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const card = (type) => `
+            <button type="button" class="config-widget-pick" data-widget-add="${esc(type)}"
+                title="${esc(this.widgetTypeAbout(type))}">
+                <span class="config-widget-pick-name">${esc(this.widgetTypeName(type))}</span>
+                <span class="config-widget-pick-about">${esc(this.widgetTypeAbout(type))}</span>
+            </button>`;
+        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
+            <section class="config-widget-pick-group">
+                <h4 class="config-widget-pick-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
+                <div class="config-widget-pick-grid">${types.map(card).join('')}</div>
+            </section>`).join('');
+
+        const pagePicker = pages.length > 1 ? `
+            <label class="config-widget-add-field">
+                <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
+                <select class="config-select" data-widget-page>${pageOptions}</select>
+            </label>` : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
+
+        return `
+            <details class="config-panel config-widget-add" data-fold="widget:add"
+                ${this.foldIsOpen('widget:add', true) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.widgetsAddTitle', 'Add a widget'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.widgetsAddNote',
+                            'Choose a kind and it lands at the end of the page. Everything about it is editable afterwards.'))}</span>
+                    </span>
+                </summary>
+                <div class="config-widget-add-body">
+                    ${pagePicker}
+                    ${groups}
+                    <section class="config-widget-pick-group">
+                        <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
+                            'And anything else: the Custom widget'))}</h4>
+                        <div class="config-widget-pick-grid">${card('custom')}</div>
+                        <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
+                            'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
+                    </section>
+                </div>
+            </details>`;
+    }
+
+    /** The two halves of the Widgets section: the ones you have, and the kinds. */
+    static WIDGETS_TABS = ['widgets', 'types'];
 
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
@@ -15168,6 +15372,7 @@ class DashboardConfig {
             duplicates: 'The same address stored more than once, and how many copies could go.',
             trash: 'What is waiting in the trash, and when retention removes it for good.',
             backups: 'How old the newest automatic backup is, and whether the last run failed.',
+            custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
@@ -15259,8 +15464,10 @@ class DashboardConfig {
 
             const add = target.closest('[data-widget-add]');
             if (add) {
-                const type = body.querySelector('[data-widget-type]')?.value || 'health';
-                void this.addWidget(type);
+                // The kind is on the card that was clicked. It used to be read
+                // from a dropdown beside a single Add button, which is what
+                // made choosing and adding two steps instead of one.
+                void this.addWidget(add.getAttribute('data-widget-add') || 'health');
                 return;
             }
 
@@ -15375,17 +15582,6 @@ class DashboardConfig {
 
             const title = target.closest('[data-widget="title"]');
             if (title) void this.renameWidget(Number(title.getAttribute('data-index')), title.value);
-        });
-
-        /*
-         * The line under the type picker follows the picker, so what you are
-         * about to add is described before you add it rather than after.
-         */
-        body.addEventListener('input', (event) => {
-            const picker = event.target?.closest?.('[data-widget-type]');
-            if (!picker) return;
-            const about = body.querySelector('[data-widget-add-about]');
-            if (about) about.textContent = this.widgetTypeAbout(picker.value);
         });
     }
 

@@ -237,7 +237,7 @@ test.describe('the widgets tab', () => {
             });
         });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-widget-add="health"]')).toBeVisible({ timeout: 15_000 });
     });
 
     test('it offers settings, not arrows', async ({ page }) => {

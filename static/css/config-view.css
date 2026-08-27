@@ -6223,3 +6223,184 @@ button.config-bm-shortcut-pill {
 @media (max-width: 52rem) {
     .config-view-intro-row { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Widgets: choosing one, and what each one is ─────────────────────────── */
+/*
+ * The picker and the reference are built from the same parts on purpose.
+ *
+ * Adding a widget used to be a dropdown, a button, and one line that changed
+ * as the dropdown did — so comparing two kinds meant looking at them one at a
+ * time and remembering. Both screens now put every kind on the page under the
+ * question it answers; the only difference is that one of them is clickable.
+ */
+.config-widget-pick-group,
+.config-widget-type-group {
+    margin: 0 0 18px;
+}
+
+.config-widget-pick-group:last-child,
+.config-widget-type-group:last-child {
+    margin-bottom: 0;
+}
+
+.config-widget-pick-group-title,
+.config-widget-type-group-title {
+    margin: 0 0 8px;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+/*
+ * As many across as the panel has room for, never fewer than one.
+ *
+ * auto-fill with a minimum rather than a fixed count: config is a column
+ * inside a page that is itself a column, so the width here is whatever is
+ * left after the rail — a number of columns chosen in advance is wrong at
+ * some window size.
+ */
+.config-widget-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: 8px;
+}
+
+.config-widget-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.config-widget-pick:hover,
+.config-widget-pick:focus-visible {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.config-widget-pick-name {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.config-widget-pick-about,
+.config-widget-type-about {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+.config-widget-pick-footnote {
+    margin: 8px 0 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+}
+
+.config-widget-add-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 12px;
+}
+
+/* The reference: a name and a sentence, stacked rather than gridded — reading
+   is a column, choosing is a grid. */
+.config-widget-type-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.config-widget-type-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-type-name {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* ── The Custom widget, explained at length ──────────────────────────────── */
+.config-widget-custom-ref {
+    padding: 14px 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-custom-lead {
+    margin: 0 0 12px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    line-height: 1.6;
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+.config-widget-custom-ref .config-widget-custom-lead:last-child {
+    margin: 12px 0 0;
+}
+
+.config-widget-custom-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+/*
+ * A rule down the left rather than a box per point.
+ *
+ * Seven bordered cards inside a bordered panel is three edges deep before any
+ * of it says anything; a hairline is enough to say "these belong together and
+ * each one is separate".
+ */
+.config-widget-custom-point {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-widget-custom-point-title {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.config-widget-custom-point-body {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.6;
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+.config-widget-custom-code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+    font-size: 0.95em;
+    /* Whatever the reader set config to, a path is a path. */
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
