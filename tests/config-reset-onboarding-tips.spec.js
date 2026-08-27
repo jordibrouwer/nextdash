@@ -76,6 +76,35 @@ test.describe('replaying the tour also replays the tips', () => {
             .toBe(false);
     });
 
+    /*
+     * The dialog promises the welcome tour, and the card is the tour. Clearing
+     * onboardingCompleted alone did not bring it back: quick-start checks
+     * `quickStart.dismissed`, which stayed true, so the reader was told the
+     * tour would replay and nothing appeared. Worse, the two flags were then in
+     * disagreement -- dismissed, but not completed -- which is the state that
+     * silences every unprompted card, the What's new modal after an upgrade
+     * included.
+     */
+    test('the card itself comes back, not just the flag', async ({ page }) => {
+        await openBehaviorGeneral(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.quickStart = { ...(d.settings.quickStart || {}), dismissed: true, setupDone: true };
+            d.settings.onboardingCompleted = true;
+            await d.saveSettings?.();
+        });
+
+        await resetOnboarding(page);
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.settings.quickStart?.dismissed
+        ), { timeout: 10_000 }).toBe(false);
+
+        // And on the next visit it is actually on screen.
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('.quickstart-card')).toBeVisible({ timeout: 15_000 });
+    });
+
     test('it survives the round trip to the server', async ({ page }) => {
         await openBehaviorGeneral(page);
         await page.evaluate(() => {
