@@ -476,6 +476,28 @@ body:not([data-depth="flat"]) .dashboard-grid:not(.layout-cards):not(.layout-wid
     padding-bottom: 0.35rem;
 }
 
+/* A category spanning more than one column says so with its rule.
+ *
+ * The rule above fades out at 85%, which is right for a single column: the
+ * title names the category and the line trails off under it. Across two
+ * columns that same fade lands well short of the edge, so a wide category
+ * looked like a narrow one whose line happened to be long -- the width was
+ * only legible from the badge in the header, or by counting the bookmarks.
+ *
+ * Here it carries further and holds its colour longer, so the eye follows it
+ * to where the category actually ends. Still a hairline, still fading rather
+ * than stopping: the point is to trace the span, not to draw a box around it.
+ */
+body:not([data-depth="flat"]) .dashboard-grid:not(.layout-cards):not(.layout-widgets) .category.category--wide .category-title {
+    border-image: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 70%, transparent) 0%,
+        color-mix(in srgb, var(--accent-primary) 30%, var(--hairline)) 45%,
+        var(--hairline) 80%,
+        transparent 100%
+    ) 1;
+}
+
 /* ── Typographic character ─────────────────────────────────────────────────
    A theme is a palette today. These two variables let it also be a voice.
 
