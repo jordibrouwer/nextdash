@@ -323,6 +323,34 @@ environment:
 
 ---
 
+## Screenshots
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-6.png" alt="Dashboard with combined columns" width="100%" />
+      <br />
+      <sub><b>Dashboard</b> with combined columns.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-7.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widget</b> settings.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-8.png" alt="Dashboard with widgets" width="100%" />
+      <br />
+      <sub><b>Dashboard</b>  with widgets.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-9.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widgets</b> settings.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Features
 
 ### Keyboard-first workflow
