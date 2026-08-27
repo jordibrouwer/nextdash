@@ -2,33 +2,8 @@
   "tag": "v1.4.0",
   "date": "27 August 2026",
   "releasedAt": "2026-08-27",
-  "modalLead": "A theme engine rebuilt from the ground up: a browser to find themes in rather than a list of 214 lines, every theme given its own accent, depth and backdrop, and thirty-three new ones. Alongside it — where bookmarks come from, where copies of them are kept, and what nextDash can tell the rest of your machine.",
+  "modalLead": "The largest release so far — seventy changes, four of them new ground. A page can hold widgets now: fourteen kinds of block, including one that reads any service you run, with twenty-eight already filled in. The theme engine is rebuilt. Bookmarks can arrive on their own, a copy of a page can be kept for when the page dies, and nextDash can tell the rest of your machine what happened here.",
   "sections": [
-    {
-      "title": "Themes, rebuilt",
-      "items": [
-        {
-          "badge": "new",
-          "text": "<strong>A theme browser, instead of a list of 214 lines.</strong> The picker was a listbox sorted alphabetically, which puts a theme twenty positions away from its own other half, shows you nothing of what any of them look like, and cannot be searched. At that size a list is not navigation. It is a grid of cards now — one per family with a light/dark switch on it, so 214 becomes 107 — with a search box, filters for <em>light</em>, <em>dark</em> and <em>favourites</em>, and a star so the handful you actually use are one click away. The live preview on the real dashboard is unchanged: move through the grid and the page follows, leave without choosing and your old theme comes back."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>Every theme has its own colour again.</strong> A theme's accent — the focus ring, the active tab, the hovered row — was its <em>success</em> colour, because there was only ever one accent and that was it. So every install accented green or teal whatever the theme was called: <em>this link answers</em> and <em>this is a Mulberry Silk install</em> were the same value. All 214 variants now carry an accent of their own."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>The page is no longer one flat rectangle.</strong> A theme declares thirteen colours, two of which are surfaces — and two surfaces cannot express depth, so a card, a panel and a control were all painted the same and only a border said where one stopped. A second layer is now derived from what a theme already declares: a tint in its greys, a ladder of surfaces a card can sit on, and two large, soft washes of light behind the page in the theme's own colours. <em>Config → Appearance</em> offers <em>flat</em>, <em>soft</em> and <em>rich</em>; <em>flat</em> is the dashboard exactly as it was, so liking the old look is one control rather than not upgrading."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>Backdrops beyond dots.</strong> The texture behind your bookmarks can be dots, a grid, lines or hatching — or nothing at all. Left on <em>auto</em> the theme decides: most ask for dots, and the handful whose texture is part of what they are ask for something else. A background image of your own still wins over all of it, because a background you chose was chosen instead of this, not on top of it."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>Thirty-three new themes.</strong> <em>Rosé Pine</em>, <em>City Lights</em>, <em>Tomorrow Dusk</em>, <em>Cobalt Ink</em>, <em>Iceberg Drift</em>, <em>Owl Hours</em>, <em>Polar Night</em>, <em>Zen Ember</em>, <em>Great Wave</em>, <em>Bamboo Panda</em>, <em>Synth Sunset</em> and twenty-two more, each in a light and a dark variant. That brings it to 107 families, 214 variants."
-        }
-      ]
-    },
     {
       "title": "Widgets on the dashboard",
       "items": [
@@ -38,7 +13,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Eight tiles, each reading something nextDash already knows.</strong> <em>Health</em> and <em>Uptime</em> report what the health view reports, worst first, with a heartbeat per monitored link. <em>Trend</em> draws the last thirty days. <em>Inbox</em> says what is waiting. <em>Neglected</em> surfaces what you saved and never opened. <em>Sources</em>, <em>Feeds</em> and <em>Certificates</em> show the three things that were previously visible nowhere you pass on an ordinary day — a failed import, a feed gone quiet, a certificate running out."
+          "text": "<strong>Thirteen tiles, each reading something nextDash already knows.</strong> <em>Health</em> and <em>Uptime</em> report what the health view reports, worst first, with a heartbeat per monitored link. <em>Health trend</em> draws the last thirty days. <em>Certificates</em> shows what is running out, per site. <em>Inbox</em> says what is waiting, <em>Feeds</em> which feeds went quiet, <em>Sources</em> what each import last did. And for tidying: <em>Neglected</em>, <em>Blind spots</em>, <em>Duplicates</em>, <em>Archive</em>, <em>Trash</em> and <em>Backups</em> — the things that were previously visible nowhere you pass on an ordinary day."
         },
         {
           "badge": "new",
@@ -67,6 +42,67 @@
         {
           "badge": "fix",
           "text": "<strong>A tile redraws from fresh data when its settings change.</strong> It used to draw the new settings over figures fetched before they existed, which read as though the change had not taken — including on pages you were not looking at."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Twenty-eight services the Custom widget already knows.</strong> Pick one and the address, the figures worth reading and the sign-in it wants are filled in for you, in four groups — and everything stays editable afterwards."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Widgets has two tabs, and adding one no longer loses it.</strong> The kinds you can add filled the whole screen, which pushed the widgets you already have below the fold: you would click a card and the thing you just made was somewhere you could not see. Choosing a kind opens over the page now, and closes onto your new widget with its name ready to type. The <em>Types</em> tab lists every kind with what it does, and you can add from there too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A widget can be renamed after you save it</strong>, and the service picker stays on the service you chose instead of jumping back to the top of the list."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A percentage on a custom tile reads as a percentage.</strong> Some services report a figure that came out as <em>43.729183739999996%</em> on a tile the size of a stamp."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing your own address over a service keeps the rest of it.</strong> The path the service had filled in was thrown away, so the widget asked the right machine the wrong question."
+        }
+      ]
+    },
+    {
+      "title": "Themes, rebuilt",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme browser, instead of a list of 214 lines.</strong> The picker was a listbox sorted alphabetically, which puts a theme twenty positions away from its own other half, shows you nothing of what any of them look like, and cannot be searched. At that size a list is not navigation. It is a grid of cards now — one per family with a light/dark switch on it, so 214 becomes 107 — with a search box, filters for <em>light</em>, <em>dark</em> and <em>favourites</em>, and a star so the handful you actually use are one click away. The live preview on the real dashboard is unchanged: move through the grid and the page follows, leave without choosing and your old theme comes back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every theme has its own colour again.</strong> A theme's accent — the focus ring, the active tab, the hovered row — was its <em>success</em> colour, because there was only ever one accent and that was it. So every install accented green or teal whatever the theme was called: <em>this link answers</em> and <em>this is a Mulberry Silk install</em> were the same value. All 214 variants now carry an accent of their own."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The page is no longer one flat rectangle.</strong> A theme declares thirteen colours, two of which are surfaces — and two surfaces cannot express depth, so a card, a panel and a control were all painted the same and only a border said where one stopped. A second layer is now derived from what a theme already declares: a tint in its greys, a ladder of surfaces a card can sit on, and two large, soft washes of light behind the page in the theme's own colours. <em>Config → Appearance</em> offers <em>flat</em>, <em>soft</em> and <em>rich</em>; <em>flat</em> is the dashboard exactly as it was, so liking the old look is one control rather than not upgrading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Backdrops beyond dots.</strong> The texture behind your bookmarks can be dots, a grid, lines or hatching — or nothing at all. Left on <em>auto</em> the theme decides: most ask for dots, and the handful whose texture is part of what they are ask for something else. A background image of your own still wins over all of it, because a background you chose was chosen instead of this, not on top of it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Thirty-three new themes.</strong> <em>Rosé Pine</em>, <em>City Lights</em>, <em>Tomorrow Dusk</em>, <em>Cobalt Ink</em>, <em>Iceberg Drift</em>, <em>Owl Hours</em>, <em>Polar Night</em>, <em>Zen Ember</em>, <em>Great Wave</em>, <em>Bamboo Panda</em>, <em>Synth Sunset</em> and twenty-two more, each in a light and a dark variant. That brings it to 107 families, 214 variants."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The dashboard offers to show you the themes.</strong> Two hundred of them sat behind <em>Config → Appearance → Browse</em>, which is three clicks from anywhere you actually look, so most people never found out their dashboard could look like anything else. A card now offers it once, and the button opens the browser there and then — the preview lands on the page you are already looking at, and closing it without choosing leaves your theme exactly as it was."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon harmonisation stays on when you change theme.</strong> It is set per theme, and only the two themes a new install starts with had it switched on — so picking any other theme quietly turned it off, with nothing on screen saying so. It is on for every theme now unless you switch it off yourself. If you are on a theme you never configured it for, your site icons will start blending with it after this update; the switch is under <em>Appearance</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The theme you pick is the theme you get.</strong> Choosing one from the browser could leave the previous theme's colours on screen beside the new one — pick Moss &amp; Stone from Retro CRT and end up looking at Marigold Dusk. Reloading always fixed it, because what was saved had been right all along."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The plain dark and light themes are called ThinkDashboard.</strong> They were <em>Old Default</em>, which said what they used to be rather than what they are. Nothing you have chosen moves."
         }
       ]
     },
@@ -162,6 +198,43 @@
       ]
     },
     {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Uptime, as a reading rather than a count.</strong> <em>Statistics → Health</em> said how many bookmarks you monitor and never how well they did. It now shows how much of the time they answered over the last day, week and month, how many are failing right now, the average response and how many outages are on record."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Certificates that are running out</strong>, counted per site rather than per bookmark, using the warning window you set. Nothing is shown when none are close, which is the ordinary case and reads correctly as nothing to do."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How much of your collection has a copy kept here.</strong> A dead link with a saved copy is still readable; one without it is gone. That number was only ever on a widget you had to have added."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Everything that is not a bookmark, counted.</strong> A new panel on <em>Statistics → Content</em> says how many widgets are on your pages and of what kind, how many feeds and import sources you have, what is waiting in the trash and how many automatic backups are kept."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>“Healthy 100%” while two monitors were down.</strong> The healthy share left out the bookmarks that are failing a check and the ones answering with the wrong content — so the headline could read 100% directly above a row saying two are down. Those two also get rows of their own now, along with the ones that changed since you last looked and the ones in a category that no longer exists."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The cleanup score says your own threshold.</strong> You can set when a bookmark counts as neglected; the score always claimed 90 days. Set to seven, the page read <em>120 bookmarks have not been opened in 7 days</em> and, four lines below, <em>120 not opened in 90 days</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Category names, not the ids underneath them.</strong> The category panels and the CSV export showed the raw name a category is stored under — <em>dev</em> instead of <em>Development</em> — unless you happened to have opened <em>Config → Bookmarks</em> first in the same visit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The time under the figures is on your clock.</strong> With the 24-hour setting on, the header read <em>15:10</em> and Statistics read <em>03:10 PM</em> on the same screen. Every clock in the app follows the setting now."
+        }
+      ]
+    },
+    {
       "title": "Cards and previews",
       "items": [
         {
@@ -227,6 +300,26 @@
         {
           "badge": "new",
           "text": "<strong>A new install starts with the button bar in the corner.</strong> It began centred above the bookmarks, floating over the thing you opened the dashboard to look at. If you have ever chosen a position, yours is untouched."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A fifth setup step, for the bookmarks you already have.</strong> Quick setup ended by asking how you would like to begin, and one of the answers is <em>start from scratch</em> — which left you looking at an empty dashboard, with nothing in the app saying you need not type it all in. It now points at both ways in: a file you already have, and a list that keeps arriving."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>About three hundred translations that had been written and never shown.</strong> Widget names and descriptions, the weather, layout and background presets, the figure formats — all translated in all four languages, and all of them displaying in English."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The lists and the overview look like the rest of config.</strong> Pages, categories, tags and finders were columns of empty rectangles on the Classic layout, and <em>Config → Overview</em> was bare text between hairlines while every other section is made of cards."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help has a Widgets tab.</strong> Five articles: what a widget is, the thirteen kinds and what each one answers, how to add one and where it ends up, the Custom widget in full, and the twenty-eight services it already knows how to read. It used to be a single paragraph filed under <em>Pages &amp; bookmarks</em>, which is why almost nobody found the Custom widget."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing <em>:config</em> lists the config you actually have.</strong> It offered sections from two rewrites ago — <em>Theme &amp; colors</em>, <em>Collections</em> — and never offered Overview, Appearance, Behavior, Widgets or About. Worse, every one of them opened the same screen: whichever you picked, you landed on Overview, after a full page reload. They open the right section now, in place, and the old names that became sub-tabs still work and take you to their tab."
         }
       ]
     },

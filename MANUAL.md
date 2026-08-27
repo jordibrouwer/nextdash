@@ -252,7 +252,7 @@ Config is a **view inside the dashboard**, not a separate page — same tab, sam
 | Keyboard-first | Bookmark editor, stats, backups |
 | Live layout and themes | Every setting, grouped by topic |
 
-It has nine sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+It has ten sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
 **The overview is a news stream** (**v1.3.3**). Under the act zone sits one dated list mixing three sources — posts from **nextdash.cc**, **releases**, and the **settings** each release introduced — newest first, each row carrying a source label, a one-line summary, its date in your own date format, and its own way in: read the post, show what's new, or open the setting. The chips above it narrow the list to one source, and pressing the active chip again widens it back; hiding the site's posts entirely is one click. A green dot marks anything published since you last read the stream, with a count on **Overview** in the section rail — a first visit starts quiet rather than declaring everything unread. Six rows fit on the overview, and up to two of them are kept for **posts from the site** (**v1.3.3.2**) — in plain date order a busy release day fills the window with release rows and the settings they brought, and the posts drop off the page the day after they went up. The features shown are those from the two most recent releases **that introduced one**, so a hotfix does not spend the window. **All news & features** opens the rest under **About → News & features**, together with every setting worth switching on from earlier releases and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
 
@@ -782,7 +782,7 @@ Use **`Enter`** on a highlighted row to run it (including after autocomplete exp
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
 | `:recent` / `:overview` / `:cheat` / `:help` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet (`!` / `F1`), what's new, reload |
 | `:inbox` / `:inbox triage` | Open Inbox (`Shift+I`, or `0`) or triage unread items one by one |
-| `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
+| `:config [section]` | Open a config section in place: `overview`, `bookmarks`, `appearance`, `pages-tags`, `behavior`, `data-backups`, `widgets`, `stats`, `help`, `about`. The names that became sub-tabs — `categories`, `tags`, `finders`, `pages`, `backups`, `themes` — still work and land on their tab |
 | `:stale [days]` | List stale bookmarks |
 | `:health [filter]` | Open health view (`Shift+H`) — `broken`, `duplicate`, `stale`, `refresh`, … |
 | `:health page [n]` | Open health with a specific page context |
@@ -910,18 +910,45 @@ width of one or two columns, and settings of its own. The order of widgets and
 categories is one list, so there is a single answer to where any block sits — the
 same list the **Categories** tab arranges.
 
-**The eight types**
+**The thirteen types**, grouped in the picker under the question each answers.
+
+*Are the links still good?*
 
 | Type | What it shows |
 |---|---|
-| **Health** | The figures the health view reports: broken, stale, unchecked, and the score. Click a figure to open that filter |
+| **Health** | The figures the health view reports: broken, down, changed, fine. Click a figure to open that filter |
 | **Uptime** | Your monitored bookmarks, worst first, with a heartbeat bar per row. Only monitored ones appear — the rest have no samples |
-| **Trend** | The last thirty days of the health score as a small chart |
-| **Inbox** | What is waiting in the inbox, and how much of it is unread |
+| **Certificates** | Certificates about to expire, grouped by host rather than by bookmark: ten bookmarks on one domain share one certificate |
+| **Health trend** | Broken links over time as a line, because the direction is what a single number cannot show |
+
+*What is arriving?*
+
+| Type | What it shows |
+|---|---|
+| **Inbox** | How much is waiting to be filed, and how long the oldest has waited |
+| **Feeds** | Feeds with new items, and the ones that stopped after repeated failures |
+| **Sources** | What each import last did. A failed import used to be discoverable only by wondering why nothing new had arrived |
+
+*What needs tidying?*
+
+| Type | What it shows |
+|---|---|
 | **Neglected** | Bookmarks you saved and have not opened, oldest first |
-| **Sources** | Each configured source and what its last round did. A failed import used to be discoverable only by wondering why nothing new had arrived |
-| **Feeds** | Which feeds published recently and which have gone quiet |
-| **Certificates** | Hosts whose certificate is running out, soonest first |
+| **Blind spots** | Never checked, checked long ago, or not watched at all |
+| **Duplicates** | The same address stored more than once, and how many copies could go |
+| **Archive** | How many bookmarks have a copy kept, and which broken ones have none |
+| **Trash** | What is waiting there, and when retention removes it |
+| **Backups** | How old the newest automatic backup is, and whether the last run failed |
+
+And a fourteenth that is a capability rather than a report: the **Custom** widget, below.
+
+**Adding one**
+
+**Config → Widgets** opens on the widgets you have, with one *Add a widget*
+button above them. The catalogue opens over the page; choosing a kind closes it
+onto the new widget with its name ready to type. The **Types** tab is the same
+catalogue as reading matter — every kind with what it does, and an *Add* button
+on each — so you can read about one and take it without changing screens.
 
 **Settings a widget can be given**
 
@@ -933,19 +960,62 @@ what you want to see, and what falls outside it has to stay visible.
 **The custom widget**
 
 The escape hatch, for a service that is not in the list. Give it an address that
-answers with JSON and name the fields you want on the tile:
+answers with JSON and name the fields you want on the tile. It is deliberately
+the only widget that talks to anything outside.
 
-- **Address** — the endpoint to fetch. It is fetched **by the server**, not by
-  your browser, so a LAN address works and no key ever reaches the page.
+- **Address** — any `http` or `https` endpoint, `GET` or `POST`. It is fetched
+  **by the server**, not by your browser, which is what makes a machine on your
+  own network reachable at all and what keeps a key out of a page any script
+  could read. The address is stored rather than sent: the request names a
+  widget, and the server visits only what that widget was configured to visit.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
-- **Fields** — a path per figure, like `status.queue` or `data.0.count`, with a
-  label. A path that stops matching is marked rather than blank, because a blank
-  reads as a zero and zero is a fact.
+  Those live in a separate file that no export or backup ZIP includes.
+- **Fields** — a path per figure, with a label and a shape. A path walks objects
+  and arrays — `server.disk[0].used` — and either names something or does not; a
+  path that silently matched several things would make a wrong figure look
+  right. A path that stops matching is marked rather than blank, because a blank
+  reads as a zero and zero is a fact. Up to **eight** figures on one tile.
+- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Time ago*
+  or *Text*. Sizes step through KB and MB, a ratio between 0 and 1 is read as a
+  percentage, and a date arrives as seconds, milliseconds or an ISO string.
+- **Or a list instead of figures** — point at an array and the tile draws its
+  entries as rows, up to twenty: the downloads running now, the last few errors.
+- **Schedule** — anywhere between 30 seconds and a day, five minutes by default.
+  One answer is shared by everyone looking at the dashboard, so a wall display
+  costs the service nothing extra.
 
-Answers are cached briefly so an open dashboard does not become a poll loop
-against somebody else's service; **Refresh** on the widget skips that cache and
-needs the write token if your install uses one.
+**Refresh** on the widget skips the cache, including the short retry window a
+failure gets, and needs the write token if your install uses one.
+
+It will not change anything: a tile reads, and the two methods it offers are the
+two that ask a question. An answer has **eight seconds** to arrive and is read up
+to a **megabyte**. There is no expression language and no arithmetic.
+
+**Twenty-eight services it already knows**
+
+Pick one and the address, the figures worth reading and the header its API wants
+are filled in. Everything stays editable afterwards, so a preset is a starting
+point rather than a lock.
+
+| Group | Services |
+|---|---|
+| **Media & downloads** | Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd, NZBGet |
+| **Network** | Pi-hole (v6 and v5 separately — v6 rewrote its API), AdGuard Home, Traefik, Speedtest Tracker |
+| **System** | Proxmox VE, TrueNAS, Glances, Syncthing |
+| **Apps** | Nextcloud, Paperless-ngx, Home Assistant, Grafana, ntfy |
+
+Each preset carries a sample address in the right shape, the path on that service
+that answers with the numbers worth a tile, the figures pulled out of it with
+their labels and shapes, and how it wants to be signed in to — an `X-Api-Key`
+header, a bearer token, a username and password, or nothing at all. Each also
+names where to find its key: Sonarr's is under *Settings → General*, and the
+panel says so at the moment you need it.
+
+A service that is not on the list needs no code — that is the point of the custom
+widget. The presets exist because copying an address, four paths and a header
+name out of another program's documentation is the tedious half, not the hard
+half.
 
 **A widget can be two columns wide, at most.** A widget is a summary, and one
 that needs three columns is a view that has not admitted it yet. On a
@@ -1106,7 +1176,7 @@ Two things worth knowing:
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own). Since **v2026.09.08.2** the list previews as you move through it: arrow keys or the mouse apply each theme to the dashboard behind the config view, and nothing is saved until you press Enter or click one. **Esc**, a click elsewhere, or moving focus away puts back the theme you started with, so browsing the list can never leave you somewhere you did not choose.
 - **Random theme** (**v2026.07.26**) — under **config → appearance → Theme**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health, or when switching dashboard pages — tabs, `1`–`9`, swipe, or hash; **v2026.07.26.2**). Each rotate picks a different theme from the pool when more than one is eligible (**v2026.07.26.3**). A **Currently showing** hint names the active theme while random is on. If random is on and you pick a different saved theme, your choice is stored but the display keeps rotating until you turn random off — a toast confirms this (**v2026.07.26.3**), including from `:theme` in search. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. The first desktop visit to Appearance may show a one-time popover pointing at this control (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** — the button stays fixed while the card appears.
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
-- **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. Changes apply live on the bookmark grid without a reload; stays enabled when a custom theme is active; and with **Random theme** on, it is one shared setting for the whole rotation instead of resetting each time the pool picks a new theme (**v2026.07.26.3**). **New installs start with it on** (Muted, intensity 0.5) for both variants of the default theme; existing dashboards keep whatever they had.
+- **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). **On unless you switch it off** (v1.4.0): it is stored per theme, and a theme you have never configured it for is harmonised rather than left plain — before that, only the two themes a fresh install ships with had it on, so picking any other theme quietly turned it off. Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. Changes apply live on the bookmark grid without a reload; stays enabled when a custom theme is active; and with **Random theme** on, it is one shared setting for the whole rotation instead of resetting each time the pool picks a new theme (**v2026.07.26.3**). **New installs start with it on** (Muted, intensity 0.5) for both variants of the default theme; existing dashboards keep whatever they had.
 
 ### The theme browser (v1.4.0)
 
@@ -1123,6 +1193,12 @@ searched. At that size a list stops being navigation.
   *Dark*.
 - **A star per family** builds your own shortlist, kept in the order you starred
   them, so the handful you actually use are one click away rather than a scroll.
+- **The dashboard offers it once** (v1.4.0). Two hundred themes behind three
+  clicks is three clicks more than most people go looking, so a card in the
+  corner offers the browser once and the button opens it there and then — the
+  preview lands on the page you are already looking at, and closing without
+  choosing leaves your theme as it was. Answer it either way and it does not
+  come back.
 - **The preview is unchanged.** Moving through the grid applies each theme to
   the real dashboard behind the config view, and leaving without choosing puts
   back the one you started on. Nothing is saved until you pick.
@@ -1550,6 +1626,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 
 Every Behavior tab has a **filter field** beside *Only changed*: it narrows the tab to the settings whose label, hint or options match what you type, and `Escape` clears it. That is the other half of `Ctrl/Cmd+Shift+K`, which finds one setting anywhere; this one narrows the eighty-odd in front of you. **Keep settings on this device only** lives here, in *Sync & feedback*, and only here — it used to be offered on Data & backups as well, where it was the copy that worked.
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
+| **Widgets** | Widgets · Types |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Tips · Configuring · Pages & bookmarks · Search & keyboard · Health · Monitoring · Inbox · Statistics · Data & hosting |
 | **About** | No sub-tabs — the wordmark, what nextDash is, the release notes, and where it comes from |
@@ -1557,6 +1634,10 @@ Every Behavior tab has a **filter field** beside *Only changed*: it narrows the 
 **Statistics** can be narrowed to **one page**: a *Showing* selector beside the sub-tabs, offered as soon as there is more than one page. Everything worked out on this side narrows with it — counts, coverage, activity, the cleanup score. Two things cannot: the **inbox**, which belongs to no page, and the **health report**, which the server builds for the whole collection. Both say so on screen rather than quietly ignoring the choice, and the export records which scope produced it. The filter is deliberately not remembered between visits — it hides most of the library, and a filter still in force from last week reads as a shrunken collection rather than as a choice.
 
 **Health** opens with the **healthy share over time**, drawn from the day-per-day series the server already records for the health view — on a fixed 0–100 axis, with a gap where a day was never recorded, and the change in words beside it (*up 12 points over 30 recorded days*). Below a couple of recorded days it says what it is waiting for instead.
+
+The **Health** sub-tab reports the readings nextDash was already taking one bookmark at a time. **Uptime** pools every monitor's checks over the last 24 hours, 7 days and 30 days — by check rather than by monitor, so a service checked every five minutes does not outweigh one checked hourly — with the average response, how many are failing right now, and the outages on record. A window with nothing recorded says so, which is not the same as one that was down. **Certificates** lists what is close to expiry, counted per site rather than per bookmark, on the warning window set under Health; nothing is drawn when none are close. **Archive coverage** says how much of the collection has a copy kept on this disk, which is the difference between a dead link you can still read and one that is gone.
+
+The **Content** sub-tab ends with **Beyond bookmarks**: how many widgets sit on your pages and of what kind, how many feeds and import sources you have, what is waiting in the trash, and how many automatic backups are kept. Each figure is fetched on its own and a figure that cannot be read is left out rather than shown as zero — *none* and *could not ask* are different answers.
 
 **Statistics** ends with the time the figures were worked out and two controls beside it, on every sub-tab: **Refresh** — the numbers come from what is in memory, so a tab left open goes stale while the stamp above it keeps its old time — and **Export as CSV**, which carries every sub-tab's figures including the two that come from the server, so visit **Inbox** and **Health** before exporting if you want theirs in the file. Duplicate URLs are counted the way the health view counts them: a trailing slash, a `#fragment` and a differently-cased host are the same link, not three.
 
@@ -1629,8 +1710,13 @@ like a category is — but it grew a settings panel per type and stopped being a
 list of names. Arranging blocks still happens on the **Categories** tab, which is
 where the one block order lives.
 
-Each type carries a line saying what it does, so choosing one does not mean
-adding it to find out.
+Two sub-tabs: **Widgets**, the ones you have, and **Types**, the catalogue. The
+catalogue used to sit open above the list and filled the screen, which pushed
+your own widgets below the fold — choosing a kind added something you could not
+see. It opens over the page now and closes onto the new widget, with its name
+ready to type. Each type carries a line saying what it does, so choosing one does
+not mean adding it to find out, and the Types tab adds from where each kind is
+described.
 
 ### Server log (Data & backups → Server log)
 

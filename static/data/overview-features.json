@@ -2,6 +2,38 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureStatsReadingTitle",
+      "titleFallback": "Statistics reports what the app already knows",
+      "whatKey": "config.overviewNewFeatureStatsReadingWhat",
+      "whatFallback": "The section counted bookmarks, tags and categories and stopped there. It said how many services you monitor but never how well they did, nothing about certificates running out, and nothing about how much of the collection has a saved copy — all of which nextDash had already worked out. Some of what it did report was wrong: the healthy share could read 100% directly above a row saying two monitors were down.",
+      "howKey": "config.overviewNewFeatureStatsReadingHow",
+      "howFallback": "Health gains uptime over the last day, week and month with the average response and the outages on record; certificates near expiry, counted per site on your own warning window; and how much of the collection has a copy kept here. Content gains a panel for everything that is not a bookmark — widgets, feeds, import sources, the trash and the automatic backups. The healthy share counts every state now, the cleanup score names the threshold you actually set, category panels show names rather than the ids underneath them, and the timestamp follows your 12- or 24-hour setting.",
+      "enableKey": "config.overviewNewFeatureStatsReadingEnable",
+      "enableFallback": "Nothing to switch on. The uptime and certificate panels appear once there is something to report.",
+      "ctaKey": "config.overviewNewFeatureStatsReadingCta",
+      "ctaFallback": "Open Statistics →",
+      "go": {
+        "section": "stats"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetCatalogueTitle",
+      "titleFallback": "Adding a widget no longer loses the widget",
+      "whatKey": "config.overviewNewFeatureWidgetCatalogueWhat",
+      "whatFallback": "The kinds you can add filled a whole screen at the top of the Widgets tab, which pushed the widgets you already have below the fold. Choosing a kind added something you could not see, and the only sign of it was a message in the opposite corner.",
+      "howKey": "config.overviewNewFeatureWidgetCatalogueHow",
+      "howFallback": "Widgets opens on your own widgets with one button above them. The catalogue opens over the page, the way the theme browser does, and closes onto the new widget with its name ready to type. The Types tab lists every kind with what it does and adds from there too, and the Custom widget comes with twenty-eight services already filled in.",
+      "enableKey": "config.overviewNewFeatureWidgetCatalogueEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureWidgetCatalogueCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureThemeEngineTitle",
       "titleFallback": "A theme browser, and every theme rebuilt",
       "whatKey": "config.overviewNewFeatureThemeEngineWhat",

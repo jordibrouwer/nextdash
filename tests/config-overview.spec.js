@@ -160,7 +160,13 @@ test.describe('config overview', () => {
 
     test('the statistics link opens that section', async ({ page }) => {
         await openOverview(page);
-        await page.locator('[data-overview-go=\'{"section":"stats"}\']').click();
+        // Scoped to the At a glance panel: a spotlight entry in the news stream
+        // may point at the same section, and two buttons carrying one target is
+        // the stream working rather than a duplicate to disambiguate by index.
+        const panel = page.locator('.config-panel').filter({
+            has: page.locator('.config-panel-title', { hasText: /glance/i }),
+        });
+        await panel.locator('[data-overview-go=\'{"section":"stats"}\']').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.section)).toBe('stats');
     });

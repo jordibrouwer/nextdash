@@ -83,6 +83,7 @@
                 'tipMaintRotReport',
                 'tipMaintMerge',
                 'tipMaintMonitorStats',
+                'tipMaintStatsUptime',
                 'tipMaintCert',
                 'tipMaintExpectText',
                 'tipMaintMaintenanceWindow',
@@ -99,6 +100,7 @@
             tips: [
                 'tipTuneInfo',
                 'tipTuneTheme',
+                'tipTuneThemeBrowser',
                 'tipTunePreview',
                 'tipTuneSmartCollections',
                 'tipTuneFresh',
@@ -117,7 +119,7 @@
             // the two directions Data & backups grew in v1.4.0.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks'],
         },
     ];
 
