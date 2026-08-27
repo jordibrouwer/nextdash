@@ -188,7 +188,7 @@ Because the width follows the contents, it also follows them as they change: a b
 | 16 – 30 | 2 |
 | 31 – 45 | 3 |
 
-A spread category says so twice: a rule under its header running the width of the whole block, and a small **↔ N** beside the title naming the number of columns it currently takes.
+A spread category says so with a small **↔ N** beside the title, naming the number of columns it currently takes.
 
 | Route | How |
 |-------|-----|

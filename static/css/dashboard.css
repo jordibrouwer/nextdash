@@ -1575,33 +1575,19 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     --category-span: 1 !important;
 }
 
-/* One category, several columns — and a way to see that at a glance.
+/* One category, several columns — and no second rule to say so.
  *
- * Two blocks of bookmarks side by side look like two categories. The rule below
- * runs from the left edge of the first column to the right edge of the last,
- * directly under the header, and says that everything beneath it belongs to the
- * name above it — the way a table header rule does.
- *
- * Dropped while the category is collapsed: the body is still in the document
- * with its rows squeezed to nothing, so the rule would be left hanging under a
- * header with visibly nothing under it.
+ * A wide category used to draw its own line across the full span, under the
+ * header. The header already carries one: the fading rule the depth presets
+ * give every category title, which runs the same width because the title does.
+ * Two lines a few pixels apart read as a mistake, so this one is gone and the
+ * width is left to the spread badge and the layout itself.
  */
-.dashboard-grid .category.category--wide:not([data-collapsed="true"]) .category-body {
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 85%, transparent);
-    padding-top: 0.6rem;
-}
-
-/* The presets that already draw the category as a card say it themselves — a
-   second line inside the box is one line too many. */
-.dashboard-grid.layout-cards .category.category--wide:not([data-collapsed="true"]) .category-body,
-.dashboard-grid.layout-widgets .category.category--wide:not([data-collapsed="true"]) .category-body {
-    border-top: none;
-    padding-top: 0;
-}
 
 /* The marker in the header: how many columns this category is currently taking.
-   Small and quiet — it names what the rule already shows, for the times the
-   width alone is ambiguous (a narrow window, two columns of similar length). */
+   Small and quiet — it is the one thing that says the width out loud, for the
+   times the width alone is ambiguous (a narrow window, two columns of similar
+   length). */
 .category-spread-badge {
     display: inline-flex;
     align-items: center;

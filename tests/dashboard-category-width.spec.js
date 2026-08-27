@@ -295,7 +295,7 @@ test.describe('the column count is the ceiling', () => {
 });
 
 test.describe('a spread category shows that it is one category', () => {
-    test('a rule under the header runs the width of the block, and a marker names it', async ({ page }) => {
+    test('a marker names the width, and no second rule is drawn under the header', async ({ page }) => {
         await openDashboard(page, { itemLimit: 1 });
         const id = await categoryWith(page, 2);
         test.skip(id === null, 'no stored category with two bookmarks in this fixture');
@@ -317,10 +317,10 @@ test.describe('a spread category shows that it is one category', () => {
             const rows = [...el.querySelectorAll('.bookmark-link')].map((r) => r.getBoundingClientRect());
             const badge = el.querySelector('.category-spread-badge');
             return {
+                // The header's own fading rule is the only line here now: a
+                // second one a few pixels under it read as a mistake.
                 rule: getComputedStyle(el.querySelector('.category-body')).borderTopWidth,
-                // From the first column to the last: two blocks of bookmarks
-                // side by side read as two categories, and this is the line
-                // that says they are one.
+                // The block itself still runs from the first column to the last.
                 startsAtFirstColumn: Math.round(body.left) <= Math.round(Math.min(...rows.map((r) => r.left))),
                 endsAfterLastColumn: Math.round(body.right) >= Math.round(Math.max(...rows.map((r) => r.right))),
                 badge: badge?.textContent || null,
@@ -329,27 +329,11 @@ test.describe('a spread category shows that it is one category', () => {
         }, id);
 
         const span = (await stateOf(page, id)).span;
-        expect(spread.rule).toBe('1px');
+        expect(spread.rule).toBe('0px');
         expect(spread.startsAtFirstColumn).toBe(true);
         expect(spread.endsAfterLastColumn).toBe(true);
         expect(spread.badge).toBe(`↔${span}`);
         expect(spread.badgeTitle).toContain(String(span));
-    });
-
-    test('the rule goes away while the category is collapsed', async ({ page }) => {
-        await openDashboard(page, { itemLimit: 1 });
-        const id = await categoryWith(page, 2);
-        await setSpread(page, id, true);
-
-        // The body stays in the document with its rows squeezed to nothing, so
-        // an unguarded rule would hang under a header with nothing beneath it.
-        expect(await page.evaluate((categoryId) => {
-            const el = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(categoryId)}"]`);
-            el.setAttribute('data-collapsed', 'true');
-            const collapsed = getComputedStyle(el.querySelector('.category-body')).borderTopWidth;
-            el.setAttribute('data-collapsed', 'false');
-            return collapsed;
-        }, id)).toBe('0px');
     });
 });
 
