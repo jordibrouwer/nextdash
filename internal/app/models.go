@@ -323,9 +323,10 @@ type Settings struct {
 	// appearing under the pointer, and their only answer used to be off —
 	// throwing away the whole feature to avoid one behaviour of it.
 	LinkPreviewMode string `json:"linkPreviewMode"`
-	// ShowSiteNews draws the five most recent nextdash.cc posts on the config
-	// overview. On by default; off means the server never fetches the feed at
-	// all, rather than fetching and hiding it.
+	// ShowSiteNews draws the most recent nextdash.cc posts in the config
+	// overview's news stream, where they sit in date order beside the releases
+	// and the features those releases brought. On by default; off means the
+	// server never fetches the feed at all, rather than fetching and hiding it.
 	ShowSiteNews bool `json:"showSiteNews"`
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
@@ -611,6 +612,20 @@ type DiscoverabilityState struct {
 	// SeenSettingPromos lists dismissed config setting highlight popovers.
 	SeenSettingPromos []string `json:"seenSettingPromos,omitempty"`
 }
+
+/*
+defaultHealthWidgetID is the id of the health widget a fresh install ships with.
+
+Fixed rather than minted: newWidgetID is random so that a deleted widget cannot
+hand its place in BlockOrder to the next one, which is right for a widget being
+added at runtime and wrong here — the seed writes the id into BlockOrder in the
+same breath, and a fixed one makes the starting install identical everywhere,
+which is what a test can assert against and a support answer can name.
+
+It carries the same `w_` prefix every widget id has, so isWidgetID reads it as
+one and it cannot collide with a category slug.
+*/
+const defaultHealthWidgetID = "w_000000000001"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
@@ -904,6 +919,36 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{ID: "social", Name: "Social"},
 				{ID: "search", Name: "Search"},
 				{ID: "utilities", Name: "Utilities"},
+			},
+			/*
+			 * A health widget, on the page from the first load.
+			 *
+			 * A page can hold something other than links, and nothing on a
+			 * fresh install said so: widgets were a config section you had to
+			 * go looking for, which is a poor way to learn that the thing
+			 * exists. One block, at the top, reporting the collection it sits
+			 * above.
+			 *
+			 * Health rather than any of the other twelve because it is the only
+			 * one that reads correctly on an install with no history: it counts
+			 * what the header badge has already fetched, so it says something
+			 * true on the first paint rather than "nothing recorded yet". An
+			 * inbox tile would be empty, uptime and trend have no samples, and
+			 * sources and feeds have nothing registered.
+			 *
+			 * Empty config on purpose: `show` absent means every figure, which
+			 * is what a reader who has not chosen wants. Deletable like any
+			 * other seeded row.
+			 */
+			Widgets: []Widget{
+				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
+			},
+			// The widget leads, then the categories in the order above. Without
+			// an explicit order the widget would fall wherever resolveBlockOrder
+			// put it, which is after every category it is meant to summarise.
+			BlockOrder: []string{
+				defaultHealthWidgetID,
+				"development", "media", "social", "search", "utilities",
 			},
 			Bookmarks: []Bookmark{
 				// The project's own site, in the seed rather than only behind the

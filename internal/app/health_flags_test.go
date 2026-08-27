@@ -55,11 +55,20 @@ func TestSummaryCountsMatchFlagsWhenConditionsOverlap(t *testing.T) {
 	if s.MissingPreviewCount != counts["missing-preview"] {
 		t.Errorf("missing-preview: tile=%d filter=%d", s.MissingPreviewCount, counts["missing-preview"])
 	}
-	// The other direction of exclusivity: a bookmark with problems must not carry
-	// the healthy flag, or the Healthy filter would list bookmarks the Healthy
-	// tile never counted — the same dead end, mirrored.
-	if counts["healthy"] != 0 {
-		t.Errorf("healthy flag on %d issue(s) that have problems", counts["healthy"])
+	/*
+	 * Housekeeping does not make a working link unhealthy.
+	 *
+	 * These two are duplicates of each other and neither has been opened, and
+	 * both answer perfectly well. Healthy used to mean "no other condition held
+	 * at all", which made every bookmark on a fresh install unhealthy — the
+	 * health widget on a new dashboard read 0 broken, 0 down, 0 content and
+	 * 0 healthy about eight working links. It is the absence of a problem with
+	 * the *link* now; duplicate and unused keep their own counters and their own
+	 * flags, and `status` still groups these two under Duplicate.
+	 */
+	if counts["healthy"] != len(report.Issues) {
+		t.Errorf("healthy flag on %d of %d reachable issue(s), want all of them",
+			counts["healthy"], len(report.Issues))
 	}
 	if s.HealthyCount != counts["healthy"] {
 		t.Errorf("healthy: tile=%d filter=%d", s.HealthyCount, counts["healthy"])
@@ -93,6 +102,28 @@ func TestBrokenBookmarkStillCarriesItsOtherFlags(t *testing.T) {
 
 // Healthy is the absence of every other condition, so it must never sit alongside
 // one — otherwise the Healthy tile would count bookmarks that have something wrong.
+/*
+A broken link is never healthy.
+
+The mirror of the tile/filter dead end: the Healthy filter must not list a
+bookmark the Healthy tile did not count, and a link that failed its last check
+is the one case where that would mislead rather than merely differ.
+*/
+func TestBrokenIsNeverHealthy(t *testing.T) {
+	h, _ := healthTestStore(t, `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Down","url":"https://down.example","checkStatus":true,"lastChecked":1,"lastError":"connection refused","openCount":4,"lastOpened":1}
+	]}`)
+
+	report := healthReportVia(t, h)
+	counts := flagCounts(report)
+	if counts["healthy"] != 0 {
+		t.Errorf("healthy flag on a broken bookmark: %v", report.Issues[0].Flags)
+	}
+	if report.Summary.HealthyCount != counts["healthy"] {
+		t.Errorf("healthy: tile=%d filter=%d", report.Summary.HealthyCount, counts["healthy"])
+	}
+}
+
 func TestHealthyFlagIsExclusive(t *testing.T) {
 	recent := strconv.FormatInt(time.Now().Add(-2*time.Hour).UnixMilli(), 10)
 	h, _ := healthTestStore(t, `{"id":1,"name":"Page 1","bookmarks":[

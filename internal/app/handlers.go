@@ -831,10 +831,39 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if isDrifting {
 				report.Summary.DriftCount++
 			}
-			if status == "healthy" {
+			/*
+			 * Healthy is a statement about the link, not about the tidiness of
+			 * the row.
+			 *
+			 * It used to mean "no other condition held at all", so a link that
+			 * answered perfectly was not healthy while it was also never opened,
+			 * had no preview yet, sat in a renamed category or shared a URL with
+			 * another row. On a fresh install that is every bookmark, which is
+			 * why the health widget on a new dashboard read 0 broken, 0 down,
+			 * 0 content and 0 healthy — four zeroes about eight working links.
+			 *
+			 * It is now the absence of the thing the three counters beside it
+			 * report: nothing known to be wrong with the link. Those four are
+			 * what the health widget and the statistics panel present together,
+			 * and a reader takes the fourth as "and these are fine".
+			 *
+			 * Not "checked and answered" — a bookmark with checking switched off
+			 * is not being claimed as broken either, and
+			 * TestHealthyFlagIsExclusive has said since it was written that a
+			 * quiet, unchecked, opened bookmark is healthy. Verified is a
+			 * different question, and UncheckedCount is the counter that asks it.
+			 *
+			 * Housekeeping keeps its own counters — UnusedCount,
+			 * MissingPreviewCount, StaleCount, DuplicateCount and the rest — so
+			 * nothing stops being reported; it stops being reported as ill
+			 * health. `status` is untouched, so the Health view still groups a
+			 * never-opened bookmark under Unused. The flag moves with the
+			 * counter, because a tile whose number cannot be found by the filter
+			 * of the same name is the one thing this loop is built to prevent.
+			 */
+			isLinkHealthy := !isBroken
+			if isLinkHealthy {
 				report.Summary.HealthyCount++
-				// Healthy is the absence of every flag above, not a condition of
-				// its own, so it is only added when nothing else was.
 				flags = append(flags, "healthy")
 			}
 
