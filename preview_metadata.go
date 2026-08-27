@@ -5,7 +5,6 @@ import (
 	"html"
 	"io"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -208,21 +207,16 @@ func readableTextLength(doc string) int {
 	return len(strings.TrimSpace(stripped))
 }
 
+// trimToLength caps a string at max characters.
+//
+// Counted in runes rather than bytes: slicing a byte at a time cut an accented
+// or emoji character in half, and half a character is not a shorter title but
+// a broken one -- it reaches the page as U+FFFD. Every caller here is trimming
+// text a stranger's website supplied, so the multi-byte case is the ordinary
+// one, not the exception.
 func trimToLength(value string, max int) string {
 	value = strings.TrimSpace(value)
-	if len(value) <= max {
-		return value
-	}
-	return strings.TrimSpace(value[:max])
-}
-
-// parseContentLength reads a stored length back, tolerating an absent value.
-func parseContentLength(raw string) int {
-	n, err := strconv.Atoi(strings.TrimSpace(raw))
-	if err != nil || n < 0 {
-		return 0
-	}
-	return n
+	return strings.TrimSpace(truncateRunes(value, max))
 }
 
 /*

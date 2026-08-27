@@ -156,12 +156,13 @@ func normalizeSourceID(raw string) string {
 	return id
 }
 
+// truncateForState caps a stored status string at max characters.
+//
+// Counted in runes, not bytes: a feed title or an error message from a foreign
+// server is routinely multi-byte, and a byte-wise cut lands mid-character and
+// stores a broken one.
 func truncateForState(raw string, max int) string {
-	trimmed := strings.TrimSpace(raw)
-	if len(trimmed) <= max {
-		return trimmed
-	}
-	return trimmed[:max]
+	return truncateRunes(strings.TrimSpace(raw), max)
 }
 
 // GetSource reads one entry.
