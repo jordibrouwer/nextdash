@@ -16,6 +16,8 @@
 (function () {
     'use strict';
 
+    const escape = window.NextDashHtml.escapeHtml;
+
     /** One column of stand-in bookmark rows. */
     function col(rows, modifier = '') {
         const lines = Array.from({ length: rows }, () => '<span class="setting-art-row"></span>').join('');
@@ -388,12 +390,6 @@
                     + `<span class="setting-art-theme-bar"></span></span>`).join('')}</span>`,
             'setting-art-frame--themes'
         );
-    }
-
-    function escape(value) {
-        return String(value).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
     }
 
     const BUILDERS = {

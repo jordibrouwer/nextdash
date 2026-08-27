@@ -34,11 +34,7 @@
             : text;
     }
 
-    function esc(value) {
-        return String(value).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
-    }
+    const esc = window.NextDashHtml.escapeHtml;
 
     /** A column of stand-in bookmark rows, `rows` tall. */
     function fakeColumn(rows, extraClass = '') {

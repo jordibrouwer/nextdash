@@ -37,11 +37,7 @@
             : text;
     }
 
-    function esc(value) {
-        return String(value).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
-    }
+    const esc = window.NextDashHtml.escapeHtml;
 
     /**
      * Each step is a title, an HTML body (trusted — assembled from esc()'d

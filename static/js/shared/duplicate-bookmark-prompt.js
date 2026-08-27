@@ -19,15 +19,7 @@
         return value && value !== key ? value : fallback;
     }
 
-    function escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;',
-        }[ch]));
-    }
+    const escapeHtml = window.NextDashHtml.escapeHtml;
 
     /**
      * The duplicate-URL 409, or null for any other body — a shortcut clash, a

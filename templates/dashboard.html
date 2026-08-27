@@ -19,6 +19,7 @@
     {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}"></script>{{end}}
     <script src="{{asset "js/font-presets.js"}}"></script>
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
+    <script src="{{asset "js/shared/escape-html.js"}}"></script>
     <script src="{{asset "js/settings-sanitize.js"}}"></script>
     <script src="{{asset "js/discoverability-state.js"}}"></script>
     <script src="{{asset "js/theme-utils.js"}}"></script>
