@@ -3993,8 +3993,6 @@
     "tagsSaveError": "Kon de tags niet bewaren.",
     "themeDark": "Donker",
     "themeLight": "Licht",
-    "themeOldDefaultDark": "Klassiek donker",
-    "themeOldDefaultLight": "Klassiek licht",
     "tileActiveTheme": "Actief thema",
     "tileBrokenReview": "Bekijk in gezondheid",
     "tileFontSize": "Tekstgrootte",
@@ -5252,7 +5250,9 @@
     "statsLibraryUnavailable": "Deze cijfers konden niet gelezen worden.",
     "statsAxisThing": "Onderdeel",
     "statsAxisCount": "Hoeveel",
-    "statsCertsExpiredHost": "Verlopen: {host}, {days} dagen geleden."
+    "statsCertsExpiredHost": "Verlopen: {host}, {days} dagen geleden.",
+    "themeThinkDashboardDark": "ThinkDashboard [donker]",
+    "themeThinkDashboardLight": "ThinkDashboard [licht]"
   },
   "colors": {
     "title": "thema-aanpassing",

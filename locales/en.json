@@ -3993,8 +3993,6 @@
     "tagsSaveError": "Could not update the tag.",
     "themeDark": "Dark",
     "themeLight": "Light",
-    "themeOldDefaultDark": "Old Default [dark]",
-    "themeOldDefaultLight": "Old Default [light]",
     "tileActiveTheme": "Active theme",
     "tileBrokenReview": "Review in health",
     "tileFontSize": "Font size",
@@ -5252,7 +5250,9 @@
     "statsLibraryUnavailable": "These figures could not be read.",
     "statsAxisThing": "Thing",
     "statsAxisCount": "How many",
-    "statsCertsExpiredHost": "Expired: {host}, {days} days ago."
+    "statsCertsExpiredHost": "Expired: {host}, {days} days ago.",
+    "themeThinkDashboardDark": "ThinkDashboard [dark]",
+    "themeThinkDashboardLight": "ThinkDashboard [light]"
   },
   "colors": {
     "title": "theme customization",

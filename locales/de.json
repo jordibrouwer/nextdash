@@ -3993,8 +3993,6 @@
     "tagsSaveError": "Tags konnten nicht gespeichert werden.",
     "themeDark": "Dunkel",
     "themeLight": "Hell",
-    "themeOldDefaultDark": "Klassisch dunkel",
-    "themeOldDefaultLight": "Klassisch hell",
     "tileActiveTheme": "Aktives Thema",
     "tileBrokenReview": "Im Zustand ansehen",
     "tileFontSize": "Schriftgröße",
@@ -5252,7 +5250,9 @@
     "statsLibraryUnavailable": "Diese Zahlen konnten nicht gelesen werden.",
     "statsAxisThing": "Element",
     "statsAxisCount": "Wie viele",
-    "statsCertsExpiredHost": "Abgelaufen: {host}, vor {days} Tagen."
+    "statsCertsExpiredHost": "Abgelaufen: {host}, vor {days} Tagen.",
+    "themeThinkDashboardDark": "ThinkDashboard [dunkel]",
+    "themeThinkDashboardLight": "ThinkDashboard [hell]"
   },
   "colors": {
     "title": "themenanpassung",

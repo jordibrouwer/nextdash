@@ -8128,8 +8128,8 @@ class DashboardConfig {
 
     /** Friendly name for a theme id, matching the old config's labels. */
     themeDisplayName(themeId, name) {
-        if (themeId === 'dark') return this.t('config.themeOldDefaultDark', 'Old Default [dark]');
-        if (themeId === 'light') return this.t('config.themeOldDefaultLight', 'Old Default [light]');
+        if (themeId === 'dark') return this.t('config.themeThinkDashboardDark', 'ThinkDashboard [dark]');
+        if (themeId === 'light') return this.t('config.themeThinkDashboardLight', 'ThinkDashboard [light]');
         if (name && String(name).trim()) return String(name);
         return themeId;
     }
@@ -9655,8 +9655,8 @@ class DashboardConfig {
      *
      * These two buttons used to set the bare ids `light` and `dark`, which are
      * not a mode at all — they are a specific legacy pair the picker lists as
-     * "Old Default". So picking Bio Abyss and then clicking Dark threw the
-     * choice away and left the picker reading "Old Default [dark]", which looks
+     * "ThinkDashboard". So picking Bio Abyss and then clicking Dark threw the
+     * choice away and left the picker reading "ThinkDashboard [dark]", which looks
      * exactly like the setting failing to stick.
      *
      * Every built-in ships as `<family>-dark` / `<family>-light`, so the

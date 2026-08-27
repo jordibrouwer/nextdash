@@ -3993,8 +3993,6 @@
     "tagsSaveError": "Impossible d'enregistrer les étiquettes.",
     "themeDark": "Sombre",
     "themeLight": "Clair",
-    "themeOldDefaultDark": "Classique sombre",
-    "themeOldDefaultLight": "Classique clair",
     "tileActiveTheme": "Thème actif",
     "tileBrokenReview": "Voir dans l'état",
     "tileFontSize": "Taille du texte",
@@ -5252,7 +5250,9 @@
     "statsLibraryUnavailable": "Ces chiffres n’ont pas pu être lus.",
     "statsAxisThing": "Élément",
     "statsAxisCount": "Combien",
-    "statsCertsExpiredHost": "Expiré : {host}, il y a {days} jours."
+    "statsCertsExpiredHost": "Expiré : {host}, il y a {days} jours.",
+    "themeThinkDashboardDark": "ThinkDashboard [sombre]",
+    "themeThinkDashboardLight": "ThinkDashboard [clair]"
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -137,10 +137,10 @@ test.describe('Appearance → theme picker', () => {
 
         // Quick mode used to set the bare ids `light`/`dark`, which are a
         // specific legacy pair rather than a mode — so this threw the choice
-        // away and left the picker reading "Old Default".
+        // away and left the picker reading "ThinkDashboard".
         await page.locator(`[data-appearance-theme="${other.endsWith('-dark') ? 'dark' : 'light'}"]`).click();
         await expect.poll(() => stored(page)).toBe(other);
-        // The picker follows: same family, other half — not "Old Default".
+        // The picker follows: same family, other half — not "ThinkDashboard".
         await expect.poll(async () => (await page.locator('[data-theme-picker-label]').textContent() || '').trim())
             .toBe(await page.evaluate((id) => window.dashboardInstance.config.themeDisplayName(
                 id, window.dashboardInstance.config._themeList?.[id] || ''), other));
