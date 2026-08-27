@@ -11,6 +11,11 @@
  * fetch it. The popover markup mirrors that menu's (.move-popover) so both look
  * like one feature.
  */
+// What a reader does to scroll: the wheel, a finger, a drag on the scrollbar,
+// a key. Watched in the capture phase so a scroller that stops propagation
+// still counts.
+const SCROLL_INTENT_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'];
+
 class DashboardCategoryMenu {
     constructor(dashboard) {
         this.dash = dashboard;
@@ -370,6 +375,18 @@ class DashboardCategoryMenu {
         };
 
         let onOutside = null;
+        // A scroll closes the menu, but only one the reader asked for. Any
+        // re-render of the grid empties the column for an instant, the document
+        // gets shorter, and the browser clamps scrollTop back into range --
+        // which fires `scroll` just like a real one and used to take the open
+        // menu down with it. Wheel, touch, pointer and key are the marks a
+        // reader leaves; the clamp leaves none, so it no longer counts.
+        const INTENT_WINDOW_MS = 500;
+        let lastIntentAt = -Infinity;
+        const markScrollIntent = () => { lastIntentAt = performance.now(); };
+        const onScroll = () => {
+            if (performance.now() - lastIntentAt <= INTENT_WINDOW_MS) close();
+        };
         const close = () => {
             if (pop.parentNode) pop.remove();
             document.removeEventListener('keydown', onKey, true);
@@ -378,8 +395,11 @@ class DashboardCategoryMenu {
                 document.removeEventListener('contextmenu', onOutside);
                 onOutside = null;
             }
+            SCROLL_INTENT_EVENTS.forEach((type) => {
+                document.removeEventListener(type, markScrollIntent, true);
+            });
             window.removeEventListener('resize', close);
-            window.removeEventListener('scroll', close, true);
+            window.removeEventListener('scroll', onScroll, true);
             if (this._cleanup === close) this._cleanup = null;
             if (previousFocus && typeof previousFocus.focus === 'function') {
                 previousFocus.focus({ preventScroll: true });
@@ -423,8 +443,13 @@ class DashboardCategoryMenu {
         });
 
         document.addEventListener('keydown', onKey, true);
+        // Registered after onKey on purpose: the keys the menu handles itself
+        // stop there, so moving through the menu never reads as scroll intent.
+        SCROLL_INTENT_EVENTS.forEach((type) => {
+            document.addEventListener(type, markScrollIntent, { capture: true, passive: true });
+        });
         window.addEventListener('resize', close);
-        window.addEventListener('scroll', close, true);
+        window.addEventListener('scroll', onScroll, true);
         setTimeout(() => {
             onOutside = (e) => { if (!pop.contains(e.target)) close(); };
             document.addEventListener('click', onOutside);
