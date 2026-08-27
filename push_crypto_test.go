@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/hkdf"
 	"crypto/rand"
 	"crypto/sha256"
@@ -211,8 +210,11 @@ func TestGenerateAndParseVAPIDKeys(t *testing.T) {
 	}
 	// The parsed private key must regenerate the same public point, or the token
 	// would be signed by a key the push service cannot match to k=.
-	wantX, wantY := elliptic.Unmarshal(elliptic.P256(), pub) //nolint:staticcheck // matches the marshal side
-	if priv.PublicKey.X.Cmp(wantX) != 0 || priv.PublicKey.Y.Cmp(wantY) != 0 {
+	want, err := p256PublicKeyFromPoint(pub)
+	if err != nil {
+		t.Fatalf("p256PublicKeyFromPoint: %v", err)
+	}
+	if priv.PublicKey.X.Cmp(want.X) != 0 || priv.PublicKey.Y.Cmp(want.Y) != 0 {
 		t.Error("parsed private key does not match the stored public key")
 	}
 }
@@ -289,8 +291,10 @@ func TestSignVAPIDTokenVerifies(t *testing.T) {
 	}
 
 	pubBytes, _ := decodeB64(publicKey)
-	x, y := elliptic.Unmarshal(elliptic.P256(), pubBytes) //nolint:staticcheck // matches the marshal side
-	pub := &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
+	pub, err := p256PublicKeyFromPoint(pubBytes)
+	if err != nil {
+		t.Fatalf("p256PublicKeyFromPoint: %v", err)
+	}
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
 	r := new(big.Int).SetBytes(sig[:32])
 	s := new(big.Int).SetBytes(sig[32:])

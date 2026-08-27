@@ -84,7 +84,14 @@ func generateVAPIDKeys() (vapidKeys, error) {
 	if err != nil {
 		return vapidKeys{}, err
 	}
-	pub := elliptic.Marshal(elliptic.P256(), priv.X, priv.Y) //nolint:staticcheck // uncompressed point is the wire format Web Push requires
+	// The uncompressed point is the wire format Web Push requires, and
+	// crypto/ecdh emits exactly that -- elliptic.Marshal, which used to do this,
+	// has been deprecated since Go 1.21.
+	ecdhPub, err := priv.PublicKey.ECDH()
+	if err != nil {
+		return vapidKeys{}, err
+	}
+	pub := ecdhPub.Bytes()
 	// Left-pad the scalar to a full 32 bytes: a big.Int drops leading zeros and a
 	// short key would fail to reconstruct.
 	d := priv.D.FillBytes(make([]byte, 32))
@@ -104,15 +111,37 @@ func parseVAPIDPrivateKey(keys vapidKeys) (*ecdsa.PrivateKey, error) {
 	if len(raw) != 32 {
 		return nil, fmt.Errorf("invalid VAPID private key length %d", len(raw))
 	}
-	d := new(big.Int).SetBytes(raw)
-	curve := elliptic.P256()
-	if d.Sign() == 0 || d.Cmp(curve.Params().N) >= 0 {
+	// NewPrivateKey does the range check this used to do by hand (0 < d < N) and
+	// derives the public point, which is what ScalarBaseMult was here for before
+	// Go 1.21 deprecated it.
+	ecdhPriv, err := ecdh.P256().NewPrivateKey(raw)
+	if err != nil {
 		return nil, errors.New("VAPID private key out of range")
 	}
-	priv := &ecdsa.PrivateKey{D: d}
-	priv.PublicKey.Curve = curve
-	priv.PublicKey.X, priv.PublicKey.Y = curve.ScalarBaseMult(raw)
-	return priv, nil
+	pub, err := p256PublicKeyFromPoint(ecdhPriv.PublicKey().Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return &ecdsa.PrivateKey{PublicKey: *pub, D: new(big.Int).SetBytes(raw)}, nil
+}
+
+// p256PublicKeyFromPoint reads an uncompressed P-256 point -- the 65-byte form
+// Web Push puts on the wire -- back into a signing-side public key.
+//
+// Routed through crypto/ecdh rather than elliptic.Unmarshal, whose replacement
+// it is: NewPublicKey rejects a point that is not on the curve, which the
+// deprecated call did only as a side effect of returning nil coordinates.
+func p256PublicKeyFromPoint(raw []byte) (*ecdsa.PublicKey, error) {
+	point, err := ecdh.P256().NewPublicKey(raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid P-256 public key: %w", err)
+	}
+	b := point.Bytes()
+	return &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+		X:     new(big.Int).SetBytes(b[1:33]),
+		Y:     new(big.Int).SetBytes(b[33:65]),
+	}, nil
 }
 
 // vapidAudience is the scheme+host of the push endpoint, which is what the JWT
