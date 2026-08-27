@@ -473,7 +473,10 @@ class Dashboard {
             window.nextdashTrackContent?.();
             this.initializeOnboarding();
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
-                this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });
+                // No delay passed on purpose: 900ms is already the default,
+                // and naming it here shadows the faster path the scheduler
+                // takes when there is an unseen release to show.
+                this.schedulePostOnboardingPrompts({ resetAttempts: true });
             }
         } catch (error) {
             this._renderBootstrapFatalError();

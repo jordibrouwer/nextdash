@@ -137,7 +137,10 @@ class DashboardInlineEdit {
                     pinned: false,
                     checkStatus: false,
                     monitor: false,
-                    monitorIntervalMinutes: window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 60,
+                    // 15, the same figure check-mode.js and the server both
+                    // default to. The literal is only for a page where
+                    // check-mode.js has not loaded, and must not disagree with it.
+                    monitorIntervalMinutes: window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15,
                 },
                 pageId,
                 index: -1,

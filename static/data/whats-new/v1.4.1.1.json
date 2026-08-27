@@ -1,0 +1,52 @@
+{
+  "tag": "v1.4.1.1",
+  "date": "27 August 2026",
+  "releasedAt": "2026-08-27",
+  "modalLead": "Release notes that stopped appearing after an upgrade, the site's posts arriving two at a time instead of ten, and the settings that were still in English whatever language you had chosen.",
+  "sections": [
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>An upgrade shows its release notes again.</strong> On some installs the window you are reading never opened by itself, however many versions went by — and nothing on any screen could switch it back on. It opens on the first visit after an upgrade, as it always should have."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Replay the welcome tour actually replays it.</strong> Under <em>Behaviour → General</em>, the button promised the tour and the tips would come back and only the tips did. The welcome card returns with it now."
+        }
+      ]
+    },
+    {
+      "title": "Overview",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>All ten posts from nextdash.cc reach the overview.</strong> Two of them shared the page with the releases and the rest were only reachable through <em>All news &amp; features</em>. The overview holds fourteen rows now and keeps ten for the site's posts, so a busy release week no longer pushes them off."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Depth and Backdrop speak your language.</strong> The two controls under <em>Appearance</em> and every choice in them — Flat, Soft, Rich, Dots, Grid, Lines, Hatch — were left in English on a Dutch, German or French dashboard. Along with <em>Browse…</em> beside the theme, the widget title field, and the message a source shows when it still needs a token."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A category spread across two columns looks like one.</strong> The line under its name stopped short of where the category actually ended, so a wide one read as a narrow one that happened to have a long title. It now runs the full width."
+        }
+      ]
+    },
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Right-clicking a category header keeps its menu.</strong> If anything was redrawing in the background at that moment, the menu closed itself under the pointer."
+        }
+      ]
+    }
+  ]
+}
