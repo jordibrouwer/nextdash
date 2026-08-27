@@ -1680,7 +1680,17 @@
     "widgetType.duplicates": "Duplicaten",
     "widgetType.trash": "Prullenbak",
     "widgetType.backups": "Back-ups",
-    "widgetType.custom": "Custom"
+    "widgetType.custom": "Custom",
+    "themeBrowserNoticeTitle": "Je dashboard kan er heel anders uitzien",
+    "themeBrowserNoticeBody": "Ruim tweehonderd thema’s, als een raster dat je kunt doorzoeken in plaats van een lijst die je moet doorscrollen. Elk thema wordt op deze pagina getoond terwijl je kijkt, en er wordt niets opgeslagen tot je kiest — kijken kost dus niets.",
+    "themeBrowserNoticeTry": "Thema’s bekijken",
+    "themeBrowserNoticeNoThanks": "Nee, bedankt",
+    "themeBrowserNoticeDismiss": "Sluiten",
+    "themeBrowserNoticeOpenedTitle": "Wissel wanneer je wilt",
+    "themeBrowserNoticeOpenedBody": "De browser staat onder Config → Weergave → Bekijken, en elk thema komt als een lichte en een donkere helft. Er wordt niets opgeslagen tot je er een kiest.",
+    "themeBrowserNoticeCommandHint": "Of wissel van thema zonder de pagina te verlaten met",
+    "themeBrowserNoticeOpenAppearance": "Weergave-instellingen openen",
+    "themeBrowserNoticeDone": "Duidelijk"
   },
   "health": {
     "kicker": "overzicht",

@@ -1680,7 +1680,17 @@
     "widgetType.duplicates": "Duplicates",
     "widgetType.trash": "Trash",
     "widgetType.backups": "Backups",
-    "widgetType.custom": "Custom"
+    "widgetType.custom": "Custom",
+    "themeBrowserNoticeTitle": "Your dashboard can look like anything",
+    "themeBrowserNoticeBody": "Over two hundred themes, as a grid you can search rather than a list you have to scroll. Each one previews on this page while you look at it, and nothing is saved until you choose — so it costs nothing to find out.",
+    "themeBrowserNoticeTry": "Browse themes",
+    "themeBrowserNoticeNoThanks": "No thanks",
+    "themeBrowserNoticeDismiss": "Dismiss",
+    "themeBrowserNoticeOpenedTitle": "Change it whenever you like",
+    "themeBrowserNoticeOpenedBody": "The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you pick one.",
+    "themeBrowserNoticeCommandHint": "Or switch theme without leaving the page with",
+    "themeBrowserNoticeOpenAppearance": "Open appearance settings",
+    "themeBrowserNoticeDone": "Got it"
   },
   "health": {
     "kicker": "overview",

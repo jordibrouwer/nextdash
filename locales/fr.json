@@ -1680,7 +1680,17 @@
     "widgetType.duplicates": "Doublons",
     "widgetType.trash": "Corbeille",
     "widgetType.backups": "Sauvegardes",
-    "widgetType.custom": "Personnalisé"
+    "widgetType.custom": "Personnalisé",
+    "themeBrowserNoticeTitle": "Votre tableau de bord peut avoir une tout autre allure",
+    "themeBrowserNoticeBody": "Plus de deux cents thèmes, sous forme de grille que l’on peut chercher plutôt que de liste à faire défiler. Chacun s’affiche sur cette page pendant que vous le regardez, et rien n’est enregistré tant que vous n’avez pas choisi — regarder ne coûte donc rien.",
+    "themeBrowserNoticeTry": "Parcourir les thèmes",
+    "themeBrowserNoticeNoThanks": "Non merci",
+    "themeBrowserNoticeDismiss": "Fermer",
+    "themeBrowserNoticeOpenedTitle": "Changez quand vous voulez",
+    "themeBrowserNoticeOpenedBody": "Le navigateur se trouve sous Config → Apparence → Parcourir, et chaque thème existe en moitié claire et moitié sombre. Rien n’est enregistré tant que vous n’en choisissez pas un.",
+    "themeBrowserNoticeCommandHint": "Ou changez de thème sans quitter la page avec",
+    "themeBrowserNoticeOpenAppearance": "Ouvrir les réglages d’apparence",
+    "themeBrowserNoticeDone": "Compris"
   },
   "health": {
     "kicker": "vue d'ensemble",

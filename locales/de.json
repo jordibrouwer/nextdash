@@ -1680,7 +1680,17 @@
     "widgetType.duplicates": "Duplikate",
     "widgetType.trash": "Papierkorb",
     "widgetType.backups": "Backups",
-    "widgetType.custom": "Custom"
+    "widgetType.custom": "Custom",
+    "themeBrowserNoticeTitle": "Dein Dashboard kann ganz anders aussehen",
+    "themeBrowserNoticeBody": "Über zweihundert Themen, als durchsuchbares Raster statt als Liste zum Scrollen. Jedes wird auf dieser Seite gezeigt, während du es ansiehst, und nichts wird gespeichert, bevor du wählst — Nachsehen kostet also nichts.",
+    "themeBrowserNoticeTry": "Themen ansehen",
+    "themeBrowserNoticeNoThanks": "Nein, danke",
+    "themeBrowserNoticeDismiss": "Schließen",
+    "themeBrowserNoticeOpenedTitle": "Jederzeit wechselbar",
+    "themeBrowserNoticeOpenedBody": "Der Browser liegt unter Config → Darstellung → Ansehen, und jedes Thema kommt als helle und dunkle Hälfte. Nichts wird gespeichert, bevor du eines wählst.",
+    "themeBrowserNoticeCommandHint": "Oder wechsle das Thema, ohne die Seite zu verlassen, mit",
+    "themeBrowserNoticeOpenAppearance": "Darstellungseinstellungen öffnen",
+    "themeBrowserNoticeDone": "Verstanden"
   },
   "health": {
     "kicker": "Übersicht",

@@ -8961,6 +8961,11 @@ class DashboardConfig {
      * to patch in place.
      */
     repaintAppearanceBody() {
+        // The theme browser can be opened from the dashboard now, and its
+        // onPick lands here. Without this the fallback below would render the
+        // whole config view over the bookmarks someone is looking at, because
+        // the appearance body it looks for is legitimately absent.
+        if (!this.isActiveView()) return;
         const host = document.getElementById('config-appearance-body');
         if (!host || this.appearanceTab !== 'custom-themes') { this.render(); return; }
         host.innerHTML = this.renderCustomThemes();

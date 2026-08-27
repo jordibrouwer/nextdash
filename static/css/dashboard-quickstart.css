@@ -412,9 +412,12 @@
     margin-top: 0.8rem;
 }
 
-/* Shown only after the rail is applied: the command that moves it again,
-   for the one person who has just proved they care where the bar sits. */
-.side-rail-notice-hint {
+/* Shown only after the invitation has been taken up: the command that does the
+   same thing again, for the one person who has just proved they care about it.
+   Two cards, one shape -- keep them selecting the same rules rather than
+   letting a second copy drift. */
+.side-rail-notice-hint,
+.theme-browser-notice-hint {
     margin: 0.6rem 0 0;
     width: 100%;
     font-size: var(--font-size-small, 0.72rem);
@@ -422,7 +425,8 @@
     line-height: 1.5;
 }
 
-.side-rail-notice-hint kbd {
+.side-rail-notice-hint kbd,
+.theme-browser-notice-hint kbd {
     font-family: var(--font-family-main);
     font-size: 0.68rem;
     background: var(--background-secondary);

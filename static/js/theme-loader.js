@@ -541,6 +541,10 @@
     
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
+        // Exported so callers can ask "is this still the packaged default?"
+        // without spelling the id again -- a third copy of it would be a third
+        // thing to keep in step (see TestThemeLoaderAgreesWithTheServerDefault).
+        DEFAULT_THEME,
         normalizeTheme,
         normalizeRandomThemeMode: (parsedSettings) =>
             themeUtils().normalizeRandomThemeMode(parsedSettings),
