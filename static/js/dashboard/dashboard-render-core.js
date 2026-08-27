@@ -435,6 +435,59 @@ class DashboardRenderCore {
         labelWrap.appendChild(name);
 
         title.appendChild(labelWrap);
+
+        /*
+         * Collapsing, on the same terms as a category.
+         *
+         * A widget is a summary, and a dashboard carrying several of them has
+         * the same problem a dashboard of long categories has: the block you
+         * want is below the fold because the ones above it are open. The state
+         * lives in the same `collapsedCategories` map under the same page-scoped
+         * key, because the block already calls itself a category to the grid and
+         * to DragReorder -- a second store would be a second thing to prune when
+         * a page is deleted, and staleCollapsedKeys already prunes this one.
+         *
+         * Widget ids are prefixed `w_`, so they cannot collide with a category
+         * id in that map.
+         */
+        const collapsedKey = `${d.currentPageId}:${widget.id}`;
+        const isCollapsed = d.collapsedCategories?.[collapsedKey] === true;
+        block.setAttribute('data-collapsed', isCollapsed ? 'true' : 'false');
+
+        const titleDomId = `widget-title-${String(widget.id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+        title.id = titleDomId;
+        block.setAttribute('aria-labelledby', titleDomId);
+        title.setAttribute('role', 'rowheader');
+        title.tabIndex = 0;
+        title.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+
+        const trailingWrap = document.createElement('span');
+        trailingWrap.className = 'category-title-trailing';
+        const chevron = document.createElement('span');
+        chevron.className = 'category-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        trailingWrap.appendChild(chevron);
+        title.appendChild(trailingWrap);
+
+        const setWidgetCollapsed = (collapsed) => {
+            block.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+            title.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            if (!d.collapsedCategories || typeof d.collapsedCategories !== 'object') {
+                d.collapsedCategories = {};
+            }
+            d.collapsedCategories[collapsedKey] = collapsed;
+            d.saveCollapsedStates();
+        };
+
+        title.addEventListener('click', () => {
+            setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
+        });
+        title.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
+        });
+
         block.appendChild(title);
 
         const body = document.createElement('div');
@@ -446,7 +499,15 @@ class DashboardRenderCore {
             body.textContent = d.language?.t?.('dashboard.widgetUnknown') || 'This widget is not available.';
             body.classList.add('dashboard-widget-body--empty');
         }
-        block.appendChild(body);
+
+        // Wrapped in the same .category-body a category uses, so the collapse
+        // animation is the one already written rather than a second one that
+        // would have to be kept in step with it. refreshWidgets still finds the
+        // body by its own class and redraws into it.
+        const bodyWrap = document.createElement('div');
+        bodyWrap.className = 'category-body';
+        bodyWrap.appendChild(body);
+        block.appendChild(bodyWrap);
         return block;
     }
 
