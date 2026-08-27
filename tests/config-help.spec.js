@@ -120,8 +120,13 @@ test.describe('the tabs carry a readable amount each', () => {
 
     test('Tips renders the whole catalogue, grouped', async ({ page }) => {
         await openHelp(page, 'tips');
+        // Counted against TIP_GROUPS rather than a literal: the number was 7,
+        // a group was added, and the spec failed for being out of date rather
+        // than for anything being wrong. A group whose tips all resolve empty
+        // renders nothing, so this also catches a group with no strings.
+        const groups = await page.evaluate(() => window.ConfigHelpTips.TIP_GROUPS.length);
         const panels = page.locator('#config-help-body .config-panel');
-        await expect(panels).toHaveCount(7);
+        await expect(panels).toHaveCount(groups);
         // The Start tab used to show eleven hand-picked keys while the prose
         // promised the rest were here.
         const tips = await page.locator('#config-help-body .config-help-tip').count();

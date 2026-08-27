@@ -21752,13 +21752,14 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
+    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
 
     helpTabLabel(tab) {
         const map = {
             start: ['config.helpTabStart', 'Getting started'],
             config: ['config.helpTabConfig', 'Configuring'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
+            widgets: ['config.helpTabWidgets', 'Widgets'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
             health: ['config.helpTabHealth', 'Health'],
@@ -21930,6 +21931,7 @@ class DashboardConfig {
         switch (this.helpTab) {
             case 'config': return this.renderHelpConfig();
             case 'organizing': return this.renderHelpOrganizing();
+            case 'widgets': return this.renderHelpWidgets();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -22229,6 +22231,64 @@ class DashboardConfig {
             {
                 kind: 'bars', value: { values: [0.9, 0.7, 0.95, 0.4, 0.8], mark: 3, tone: 'bad' },
                 captionKey: 'config.helpArtWidgetFigures', caption: 'Figures it already keeps',
+            },
+        ],
+        'config.helpWidgetKindsTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
+                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
+                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
+                ],
+                captionKey: 'config.helpArtWidgetKinds', caption: 'What each one answers',
+            },
+            {
+                kind: 'spark', value: [0.2, 0.35, 0.3, 0.5, 0.65, 0.6, 0.8],
+                captionKey: 'config.helpArtWidgetTrend', caption: 'Or the direction it is going',
+            },
+        ],
+        'config.helpWidgetAddingTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.helpArtWidgetStepChoose', d: 'Choose a kind' },
+                    { k: 'config.helpArtWidgetStepName', d: 'Name it' },
+                    { k: 'config.helpArtWidgetStepPlace', d: 'Drag it into place' },
+                ],
+            },
+            {
+                kind: 'widgetSpan', value: 1,
+                captionKey: 'config.helpArtWidgetNarrow', caption: 'One column, or two',
+            },
+        ],
+        'config.helpWidgetCustomTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
+                    inside: [
+                        { k: 'config.helpArtWidgetAddress', d: 'The address' },
+                        { k: 'config.helpArtWidgetKey', d: 'The key' },
+                    ],
+                    out: { k: 'config.helpArtWidgetTile', d: 'The tile' },
+                },
+                captionKey: 'config.helpArtWidgetFetched', caption: 'Fetched here, never by your browser',
+            },
+            {
+                kind: 'query', value: [['token', 'server.disk'], ['text', '[0].used']],
+                captionKey: 'config.helpArtWidgetPath', caption: 'A path into the answer',
+            },
+        ],
+        'config.helpWidgetServicesTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtWidgetPreset', d: 'Pick a service' },
+                    { k: 'config.helpArtWidgetFilled', d: 'Address and figures filled in' },
+                    { k: 'config.helpArtWidgetYours', d: 'Edit anything' },
+                ],
+                captionKey: 'config.helpArtWidgetPresets', caption: 'Twenty-eight already known',
             },
         ],
         'config.helpSourcesTitle': [
@@ -22709,12 +22769,36 @@ class DashboardConfig {
             </div>`)
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
                 'config.helpBookmarksBody', '')
-            // A widget is a block on a page beside a category, which is where
-            // the reader of this tab is already standing.
-            + this.helpPanel('config.helpWidgetsTitle', 'Widgets',
-                'config.helpWidgetsBody', '')
             + this.helpPanel('config.helpTagsTitle', 'Tags & collections',
                 'config.helpTagsBody', '');
+    }
+
+    /*
+     * Widgets, as a tab of its own.
+     *
+     * One paragraph under Pages & bookmarks was right while a widget was a
+     * block you added and forgot. It is a section of config now, with thirteen
+     * kinds, a settings panel each, and a custom tile that reads any service
+     * answering JSON — twenty-eight of them already filled in. That is not a
+     * paragraph, and burying it under a tab about pages is why the custom
+     * widget went unnoticed.
+     */
+    renderHelpWidgets() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return this.helpPanel('config.helpWidgetsTitle', 'What a widget is',
+            'config.helpWidgetsBody', '')
+            + this.helpPanel('config.helpWidgetKindsTitle', 'The kinds, and what each answers',
+                'config.helpWidgetKindsBody', '')
+            + this.helpPanel('config.helpWidgetAddingTitle', 'Adding one, and where it sits',
+                'config.helpWidgetAddingBody', '',
+                `<div class="config-actions">
+                    <button type="button" class="config-btn" data-overview-go='{"section":"widgets"}'>${
+                        esc(this.t('config.helpWidgetsOpen', 'Open Widgets'))}</button>
+                </div>`)
+            + this.helpPanel('config.helpWidgetCustomTitle', 'The Custom widget',
+                'config.helpWidgetCustomBody', '')
+            + this.helpPanel('config.helpWidgetServicesTitle', 'The services it already knows',
+                'config.helpWidgetServicesBody', '');
     }
 
     renderHelpSearch() {
