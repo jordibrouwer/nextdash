@@ -139,17 +139,21 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it, which is the part a release gets wrong:
     // a flag left on hides a release nobody meant to hide, and a flag taken off
     // without bumping the tokens announces it to nobody.
-    test('v1.4.0 leads the index and the modal, with v1.2.1 still hidden behind it', async ({ page }) => {
+    test('v1.4.1.1 leads the index while the modal still leads with v1.4.0', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
-        // The newest entry is the one the release tag and Config → Overview →
-        // Latest update read, flag or no flag.
-        expect(index[0].tag).toBe('v1.4.0');
-        expect(index[0].hideFromModal).toBeUndefined();
-        expect(index[1].tag).toBe('v1.3.3.5');
-        expect(index[2].tag).toBe('v1.3.3.4');
+        // The newest entry is the one the release tag and Config → Overview
+        // read, flag or no flag — and this time the newest entry is itself
+        // hidden, which is the arrangement the flag exists for: a round of
+        // fixes recorded and versioned normally, without reopening the notes
+        // in front of readers who have just been shown v1.4.0.
+        expect(index[0].tag).toBe('v1.4.1.1');
+        expect(index[0].hideFromModal).toBe(true);
+        expect(index[1].tag).toBe('v1.4.0');
+        expect(index[1].hideFromModal).toBeUndefined();
+        expect(index[2].tag).toBe('v1.3.3.5');
         // And the hidden one further down stays hidden: a release recorded but
         // not announced does not become announced because a later one shipped.
         const hidden = index.find((e) => e.tag === 'v1.2.1');
@@ -167,8 +171,9 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // v1.4.0 leads; v1.2.1 is skipped wherever the reader looks, which is
-        // the whole of what hideFromModal promises.
+        // v1.4.0 leads the modal even though v1.4.1.1 is newer, and v1.2.1 is
+        // skipped wherever the reader looks — which is the whole of what
+        // hideFromModal promises, at both ends of the list.
         expect(await shownTags()).toContain('v1.4.0');
         expect(await shownTags()).not.toContain('v1.2.1');
 
@@ -193,7 +198,11 @@ test.describe('a release flagged hideFromModal', () => {
     test('the release constants name v1.4.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
+        // The release token stays on v1.4.0 on purpose: v1.4.1.1 is flagged
+        // hideFromModal, and moving this would reopen the notes for everyone.
         expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.0'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v258'");
+        // The data token does move, or a browser holding the old index never
+        // learns v1.4.1.1 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v259'");
     });
 });
