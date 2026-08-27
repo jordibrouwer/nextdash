@@ -55,8 +55,37 @@
         // Only first-run installs (onboardingCompleted !== true) see quick-start.
         shouldStart() {
             if (this.dash?.settings?.onboardingCompleted === true) return false;
-            if (this.state().dismissed === true) return false;
+            if (this.state().dismissed === true) {
+                // Two flags record the same fact, and an install can end up
+                // holding one without the other: dismissed here, but
+                // onboardingCompleted still false. That install falls between
+                // the two -- quick-start does not start (dismissed), and every
+                // unprompted card is refused as well, because
+                // canShowUnpromptedUi requires onboardingCompleted. The
+                // What's new modal after an upgrade is the visible loss: the
+                // release check says show it and nothing ever asks.
+                //
+                // Dismissing the card is finishing the onboarding, so the
+                // stricter flag is brought into line the moment the drift is
+                // noticed, rather than leaving the reader to find a setting
+                // that does not exist in the interface.
+                this.reconcileOnboardingCompleted();
+                return false;
+            }
             return true;
+        }
+
+        /**
+         * Bring onboardingCompleted into line with a dismissed quick-start.
+         *
+         * Writes only when they actually disagree, so an ordinary load costs
+         * nothing and the settings file is not rewritten on every visit.
+         */
+        reconcileOnboardingCompleted() {
+            const d = this.dash;
+            if (!d?.settings || d.settings.onboardingCompleted === true) return;
+            d.settings.onboardingCompleted = true;
+            this.persistState();
         }
 
         start() {

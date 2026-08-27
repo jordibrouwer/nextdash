@@ -7606,6 +7606,18 @@ class DashboardConfig {
         const ok = await this.confirmAction(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false });
         if (!ok) return;
         this.dash.settings.onboardingCompleted = false;
+        // Both flags, because both have to be cleared for the card to come
+        // back. `dismissed` is what quick-start itself checks: clearing only
+        // onboardingCompleted left an install where the tour was promised, the
+        // card was still dismissed, and so nothing appeared -- and it put the
+        // two flags into exactly the disagreement that silences every
+        // unprompted card (see dashboard-quickstart.js shouldStart).
+        //
+        // setupDone is left alone: replaying the tour is not a reason to ask
+        // again for a language and a theme that are already chosen.
+        if (this.dash.settings.quickStart && typeof this.dash.settings.quickStart === 'object') {
+            this.dash.settings.quickStart.dismissed = false;
+        }
         // The dialog promises the tour and the tips, and only the quick-start
         // card came back: the tip and tour ids live in discoverabilityState,
         // which onboardingCompleted does not touch. Persisted by the save
