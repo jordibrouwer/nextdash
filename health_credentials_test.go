@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -421,5 +422,65 @@ func TestACredentialSurvivesARedirectOnTheSameService(t *testing.T) {
 	defer mu.Unlock()
 	if sawKey != "the-key" {
 		t.Errorf("X-Api-Key = %q after a redirect within the service, want it kept", sawKey)
+	}
+}
+
+/*
+The summary route describes an entry without describing what is in it.
+
+The widget's sign-in block needs to know that a key is set and which header
+carries it, so it can say so instead of showing an empty box over a stored
+credential. Header names are public -- X-Api-Key is printed on Sonarr's own
+settings page -- and the values are the whole reason this file exists, so this
+pins the line between them.
+*/
+func TestCredentialSummariesCarryNoSecrets(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+
+	if err := saveHealthCredential("widget:w_abc123", HealthCredential{
+		Label:   "Sonarr",
+		Headers: map[string]string{"X-Api-Key": "super-secret-value"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveHealthCredential("adguard", HealthCredential{
+		Label:         "AdGuard",
+		BasicUser:     "admin",
+		BasicPassword: "hunter2",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	details := listHealthCredentialDetails()
+	if len(details) != 2 {
+		t.Fatalf("described %d of 2 entries", len(details))
+	}
+
+	key := details["widget:w_abc123"]
+	if key.Label != "Sonarr" {
+		t.Errorf("label = %q, want Sonarr", key.Label)
+	}
+	if len(key.Headers) != 1 || key.Headers[0] != "X-Api-Key" {
+		t.Errorf("headers = %v, want the name only", key.Headers)
+	}
+	if key.Basic {
+		t.Error("a header credential reported basic auth")
+	}
+
+	basic := details["adguard"]
+	if !basic.Basic || basic.BasicUser != "admin" {
+		t.Errorf("basic = %v, user = %q", basic.Basic, basic.BasicUser)
+	}
+
+	// The whole point: nothing anywhere in the answer is a secret.
+	encoded, err := json.Marshal(details)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, secret := range []string{"super-secret-value", "hunter2"} {
+		if strings.Contains(string(encoded), secret) {
+			t.Fatalf("a stored secret reached the summary: %s", encoded)
+		}
 	}
 }

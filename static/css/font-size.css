@@ -15,9 +15,27 @@
     --font-size-bookmark: 1.25rem;     /* Bookmark links */
     --font-size-controls: 0.875rem;    /* Tabs, buttons, config link */
     --font-size-text: 0.875rem;        /* General text (forms, config, body text, etc.) */
+    /*
+     * Captions, hints, and the word under a figure.
+     *
+     * Used in about forty places and defined in none of them until now, so
+     * every rule that asked for it without spelling out a fallback was an
+     * invalid declaration and the text rendered at whatever it inherited --
+     * measured at 18px where the surrounding body text was also 18px. The
+     * sixteen call sites that did carry a fallback are why it looked
+     * inconsistent rather than broken: the same intended size came out
+     * 0.66rem in one place and full size in the next.
+     *
+     * Derived from --font-size-text rather than fixed, so it follows the
+     * reader's size setting the way everything else on this scale does. At
+     * the default that is 0.717rem, which is where the hand-written fallbacks
+     * already clustered.
+     */
+    --font-size-small: calc(var(--font-size-text) * 0.82);
     
     /* Font Weight Variables - 4 core weights */
     --font-weight-normal: 400;         /* Normal text weight */
+    --font-weight-medium: 500;         /* Medium - asked for in nine places, defined in none */
     --font-weight-semibold: 600;       /* Semibold - labels, emphasis */
     --font-weight-bold: 700;           /* Bold - headings, important text */
     --font-weight-black: 900;          /* Extra bold - titles, strong emphasis */

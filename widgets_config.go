@@ -123,9 +123,53 @@ var widgetFields = map[WidgetType][]widgetField{
 	 * the list -- rather than growing the table a nested-object kind that only
 	 * one type would ever use.
 	 */
+	WidgetTypeArchive: {
+		{Key: "pageId", Kind: "int", Min: 0, Max: 1 << 20},
+		// brokenOnly changes the question rather than the filter: off, the
+		// coverage is of the whole collection; on, it is of the links that are
+		// already broken -- "of what died, how much did I keep".
+		{Key: "brokenOnly", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeTrash: {
+		// warnDays is when an entry starts reading as urgent. Bounded well
+		// under the retention window, since a warning that covers the whole
+		// window warns about everything and therefore about nothing.
+		{Key: "warnDays", Kind: "int", Min: 1, Max: 30},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeUnchecked: {
+		{Key: "pageId", Kind: "int", Min: 0, Max: 1 << 20},
+		{Key: "staleDays", Kind: "int", Min: 1, Max: widgetMaxDays},
+		// A bookmark with checking switched off is a deliberate choice, not a
+		// gap, so whether it counts is the reader's to decide.
+		{Key: "includeDisabled", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeDuplicates: {
+		// minCount is how many copies make a finding. Two is the default and
+		// the floor -- one copy is not a duplicate of anything.
+		{Key: "minCount", Kind: "int", Min: 2, Max: widgetMaxRows},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
+	WidgetTypeBackups: {
+		{Key: "showList", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
 	WidgetTypeCustom: {
 		{Key: "url", Kind: "url"},
 		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
+		/*
+		 * presetId records which service this widget was started from.
+		 *
+		 * Nothing reads it to decide behaviour -- the address and the figures
+		 * are what the widget acts on, and they stay editable afterwards. It
+		 * is stored so the panel can say what it was started from when it is
+		 * opened again, and so the address keeps that service's path when the
+		 * sample host is replaced. Without it both are forgotten the moment
+		 * the panel closes.
+		 */
+		{Key: "presetId", Kind: "string"},
 		{Key: "credentialId", Kind: "string"},
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
@@ -302,6 +346,11 @@ func widgetTypeNames() []string {
 	ordered := []WidgetType{
 		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeTrend,
 		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
+		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
+		WidgetTypeTrash, WidgetTypeBackups,
+		// Custom stays last: it is the escape hatch for a service with no
+		// widget of its own, and a list that offers it first invites someone
+		// to build by hand what is two entries above it.
 		WidgetTypeCustom,
 	}
 	names := make([]string, 0, len(ordered))

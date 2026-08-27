@@ -72,7 +72,6 @@ class Dashboard {
             showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',
-            showBackgroundDots: true,
             showTitle: true,
             showDate: true,
             showTime: true,
@@ -567,10 +566,6 @@ class Dashboard {
 
     applyFontSize() {
         return this.visual.applyFontSize(...arguments);
-    }
-
-    applyBackgroundDots() {
-        return this.visual.applyBackgroundDots(...arguments);
     }
 
     applyAnimations() {

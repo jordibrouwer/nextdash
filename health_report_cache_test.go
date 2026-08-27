@@ -71,9 +71,31 @@ func TestGetBookmarkHealthCacheExpires(t *testing.T) {
 		t.Fatalf("initial total = %d, want 0", report1.Summary.TotalBookmarks)
 	}
 
-	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "A", URL: "https://example.com"}}); err != nil {
-		t.Fatalf("SaveBookmarksByPage: %v", err)
+	/*
+		Written past the store, deliberately.
+
+		A write that goes through the store is seen at once now -- the store
+		counts its writes and the report is stamped with that count, which is
+		what stopped a bookmark added from being invisible for three minutes.
+		The clock still has a job, and this is it: a file changed underneath
+		the process, by an import, a restore, or a hand on the data directory.
+		Nothing bumped the count, so only the age of the report can catch it.
+	*/
+	page := PageWithBookmarks{
+		Page:      Page{ID: 1, Name: "Page 1"},
+		Bookmarks: []Bookmark{{Name: "A", URL: "https://example.com", PageID: 1}},
 	}
+	encoded, err := json.Marshal(page)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), encoded, 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	// What an import does after replacing files: tell the store its own read
+	// caches are stale. That does not count as a write, so the health report
+	// is left holding what it built -- which is the case the clock is for.
+	h.store.InvalidateReadCache()
 
 	cached := httptest.NewRecorder()
 	h.GetBookmarkHealth(cached, httptest.NewRequest(http.MethodGet, "/api/bookmark-health", nil))

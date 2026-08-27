@@ -65,11 +65,6 @@
         return frame(`<span class="setting-art-col is-${mode}">${rows}</span>`, 'setting-art-frame--density');
     }
 
-    /** The dotted backdrop, on or off. */
-    function dots(on) {
-        return frame(`<span class="setting-art-dots${on ? ' is-on' : ''}"></span>`, 'setting-art-frame--dots');
-    }
-
     /** Text at three sizes, which is the one thing a size name cannot show. */
     function fontSize(size) {
         return frame(`<span class="setting-art-type is-${size}">Aa</span>`, 'setting-art-frame--type');
@@ -346,10 +341,10 @@
     /**
      * The backdrop, in the shape it is set to.
      *
-     * `dots` above answers on/off, which was the whole question while dots were
-     * the only pattern there was. Five shapes is a different question, and the
-     * names — hatch, lines, grid — are exactly the kind that mean four things
-     * until you see one.
+     * There used to be a companion answering on/off, which was the whole
+     * question while dots were the only pattern there was. Five shapes is a
+     * different question, and the names — hatch, lines, grid — are exactly the
+     * kind that mean four things until you see one.
      */
     function pattern(kind) {
         const value = String(kind || 'dots').replace(/[^a-z]/g, '') || 'dots';
@@ -402,7 +397,7 @@
     }
 
     const BUILDERS = {
-        grid, spacing, margins, density, dots, fontSize, layoutVersion, barPosition, flow,
+        grid, spacing, margins, density, fontSize, layoutVersion, barPosition, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
         boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
     };

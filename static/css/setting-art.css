@@ -112,24 +112,6 @@
     flex: 1 1 0;
 }
 
-/* The dotted backdrop, drawn at its own scale rather than the grid's. */
-.setting-art-dots {
-    display: block;
-    width: 3.2rem;
-    height: 1.5rem;
-    border-radius: 0.2rem;
-    background: var(--background-secondary);
-}
-
-.setting-art-dots.is-on {
-    background-color: var(--background-secondary);
-    background-image: radial-gradient(
-        color-mix(in srgb, var(--text-tertiary) 55%, transparent) 1px,
-        transparent 1px
-    );
-    background-size: 0.42rem 0.42rem;
-}
-
 /* Type size: the only setting here whose subject is the letterform itself. */
 .setting-art-type {
     display: inline-flex;

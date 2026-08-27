@@ -478,6 +478,9 @@ class DashboardRenderCore {
         delete d._widgetFeeds;
         delete d._widgetTrend;
         delete d._widgetInbox;
+        delete d._widgetTrash;
+        delete d._widgetDuplicates;
+        delete d._widgetBackups;
     }
 
     refreshWidgets(type) {

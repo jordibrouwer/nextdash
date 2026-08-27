@@ -180,7 +180,11 @@
         }
 
         confirmDiscardInlineEdit() {
-            if (!this.isInlineEditUnsavedChanges()) {
+            // hasInlineEdit..., not isInlineEdit...: the stub defines the
+            // former a dozen lines up and nothing anywhere defines the latter,
+            // so this threw a TypeError instead of returning a promise, and
+            // every caller was awaiting it.
+            if (!this.hasInlineEditUnsavedChanges()) {
                 return Promise.resolve(true);
             }
             return this.load().then((mod) => mod.confirmDiscardInlineEdit());

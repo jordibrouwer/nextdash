@@ -761,12 +761,31 @@
 /* The sub-tab strip and the page scope share a row: the scope applies to
    every tab, so it belongs beside them rather than inside one. Wraps under the
    tabs on a narrow window. */
+/*
+ * The rule under the tabs belongs to this row, not to the tabs.
+ *
+ * .config-subtabs draws its own border-bottom, which is right on every other
+ * screen because there it is the only thing on its line. Statistics puts the
+ * scope picker beside it, so the strip is a flex item sized to its own content
+ * and the rule stopped under the last tab with the rest of the width bare.
+ * Moved out here it runs the full width and passes under the picker too, which
+ * is what makes the two read as one row.
+ */
 .config-stats-head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-stats-head .config-subtabs {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
 }
 
 .config-stats-scope {
@@ -928,6 +947,63 @@
 .config-btn--danger {
     color: #d1493f;
     border-color: color-mix(in srgb, #d1493f 45%, transparent);
+}
+
+/*
+ * The one button on a panel that writes. Marked, because a panel with a Save
+ * and a Discard beside each other should not make the reader work out which is
+ * which from the labels alone.
+ */
+.config-btn--primary {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--accent-color, #4a90d9);
+}
+
+.config-btn--primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 14%, transparent);
+}
+
+.config-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.config-btn:disabled:hover {
+    background: var(--button-bg, transparent);
+    border-color: var(--border-color, rgba(128, 128, 128, 0.35));
+}
+
+.config-btn--primary:disabled:hover {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+/*
+ * The Save bar closes every widget panel.
+ *
+ * Set off by a rule above it rather than floated or stuck to the bottom: the
+ * panel is short, and a bar that follows the scroll would cover the figures
+ * table it is meant to be saving.
+ */
+.config-widget-savebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* Unsaved is stated in words as well as colour, because the whole reason this
+   bar exists is that silence could not tell "written" from "ignored". */
+.config-widget-savebar-state {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+}
+
+.config-widget-savebar.is-dirty .config-widget-savebar-state {
+    color: var(--status-warning, var(--text-secondary));
 }
 
 .config-btn--danger:hover {
@@ -5908,6 +5984,39 @@ button.config-bm-shortcut-pill {
     align-items: start;
 }
 
+/*
+ * The sign-in, under the address it belongs to.
+ *
+ * Its own block rather than another cell in the grid above: the address, the
+ * credential and the cache time are three unrelated settings only while the
+ * credential is one dropdown. The moment it grows a header name and a key it
+ * is a small form, and a form wedged into a third of a row reads as three
+ * boxes nobody explained.
+ */
+.config-widget-auth {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 12px 18px;
+    align-items: start;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-primary);
+}
+
+/* The button, its status and the note run under the fields rather than beside
+   them: each is about the block as a whole, not about one box in it. */
+.config-widget-auth-actions,
+.config-widget-auth > .config-widget-note {
+    grid-column: 1 / -1;
+}
+
+.config-widget-auth-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 /* Path, label, format, remove — the same track sizes for the header and every
    row, so the columns line up down the list. */
 .config-custom-head,
@@ -6113,4 +6222,185 @@ button.config-bm-shortcut-pill {
 
 @media (max-width: 52rem) {
     .config-view-intro-row { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Widgets: choosing one, and what each one is ─────────────────────────── */
+/*
+ * The picker and the reference are built from the same parts on purpose.
+ *
+ * Adding a widget used to be a dropdown, a button, and one line that changed
+ * as the dropdown did — so comparing two kinds meant looking at them one at a
+ * time and remembering. Both screens now put every kind on the page under the
+ * question it answers; the only difference is that one of them is clickable.
+ */
+.config-widget-pick-group,
+.config-widget-type-group {
+    margin: 0 0 18px;
+}
+
+.config-widget-pick-group:last-child,
+.config-widget-type-group:last-child {
+    margin-bottom: 0;
+}
+
+.config-widget-pick-group-title,
+.config-widget-type-group-title {
+    margin: 0 0 8px;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+/*
+ * As many across as the panel has room for, never fewer than one.
+ *
+ * auto-fill with a minimum rather than a fixed count: config is a column
+ * inside a page that is itself a column, so the width here is whatever is
+ * left after the rail — a number of columns chosen in advance is wrong at
+ * some window size.
+ */
+.config-widget-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: 8px;
+}
+
+.config-widget-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.config-widget-pick:hover,
+.config-widget-pick:focus-visible {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.config-widget-pick-name {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.config-widget-pick-about,
+.config-widget-type-about {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+.config-widget-pick-footnote {
+    margin: 8px 0 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+}
+
+.config-widget-add-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 12px;
+}
+
+/* The reference: a name and a sentence, stacked rather than gridded — reading
+   is a column, choosing is a grid. */
+.config-widget-type-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.config-widget-type-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-type-name {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* ── The Custom widget, explained at length ──────────────────────────────── */
+.config-widget-custom-ref {
+    padding: 14px 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-custom-lead {
+    margin: 0 0 12px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    line-height: 1.6;
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+.config-widget-custom-ref .config-widget-custom-lead:last-child {
+    margin: 12px 0 0;
+}
+
+.config-widget-custom-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+/*
+ * A rule down the left rather than a box per point.
+ *
+ * Seven bordered cards inside a bordered panel is three edges deep before any
+ * of it says anything; a hairline is enough to say "these belong together and
+ * each one is separate".
+ */
+.config-widget-custom-point {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-widget-custom-point-title {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.config-widget-custom-point-body {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    line-height: 1.6;
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+.config-widget-custom-code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+    font-size: 0.95em;
+    /* Whatever the reader set config to, a path is a path. */
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 }

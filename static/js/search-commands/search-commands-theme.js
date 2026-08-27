@@ -134,16 +134,13 @@ class SearchCommandTheme {
         document.body.classList.add(safeTheme);
         document.body.setAttribute('data-theme', safeTheme);
 
-        // Get showBackgroundDots setting
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let showBackgroundDots = true; // default
 
         if (deviceSpecific) {
             const settings = localStorage.getItem('dashboardSettings');
             if (settings) {
                 try {
                     const parsed = JSON.parse(settings);
-                    showBackgroundDots = parsed.showBackgroundDots !== false;
                     // Update theme in localStorage
                     parsed.theme = safeTheme;
                     if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
@@ -162,7 +159,6 @@ class SearchCommandTheme {
                 if (response.ok) {
                     const currentSettings = await response.json();
                     currentSettings.theme = safeTheme;
-                    showBackgroundDots = currentSettings.showBackgroundDots !== false;
 
                     // Save updated settings to server
                     await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {
@@ -182,7 +178,7 @@ class SearchCommandTheme {
         // Apply theme using ThemeLoader
         if (window.ThemeLoader && typeof window.ThemeLoader.applyTheme === 'function') {
             const currentFontSize = window.ThemeLoader.getFontSize ? window.ThemeLoader.getFontSize() : 'm';
-            window.ThemeLoader.applyTheme(safeTheme, showBackgroundDots, currentFontSize);
+            window.ThemeLoader.applyTheme(safeTheme, currentFontSize);
         } else {
             console.warn('ThemeLoader not available');
         }

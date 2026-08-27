@@ -4,6 +4,24 @@
 html {
     scrollbar-gutter: stable;
     --dashboard-bg-opacity: 1;
+
+    /*
+     * Two tokens the stylesheets ask for and no theme supplies.
+     *
+     * A var() with no fallback that resolves to nothing makes the whole
+     * declaration invalid, so these did not degrade -- they vanished. The
+     * transitions in status.css simply never ran, and the finder search mode,
+     * which is coloured to tell it apart from the other modes, inherited the
+     * colour of whatever it sat in and so looked like no mode at all.
+     *
+     * accent-secondary is mixed from the accent the theme does define rather
+     * than picked: it has to differ from --accent-primary to do its job, and
+     * it must not borrow --accent-warning or --accent-success, whose colours
+     * already mean something. Pulling the accent towards the text colour
+     * gives a second tone of the same family on every theme.
+     */
+    --accent-secondary: color-mix(in srgb, var(--accent-primary) 55%, var(--text-primary));
+    --transition-normal: 0.2s ease;
 }
 
 /* Background Patterns */
@@ -25,11 +43,6 @@ html[data-theme] body:not(.no-background-dots)::before {
 
 body.no-background-dots::before {
     content: none;
-}
-
-/* No Background Dots Option */
-body.no-background-dots:not(.has-custom-background) {
-    background-image: none !important;
 }
 
 /* Custom Background (auto / gradient / image) — ::after keeps opacity on the backdrop only */

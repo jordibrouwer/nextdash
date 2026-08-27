@@ -234,8 +234,8 @@ test.describe('widgets update as they are configured', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
         await page.waitForSelector('[data-widget-add]', { timeout: 15_000 });
-        await page.selectOption('[data-widget-type]', 'inbox');
-        await page.click('[data-widget-add]');
+        // The kind is the button: choosing one is what adds it.
+        await page.click('[data-widget-add="inbox"]');
 
         // No reload anywhere: the grid is redrawn in place.
         await expect.poll(async () => page.evaluate(() =>
@@ -622,6 +622,12 @@ test.describe('widget width', () => {
         await page.waitForSelector('[data-widget-setting="columns"]', { timeout: 15_000 });
 
         await page.selectOption('[data-widget-setting="columns"]', '2');
+        /*
+         * And Save, which is the part that writes. The panel holds a draft:
+         * it used to write every control as it changed, so a half-made choice
+         * was stored and walking away from the screen left it there.
+         */
+        await page.locator('[data-widget-save]').first().click();
 
         await expect.poll(async () => page.evaluate(async () => {
             const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -657,7 +663,7 @@ test.describe('widgets as a section', () => {
         expect(widgets).toBe(backups + 1);
 
         // The editor is here, and it is the same one.
-        await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-widget-add="health"]')).toBeVisible({ timeout: 15_000 });
     });
 
     test('it is no longer a tab under Pages & tags', async ({ page }) => {

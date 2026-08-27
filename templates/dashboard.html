@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -127,7 +127,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-show-title="{{.ShowTitle}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
         <div class="dashboard-noscript" role="alert">
@@ -440,6 +440,12 @@
     <script src="{{asset "js/dashboard/dashboard-widget-trend.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-inbox.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-neglected.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-archive.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-unchecked.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-duplicates.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-trash.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-backups.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-presets.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-custom.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
     <!-- Registers the push service worker and keeps this device's subscription current. -->

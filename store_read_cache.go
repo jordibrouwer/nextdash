@@ -61,6 +61,18 @@ func (fs *FileStore) invalidateReadCache() {
 // per-page bookmarks/categories entries for *other* pages are the ones a
 // scoped write can safely leave alone.
 func (fs *FileStore) noteDataMutation(pageID int) {
+	/*
+		Bumped first, and for every write.
+
+		This is the one place every mutation passes through, which is what
+		makes it the right place to count them: a cache elsewhere in the
+		program -- the health report is the one that needed it -- can hold the
+		generation it was built from and know it is stale without every write
+		path having to remember to say so. Invalidating from the call sites was
+		the other option, and adding a bookmark was already the path that
+		forgot.
+	*/
+	fs.dataGeneration++
 	if pageID <= 0 {
 		fs.invalidateReadCache()
 		return
@@ -124,4 +136,18 @@ func clonePageOrder(in []int) []int {
 	out := make([]int, len(in))
 	copy(out, in)
 	return out
+}
+
+/*
+DataGeneration reports how many writes this store has seen.
+
+Compared for equality by callers that cache something derived from the data;
+the value itself carries no meaning and is not persisted, so it starts at nought
+again on a restart -- which is correct, because the caches that read it start
+empty then too.
+*/
+func (fs *FileStore) DataGeneration() uint64 {
+	fs.mutex.RLock()
+	defer fs.mutex.RUnlock()
+	return fs.dataGeneration
 }

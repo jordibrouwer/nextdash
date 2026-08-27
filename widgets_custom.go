@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"mime"
 	"net/http"
 	neturl "net/url"
 	"strconv"
@@ -433,6 +434,40 @@ func formatRelativeSince(when, now time.Time) string {
 }
 
 /*
+describeNonJSONAnswer says what arrived instead of JSON.
+
+"that answer is not JSON" is true and useless. The common cause is an address
+that names a host and no path: a service's web interface answers the root with
+its own front page, 200 and HTML, so the widget is looking at a login screen
+rather than at an API. Left unsaid, that failure is indistinguishable from a
+wrong credential or a service that has changed its format, and the reader has
+three things to check instead of one.
+
+The body is looked at as well as the header, because a great many services
+label a page text/plain or nothing at all.
+*/
+func describeNonJSONAnswer(resp *http.Response, raw []byte) string {
+	body := strings.TrimSpace(string(raw))
+	if body == "" {
+		return "that address answered with nothing"
+	}
+	mediaType := ""
+	if resp != nil {
+		mediaType, _, _ = mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	}
+	looksLikeAPage := strings.EqualFold(mediaType, "text/html") ||
+		strings.HasPrefix(body, "<!") || strings.HasPrefix(body, "<html") ||
+		strings.HasPrefix(body, "<HTML")
+	if looksLikeAPage {
+		return "that address answered with a web page, not JSON — check the path"
+	}
+	if mediaType != "" && !strings.Contains(mediaType, "json") {
+		return fmt.Sprintf("that address answered with %s, not JSON", mediaType)
+	}
+	return "that answer is not JSON"
+}
+
+/*
 fetchCustomWidget asks one service and turns its answer into figures.
 
 Through outboundHTTPClient, which checks the address at dial time, validates
@@ -500,7 +535,7 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	}
 	var document any
 	if err := json.Unmarshal(raw, &document); err != nil {
-		result.Error = "that answer is not JSON"
+		result.Error = describeNonJSONAnswer(resp, raw)
 		return result
 	}
 

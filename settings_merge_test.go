@@ -10,7 +10,6 @@ func TestMergeSettingsFromBodyPreservesStoredWhenIncomingEmpty(t *testing.T) {
 
 	stored := Settings{
 		Theme:               "mulberry-silk-dark",
-		ShowBackgroundDots:  true,
 		AllowLocalBookmarks: true,
 		ColumnsPerRow:       4,
 		Language:            "nl",
@@ -36,7 +35,6 @@ func TestMergeSettingsFromBodyUpdatesPresentFields(t *testing.T) {
 
 	stored := Settings{
 		Theme:               "classic-dark",
-		ShowBackgroundDots:  true,
 		AllowLocalBookmarks: false,
 		LayoutVersion:       "classic",
 	}
@@ -60,13 +58,13 @@ func TestMergeSettingsFromBodyRoundTripJSON(t *testing.T) {
 	t.Parallel()
 
 	stored := Settings{Theme: "cherry-graphite-dark", Language: "en"}
-	body, _ := json.Marshal(map[string]any{"showBackgroundDots": false})
+	body, _ := json.Marshal(map[string]any{"showTitle": false})
 	merged, err := mergeSettingsFromBody(stored, body)
 	if err != nil {
 		t.Fatalf("mergeSettingsFromBody: %v", err)
 	}
-	if merged.ShowBackgroundDots != false {
-		t.Fatalf("showBackgroundDots = %v, want false", merged.ShowBackgroundDots)
+	if merged.ShowTitle != false {
+		t.Fatalf("showTitle = %v, want false", merged.ShowTitle)
 	}
 	if merged.Theme != stored.Theme {
 		t.Fatalf("theme = %q, want %q", merged.Theme, stored.Theme)
