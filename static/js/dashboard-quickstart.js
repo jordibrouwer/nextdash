@@ -101,7 +101,7 @@
         renderSetupCard() {
             this.draft = this.buildDraft();
             this.setupStep = 0;
-            this.setupStepCount = 4;
+            this.setupStepCount = 5;
 
             const el = document.createElement('div');
             el.className = 'quickstart-card quickstart-setup';
@@ -167,38 +167,74 @@
                                placeholder="${this.escape(this.t('setupLocationPlaceholder', 'City name (e.g. Amsterdam)'))}">
                     </label>`;
             }
-            // step 3 — starting point: keep bookmarks or start empty.
-            // On a first run the only bookmarks present are the seed examples, so we
-            // say "example". If onboarding already completed (a rare wizard re-entry)
-            // and bookmarks exist, they may be the user's own — drop "example" then so
-            // we never promise to only clear samples.
-            const hasOwnBookmarks = this.dash?.settings?.onboardingCompleted === true
-                && this.bookmarkCount(this.dash) > 0;
-            const keepLabel = hasOwnBookmarks
-                ? this.t('setupStartKeepOwn', 'Keep my bookmarks')
-                : this.t('setupStartKeep', 'Keep the example bookmarks');
-            const emptyHint = hasOwnBookmarks
-                ? this.t('setupStartEmptyHintOwn', 'Removes every bookmark on every page. Pages, categories, and all settings stay. This cannot be undone.')
-                : this.t('setupStartEmptyHint', 'Removes every example bookmark on every page. Pages, categories, and all settings stay. Nothing is added back.');
+            if (step === 3) {
+                // step 3 — starting point: keep bookmarks or start empty.
+                // On a first run the only bookmarks present are the seed examples, so we
+                // say "example". If onboarding already completed (a rare wizard re-entry)
+                // and bookmarks exist, they may be the user's own — drop "example" then so
+                // we never promise to only clear samples.
+                const hasOwnBookmarks = this.dash?.settings?.onboardingCompleted === true
+                    && this.bookmarkCount(this.dash) > 0;
+                const keepLabel = hasOwnBookmarks
+                    ? this.t('setupStartKeepOwn', 'Keep my bookmarks')
+                    : this.t('setupStartKeep', 'Keep the example bookmarks');
+                const emptyHint = hasOwnBookmarks
+                    ? this.t('setupStartEmptyHintOwn', 'Removes every bookmark on every page. Pages, categories, and all settings stay. This cannot be undone.')
+                    : this.t('setupStartEmptyHint', 'Removes every example bookmark on every page. Pages, categories, and all settings stay. Nothing is added back.');
+                return `
+                    <fieldset class="quickstart-fieldset quickstart-startpoint" data-qs-field="startEmpty">
+                        <legend>${this.escape(this.t('setupStartPoint', 'How would you like to begin?'))}</legend>
+                        <label class="quickstart-radio quickstart-radio-block">
+                            <input type="radio" name="qs-startempty" value="false">
+                            <span class="quickstart-radio-text">
+                                <span class="quickstart-radio-label">${this.escape(keepLabel)}</span>
+                                <span class="quickstart-radio-hint">${this.escape(this.t('setupStartKeepHint', 'Explore nextDash with a ready-made dashboard. You can edit or remove anything later.'))}</span>
+                            </span>
+                        </label>
+                        <label class="quickstart-radio quickstart-radio-block">
+                            <input type="radio" name="qs-startempty" value="true">
+                            <span class="quickstart-radio-text">
+                                <span class="quickstart-radio-label">${this.escape(this.t('setupStartEmpty', 'Start from scratch — no bookmarks'))}</span>
+                                <span class="quickstart-radio-hint">${this.escape(emptyHint)}</span>
+                            </span>
+                        </label>
+                    </fieldset>
+                    <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are off — nothing is sent unless you turn them on. If you do, no bookmark names, URLs, or searches are ever sent. You can turn them on in Config → General.'))}</p>`;
+            }
+
+            /*
+             * Last, and deliberately after the starting point.
+             *
+             * Whoever has just chosen to start from scratch is looking at an
+             * empty dashboard and wondering whether they have to type it all
+             * in. They do not, and this is the one moment in the app where
+             * that question is certain to be on their mind.
+             *
+             * Two ways in rather than one, because they answer different
+             * questions: a file you already have, and a list that keeps
+             * arriving. Both open the screen rather than importing from here
+             * -- a file picker inside a setup card is a step with no way back,
+             * and that screen already explains the formats.
+             */
             return `
-                <fieldset class="quickstart-fieldset quickstart-startpoint" data-qs-field="startEmpty">
-                    <legend>${this.escape(this.t('setupStartPoint', 'How would you like to begin?'))}</legend>
-                    <label class="quickstart-radio quickstart-radio-block">
-                        <input type="radio" name="qs-startempty" value="false">
-                        <span class="quickstart-radio-text">
-                            <span class="quickstart-radio-label">${this.escape(keepLabel)}</span>
-                            <span class="quickstart-radio-hint">${this.escape(this.t('setupStartKeepHint', 'Explore nextDash with a ready-made dashboard. You can edit or remove anything later.'))}</span>
-                        </span>
-                    </label>
-                    <label class="quickstart-radio quickstart-radio-block">
-                        <input type="radio" name="qs-startempty" value="true">
-                        <span class="quickstart-radio-text">
-                            <span class="quickstart-radio-label">${this.escape(this.t('setupStartEmpty', 'Start from scratch — no bookmarks'))}</span>
-                            <span class="quickstart-radio-hint">${this.escape(emptyHint)}</span>
-                        </span>
-                    </label>
-                </fieldset>
-                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are off — nothing is sent unless you turn them on. If you do, no bookmark names, URLs, or searches are ever sent. You can turn them on in Config → General.'))}</p>`;
+                <p class="quickstart-field-hint">${this.escape(this.t('setupImportLead',
+                    'You do not have to start by typing. nextDash reads the bookmarks file your browser exports, a CSV, or a nextDash backup.'))}</p>
+                <div class="quickstart-setup-links">
+                    <button type="button" class="quickstart-setup-link" data-qs-goto="backups">
+                        <span class="quickstart-setup-link-label">${this.escape(this.t('setupImportOpen',
+                            'Import my bookmarks'))}</span>
+                        <span class="quickstart-setup-link-hint">${this.escape(this.t('setupImportOpenHint',
+                            'Export to a file in Chrome, Firefox, Safari or Edge, then open it here.'))}</span>
+                    </button>
+                    <button type="button" class="quickstart-setup-link" data-qs-goto="sources">
+                        <span class="quickstart-setup-link-label">${this.escape(this.t('setupImportSources',
+                            'Follow a list instead'))}</span>
+                        <span class="quickstart-setup-link-hint">${this.escape(this.t('setupImportSourcesHint',
+                            'Point nextDash at a bookmarks file it can re-read, and new links arrive on their own.'))}</span>
+                    </button>
+                </div>
+                <p class="quickstart-field-hint">${this.escape(this.t('setupImportLater',
+                    'Both live under Config → Data & backups, so this can wait until you are ready.'))}</p>`;
         }
 
         renderSetupStep() {
@@ -211,6 +247,7 @@
                 this.t('setupStep2Title', 'Layout'),
                 this.t('setupStep3Title', 'Links & weather'),
                 this.t('setupStep4Title', 'Starting point'),
+                this.t('setupStep5Title', 'Your own bookmarks'),
             ];
 
             el.innerHTML = `
@@ -255,7 +292,7 @@
                 setRadio('qs-weather', d.showWeatherWithDate);
                 setSelect('weatherLocation', d.weatherLocation);
                 this.toggleWeatherLocation();
-            } else {
+            } else if (step === 3) {
                 setRadio('qs-startempty', d.startEmpty);
             }
         }
@@ -288,6 +325,24 @@
                     this.renderSetupStep();
                 }
             });
+            el.querySelectorAll('[data-qs-goto]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    /*
+                     * Finish first, then travel.
+                     *
+                     * Everything answered in the four steps before this is
+                     * still only in the draft; leaving without applying it
+                     * would throw away the whole setup in exchange for opening
+                     * one screen. Awaited, so the screen is opened against
+                     * settings that have already landed.
+                     */
+                    const target = button.getAttribute('data-qs-goto');
+                    Promise.resolve(this.finishSetup())
+                        .then(() => this.openDataScreen(target))
+                        .catch(() => this.openDataScreen(target));
+                });
+            });
+
             if (step === 2) {
                 el.querySelectorAll('input[name="qs-weather"]').forEach((r) => {
                     r.addEventListener('change', () => {
@@ -296,6 +351,49 @@
                     });
                 });
             }
+        }
+
+        /*
+         * Open Data & backups on one of its tabs.
+         *
+         * The tab travels through the address rather than as an argument,
+         * because openConfigView takes a section and reads the tab from the
+         * hash -- and only does so when the hash already names the section it
+         * is opening. Written first for that reason; setting it afterwards
+         * would be overwritten by the render that follows.
+         */
+        openDataScreen(tab) {
+            const config = this.dash?.config;
+            if (typeof config?.openConfigView !== 'function') {
+                this.dash?.showView?.('config');
+                return;
+            }
+            try {
+                const url = new URL(window.location.href);
+                url.hash = `#config/data-backups/${tab || 'backups'}`;
+                // replaceState rather than a navigation: config records where
+                // it settled itself, and a history entry for a screen that has
+                // not been drawn yet is a Back button that goes nowhere.
+                window.history.replaceState(window.history.state, '', url);
+            } catch (_error) {
+                // An address that cannot be written is no reason not to open
+                // the section; it opens on its remembered tab instead.
+            }
+            /*
+             * Open the fold the buttons live behind, before the screen draws.
+             *
+             * Import and export sit inside a collapsed <details>, which is
+             * right for a screen someone came to on purpose and wrong for one
+             * they were sent to: landing on a heading with the thing you were
+             * promised folded away is the same as not arriving. Remembered
+             * rather than clicked open afterwards, so the panel is already
+             * open in the first paint.
+             */
+            if (typeof config.rememberFold === 'function') {
+                config.rememberFold(tab === 'sources' ? 'source:browser' : 'backup:bookmarks', true);
+            }
+            const opened = config.openConfigView('data-backups');
+            if (opened && typeof opened.catch === 'function') opened.catch(() => {});
         }
 
         // Read the DOM for the current step into the draft (survives back/next).
@@ -317,7 +415,7 @@
                 const op = radioVal('qs-open'); if (op != null) d.openInNewTab = op === 'true';
                 const w = radioVal('qs-weather'); if (w != null) d.showWeatherWithDate = w === 'true';
                 const loc = selVal('weatherLocation'); if (loc != null) d.weatherLocation = loc;
-            } else {
+            } else if (step === 3) {
                 const se = radioVal('qs-startempty'); if (se != null) d.startEmpty = se === 'true';
             }
         }
