@@ -65,6 +65,17 @@ for (const m of blob.matchAll(/[`'"]((?:config|dashboard)\.)?([A-Za-z0-9_]*)\$\{
     templates.push({ prefix, suffix });
 }
 
+// The same thing written with `+` instead of a template literal.
+//
+// `t('config.backgroundPattern' + option.charAt(0).toUpperCase() + ...)` builds
+// a key exactly as a template does, and the pattern above cannot see it — so
+// every key in that family was reported unreachable while being used on screen.
+// Only the prefix is recoverable here: what follows the `+` is an expression,
+// and the suffix, if any, is beyond it.
+for (const m of blob.matchAll(/['"](?:config|dashboard)\.([A-Za-z0-9_]+)['"]\s*\+/g)) {
+    if (m[1]) templates.push({ prefix: m[1], suffix: '' });
+}
+
 // Families whose keys are chosen by a value in data rather than by name.
 const DATA_DRIVEN = [
     /^theme/, /^weather/, /^checkMode/, /^help[A-Z]/, /^tip[A-Z0-9]/, /^month/, /^weekday/,

@@ -65,6 +65,10 @@ class DashboardPromos {
         clearTimeout(d._postOnboardingPromptsTimer);
         let delay = 900;
         if (options.afterOnboarding) delay = 600;
+        // An explicit delay is a retry asking to be tried again later, so it
+        // wins. Callers scheduling the first run must NOT pass the default:
+        // naming 900 here reaches this branch and skips the one below, which is
+        // how the prefetch and the fast path sat dead for a while.
         else if (Number.isFinite(options.delay)) delay = options.delay;
         else if (this.shouldShowWhatsNewPrompt()) {
             // A release the reader has not seen: show it now rather than after
