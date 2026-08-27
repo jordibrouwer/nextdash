@@ -407,7 +407,7 @@ class Dashboard {
                         this.health?.restoreHealthHash?.();
                         return;
                     }
-                    const pageIndex = parseInt(hash) - 1;
+                    const pageIndex = parseInt(hash, 10) - 1;
                     if (pageIndex >= 0 && pageIndex < this.pages.length) {
                         const page = this.pages[pageIndex];
                         if (!this.samePageId(page.id, this.currentPageId)) {
