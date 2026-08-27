@@ -8,7 +8,11 @@
 
 My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
 
-Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard. Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
+Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard.
+
+It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all, and a fourteenth — the **custom widget** — points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
+
+Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
@@ -528,9 +532,16 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 ### Widgets
 
+A dashboard of links can only answer *where do I go*. Widgets answer *what is
+going on* — and they work off data nextDash already collects, so most of them
+need nothing configured beyond being added. A **new install ships with a Health
+widget already on the page**, so the feature is visible rather than something
+you have to go and find.
+
 - **A block on a page can hold something other than links** (**v1.4.0**) — a widget is drawn among the categories, dragged into place like one, and can be one or two columns wide. Add, name and arrange them under **Config → Widgets**; the block order is the same list that orders categories, so there is one answer to where anything sits
-- **Eight types, each reading something nextDash already keeps** (**v1.4.0**) — **Health** and **Uptime** report what the health view reports, worst first, with a heartbeat per monitored link; **Trend** draws the last thirty days; **Inbox** says what is waiting; **Neglected** surfaces what you saved and never opened; and **Sources**, **Feeds** and **Certificates** show the three things that were previously visible only by going looking — a failed import, a feed gone quiet, a certificate running out
-- **A custom widget** (**v1.4.0**) — point it at an address that answers with JSON, name the fields you want on the tile, and it draws them. The fetch happens on the server, so the address and any stored sign-in never reach your browser. It answers "my service is not in the list" without a codepath per service
+- **Thirteen types, each reading something nextDash already keeps** (**v1.4.0**) — no configuration beyond adding the tile, because the data is already there. **Health** and **Uptime** report what the health view reports, worst first, with a heartbeat per monitored link; **Trend** draws the last thirty days; **Inbox** says what is waiting; **Neglected** surfaces what you saved and never opened; **Unchecked** and **Duplicates** name what the collection has quietly accumulated; **Trash** counts what is still recoverable and **Backups** how old the newest one is; **Archive** says how much has a copy kept locally; and **Sources**, **Feeds** and **Certificates** show the three things that were previously visible only by going looking — a failed import, a feed gone quiet, a certificate running out
+- **A custom widget, with 28 services already filled in** (**v1.4.0**) — the fourteenth type points at any address that answers with JSON, so a service nextDash has never heard of needs no code. Pick a **preset** and the address shape, the fields and the labels arrive already written; the list covers **Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd and NZBGet** for media, **Pi-hole (v5 and v6), AdGuard Home, Traefik and Speedtest Tracker** for the network, **Proxmox VE, TrueNAS, Glances and Syncthing** for the machine, and **Nextcloud, Paperless-ngx, Home Assistant, Grafana and ntfy** alongside. Nothing is hard-coded per service — a preset is a starting point you can edit, and writing your own from scratch is the same form with the fields left blank
+- **The custom widget's request is made by the server, not your browser** (**v1.4.0**) — the address and any API key stay on the machine running nextDash, which is what lets a tile read a service that is not reachable from the browser at all, and keeps the key out of a page anyone can view source on. It inherits the same SSRF checks and rate limiting as every other outbound request
 - **Settings per widget** (**v1.4.0**) — which page it counts, how many rows it shows, what it is called, how wide it is. A tile that leaves rows out says how many, so five of twelve does not look like five of five
 - **A figure opens the rows behind it** (**v1.4.0**) — clicking a count on a health tile lands in the health view with that filter already applied
 
