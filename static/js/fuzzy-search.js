@@ -154,11 +154,7 @@ class FuzzySearchComponent {
     }
 
     _escHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+        return window.NextDashHtml.escapeHtml(str);
     }
 
     /**

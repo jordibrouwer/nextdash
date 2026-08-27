@@ -97,6 +97,7 @@
      * and were thrown away — so the preview card had to ask for them again, or
      * go without. This keeps the four facts worth carrying and drops the rest.
      */
+    let healthCertificates = {};
     const healthFacts = new Map();
     let healthFactsAt = 0;
 
@@ -129,6 +130,16 @@
         const rows = Array.isArray(report?.rows) ? report.rows : null;
         const issues = Array.isArray(report?.issues) ? report.issues : [];
         const certificates = report?.certificates || {};
+        /*
+         * The map by host, beside the per-bookmark facts.
+         *
+         * A certificate belongs to a host, not to any one bookmark: ten
+         * bookmarks on one domain share one expiry. The loop below attaches it
+         * per bookmark for the preview card, which asks about one link; the
+         * certificates widget asks the other question -- what expires soon,
+         * anywhere -- and that needs the map itself.
+         */
+        healthCertificates = certificates;
         healthFacts.clear();
         (rows || issues).forEach((entry) => {
             const key = factsKey(entry?.url);
@@ -186,6 +197,8 @@
     window.HealthFacts = {
         get: getHealthFacts,
         remember: rememberHealthFacts,
+        /** Certificates by host, as the last report described them. */
+        get certificates() { return healthCertificates; },
         get size() { return healthFacts.size; },
         get updatedAt() { return healthFactsAt; },
     };

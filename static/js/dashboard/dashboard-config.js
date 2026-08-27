@@ -30,6 +30,7 @@ class DashboardConfig {
         'pages-tags',
         'behavior',
         'data-backups',
+        'widgets',
         'stats',
         'help',
         'about',
@@ -45,12 +46,14 @@ class DashboardConfig {
      * literals scattered through the render methods. Moving the mark then meant
      * finding all of them, and a half-moved trail points at nothing.
      *
-     * Cleared (set to `{}`) once the setting is no longer new — which is where
-     * it stands: the trail pointed at Appearance → Layout for the categories
-     * -across-columns setting of v1.3.0, two releases ago, and a mark that
-     * outlives its release trains people to ignore the mark.
+     * Cleared (set to `{}`) once the setting is no longer new — a mark that
+     * outlives its release trains people to ignore the mark. It stood empty
+     * from v1.3.0, whose Appearance → Layout trail had gone stale, until
+     * v1.4.0 added a whole section rather than a setting: Widgets is the one
+     * place in the rail a reader has no reason to look, because it was not
+     * there the last time they opened config.
      */
-    static NEW_THIS_RELEASE = {};
+    static NEW_THIS_RELEASE = { section: 'widgets' };
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -143,11 +146,15 @@ class DashboardConfig {
         this._bmCategoriesCache = new Map();
         // Statistics: undefined while the health fetch is in flight, null on failure.
         this._statsHealth = undefined;
+        // Same contract for the counts that are not bookmarks — widgets, feeds,
+        // sources, trash, backups.
+        this._statsLibrary = undefined;
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
         // Statistics sub-tab.
         this.statsTab = 'overview';
+        this.widgetsTab = 'widgets';
         // Which page the figures describe; '' is the whole library. Deliberately
         // not persisted, unlike the activity range: a range reframes the numbers
         // while this one hides most of them, and a filter still in force from
@@ -334,6 +341,10 @@ class DashboardConfig {
             // news` opened the colophon and choosing the tab never reached the
             // address bar.
             about: DashboardConfig.ABOUT_TABS,
+            // The same trap About fell into: a section in SUB_TAB_STATE but not
+            // here has a tab that cannot be addressed, so the strip works and
+            // the address bar never follows it.
+            widgets: DashboardConfig.WIDGETS_TABS,
         };
     }
 
@@ -359,6 +370,7 @@ class DashboardConfig {
         'data-backups': 'dbTab',
         help: 'helpTab',
         bookmarks: 'bmTab',
+        widgets: 'widgetsTab',
     };
 
     /**
@@ -375,6 +387,7 @@ class DashboardConfig {
         'data-db-tab': 'data-backups',
         'data-help-tab': 'help',
         'data-bm-tab': 'bookmarks',
+        'data-widgets-tab': 'widgets',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -386,6 +399,7 @@ class DashboardConfig {
         'data-backups': 'data-db-tab',
         help: 'data-help-tab',
         bookmarks: 'data-bm-tab',
+        widgets: 'data-widgets-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -615,11 +629,15 @@ class DashboardConfig {
     }
 
     loadStatsTabData(tab, { all = false } = {}) {
+        // Category names, for the panels and the CSV that label by name. Not
+        // gated on a tab: the export button sits in the foot of every one.
+        void this.prefetchAllBookmarkCategories();
         // History is cheap and every tab can use it, so it is not gated on one.
         if (this._statsTrend === undefined) void this.loadStatsTrend();
         if ((all || tab === 'inbox') && this._statsInboxItems === undefined) void this.loadStatsInbox();
         if ((all || tab === 'activity') && this._statsFinders === undefined) void this.loadStatsFinders();
         if ((all || tab === 'health') && this._statsHealth === undefined) void this.loadStatsHealth();
+        if ((all || tab === 'content') && this._statsLibrary === undefined) void this.loadStatsLibrary();
     }
 
     /**
@@ -1258,6 +1276,9 @@ class DashboardConfig {
                 }
                 break;
             }
+            case 'widgets':
+                this.repaintWidgetsBody();
+                break;
             case 'stats':
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
@@ -1373,6 +1394,7 @@ class DashboardConfig {
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
+            widgets: ['config.sectionWidgets', 'Widgets'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             about: ['config.sectionAbout', 'About'],
@@ -1485,6 +1507,13 @@ class DashboardConfig {
         } else if (this.section === 'data-backups') {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
+        } else if (this.section === 'widgets') {
+            this.bindWidgetsTabs(container);
+            this.bindWidgetsEditor(container);
+            void this.loadWidgetsEditor();
+            // The custom widget offers a credential by name; the names are two
+            // dozen bytes and cheaper to have than to wait for.
+            void this.loadCredentialNames();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
@@ -2289,7 +2318,6 @@ class DashboardConfig {
         { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
         { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
-        { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
         { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
@@ -2300,6 +2328,8 @@ class DashboardConfig {
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'display' },
         { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
+        { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
+        { field: 'backupExcludeSecrets', labelKey: 'backupIncludeSecretsLabel', fallback: 'Tokens and passwords', section: 'data-backups', subTab: 'backups' },
     ];
 
     /**
@@ -2315,6 +2345,7 @@ class DashboardConfig {
      */
     static FIELD_KEYWORDS = {
         monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
+        monitorNotifyDashboardUrl: ['ntfy', 'button', 'notification', 'address', 'alert'],
         monitorNotifyRetries: ['webhook', 'alert', 'notify', 'retries'],
         pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
@@ -2357,6 +2388,8 @@ class DashboardConfig {
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
+        backupExcludeArchives: ['backup', 'archive', 'capture', 'saved page', 'size'],
+        backupExcludeSecrets: ['backup', 'token', 'password', 'key', 'credential', 'secret'],
         weatherLocation: ['weather', 'location', 'city'],
         weatherSource: ['weather', 'source', 'ip'],
         weatherUnit: ['weather', 'celsius', 'fahrenheit', 'temperature'],
@@ -2956,6 +2989,9 @@ class DashboardConfig {
         if (this.section === 'pages-tags') {
             return this.renderPagesTags();
         }
+        if (this.section === 'widgets') {
+            return this.renderWidgetsSection();
+        }
         if (this.section === 'bookmarks') {
             return this.renderBookmarksSection();
         }
@@ -3442,7 +3478,9 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const stream = this._newsStream;
         const filter = this.newsFilter || 'all';
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 6;
+        // Falls back to the module's own figure; the literal is only for a
+        // page where the stream module has not loaded, and must not disagree.
+        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
 
         let body;
         if (stream === undefined) {
@@ -3575,7 +3613,9 @@ class DashboardConfig {
         if (stream === undefined) return '';
         const filter = this.newsFilter || 'all';
         const matching = stream.filter((item) => filter === 'all' || item.source === filter).length;
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 6;
+        // The same figure the list above uses, or the foot would count rows the
+        // reader cannot see.
+        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
         const shown = Math.min(matching, limit);
         const offline = this._siteNewsEnabled === false
             ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')
@@ -4153,6 +4193,37 @@ class DashboardConfig {
         return this.t('config.backupDaysAgo', '{n}d ago').replace('{n}', String(days));
     }
 
+    /*
+     * When a copy was saved, in the terms someone actually asks it in.
+     *
+     * "today 13:56" and "yesterday 09:12" answer "is this fresh?" at a glance,
+     * which is the question about a recent capture. Past a week that stops being
+     * useful -- "42d ago" is arithmetic homework -- so it becomes the date, which
+     * is the question about an old one: not how long ago, but when.
+     *
+     * The full timestamp goes in the title either way, because the exact moment
+     * is occasionally what you need and should never be lost to a friendlier
+     * phrasing.
+     */
+    formatCaptureWhen(at) {
+        const stamp = Number(at) || 0;
+        if (!stamp) return { label: '', title: '' };
+        const when = new Date(stamp);
+        const title = when.toLocaleString();
+
+        const time = window.NextDashClock.formatTime(when, this.dash.settings);
+        const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const days = Math.round((startOfDay(new Date()) - startOfDay(when)) / 86400000);
+
+        if (days === 0) return { label: this.t('config.captureToday', 'today {time}').replace('{time}', time), title };
+        if (days === 1) return { label: this.t('config.captureYesterday', 'yesterday {time}').replace('{time}', time), title };
+        if (days > 1 && days < 7) {
+            return { label: this.t('config.captureDaysAgo', '{n} days ago').replace('{n}', String(days)), title };
+        }
+        // Older than a week: the date says more than the distance does.
+        return { label: when.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }), title };
+    }
+
     /** The future half of formatRelative, in the same steps. */
     formatRelativeAhead(mins) {
         if (mins < 1) return this.t('config.backupInAMoment', 'in a moment');
@@ -4245,6 +4316,460 @@ class DashboardConfig {
         `;
     }
 
+    /*
+     * The services nextDash can pull bookmarks from.
+     *
+     * One descriptor per source rather than a hand-written panel each: cluster A
+     * is a dozen of these, and every one of them asks the same four questions --
+     * what is your token, where should they land, import now, forget it. Written
+     * out twelve times that is twelve places to fix the next bug in; written
+     * once it is a row in this list.
+     *
+     * `id` is the key in sources.json, `kind` selects the importer server-side.
+     * `tokenHelp` is where the reader gets the token, because "personal access
+     * token" is not an instruction if you have never made one.
+     */
+    static SOURCE_DEFS = [
+        {
+            id: 'github:stars',
+            kind: 'github-stars',
+            slug: 'stars',
+            titleKey: 'starsSectionTitle',
+            titleFallback: 'GitHub stars',
+            descKey: 'starsDescription',
+            descFallback: 'Import the repositories you starred, with their description and language. Needs a personal access token; nextDash only ever reads.',
+            tokenHelpKey: 'starsTokenHelp',
+            tokenHelpFallback: 'Create one at github.com/settings/tokens — no scopes needed for public stars.',
+            tokenPlaceholder: 'ghp_…',
+            categoryFallback: 'GitHub',
+        },
+        {
+            id: 'raindrop:all',
+            kind: 'raindrop',
+            slug: 'raindrop',
+            titleKey: 'raindropSectionTitle',
+            titleFallback: 'Raindrop.io',
+            descKey: 'raindropDescription',
+            descFallback: 'Import your Raindrop collections, with their tags, notes and the date you saved each one. Needs a test token; nextDash only ever reads.',
+            tokenHelpKey: 'raindropTokenHelp',
+            tokenHelpFallback: 'app.raindrop.io/settings/integrations — create an app, then copy its test token.',
+            tokenPlaceholder: '…',
+            categoryFallback: 'Raindrop',
+        },
+        /*
+         * The three that identify an account rather than authenticate one.
+         *
+         * needsHandle puts a second field on the panel; needsToken false hides
+         * the token pair entirely, because a panel asking for a token that is
+         * never sent is a panel that looks broken.
+         */
+        {
+            id: 'hn:favorites',
+            kind: 'hackernews',
+            slug: 'hn',
+            needsHandle: true,
+            needsToken: false,
+            offersRows: true,
+            titleKey: 'hnSectionTitle',
+            titleFallback: 'Hacker News favorites',
+            descKey: 'hnDescription',
+            descFallback: 'Import what you starred on Hacker News. No token and no account needed — just your username.',
+            handleLabelKey: 'hnHandleLabel',
+            handleLabelFallback: 'Hacker News username',
+            handlePlaceholder: 'pg',
+            categoryFallback: 'Hacker News',
+        },
+        {
+            id: 'youtube:channel',
+            kind: 'youtube',
+            slug: 'youtube',
+            needsHandle: true,
+            needsToken: false,
+            offersRows: true,
+            titleKey: 'youtubeSectionTitle',
+            titleFallback: 'YouTube channel',
+            descKey: 'youtubeDescription',
+            descFallback: 'Follow a channel through its public feed. No API key and no quota; a handle is resolved to a channel id for you.',
+            handleLabelKey: 'youtubeHandleLabel',
+            handleLabelFallback: 'Channel',
+            handlePlaceholder: '@handle, UC… id, or a channel URL',
+            categoryFallback: 'YouTube',
+        },
+        {
+            id: 'mastodon:bookmarks',
+            kind: 'mastodon',
+            slug: 'mastodon',
+            needsHandle: true,
+            titleKey: 'mastodonSectionTitle',
+            titleFallback: 'Mastodon bookmarks',
+            descKey: 'mastodonDescription',
+            descFallback: 'Import the posts you bookmarked. Needs an access token from your own instance; nextDash only ever reads.',
+            handleLabelKey: 'mastodonHandleLabel',
+            handleLabelFallback: 'Instance',
+            handlePlaceholder: 'mastodon.social',
+            tokenHelpKey: 'mastodonTokenHelp',
+            tokenHelpFallback: 'Your instance → Preferences → Development → New application, with the read:bookmarks scope.',
+            tokenPlaceholder: '…',
+            categoryFallback: 'Mastodon',
+        },
+    ];
+
+    /** Everything nextDash can pull bookmarks in from, on repeat. */
+    renderDataSources() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const panels = DashboardConfig.SOURCE_DEFS.map((def) => this.renderSourcePanel(def)).join('');
+        /*
+         * The promise this tab makes, drawn once at the top.
+         *
+         * "Previews what it would do before it writes" is the sentence people
+         * need to believe before pasting a token into a box, and a sentence is
+         * a poor place to make that argument. Three chips and two arrows say it
+         * in the shape it happens in.
+         */
+        const flow = window.SettingArt?.render?.('flow', [
+            this.t('config.sourcesArtService', 'A service'),
+            this.t('config.sourcesArtPreview', 'Preview'),
+            this.t('config.sourcesArtPage', 'Your page'),
+        ], 'config-view-intro-art') || '';
+        return `
+            <div class="config-view-intro-row">
+                <p class="config-view-intro">${esc(this.t('config.sourcesIntro',
+                    'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
+                ${flow}
+            </div>
+            ${panels}
+            ${this.renderArchivePanel()}
+            ${this.renderLocalArchivePanel()}
+        `;
+    }
+
+    /*
+     * Where nextDash pushes to, as opposed to where it pulls from.
+     *
+     * Sources answer "what did that service add"; a webhook answers the same
+     * question the other way round, for whatever somebody built around this
+     * install -- an n8n flow, a Home Assistant automation, a script. Without
+     * it, anything downstream has to poll, which is the reason this sits
+     * beside Sources rather than under the alert settings: those send a
+     * message to a person, these send an event to a program.
+     */
+    renderDataWebhooks() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = (this._webhookEndpoints || []).map((e) => this.renderWebhookRow(e)).join('');
+        const empty = `<p class="config-view-loading">${esc(this.t('config.webhooksEmpty',
+            'Nothing is listening yet.'))}</p>`;
+        return `
+            <div class="config-view-intro-row">
+                <p class="config-view-intro">${esc(this.t('config.webhooksIntro',
+                    'Push an event to another program the moment it happens here — a bookmark added, changed or removed, a monitored bookmark going down or coming back. Every delivery is signed, so the receiver can tell it came from this install.'))}</p>
+                ${window.SettingArt?.render?.('boundary', {
+                    label: 'nextDash',
+                    inside: [this.t('config.webhooksArtAdded', 'Added'), this.t('config.webhooksArtDown', 'Down')],
+                    out: this.t('config.webhooksArtReceiver', 'Your receiver'),
+                }, 'config-view-intro-art') || ''}
+            </div>
+            <div class="config-webhook-list">${rows || empty}</div>
+            ${this.renderMCPPanel()}
+            <details class="config-panel config-source-panel"
+                data-fold="webhook-new" ${this.foldIsOpen('webhook-new') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.webhookAddTitle', 'Add a receiver'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.webhookAddNote',
+                            'The address to post to, and what it should hear about.'))}</span>
+                    </span>
+                </summary>
+                ${this.renderWebhookForm(null)}
+            </details>
+        `;
+    }
+
+    /*
+     * The other direction a program can talk to this install: an assistant
+     * reading and adding bookmarks over MCP.
+     *
+     * On this tab rather than a settings panel of its own because the question
+     * it answers is the same one the webhooks above answer -- how does another
+     * program reach this -- and splitting the two would mean looking in two
+     * places for it.
+     */
+    renderMCPPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const on = this.dash.settings?.mcpEnabled === true;
+        const address = `${window.location.origin}/mcp`;
+        return `
+            <details class="config-panel config-source-panel"
+                data-fold="mcp" ${this.foldIsOpen('mcp') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'Assistant access'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.mcpSummary',
+                            'Let an AI assistant search your bookmarks and add new ones.'))}</span>
+                    </span>
+                </summary>
+                <p class="config-panel-note">${esc(this.t('config.mcpNote',
+                    'An assistant that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="mcpEnabled" ${on ? 'checked' : ''}>
+                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer assistants at this address'))}</span>
+                </label>
+                ${on ? `
+                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the assistant this address:'))}</p>
+                    <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
+            </details>
+        `;
+    }
+
+    /*
+     * One saved receiver, folded shut.
+     *
+     * The signing key is not in here. It travelled back once, in the answer to
+     * the save that generated it, because that is the only moment it can be
+     * copied into the far side -- a screen that redisplays it turns every
+     * screenshot and every shoulder into a leak.
+     */
+    renderWebhookRow(endpoint) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const name = endpoint.label || endpoint.id;
+        const state = endpoint.enabled
+            ? this.t('config.webhookStateOn', 'Sending')
+            : this.t('config.webhookStateOff', 'Paused');
+        return `
+            <details class="config-panel config-source-panel" data-webhook-id="${esc(endpoint.id)}"
+                data-fold="webhook:${esc(endpoint.id)}" ${this.foldIsOpen(`webhook:${endpoint.id}`) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(name)}</span>
+                        <span class="config-source-summary-note">${esc(state)} — ${esc(endpoint.url)}</span>
+                    </span>
+                </summary>
+                ${this.renderWebhookForm(endpoint)}
+            </details>
+        `;
+    }
+
+    renderWebhookForm(endpoint) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const existing = !!endpoint;
+        const id = endpoint?.id || '';
+        const selected = endpoint?.events || [];
+        const labels = {
+            'bookmark.added': this.t('config.webhookEventBookmarkAdded', 'A bookmark is added'),
+            'bookmark.updated': this.t('config.webhookEventBookmarkUpdated', 'A bookmark changes'),
+            'bookmark.deleted': this.t('config.webhookEventBookmarkDeleted', 'A bookmark is removed'),
+            'health.down': this.t('config.webhookEventHealthDown', 'A monitored bookmark goes down'),
+            'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
+        };
+        const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
+            <label class="config-check">
+                <input type="checkbox" data-webhook-event="${esc(name)}" ${selected.includes(name) ? 'checked' : ''}>
+                <span>${esc(labels[name] || name)}</span>
+            </label>`).join('');
+        return `
+            <div class="config-webhook-form" data-webhook-form="${esc(id)}">
+                <div class="config-field">
+                    <label class="config-field-label">${esc(this.t('config.webhookIdLabel', 'Name'))}</label>
+                    <input type="text" class="config-text" data-webhook-field="id" value="${esc(id)}"
+                        ${existing ? 'readonly' : ''} autocomplete="off" spellcheck="false" placeholder="n8n">
+                    <p class="config-field-hint">${esc(this.t('config.webhookIdHint',
+                        'Letters, digits, dash, underscore, dot and colon. Fixed once saved.'))}</p>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label">${esc(this.t('config.webhookUrlLabel', 'Address to post to'))}</label>
+                    <input type="url" class="config-text" data-webhook-field="url" value="${esc(endpoint?.url || '')}"
+                        autocomplete="off" spellcheck="false" placeholder="https://…">
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.webhookEventsLabel', 'Send when'))}</span>
+                    <div class="config-checkset" role="group">${boxes}</div>
+                    <p class="config-field-hint">${esc(this.t('config.webhookEventsHint',
+                        'Nothing ticked means everything.'))}</p>
+                </div>
+                <label class="config-check">
+                    <input type="checkbox" data-webhook-field="enabled" ${endpoint?.enabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.webhookEnabledLabel', 'Send to this receiver'))}</span>
+                </label>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-webhook-action="save">${esc(this.t('config.webhookSave', 'Save'))}</button>
+                    ${existing ? `
+                        <button type="button" class="config-btn" data-webhook-action="test">${esc(this.t('config.webhookTest', 'Send a test'))}</button>
+                        <button type="button" class="config-btn config-btn--danger" data-webhook-action="delete">${esc(this.t('config.webhookDelete', 'Remove'))}</button>` : ''}
+                    <span class="config-field-hint" data-webhook-status></span>
+                </div>
+                <p class="config-field-hint" data-webhook-secret hidden></p>
+            </div>
+        `;
+    }
+
+    /*
+     * Copies on this disk, through monolith.
+     *
+     * Beside the Web Archive panel because they answer the same question and
+     * answer it differently: one asks a third party to keep a copy for decades,
+     * the other keeps one here that nobody else has to stay online for. Neither
+     * replaces the other, which is why both are offered rather than a single
+     * "archiving" switch.
+     */
+    renderLocalArchivePanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <details class="config-panel config-source-panel" data-local-archive-panel
+                data-fold="local-archive" ${this.foldIsOpen('local-archive') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.localArchiveTitle', 'Local copies'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.localArchiveDescription',
+                            'Save a whole page — text, styling and images — as one file in your data directory, so it stays readable even if the site and the Web Archive are both gone.'))}</span>
+                    </span>
+                </summary>
+                <p class="config-panel-note" id="config-local-archive-state"></p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-local-archive-url">${esc(this.t('config.localArchiveUrlLabel', 'Page to save'))}</label>
+                    <input type="url" id="config-local-archive-url" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="https://…">
+                    <p class="config-field-hint">${esc(this.t('config.localArchiveUrlHint',
+                        'Any bookmark can also be saved from its own menu; this is for a page you have in hand.'))}</p>
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-local-archive-action="capture">${esc(this.t('config.localArchiveCaptureBtn', 'Save a copy…'))}</button>
+                    <button type="button" class="config-btn" data-local-archive-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+                </div>
+                <div id="config-local-archive-list" class="config-local-archives"></div>
+            </details>
+        `;
+    }
+
+    /*
+     * Archiving, which is the only outbound source on this tab.
+     *
+     * It sits here rather than with the importers because it is the same kind
+     * of setting -- a third party, a key, something that runs on its own -- but
+     * it has no page and no category to choose: nothing arrives, a copy leaves.
+     *
+     * The keys are archive.org's S3-style pair. Write-only in the same way the
+     * import tokens are: the server answers with whether one is stored, never
+     * with the value.
+     */
+    renderArchivePanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
+            <details class="config-panel config-source-panel" data-archive-panel
+                data-fold="archive" ${this.foldIsOpen('archive') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.archiveSectionTitle', 'Web Archive'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.archiveDescription',
+                            'Ask the Internet Archive to keep a copy of a page the day you save it, so the bookmark outlives the site. Around 4 in 10 pages from ten years ago are already gone.'))}</span>
+                    </span>
+                </summary>
+                <label class="config-toggle">
+                    <input type="checkbox" data-archive-toggle="archiveSaveEnabled" ${s.archiveSaveEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.archiveSaveEnabledLabel', 'Archive every new bookmark'))}</span>
+                </label>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-archive-key">${esc(this.t('config.archiveAccessKeyLabel', 'Access key'))}</label>
+                    <input type="password" id="config-archive-key" class="config-text" autocomplete="off" spellcheck="false">
+                    <p class="config-field-hint">${esc(this.t('config.archiveKeysHelp',
+                        'archive.org/account/s3.php — sign in and copy the pair. Without them captures still work, at a far smaller daily allowance.'))}</p>
+                    <p class="config-field-hint" id="config-archive-key-note"></p>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-archive-secret">${esc(this.t('config.archiveSecretLabel', 'Secret key'))}</label>
+                    <input type="password" id="config-archive-secret" class="config-text" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-archive-action="save">${esc(this.t('config.archiveSaveKeysBtn', 'Save keys'))}</button>
+                    <button type="button" class="config-btn" data-archive-action="test">${esc(this.t('config.archiveTestBtn', 'Archive a page now…'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-archive-action="forget">${esc(this.t('config.archiveForgetBtn', 'Forget keys'))}</button>
+                </div>
+                <p class="config-panel-note" id="config-archive-status"></p>
+            </details>
+        `;
+    }
+
+    /** One source's panel, built from its descriptor. */
+    renderSourcePanel(def) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const slug = def.slug;
+        // Defaults so the two descriptor shapes -- token sources and account
+        // sources -- do not each need every field spelled out.
+        const needsToken = def.needsToken !== false;
+
+        const handleField = def.needsHandle ? `
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-handle">${esc(this.t(`config.${def.handleLabelKey}`, def.handleLabelFallback))}</label>
+                    <input type="text" id="config-${esc(slug)}-handle" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(def.handlePlaceholder || '')}">
+                </div>` : '';
+
+        const tokenFields = needsToken ? `
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-token">${esc(this.t('config.sourceTokenLabel', 'Access token'))}</label>
+                    <input type="password" id="config-${esc(slug)}-token" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(def.tokenPlaceholder || '')}">
+                    <p class="config-field-hint">${esc(this.t(`config.${def.tokenHelpKey}`, def.tokenHelpFallback))}</p>
+                    <p class="config-field-hint" id="config-${esc(slug)}-token-note"></p>
+                </div>` : '';
+
+        /*
+         * What a feed becomes.
+         *
+         * Offered only where both answers are defensible. A list of saved items
+         * is bookmarks and nothing else; a subscription is one thing followed,
+         * and turning its rolling window into rows means new bookmarks for ever.
+         */
+        const rowsField = def.offersRows ? `
+                <label class="config-toggle">
+                    <input type="checkbox" data-source-rows="${esc(def.id)}">
+                    <span>${esc(this.t('config.sourceAsRows', 'Import each item as its own bookmark'))}</span>
+                </label>
+                <p class="config-field-hint">${esc(this.t('config.sourceAsRowsHint',
+                    'Off: one bookmark to the source itself, which Fresh can then count new items on.'))}</p>` : '';
+
+        /*
+         * Folded shut, as <details> rather than a panel of our own.
+         *
+         * Seven services stacked open is a wall to scroll past before the one
+         * you came for, and every one of them shows a token box. Native details
+         * carries the keyboard behaviour, the screen-reader semantics and the
+         * open state without any of it being reimplemented — and the contents
+         * stay in the DOM while closed, so everything that fills these fields
+         * goes on working whether or not anyone has opened them.
+         */
+        return `
+            <details class="config-panel config-source-panel" data-source-panel="${esc(def.id)}"
+                data-fold="source:${esc(def.id)}" ${this.foldIsOpen(`source:${def.id}`) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t(`config.${def.titleKey}`, def.titleFallback))}</span>
+                        <span class="config-source-summary-note">${esc(this.t(`config.${def.descKey}`, def.descFallback))}</span>
+                    </span>
+                    <span class="config-source-chip" id="config-${esc(slug)}-chip"></span>
+                </summary>
+                ${handleField}
+                ${tokenFields}
+                <div class="config-field" data-source-page-field="${esc(def.id)}">
+                    <label class="config-field-label" for="config-${esc(slug)}-page">${esc(this.t('config.sourcePageLabel', 'Page to import onto'))}</label>
+                    <select id="config-${esc(slug)}-page" class="config-select" data-source-page="${esc(def.id)}"></select>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-category">${esc(this.t('config.sourceCategoryLabel', 'Category for imported bookmarks'))}</label>
+                    <input type="text" id="config-${esc(slug)}-category" class="config-text" autocomplete="off"
+                        placeholder="${esc(def.categoryFallback)}">
+                    <p class="config-field-hint">${esc(this.t('config.sourceCategoryHint', 'Used only for bookmarks the service files nowhere — folders and collections keep their own names.'))}</p>
+                </div>
+                ${rowsField}
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-source-action="save" data-source-id="${esc(def.id)}">${esc(this.t(needsToken ? 'config.sourceSaveBtn' : 'config.sourceSaveSettingsBtn', needsToken ? 'Save token' : 'Save'))}</button>
+                    <button type="button" class="config-btn" data-source-action="run" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceRunBtn', 'Import…'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-source-action="forget" data-source-id="${esc(def.id)}">${esc(this.t(needsToken ? 'config.sourceForgetBtn' : 'config.sourceForgetSettingsBtn', needsToken ? 'Forget token' : 'Forget'))}</button>
+                </div>
+                <p class="config-panel-note" id="config-${esc(slug)}-status"></p>
+            </details>
+        `;
+    }
+
     /** Which sub-tab of Data & backups is showing. */
     renderDbTab() {
         if (this.dbTab === 'reset') {
@@ -4252,6 +4777,12 @@ class DashboardConfig {
         }
         if (this.dbTab === 'trash') {
             return this.renderDataTrash();
+        }
+        if (this.dbTab === 'sources') {
+            return this.renderDataSources();
+        }
+        if (this.dbTab === 'webhooks') {
+            return this.renderDataWebhooks();
         }
         if (this.dbTab === 'icons') {
             return this.renderDataIcons();
@@ -4266,6 +4797,7 @@ class DashboardConfig {
         const map = {
             list: ['config.bmTabList', 'List'],
             settings: ['config.bmTabSettings', 'Settings'],
+            'local-copies': ['config.bmTabLocalCopies', 'Local copies'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -4274,6 +4806,8 @@ class DashboardConfig {
     dbTabLabel(tab) {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
+            sources: ['config.dbTabSources', 'Sources'],
+            webhooks: ['config.dbTabWebhooks', 'Webhooks'],
             icons: ['config.dbTabIcons', 'Icons & previews'],
             logs: ['config.dbTabLogs', 'Server log'],
             trash: ['config.dbTabTrash', 'Trash'],
@@ -4309,8 +4843,15 @@ class DashboardConfig {
         return `
             ${tiles}
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</h3>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:create" ${this.foldIsOpen('backup:create', true) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupCreateSummary',
+                            'Make one now, or have one made on a schedule — and choose what it carries.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownload', 'Download backup'))}</button>
                     <button type="button" class="config-btn" data-backup-action="run">${esc(this.t('config.backupRunNow', 'Make a backup now'))}</button>
@@ -4323,42 +4864,84 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}</span>
                     <select class="config-select" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>
                 </div>
-            </div>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</h3>
+                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupContentsTitle',
+                    'What a backup carries'))}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="backupIncludeArchives"
+                        ${s.backupExcludeArchives ? '' : 'checked'}>
+                    <span>${esc(this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'))}</span>
+                </label>
+                <p class="config-field-note">${esc(this.t('config.backupIncludeArchivesNote',
+                    'A saved page may be the only copy left, and these are by far the largest thing in a backup.'))}</p>
+                <label class="config-toggle" style="margin-top:10px">
+                    <input type="checkbox" data-backup-toggle="backupIncludeSecrets"
+                        ${s.backupExcludeSecrets ? '' : 'checked'}>
+                    <span>${esc(this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'))}</span>
+                </label>
+                <p class="config-field-note">${esc(this.t('config.backupIncludeSecretsNote',
+                    'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again — and that the backup file itself is a secret.'))}</p>
+            </details>
+
+            <details class="config-panel config-source-panel"
+                data-fold="backup:stored" ${this.foldIsOpen('backup:stored', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupStoredSummary',
+                            'The copies already on this machine, newest first.'))}</span>
+                    </span>
+                </summary>
                 <div id="config-backup-list">${this.renderBackupList()}</div>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</h3>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:zip" ${this.foldIsOpen('backup:zip', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.backupsZipSummary',
+                            'Put an earlier backup back. What it contains replaces what is here.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="import">${esc(this.t('config.backupImport', 'Import backup…'))}</button>
                 </div>
                 <input type="file" id="config-import-input" accept=".zip" hidden>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</p>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:bookmarks" ${this.foldIsOpen('backup:bookmarks', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="html-export">${esc(this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="csv-import">${esc(this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
                 </div>
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
-            </div>
+            </details>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</p>
+            <details class="config-panel config-source-panel"
+                data-fold="backup:settings" ${this.foldIsOpen('backup:settings', false) ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</span>
+                    </span>
+                </summary>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="settings-export">${esc(this.t('config.settingsExportBtn', 'Export settings (JSON)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
                 </div>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
-            </div>
+            </details>
 
 
         `;
@@ -4598,13 +5181,11 @@ class DashboardConfig {
         }).join('');
     }
 
-    /** Clock time for a log line, in the browser's locale like the other dates. */
+    /** Clock time for a log line, on the reader's own clock like every other. */
     formatLogTime(iso) {
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return '';
-        return d.toLocaleTimeString(undefined, {
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-        });
+        return window.NextDashClock.formatTime(d, this.dash.settings, { seconds: true });
     }
 
     /**
@@ -5328,7 +5909,139 @@ class DashboardConfig {
         if (container) this.bindDataBackupsActions(container);
     }
 
+    async loadWebhooks() {
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher('/api/webhooks');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this._webhookEndpoints = Array.isArray(data?.endpoints) ? data.endpoints : [];
+            this._webhookEvents = Array.isArray(data?.events) ? data.events : null;
+        } catch (err) {
+            this._webhookEndpoints = [];
+        }
+        this.repaintWebhooks();
+    }
+
+    /*
+     * Only this tab's body is repainted, and only while it is the one on
+     * screen: a fetch that lands after the reader has moved on must not
+     * replace whatever they opened instead.
+     */
+    repaintWebhooks() {
+        if (this.section !== 'data-backups' || this.dbTab !== 'webhooks') return;
+        const body = document.getElementById('config-db-body');
+        if (!body) return;
+        body.innerHTML = this.renderDbTab();
+        this.bindDataBackupsActions(body);
+    }
+
+    bindWebhookControls(container) {
+        container.querySelectorAll('[data-webhook-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const form = btn.closest('[data-webhook-form]');
+                void this.handleWebhookAction(btn.getAttribute('data-webhook-action'), form);
+            });
+        });
+    }
+
+    async handleWebhookAction(action, form) {
+        if (!form) return;
+        // Every call below writes, so it has to carry the write token an
+        // install can be configured to demand. Plain fetch does not.
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const status = form.querySelector('[data-webhook-status]');
+        const say = (text) => { if (status) status.textContent = text; };
+        const field = (name) => form.querySelector(`[data-webhook-field="${name}"]`);
+        const id = String(field('id')?.value || '').trim();
+        if (!id) {
+            say(this.t('config.webhookNeedsName', 'Give it a name first.'));
+            return;
+        }
+
+        if (action === 'delete') {
+            const ok = await this.confirmAction(
+                this.t('config.webhookDeleteConfirm',
+                    'Remove this receiver? Its signing key goes with it, so adding it back means configuring the far side again.'),
+                { confirmLabel: this.t('config.webhookDelete', 'Remove'), danger: true }
+            );
+            if (!ok) return;
+            await fetcher(`/api/webhooks?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+            await this.loadWebhooks();
+            return;
+        }
+
+        if (action === 'test') {
+            say(this.t('config.webhookTesting', 'Sending…'));
+            try {
+                const res = await fetcher(`/api/webhooks/test?id=${encodeURIComponent(id)}`, { method: 'POST' });
+                const data = await res.json();
+                // The receiver's own status code, not ours: "it answered 404"
+                // is the answer to why nothing arrived, and a bare "failed"
+                // is not.
+                say(data?.ok
+                    ? this.t('config.webhookTestSent', 'Delivered — the receiver accepted it.')
+                    : (data?.status
+                        ? this.t('config.webhookTestRefused', 'The receiver answered HTTP {n}.').replace('{n}', String(data.status))
+                        : (data?.error || this.t('config.webhookTestFailed', 'Could not reach it.'))));
+            } catch (err) {
+                say(this.t('config.webhookTestFailed', 'Could not reach it.'));
+            }
+            return;
+        }
+
+        const events = Array.from(form.querySelectorAll('[data-webhook-event]'))
+            .filter((box) => box.checked)
+            .map((box) => box.getAttribute('data-webhook-event'));
+        say(this.t('config.webhookSaving', 'Saving…'));
+        try {
+            const res = await fetcher('/api/webhooks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    url: String(field('url')?.value || '').trim(),
+                    events,
+                    enabled: field('enabled')?.checked === true,
+                }),
+            });
+            if (!res.ok) {
+                say((await res.text()).trim() || this.t('config.webhookSaveFailed', 'Could not save it.'));
+                return;
+            }
+            const data = await res.json();
+            this._webhookEndpoints = Array.isArray(data?.endpoints) ? data.endpoints : this._webhookEndpoints;
+            // The one moment the key is readable. Shown here rather than in a
+            // toast because it has to survive long enough to be copied, and
+            // it will never be shown again.
+            if (data?.secret) {
+                this._webhookNewSecret = { id, secret: data.secret };
+            }
+            this.repaintWebhooks();
+            this.showWebhookSecret();
+        } catch (err) {
+            say(this.t('config.webhookSaveFailed', 'Could not save it.'));
+        }
+    }
+
+    showWebhookSecret() {
+        const pending = this._webhookNewSecret;
+        if (!pending) return;
+        const panel = document.querySelector(`[data-webhook-id="${CSS.escape(pending.id)}"]`);
+        const line = panel?.querySelector('[data-webhook-secret]');
+        if (!line) return;
+        panel.open = true;
+        line.hidden = false;
+        line.textContent = this.t('config.webhookSecretOnce',
+            'Signing key (shown once — copy it into the receiver now): {key}').replace('{key}', pending.secret);
+        this._webhookNewSecret = null;
+    }
+
     bindDataBackupsActions(container) {
+        // The folds on this section remember whether they were open, so a
+        // repaint after a backup or an import does not shut the panel someone
+        // is working in.
+        this.bindFolds(container);
         // A deep link straight to the trash tab renders before anything has been
         // fetched, so the first paint would stay on "Loading…" forever without
         // this.
@@ -5339,6 +6052,12 @@ class DashboardConfig {
             this.bindServerLogControls(container);
             void this.loadServerLog({ reset: true });
             this.updateServerLogTimer();
+        }
+        if (this.dbTab === 'webhooks') {
+            this.bindWebhookControls(container);
+            // Fetched on open rather than with the section: the other tabs
+            // should not pay for a list they never show.
+            if (this._webhookEndpoints == null) void this.loadWebhooks();
         }
         this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
             if (tab === this.dbTab) return;
@@ -5409,6 +6128,62 @@ class DashboardConfig {
         bindFileInput('#config-csv-import-input', this.importBookmarksCSV);
         bindFileInput('#config-settings-import-input', this.importSettings);
 
+        // Whether a token is saved, and what the last round did. Read here
+        // rather than rendered into the panels, because they are built from
+        // settings the browser already has and this is the one thing on them
+        // that only the server knows.
+        if (container.querySelector('[data-local-archive-panel]')) {
+            void this.loadLocalArchives();
+            container.querySelectorAll('[data-local-archive-action]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    switch (btn.getAttribute('data-local-archive-action')) {
+                        case 'capture': void this.captureLocalArchive(); break;
+                        case 'refresh': void this.loadLocalArchives(); break;
+                        default: break;
+                    }
+                });
+            });
+        }
+
+        if (container.querySelector('[data-archive-panel]')) {
+            void this.loadArchiveSettings();
+            container.querySelector('[data-archive-toggle="archiveSaveEnabled"]')
+                ?.addEventListener('change', (event) => {
+                    void this.saveArchiveSettings({ enabled: event.target.checked });
+                });
+            container.querySelectorAll('[data-archive-action]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    switch (btn.getAttribute('data-archive-action')) {
+                        case 'save': void this.saveArchiveSettings(); break;
+                        case 'test': void this.testArchiveCapture(); break;
+                        case 'forget': void this.forgetArchiveKeys(); break;
+                        default: break;
+                    }
+                });
+            });
+        }
+
+        if (container.querySelector('[data-source-panel]')) {
+            this.bindSourceTokenDrafts(container);
+            this.bindSourcePageSelects(container);
+            void this.loadSourceStates();
+        }
+
+        // Every source panel is built from the same descriptor, so its buttons
+        // carry which source they belong to rather than having an action name
+        // each -- one more service is a row in SOURCE_DEFS, not three cases.
+        container.querySelectorAll('[data-source-action]').forEach((btn) => {
+            const id = btn.getAttribute('data-source-id');
+            btn.addEventListener('click', () => {
+                switch (btn.getAttribute('data-source-action')) {
+                    case 'save': void this.saveSource(id); break;
+                    case 'run': void this.runSource(id); break;
+                    case 'forget': void this.forgetSource(id); break;
+                    default: break;
+                }
+            });
+        });
+
         container.querySelectorAll('[data-backup-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setBackupToggle(input.getAttribute('data-backup-toggle'), input.checked));
         });
@@ -5426,6 +6201,7 @@ class DashboardConfig {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
             case 'import': document.getElementById('config-import-input')?.click(); break;
+            case 'html-export': void this.exportBookmarksHTML(); break;
             case 'csv-export': void this.exportBookmarksCSV(); break;
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
             case 'csv-import': document.getElementById('config-csv-import-input')?.click(); break;
@@ -5469,6 +6245,31 @@ class DashboardConfig {
 
     setBackupToggle(name, value) {
         const d = this.dash;
+        /*
+         * The two content switches read as "include" and are stored as
+         * "exclude".
+         *
+         * A settings file written before these existed has neither key, and an
+         * absent boolean is false — which on the exclude spelling means the
+         * fuller backup, exactly what that install already made. Spelling them
+         * as "include" would have every older install quietly start writing
+         * thinner backups the day it upgraded.
+         */
+        if (name === 'backupIncludeArchives' || name === 'backupIncludeSecrets') {
+            const field = name === 'backupIncludeArchives' ? 'backupExcludeArchives' : 'backupExcludeSecrets';
+            d.settings[field] = !value;
+            void this.saveSettingsWithFeedback();
+            return;
+        }
+        // The MCP endpoint stays shut until this is ticked: it answers
+        // questions about every bookmark there is, so opening it has to be a
+        // decision somebody made.
+        if (name === 'mcpEnabled') {
+            d.settings.mcpEnabled = value;
+            void this.saveSettingsWithFeedback();
+            this.repaintWebhooks();
+            return;
+        }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
@@ -5526,18 +6327,65 @@ class DashboardConfig {
     }
 
     /** Re-fetch the link-preview card for every bookmark that has one. */
+    /*
+     * Re-fetch every link preview, in batches, with a real bar.
+     *
+     * One page fetch per bookmark: measured at 1.3 seconds for eight, so a real
+     * collection is minutes. It used to be a single request with no feedback at
+     * all -- the button sat there and the app looked hung, and a proxy was free
+     * to time the whole thing out halfway through with nothing saved.
+     *
+     * The bar is determinate because the size is known: the first response says
+     * how many there are. An indeterminate sweep here would be throwing away a
+     * number we already have.
+     */
     async refreshAllPreviews() {
         if (!await this.confirmAction(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
+
+        const BATCH = 5;
+        this.showProgressOverlay(
+            this.t('config.refreshAllPreviewsTitle', 'Refreshing link previews…'),
+            this.t('config.refreshAllPreviewsCounting', 'Reading the collection'));
+
+        let offset = 0;
+        let total = 0;
+        let refreshed = 0;
         try {
-            const res = await this.writeFetch('/api/previews/refresh', { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Walks until the server says it is done rather than counting
+            // rounds here: the collection can change under a long run, and the
+            // server's own position is the only one that stays true.
+            for (let round = 0; round < 2000; round++) {
+                const res = await this.writeFetch(
+                    `/api/previews/refresh?offset=${offset}&limit=${BATCH}`, { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const body = await res.json();
+
+                total = Number(body.total) || total;
+                refreshed += Number(body.refreshed) || 0;
+                offset = Number(body.next) || offset + BATCH;
+
+                window.ProgressOverlay?.update(Math.min(offset, total), total,
+                    this.t('config.refreshAllPreviewsProgress', '{done} of {total}')
+                        .replace('{done}', String(Math.min(offset, total)))
+                        .replace('{total}', String(total)));
+
+                if (body.done || offset >= total) break;
+            }
+            this.finishProgressOverlay(
+                this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'));
             this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
         } catch {
-            this.notify(this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.'), 'error');
+            this.hideProgressOverlay();
+            // Says how far it got: a run that stopped at 300 of 500 left 300
+            // previews genuinely refreshed, and starting over is not required.
+            const partial = total
+                ? this.t('config.refreshAllPreviewsPartial', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(refreshed)).replace('{total}', String(total))
+                : this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.');
+            this.notify(partial, 'error');
         }
     }
 
-    /** Drop every cached link-preview card. */
     async clearAllPreviews() {
         if (!await this.confirmAction(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'), { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
         try {
@@ -5670,11 +6518,17 @@ class DashboardConfig {
         try {
             const form = new FormData();
             form.append('file', file);
+            // Indeterminate: unpacking a ZIP and writing every file back is one
+            // request whose length depends on what is in the archive.
+            this.showProgressOverlay(
+                this.t('config.backupImportTitle', 'Importing the backup…'),
+                this.t('config.backupImportStatus', 'Replacing your data'));
             const res = await this.writeFetch('/api/import', { method: 'POST', body: form });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.backupImportSuccess', 'Backup imported. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.backupImportError', 'Could not import the backup.'), 'error');
         }
     }
@@ -5691,6 +6545,9 @@ class DashboardConfig {
         if (!typed) return;
         try {
             // The server rejects a reset without an explicit confirmation flag.
+            this.showProgressOverlay(
+                this.t('config.backupResetTitle', 'Deleting everything…'),
+                this.t('config.backupResetStatus', 'Clearing the data directory'));
             const res = await this.writeFetch('/api/reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -5715,6 +6572,25 @@ class DashboardConfig {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Download the collection as a bookmark file every browser can read.
+     *
+     * Through writeFetch rather than a plain link: the route is behind the
+     * write token, and an <a> cannot carry a header — on an install that has
+     * one set, a link would download a 401 page named like a bookmark file.
+     */
+    async exportBookmarksHTML() {
+        try {
+            const res = await this.writeFetch('/api/bookmarks/export-html');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const date = new Date().toISOString().slice(0, 10);
+            this.triggerDownload(await res.blob(), `nextdash-bookmarks-${date}.html`);
+            this.notify(this.t('config.htmlExportSuccess', 'Bookmarks exported.'), 'success');
+        } catch {
+            this.notify(this.t('config.htmlExportError', 'Could not export the bookmarks.'), 'error');
+        }
     }
 
     async exportBookmarksCSV() {
@@ -5748,37 +6624,760 @@ class DashboardConfig {
         }
     }
 
-    /** Parse a browser-exported Netscape bookmark file into {name,url,category}[]. */
-    parseBrowserBookmarks(html) {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const bookmarks = [];
-        const walk = (container, folderName) => {
-            const els = Array.from(container.children);
-            for (let i = 0; i < els.length; i++) {
-                const el = els[i];
-                if (el.tagName === 'DT') {
-                    const h3 = el.querySelector('h3');
-                    const a = el.querySelector('a[href]');
-                    if (h3 && !a) {
-                        const name = h3.textContent.trim();
-                        if (i + 1 < els.length && els[i + 1].tagName === 'DL') {
-                            walk(els[i + 1], name);
-                            i++;
-                        }
-                    } else if (a) {
-                        const href = a.getAttribute('href');
-                        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-                            bookmarks.push({ name: a.textContent.trim() || href, url: href, category: folderName });
-                        }
-                    }
-                } else if (el.tagName === 'DL' || el.tagName === 'P') {
-                    walk(el, folderName);
-                }
+    /**
+     * Import an exported bookmark file.
+     *
+     * The file goes to the server whole. It used to be parsed here with
+     * DOMParser and posted as {name, url, category}, which meant an export
+     * carrying tags, notes and dates arrived stripped to three fields — the
+     * parser is in Go now (netscape.go) and reads all of them.
+     *
+     * The count in the confirm comes from a dry run against that same parser,
+     * so the number the reader agrees to is the number that will be written,
+     * and it can say how many are already here — which a total never could.
+     */
+    /*
+     * One source's four operations: save, preview-then-import, forget, and read
+     * back what the server knows.
+     *
+     * Written against a descriptor rather than per service, because every source
+     * in cluster A needs exactly these and differs only in its id and its
+     * labels. The token field is write-only throughout: the server answers with
+     * hasToken and never the token, so there is nothing to prefill, and an empty
+     * field means "leave it as it is" -- which is why saving a category cannot
+     * silently sign the reader out of their own source.
+     */
+    sourceDef(id) {
+        return DashboardConfig.SOURCE_DEFS.find((def) => def.id === id) || null;
+    }
+
+    /*
+     * A half-typed token, kept across a repaint.
+     *
+     * The panel is rebuilt from scratch whenever the section repaints -- a
+     * settings save, a revision check, switching tabs and back -- and that threw
+     * away whatever was in the token field. Paste a token, have anything at all
+     * repaint before the click lands, and Save sends an empty field: which means
+     * "unchanged", which means nothing was stored. From the outside that is
+     * exactly "it does not remember my token".
+     *
+     * Held in memory only, and dropped the moment it is saved: it is a token,
+     * so it does not go to localStorage and it does not go into the markup.
+     */
+    get sourceTokenDrafts() {
+        if (!this._sourceTokenDrafts) this._sourceTokenDrafts = new Map();
+        return this._sourceTokenDrafts;
+    }
+
+    /** Put the drafts back after a render, and keep recording new ones. */
+    bindSourceTokenDrafts(container) {
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            const field = container.querySelector(`#config-${def.slug}-token`);
+            if (!field) return;
+            const draft = this.sourceTokenDrafts.get(def.id);
+            if (draft) field.value = draft;
+            field.addEventListener('input', () => {
+                if (field.value) this.sourceTokenDrafts.set(def.id, field.value);
+                else this.sourceTokenDrafts.delete(def.id);
+            });
+        });
+    }
+
+    /*
+     * The page a source writes to, chosen rather than inherited.
+     *
+     * It used to be whichever page happened to be open when the token was
+     * saved, which is not a choice anyone made: import a month later from a
+     * different page and the bookmarks land somewhere else entirely, and it
+     * reads as nothing having happened.
+     *
+     * The same shape as the bookmark form's page field, down to the "+ New
+     * page" entry and the shared InlineCreateRow it opens, because it is the
+     * same decision and should not need learning twice.
+     */
+    static SOURCE_NEW_PAGE = '__new__';
+
+    fillSourcePageSelect(select, selectedId) {
+        const pages = this.dash.pages || [];
+        select.replaceChildren();
+
+        const create = document.createElement('option');
+        create.value = DashboardConfig.SOURCE_NEW_PAGE;
+        create.textContent = this.t('config.addNewPageOption', '➕ New page…');
+        select.appendChild(create);
+
+        let matched = false;
+        pages.forEach((page) => {
+            const option = document.createElement('option');
+            option.value = String(page.id);
+            option.textContent = page.name || String(page.id);
+            if (Number(page.id) === Number(selectedId)) {
+                option.selected = true;
+                matched = true;
             }
-        };
-        const topDl = doc.querySelector('dl');
-        if (topDl) walk(topDl, '');
-        return bookmarks;
+            select.appendChild(option);
+        });
+        // A source pointing at a page that has since been deleted falls back to
+        // the one being looked at rather than to the create entry, which would
+        // make an ordinary save open a name prompt.
+        if (!matched && pages.length) {
+            select.value = String(this.dash.currentPageId || pages[0].id);
+        }
+        return matched;
+    }
+
+    /** Wire each panel's page select, including its inline create row. */
+    bindSourcePageSelects(container) {
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            const select = container.querySelector(`[data-source-page="${CSS.escape(def.id)}"]`);
+            if (!select || select.dataset.bound === '1') return;
+            select.dataset.bound = '1';
+            this.fillSourcePageSelect(select, this.dash.currentPageId);
+
+            const field = select.closest('[data-source-page-field]');
+            if (!field || typeof window.InlineCreateRow !== 'function' && !window.InlineCreateRow?.create) {
+                return;
+            }
+            const row = window.InlineCreateRow.create({
+                kind: 'page',
+                placeholder: this.t('config.newPageNamePlaceholder', 'Page name'),
+                labels: {
+                    create: this.t('config.create', 'Create'),
+                    cancel: this.t('config.cancel', 'Cancel'),
+                },
+            });
+            field.appendChild(row.box);
+
+            // What the select showed before "+ New page…" was picked, so
+            // cancelling puts it back rather than leaving the sentinel selected.
+            let lastValue = select.value;
+
+            const close = () => {
+                row.box.hidden = true;
+                row.error.hidden = true;
+                row.input.value = '';
+                select.hidden = false;
+                select.value = lastValue;
+                select.focus({ preventScroll: true });
+            };
+
+            window.InlineCreateRow.wire(row, {
+                submit: async (name) => {
+                    const created = await this.dash.structureCreate?.createPageFromForm?.(name);
+                    if (!created || created.error) {
+                        return created?.error || this.t('config.sourcePageCreateError', 'Could not create that page.');
+                    }
+                    this.fillSourcePageSelect(select, created.id);
+                    select.value = String(created.id);
+                    lastValue = select.value;
+                    row.box.hidden = true;
+                    row.error.hidden = true;
+                    row.input.value = '';
+                    select.hidden = false;
+                    select.focus({ preventScroll: true });
+                    return null;
+                },
+                onCancel: close,
+            });
+            row.box.__closeInlineCreate = close;
+
+            select.addEventListener('change', () => {
+                if (select.value !== DashboardConfig.SOURCE_NEW_PAGE) {
+                    lastValue = select.value;
+                    return;
+                }
+                // Put the real value back at once: a save while this row is open
+                // must not read the sentinel as the target page.
+                select.value = lastValue;
+                select.hidden = true;
+                row.box.hidden = false;
+                row.error.hidden = true;
+                row.input.value = '';
+                row.input.focus({ preventScroll: true });
+            });
+        });
+    }
+
+    /*
+     * The archive panel: keys in, never out.
+     *
+     * Read from /api/health/archive-settings rather than from the settings
+     * payload, which carries every credential it holds. Same write-only rule as
+     * the import tokens -- an empty field means "keep what is stored", so
+     * flipping the switch cannot wipe the keys.
+     */
+    async loadArchiveSettings() {
+        const note = document.getElementById('config-archive-key-note');
+        if (!note) return;
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const state = await res.json();
+            note.textContent = state.hasKeys
+                ? this.t('config.archiveKeysSet', 'Keys are saved. Leave these empty to keep them.')
+                : this.t('config.archiveKeysMissing', 'No keys saved yet.');
+            const toggle = document.querySelector('[data-archive-toggle="archiveSaveEnabled"]');
+            if (toggle) toggle.checked = Boolean(state.enabled);
+        } catch {
+            note.textContent = '';
+        }
+    }
+
+    async saveArchiveSettings({ enabled } = {}) {
+        const key = document.getElementById('config-archive-key');
+        const secret = document.getElementById('config-archive-secret');
+        const toggle = document.querySelector('[data-archive-toggle="archiveSaveEnabled"]');
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enabled: enabled !== undefined ? enabled : Boolean(toggle?.checked),
+                    accessKey: key?.value || '',
+                    secret: secret?.value || '',
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const state = await res.json();
+            // Cleared once stored: a key sitting in a form field is one
+            // screenshot away from being shared.
+            if (key) key.value = '';
+            if (secret) secret.value = '';
+            if (enabled === undefined) {
+                this.notify(this.t('config.archiveSaved', 'Archive keys saved.'), 'success');
+            }
+            // Switching it on without keys works, at a much smaller daily
+            // allowance -- worth saying rather than letting it look broken.
+            if (state.enabled && !state.hasKeys) {
+                this.notify(this.t('config.archiveNoKeysWarning',
+                    'Archiving is on without keys, which the archive allows at a far smaller daily limit.'), 'info');
+            }
+            void this.loadArchiveSettings();
+        } catch {
+            this.notify(this.t('config.archiveSaveError', 'Could not save the archive settings.'), 'error');
+        }
+    }
+
+    async forgetArchiveKeys() {
+        const ok = await this.confirmAction(
+            this.t('config.archiveForgetConfirm', 'Forget the archive keys? Pages already captured stay in the archive.'),
+            { confirmLabel: this.t('config.archiveForgetBtn', 'Forget keys'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch('/api/health/archive-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ forget: true }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.archiveForgotten', 'Archive keys forgotten.'), 'success');
+            void this.loadArchiveSettings();
+        } catch {
+            this.notify(this.t('config.archiveSaveError', 'Could not save the archive settings.'), 'error');
+        }
+    }
+
+    /** Capture one page now, so the keys can be proved before they are relied on. */
+    async testArchiveCapture() {
+        const target = (this.dash.allBookmarks || [])[0]?.url || 'https://example.com/';
+        const status = document.getElementById('config-archive-status');
+        this.showProgressOverlay(
+            this.t('config.archiveTestingTitle', 'Asking the archive…'),
+            this.t('config.archiveTestingStatus', 'Queueing a capture'));
+        try {
+            const res = await this.writeFetch(`/api/health/archive-save?url=${encodeURIComponent(target)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            this.hideProgressOverlay();
+            if (!res.ok) {
+                // The archive's own sentence, which says what to do about it --
+                // add keys, wait for the allowance, pick another page.
+                const message = body.error || this.t('config.archiveTestError', 'The archive refused that.');
+                if (status) status.textContent = message;
+                this.notify(message, 'error');
+                return;
+            }
+            const message = body.skipped
+                ? this.t('config.archiveTestSkipped', 'That page was already sent to the archive today.')
+                : this.t('config.archiveTestQueued', 'Queued. The archive is capturing {u} now.').replace('{u}', target);
+            if (status) status.textContent = message;
+            this.notify(message, 'success');
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.archiveTestError', 'The archive refused that.'), 'error');
+        }
+    }
+
+    /*
+     * The stored copies, and what they cost.
+     *
+     * Size is shown per capture and as a total, because these are whole pages
+     * with their images inlined: a hundred of them is a gigabyte, and an archive
+     * whose cost is invisible is one that surprises somebody later.
+     */
+    async loadLocalArchives() {
+        const state = document.getElementById('config-local-archive-state');
+        const list = document.getElementById('config-local-archive-list');
+        if (!state || !list) return;
+
+        let data;
+        try {
+            const res = await this.writeFetch('/api/archives');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
+        } catch {
+            state.textContent = this.t('config.localArchiveLoadError', 'Could not read the stored copies.');
+            return;
+        }
+
+        // Not installed is the common case, and it is a setup step rather than
+        // a fault: say what to do instead of showing an empty list.
+        if (!data.available) {
+            state.textContent = this.t('config.localArchiveMissing',
+                'monolith is not installed. Install it (brew install monolith, or your package manager) and restart nextDash.');
+            state.classList.add('config-note--warn');
+        } else {
+            state.classList.remove('config-note--warn');
+            const captures = data.captures || [];
+            state.textContent = captures.length
+                ? this.t('config.localArchiveSummary', '{n} copies, {size} on disk')
+                    .replace('{n}', String(captures.length))
+                    .replace('{size}', this.formatBytes(data.totalBytes || 0))
+                : this.t('config.localArchiveEmpty', 'No copies saved yet.');
+        }
+
+        this.renderLocalArchiveList(list, data.captures || []);
+    }
+
+    renderLocalArchiveList(list, captures) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!captures.length) {
+            list.replaceChildren();
+            return;
+        }
+        list.innerHTML = captures.map((capture) => {
+            const name = String(capture.url || '').split('/').pop();
+            const when = this.formatCaptureWhen(capture.at);
+            return `
+                <div class="config-local-archive-row">
+                    <a class="config-local-archive-name" href="${esc(capture.url)}" target="_blank" rel="noopener noreferrer">${esc(this.localArchiveLabel(name))}</a>
+                    <span class="config-local-archive-meta" title="${esc(when.title)}">${esc(when.label)} · ${esc(this.formatBytes(capture.bytes || 0))}</span>
+                    <span class="config-local-archive-actions">
+                        <button type="button" class="config-btn config-btn--small"
+                            data-local-archive-download="${esc(name)}">${esc(this.t('config.localArchiveDownloadBtn', 'Download'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger"
+                            data-local-archive-delete="${esc(name)}">${esc(this.t('config.localArchiveDeleteBtn', 'Delete'))}</button>
+                    </span>
+                </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-local-archive-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deleteLocalArchive(btn.getAttribute('data-local-archive-delete')));
+        });
+        list.querySelectorAll('[data-local-archive-download]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.downloadLocalArchive(btn.getAttribute('data-local-archive-download')));
+        });
+    }
+
+    /*
+     * A filename back into something readable.
+     *
+     * The stored name is the canonical key with every unusual character turned
+     * into a dash plus a timestamp -- an identifier, never meant to be read. The
+     * host is the part worth showing.
+     */
+    localArchiveLabel(name) {
+        const stem = String(name || '').replace(/-\d{8}-\d{6}\.html$/, '');
+        return stem.replace(/^https?---/, '').replace(/-+/g, ' ').trim() || name;
+    }
+
+    formatBytes(bytes) {
+        const n = Number(bytes) || 0;
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    async captureLocalArchive(url) {
+        const field = document.getElementById('config-local-archive-url');
+        const target = String(url || field?.value || '').trim();
+        if (!target) {
+            this.notify(this.t('config.localArchiveNeedsUrl', 'Paste the address of the page to save.'), 'error');
+            field?.focus();
+            return;
+        }
+
+        // A capture fetches every asset on the page, which is genuinely slow --
+        // go.dev took eleven seconds. The overlay says so rather than leaving
+        // the button looking stuck.
+        this.showProgressOverlay(
+            this.t('config.localArchiveCapturingTitle', 'Saving a copy…'),
+            this.t('config.localArchiveCapturingStatus', 'Fetching the page and everything on it'));
+        try {
+            const res = await this.writeFetch(`/api/archives/capture?url=${encodeURIComponent(target)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            this.hideProgressOverlay();
+            if (!res.ok) {
+                // monolith's own sentence: it says which asset or which flag
+                // went wrong, which is more use than "capture failed".
+                this.notify(body.error || this.t('config.localArchiveError', 'Could not save that page.'), 'error');
+                return;
+            }
+            this.notify(this.t('config.localArchiveSaved', 'Saved {size}.')
+                .replace('{size}', this.formatBytes(body.bytes || 0)), 'success');
+            if (field) field.value = '';
+            void this.loadLocalArchives();
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.localArchiveError', 'Could not save that page.'), 'error');
+        }
+    }
+
+    /*
+     * Take a copy out of nextDash and onto the machine.
+     *
+     * Through writeFetch and a blob rather than a plain link: the route sits
+     * behind the write token, and an <a download> carries no header -- on an
+     * install that has a token set it would save a 401 page under the name of
+     * an archive. The same reason the HTML export does it this way.
+     *
+     * The point of the button is that a stored page should not be trapped in
+     * nextDash: it is one self-contained HTML file, and it should be openable
+     * from a Downloads folder in ten years without this app running at all.
+     */
+    async downloadLocalArchive(name) {
+        if (!name) return;
+        try {
+            const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.triggerDownload(await res.blob(), name);
+        } catch {
+            this.notify(this.t('config.localArchiveDownloadError', 'Could not download that copy.'), 'error');
+        }
+    }
+
+    async deleteLocalArchive(name) {
+        if (!name) return;
+        const ok = await this.confirmAction(
+            this.t('config.localArchiveDeleteConfirm', 'Delete this copy? The page it came from is not affected.'),
+            { confirmLabel: this.t('config.localArchiveDeleteBtn', 'Delete'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.localArchiveDeleted', 'Copy deleted.'), 'success');
+            void this.loadLocalArchives();
+        } catch {
+            this.notify(this.t('config.localArchiveError', 'Could not save that page.'), 'error');
+        }
+    }
+
+    /** The account this source is pointed at, as the server has it. */
+    async sourceHandleValue(id) {
+        const def = this.sourceDef(id);
+        const typed = document.getElementById(`config-${def?.slug}-handle`)?.value?.trim();
+        if (typed) return typed;
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) return '';
+            const body = await res.json();
+            return (Array.isArray(body) ? body : []).find((s) => s.id === id)?.handle || '';
+        } catch {
+            return '';
+        }
+    }
+
+    /** Whether the server is holding a token for this source. */
+    async sourceHasToken(id) {
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) return false;
+            const body = await res.json();
+            return Boolean((Array.isArray(body) ? body : []).find((s) => s.id === id)?.hasToken);
+        } catch {
+            return false;
+        }
+    }
+
+    /** Read every configured source once and fill in each panel. */
+    async loadSourceStates() {
+        let sources = [];
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            sources = Array.isArray(body) ? body : [];
+        } catch {
+            // Offline or no write access: the panels stay as they are rather
+            // than claiming no token is saved, which would be a lie the reader
+            // might act on by pasting theirs again.
+            return;
+        }
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            this.renderSourceState(def, sources.find((s) => s.id === def.id));
+        });
+    }
+
+    renderSourceState(def, source) {
+        const note = document.getElementById(`config-${def.slug}-token-note`);
+        const status = document.getElementById(`config-${def.slug}-status`);
+        const category = document.getElementById(`config-${def.slug}-category`);
+        const pageSelect = document.getElementById(`config-${def.slug}-page`);
+
+        if (pageSelect && source?.targetPage) {
+            this.fillSourcePageSelect(pageSelect, source.targetPage);
+        }
+        // The handle is not secret, so unlike the token it comes back and is
+        // shown -- a panel that forgot which account it points at is a panel
+        // nobody trusts.
+        const handle = document.getElementById(`config-${def.slug}-handle`);
+        if (handle && source?.handle && !handle.value) handle.value = source.handle;
+        const rows = document.querySelector(`[data-source-rows="${CSS.escape(def.id)}"]`);
+        if (rows && source) rows.checked = Boolean(source.asRows);
+
+        /*
+         * Only the panels that ask for a token have a line about one.
+         *
+         * This used to be an early return covering the whole function, so the
+         * two sources that need no token -- Hacker News favourites and a
+         * YouTube channel -- never had their handle, their page or their last
+         * result restored either. The comment above says a panel that forgot
+         * which account it points at is a panel nobody trusts; those were
+         * exactly the two that forgot.
+         */
+        if (note) {
+            note.textContent = source?.hasToken
+                ? this.t('config.sourceTokenSet', 'A token is saved. Leave this empty to keep it.')
+                : this.t('config.sourceTokenMissing', 'No token saved yet.');
+        }
+        if (category && source?.targetCategory && !category.value) {
+            category.value = source.targetCategory;
+        }
+        /*
+         * What the folded summary says.
+         *
+         * A row of seven identical headings tells you nothing about which one
+         * you already set up, so the chip carries the one fact that decides
+         * whether to open it: never used, ready, or the last attempt failed.
+         */
+        const chip = document.getElementById(`config-${def.slug}-chip`);
+        if (chip) {
+            chip.classList.remove('is-ready', 'is-failed');
+            if (source?.lastError) {
+                chip.classList.add('is-failed');
+                chip.textContent = this.t('config.sourceChipFailed', 'last import failed');
+            } else if (source?.hasToken || source?.handle) {
+                chip.classList.add('is-ready');
+                chip.textContent = source?.lastRun
+                    ? this.t('config.sourceChipReady', 'set up')
+                    : this.t('config.sourceChipNotRunYet', 'set up, never run');
+            } else {
+                chip.textContent = this.t('config.sourceChipUnused', 'not set up');
+            }
+        }
+
+        if (!status) return;
+        if (source?.lastError) {
+            status.textContent = this.t('config.sourceLastError', 'Last attempt failed: {e}')
+                .replace('{e}', source.lastError);
+        } else if (source?.lastResult) {
+            status.textContent = this.t('config.sourceLastRun', 'Last import: {r}')
+                .replace('{r}', source.lastResult);
+        } else {
+            status.textContent = '';
+        }
+    }
+
+    async saveSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
+        const token = document.getElementById(`config-${def.slug}-token`);
+        const category = document.getElementById(`config-${def.slug}-category`);
+        const chosen = document.getElementById(`config-${def.slug}-page`)?.value;
+        const pageId = (chosen && chosen !== DashboardConfig.SOURCE_NEW_PAGE ? Number(chosen) : 0)
+            || Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+
+        /*
+         * An empty field means "keep the stored token" -- but only if there is
+         * one. With nothing stored it means the reader has not given one yet,
+         * and answering "Source saved." to that is how someone concludes the
+         * token was forgotten: the message said it worked.
+         */
+        // Only where a token is part of the source: Hacker News and YouTube
+        // authenticate nothing, so demanding one would block a working setup.
+        if (def.needsToken !== false && !token?.value?.trim() && !(await this.sourceHasToken(id))) {
+            this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
+            token?.focus();
+            return;
+        }
+
+        try {
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    kind: def.kind,
+                    label: def.titleFallback,
+                    token: token?.value || '',
+                    handle: document.getElementById(`config-${def.slug}-handle`)?.value?.trim() || '',
+                    asRows: Boolean(document.querySelector(`[data-source-rows="${CSS.escape(def.id)}"]`)?.checked),
+                    targetPage: pageId,
+                    targetCategory: category?.value?.trim() || '',
+                    enabled: true,
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Cleared rather than left standing: a token sitting in a form field
+            // after it has been saved is one screenshot away from being shared.
+            if (token) token.value = '';
+            this.sourceTokenDrafts.delete(id);
+            this.notify(this.t('config.sourceSaved', 'Source saved.'), 'success');
+            void this.loadSourceStates();
+        } catch {
+            this.notify(this.t('config.sourceSaveError', 'Could not save that source.'), 'error');
+        }
+    }
+
+    /*
+     * The blocking overlay a long-running config action shows.
+     *
+     * The markup and the behaviour moved to window.ProgressOverlay so the health
+     * view can show the same thing while it saves a page -- two overlays that
+     * are almost the same is how two surfaces drift apart. These three stay as
+     * the names the rest of this file already calls.
+     */
+    showProgressOverlay(title, status) {
+        return window.ProgressOverlay?.show(title, status);
+    }
+
+    finishProgressOverlay(status) {
+        window.ProgressOverlay?.finish(status);
+    }
+
+    hideProgressOverlay() {
+        window.ProgressOverlay?.hide();
+    }
+
+    async runSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
+        const url = `/api/sources/${encodeURIComponent(id)}/run`;
+        const serviceName = this.t(`config.${def.titleKey}`, def.titleFallback);
+
+        // Nothing to import with. Said plainly rather than as "could not reach
+        // that service", which sends the reader looking at their network.
+        if (def.needsToken !== false && !await this.sourceHasToken(id)) {
+            this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
+            document.getElementById(`config-${def.slug}-token`)?.focus();
+            return;
+        }
+        // An account source needs its name instead, and saying which is missing
+        // is the difference between a fixable message and a puzzle.
+        if (def.needsHandle && !(await this.sourceHandleValue(id))) {
+            this.notify(this.t('config.sourceHandleRequired', 'Fill in the account or channel first.'), 'error');
+            document.getElementById(`config-${def.slug}-handle`)?.focus();
+            return;
+        }
+
+        // The preview walks the whole service, so it is itself the slow part --
+        // it earns the overlay just as much as the import does.
+        this.showProgressOverlay(
+            this.t('config.sourceCheckingTitle', 'Checking {s}…').replace('{s}', serviceName),
+            this.t('config.sourceCheckingStatus', 'Reading what is there'));
+
+        let preview;
+        try {
+            const res = await this.writeFetch(url);
+            if (res.status === 401) {
+                this.hideProgressOverlay();
+                this.notify(this.t('config.sourceTokenRejected', 'That token was rejected.'), 'error');
+                void this.loadSourceStates();
+                return;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            preview = await res.json();
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.sourceRunError', 'Could not reach that service.'), 'error');
+            void this.loadSourceStates();
+            return;
+        }
+        this.hideProgressOverlay();
+
+        if (!Number(preview.new)) {
+            this.notify(this.t('config.sourceNothingNew', 'Nothing new to import.'), 'info');
+            void this.loadSourceStates();
+            return;
+        }
+
+        /*
+         * Which page the bookmarks are going to, named in the confirm.
+         *
+         * A source keeps the page it was configured with, so an import can land
+         * somewhere the reader is not currently looking -- and then it looks
+         * like nothing happened. Saying so before it writes is cheaper than
+         * explaining it afterwards.
+         */
+        const targetPage = Number(preview.page) || Number(this.dash.currentPageId) || 1;
+        const pageName = (this.dash.pages || []).find((p) => Number(p.id) === targetPage)?.name || '';
+
+        const question = Number(preview.duplicates) > 0
+            ? this.t('config.sourceConfirmDetail', 'Import {n} bookmarks onto {p}? {d} are already here and will be skipped.')
+                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates)).replace('{p}', pageName)
+            : this.t('config.sourceConfirm', 'Import {n} bookmarks onto {p}?')
+                .replace('{n}', String(preview.new)).replace('{p}', pageName);
+        const ok = await this.confirmAction(question,
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
+        if (!ok) return;
+
+        this.showProgressOverlay(
+            this.t('config.sourceImportingTitle', 'Importing from {s}…').replace('{s}', serviceName),
+            this.t('config.sourceImportingStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
+
+        try {
+            const res = await this.writeFetch(url, { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const result = await res.json();
+            const imported = result.imported ?? preview.new;
+            this.finishProgressOverlay(
+                this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
+            this.notify(this.t('config.sourceImported', 'Imported {n} bookmarks.')
+                .replace('{n}', String(imported)), 'success');
+            /*
+             * Refresh the page the import actually wrote to, not just the one
+             * being looked at. Those are the same only by luck: the target is
+             * stored on the source and the reader may have moved pages since.
+             * Refreshing only the current page left the target page's cached
+             * copy stale, so switching to it showed the collection from before
+             * the import -- and its new categories were missing, which is what
+             * makes an imported bookmark uneditable.
+             */
+            const currentPage = Number(this.dash.currentPageId) || targetPage;
+            await this.dash.data?.refreshAfterBookmarkMutation?.({
+                pageIds: [...new Set([targetPage, currentPage])],
+                repaintActiveView: true,
+            });
+        } catch {
+            this.hideProgressOverlay();
+            this.notify(this.t('config.sourceRunError', 'Could not reach that service.'), 'error');
+        }
+        void this.loadSourceStates();
+    }
+
+    async forgetSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
+        const ok = await this.confirmAction(
+            this.t('config.sourceForgetConfirm', 'Forget this token? Imported bookmarks stay where they are.'),
+            { confirmLabel: this.t('config.sourceForgetBtn', 'Forget token'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.sourceForgotten', 'Token forgotten.'), 'success');
+            void this.loadSourceStates();
+        } catch {
+            this.notify(this.t('config.sourceSaveError', 'Could not save that source.'), 'error');
+        }
     }
 
     async importBrowserBookmarks(file) {
@@ -5786,30 +7385,35 @@ class DashboardConfig {
             this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
             return;
         }
-        let bookmarks;
+        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+        const url = `/api/bookmarks/import-html?page=${encodeURIComponent(pageId)}`;
+
+        let preview;
         try {
-            bookmarks = this.parseBrowserBookmarks(await file.text());
+            const res = await this.writeFetch(`${url}&dryRun=1`, { method: 'POST', body: file });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            preview = await res.json();
         } catch {
             this.notify(this.t('config.browserImportError', 'Could not read that bookmarks file.'), 'error');
             return;
         }
-        if (bookmarks.length === 0) {
+        if (!Number(preview.total)) {
             this.notify(this.t('config.browserImportEmpty', 'No bookmarks found in that file.'), 'error');
             return;
         }
-        // Import onto the current page; the server dedups against existing URLs.
-        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
-        const ok = await this.confirmAction(
-            this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?').replace('{n}', String(bookmarks.length)),
-            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false }
-        );
+
+        const question = Number(preview.duplicates) > 0
+            ? this.t('config.browserImportConfirmDetail',
+                'Import {n} bookmarks onto the current page? {d} are already here and will be skipped.')
+                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates))
+            : this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?')
+                .replace('{n}', String(preview.new));
+        const ok = await this.confirmAction(question,
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
         if (!ok) return;
+
         try {
-            const res = await this.writeFetch('/api/bookmarks/import-browser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId, bookmarks }),
-            });
+            const res = await this.writeFetch(url, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
@@ -5864,6 +7468,11 @@ class DashboardConfig {
         if (!ok) return;
 
         try {
+            // After the confirm, so the overlay never covers the question it
+            // was asked to answer.
+            this.showProgressOverlay(
+                this.t('config.csvImportTitle', 'Importing bookmarks…'),
+                this.t('config.csvImportStatus', 'Writing them to the page'));
             const res = await this.writeFetch('/api/bookmarks/import-browser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -5879,6 +7488,7 @@ class DashboardConfig {
             );
             setTimeout(() => window.location.reload(), 1000);
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.csvImportError', 'Could not import the bookmarks.'), 'error');
         }
     }
@@ -6272,7 +7882,11 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
-                    ${this.renderThemePicker()}
+                    <div class="config-theme-row">
+                        ${this.renderThemePicker()}
+                        <button type="button" class="config-btn config-theme-browse"
+                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Browse…'))}</button>
+                    </div>
                     ${this.appearanceAff('theme')}
                 </div>
                 ${randomShowingHint}
@@ -6289,6 +7903,22 @@ class DashboardConfig {
                         <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
+                    <select class="config-select" data-appearance-select="themeDepth">
+                        ${['flat', 'soft', 'rich'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
+                    ${this.appearanceAff('themeDepth')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
+                    <select class="config-select" data-appearance-select="backgroundPattern">
+                        ${[['auto', 'Follow the theme'], ['dots', 'Dots'], ['grid', 'Grid'], ['lines', 'Lines'], ['hatch', 'Hatch'], ['none', 'None']].map(([option, label]) => `<option value="${option}"${(s.backgroundPattern || 'auto') === option ? ' selected' : ''}>${esc(this.t('config.backgroundPattern' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
+                    ${this.appearanceAff('backgroundPattern')}
                 </div>
                 <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
                     <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
@@ -6340,16 +7970,6 @@ class DashboardConfig {
                     <span class="config-range-value">${Math.round(opacity * 100)}%</span>
                     ${this.appearanceAff('backgroundOpacity')}
                 </div>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
-                        <span>${esc(this.t('config.showBackgroundDots', 'Show background dots'))}</span>
-                    </label>
-                    ${this.appearanceAff('showBackgroundDots')}
-                </div>
-                <div class="config-field-art" data-appearance-art="showBackgroundDots" data-art-kind="dots">${
-                    window.SettingArt?.render?.('dots', s.showBackgroundDots !== false) || ''
-                }</div>
             </div>`);
     }
 
@@ -6404,9 +8024,9 @@ class DashboardConfig {
         const s = this.dash.settings || {};
 
         // These five are the only values the server accepts; it silently
-        // rewrites anything else to 'bottom'. See models.go.
+        // rewrites anything else to 'bottom-right'. See models.go.
         const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
-            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom';
+            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom-right';
         // Short labels: the full ones carry "(default)" and "corner", which is
         // more than a button in a five-up group can show.
         const barPositions = [
@@ -6512,8 +8132,8 @@ class DashboardConfig {
 
     /** Friendly name for a theme id, matching the old config's labels. */
     themeDisplayName(themeId, name) {
-        if (themeId === 'dark') return this.t('config.themeOldDefaultDark', 'Old Default [dark]');
-        if (themeId === 'light') return this.t('config.themeOldDefaultLight', 'Old Default [light]');
+        if (themeId === 'dark') return this.t('config.themeThinkDashboardDark', 'ThinkDashboard [dark]');
+        if (themeId === 'light') return this.t('config.themeThinkDashboardLight', 'ThinkDashboard [light]');
         if (name && String(name).trim()) return String(name);
         return themeId;
     }
@@ -6531,6 +8151,47 @@ class DashboardConfig {
         return modes.map(([value, labelKey, fallback]) =>
             `<button type="button" class="config-choice${value === current ? ' is-active' : ''}" data-appearance-randommode="${esc(value)}" aria-pressed="${value === current}">${esc(this.t(labelKey, fallback))}</button>`
         ).join('');
+    }
+
+    /**
+     * The theme browser, over the config view.
+     *
+     * Preview and revert are the config view's own — the same pair the inline
+     * picker uses — so browsing here can no more strand a theme than browsing
+     * there can. _themePickerPrevious is what revert restores to, and it has to
+     * be set before the first preview rather than by the browser itself.
+     */
+    async openThemeBrowser() {
+        if (!window.ThemeBrowser?.open) return;
+        const [colors] = await Promise.all([this.loadColorsData(), this.loadThemeList()]);
+        const palettes = {
+            light: colors?.light || {},
+            dark: colors?.dark || {},
+            ...(colors?.builtIn || {}),
+            ...(colors?.custom || {}),
+        };
+        this._themePickerPrevious = this.dash.settings?.theme || 'dark';
+        window.ThemeBrowser.open({
+            palettes,
+            current: this.dash.settings?.theme || 'dark',
+            favorites: Array.isArray(this.dash.settings?.favoriteThemes)
+                ? this.dash.settings.favoriteThemes
+                : [],
+            t: (key, fallback) => this.t(key, fallback),
+            displayName: (id, name) => this.themeDisplayName(id, name),
+            onPreview: (id) => this.previewThemeChoice(id),
+            onRevert: () => this.revertThemePreview(),
+            onFavorites: (favorites) => {
+                this.dash.settings.favoriteThemes = favorites;
+                this.persistAppearance();
+            },
+            onPick: async (id) => {
+                this.clearThemePreview();
+                this._themePickerPrevious = null;
+                await this.applyThemeChoice(id);
+                this.repaintAppearanceBody();
+            },
+        });
     }
 
     renderThemeOptions() {
@@ -7079,11 +8740,7 @@ class DashboardConfig {
         if (this.dash.visual?.initializeAutoDarkMode) {
             this.dash.visual.initializeAutoDarkMode();
         } else {
-            window.ThemeLoader?.applyTheme?.(
-                this.displayTheme(),
-                s.showBackgroundDots !== false,
-                this.currentFontSize()
-            );
+            window.ThemeLoader?.applyTheme?.(this.displayTheme(), this.currentFontSize());
         }
         this.reloadThemeCSS();
     }
@@ -7308,6 +8965,11 @@ class DashboardConfig {
      * to patch in place.
      */
     repaintAppearanceBody() {
+        // The theme browser can be opened from the dashboard now, and its
+        // onPick lands here. Without this the fallback below would render the
+        // whole config view over the bookmarks someone is looking at, because
+        // the appearance body it looks for is legitimately absent.
+        if (!this.isActiveView()) return;
         const host = document.getElementById('config-appearance-body');
         if (!host || this.appearanceTab !== 'custom-themes') { this.render(); return; }
         host.innerHTML = this.renderCustomThemes();
@@ -7874,7 +9536,8 @@ class DashboardConfig {
         const map = this.dash.settings?.themeIconStyling || {};
         const entry = map[this.iconStylingThemeKey()] || {};
         return {
-            enabled: entry.enabled === true,
+            // Absent means on -- see normalizeEntry in theme-icon-styling.js.
+            enabled: entry.enabled !== false,
             style: entry.style || 'muted',
             intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
         };
@@ -7996,8 +9659,8 @@ class DashboardConfig {
      *
      * These two buttons used to set the bare ids `light` and `dark`, which are
      * not a mode at all — they are a specific legacy pair the picker lists as
-     * "Old Default". So picking Bio Abyss and then clicking Dark threw the
-     * choice away and left the picker reading "Old Default [dark]", which looks
+     * "ThinkDashboard". So picking Bio Abyss and then clicking Dark threw the
+     * choice away and left the picker reading "ThinkDashboard [dark]", which looks
      * exactly like the setting failing to stick.
      *
      * Every built-in ships as `<family>-dark` / `<family>-light`, so the
@@ -8061,10 +9724,6 @@ class DashboardConfig {
         switch (name) {
             case 'autoDarkMode':
                 d.settings.autoDarkMode = value;
-                this.applyThemeLive();
-                break;
-            case 'showBackgroundDots':
-                d.settings.showBackgroundDots = value;
                 this.applyThemeLive();
                 break;
             case 'showIcons':
@@ -8192,6 +9851,22 @@ class DashboardConfig {
         }
         if (name === 'randomThemeMode') {
             this.setRandomThemeMode(value);
+            return;
+        }
+        if (name === 'backgroundPattern') {
+            const pattern = ['auto', 'dots', 'grid', 'lines', 'hatch', 'none'].includes(value) ? value : 'auto';
+            this.dash.settings.backgroundPattern = pattern;
+            window.ThemeLoader?.applyBackgroundPattern?.(pattern);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'themeDepth') {
+            const depth = ['flat', 'soft', 'rich'].includes(value) ? value : 'rich';
+            this.dash.settings.themeDepth = depth;
+            // Applied before it is saved: the point of the control is seeing the
+            // difference, and a round trip to the server is a second of nothing.
+            window.ThemeLoader?.applyThemeDepth?.(depth);
+            this.persistAppearance();
         }
     }
 
@@ -8239,6 +9914,7 @@ class DashboardConfig {
 
     handleAppearanceAction(action) {
         switch (action) {
+            case 'browse-themes': void this.openThemeBrowser(); break;
             case 'edit-colors': this.openThemeEditorTab(); break;
             case 'upload-font': document.getElementById('config-font-input')?.click(); break;
             case 'upload-favicon': document.getElementById('config-favicon-input')?.click(); break;
@@ -8412,7 +10088,7 @@ class DashboardConfig {
         showSearchButton: { def: true },
         showFindersButton: { def: true },
         showCommandsButton: { def: true },
-        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom' },
+        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
@@ -8428,9 +10104,8 @@ class DashboardConfig {
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
         showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         // Appearance
-        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: true },
+        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: false },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
-        showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'], def: true },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
@@ -8613,6 +10288,11 @@ class DashboardConfig {
                 field: 'monitorNotifyUrl', type: 'text',
                 label: urlLabelByPreset[preset] || t('config.monitorNotifyUrlLabel', 'Alert webhook URL'),
             });
+        }
+        if (forIndex || preset === 'ntfy') {
+            // Only ntfy carries buttons, and a button has to lead somewhere.
+            controls.push({ field: 'monitorNotifyDashboardUrl', type: 'text',
+                label: t('config.monitorNotifyDashboardUrlLabel', 'Address of this dashboard (for notification buttons)') });
         }
         if (forIndex || preset === 'telegram') {
             controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });
@@ -8892,6 +10572,8 @@ class DashboardConfig {
                     { field: 'linkPreviewParts', type: 'checkset', special: 'previewCard',
                         label: t('config.linkPreviewPartsLabel', 'What the card shows'), options: [
                             { value: 'image', label: t('config.linkPreviewPartImage', 'Image') },
+                            { value: 'byline', label: t('config.linkPreviewPartByline', 'Site, author & date') },
+                            { value: 'embed', label: t('config.linkPreviewPartEmbed', 'Video player') },
                             { value: 'description', label: t('config.linkPreviewPartDescription', 'Description') },
                             { value: 'note', label: t('config.linkPreviewPartNote', 'Your note') },
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
@@ -11072,13 +12754,36 @@ class DashboardConfig {
 
     /* ── Pages & tags ──────────────────────────────────────────────────────── */
 
+    /*
+     * Widgets sits beside Categories because it is the same kind of thing: both
+     * are blocks on a page, arranged in one order. Its own tab rather than rows
+     * mixed into Categories, so a list of categories stays a list of categories.
+     */
+    /*
+     * Widgets is not here any more: it is a section of its own in the rail,
+     * under Data & backups. It sat among categories and tags because a widget
+     * is a block beside them, but the tab had grown a settings panel per type
+     * and stopped being a list of names — and the thing it is arranged with,
+     * the block order, lives on the categories tab regardless.
+     */
     static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
      * upkeep on another: neither belongs beside the export buttons.
      */
-    static DB_TABS = ['backups', 'icons', 'logs', 'trash', 'reset'];
+    /*
+     * Sources sits between Backups and Icons because that is the order of the
+     * question being asked: what do I keep, where does it come in from, how does
+     * it look.
+     *
+     * Named Sources rather than Import: Backups & data already has import
+     * buttons on it, and two things called import on neighbouring tabs is a
+     * question the reader has to answer before every click. Those are files;
+     * these are places bookmarks come from and keep coming from. It is also what
+     * the register underneath already calls them -- sources.json, /api/sources.
+     */
+    static DB_TABS = ['backups', 'sources', 'webhooks', 'icons', 'logs', 'trash', 'reset'];
 
     /**
      * Bookmarks is a list section, so its settings used to sit after the list —
@@ -11086,7 +12791,12 @@ class DashboardConfig {
      * loads more, which also means you cannot reach them by jumping to the
      * bottom: the bottom moves. One strip, the same one five other sections use.
      */
-    static BM_TABS = ['list', 'settings'];
+    /*
+     * Local copies is a tab here rather than only in Data & backups because it
+     * is a list of bookmarks, not a setting. Where the copies come from is
+     * configuration; which pages you have kept is part of the collection.
+     */
+    static BM_TABS = ['list', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -11112,6 +12822,198 @@ class DashboardConfig {
         return this.t(key, fallback);
     }
 
+    /**
+     * Widgets, as a section rather than a tab.
+     *
+     * The editor is the one that was under Pages & tags; what it gains here is
+     * room and a heading of its own. Where a widget *sits* is still arranged on
+     * the categories tab, together with the categories it sits between — one
+     * order, one place to change it — so that is said here rather than left for
+     * someone to discover.
+     */
+    renderWidgetsSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
+            const active = tab === this.widgetsTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
+        }).join('');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
+                'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
+        `;
+    }
+
+    renderWidgetsTab() {
+        return this.widgetsTab === 'types' ? this.renderWidgetTypeReference() : this.renderWidgetsEditor();
+    }
+
+    widgetsTabLabel(tab) {
+        const map = {
+            widgets: ['config.widgetsTabList', 'Widgets'],
+            types: ['config.widgetsTabTypes', 'Types'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /*
+     * What each kind of widget is for, all in one place.
+     *
+     * The add form names a type and says one line about it, which is the right
+     * amount while you are adding one and the wrong amount while you are
+     * deciding between fourteen. The same sentences the form uses -- one
+     * source, so a type cannot describe itself two ways.
+     *
+     * Grouped by the question a type answers rather than listed flat: thirteen
+     * names in one column is a list to read, four short groups is a thing to
+     * scan. Custom stands alone at the end because it is not one more tile, it
+     * is the way to build a tile nobody has written.
+     */
+    static WIDGET_TYPE_GROUPS = [
+        ['links', ['health', 'uptime', 'certs', 'trend']],
+        ['incoming', ['inbox', 'feeds', 'sources']],
+        ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
+    ];
+
+    widgetTypeGroupLabel(group) {
+        const map = {
+            links: ['config.widgetGroupLinks', 'Are the links still good?'],
+            incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
+            upkeep: ['config.widgetGroupUpkeep', 'What needs tidying?'],
+        };
+        const [key, fallback] = map[group] || [group, group];
+        return this.t(key, fallback);
+    }
+
+    renderWidgetTypeReference() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // Each row carries the button that adds it, so reading about a kind and
+        // choosing it are not two screens apart. Reference and catalogue were
+        // the same thirteen names and the same thirteen sentences, twice.
+        const row = (type) => `
+            <li class="config-widget-type-row">
+                <span class="config-widget-type-name">${esc(this.widgetTypeName(type))}</span>
+                <span class="config-widget-type-about">${esc(this.widgetTypeAbout(type))}</span>
+                <button type="button" class="config-btn config-btn--small config-widget-type-add"
+                    data-widget-add="${esc(type)}"
+                    aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}')
+                        .replace('{name}', this.widgetTypeName(type)))}">${
+                    esc(this.t('config.widgetsAddShort', 'Add'))}</button>
+            </li>`;
+        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
+            <section class="config-widget-type-group">
+                <h4 class="config-widget-type-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
+                <ul class="config-widget-type-list">${types.map(row).join('')}</ul>
+            </section>`).join('');
+
+        return `
+            <p class="config-panel-note">${esc(this.t('config.widgetTypesIntro',
+                'Every kind of widget nextDash can draw. Add one straight from this list.'))}</p>
+            ${groups}
+            ${this.renderCustomWidgetReference()}`;
+    }
+
+    /*
+     * The custom widget, at length.
+     *
+     * It is the only type that is a capability rather than a report, and the
+     * only one whose limits a reader has to know before they can judge whether
+     * their service will work. Everything here is a number the server actually
+     * enforces -- the timeout, the caps, the formats -- so this page and
+     * widgets_custom.go have to be read together when either changes.
+     */
+    renderCustomWidgetReference() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const t = (key, fallback) => esc(this.t(key, fallback));
+        const presets = window.DashboardWidgetPresets?.PRESETS?.length || 0;
+
+        /*
+         * Every string here is plain text and escaped; the examples are built
+         * as their own elements. Putting markup inside a translatable string
+         * means whichever half of it a translator drops is a broken tag.
+         */
+        const point = (title, body, aside) => `
+            <li class="config-widget-custom-point">
+                <span class="config-widget-custom-point-title">${title}</span>
+                <span class="config-widget-custom-point-body">${body}${aside ? ` ${aside}` : ''}</span>
+            </li>`;
+        const code = (sample) => `<code class="config-widget-custom-code">${esc(sample)}</code>`;
+        const formats = DashboardConfig.CUSTOM_FORMATS
+            .map((format) => code(this.t(`config.widgetFormat.${format}`, format)))
+            .join(' ');
+
+        return `
+            <section class="config-widget-type-group config-widget-custom-ref">
+                <h4 class="config-widget-type-group-title">${t('config.widgetGroupCustom',
+                    'And anything else: the Custom widget')}</h4>
+                <p class="config-widget-custom-lead">${t('config.widgetCustomRefLead',
+                    'Every widget above reads something nextDash already knows. The Custom widget reads a figure out of any service that answers JSON, so a tile can show what your own machines are doing without waiting for nextDash to grow a widget for them.')}</p>
+                <ul class="config-widget-custom-points">
+                    ${point(
+                        t('config.widgetCustomRefAddressTitle', 'An address that answers JSON'),
+                        t('config.widgetCustomRefAddressBody',
+                            'Any http or https endpoint, fetched by the server rather than by the browser — so a service on your own network works, and no key ever reaches the page. GET, or POST with a body for the services that insist.'))}
+                    ${point(
+                        t('config.widgetCustomRefPathsTitle', 'Paths into the answer'),
+                        t('config.widgetCustomRefPathsBody',
+                            'Name the value you want and nothing else — the path walks objects and arrays. Up to eight figures on one tile; more than that is a report rather than a glance.'),
+                        code('server.disk[0].used'))}
+                    ${point(
+                        t('config.widgetCustomRefFormatsTitle', 'A shape per figure'),
+                        t('config.widgetCustomRefFormatsBody',
+                            'The same number reads differently depending on what it is:'),
+                        formats)}
+                    ${point(
+                        t('config.widgetCustomRefListTitle', 'Or a list instead of figures'),
+                        t('config.widgetCustomRefListBody',
+                            'Point at an array and the tile draws its entries as rows, up to twenty — the downloads running now, the last few errors.'))}
+                    ${point(
+                        t('config.widgetCustomRefAuthTitle', 'A sign-in that stays out of your backups'),
+                        t('config.widgetCustomRefAuthBody',
+                            'An API key in a header, or a username and password. Kept in a separate file that no export or backup ZIP includes; the widget itself stores only a reference to it.'))}
+                    ${point(
+                        t('config.widgetCustomRefCacheTitle', 'Asked on a schedule you set'),
+                        t('config.widgetCustomRefCacheBody',
+                            'Anywhere between 30 seconds and a day, five minutes by default. One answer is shared by everyone looking at the dashboard, so a wall display costs the service nothing extra.'))}
+                    ${presets ? point(
+                        t('config.widgetCustomRefPresetsTitle', 'Or start from a service already known'),
+                        this.t('config.widgetCustomRefPresetsBody',
+                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in four groups, and everything stays editable afterwards.')
+                            .split('{count}').map(esc).join(`<strong>${esc(String(presets))}</strong>`)) : ''}
+                </ul>
+                <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
+                    'What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.')}</p>
+                <p class="config-widget-custom-add">
+                    <button type="button" class="config-btn config-btn--small" data-widget-add="custom">${
+                        t('config.widgetsAddNamed', 'Add {name}')
+                            .replace('{name}', esc(this.widgetTypeName('custom')))}</button>
+                </p>
+            </section>`;
+    }
+
+    bindWidgetsTabs(container) {
+        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => {
+            if (tab === this.widgetsTab) return;
+            this.widgetsTab = tab;
+            this.restoreConfigHash();
+            // Only the body changes. Repainting the strip as well would rebuild
+            // the buttons under the pointer that just clicked one.
+            this.repaintWidgetsBody();
+            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+        });
+    }
+
+    /** Redraw the widgets section without refetching what it already has. */
+    repaintWidgetsBody() {
+        const body = document.getElementById('config-widgets-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderWidgetsTab();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindWidgetsEditor(container);
+    }
+
     renderPagesTags() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.PT_TABS.map((tab) => {
@@ -11132,6 +13034,7 @@ class DashboardConfig {
             case 'collections': return this.renderCollections();
             case 'pages': return this.renderPagesEditor();
             case 'categories': return this.renderCategoriesEditor();
+            case 'widgets': return this.renderWidgetsEditor();
             default: return '';
         }
     }
@@ -12664,6 +14567,1603 @@ class DashboardConfig {
 
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
+    /*
+     * The widgets on a page, in the order the dashboard draws them.
+     *
+     * Moving one here moves it on the dashboard, because both write the same
+     * blockOrder -- the alternative is two orders that agree until they do not.
+     * The list shows every block, categories included but not editable here, so
+     * "move up" means something: a widget between two categories has to be able
+     * to be put there without dragging on the dashboard.
+     */
+    /*
+     * The widgets on a page: which there are, and how each is set up.
+     *
+     * Deliberately no arrows here. Where a widget sits is arranged on the
+     * Categories tab, in one list with the categories it sits between -- an
+     * order that could be edited in two places is two places that disagree, and
+     * that is the bug this tab was split away from.
+     */
+    renderWidgetsEditor() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        const pageOptions = pages.map((p) =>
+            `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
+        ).join('');
+
+        let body;
+        if (this._widgetBlocks == null) {
+            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        } else {
+            const widgets = this._widgetBlocks.filter((b) => b.isWidget);
+            if (!widgets.length) {
+                // The empty list is the invitation. It used to be one grey line
+                // under a picker that filled the screen, which made the picker
+                // the page and the list an afterthought.
+                body = `
+                <div class="config-widget-empty">
+                    <p class="config-widget-empty-title">${esc(this.t('config.widgetsEmpty',
+                        'No widgets on this page yet.'))}</p>
+                    <p class="config-widget-empty-hint">${esc(this.t('config.widgetsEmptyHint',
+                        'A widget is a block beside your categories that holds something other than bookmarks.'))}</p>
+                    ${this.renderWidgetAddButton()}
+                </div>`;
+            } else {
+                const rows = widgets.map((widget) => {
+                    const index = this._widgetBlocks.indexOf(widget);
+                    const enabled = widget.config?.enabled !== false;
+                    const open = this._widgetSettingsOpen === index;
+                    return `
+                <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
+                    data-widget-row="${index}">
+                    <div class="config-widget-row-head">
+                        <div class="config-widget-row-identity">
+                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
+                                data-index="${index}" value="${esc(widget.title || '')}"
+                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
+                                placeholder="${esc(this.widgetTypeName(widget.type))}">
+                        </div>
+                        <div class="config-widget-row-actions">
+                            <label class="config-toggle config-toggle--inline"
+                                title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                                <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
+                                <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
+                            </label>
+                            <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                                aria-expanded="${open ? 'true' : 'false'}">${esc(
+                                this.t('config.widgetsConfigure', 'Settings'))}</button>
+                            <button type="button" class="config-btn config-btn--small config-btn--danger"
+                                data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                        </div>
+                    </div>
+                    <p class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</p>
+                    <div class="config-widget-settings" ${open ? '' : 'hidden'}>${
+                        open ? this.renderWidgetSettings(widget, index) : ''}</div>
+                </li>`;
+                }).join('');
+                body = `<ul class="config-widget-list">${rows}</ul>`;
+            }
+        }
+
+        const hasWidgets = Array.isArray(this._widgetBlocks)
+            && this._widgetBlocks.some((b) => b.isWidget);
+        const pagePicker = pages.length > 1 ? `
+            <label class="config-widget-head-field">
+                <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
+                <select class="config-select" data-widget-page>${pageOptions}</select>
+            </label>` : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
+
+        return `
+            <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
+                'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
+            <div class="config-widget-head">
+                ${pagePicker}
+                ${hasWidgets ? this.renderWidgetAddButton() : ''}
+            </div>
+            ${body}
+        `;
+    }
+
+    /** The one door to the catalogue. Same label wherever it appears. */
+    renderWidgetAddButton() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<button type="button" class="config-btn config-btn--primary" data-widget-catalogue>${
+            esc(this.t('config.widgetsAddTitle', 'Add a widget'))}</button>`;
+    }
+
+    /*
+     * Choosing what to add: the kinds themselves, not a list of their names.
+     *
+     * Every kind is on screen at once, under the question it answers, and
+     * choosing one is the click that adds it -- no second step that asks
+     * nothing.
+     *
+     * It opens as an overlay rather than sitting on the tab. Inline it was
+     * measured at 900px on a 900px viewport, which put the list of widgets you
+     * actually have 412px below the fold: clicking a card added something you
+     * could not see, and said so with a toast in the opposite corner. The
+     * theme browser answers the same question the same way, for the same
+     * reason.
+     */
+    openWidgetCatalogue() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!window.AppModal?.show) return;
+
+        window.AppModal.show({
+            title: this.t('config.widgetsAddTitle', 'Add a widget'),
+            htmlMessage: `
+                <p class="config-widget-catalogue-note">${esc(this.t('config.widgetsAddNote',
+                    'Choose a kind and it lands at the end of the page. Everything about it is editable afterwards.'))}</p>
+                ${this.renderWidgetCatalogue()}`,
+            showCancel: false,
+            confirmText: this.t('dashboard.close', 'Close'),
+            modalClass: 'modal--widget-catalogue',
+            modalMaxWidth: '52rem',
+            initialFocusSelector: '[data-widget-add]',
+        });
+
+        // The overlay lives outside #config-widgets-body, so the tab's
+        // delegated click handler never sees these.
+        const root = document.getElementById('modal-text');
+        if (!root) return;
+        root.addEventListener('click', (event) => {
+            const card = event.target?.closest?.('[data-widget-add]');
+            if (!card) return;
+            window.AppModal.hide();
+            void this.addWidget(card.getAttribute('data-widget-add') || 'health');
+        });
+    }
+
+    /** The catalogue itself: every kind, grouped under the question it answers. */
+    renderWidgetCatalogue() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const card = (type) => `
+            <button type="button" class="config-widget-pick" data-widget-add="${esc(type)}">
+                <span class="config-widget-pick-name">${esc(this.widgetTypeName(type))}</span>
+                <span class="config-widget-pick-about">${esc(this.widgetTypeAbout(type))}</span>
+            </button>`;
+        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
+            <section class="config-widget-pick-group">
+                <h4 class="config-widget-pick-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
+                <div class="config-widget-pick-grid">${types.map(card).join('')}</div>
+            </section>`).join('');
+
+        return `
+            <div class="config-widget-catalogue">
+                ${groups}
+                <section class="config-widget-pick-group">
+                    <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
+                        'And anything else: the Custom widget'))}</h4>
+                    <div class="config-widget-pick-grid">${card('custom')}</div>
+                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
+                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
+                </section>
+            </div>`;
+    }
+
+    /** The two halves of the Widgets section: the ones you have, and the kinds. */
+    static WIDGETS_TABS = ['widgets', 'types'];
+
+    /** The types a reader may add. Mirrors the server's register. */
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
+        'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups', 'custom'];
+
+    /*
+     * What each type may be told, mirroring widgetFields in widgets_config.go.
+     *
+     * A table rather than a form per type: the panel is generated from this, and
+     * the server narrows a stored config to the same shape. A field declared in
+     * one and not the other is then a mismatch that shows immediately, instead
+     * of a setting that silently does nothing — which is what happened to the
+     * health widget's own `show`, read since the day it shipped and never
+     * settable until now.
+     *
+     * `rows`, `days` and the other numbers carry the same bounds the server
+     * enforces; the input simply refuses out of range rather than having the
+     * value dropped on save without explanation.
+     */
+    static WIDGET_SETTINGS = {
+        health: [
+            { key: 'show', kind: 'checkset', label: ['config.widgetShow', 'Figures to show'],
+              options: [
+                  ['broken', ['config.widgetShowBroken', 'Broken']],
+                  ['down', ['config.widgetShowDown', 'Down now']],
+                  ['content', ['config.widgetShowContent', 'Content changed']],
+                  ['healthy', ['config.widgetShowHealthy', 'Healthy']],
+              ] },
+        ],
+        uptime: [
+            { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
+            { key: 'sparkline', kind: 'bool', label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        certs: [
+            { key: 'withinDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        trend: [
+            { key: 'days', kind: 'int', min: 7, max: 90, label: ['config.widgetTrendDays', 'Days to plot'] },
+        ],
+        inbox: [
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+        ],
+        feeds: [
+            { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
+            { key: 'showRetired', kind: 'bool', label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        sources: [
+            { key: 'errorsOnly', kind: 'bool', label: ['config.widgetErrorsOnly', 'Only sources that failed'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        neglected: [
+            { key: 'sinceDays', kind: 'int', min: 7, max: 730,
+              label: ['config.widgetSinceDays', 'Not opened for (days)'] },
+            { key: 'includeNeverOpened', kind: 'bool',
+              label: ['config.widgetNeverOpened', 'Count bookmarks never opened'] },
+            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        archive: [
+            { key: 'brokenOnly', kind: 'bool',
+              label: ['config.widgetArchiveBrokenOnly', 'Count only the links that are already broken'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        unchecked: [
+            { key: 'staleDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetStaleDays', 'Count as stale after (days)'] },
+            { key: 'includeDisabled', kind: 'bool',
+              label: ['config.widgetIncludeDisabled', 'Count bookmarks with checking switched off'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        duplicates: [
+            { key: 'minCount', kind: 'int', min: 2, max: 20,
+              label: ['config.widgetMinCount', 'Report from this many copies'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        trash: [
+            { key: 'warnDays', kind: 'int', min: 1, max: 30,
+              label: ['config.widgetWarnDays', 'Mark as urgent within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        backups: [
+            { key: 'showList', kind: 'bool', label: ['config.widgetShowList', 'List the backups themselves'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        /*
+         * The custom widget's scalars. Its fields[] is a list of objects, which
+         * this table cannot describe, so renderCustomWidgetFields draws that
+         * half — rather than teaching the table a nested kind only one type
+         * would ever use.
+         */
+        custom: [
+            { key: 'url', kind: 'text', maxlength: 2000,
+              label: ['config.widgetCustomUrl', 'Address to read'],
+              placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
+            { key: 'ttl', kind: 'int', min: 30, max: 86400,
+              label: ['config.widgetCustomTtl', 'Ask again after (seconds)'] },
+            { key: 'itemsPath', kind: 'text', maxlength: 200,
+              label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
+              placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
+        ],
+    };
+
+    /** The formats a value may be shown in — the server accepts these and no others. */
+    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
+
+    /*
+     * The id this widget's own key is filed under.
+     *
+     * Derived from the widget rather than typed, because naming a secret is a
+     * question nobody asked to be asked: the reader is filling in a Sonarr
+     * widget, and "give this credential a name" is a step between them and the
+     * thing they came to do.
+     *
+     * The colon is deliberate -- normalizeCredentialID allows it -- and marks
+     * the entry as belonging to a widget rather than being a shared one
+     * somebody made on purpose.
+     */
+    widgetCredentialId(widget) {
+        return widget?.id ? `widget:${widget.id}` : '';
+    }
+
+    /*
+     * What the credential file says is filed for this widget -- never the secret.
+     *
+     * The value does not come back from the server and never will, so this
+     * reads the shape around it: a header name means an API key, a username
+     * means basic auth. Enough to draw the right form with the right box
+     * already labelled, and to say that something is set without showing it.
+     */
+    storedCredentialState(widget) {
+        const own = this.widgetCredentialId(widget);
+        const chosen = String(widget?.config?.credentialId || '');
+        const details = this.dash.healthCredentialDetails || {};
+        if (chosen && chosen !== own) return { kind: 'shared', shared: chosen };
+        const stored = details[own];
+        if (!stored) return { kind: 'none' };
+        if (stored.headers?.length) {
+            return { kind: 'header', headerName: stored.headers[0], saved: true };
+        }
+        if (stored.basic) return { kind: 'basic', basicUser: stored.basicUser || '', saved: true };
+        return { kind: 'none' };
+    }
+
+    /*
+     * What is on screen for one widget, before it is saved.
+     *
+     * Every control in the panel writes here and nowhere else, and one Save
+     * button writes the whole thing out. The alternative -- a listener per
+     * input, each writing to the server on its own change -- is what this
+     * replaces, and it failed in the one way that leaves no trace: the panel is
+     * redrawn by several paths (opening it, a preset landing, the credential
+     * names arriving from their own fetch), a listener does not survive its
+     * element being replaced, and a box nobody is listening to still accepts
+     * typing. It looks saved and is not.
+     *
+     * Keyed on the widget id rather than the index, because the index shifts
+     * when a block above it is removed and a draft must not follow it.
+     */
+    widgetDraft(index, { create = true } = {}) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return null;
+        this._widgetDrafts = this._widgetDrafts || {};
+        if (!this._widgetDrafts[block.id]) {
+            if (!create) return null;
+            this._widgetDrafts[block.id] = {
+                // A copy, deep enough for the one nested shape a config has.
+                // Editing the stored object directly would mean a Revert had
+                // nothing left to revert to.
+                config: {
+                    ...(block.config || {}),
+                    fields: Array.isArray(block.config?.fields)
+                        ? block.config.fields.map((field) => ({ ...field }))
+                        : undefined,
+                },
+                auth: this.storedCredentialState(block),
+            };
+        }
+        return this._widgetDrafts[block.id];
+    }
+
+    widgetCredentialState(widget, index) {
+        return this.widgetDraft(index)?.auth || { kind: 'none' };
+    }
+
+    /*
+     * Whether this panel holds anything not yet written.
+     *
+     * Compared against what is stored rather than tracked with a flag: a value
+     * typed and then typed back is not a change, and a flag would keep saying
+     * it was.
+     */
+    widgetDraftDirty(index) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index, { create: false });
+        if (!block || !draft) return false;
+        const clean = (config) => JSON.stringify(config || {}, Object.keys(config || {}).sort());
+        if (clean(draft.config) !== clean(block.config)) return true;
+        const before = this.storedCredentialState(block);
+        const now = draft.auth || {};
+        // A secret that was typed is a change even when nothing else moved.
+        if (String(now.secret || '')) return true;
+        return before.kind !== now.kind
+            || String(before.headerName || '') !== String(now.headerName || '')
+            || String(before.basicUser || '') !== String(now.basicUser || '')
+            || String(before.shared || '') !== String(now.shared || '');
+    }
+
+    /*
+     * Where the API key is typed: here, in the widget, and nowhere else.
+     *
+     * The value does not go into the widget's config. bookmarks-N.json is in
+     * the backup allowlist and in every export, so a key stored there would
+     * travel in a ZIP to wherever that backup goes; it is written to the
+     * credential file instead and the widget keeps only the id. That is a
+     * storage decision and not a reason to send anyone to another screen --
+     * whoever is filling in a Sonarr widget is holding the Sonarr key.
+     */
+    renderWidgetCredential(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = this.widgetCredentialState(widget, index);
+        const own = this.widgetCredentialId(widget);
+        const shared = Object.entries(this.dash.healthCredentials || {})
+            .filter(([id]) => id !== own)
+            .sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+        const id = `widget-${index}-auth`;
+        const pick = (value, key, fallback) =>
+            `<option value="${esc(value)}" ${state.kind === value ? 'selected' : ''}>${
+                esc(this.t(key, fallback))}</option>`;
+
+        /*
+         * A saved key is shown as the fact that it is set, never as itself.
+         *
+         * An empty box over a stored key reads as "no key", and the reader
+         * pastes it again for no reason; a box holding the key is a key on a
+         * screen, in a screenshot, over a shoulder.
+         */
+        const secretPlaceholder = state.saved
+            ? this.t('config.widgetAuthKept', 'Set — type to replace')
+            : this.t('config.widgetAuthPaste', 'Paste it here');
+
+        const header = state.kind !== 'header' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-name">${esc(this.t('config.widgetAuthHeaderName', 'Header'))}</label>
+                <input type="text" id="${id}-name" class="config-text" data-widget-auth="headerName"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.headerName || '')}" placeholder="X-Api-Key">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-key">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
+                <input type="password" id="${id}-key" class="config-text" data-widget-auth="secret"
+                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
+                    placeholder="${esc(secretPlaceholder)}">
+            </div>`;
+
+        const basic = state.kind !== 'basic' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-user">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
+                <input type="text" id="${id}-user" class="config-text" data-widget-auth="basicUser"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.basicUser || '')}">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-pass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
+                <input type="password" id="${id}-pass" class="config-text" data-widget-auth="secret"
+                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
+                    placeholder="${esc(secretPlaceholder)}">
+            </div>`;
+
+        const sharedPick = state.kind !== 'shared' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-shared">${esc(this.t('config.widgetAuthSharedPick', 'Which one'))}</label>
+                <select id="${id}-shared" class="config-select" data-widget-auth="shared"
+                    data-widget-index="${index}">
+                    ${shared.map(([sid, label]) =>
+                        `<option value="${esc(sid)}" ${sid === state.shared ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+                </select>
+            </div>`;
+
+        const explains = state.kind === 'header' || state.kind === 'basic';
+        return `
+            <div class="config-widget-auth" data-widget-auth-form="${index}">
+                <div class="config-widget-field">
+                    <label for="${id}">${esc(this.t('config.widgetCustomCredential', 'Sign in with'))}</label>
+                    <select id="${id}" class="config-select" data-widget-auth="kind" data-widget-index="${index}">
+                        ${pick('none', 'config.widgetAuthNone', 'Nothing — ask anonymously')}
+                        ${pick('header', 'config.widgetAuthHeader', 'An API key')}
+                        ${pick('basic', 'config.widgetAuthBasic', 'A username and password')}
+                        ${shared.length ? pick('shared', 'config.widgetAuthShared', 'A sign-in saved elsewhere') : ''}
+                    </select>
+                </div>
+                ${header}${basic}${sharedPick}
+                ${explains ? `
+                    <p class="config-widget-note">${esc(this.t('config.widgetAuthNote',
+                        'Kept in a separate file that stays out of your backups and exports, so a key never travels in a ZIP. The widget itself stores only a reference.'))}</p>` : ''}
+            </div>`;
+    }
+
+    /**
+     * A starting position for the Custom widget, per service.
+     *
+     * This is the answer to "why is there no Sonarr widget". Everything a
+     * dedicated widget would need already exists — a server that fetches, a
+     * credential store that keeps the key out of the browser, a cache, a path
+     * reader, a formatter — so what was missing was never code. It was knowing
+     * that Sonarr keeps the queue size at `totalCount` under
+     * `/api/v3/queue/status`, which is knowledge, and knowledge belongs in a
+     * data file rather than in a handler that has to be released.
+     *
+     * It fills the form and then gets out of the way: the address stays
+     * editable and the figures become ordinary rows, so a service that moves a
+     * field is a thing the reader can fix without waiting for a version.
+     */
+    renderWidgetPresets(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const catalogue = window.DashboardWidgetPresets;
+        // The picker is drawn from a script that may not have loaded; without
+        // it the panel is exactly what it was before presets existed.
+        if (!catalogue?.PRESETS?.length) return '';
+
+        const id = `widget-${index}-preset`;
+        // What this widget was started from, if anything. Shown as the
+        // selection rather than reset to nothing: a panel that has clearly
+        // been filled in by Sonarr and says "Choose a service" reads as though
+        // the choice did not take.
+        const chosen = String(this.widgetDraft(index)?.config?.presetId
+            || widget?.config?.presetId || '');
+        const groups = catalogue.GROUPS.map(([group, title]) => {
+            const options = catalogue.PRESETS
+                .filter((preset) => preset.group === group)
+                .map((preset) => `<option value="${esc(preset.id)}"${
+                    preset.id === chosen ? ' selected' : ''}>${esc(preset.name)}</option>`)
+                .join('');
+            return options
+                ? `<optgroup label="${esc(this.t(`config.widgetPresetGroup.${group}`, title))}">${options}</optgroup>`
+                : '';
+        }).join('');
+
+        return `
+            <div class="config-custom-group">
+                <h4 class="config-custom-group-title">${esc(this.t('config.widgetPresets',
+                    'Start from a service'))}</h4>
+                <p class="config-widget-note">${esc(this.t('config.widgetPresetsNote',
+                    'Fills in the address and the figures for a service that is already known. '
+                    + 'Everything stays editable afterwards.'))}</p>
+                <div class="config-widget-field">
+                    <label for="${id}">${esc(this.t('config.widgetPresetPick', 'Service'))}</label>
+                    <select id="${id}" class="config-select" data-widget-preset="${index}">
+                        <option value=""${chosen ? '' : ' selected'}>${esc(
+                            this.t('config.widgetPresetNone', 'Choose a service…'))}</option>
+                        ${groups}
+                    </select>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * The fields a custom widget reads, as rows that can be added and removed.
+     *
+     * A path, what to call it, and how to show it. No expression box: the
+     * moment a config can compute, it is a second product with its own bugs and
+     * no debugger — and a widget only ever needs a number out of a response.
+     */
+    renderCustomWidgetFields(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const fields = Array.isArray(widget?.config?.fields) ? widget.config.fields : [];
+        const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
+            `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
+                this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+
+        /*
+         * A header row, because three unlabelled boxes side by side is a puzzle.
+         *
+         * Placeholders alone were not enough: they vanish the moment a row has
+         * a value, and the second row then has nothing saying which box is the
+         * path and which the label.
+         */
+        const head = fields.length ? `
+                <div class="config-custom-head" aria-hidden="true">
+                    <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
+                    <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
+                    <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span></span>
+                </div>` : '';
+
+        const rows = fields.map((field, row) => `
+            <div class="config-custom-field" data-custom-row="${row}">
+                <input type="text" class="config-text" data-custom-field="path" data-custom-index="${index}"
+                    data-custom-row="${row}" maxlength="200" value="${esc(field?.path || '')}"
+                    placeholder="${esc(this.t('config.widgetCustomPathPlaceholder', 'server.recent[0].name'))}"
+                    aria-label="${esc(this.t('config.widgetCustomPath', 'Path'))}">
+                <input type="text" class="config-text" data-custom-field="label" data-custom-index="${index}"
+                    data-custom-row="${row}" maxlength="60" value="${esc(field?.label || '')}"
+                    placeholder="${esc(this.t('config.widgetCustomLabelPlaceholder', 'What to call it'))}"
+                    aria-label="${esc(this.t('config.widgetCustomLabel', 'Label'))}">
+                <select class="config-select" data-custom-field="format" data-custom-index="${index}"
+                    data-custom-row="${row}"
+                    aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
+                    formatOptions(field?.format || 'text')}</select>
+                <button type="button" class="config-btn config-btn--small config-btn--danger"
+                    data-custom-remove="${row}" data-custom-index="${index}"
+                    aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
+                    this.t('config.backupDelete', 'Delete'))}</button>
+            </div>`).join('');
+
+        return `
+            <div class="config-custom-group">
+                <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomFields',
+                    'Figures to read'))}</h4>
+                <p class="config-widget-note">${esc(this.t('config.widgetCustomFieldsNote',
+                    'A path into the answer, what to call it, and how to show it. "server.disk[0].used" reads that one value.'))}</p>
+                ${head}${rows || `<p class="config-widget-settings-empty">${esc(this.t(
+                    'config.widgetCustomNoFields', 'No figures yet.'))}</p>`}
+                <div>
+                    <button type="button" class="config-btn config-btn--small" data-custom-add="${index}"
+                        ${fields.length >= 8 ? 'disabled' : ''}>${esc(
+                        this.t('config.widgetCustomAddField', 'Add a figure'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** Fetch the credential names once, so a picker can offer them. */
+    async loadCredentialNames() {
+        if (this.dash.healthCredentials) return this.dash.healthCredentials;
+        try {
+            const res = await fetch('/api/health/credentials');
+            if (!res.ok) return {};
+            const data = await res.json();
+            this.dash.healthCredentials = data?.credentials || {};
+            // Names are enough for a dropdown; the widget's own sign-in block
+            // needs to know what an entry actually holds, so it can say "an
+            // X-Api-Key is set" rather than showing an empty box over a key
+            // that is very much there.
+            this.dash.healthCredentialDetails = data?.details || {};
+        } catch (_error) {
+            this.dash.healthCredentials = {};
+            this.dash.healthCredentialDetails = {};
+        }
+        // Redrawn once they arrive: the panel is built synchronously and would
+        // otherwise offer an empty picker until something else repainted it.
+        if (this.section === 'widgets') this.repaintWidgetsBody();
+        return this.dash.healthCredentials;
+    }
+
+    /**
+     * The stored credential names, for a picker in the widgets tab.
+     *
+     * Names only. The values live in their own file and no route hands them
+     * back, so this can be read without holding a secret in the page.
+     */
+    /*
+     * Which folds are open, across a repaint.
+     *
+     * <details> keeps its open state in the DOM, and these tabs redraw their
+     * whole body -- after a backup runs, after a source imports. Without this
+     * the panel someone was working in snapped shut the moment they pressed a
+     * button inside it.
+     */
+    foldIsOpen(key, fallback = false) {
+        this._openFolds = this._openFolds || new Set();
+        // A deliberate close is remembered too, or a panel that opens by
+        // default could never be shut for longer than one repaint.
+        if (this._openFolds.has(`!${key}`)) return false;
+        return this._openFolds.has(key) || fallback;
+    }
+
+    rememberFold(key, open) {
+        this._openFolds = this._openFolds || new Set();
+        this._openFolds.delete(open ? `!${key}` : key);
+        this._openFolds.add(open ? key : `!${key}`);
+    }
+
+    /** Wire every fold on a container so it remembers itself. */
+    bindFolds(container) {
+        (container || document).querySelectorAll('[data-fold]').forEach((panel) => {
+            if (panel.dataset.foldBound === 'true') return;
+            panel.dataset.foldBound = 'true';
+            panel.addEventListener('toggle', () => {
+                this.rememberFold(panel.getAttribute('data-fold'), panel.open);
+            });
+        });
+    }
+
+    renderCredentialOptionsFor(selected) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const list = this.dash.healthCredentials || {};
+        return Object.keys(list).sort().map((id) =>
+            `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>`
+        ).join('');
+    }
+
+    /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
+    renderWidgetSettings(stored, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
+        // No early return for a type with no fields of its own: width applies to
+        // every widget, so the panel is never empty.
+
+        /*
+         * Drawn from the draft, not from what is stored.
+         *
+         * A shadow of the block with the draft's config on it, so every
+         * render* below keeps reading `widget.config` and none of them has to
+         * know a draft exists.
+         */
+        const draft = this.widgetDraft(index);
+        const widget = { ...stored, config: draft?.config || stored.config || {} };
+        const config = widget.config || {};
+        const rows = fields.map((field) => {
+            const label = esc(this.t(field.label[0], field.label[1]));
+            const id = `widget-${index}-${esc(field.key)}`;
+            if (field.kind === 'bool') {
+                return `
+                    <label class="config-toggle config-toggle--inline">
+                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="bool"
+                            ${config[field.key] ? 'checked' : ''}>
+                        <span>${label}</span>
+                    </label>`;
+            }
+            if (field.kind === 'int') {
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="number" id="${id}" class="config-text config-text--number"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="int" min="${field.min}" max="${field.max}"
+                            value="${esc(config[field.key] ?? '')}"
+                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                    </div>`;
+            }
+            if (field.kind === 'text') {
+                const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="text" maxlength="${field.maxlength || 200}"
+                            value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
+                    </div>`;
+            }
+            if (field.kind === 'tags') {
+                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
+                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    </div>`;
+            }
+            // checkset: an absent list means all, which is the default for the
+            // health widget's figures and reads better than every box ticked.
+            const chosen = Array.isArray(config[field.key]) ? config[field.key] : null;
+            const boxes = (field.options || []).map(([value, text]) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="checkset"
+                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                    <span>${esc(this.t(text[0], text[1]))}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${label}</span>
+                    <div class="config-widget-checkset">${boxes}</div>
+                </div>`;
+        }).join('');
+        if (widget.type === 'custom') {
+            /*
+             * Two groups rather than one grid of six unrelated boxes.
+             *
+             * Where to read from and what to show are different questions, and
+             * a flat panel made the address, the credential and a dotted path
+             * read as equally weighted neighbours. The figures need the full
+             * width regardless: their rows are four controls wide, and in a
+             * third of the panel they overlapped each other.
+             */
+            return `<div class="config-widget-settings-body is-custom">
+                ${this.renderWidgetPresets(widget, index)}
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
+                        'Where to read from'))}</h4>
+                    <div class="config-custom-grid">${rows}</div>
+                    ${this.renderWidgetCredential(widget, index)}
+                </div>
+                ${this.renderCustomWidgetFields(widget, index)}
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
+                        'On the dashboard'))}</h4>
+                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
+                </div>
+                ${this.renderWidgetSaveBar(index)}
+            </div>`;
+        }
+        return `<div class="config-widget-settings-body">${
+            this.renderWidgetWidth(widget, index)}${rows}${this.renderWidgetSaveBar(index)}</div>`;
+    }
+
+    /*
+     * One Save for the whole panel, and a Revert beside it.
+     *
+     * Every setting here is written by the same button, including the sign-in
+     * -- even though that one lands in a different file. Two buttons would ask
+     * the reader to know which control belongs to which store, which is a
+     * detail of where things are kept and not a question anybody came here to
+     * answer.
+     *
+     * The state line is the point: a panel that saves silently cannot tell the
+     * difference between "written" and "ignored", and that is exactly the
+     * failure this replaced.
+     */
+    renderWidgetSaveBar(index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const dirty = this.widgetDraftDirty(index);
+        const saved = this._widgetJustSaved === index;
+        return `
+            <div class="config-widget-savebar${dirty ? ' is-dirty' : ''}">
+                <button type="button" class="config-btn config-btn--primary"
+                    data-widget-save="${index}" ${dirty ? '' : 'disabled'}>${esc(
+                    this.t('config.widgetSave', 'Save changes'))}</button>
+                <button type="button" class="config-btn config-btn--small"
+                    data-widget-revert="${index}" ${dirty ? '' : 'disabled'}>${esc(
+                    this.t('config.widgetRevert', 'Discard'))}</button>
+                <span class="config-widget-savebar-state" data-widget-save-state>${esc(
+                    dirty ? this.t('config.widgetUnsaved', 'Not saved yet')
+                    : saved ? this.t('config.widgetSaved', 'Saved.')
+                    : '')}</span>
+            </div>`;
+    }
+
+    /**
+     * How wide the widget is drawn, for every type.
+     *
+     * Outside WIDGET_SETTINGS for the same reason the shown toggle is: it
+     * belongs to every widget, and declaring it eight times would be eight
+     * copies of one line. Two is the ceiling — a widget is a summary, and one
+     * needing three columns is a view that has not admitted it yet.
+     */
+    renderWidgetWidth(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = Number(widget?.config?.columns) === 2 ? 2 : 1;
+        const id = `widget-${index}-columns`;
+        const option = (value, key, fallback) =>
+            `<option value="${value}" ${current === value ? 'selected' : ''}>${esc(this.t(key, fallback))}</option>`;
+        // Drawn beside the choice, because the question is not how big the
+        // widget is but what it does to the blocks next to it — and that is a
+        // shape rather than a number.
+        const art = window.SettingArt?.render?.('widgetSpan', current) || '';
+        return `
+            <div class="config-widget-field">
+                <label for="${id}">${esc(this.t('config.widgetColumns', 'Width'))}</label>
+                <span class="config-widget-choice">
+                    <select id="${id}" class="config-select" data-widget-setting="columns"
+                        data-widget-index="${index}" data-widget-kind="int">
+                        ${option(1, 'config.widgetColumnsOne', 'One column')}
+                        ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
+                    </select>
+                    ${art}
+                </span>
+                <span class="config-widget-note">${esc(this.t('config.widgetColumnsNote',
+                    'A dashboard showing one column draws the widget in that one column.'))}</span>
+            </div>`;
+    }
+
+    /**
+     * One line on what a widget puts on the dashboard.
+     *
+     * Beside the name rather than behind a help icon: eight types is past the
+     * point where the names carry themselves, and "Neglected" or "Trend" says
+     * nothing about what lands on the grid.
+     */
+    widgetTypeAbout(type) {
+        const key = `config.widgetAbout.${type}`;
+        const fallbacks = {
+            health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
+            uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
+            certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
+            trend: 'Broken links over time, as a line — the direction is what a single number cannot show.',
+            inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
+            feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
+            sources: 'What each import last did, so a failed import is not only visible in config.',
+            neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',
+            archive: 'How many bookmarks have a copy kept, and which broken ones have none.',
+            unchecked: 'The blind spots: never checked, checked long ago, or not watched at all.',
+            duplicates: 'The same address stored more than once, and how many copies could go.',
+            trash: 'What is waiting in the trash, and when retention removes it for good.',
+            backups: 'How old the newest automatic backup is, and whether the last run failed.',
+            custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
+        };
+        const label = this.dash.language?.t?.(key);
+        return label && label !== key ? label : (fallbacks[type] || '');
+    }
+
+    widgetTypeName(type) {
+        const key = `dashboard.widgetType.${type}`;
+        const label = this.dash.language?.t?.(key);
+        return label && label !== key ? label : String(type || 'widget');
+    }
+
+    /*
+     * Read the page's blocks and lay them out as one list.
+     *
+     * Widgets and categories together, in blockOrder, because that is the order
+     * being edited. Two lists side by side would make "up" ambiguous.
+     */
+    async loadWidgetsEditor() {
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        if (!pageId) return;
+        this._widgetPageId = Number(pageId);
+
+        /*
+         * Already loaded for this page: do not refetch and repaint.
+         *
+         * The repaint at the end of this rebinds the tab, which calls this
+         * again -- so without the guard it is an endless loop that detaches
+         * every control on the tab before a click can land on it. The
+         * categories editor beside this one carries the same guard for the same
+         * reason.
+         */
+        if (this._widgetBlocks != null && this._widgetLoadedFor === this._widgetPageId) return;
+
+        try {
+            const [blocksRes, catsRes] = await Promise.all([
+                this.writeFetch(`/api/pages/${this._widgetPageId}/blocks`),
+                fetch(`/api/categories?page=${this._widgetPageId}`),
+            ]);
+            if (!blocksRes.ok) throw new Error(`HTTP ${blocksRes.status}`);
+            const blocks = await blocksRes.json();
+            const categories = catsRes.ok ? await catsRes.json() : [];
+
+            const widgetById = new Map((blocks.widgets || []).map((w) => [w.id, w]));
+            const categoryById = new Map((categories || []).map((c) => [String(c.id), c]));
+
+            this._widgetOrder = blocks.order || [];
+            this._widgetBlocks = (blocks.order || []).map((id) => {
+                const widget = widgetById.get(id);
+                if (widget) {
+                    return { id, isWidget: true, type: widget.type, title: widget.title || '', config: widget.config || {} };
+                }
+                const category = categoryById.get(String(id));
+                return { id, isWidget: false, name: category?.name || id };
+            });
+        } catch {
+            this._widgetBlocks = [];
+            this._widgetOrder = [];
+        }
+        this._widgetLoadedFor = this._widgetPageId;
+        this.repaintWidgetsBody();
+    }
+
+    /*
+     * Every control on this tab, through one listener per event type.
+     *
+     * Delegated rather than bound per element, because the panel is redrawn by
+     * several paths -- opening a widget's settings, a preset landing, the
+     * credential names arriving from their own fetch -- and a listener bound to
+     * an input does not survive its element being replaced. Whichever paint
+     * lands last then leaves controls nothing is listening to, and that failure
+     * is silent: typing works, the value is simply never read, so a setting
+     * looks accepted and is gone on the next load.
+     *
+     * The body element is never replaced, only its innerHTML, so listeners
+     * there outlive every repaint. The guard stops a second call from stacking
+     * a duplicate, which would act twice on one click.
+     */
+    bindWidgetsEditor(container) {
+        const body = document.getElementById('config-widgets-body') || container;
+        if (!body || body.dataset.widgetsDelegated === 'true') return;
+        body.dataset.widgetsDelegated = 'true';
+
+        const indexOn = (el, attr) => Number(el.getAttribute(attr));
+
+        body.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!target?.closest) return;
+
+            const catalogue = target.closest('[data-widget-catalogue]');
+            if (catalogue) { this.openWidgetCatalogue(); return; }
+
+            const add = target.closest('[data-widget-add]');
+            if (add) {
+                // The kind is on the control that was clicked -- a card in the
+                // catalogue overlay, or a row on the Types tab. It used to be
+                // read from a dropdown beside a single Add button, which is
+                // what made choosing and adding two steps instead of one.
+                void this.addWidget(add.getAttribute('data-widget-add') || 'health');
+                return;
+            }
+
+            const remove = target.closest('[data-widget-delete]');
+            if (remove) { void this.deleteWidget(indexOn(remove, 'data-widget-delete')); return; }
+
+            /*
+             * Opening the settings redraws the tab, so which row is open is
+             * state rather than a class toggle: a rename or a save elsewhere
+             * must not close a panel someone is working in.
+             */
+            const toggle = target.closest('[data-widget-settings]');
+            if (toggle) {
+                const index = indexOn(toggle, 'data-widget-settings');
+                this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
+                this._widgetJustSaved = null;
+                this.repaintWidgetsBody();
+                return;
+            }
+
+            const save = target.closest('[data-widget-save]');
+            if (save) { void this.saveWidgetDraft(indexOn(save, 'data-widget-save')); return; }
+
+            const revert = target.closest('[data-widget-revert]');
+            if (revert) { this.revertWidgetDraft(indexOn(revert, 'data-widget-revert')); return; }
+
+            const addField = target.closest('[data-custom-add]');
+            if (addField) { this.addWidgetDraftField(indexOn(addField, 'data-custom-add')); return; }
+
+            const dropField = target.closest('[data-custom-remove]');
+            if (dropField) {
+                this.removeWidgetDraftField(
+                    indexOn(dropField, 'data-custom-index'),
+                    indexOn(dropField, 'data-custom-remove'));
+            }
+        });
+
+        body.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!target?.closest) return;
+
+            const page = target.closest('[data-widget-page]');
+            if (page) {
+                this._widgetPageId = Number(page.value);
+                this._widgetBlocks = null;
+                this._widgetLoadedFor = null;
+                this._widgetDrafts = {};
+                this.repaintWidgetsBody();
+                void this.loadWidgetsEditor();
+                return;
+            }
+
+            // Whether a widget is drawn at all. Written straight through rather
+            // than into the draft: it is a property of the list, not of the
+            // panel, and it has its own control on the row.
+            const shown = target.closest('[data-widget-enabled]');
+            if (shown) {
+                void this.setWidgetConfig(indexOn(shown, 'data-widget-enabled'),
+                    { enabled: shown.checked });
+                return;
+            }
+
+            const preset = target.closest('[data-widget-preset]');
+            if (preset) {
+                /*
+                 * The choice stays on the picker.
+                 *
+                 * It was cleared here on the grounds that a preset is a
+                 * starting position rather than a kind of widget, which is
+                 * true of what the widget does and wrong about what the screen
+                 * says: a panel holding Sonarr's address, Sonarr's three
+                 * figures and Sonarr's header, above a picker reading "Choose
+                 * a service", reads as a choice that did not take. What it is
+                 * a record of is where this widget started, and the note above
+                 * it already says everything stays editable afterwards.
+                 */
+                const picked = preset.value;
+                if (picked) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), picked);
+                return;
+            }
+
+            const auth = target.closest('[data-widget-auth]');
+            if (auth) {
+                const field = auth.getAttribute('data-widget-auth');
+                const index = indexOn(auth, 'data-widget-index');
+                if (field === 'kind' || field === 'shared') this.setWidgetAuthKind(index, field, auth.value);
+                else this.updateWidgetAuthField(index, field, auth.value);
+                return;
+            }
+
+            const field = target.closest('[data-custom-field]');
+            if (field) {
+                this.updateWidgetDraftField(
+                    indexOn(field, 'data-custom-index'),
+                    indexOn(field, 'data-custom-row'),
+                    field.getAttribute('data-custom-field'),
+                    field.value);
+                this.refreshWidgetSaveBar(indexOn(field, 'data-custom-index'));
+                return;
+            }
+
+            const setting = target.closest('[data-widget-setting]');
+            if (setting) {
+                const index = indexOn(setting, 'data-widget-index');
+                this.updateWidgetDraft(index, setting);
+                if (setting.getAttribute('data-widget-setting') === 'url') {
+                    this.restorePresetPath(index, setting);
+                }
+                this.refreshWidgetSaveBar(index);
+                return;
+            }
+
+            const title = target.closest('[data-widget="title"]');
+            if (title) void this.renameWidget(Number(title.getAttribute('data-index')), title.value);
+        });
+    }
+
+    /*
+     * Bring the Save bar in step without redrawing the panel.
+     *
+     * A full repaint on every keystroke-ending change would take away the box
+     * the reader just left and put the caret somewhere else; this touches only
+     * the three things that can change.
+     */
+    refreshWidgetSaveBar(index) {
+        const save = document.querySelector(`[data-widget-save="${index}"]`);
+        const bar = save?.closest('.config-widget-savebar');
+        if (!bar) return;
+        const dirty = this.widgetDraftDirty(index);
+        bar.classList.toggle('is-dirty', dirty);
+        save.disabled = !dirty;
+        const revert = bar.querySelector('[data-widget-revert]');
+        if (revert) revert.disabled = !dirty;
+        const state = bar.querySelector('[data-widget-save-state]');
+        if (state) state.textContent = dirty ? this.t('config.widgetUnsaved', 'Not saved yet') : '';
+    }
+
+    /** Everything the server needs to store, from what is on screen. */
+    widgetPayloadFromBlocks() {
+        const blocks = this._widgetBlocks || [];
+        return {
+            widgets: blocks.filter((b) => b.isWidget).map((b) => ({
+                id: b.id, type: b.type, title: b.title, config: b.config || {},
+            })),
+            order: blocks.map((b) => b.id),
+        };
+    }
+
+    async saveWidgetBlocks(payload) {
+        const pageId = this._widgetPageId;
+        if (!pageId) return false;
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return true;
+        } catch {
+            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+            return false;
+        }
+    }
+
+    /*
+     * Add one, and land on it.
+     *
+     * The widget is appended, so it is the last row -- which used to be the
+     * problem: it arrived below a picker that filled the screen, and the only
+     * sign anything had happened was a toast in the opposite corner. The
+     * catalogue is an overlay now, so the list is what is on screen when it
+     * closes; this puts the new row in view, marks it for a moment, and puts
+     * the caret in its title, which is the next thing anyone does to it.
+     *
+     * The toast is gone with it. A row appearing under the pointer, named and
+     * focused, says it better than a message elsewhere saying it happened.
+     */
+    async addWidget(type) {
+        const payload = this.widgetPayloadFromBlocks();
+        payload.widgets.push({ type, title: '', config: {} });
+        // No id: the server mints one. Inventing one here would be a second
+        // place that decides what a widget id looks like.
+        if (!await this.saveWidgetBlocks(payload)) return;
+        this._widgetLoadedFor = null;
+        // Switch to the list before it redraws: adding from the Types tab must
+        // land somewhere the new row exists.
+        this.widgetsTab = 'widgets';
+        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+        await this.loadWidgetsEditor();
+        // After the dashboard redraw, not before: a full render replaces the
+        // elements this is about to mark and focus, so revealing first left the
+        // caret back on <body> and the mark gone within the same tick.
+        await this.refreshDashboardBlocks();
+        this.revealNewWidget();
+    }
+
+    /** Bring the last row into view, mark it, and put the caret in its title. */
+    revealNewWidget() {
+        const rows = document.querySelectorAll('#config-widgets-body .config-widget-row');
+        const row = rows[rows.length - 1];
+        if (!row) return;
+        row.classList.add('is-new');
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const title = row.querySelector('[data-widget="title"]');
+        if (title) title.focus({ preventScroll: true });
+        // Removed rather than left on: it marks an arrival, not a state, and a
+        // redraw would otherwise carry it for the rest of the session.
+        window.setTimeout(() => row.classList.remove('is-new'), 1600);
+    }
+
+    /*
+     * Change one widget's settings.
+     *
+     * Merged into whatever config it already has rather than replaced, so
+     * switching a widget off does not also forget what it was counting.
+     */
+    async setWidgetConfig(index, patch) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        const merged = { ...(blocks[index].config || {}), ...patch };
+        // undefined means "use the default", and the default is the key being
+        // absent — JSON.stringify would drop it anyway, so this makes the local
+        // copy agree with what the server will store.
+        Object.keys(patch).forEach((key) => {
+            if (patch[key] === undefined) delete merged[key];
+        });
+        blocks[index] = { ...blocks[index], config: merged };
+        this._widgetBlocks = blocks;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        await this.refreshDashboardBlocks();
+    }
+
+    /**
+     * One setting, read off the control that changed.
+     *
+     * An empty number means "use the default", which is stored as the field
+     * being absent — the same thing the server does with a value it cannot
+     * accept, and what every renderer already reads as the default.
+     */
+    /*
+     * One control changed: write it into the draft and nothing else.
+     *
+     * No server call, no repaint. A repaint here would replace the box the
+     * reader is typing in, and a server call would be the per-field write this
+     * whole panel was rebuilt to get rid of.
+     */
+    updateWidgetDraft(index, input) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const key = input.getAttribute('data-widget-setting');
+        const kind = input.getAttribute('data-widget-kind');
+        const container = input.closest('.config-widget-settings') || document;
+
+        let value;
+        if (kind === 'bool') {
+            value = input.checked;
+        } else if (kind === 'int') {
+            const raw = String(input.value || '').trim();
+            const parsed = Number.parseInt(raw, 10);
+            value = raw === '' || Number.isNaN(parsed) ? undefined : parsed;
+        } else if (kind === 'tags') {
+            const list = String(input.value || '').split(',')
+                .map((tag) => tag.trim()).filter(Boolean);
+            value = list.length ? list : undefined;
+        } else if (kind === 'text') {
+            const text = String(input.value || '').trim();
+            value = text === '' ? undefined : text;
+        } else {
+            // checkset: every box for this key, so unticking one sends the rest
+            // rather than the one that changed. All ticked is the same as
+            // saying nothing, and storing nothing keeps a later addition to the
+            // list included by default.
+            const boxes = [...container.querySelectorAll(
+                `[data-widget-setting="${CSS.escape(key)}"][data-widget-kind="checkset"]`)];
+            const chosen = boxes.filter((box) => box.checked).map((box) => box.value);
+            value = chosen.length === boxes.length ? undefined : chosen;
+        }
+
+        if (value === undefined) delete draft.config[key];
+        else draft.config[key] = value;
+    }
+
+    /** One cell of the custom widget's figures table, into the draft. */
+    updateWidgetDraftField(index, row, key, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = Array.isArray(draft.config.fields) ? draft.config.fields : [];
+        if (!fields[row]) return;
+        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        draft.config.fields = fields;
+    }
+
+    addWidgetDraftField(index) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = Array.isArray(draft.config.fields) ? [...draft.config.fields] : [];
+        if (fields.length >= 8) return;
+        // Added empty rather than with a guess: the server drops a field with
+        // no path, so a row that names nothing exists only in this panel.
+        fields.push({ path: '', label: '', format: 'text' });
+        draft.config.fields = fields;
+        this.repaintWidgetsBody();
+    }
+
+    removeWidgetDraftField(index, row) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const fields = (Array.isArray(draft.config.fields) ? draft.config.fields : [])
+            .filter((_, i) => i !== row);
+        draft.config.fields = fields.length ? fields : undefined;
+        this.repaintWidgetsBody();
+    }
+
+    /*
+     * Which kind of sign-in, into the draft.
+     *
+     * Redraws, because the choice changes which boxes are on screen -- but it
+     * writes nothing. Choosing "an API key" is the start of typing one, not a
+     * decision worth storing, and an empty credential written at that moment
+     * would be an entry that signs in with nothing.
+     */
+    setWidgetAuthKind(index, field, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        if (field === 'shared') {
+            draft.auth = { kind: 'shared', shared: value };
+        } else if (value === 'shared') {
+            const own = this.widgetCredentialId((this._widgetBlocks || [])[index]);
+            const first = Object.keys(this.dash.healthCredentials || {})
+                .filter((id) => id !== own).sort()[0] || '';
+            draft.auth = { kind: 'shared', shared: first };
+        } else if (value === 'none') {
+            draft.auth = { kind: 'none' };
+        } else {
+            // Keep what the stored entry already tells us, so switching away
+            // and back does not blank a header name that is right.
+            const before = draft.auth || {};
+            draft.auth = {
+                kind: value,
+                headerName: before.headerName || '',
+                basicUser: before.basicUser || '',
+                saved: before.saved === true && before.kind === value,
+            };
+        }
+        this.repaintWidgetsBody();
+    }
+
+    /** A typed key or username, into the draft. Never to the server per keystroke. */
+    updateWidgetAuthField(index, field, value) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
+    }
+
+    /*
+     * A preset fills the form and stops there.
+     *
+     * Applied on Save like everything else in this panel, so choosing a service
+     * to see what it would set is not itself a change to the widget. The
+     * address someone already typed keeps its host and only the path is
+     * replaced -- that is what makes moving from Sonarr to Radarr on the same
+     * box one choice rather than a retype.
+     *
+     * The credential is filled in as far as it can be: a preset knows which
+     * header its service wants, and X-Api-Key is printed on Sonarr's own
+     * settings page. The key itself is nobody's business but the reader's.
+     */
+    applyWidgetPreset(index, presetId) {
+        const catalogue = window.DashboardWidgetPresets;
+        const preset = catalogue?.byId?.(presetId);
+        const draft = this.widgetDraft(index);
+        if (!preset || !draft) return;
+
+        // configFor writes presetId along with the address and the figures, so
+        // what the panel was started from survives being saved and reopened.
+        Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
+        if (preset.auth === 'header') {
+            draft.auth = { kind: 'header', headerName: preset.authName || '', basicUser: '' };
+        } else if (preset.auth === 'basic') {
+            draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
+        } else {
+            // none, or a service that carries its key in the address itself.
+            draft.auth = { kind: 'none' };
+        }
+        this.repaintWidgetsBody();
+
+        const note = preset.auth === 'none'
+            ? this.t('config.widgetPresetNoAuth', '{name} is ready — no credential needed.')
+                .replace('{name}', preset.name)
+            : this.t('config.widgetPresetApplied', '{name} filled in. Still to do: {note}')
+                .replace('{name}', preset.name)
+                .replace('{note}', preset.note);
+        this.notify(note, 'info');
+    }
+
+    /*
+     * Put a preset's path back when the address was retyped without it.
+     *
+     * A preset fills in a whole address: a sample host, and the path its API
+     * actually answers on. Replacing the sample host is then the obvious next
+     * move -- and typing an address by hand ends at the host, so the path the
+     * preset contributed is the part that gets lost. The widget then asks the
+     * service for its front page, which answers 200 with HTML, and the failure
+     * reads as "not JSON" rather than as a path that is missing.
+     *
+     * Only while a preset is active on this draft, and only when what is there
+     * names no path of its own: an address deliberately pointed somewhere else
+     * is left exactly as it was typed.
+     */
+    restorePresetPath(index, input) {
+        const catalogue = window.DashboardWidgetPresets;
+        const draft = this.widgetDraft(index, { create: false });
+        // Read from the config rather than from a field on the draft: stored
+        // there, it still knows the service after the panel has been closed
+        // and opened again, which is exactly when someone retypes an address.
+        const startedFrom = draft?.config?.presetId;
+        const preset = startedFrom ? catalogue?.byId?.(startedFrom) : null;
+        if (!preset || typeof catalogue.hasPath !== 'function') return;
+
+        const typed = String(draft.config.url || '').trim();
+        if (!typed || catalogue.hasPath(typed)) return;
+        const restored = catalogue.addressFor(preset, typed);
+        if (!restored || restored === typed) return;
+
+        draft.config.url = restored;
+        input.value = restored;
+        // Said rather than done quietly: the box someone just typed in has
+        // changed under them, and an unexplained edit reads as the field
+        // refusing what was entered.
+        this.notify(this.t('config.widgetPresetPathKept',
+            '{name} answers on {path}, so that was put back on the address.')
+            .replace('{name}', preset.name)
+            .replace('{path}', preset.path), 'info');
+    }
+
+    /** Throw the draft away and draw what is stored. */
+    revertWidgetDraft(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (block) delete (this._widgetDrafts || {})[block.id];
+        this._widgetJustSaved = null;
+        this.repaintWidgetsBody();
+    }
+
+    /*
+     * Write the whole panel out, in the order that survives a failure.
+     *
+     * The credential first, then the config that names it: a widget pointing at
+     * an entry that does not exist yet fetches anonymously, and that reads as
+     * "the key is wrong" rather than "the key has not been saved". The other
+     * order is recoverable; this one is confusing.
+     */
+    async saveWidgetDraft(index) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index, { create: false });
+        if (!block?.isWidget || !draft) return;
+        const say = (text) => {
+            const state = document.querySelector(
+                `[data-widget-save="${index}"]`)?.closest('.config-widget-savebar')
+                ?.querySelector('[data-widget-save-state]');
+            if (state) state.textContent = text;
+        };
+
+        const auth = draft.auth || { kind: 'none' };
+        const own = this.widgetCredentialId(block);
+        const secret = String(auth.secret || '').trim();
+        const stored = this.storedCredentialState(block);
+        const config = { ...draft.config };
+
+        if (auth.kind === 'header' || auth.kind === 'basic') {
+            const payload = { id: own, label: block.title || block.type || own };
+            if (auth.kind === 'header') {
+                const name = String(auth.headerName || '').trim();
+                if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
+                if (!secret && !(stored.kind === 'header' && stored.headerName === name)) {
+                    say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
+                    return;
+                }
+                if (secret) payload.headers = { [name]: secret };
+            } else {
+                const user = String(auth.basicUser || '').trim();
+                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                if (!secret && !(stored.kind === 'basic' && stored.basicUser === user)) {
+                    say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
+                    return;
+                }
+                if (secret) { payload.basicUser = user; payload.basicPassword = secret; }
+            }
+            // Nothing to write when only the label changed and the secret is
+            // already filed: the value never comes back from the server, so
+            // re-filing it is not something this panel can do.
+            if (payload.headers || payload.basicPassword) {
+                say(this.t('config.widgetAuthSaving', 'Saving…'));
+                try {
+                    const res = await this.writeFetch('/api/health/credentials', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    this.dash.healthCredentials = data?.credentials || {};
+                    this.dash.healthCredentialDetails = data?.details || {};
+                } catch (_error) {
+                    say(this.t('config.widgetAuthFailed', 'Could not save the sign-in.'));
+                    return;
+                }
+            }
+            config.credentialId = own;
+        } else if (auth.kind === 'shared') {
+            config.credentialId = auth.shared || undefined;
+        } else {
+            delete config.credentialId;
+            await this.forgetWidgetCredential(block);
+        }
+
+        const blocks = [...(this._widgetBlocks || [])];
+        blocks[index] = { ...block, config };
+        this._widgetBlocks = blocks;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+            say(this.t('config.widgetsSaveError', 'Could not save the widgets.'));
+            return;
+        }
+
+        delete (this._widgetDrafts || {})[block.id];
+        this._widgetJustSaved = index;
+        // The tile is holding an answer it fetched under the old settings.
+        this.dash.renderCore?.forgetWidgetCaches?.();
+        this.repaintWidgetsBody();
+        await this.refreshDashboardBlocks();
+        this.notify(this.t('config.widgetSavedNotice', 'Widget saved.'), 'success');
+    }
+
+    /*
+     * Rename one widget.
+     *
+     * Written straight through rather than into the draft, for the same reason
+     * the Shown toggle is: a title is a property of the block in the list, not
+     * of the settings panel, and it has its own box on the row whether that
+     * panel is open or not. Holding it in the draft would mean a rename could
+     * only be saved by pressing Save on a panel the reader may never open.
+     *
+     * No repaint afterwards. The row is redrawn from _widgetBlocks the next
+     * time anything paints, and repainting here would replace the box the
+     * reader has just typed in while the caret is still in it.
+     */
+    async renameWidget(index, title) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        const next = String(title || '').trim();
+        if (next === String(blocks[index].title || '')) return;
+        blocks[index] = { ...blocks[index], title: next };
+        this._widgetBlocks = blocks;
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        await this.refreshDashboardBlocks();
+    }
+
+    /** Remove the entry a widget minted for itself, leaving shared ones alone. */
+    async forgetWidgetCredential(block) {
+        const id = this.widgetCredentialId(block);
+        if (!id) return;
+        if (!((this.dash.healthCredentials || {})[id])) return;
+        try {
+            await this.writeFetch(`/api/health/credentials?id=${encodeURIComponent(id)}`,
+                { method: 'DELETE' });
+        } catch (_error) {
+            // A key that could not be removed is no reason to leave the widget
+            // pointing at it; the config change goes ahead either way.
+        }
+        await this.loadCredentialNames();
+    }
+
+    async deleteWidget(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return;
+        const ok = await this.confirmAction(
+            this.t('config.widgetsDeleteConfirm',
+                'Remove this widget? Its settings and any sign-in you gave it go with it.'),
+            { confirmLabel: this.t('config.backupDelete', 'Delete'), danger: true });
+        if (!ok) return;
+
+        // Before the block goes: the id is derived from it, and without it
+        // there is no way to name the entry this widget minted for itself.
+        await this.forgetWidgetCredential(block);
+        delete (this._widgetDrafts || {})[block.id];
+
+        this._widgetBlocks = (this._widgetBlocks || []).filter((_, i) => i !== index);
+        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
+        this._widgetLoadedFor = null;
+        await this.loadWidgetsEditor();
+        await this.refreshDashboardBlocks();
+    }
+
+    /*
+     * Put the dashboard in step with what was just changed here.
+     *
+     * Without this the grid keeps the blocks it loaded with, so a widget added
+     * in config appears only after a reload -- and the reader has no way to know
+     * that is why.
+     */
+    async refreshDashboardBlocks() {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId);
+        /*
+         * Editing another page's widgets leaves this page alone — but the
+         * cached answers are the dashboard's, not the page's, so they go either
+         * way. Otherwise switching to the page that was edited draws its new
+         * tiles from data fetched before the edit.
+         */
+        d.renderCore?.forgetWidgetCaches?.();
+        if (!Number.isFinite(pageId) || pageId !== Number(this._widgetPageId)) return;
+        try {
+            const res = await this.writeFetch(`/api/pages/${pageId}/blocks`);
+            if (!res.ok) return;
+            const blocks = await res.json();
+            d.widgets = blocks.widgets || [];
+            d.blockOrder = blocks.order || [];
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            d.renderDashboard?.({ animate: false, forceFull: true });
+        } catch {
+            // The dashboard keeps what it had; the next load corrects it.
+        }
+    }
+
     renderCategoriesEditor() {
         const esc = (v) => this.dash.escapeHtml(v);
         const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
@@ -12710,8 +16210,21 @@ class DashboardConfig {
                 [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
                 [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
             ]);
+            /*
+             * The widgets that live between these categories.
+             *
+             * Interleaved here rather than listed apart, because this is the
+             * one place the page's order is arranged and an arrow that can only
+             * step past half the blocks cannot express "put it after Media".
+             * Under a search or a sort the arrows are hidden anyway, so the
+             * widgets are left out of that view rather than floating loose in a
+             * filtered list.
+             */
+            const withWidgets = locked || visible.length !== this._categories.length
+                ? rows
+                : this.interleaveWidgetRows(rows);
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                ? `<ul class="config-crud-list">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
         }
         const pagePicker = `
@@ -12731,6 +16244,96 @@ class DashboardConfig {
         `;
     }
 
+    /*
+     * Put the widget rows where the page's order says they belong.
+     *
+     * The category rows are already built and carry their own indices; this
+     * splices the widgets between them by reading blockOrder, so one list shows
+     * the whole page. A widget row is deliberately thinner than a category row:
+     * it can be moved and opened, and everything else about it -- what it shows,
+     * whether it is on -- lives on the Widgets tab, which is where a reader goes
+     * to configure one.
+     */
+    interleaveWidgetRows(categoryRowsHtml) {
+        const widgets = this._catWidgets || [];
+        if (!widgets.length) return categoryRowsHtml;
+
+        const esc = (v) => this.dash.escapeHtml(v);
+        const order = this._catBlockOrder || [];
+        const widgetById = new Map(widgets.map((w) => [w.id, w]));
+        const categoryIds = (this._categories || []).map((c) => String(c.id));
+
+        // The category rows in the order they were rendered, so a widget can be
+        // dropped between the right two.
+        const rows = String(categoryRowsHtml).split('</li>').filter((chunk) => chunk.trim());
+        const out = [];
+        let categoryCursor = 0;
+
+        order.forEach((id) => {
+            const widget = widgetById.get(id);
+            if (widget) {
+                out.push(this.renderCategoryTabWidgetRow(widget, esc));
+                return;
+            }
+            if (categoryIds.includes(String(id)) && categoryCursor < rows.length) {
+                out.push(`${rows[categoryCursor++]}</li>`);
+            }
+        });
+        // Anything the order did not name keeps its place at the end rather
+        // than disappearing from the list.
+        while (categoryCursor < rows.length) out.push(`${rows[categoryCursor++]}</li>`);
+        return out.join('');
+    }
+
+    renderCategoryTabWidgetRow(widget, esc) {
+        const label = widget.title || this.widgetTypeName(widget.type);
+        return `
+                <li class="config-crud-row config-crud-row--widget" data-block-row="${esc(widget.id)}">
+                    <div class="config-crud-fields">
+                        <span class="config-widget-category-name">${esc(label)}</span>
+                        <span class="config-widget-kind">${esc(this.t('config.categoriesRowWidget', 'widget'))}</span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-block-move="up" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
+                        <button type="button" class="config-btn config-btn--small" data-block-move="down" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                        <button type="button" class="config-btn config-btn--small" data-block-configure="${esc(widget.id)}">${esc(this.t('config.categoriesWidgetConfigure', 'Configure'))}</button>
+                    </div>
+                </li>`;
+    }
+
+    /*
+     * Move one block one place in the page's order.
+     *
+     * Writes blockOrder, the single list the dashboard draws from -- the arrows
+     * on this tab used to reorder the category array instead, which nothing
+     * reads for placement any more, so they moved a row on screen and changed
+     * nothing on the dashboard.
+     */
+    async moveBlockOnCategoriesTab(id, direction) {
+        const order = [...(this._catBlockOrder || [])];
+        const from = order.indexOf(String(id));
+        if (from < 0) return;
+        const to = from + (direction === 'up' ? -1 : 1);
+        if (to < 0 || to >= order.length) return;
+
+        [order[from], order[to]] = [order[to], order[from]];
+        this._catBlockOrder = order;
+        this.repaintPtBody();
+
+        try {
+            const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch {
+            this.notify(this.t('config.categoriesOrderError', 'Could not save the order.'), 'error');
+            return;
+        }
+        await this.refreshDashboardBlocks();
+    }
+
     async loadCategoriesEditor() {
         const pages = this.dash.pages || [];
         const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
@@ -12738,17 +16341,35 @@ class DashboardConfig {
         // Already loaded for this page — don't refetch/repaint and detach controls.
         if (this._categories != null && this._catLoadedFor === pageId) return;
         try {
-            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+            /*
+             * Categories and the page's blocks together.
+             *
+             * The blocks answer carries the order every block is drawn in --
+             * widgets and categories in one list -- which is what this editor
+             * arranges. Fetched in the same round rather than after it, so the
+             * list is never painted once without its widgets and again with.
+             */
+            const [res, blocksRes] = await Promise.all([
+                fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
+                this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/blocks`),
+            ]);
             if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
             this._categories = data;
             this._categoriesLoadFailed = false;
+            // A blocks failure is not a categories failure: the list still
+            // works, it just cannot show the widgets until the next load.
+            const blocks = blocksRes?.ok ? await blocksRes.json().catch(() => null) : null;
+            this._catWidgets = blocks?.widgets || [];
+            this._catBlockOrder = blocks?.order || [];
         } catch {
             // See loadFinders: an empty list here is a write instruction, so a
             // failed read has to be remembered rather than rendered as "none".
             this._categories = [];
             this._categoriesLoadFailed = true;
+            this._catWidgets = [];
+            this._catBlockOrder = [];
         }
         this._catLoadedFor = pageId;
         if (this.ptTab === 'categories') this.repaintPtBody();
@@ -12903,6 +16524,22 @@ class DashboardConfig {
                 });
             });
         });
+        container.querySelectorAll('[data-block-move]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.moveBlockOnCategoriesTab(
+                    btn.getAttribute('data-block-id'), btn.getAttribute('data-block-move'));
+            });
+        });
+
+        container.querySelectorAll('[data-block-configure]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                // Straight to where a widget is set up, rather than repeating
+                // its settings in a list that is about arrangement. That is its
+                // own section now, not a tab beside this one.
+                this.openConfigView('widgets');
+            });
+        });
+
         container.querySelectorAll('[data-cat-move]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 // The buttons are not rendered under a sort or search, so this
@@ -12912,11 +16549,18 @@ class DashboardConfig {
                 if (this.ptListReordered('categories')) return;
                 const i = Number(btn.getAttribute('data-index'));
                 const dir = btn.getAttribute('data-cat-move');
-                const swap = dir === 'up' ? i - 1 : i + 1;
-                if (!this._categories || swap < 0 || swap >= this._categories.length) return;
-                [this._categories[i], this._categories[swap]] = [this._categories[swap], this._categories[i]];
-                this.repaintPtBody();
-                void this.saveCategories(this._catPageId);
+                const category = this._categories?.[i];
+                if (!category) return;
+                /*
+                 * Through blockOrder, the one list the dashboard draws from.
+                 *
+                 * These arrows used to swap two entries in the category array
+                 * and post that -- which nothing reads for placement any more,
+                 * so the row moved here and nothing moved on the dashboard. One
+                 * step in the page's order moves past whatever is next, widget
+                 * or category.
+                 */
+                void this.moveBlockOnCategoriesTab(String(category.id), dir);
             });
         });
     }
@@ -13269,7 +16913,161 @@ class DashboardConfig {
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
+        if (this.bmTab === 'local-copies') {
+            return this.renderBookmarkCopiesTab();
+        }
         return this.renderBookmarksListTab();
+    }
+
+    /*
+     * Every page kept on this disk, grouped by the bookmark it belongs to.
+     *
+     * Grouped rather than a flat list because the question is almost always
+     * "what do I have of this page", and successive captures of one page are
+     * the normal case -- a flat list would interleave them with everything else
+     * by date and bury the answer.
+     *
+     * Copies whose page is no longer bookmarked get a group of their own. They
+     * are the ones worth reviewing: nothing in the dashboard points at them, so
+     * without a place to see them they would sit on disk for ever unnoticed.
+     */
+    renderBookmarkCopiesTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.bmCopiesIntro',
+                'Pages saved whole on this disk, so they stay readable if the site goes. Saved from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.'))}</p>
+            <div class="config-crud-toolbar">
+                <input type="search" id="config-copies-search" class="config-text"
+                    placeholder="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}"
+                    aria-label="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}">
+                <button type="button" class="config-btn config-btn--small" data-copies-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+            </div>
+            <p class="config-panel-note" id="config-copies-state"></p>
+            <div id="config-copies-list" class="config-copies"></div>
+        `;
+    }
+
+    /*
+     * Wire the tab's search and refresh.
+     *
+     * Its own method because the tab is reached two ways -- as the section's
+     * first render and by clicking the strip -- and the second path replaces
+     * only the body, so it has to bind that body rather than the container the
+     * section was drawn into. Binding the wrong one is how this shipped
+     * throwing on a null element.
+     */
+    bindBookmarkCopiesTab(root) {
+        const scope = root || document;
+        void this.loadBookmarkCopies();
+        scope.querySelector('#config-copies-search')
+            ?.addEventListener('input', () => this.renderBookmarkCopiesList());
+        scope.querySelectorAll('[data-copies-action="refresh"]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.loadBookmarkCopies());
+        });
+    }
+
+    /** Read the captures once and draw them grouped. */
+    async loadBookmarkCopies() {
+        const state = document.getElementById('config-copies-state');
+        const list = document.getElementById('config-copies-list');
+        if (!state || !list) return;
+
+        try {
+            const res = await this.writeFetch('/api/archives');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this._copiesData = await res.json();
+        } catch {
+            state.textContent = this.t('config.localArchiveLoadError', 'Could not read the stored copies.');
+            return;
+        }
+        this.renderBookmarkCopiesList();
+    }
+
+    renderBookmarkCopiesList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = document.getElementById('config-copies-state');
+        const list = document.getElementById('config-copies-list');
+        if (!state || !list) return;
+
+        const data = this._copiesData || {};
+        const query = (document.getElementById('config-copies-search')?.value || '').trim().toLowerCase();
+
+        if (!data.available) {
+            state.textContent = this.t('config.localArchiveMissing',
+                'monolith is not installed. Install it (brew install monolith, or your package manager) and restart nextDash.');
+            list.replaceChildren();
+            return;
+        }
+
+        const all = data.captures || [];
+        // Matched on what the reader can see: the bookmark's name, its address,
+        // and the label the filename reduces to.
+        const captures = query
+            ? all.filter((c) => [c.bookmarkName, c.bookmarkUrl, this.localArchiveLabel(String(c.url || '').split('/').pop())]
+                .some((v) => String(v || '').toLowerCase().includes(query)))
+            : all;
+
+        state.textContent = all.length
+            ? this.t('config.bmCopiesSummary', '{n} saved pages, {size} on disk')
+                .replace('{n}', String(all.length))
+                .replace('{size}', this.formatBytes(data.totalBytes || 0))
+            : this.t('config.bmCopiesEmpty', 'Nothing saved yet. Save a page from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.');
+
+        if (!captures.length) {
+            list.innerHTML = all.length
+                ? `<p class="config-panel-note">${esc(this.t('config.bmCopiesNoMatch', 'No saved page matches that.'))}</p>`
+                : '';
+            return;
+        }
+
+        // Group by bookmark, keeping the newest capture's order.
+        const groups = new Map();
+        captures.forEach((capture) => {
+            const key = capture.bookmarkUrl || '';
+            if (!groups.has(key)) {
+                groups.set(key, { name: capture.bookmarkName, url: capture.bookmarkUrl, captures: [] });
+            }
+            groups.get(key).captures.push(capture);
+        });
+
+        list.innerHTML = [...groups.values()].map((group) => {
+            const orphan = !group.url;
+            const title = orphan
+                ? this.t('config.bmCopiesOrphan', 'No longer bookmarked')
+                : (group.name || group.url);
+            const rows = group.captures.map((capture) => {
+                const name = String(capture.url || '').split('/').pop();
+                const when = this.formatCaptureWhen(capture.at);
+                return `
+                    <div class="config-local-archive-row">
+                        <a class="config-local-archive-name" href="${esc(capture.url)}" target="_blank" rel="noopener noreferrer">${esc(when.label)}</a>
+                        <span class="config-local-archive-meta" title="${esc(when.title)}">${esc(this.formatBytes(capture.bytes || 0))}</span>
+                        <span class="config-local-archive-actions">
+                            <button type="button" class="config-btn config-btn--small"
+                                data-local-archive-download="${esc(name)}">${esc(this.t('config.localArchiveDownloadBtn', 'Download'))}</button>
+                            <button type="button" class="config-btn config-btn--small config-btn--danger"
+                                data-local-archive-delete="${esc(name)}">${esc(this.t('config.localArchiveDeleteBtn', 'Delete'))}</button>
+                        </span>
+                    </div>`;
+            }).join('');
+            return `
+                <div class="config-copies-group${orphan ? ' config-copies-group--orphan' : ''}">
+                    <h4 class="config-copies-group-title">${esc(title)}
+                        <span class="config-copies-count">${esc(String(group.captures.length))}</span></h4>
+                    ${group.url ? `<p class="config-copies-group-url">${esc(group.url)}</p>` : ''}
+                    ${rows}
+                </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-local-archive-delete]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                await this.deleteLocalArchive(btn.getAttribute('data-local-archive-delete'));
+                void this.loadBookmarkCopies();
+            });
+        });
+        list.querySelectorAll('[data-local-archive-download]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.downloadLocalArchive(btn.getAttribute('data-local-archive-download')));
+        });
     }
 
 
@@ -13764,12 +17562,29 @@ class DashboardConfig {
         return labels.get(composite) || `${this.pageLabel(b.pageId)} · ${id}`;
     }
 
+    /*
+     * Every page's categories, so a label can be a name rather than an id.
+     *
+     * Two sections need this, not one. The bookmarks list needs it for its
+     * filters; Statistics needs it because its category panels and its CSV
+     * export label by name, and knownCategories() falls back to the raw id for
+     * any page whose categories are not cached. That made the labels depend on
+     * where the reader had been: straight to Statistics gave "dev" and "docs",
+     * the same visit after opening Bookmarks gave "work · Development" and
+     * "Docs" -- and with the ids in play the page prefix that tells two
+     * same-named categories apart never appeared either.
+     *
+     * Repaints whichever of the two is on screen when the names land.
+     */
     async prefetchAllBookmarkCategories() {
         const pages = this.dash.pages || [];
         await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
-        if (this.isActiveView() && this.section === 'bookmarks') {
+        if (!this.isActiveView()) return;
+        if (this.section === 'bookmarks') {
             this.repaintBookmarksFilters();
             this.repaintBookmarksList();
+        } else if (this.section === 'stats') {
+            this.repaintStatsBody();
         }
     }
 
@@ -13838,6 +17653,19 @@ class DashboardConfig {
     bookmarkStaleDays() {
         const n = Number(this.dash?.settings?.bookmarkStaleDays);
         return Number.isFinite(n) && n >= 7 ? Math.min(365, Math.round(n)) : 90;
+    }
+
+    /**
+     * How many days before expiry a certificate starts to matter.
+     *
+     * Mirrors certWarnDaysFor in health_cert.go: 0 means the built-in 30, and
+     * anything else is clamped to 3..120. Read here so the statistics panel and
+     * the notification that fires agree on what "expiring soon" means.
+     */
+    certWarnDays() {
+        const n = Number(this.dash?.settings?.certWarnDays);
+        if (!Number.isFinite(n) || n <= 0) return 30;
+        return Math.min(120, Math.max(3, Math.round(n)));
     }
 
     /** Whether deleting `count` rows should ask first. */
@@ -15041,6 +18869,8 @@ class DashboardConfig {
             // a second listener on every tab button.
             if (tab === 'settings') {
                 this.bindControlPanels(body, 'behavior');
+            } else if (tab === 'local-copies') {
+                this.bindBookmarkCopiesTab(body);
             } else {
                 this.bindBookmarksListTab(body);
             }
@@ -15049,6 +18879,10 @@ class DashboardConfig {
             this.syncSubTabStrip('data-bm-tab', tab);
         });
         if (this.bmTab === 'settings') {
+            return;
+        }
+        if (this.bmTab === 'local-copies') {
+            this.bindBookmarkCopiesTab(container);
             return;
         }
         this.bindBookmarksListTab(container);
@@ -16827,29 +20661,6 @@ class DashboardConfig {
     }
 
     /**
-     * When these numbers were worked out.
-     *
-     * They are recomputed from whatever is in memory at render time, not
-     * fetched, so nothing on the page said whether you were looking at a
-     * snapshot from ten seconds or ten minutes ago. It sits below the body
-     * rather than in the intro: it dates everything above it, including the
-     * panels that repaint on a tab switch.
-     */
-    /**
-     * Load the statistics renderers, once.
-     *
-     * Repaints when they land, so the section fills itself in rather than
-     * waiting for the next click. A failure leaves the placeholder, which says
-     * the numbers could not be drawn — better than an empty panel that looks
-     * like an install with no data.
-     */
-    /**
-     * The section body, or a placeholder while its renderers are on their way.
-     *
-     * One guard rather than a test at every call site: the renderers arrive as a
-     * batch, so the only question is whether the batch is here.
-     */
-    /**
      * The timestamp foot, or an empty one of the same shape.
      *
      * Empty *markup*, not nothing: repaintStatsBody replaces the foot by finding
@@ -16864,6 +20675,12 @@ class DashboardConfig {
         return '<div class="config-stats-foot"></div>';
     }
 
+    /**
+     * The section body, or a placeholder while its renderers are on their way.
+     *
+     * One guard rather than a test at every call site: the renderers arrive as a
+     * batch, so the only question is whether the batch is here.
+     */
     renderStatsBodySafe() {
         if (typeof this.renderStatsBody === 'function') {
             return this.renderStatsBody();
@@ -16872,6 +20689,14 @@ class DashboardConfig {
         return `<p class="config-panel-note">${esc(this.t('config.statsLoading', 'Working out the numbers…'))}</p>`;
     }
 
+    /**
+     * Load the statistics renderers, once.
+     *
+     * Repaints when they land, so the section fills itself in rather than
+     * waiting for the next click. A failure leaves the placeholder, which says
+     * the numbers could not be drawn — better than an empty panel that looks
+     * like an install with no data.
+     */
     ensureStatsRenderers() {
         if (window.DashboardConfigStatsReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
@@ -16926,12 +20751,76 @@ class DashboardConfig {
         }
     }
 
-    /**
-     * Conflicts & duplicates, with the offending values named.
+    /*
+     * Everything on a page that is not a bookmark.
      *
-     * "3 duplicate URLs" tells you there is a problem; naming them tells you
-     * which. The old config capped the list at eight and counted the rest, which
-     * keeps a badly duplicated install from filling the panel.
+     * Widgets, feeds, sources, the trash and the automatic backups are all
+     * things a reader has set up and can lose track of, and none of them were
+     * counted anywhere. Five small requests rather than one endpoint, because
+     * these are five features that were never meant to be reported together;
+     * each already answers this question for its own screen.
+     *
+     * Every one of them fails soft. A figure that cannot be fetched is left out
+     * of the panel rather than shown as zero, which would read as "you have
+     * none" for something that may well exist.
+     */
+    async loadStatsLibrary() {
+        const get = async (url) => {
+            try {
+                const res = await fetch(url);
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const pages = this.dash.pages || [];
+        const [feeds, sources, trash, backups, ...blocks] = await Promise.all([
+            get('/api/feeds'),
+            get('/api/sources'),
+            get('/api/trash'),
+            get('/api/auto-backups'),
+            ...pages.map((p) => get(`/api/pages/${encodeURIComponent(p.id)}/blocks`)),
+        ]);
+
+        const widgetTypes = new Map();
+        let widgetCount = null;
+        if (blocks.some(Boolean)) {
+            widgetCount = 0;
+            blocks.forEach((b) => {
+                (b?.widgets || []).forEach((w) => {
+                    widgetCount += 1;
+                    const type = String(w?.type || '').trim() || 'unknown';
+                    widgetTypes.set(type, (widgetTypes.get(type) || 0) + 1);
+                });
+            });
+        }
+
+        const feedMap = feeds?.feeds && typeof feeds.feeds === 'object' ? feeds.feeds : null;
+        this._statsLibrary = {
+            widgets: widgetCount,
+            widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
+            feedsEnabled: feeds ? feeds.enabled === true : null,
+            feeds: feedMap ? Object.keys(feedMap).length : null,
+            sources: Array.isArray(sources) ? sources.length : null,
+            trash: trash && Number.isFinite(Number(trash.count)) ? Number(trash.count) : null,
+            backups: Array.isArray(backups?.backups) ? backups.backups.length : null,
+            backupsEnabled: backups ? backups.enabled === true : null,
+            newestBackupAt: Array.isArray(backups?.backups) && backups.backups.length
+                ? backups.backups[0]?.createdAt || null
+                : null,
+        };
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'content') {
+            const host = document.getElementById('config-stats-library');
+            if (host) host.innerHTML = this.renderStatsLibraryBody();
+        }
+    }
+
+    /**
+     * The per-page category names, as one lookup.
+     *
+     * Keyed on page::category, so two pages that both have a "Development"
+     * are told apart rather than merged — and where the name really is used
+     * twice, the page is put in front of it.
      */
     statsCategoryLabeller() {
         const labels = new Map();
@@ -17272,8 +21161,15 @@ class DashboardConfig {
             details.push({
                 type: 'warn',
                 penalty: stalePenalty,
-                text: this.t('config.statsScoreStale90View', '{count} not opened in 90 days ({pct}%)')
-                    .replace('{count}', String(stale90)).replace('{pct}', String(Math.round(staleRatio * 100))),
+                // {days}, not a hardcoded 90: stale90 is counted with
+                // bookmarkStaleDays(), which a reader sets between 7 and 365.
+                // With it at 7 this line claimed "not opened in 90 days" about
+                // a seven-day count, four lines under a summary that had the
+                // same number and the right threshold.
+                text: this.t('config.statsScoreStaleView', '{count} not opened in {days} days ({pct}%)')
+                    .replace('{count}', String(stale90))
+                    .replace('{days}', String(this.bookmarkStaleDays()))
+                    .replace('{pct}', String(Math.round(staleRatio * 100))),
             });
         }
 
@@ -17457,9 +21353,31 @@ class DashboardConfig {
                 broken: sum.brokenCount || 0,
                 unchecked: sum.uncheckedCount || 0,
                 monitorDown: sum.monitorDownCount || 0,
+                // A host that answered while failing the bookmark's own
+                // expectation -- a required string, an expected status code.
+                // The server counts it apart from broken and monitorDown
+                // precisely so the three add up; this section never read it, so
+                // a whole class of failure was invisible here while the Health
+                // view, the health widget and the review notice all showed it.
+                content: sum.contentCount || 0,
                 duplicates: sum.duplicateCount || 0,
                 stale: sum.staleCount || 0,
                 shortcutConflicts: sum.shortcutConflictCount || 0,
+                // Layered on whatever status a bookmark already has -- a
+                // redirect or a title change under a page that still answers --
+                // so it is reported but never counted into the states.
+                drift: sum.driftCount || 0,
+                orphanedCategories: sum.orphanedCategoryCount || 0,
+                // Pooled uptime, response time and outage count across every
+                // monitor. Absent on an install that never enabled monitoring.
+                fleet: data?.fleet || null,
+                // TLS expiries seen while checking, keyed by host.
+                certificates: data?.certificates || {},
+                // Whole-page copies kept here, counted off the issue rows: the
+                // report carries one entry per bookmark, so this is the same
+                // walk the archive widget does without a second request.
+                archived: (data?.issues || []).filter((i) => Number(i?.localCopies) > 0).length,
+                tracked: (data?.issues || []).length,
                 // One point per day, recorded by the server whenever a report
                 // is built. It arrives with the report already; this section
                 // simply never read it, so every figure here was "now" with
@@ -17469,9 +21387,16 @@ class DashboardConfig {
         } catch {
             this._statsHealth = null;
         }
-        if (this.isActiveView() && this.section === 'stats') {
-            const host = document.getElementById('config-stats-health');
-            if (host) host.innerHTML = this.renderStatsHealth();
+        /*
+         * The whole body, not just the health div.
+         *
+         * Patching #config-stats-health was enough while the report only fed
+         * that one panel. It now also feeds the uptime, certificate and archive
+         * panels, which sit beside it — and those render to nothing while the
+         * fetch is in flight, so a partial repaint left them absent for good.
+         */
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+            this.repaintStatsBody();
         }
     }
 
@@ -17607,6 +21532,7 @@ class DashboardConfig {
                     this._statsInboxItems = undefined;
                     this._statsInboxAgg = undefined;
                     this._statsFinders = undefined;
+                    this._statsLibrary = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic
@@ -17830,13 +21756,14 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
+    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
 
     helpTabLabel(tab) {
         const map = {
             start: ['config.helpTabStart', 'Getting started'],
             config: ['config.helpTabConfig', 'Configuring'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
+            widgets: ['config.helpTabWidgets', 'Widgets'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
             health: ['config.helpTabHealth', 'Health'],
@@ -18008,6 +21935,7 @@ class DashboardConfig {
         switch (this.helpTab) {
             case 'config': return this.renderHelpConfig();
             case 'organizing': return this.renderHelpOrganizing();
+            case 'widgets': return this.renderHelpWidgets();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -18298,7 +22226,127 @@ class DashboardConfig {
             { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
             { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
         ],
+        // ── v1.4.0 topics ──────────────────────────────────────────────────
+        'config.helpWidgetsTitle': [
+            {
+                kind: 'widgetSpan', value: 2,
+                captionKey: 'config.helpArtWidgetWide', caption: 'A block beside your categories',
+            },
+            {
+                kind: 'bars', value: { values: [0.9, 0.7, 0.95, 0.4, 0.8], mark: 3, tone: 'bad' },
+                captionKey: 'config.helpArtWidgetFigures', caption: 'Figures it already keeps',
+            },
+        ],
+        'config.helpWidgetKindsTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
+                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
+                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
+                ],
+                captionKey: 'config.helpArtWidgetKinds', caption: 'What each one answers',
+            },
+            {
+                kind: 'spark', value: [0.2, 0.35, 0.3, 0.5, 0.65, 0.6, 0.8],
+                captionKey: 'config.helpArtWidgetTrend', caption: 'Or the direction it is going',
+            },
+        ],
+        'config.helpWidgetAddingTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.helpArtWidgetStepChoose', d: 'Choose a kind' },
+                    { k: 'config.helpArtWidgetStepName', d: 'Name it' },
+                    { k: 'config.helpArtWidgetStepPlace', d: 'Drag it into place' },
+                ],
+            },
+            {
+                kind: 'widgetSpan', value: 1,
+                captionKey: 'config.helpArtWidgetNarrow', caption: 'One column, or two',
+            },
+        ],
+        'config.helpWidgetCustomTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
+                    inside: [
+                        { k: 'config.helpArtWidgetAddress', d: 'The address' },
+                        { k: 'config.helpArtWidgetKey', d: 'The key' },
+                    ],
+                    out: { k: 'config.helpArtWidgetTile', d: 'The tile' },
+                },
+                captionKey: 'config.helpArtWidgetFetched', caption: 'Fetched here, never by your browser',
+            },
+            {
+                kind: 'query', value: [['token', 'server.disk'], ['text', '[0].used']],
+                captionKey: 'config.helpArtWidgetPath', caption: 'A path into the answer',
+            },
+        ],
+        'config.helpWidgetServicesTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtWidgetPreset', d: 'Pick a service' },
+                    { k: 'config.helpArtWidgetFilled', d: 'Address and figures filled in' },
+                    { k: 'config.helpArtWidgetYours', d: 'Edit anything' },
+                ],
+                captionKey: 'config.helpArtWidgetPresets', caption: 'Twenty-eight already known',
+            },
+        ],
+        'config.helpSourcesTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtSourceService', d: 'A service' },
+                    { k: 'config.helpArtSourcePreview', d: 'Preview' },
+                    { k: 'config.helpArtSourcePage', d: 'Your page' },
+                ],
+                captionKey: 'config.helpArtSourceFlow', caption: 'Nothing is written unseen',
+            },
+        ],
+        'config.helpArchiveTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtArchiveSave', d: 'You save it' },
+                    { k: 'config.helpArtArchiveCopy', d: 'A copy is kept' },
+                    { k: 'config.helpArtArchiveGone', d: 'The page dies' },
+                ],
+                captionKey: 'config.helpArtArchiveFlow', caption: 'The copy is made first',
+            },
+        ],
+        'config.helpIntegrationsTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtOutLabel', d: 'nextDash' },
+                    inside: [
+                        { k: 'config.helpArtOutAdded', d: 'Added' },
+                        { k: 'config.helpArtOutDown', d: 'Down' },
+                    ],
+                    out: { k: 'config.helpArtOutReceiver', d: 'Your receiver' },
+                },
+                captionKey: 'config.helpArtOutFlow', caption: 'Pushed, and signed',
+            },
+        ],
         'config.helpThemesTitle': [
+            // The browser first, because it is the change: what was a list of
+            // 214 names is a grid you can see. Then the two things every theme
+            // gained behind it.
+            {
+                kind: 'themeGrid', value: ['a', 'b', 'c', 'd', 'e', 'f'],
+                captionKey: 'config.helpArtThemeBrowser', caption: 'A grid, not a list of names',
+            },
+            {
+                kind: 'depth', value: 'rich',
+                captionKey: 'config.helpArtThemeDepth', caption: 'A card on a surface',
+            },
+            {
+                kind: 'pattern', value: 'grid',
+                captionKey: 'config.helpArtThemePattern', caption: 'Dots, grid, lines or hatch',
+            },
             {
                 kind: 'swatches', value: ['light', 'dark'],
                 captionKey: 'config.helpArtThemePair', caption: 'A light and a dark half',
@@ -18729,6 +22777,34 @@ class DashboardConfig {
                 'config.helpTagsBody', '');
     }
 
+    /*
+     * Widgets, as a tab of its own.
+     *
+     * One paragraph under Pages & bookmarks was right while a widget was a
+     * block you added and forgot. It is a section of config now, with thirteen
+     * kinds, a settings panel each, and a custom tile that reads any service
+     * answering JSON — twenty-eight of them already filled in. That is not a
+     * paragraph, and burying it under a tab about pages is why the custom
+     * widget went unnoticed.
+     */
+    renderHelpWidgets() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return this.helpPanel('config.helpWidgetsTitle', 'What a widget is',
+            'config.helpWidgetsBody', '')
+            + this.helpPanel('config.helpWidgetKindsTitle', 'The kinds, and what each answers',
+                'config.helpWidgetKindsBody', '')
+            + this.helpPanel('config.helpWidgetAddingTitle', 'Adding one, and where it sits',
+                'config.helpWidgetAddingBody', '',
+                `<div class="config-actions">
+                    <button type="button" class="config-btn" data-overview-go='{"section":"widgets"}'>${
+                        esc(this.t('config.helpWidgetsOpen', 'Open Widgets'))}</button>
+                </div>`)
+            + this.helpPanel('config.helpWidgetCustomTitle', 'The Custom widget',
+                'config.helpWidgetCustomBody', '')
+            + this.helpPanel('config.helpWidgetServicesTitle', 'The services it already knows',
+                'config.helpWidgetServicesBody', '');
+    }
+
     renderHelpSearch() {
         const esc = (v) => this.dash.escapeHtml(v);
         // Finders and commands get their own panels rather than a paragraph
@@ -18937,6 +23013,15 @@ class DashboardConfig {
     renderHelpData() {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
+            // Where bookmarks come from, where copies of them are kept, and what
+            // this install tells the outside — the three subjects the Data &
+            // backups section grew in v1.4.0, in the order its tabs carry them.
+            + this.helpPanel('config.helpSourcesTitle', 'Sources — where bookmarks come from',
+                'config.helpSourcesBody', '')
+            + this.helpPanel('config.helpArchiveTitle', 'Keeping a copy of a page',
+                'config.helpArchiveBody', '')
+            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks & assistants',
+                'config.helpIntegrationsBody', '')
             + this.helpPanel('config.helpServerLogTitle', 'Server log',
                 'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',

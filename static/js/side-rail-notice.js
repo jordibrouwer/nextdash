@@ -35,14 +35,7 @@
         return value && value !== key ? value : fallback;
     }
 
-    function escape(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    const escape = window.NextDashHtml.escapeHtml;
 
     function hasAnswered() {
         return global.DiscoverabilityState?.hasSeenSettingPromo?.(PROMO_ID) === true;

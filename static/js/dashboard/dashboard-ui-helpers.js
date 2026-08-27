@@ -38,13 +38,7 @@ class DashboardUiHelpers {
 
 
     escapeHtml(value) {
-        const d = this.dash;
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        return window.NextDashHtml.escapeHtml(value);
     }
 
 

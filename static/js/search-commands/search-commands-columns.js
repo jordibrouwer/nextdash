@@ -115,7 +115,7 @@ class SearchCommandColumns {
                 try {
                     const parsed = JSON.parse(settings);
                     // Update columnsPerRow in localStorage
-                    parsed.columnsPerRow = parseInt(columns);
+                    parsed.columnsPerRow = parseInt(columns, 10);
                     if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
                         window.DeviceSettingsMerge.saveDeviceLocalSettings(parsed);
                     } else {
@@ -131,7 +131,7 @@ class SearchCommandColumns {
                 const response = await fetch('/api/settings');
                 if (response.ok) {
                     const currentSettings = await response.json();
-                    currentSettings.columnsPerRow = parseInt(columns);
+                    currentSettings.columnsPerRow = parseInt(columns, 10);
 
                     // Save updated settings to server
                     await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/settings', {

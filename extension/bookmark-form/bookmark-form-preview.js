@@ -4,12 +4,23 @@
 (function (global) {
     'use strict';
 
+    /*
+     * The one deliberate copy of the shared escaper.
+     *
+     * This module is synced verbatim into the Chrome extension (see
+     * scripts/sync-extension-bookmark-form.sh), which loads it on its own
+     * popup without the dashboard's head scripts, so it cannot reach
+     * window.NextDashHtml. Kept identical to it in behaviour, apostrophe
+     * included -- that character was missing here and nowhere else.
+     */
     function escHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+        return String(str ?? '').replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+        }[ch]));
     }
 
     function buildCompactPreviewStripHtml(prefix, t) {

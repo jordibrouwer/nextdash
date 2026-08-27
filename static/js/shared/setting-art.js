@@ -16,6 +16,8 @@
 (function () {
     'use strict';
 
+    const escape = window.NextDashHtml.escapeHtml;
+
     /** One column of stand-in bookmark rows. */
     function col(rows, modifier = '') {
         const lines = Array.from({ length: rows }, () => '<span class="setting-art-row"></span>').join('');
@@ -63,11 +65,6 @@
     function density(mode) {
         const rows = Array.from({ length: 5 }, () => '<span class="setting-art-row"></span>').join('');
         return frame(`<span class="setting-art-col is-${mode}">${rows}</span>`, 'setting-art-frame--density');
-    }
-
-    /** The dotted backdrop, on or off. */
-    function dots(on) {
-        return frame(`<span class="setting-art-dots${on ? ' is-on' : ''}"></span>`, 'setting-art-frame--dots');
     }
 
     /** Text at three sizes, which is the one thing a size name cannot show. */
@@ -323,16 +320,82 @@
         );
     }
 
-    function escape(value) {
-        return String(value).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
+    /**
+     * A card sitting on a surface, at the depth the theme is drawn with.
+     *
+     * Depth is the hardest of these to name and the easiest to show. "Flat",
+     * "soft" and "rich" are three words for a relationship between two
+     * surfaces, and the relationship is what the eye reads in one look: at
+     * flat the card and the page are the same plane and only a line separates
+     * them, at rich the card is lifted off a tinted page with a wash behind it.
+     */
+    function depth(level) {
+        const value = String(level || 'rich').replace(/[^a-z]/g, '') || 'rich';
+        return frame(
+            `<span class="setting-art-depth is-${value}">`
+            + `<span class="setting-art-depth-wash"></span>`
+            + `<span class="setting-art-depth-card">${col(3)}</span>`
+            + `</span>`,
+            'setting-art-frame--depth'
+        );
+    }
+
+    /**
+     * The backdrop, in the shape it is set to.
+     *
+     * There used to be a companion answering on/off, which was the whole
+     * question while dots were the only pattern there was. Five shapes is a
+     * different question, and the names — hatch, lines, grid — are exactly the
+     * kind that mean four things until you see one.
+     */
+    function pattern(kind) {
+        const value = String(kind || 'dots').replace(/[^a-z]/g, '') || 'dots';
+        return frame(`<span class="setting-art-pattern is-${value}"></span>`, 'setting-art-frame--pattern');
+    }
+
+    /**
+     * A widget among categories, at the width it is given.
+     *
+     * The setting says "one column" or "two", and what it changes is a block's
+     * relationship to its neighbours rather than its own size. Drawn beside two
+     * ordinary categories, a two-column widget is obviously a widget; described
+     * in a sentence it is a number.
+     */
+    function widgetSpan(span) {
+        const wide = Number(span) > 1;
+        return frame(
+            `<span class="setting-art-blocks">`
+            + `<span class="setting-art-block is-widget${wide ? ' is-wide' : ''}">`
+            + `<span class="setting-art-band"></span><span class="setting-art-band"></span></span>`
+            + col(3) + (wide ? '' : col(3))
+            + `</span>`,
+            'setting-art-frame--blocks'
+        );
+    }
+
+    /**
+     * A grid of theme cards, which is what the browser replaced a list with.
+     *
+     * The point is not the colours: it is that there is more than one on screen
+     * and each shows what it looks like. A list of 214 names drawn as a list of
+     * 214 names would make the same argument, at more length.
+     */
+    function themeGrid(tones) {
+        const list = (Array.isArray(tones) ? tones : ['a', 'b', 'c', 'd', 'e', 'f'])
+            .map((t) => String(t).replace(/[^a-z0-9]/g, '')).filter(Boolean).slice(0, 6);
+        if (!list.length) return '';
+        return frame(
+            `<span class="setting-art-themes">${list
+                .map((tone) => `<span class="setting-art-theme is-${tone}">`
+                    + `<span class="setting-art-theme-bar"></span></span>`).join('')}</span>`,
+            'setting-art-frame--themes'
+        );
     }
 
     const BUILDERS = {
-        grid, spacing, margins, density, dots, fontSize, layoutVersion, barPosition, flow,
+        grid, spacing, margins, density, fontSize, layoutVersion, barPosition, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
-        boundary, bookmarkRow, panelMap,
+        boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
     };
 
     /**

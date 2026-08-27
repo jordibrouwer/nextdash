@@ -237,19 +237,78 @@ class SearchCommandsComponent {
         return { refresh: false };
     }
 
+    /*
+     * The sections config actually has, in the order the rail lists them.
+     *
+     * This described the config of two rewrites ago -- General settings, Theme
+     * & colors, Pages, Categories, Tags, Finders, Collections -- none of which
+     * is a section any more. Several are sub-tabs now, so they keep their name
+     * and carry the tab they landed on; the rest are gone because the thing
+     * they named is.
+     *
+     * `tab` is the sub-tab to open the section on. It is set before the section
+     * renders, which is the contract openConfigView expects.
+     */
     _CONFIG_SECTIONS = [
-        { id: 'general', labelKey: 'commands.configGeneral', fallback: 'General settings' },
-        { id: 'colors', labelKey: 'commands.configColors', fallback: 'Theme & colors' },
-        { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages' },
-        { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories' },
-        { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags' },
+        { id: 'overview', labelKey: 'commands.configOverview', fallback: 'Overview' },
         { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
-        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders' },
-        { id: 'collections', labelKey: 'commands.configCollections', fallback: 'Collections' },
-        { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups' },
-        { id: 'stats', labelKey: 'commands.configStats', fallback: 'Stats' },
-        { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help & about' },
+        { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
+        { id: 'pages-tags', labelKey: 'commands.configPagesTags', fallback: 'Pages & tags' },
+        { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
+        { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
+        { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
+        { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
+        { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
+        { id: 'about', labelKey: 'commands.configAbout', fallback: 'About' },
+        // The names that used to be sections and are now tabs, kept so typing
+        // what you remember still arrives somewhere sensible.
+        { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories', section: 'pages-tags', tab: 'categories' },
+        { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags', section: 'pages-tags', tab: 'tags' },
+        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders', section: 'pages-tags', tab: 'finders' },
+        { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages', section: 'pages-tags', tab: 'pages' },
+        { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups', section: 'data-backups', tab: 'backups' },
+        { id: 'themes', labelKey: 'commands.configThemes', fallback: 'Themes', section: 'appearance', tab: 'general' },
     ];
+
+    /*
+     * Open a config section in place.
+     *
+     * Every one of these commands used to do `location.href = '/config#x'`,
+     * which is wrong twice over. `/config` is the pre-v1.3 page and now answers
+     * 302 to `/#config` — and a redirect whose target carries its own fragment
+     * replaces the one that was asked for, so the section was dropped and all
+     * eleven rows landed on Overview. It was also a full page load of a view
+     * that lives in this same page.
+     *
+     * The sub-tab is set before the section renders, which is the order
+     * openConfigView documents. The hash fallback is for a dashboard object
+     * that is not there to ask.
+     */
+    _openConfigSection(entry) {
+        this._closeCommandPalette();
+        const dash = window.dashboardInstance;
+        const section = entry.section || entry.id;
+        const state = { 'pages-tags': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab' }[section];
+        if (dash?.config?.openConfigView) {
+            if (entry.tab && state) dash.config[state] = entry.tab;
+            void dash.config.openConfigView(section);
+            return { navigate: true };
+        }
+        window.location.hash = entry.tab ? `config/${section}/${entry.tab}` : `config/${section}`;
+        return { navigate: true };
+    }
+
+    /** The whole section, no particular tab. */
+    _openConfig() {
+        this._closeCommandPalette();
+        const dash = window.dashboardInstance;
+        if (dash?.config?.openConfigView) {
+            void dash.config.openConfigView();
+            return { navigate: true };
+        }
+        window.location.hash = 'config';
+        return { navigate: true };
+    }
 
     _LANG_OPTIONS = [
         { id: 'en', labelKey: 'commands.langEn', fallback: 'English' },
@@ -1087,11 +1146,7 @@ class SearchCommandsComponent {
             name: this._t(section.labelKey, section.fallback),
             shortcut: ':CONFIG',
             type: 'command',
-            action: () => {
-                this._closeCommandPalette();
-                window.location.href = `/config#${section.id}`;
-                return { navigate: true };
-            },
+            action: () => this._openConfigSection(section),
         });
 
         if (!query) {
@@ -1100,11 +1155,7 @@ class SearchCommandsComponent {
                     name: this._t('commands.configOpen', 'Open config'),
                     shortcut: ':CONFIG',
                     type: 'command',
-                    action: () => {
-                        this._closeCommandPalette();
-                        window.location.href = '/config';
-                        return { navigate: true };
-                    },
+                    action: () => this._openConfig(),
                 },
                 ...this._CONFIG_SECTIONS.map((section) => ({
                     name: this._t(section.labelKey, section.fallback),
@@ -2638,11 +2689,7 @@ class SearchCommandsComponent {
                         name: this._t('commands.gotoConfig', 'Open config'),
                         shortcut: ':GOTO',
                         type: 'command',
-                        action: () => {
-                            this._closeCommandPalette();
-                            window.location.href = '/config';
-                            return { navigate: true };
-                        },
+                        action: () => this._openConfig(),
                     },
                     ...this._CONFIG_SECTIONS.map((entry) => ({
                         name: this._t(entry.labelKey, entry.fallback),
@@ -2661,11 +2708,7 @@ class SearchCommandsComponent {
                 name: this._t(entry.labelKey, entry.fallback),
                 shortcut: ':GOTO',
                 type: 'command',
-                action: () => {
-                    this._closeCommandPalette();
-                    window.location.href = `/config#${entry.id}`;
-                    return { navigate: true };
-                },
+                action: () => this._openConfigSection(entry),
             }));
         }
 
@@ -2674,11 +2717,7 @@ class SearchCommandsComponent {
                 name: this._t('commands.gotoStats', 'Open config — stats'),
                 shortcut: ':GOTO',
                 type: 'command',
-                action: () => {
-                    this._closeCommandPalette();
-                    window.location.href = '/config#stats';
-                    return { navigate: true };
-                },
+                action: () => this._openConfigSection({ id: 'stats' }),
             }];
         }
 
@@ -3099,7 +3138,7 @@ class SearchCommandsComponent {
                 shortcut: ':DUPLICATE',
                 type: 'command',
                 action: () => {
-                    window.location.href = '/config#bookmarks';
+                    return this._openConfigSection({ id: 'bookmarks' });
                     return { navigate: true };
                 }
             }];
@@ -3569,7 +3608,7 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => {
                 this._closeCommandPalette();
-                window.location.href = '/config#backups';
+                return this._openConfigSection({ id: 'backups', section: 'data-backups', tab: 'backups' });
                 return { navigate: true };
             },
         }];
@@ -3622,7 +3661,7 @@ class SearchCommandsComponent {
                     type: 'command',
                     action: () => {
                         this._closeCommandPalette();
-                        window.location.href = '/config#bookmarks';
+                        return this._openConfigSection({ id: 'bookmarks' });
                         return { navigate: true };
                     },
                 },
@@ -3661,7 +3700,7 @@ class SearchCommandsComponent {
                 type: 'command',
                 action: () => {
                     this._closeCommandPalette();
-                    window.location.href = '/config#bookmarks';
+                    return this._openConfigSection({ id: 'bookmarks' });
                     return { navigate: true };
                 },
             }];

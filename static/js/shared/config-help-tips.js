@@ -71,6 +71,7 @@
                 'tipFindFinders',
                 'tipFindTagCloud',
                 'tipFindRecent',
+                'tipFindAddressBar',
             ],
         },
         {
@@ -82,11 +83,14 @@
                 'tipMaintRotReport',
                 'tipMaintMerge',
                 'tipMaintMonitorStats',
+                'tipMaintStatsUptime',
                 'tipMaintCert',
                 'tipMaintExpectText',
                 'tipMaintMaintenanceWindow',
                 'tipMaintTrash',
                 'tipMaintBackup',
+                'tipMaintSignIn',
+                'tipMaintArchive',
                 'tipMaintNote',
             ],
         },
@@ -96,9 +100,12 @@
             tips: [
                 'tipTuneInfo',
                 'tipTuneTheme',
+                'tipTuneThemeBrowser',
                 'tipTunePreview',
                 'tipTuneSmartCollections',
                 'tipTuneFresh',
+                'tipTuneWidgets',
+                'tipTuneCustomWidget',
                 'tipTuneCommands',
             ],
         },
@@ -106,6 +113,13 @@
             titleKey: 'tipsGroupConfig',
             titleFallback: 'Config',
             tips: ['tipConfigKeyboard', 'tipConfigFindValue'],
+        },
+        {
+            // Where bookmarks come from and where what happens here goes —
+            // the two directions Data & backups grew in v1.4.0.
+            titleKey: 'tipsGroupData',
+            titleFallback: 'Data in and out',
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks'],
         },
     ];
 

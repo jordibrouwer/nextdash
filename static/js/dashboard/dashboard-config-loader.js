@@ -25,6 +25,7 @@ class DashboardConfigLoader {
         'pages-tags',
         'behavior',
         'data-backups',
+        'widgets',
         'stats',
         'help',
         'about',

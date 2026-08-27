@@ -365,7 +365,13 @@ class SearchComponent {
         }
         const currentTheme = document.documentElement.getAttribute('data-theme') || this.settings.theme || 'default';
         const map = this.settings?.themeIconStyling || {};
-        return map[currentTheme] || { enabled: false, style: 'muted', intensity: 0.5 };
+        const entry = map[currentTheme] || {};
+        // Absent means on -- see normalizeEntry in theme-icon-styling.js.
+        return {
+            enabled: entry.enabled !== false,
+            style: entry.style || 'muted',
+            intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
+        };
     }
 
     _highlightQuery(text, query) {
@@ -2509,6 +2515,32 @@ class SearchComponent {
         if (!normalized) return;
         this.commandsComponent.resetState();
         this.currentQuery = `tag:${normalized}`;
+        this.selectedMatchIndex = 0;
+        this.updateSearch();
+        if (!this.searchActive) {
+            this.showSearch();
+        }
+    }
+
+    /**
+     * Open search on a query someone arrived with.
+     *
+     * The tag opener beside this one takes a filter; this takes what a person
+     * typed somewhere else — the browser's address bar, a link they were sent,
+     * a bookmark of a search they run often. Same three steps, because the
+     * palette does not care where a query came from.
+     */
+    openSearchWithQuery(query) {
+        const text = String(query || '').trim();
+        if (!text) {
+            // An address with no term still means "open search", which is what
+            // the palette does with an empty query anyway.
+            this.openSearchInterface();
+            if (!this.searchActive) this.showSearch();
+            return;
+        }
+        this.commandsComponent.resetState();
+        this.currentQuery = text;
         this.selectedMatchIndex = 0;
         this.updateSearch();
         if (!this.searchActive) {

@@ -2,6 +2,155 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureStatsReadingTitle",
+      "titleFallback": "Statistics reports what the app already knows",
+      "whatKey": "config.overviewNewFeatureStatsReadingWhat",
+      "whatFallback": "The section counted bookmarks, tags and categories and stopped there. It said how many services you monitor but never how well they did, nothing about certificates running out, and nothing about how much of the collection has a saved copy — all of which nextDash had already worked out. Some of what it did report was wrong: the healthy share could read 100% directly above a row saying two monitors were down.",
+      "howKey": "config.overviewNewFeatureStatsReadingHow",
+      "howFallback": "Health gains uptime over the last day, week and month with the average response and the outages on record; certificates near expiry, counted per site on your own warning window; and how much of the collection has a copy kept here. Content gains a panel for everything that is not a bookmark — widgets, feeds, import sources, the trash and the automatic backups. The healthy share counts every state now, the cleanup score names the threshold you actually set, category panels show names rather than the ids underneath them, and the timestamp follows your 12- or 24-hour setting.",
+      "enableKey": "config.overviewNewFeatureStatsReadingEnable",
+      "enableFallback": "Nothing to switch on. The uptime and certificate panels appear once there is something to report.",
+      "ctaKey": "config.overviewNewFeatureStatsReadingCta",
+      "ctaFallback": "Open Statistics →",
+      "go": {
+        "section": "stats"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetCatalogueTitle",
+      "titleFallback": "Adding a widget no longer loses the widget",
+      "whatKey": "config.overviewNewFeatureWidgetCatalogueWhat",
+      "whatFallback": "The kinds you can add filled a whole screen at the top of the Widgets tab, which pushed the widgets you already have below the fold. Choosing a kind added something you could not see, and the only sign of it was a message in the opposite corner.",
+      "howKey": "config.overviewNewFeatureWidgetCatalogueHow",
+      "howFallback": "Widgets opens on your own widgets with one button above them. The catalogue opens over the page, the way the theme browser does, and closes onto the new widget with its name ready to type. The Types tab lists every kind with what it does and adds from there too, and the Custom widget comes with twenty-eight services already filled in.",
+      "enableKey": "config.overviewNewFeatureWidgetCatalogueEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureWidgetCatalogueCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemeEngineTitle",
+      "titleFallback": "A theme browser, and every theme rebuilt",
+      "whatKey": "config.overviewNewFeatureThemeEngineWhat",
+      "whatFallback": "There are 214 built-in themes and they arrived as a listbox of 214 alphabetically sorted lines — which puts a theme twenty positions from its own other half, shows nothing of what any of them look like, and cannot be searched. At that size a list is not navigation.",
+      "howKey": "config.overviewNewFeatureThemeEngineHow",
+      "howFallback": "It is a grid of cards now: one per family with a light/dark switch on it, so 214 becomes 107, with search, segments for light, dark and favourites, and a star per family. Behind it every theme has been given an accent of its own instead of borrowing the success colour, a depth layer so a card sits on a surface rather than beside a border, and an improved backdrop you can set to dots, grid, lines or hatch. Thirty-three new families came with it.",
+      "enableKey": "config.overviewNewFeatureThemeEngineEnable",
+      "enableFallback": "Nothing to switch on. Depth starts on rich and flat is the dashboard exactly as it was, so the old look is one control away.",
+      "ctaKey": "config.overviewNewFeatureThemeEngineCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthBulkFetchTitle",
+      "titleFallback": "Three slow jobs, done to a whole selection",
+      "whatKey": "config.overviewNewFeatureHealthBulkFetchWhat",
+      "whatFallback": "Rebuilding a preview, refreshing a favicon and keeping a copy of a page on disk were each on a single row's menu. A filter that finds forty bookmarks with no preview is exactly the case for doing them at once.",
+      "howKey": "config.overviewNewFeatureHealthBulkFetchHow",
+      "howFallback": "Tick rows in the health view and the bulk bar offers all three. They run one request at a time behind a bar that counts, because each fetches a page belonging to somebody else. Saving copies asks first and names how many, since that one is minutes rather than seconds.",
+      "enableKey": "config.overviewNewFeatureHealthBulkFetchEnable",
+      "enableFallback": "Nothing to switch on. Saving a copy needs monolith installed; the run says so on the first row rather than failing forty times.",
+      "ctaKey": "config.overviewNewFeatureHealthBulkFetchCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetsTitle",
+      "titleFallback": "Your dashboard can show more than links",
+      "whatKey": "config.overviewNewFeatureWidgetsWhat",
+      "whatFallback": "A page holds categories of bookmarks. It can now also hold widgets: eight kinds of tile reading data this install already keeps — uptime per monitored service, a thirty-day trend, what is waiting in the inbox, what you saved and never opened, which import failed, which feed went quiet, which certificate is running out.",
+      "howKey": "config.overviewNewFeatureWidgetsHow",
+      "howFallback": "Add and name them under Config → Widgets, then drag them into place among your categories like any other block. Each has its own settings: which page it counts, how many rows it shows, one column or two. A ninth type points at any address that answers with JSON, so a service that is not in the list needs no code.",
+      "enableKey": "config.overviewNewFeatureWidgetsEnable",
+      "enableFallback": "Nothing to switch on. A new widget says what it is for before you add it, and a tile that leaves rows out says how many.",
+      "ctaKey": "config.overviewNewFeatureWidgetsCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSourcesTitle",
+      "titleFallback": "Bookmarks that keep arriving on their own",
+      "whatKey": "config.overviewNewFeatureSourcesWhat",
+      "whatFallback": "An import reads a file once. A source is a place bookmarks keep coming from and is asked again: GitHub stars, Raindrop.io, Hacker News, YouTube and Mastodon. The last three need no token at all — a username or a channel is the whole setup.",
+      "howKey": "config.overviewNewFeatureSourcesHow",
+      "howFallback": "Config → Data & backups → Sources. Each source previews what it would write before writing it, remembers where it got to so a second run brings only what is new, and says what the last round did. The Sources widget puts that on your dashboard, which is where a failed import becomes visible without going looking for it.",
+      "enableKey": "config.overviewNewFeatureSourcesEnable",
+      "enableFallback": "Nothing on by default. GitHub and Raindrop want a token; the other three want a name.",
+      "ctaKey": "config.overviewNewFeatureSourcesCta",
+      "ctaFallback": "Open Sources →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "sources"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureArchiveTitle",
+      "titleFallback": "A copy of the page, for when the page is gone",
+      "whatKey": "config.overviewNewFeatureArchiveWhat",
+      "whatFallback": "The health view tells you a link is dead and offers whatever copy somebody else happened to take — which for a page nobody else bookmarked is usually none. nextDash can now ask for one on the day you save the link, and keep one on your own disk.",
+      "howKey": "config.overviewNewFeatureArchiveHow",
+      "howFallback": "Config → Data & backups → Sources. Archive new bookmarks asks the Web Archive; archive.today is the second opinion for pages the first was not allowed to keep; and Local copies saves a whole page — text, styling and images — as one file in your data directory. Config → Bookmarks → Local copies lists what you have, grouped by the bookmark it belongs to.",
+      "enableKey": "config.overviewNewFeatureArchiveEnable",
+      "enableFallback": "Off by default. The Web Archive accepts captures without keys at a smaller daily allowance; a key pair from archive.org lifts it.",
+      "ctaKey": "config.overviewNewFeatureArchiveCta",
+      "ctaFallback": "Open Sources →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "sources"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWebhooksTitle",
+      "titleFallback": "Tell the rest of your machine what happened here",
+      "whatKey": "config.overviewNewFeatureWebhooksWhat",
+      "whatFallback": "Everything nextDash talks to, it talks to on its own schedule, so anything built around it had to poll. Now a bookmark added, changed or removed — and a monitored link going down or coming back — is pushed to whatever you have built: an automation, a script, a home dashboard.",
+      "howKey": "config.overviewNewFeatureWebhooksHow",
+      "howFallback": "Config → Data & backups → Webhooks. Name a receiver, give it an address, tick the events it should hear about. Every delivery is signed, so the receiver can tell it came from your install; the signing key is shown once, in the answer to the save that made it. On the same tab, an MCP endpoint lets an AI assistant search your bookmarks and add one.",
+      "enableKey": "config.overviewNewFeatureWebhooksEnable",
+      "enableFallback": "Both off until you set them up. The assistant endpoint reads everything you have filed, which is why it starts closed.",
+      "ctaKey": "config.overviewNewFeatureWebhooksCta",
+      "ctaFallback": "Open Webhooks →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "webhooks"
+      },
+      "since": "v1.4.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureAddressBarTitle",
+      "titleFallback": "Search your bookmarks from the browser's address bar",
+      "whatKey": "config.overviewNewFeatureAddressBarWhat",
+      "whatFallback": "Typing a keyword, Tab, a term and Enter is how every other search-capable site is reached without opening it first. nextDash could not be reached that way at all — there was no address a search could live at.",
+      "howKey": "config.overviewNewFeatureAddressBarHow",
+      "howFallback": "Visit your dashboard once and your browser picks it up: Firefox offers it under Search shortcuts, Chrome and its relatives under Site search, where you can shorten the keyword to something like nd. A search now has an address of its own too, so a particular search can be bookmarked or shared like any other view.",
+      "enableKey": "config.overviewNewFeatureAddressBarEnable",
+      "enableFallback": "Nothing to switch on here — the keyword is set in your browser's own settings.",
+      "ctaKey": "config.overviewNewFeatureAddressBarCta",
+      "ctaFallback": "Open Help → Search →",
+      "go": {
+        "section": "help",
+        "helpTab": "search"
+      },
+      "since": "v1.4.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureHealthTilesTitle",
       "titleFallback": "Every health tile leads somewhere",
       "whatKey": "config.overviewNewFeatureHealthTilesWhat",

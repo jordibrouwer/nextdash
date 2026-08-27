@@ -1,0 +1,212 @@
+/* The theme browser.
+
+   Built on the tokens theme-depth.css derives, so the modal is painted in the
+   theme being browsed and every card sits on the same surface ladder as the
+   dashboard behind it. */
+
+.modal--theme-browser .modal-text {
+    /* The grid brings its own spacing; the modal's prose padding would only
+       narrow it. */
+    text-align: left;
+}
+
+.theme-browser {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: min(70vh, 40rem);
+}
+
+.theme-browser-bar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.theme-browser-search {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid var(--hairline-strong, var(--border-primary));
+    background: var(--surface-1, var(--background-secondary));
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.theme-browser-search:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
+.theme-browser-segments {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.theme-browser-segment,
+.theme-browser-variant {
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--layout-radius-pill, 999px);
+    border: 1px solid var(--hairline, var(--border-secondary));
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.theme-browser-segment.is-on,
+.theme-browser-variant.is-on {
+    background: var(--accent-wash, color-mix(in srgb, var(--accent-primary) 16%, transparent));
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.theme-browser-count {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.85em;
+}
+
+.theme-browser-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.6rem;
+    overflow-y: auto;
+    /* Room for the focus ring, which would otherwise be clipped by the scroll
+       container on the first and last row. */
+    padding: 2px;
+}
+
+.theme-browser-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.55rem;
+    border-radius: var(--layout-radius-md, 12px);
+    border: 1px solid var(--hairline, var(--border-secondary));
+    background: var(--surface-1, var(--background-secondary));
+    box-shadow: var(--edge-light, none);
+    cursor: pointer;
+    transition: border-color var(--layout-transition, 0.2s ease),
+                transform var(--layout-transition, 0.2s ease);
+}
+
+.theme-browser-card:hover,
+.theme-browser-card:focus-visible {
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.theme-browser-card.is-current {
+    border-color: var(--accent-primary);
+    box-shadow: var(--edge-light, none), 0 0 0 1px var(--accent-primary) inset;
+}
+
+/* The swatch bar is the whole point of a grid over a list: at this many themes
+   nobody chooses by name. Six stops, in the order the eye needs them — the two
+   surfaces first, then the text that has to sit on them, then the accents. */
+.theme-browser-swatches {
+    display: flex;
+    height: 1.6rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    overflow: hidden;
+    border: 1px solid var(--hairline, var(--border-secondary));
+}
+
+.theme-browser-swatch {
+    flex: 1 1 0;
+}
+
+.theme-browser-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+
+.theme-browser-card-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.theme-browser-star {
+    border: none;
+    background: none;
+    padding: 0 0.1rem;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    font-size: 1em;
+    line-height: 1;
+}
+
+.theme-browser-star.is-on {
+    color: var(--accent-warning);
+}
+
+.theme-browser-card-traits {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.8em;
+}
+
+.theme-browser-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-top: auto;
+}
+
+.theme-browser-variants {
+    display: inline-flex;
+    gap: 0.2rem;
+}
+
+.theme-browser-single,
+.theme-browser-current {
+    color: var(--text-tertiary);
+    font-size: 0.78em;
+}
+
+.theme-browser-current {
+    color: var(--accent-primary);
+}
+
+.theme-browser-empty {
+    margin: 1rem 0;
+    color: var(--text-tertiary);
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 40rem) {
+    .theme-browser-grid {
+        grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    }
+    .theme-browser {
+        max-height: 75vh;
+    }
+}
+
+/* The picker and its Browse button, side by side.
+   The picker keeps the width it had; the button takes only what it needs, so
+   the field still reads as one control with a way out of it. */
+.config-theme-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.config-theme-row .config-theme-picker {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-theme-browse {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}

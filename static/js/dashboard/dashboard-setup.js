@@ -25,7 +25,7 @@ class DashboardSetup {
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
         );
-        const barPosition = d.settings.buttonBarPosition || 'bottom';
+        const barPosition = d.settings.buttonBarPosition || 'bottom-right';
         document.body.setAttribute('data-button-position', barPosition);
         // Side-agnostic hook: layout-side-rail.css keys every rail rule off this
         // and reads the physical side from variables, so the two rails share one
@@ -75,9 +75,6 @@ class DashboardSetup {
         if (window.DashboardFont) {
             window.DashboardFont.applyMainFont(d.settings);
         }
-
-        // Apply background dots
-        d.applyBackgroundDots();
 
         // Apply animations
         d.applyAnimations();

@@ -61,14 +61,7 @@
         return fallback;
     }
 
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    const escapeHtml = window.NextDashHtml.escapeHtml;
 
     function hasSeen(id) {
         const key = String(id || '').trim();

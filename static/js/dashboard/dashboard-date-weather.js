@@ -157,17 +157,7 @@ class DashboardDateWeather {
 
 
     formatTimeLine(date) {
-        const d = this.dash;
-        const safeDate = date instanceof Date ? date : new Date();
-        const timeFormat = d.settings.timeFormat === '12h' ? '12h' : '24h';
-        const hours24 = safeDate.getHours();
-        const minutes = String(safeDate.getMinutes()).padStart(2, '0');
-        if (timeFormat === '12h') {
-            const period = hours24 >= 12 ? 'PM' : 'AM';
-            const hours12 = hours24 % 12 || 12;
-            return `${String(hours12).padStart(2, '0')}:${minutes} ${period}`;
-        }
-        return `${String(hours24).padStart(2, '0')}:${minutes}`;
+        return window.NextDashClock.formatTime(date, this.dash.settings);
     }
 
 

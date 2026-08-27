@@ -8,7 +8,11 @@
 
 My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
 
-Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard. Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
+Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard.
+
+It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all, and a fourteenth — the **custom widget** — points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
+
+Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
 
@@ -129,7 +133,9 @@ Outbound fetches (preview, ping, icons, auto-heal, the health view's check-a-URL
 
 ### Optional CORS allowlist (LAN / VPS / extension)
 
-By default, bookmark API responses send `Access-Control-Allow-Origin: *` so the browser extension and cross-origin tools work without extra config.
+By default, only an installed browser extension's origin (`chrome-extension://…`, `moz-extension://…`, `safari-web-extension://…`) receives `Access-Control-Allow-Origin`. A web page on another origin gets no CORS header and cannot read the API.
+
+Before 1.4 the default was `Access-Control-Allow-Origin: *`, which meant any site open in a tab could read your bookmarks from a nextDash whose address it could guess — the read routes need no token. The extension is unaffected by the change: a Manifest V3 extension with host permissions is granted cross-origin access by the browser itself, without CORS.
 
 Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to restrict cross-origin reads/writes, for example:
 
@@ -137,7 +143,7 @@ Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to rest
 NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
 ```
 
-Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response. Unset or empty keeps the default `*`.
+Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response; extension origins are always allowed. Set `NEXTDASH_CORS_ORIGINS=*` to restore the pre-1.4 behaviour of answering every origin.
 
 ### Activity log (bookmark events)
 
@@ -169,6 +175,27 @@ activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":
 To read them without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only** — the same lines, with the request traffic around them filtered out. It needs **Collect server log** switched on, because it is the same buffer; which events get written is still decided by the environment variables above.
 
 Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
+
+### Outgoing endpoints (webhooks, MCP)
+
+Both are **off until you configure them**, and both are described in full under
+[Integrations](#outgoing-telling-other-programs-what-happened).
+
+The **MCP endpoint** answers questions about every bookmark in the install, so
+`POST /mcp` returns `404` until *Answer assistants at this address* is ticked
+under **Config → Data & backups → Webhooks**. When it is on, every request's
+`Origin` is checked against the host it arrived on: a browser will POST to
+`localhost` from any page on the internet, and a local server that answers those
+is one visited page away from being read. A client that is not a browser sends no
+`Origin` at all, which is the normal case and passes.
+
+**Webhook** endpoint URLs go through the same address rules as a bookmark ping —
+a local receiver is reachable only on an install that has allowed local
+addresses — and they are checked twice: when you save the endpoint, so the screen
+can refuse it while you are looking at the field, and again at delivery, because
+a name is resolved again then. Redirects are not followed. The signing keys live
+in `webhooks.json` at `0600`; reading the endpoint list needs the write token,
+since an endpoint URL is not a description of a webhook, it *is* the webhook.
 
 ### Rate limits (outbound & SSRF APIs)
 
@@ -285,7 +312,7 @@ environment:
 | `PORT` | `8080` | HTTP listen port (validated 1–65535) |
 | `NEXTDASH_DATA_DIR` | `./data` | Pages, bookmarks, settings, uploads |
 | `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
-| `NEXTDASH_CORS_ORIGINS` | `*` | Comma-separated `Origin` allowlist for API CORS |
+| `NEXTDASH_CORS_ORIGINS` | *(unset)* | Extra `Origin` allowlist for API CORS, comma-separated. Extension origins always allowed; `*` answers everyone |
 | `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security` (comma-separated) |
 | `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
 | `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
@@ -295,6 +322,34 @@ environment:
 | `NEXTDASH_DISABLE_PREFETCH` | off | `1` = skip background favicon prefetch on startup |
 
 ---
+
+## Screenshots
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-6.png" alt="Dashboard with combined columns" width="100%" />
+      <br />
+      <sub><b>Dashboard</b> with combined columns.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-7.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widget</b> settings.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-8.png" alt="Dashboard with widgets" width="100%" />
+      <br />
+      <sub><b>Dashboard</b>  with widgets.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-9.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widgets</b> settings.</sub>
+    </td>
+  </tr>
+</table>
 
 ## Features
 
@@ -364,7 +419,7 @@ environment:
 - `:page` — switch page by name or number (palette stays open, `✓` on current)
 - `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` — recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload dashboard
 - `:inbox` / `:inbox triage` — open Inbox page (`Shift + I`) or start triage on unread items
-- `:config [section]` — open config or a tab (`bookmarks`, `backups`, `stats`, …)
+- `:config [section]` — open a config section in place (`overview`, `bookmarks`, `appearance`, `pages-tags`, `behavior`, `data-backups`, `widgets`, `stats`, `help`, `about`). Names that used to be sections and are now sub-tabs — `categories`, `tags`, `finders`, `pages`, `backups`, `themes` — still work and land on their tab
 - `:remove` — delete the focused bookmark
 - `:sort <method>` — per focused category: `order` / `az` / `recent` (palette shows the category name)
 - `:stale [days]` — list stale bookmarks; optional day window (e.g. `:stale 7`)
@@ -397,7 +452,7 @@ environment:
 
 #### Config (for self-hosters)
 
-**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. Reopening it within **5 minutes** restores the **last section and sub-tab** you were on, whichever way you left — including the header buttons that switch view around it; after that it starts on **Overview** again. A deep link like `/#config/behavior/privacy` still wins. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
+**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. Reopening it within **5 minutes** restores the **last section and sub-tab** you were on, whichever way you left — including the header buttons that switch view around it; after that it starts on **Overview** again. A deep link like `/#config/behavior/privacy` still wins. It has ten sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
 
 The settings a self-hoster reaches for most: **Behavior → General** (localhost & private-network bookmarks, HyprMode, session tips), **Behavior → Privacy** (analytics), **Behavior → Status & health** (background rechecks, downtime webhook), and **Data & backups** (backup, restore, import/export, the **Trash** — deleted bookmarks stay recoverable for 30 days, with search and bulk restore — and **Reset**, each on its own sub-tab).
 
@@ -430,6 +485,7 @@ Type these directly in the search bar (`>` mode, or after opening search). Expan
 
 Partial values (e.g. `status:on`) keep showing suggestions until the filter is complete. `status:online` uses persisted reachability on monitored bookmarks, not only the live status cache.
 
+- **Your browser's address bar is a nextDash search box** (**v1.4.0**) — type the keyword, `Tab`, a term, `Enter`, and you land in your bookmarks with the results on screen. No extension and no dashboard to open first. Your browser offers it after one visit; give it a short keyword in the browser's own settings. A search now has an address of its own (`#search?q=…`), so one can be bookmarked or shared like any other view
 ### Organisation
 
 - Unlimited pages and categories
@@ -457,6 +513,20 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - Collapsible categories with optional always-collapsed default
 - Tags on bookmarks with autocomplete; filter by tag in search and collections
 
+### Where bookmarks come from
+
+- **A Sources tab** (**v1.4.0**) — **Config → Data & backups → Sources**, for the services that keep sending bookmarks, as opposed to the import buttons that read a file once. Each source remembers what it already brought in, where its bookmarks land, and what the last round did, and previews what it would write before writing it
+- **Five services** (**v1.4.0**) — **GitHub stars** and **Raindrop.io** need a token; **Hacker News**, **YouTube** and **Mastodon** need nothing at all, since all three publish public XML at a predictable address. Type a username or a channel and that is the whole setup
+- **The browser bookmark file, in and out** (**v1.4.0**) — the thirty-year-old format every browser exports, and that Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep all speak. Folders become categories, and tags, notes and the date you saved a link survive the trip. **Export bookmarks (HTML)** hands the collection back in the same format, readable by any browser
+- Import also reads **CSV** and **JSON**, and — since **v1.4.0** — the CSV route keeps the tags and notes it always claimed to
+
+### Keeping a copy of a page
+
+- **Ask the Web Archive to keep a copy the day you save a link** (**v1.4.0**) — everything else in the health view is diagnosis: it tells you a link is dead and offers whatever copy somebody else happened to take, which for a page nobody else bookmarked is usually none. Switch it on under **Config → Data & backups → Sources**, with an archive.org key pair and a one-page test capture to prove them
+- **Local copies on your own disk** (**v1.4.0**) — a whole page, text, styling and images, saved as one file in your data directory through [monolith](https://github.com/Y2Z/monolith), so it stays readable when the site and the Web Archive are both gone. **Config → Bookmarks → Local copies** lists what you have, grouped by the bookmark it belongs to
+- **archive.today** (**v1.4.0**) — the two archives disagree by design. The Web Archive honours a site that turns it away and drops what a site later withdraws; archive.today keeps what it captured. For a link that died behind a paywall, *no copy* from the first is routinely not *no copy*
+- **The date the web lost a page** (**v1.4.0**) — reading the archive's own index rather than asking for the capture nearest to now, which for a dead link is usually a copy of the error page
+
 ### Config
 
 - **The overview is a news stream** (**v1.3.3**) — posts from nextdash.cc, releases, and the settings each release introduced, in one dated list with the newest first, every row labelled with its source and opening on its own. Source chips narrow it to one kind or hide the site's posts entirely. Two of the six rows are kept for the site's own posts, so a day of releases does not push them off the page, and the settings shown are those from the two most recent releases that introduced one (**v1.3.3.2**). A green dot and a count on **Overview** in the rail mark anything published since you last read it; *All news & features* opens the full list under **About**, with the older settings catalogue and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts. Beside the stream: **About the developer** level with the top of the list, and under a *Your install* line the figures — **At a glance** and what differs from the defaults — which you look up rather than meet on the way in, and which is what puts the stream above the fold. It replaced a carousel that showed one of forty-nine features at a time and a *Latest update* panel repeating the release named directly above it.
@@ -471,6 +541,10 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - Most settings carry an **ℹ** explaining what they do and a **↺** to restore the default
 - On a phone the section list is a single swipeable row rather than four wrapped rows (v2026.09.07)
 
+- **Panels fold shut** (**v1.4.0**) — **Sources** and **Backups & data** stacked every panel open, which is a wall to scroll past before reaching the one you came for. They open on a click and remember they were open
+- **The slow actions show progress** (**v1.4.0**) — refreshing every link preview is one request per bookmark, well over a minute for a real collection, and it used to sit there looking hung
+- **Widgets is a section of its own** (**v1.4.0**) — in the rail under **Data & backups**, with a short description of what each type does
+- **A backup carries your whole data directory** (**v1.4.0**) — files had been left out one at a time, each for a reason that held alone, until together they made a restore an install that had lost its history and had to earn it back over weeks: the uptime chart alone needs thirty days before the window it claims is real. Two switches under **What a backup carries** decide whether saved pages and stored tokens travel with it — the first is by far the largest thing in a backup, the second makes a restore need nothing typed in again and makes the backup file itself a secret
 ### Inbox
 
 - **Inbox** (`/#inbox`, `Shift + I`, or `:inbox`) — a holding area for links worth keeping before you know where they belong. Paste a URL on the dashboard and it lands here, becomes a bookmark, or asks you which, depending on **Config → Behavior → Inbox**; the browser extension saves here too, and a URL already in the inbox is turned away rather than duplicated. Items live in `data/inbox.json`
@@ -483,6 +557,21 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **Import** (**v1.2.0**) — beside the CSV and JSON exports; skips links already there and reports how many arrived, how many were already in and how many did not fit. A link can also go back to **unread**, and the page's own fetched description shows under the title
 - The first visit runs a **one-time tour** — seven steps through the whole loop, from where links come from to how a backlog gets cleared. **Config → Help → Inbox** covers the same ground at any time, and **Show quick-start card again** under **Config → Behavior → General** brings the tour back
 - Toggle under **Config → Behavior → Inbox → Enable Inbox**; unread items show a badge on the Inbox tab
+
+### Widgets
+
+A dashboard of links can only answer *where do I go*. Widgets answer *what is
+going on* — and they work off data nextDash already collects, so most of them
+need nothing configured beyond being added. A **new install ships with a Health
+widget already on the page**, so the feature is visible rather than something
+you have to go and find.
+
+- **A block on a page can hold something other than links** (**v1.4.0**) — a widget is drawn among the categories, dragged into place like one, and can be one or two columns wide. Add, name and arrange them under **Config → Widgets**; the block order is the same list that orders categories, so there is one answer to where anything sits
+- **Thirteen types, each reading something nextDash already keeps** (**v1.4.0**) — no configuration beyond adding the tile, because the data is already there. **Health** and **Uptime** report what the health view reports, worst first, with a heartbeat per monitored link; **Trend** draws the last thirty days; **Inbox** says what is waiting; **Neglected** surfaces what you saved and never opened; **Unchecked** and **Duplicates** name what the collection has quietly accumulated; **Trash** counts what is still recoverable and **Backups** how old the newest one is; **Archive** says how much has a copy kept locally; and **Sources**, **Feeds** and **Certificates** show the three things that were previously visible only by going looking — a failed import, a feed gone quiet, a certificate running out
+- **A custom widget, with 28 services already filled in** (**v1.4.0**) — the fourteenth type points at any address that answers with JSON, so a service nextDash has never heard of needs no code. Pick a **preset** and the address shape, the fields and the labels arrive already written; the list covers **Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd and NZBGet** for media, **Pi-hole (v5 and v6), AdGuard Home, Traefik and Speedtest Tracker** for the network, **Proxmox VE, TrueNAS, Glances and Syncthing** for the machine, and **Nextcloud, Paperless-ngx, Home Assistant, Grafana and ntfy** alongside. Nothing is hard-coded per service — a preset is a starting point you can edit, and writing your own from scratch is the same form with the fields left blank
+- **The custom widget's request is made by the server, not your browser** (**v1.4.0**) — the address and any API key stay on the machine running nextDash, which is what lets a tile read a service that is not reachable from the browser at all, and keeps the key out of a page anyone can view source on. It inherits the same SSRF checks and rate limiting as every other outbound request
+- **Settings per widget** (**v1.4.0**) — which page it counts, how many rows it shows, what it is called, how wide it is. A tile that leaves rows out says how many, so five of twelve does not look like five of five
+- **A figure opens the rows behind it** (**v1.4.0**) — clicking a count on a health tile lands in the health view with that filter already applied
 
 ### Smart collections
 
@@ -500,7 +589,12 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 
 ### Appearance
 
-- 57+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink, Bio Abyss, Sea Glass, and fifteen more added in v2026.07.26)
+- **A theme browser, not a list** (**v1.4.0**) — 214 themes used to arrive as a listbox of 214 alphabetically sorted lines, which puts a theme twenty positions from its own other half, shows nothing of what any of them look like, and cannot be searched. It is a grid of cards now: one per family with a light/dark switch on it, so 214 becomes 107, with a search box, segments for **all** / **favourites** / **light** / **dark**, and a star per family. The live preview on the real dashboard is unchanged — move through the grid and the page follows, leave without choosing and your theme comes back
+- **Every theme has its own accent** (**v1.4.0**) — the accent was the *success* colour, because there had only ever been one, so every install accented green or teal whatever the theme was called: *this link answers* and *this is a Mulberry Silk install* were the same value. All 214 variants carry their own now. A custom theme written before this keeps accenting in its success colour rather than losing its accent
+- **Depth, in three settings** (**v1.4.0**) — a theme declares thirteen colours of which two are surfaces, and two surfaces cannot express depth: a card, a panel and a control were painted the same and only a border said where one stopped. A second layer is derived from what a theme already declares — a tint in its greys, a ladder of surfaces, a sheen on a card — under **Config → Appearance**: **flat**, **soft** or **rich**. *Flat* is the dashboard exactly as it was, so preferring the old look is one control rather than not upgrading
+- **The page is no longer one flat rectangle** (**v1.4.0**) — two large, soft washes of light behind it, in the theme's own accent and warning hues at 7% and 5% scaled by the depth setting. A single hue reads as a mistake; two related hues read as light. A background image of your own switches it off, because a background you chose was chosen instead of this rather than on top of it
+- **Backdrops beyond dots** (**v1.4.0**) — dots, grid, lines, hatch or none. Left on **auto** the theme decides: most ask for dots, and the handful whose texture is part of what they are ask for something else
+- **107 built-in theme families, 214 variants** — thirty-three families added in **v1.4.0** (Rosé Pine, City Lights, Tomorrow Dusk, Cobalt Ink, Iceberg Drift, Owl Hours, Polar Night, Zen Ember, Great Wave, Bamboo Panda, Synth Sunset and twenty-two more), on top of Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink, Bio Abyss, Sea Glass and the rest
 - **Random theme** — pick a different built-in theme on each page refresh or each view change (bookmarks ↔ config ↔ inbox ↔ health); auto dark mode limits the pool to matching variants (`Config → Appearance`)
 - Custom theme editor (`config#colors`) — dark/light default palettes, **packaged themes** subtab (edit built-in families), custom theme list with **export/import** and **undo**; live preview on palette cards with contrast warnings; on mobile the editor is read-only (viewer mode)
 - Auto dark mode — follows system light/dark without overwriting your saved theme palette id
@@ -517,6 +611,8 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Background image or gradient support
 - Clickable date/time header showing a week-overview popover; optional calendar URL link
 
+- **A new install starts with the button bar in the bottom-right corner** (**v1.4.0**) — it began centred above the bookmarks, floating over the thing you open the dashboard to look at. If you have ever chosen a position, yours is untouched
+- **What's new opens on the release** (**v1.4.0**) — the version is the headline, the summary its subtitle, and everything older is one line each that opens when you ask. A third of the window used to go to an update notice, a boxed summary and a request for support before the first word
 ### Monitoring & health
 
 - Real-time online/offline status with ping timings per bookmark
@@ -549,8 +645,13 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Favicon display and refresh from the health view (per row)
 - **Find a setting by what it is set to** (**v1.3.0**) — `Ctrl/Cmd + Shift + K` matches the current value as well as the name (*8099*, *Monitor*), shows it after the location, and marks the settings that stay server-wide while *Keep settings on this device only* is on
 - **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **week-over-week** comparison on Activity when the week period is selected, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav, formatted **Last backup** on overview; conflicts link to health
+- **Statistics reports what the app already knows** (**v1.4.0**) — the Health tab pools **uptime** across every monitor over the last day, week and month with the average response and the outages on record, lists the **certificates** close to expiry per site on your own warning window, and says how much of the collection has a **copy kept on this disk**. The Content tab counts everything that is not a bookmark: widgets by kind, feeds, import sources, the trash and the automatic backups. The healthy share counts every failing state rather than three of them, the cleanup score names the neglect threshold you actually set, category panels show names rather than the ids underneath them, and the timestamp follows your 12- or 24-hour setting.
 - **Statistics says what its figures mean** (**v1.3.1**) — the tab opens with the three things that follow from them: where your opening lands, what is going unread, and what is not answering, each with the button that acts on it, and nothing shown when there is nothing to report. Tiles carry the direction a count moved over the week, read from the daily points the health report has been recording all along, and the CSV export waits for the Health and Inbox tabs so it is not silently missing two of its five sections.
 
+- **Check a service you have to be signed in to** (**v1.4.0**) — a self-hosted service bookmarked at its web interface answers *not signed in* to an anonymous check, so the row read broken while the service was fine, and the only way to stop that was to stop watching the bookmark most worth watching. Store the sign-in once under **Config → Data & backups → Sources → Health sign-ins** and point any number of bookmarks at it; the bookmark keeps only a name, and the secret stays out of your backups unless you ask for it
+- **Buttons on a downtime alert** (**v1.4.0**) — an alert reaching your phone through **ntfy** carries **Open link** and **Health**, so you can act on it without finding a laptop. A failure is sent above the default priority so it breaks a quiet-hours rule, a recovery below it. Give nextDash its own address under **Downtime alerts** for the second button to appear
+- **Three slow jobs on a whole selection** (**v1.4.0**) — tick rows in the health view and **Rebuild previews**, **Refresh favicons** and **Save a copy on this disk** act on all of them. Each was already on a single row's menu, which is where the tedium was: a filter that finds forty bookmarks with no preview is exactly the case for doing them at once. They run one request at a time behind a bar that counts, because each one fetches a page belonging to somebody else
+- **A bot check is not a dead link** (**v1.4.0**) — a site asking *are you a robot* was counted as gone. Only the answers that say the page or the host no longer exists count now; the rest read as unknown, which is the difference between a monitor people trust and one they switch off
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
@@ -568,6 +669,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Settings-only **export/import** of `settings.json` (migration-safe) from Config → Backups
 - Bookmark icons: upload, URL fetch, link-preview fetch; re-upload **overwrites** same filename
 
+- **A card says what the page says about itself** (**v1.4.0**) — publisher, author and publication date alongside the title, description and image it already showed, and for the video providers a player you can start from the card
 ### Notifications
 
 - Toast notifications with undo support
@@ -619,7 +721,7 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 - Duplicate URL warning; **409** when the shortcut is already taken on that page
 - If a dashboard tab is open on the same server, it may toast and refresh
 
-When you restrict CORS with `NEXTDASH_CORS_ORIGINS`, include your extension origin (`chrome-extension://…` from `chrome://extensions`).
+The extension needs no CORS configuration: its origin is allowed by default, and its host permissions let the browser grant the request regardless. `NEXTDASH_CORS_ORIGINS` is only for pages of your own.
 
 See `extension/README.md` for full usage and development notes.
 
@@ -671,6 +773,57 @@ syntax-checked, since several of them need a host app to exercise at all.
 
 The **Dropzone 5** action also has [a repository of its
 own](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
+
+### Outgoing: telling other programs what happened
+
+Everything above sends a link *in*. Since **v1.4.0** nextDash can also push *out*,
+so nothing has to poll it to find out that something changed.
+
+**Webhooks** — **Config → Data & backups → Webhooks**. Five events: a bookmark
+added, changed or removed, and a monitored bookmark going down or coming back.
+A receiver can subscribe to all of them or to a few.
+
+Every delivery is signed with the [Standard
+Webhooks](https://www.standardwebhooks.com/) scheme, so a receiver that already
+verifies those needs no special case:
+
+```
+POST /your-endpoint
+content-type: application/json
+webhook-id: msg_2b7f…
+webhook-timestamp: 1756253400
+webhook-signature: v1,K5s0…
+
+{"type":"bookmark.added","timestamp":"2026-08-27T09:30:00Z","data":{…}}
+```
+
+The signature is an HMAC-SHA256 over `{id}.{timestamp}.{payload}` with the
+endpoint's own key, base64-encoded. The id and the timestamp are signed rather
+than merely sent: the id is how a receiver recognises a redelivery it already
+acted on, and the timestamp is how it refuses one replayed at it a day later.
+
+The key is generated when you save the endpoint and shown **once**, in the answer
+to that save — copy it into the receiver then. Keys live in `webhooks.json` at
+`0600` beside the health sign-ins, and are excluded from backups unless you ask
+for them. A failed delivery is retried twice with a growing gap; a `4xx` is not
+retried, since that is the receiver saying the request itself is wrong.
+
+**MCP**, for an AI assistant — same tab, and **off until you switch it on**. One
+endpoint at `POST /mcp` speaking JSON-RPC 2.0, with four tools: search the
+collection, look one bookmark up, list the tags in use, and add a bookmark.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+```
+
+It is off by default because it answers questions about every bookmark in the
+install, which is not something to add to a default install quietly. `Origin` is
+checked on every request — a browser will POST to `localhost` from any site on
+the internet — and adding a bookmark goes through the same handler the dashboard
+posts to, so the duplicate check, the URL validation and the outgoing webhook all
+still apply. If the install runs with a write token, the assistant needs it to
+write.
+
 
 ---
 

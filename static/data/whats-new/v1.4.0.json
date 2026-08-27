@@ -1,0 +1,348 @@
+{
+  "tag": "v1.4.0",
+  "date": "27 August 2026",
+  "releasedAt": "2026-08-27",
+  "modalLead": "The largest release so far — seventy changes, four of them new ground. A page can hold widgets now: fourteen kinds of block, including one that reads any service you run, with twenty-eight already filled in. The theme engine is rebuilt. Bookmarks can arrive on their own, a copy of a page can be kept for when the page dies, and nextDash can tell the rest of your machine what happened here.",
+  "sections": [
+    {
+      "title": "Widgets on the dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A block on a page can now hold something other than links.</strong> A widget sits among your categories, is dragged into place like one, and can be one or two columns wide. Add them under <em>Config → Widgets</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Thirteen tiles, each reading something nextDash already knows.</strong> <em>Health</em> and <em>Uptime</em> report what the health view reports, worst first, with a heartbeat per monitored link. <em>Health trend</em> draws the last thirty days. <em>Certificates</em> shows what is running out, per site. <em>Inbox</em> says what is waiting, <em>Feeds</em> which feeds went quiet, <em>Sources</em> what each import last did. And for tidying: <em>Neglected</em>, <em>Blind spots</em>, <em>Duplicates</em>, <em>Archive</em>, <em>Trash</em> and <em>Backups</em> — the things that were previously visible nowhere you pass on an ordinary day."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A custom widget, for the service that is not in the list.</strong> Point it at an address that answers with JSON, name the fields you want on the tile, and it draws them. It can use the same stored sign-in as a health check, so no key ever reaches your browser."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every widget has settings.</strong> Which page it counts, how many rows it shows, what it is called, how wide it is. A tile that leaves rows out now says how many, so five of twelve no longer looks like five of five."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><em>Widgets</em> is its own place in Config.</strong> It grew out of the list it started in, under <em>Pages &amp; tags</em>, and now sits in the rail under <em>Data &amp; backups</em> with a short description of what each type does."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A figure on a tile opens the rows behind it.</strong> Clicking a count on the health widget did nothing at all — no view, no error, no sign the click had registered. A number you cannot act on is a decoration."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Deleting a widget deletes that widget.</strong> <em>Delete</em> had never worked: it always asked to remove the first block on the page, which is normally a category, and the refusal was silent."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>One order for widgets and categories.</strong> They kept two lists between them, so a widget dropped into second place came back fourth, and the arrows on the <em>Categories</em> tab moved a row on screen and changed nothing on the dashboard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A tile redraws from fresh data when its settings change.</strong> It used to draw the new settings over figures fetched before they existed, which read as though the change had not taken — including on pages you were not looking at."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Twenty-eight services the Custom widget already knows.</strong> Pick one and the address, the figures worth reading and the sign-in it wants are filled in for you, in four groups — and everything stays editable afterwards."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Widgets has two tabs, and adding one no longer loses it.</strong> The kinds you can add filled the whole screen, which pushed the widgets you already have below the fold: you would click a card and the thing you just made was somewhere you could not see. Choosing a kind opens over the page now, and closes onto your new widget with its name ready to type. The <em>Types</em> tab lists every kind with what it does, and you can add from there too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A widget can be renamed after you save it</strong>, and the service picker stays on the service you chose instead of jumping back to the top of the list."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A percentage on a custom tile reads as a percentage.</strong> Some services report a figure that came out as <em>43.729183739999996%</em> on a tile the size of a stamp."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing your own address over a service keeps the rest of it.</strong> The path the service had filled in was thrown away, so the widget asked the right machine the wrong question."
+        }
+      ]
+    },
+    {
+      "title": "Themes, rebuilt",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme browser, instead of a list of 214 lines.</strong> The picker was a listbox sorted alphabetically, which puts a theme twenty positions away from its own other half, shows you nothing of what any of them look like, and cannot be searched. At that size a list is not navigation. It is a grid of cards now — one per family with a light/dark switch on it, so 214 becomes 107 — with a search box, filters for <em>light</em>, <em>dark</em> and <em>favourites</em>, and a star so the handful you actually use are one click away. The live preview on the real dashboard is unchanged: move through the grid and the page follows, leave without choosing and your old theme comes back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every theme has its own colour again.</strong> A theme's accent — the focus ring, the active tab, the hovered row — was its <em>success</em> colour, because there was only ever one accent and that was it. So every install accented green or teal whatever the theme was called: <em>this link answers</em> and <em>this is a Mulberry Silk install</em> were the same value. All 214 variants now carry an accent of their own."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The page is no longer one flat rectangle.</strong> A theme declares thirteen colours, two of which are surfaces — and two surfaces cannot express depth, so a card, a panel and a control were all painted the same and only a border said where one stopped. A second layer is now derived from what a theme already declares: a tint in its greys, a ladder of surfaces a card can sit on, and two large, soft washes of light behind the page in the theme's own colours. <em>Config → Appearance</em> offers <em>flat</em>, <em>soft</em> and <em>rich</em>; <em>flat</em> is the dashboard exactly as it was, so liking the old look is one control rather than not upgrading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Backdrops beyond dots.</strong> The texture behind your bookmarks can be dots, a grid, lines or hatching — or nothing at all. Left on <em>auto</em> the theme decides: most ask for dots, and the handful whose texture is part of what they are ask for something else. A background image of your own still wins over all of it, because a background you chose was chosen instead of this, not on top of it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Thirty-three new themes.</strong> <em>Rosé Pine</em>, <em>City Lights</em>, <em>Tomorrow Dusk</em>, <em>Cobalt Ink</em>, <em>Iceberg Drift</em>, <em>Owl Hours</em>, <em>Polar Night</em>, <em>Zen Ember</em>, <em>Great Wave</em>, <em>Bamboo Panda</em>, <em>Synth Sunset</em> and twenty-two more, each in a light and a dark variant. That brings it to 107 families, 214 variants."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The dashboard offers to show you the themes.</strong> Two hundred of them sat behind <em>Config → Appearance → Browse</em>, which is three clicks from anywhere you actually look, so most people never found out their dashboard could look like anything else. A card now offers it once, and the button opens the browser there and then — the preview lands on the page you are already looking at, and closing it without choosing leaves your theme exactly as it was."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon harmonisation stays on when you change theme.</strong> It is set per theme, and only the two themes a new install starts with had it switched on — so picking any other theme quietly turned it off, with nothing on screen saying so. It is on for every theme now unless you switch it off yourself. If you are on a theme you never configured it for, your site icons will start blending with it after this update; the switch is under <em>Appearance</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The theme you pick is the theme you get.</strong> Choosing one from the browser could leave the previous theme's colours on screen beside the new one — pick Moss &amp; Stone from Retro CRT and end up looking at Marigold Dusk. Reloading always fixed it, because what was saved had been right all along."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The plain dark and light themes are called ThinkDashboard.</strong> They were <em>Old Default</em>, which said what they used to be rather than what they are. Nothing you have chosen moves."
+        }
+      ]
+    },
+    {
+      "title": "Where bookmarks come from",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A <em>Sources</em> tab, for the places bookmarks keep arriving from.</strong> Under <em>Config → Data &amp; backups</em>, separate from the import buttons: those read a file once, these are asked again. Each one remembers what it already brought in and says what the last round did."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Five services to start with.</strong> <em>GitHub stars</em> and <em>Raindrop.io</em> need a token. <em>Hacker News</em>, <em>YouTube</em> and <em>Mastodon</em> need nothing at all — type a username or a channel and that is the whole setup."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Import a browser's own bookmark file.</strong> The file every browser exports, and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep with it. Folders become categories, and tags, notes and the date you saved a link all survive the trip."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Export your collection in the same format.</strong> <em>Export bookmarks (HTML)</em> sits beside the CSV pair, and reads back into any browser."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A CSV import keeps the tags and notes it promised.</strong> The manual named that as the reason to prefer it, and the route dropped both on the floor."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The import question says how many are coming.</strong> <em>Are you sure? Import</em> — the question itself was missing, on the one dialog standing between you and two thousand new rows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A folder named without letters keeps its name.</strong> A folder called <em>📚</em> or <em>读书</em> lost it: no category was made, every bookmark inside landed uncategorised, and afterwards they could not be edited."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An import you could not see.</strong> Bringing in stars wrote them to the server and left the dashboard showing the collection from before."
+        }
+      ]
+    },
+    {
+      "title": "Keeping a copy of a page",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Ask the Web Archive to keep a copy the day you save a link.</strong> Everything else in the health view is diagnosis — it tells you a link is dead and offers whatever copy somebody else happened to take. For a page nobody else bookmarked there usually is none. Switch it on under <em>Config → Data &amp; backups → Sources</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Keep a copy on your own disk.</strong> <em>Local copies</em> saves a whole page — text, styling and images — as one file in your data directory, so it stays readable even if the site and the Web Archive are both gone."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A tab for the pages you have saved.</strong> <em>Config → Bookmarks → Local copies</em> lists them grouped by the bookmark they belong to, since the question is almost always <em>what do I have of this page</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>archive.today, for the copies the Web Archive was not allowed to keep.</strong> The two disagree by design: one honours a site that turns it away and drops what a site later withdraws, the other keeps what it captured. For a link that died behind a paywall, <em>no copy</em> from the first is routinely not <em>no copy</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The date the web lost a page.</strong> The health view can now say when a link last answered, rather than only that it does not now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><em>Recover from archive</em> works again.</strong> The button still answered, it simply looked for the copy in the wrong place, so nothing appeared and nothing failed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The archive says what went wrong, and you can try again.</strong> A refused capture, a missing key, or a daily allowance already spent now reads as what it is instead of as silence."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Check a service you have to be signed in to.</strong> A self-hosted service bookmarked at its web interface answered <em>not signed in</em> to an anonymous check, so the row read broken while the service was fine — and the only way to stop that was to stop watching the one bookmark worth watching. Store the sign-in once and reuse it across every link on that service; it is kept out of your backups unless you ask for it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Buttons on a downtime alert.</strong> An alert reaching your phone through ntfy now carries <em>Open link</em> and <em>Health</em>, so you can act on it without finding a laptop. Give nextDash its own address under <em>Config → Behavior → Status → Downtime alerts</em> for the second button to appear."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A bot check is not a dead link.</strong> A site asking <em>are you a robot</em> was counted as gone. Only the answers that actually say the page or the host no longer exists count now; the rest read as unknown."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Three slow jobs, done to a whole selection.</strong> Tick rows in the health view and <em>Rebuild previews</em>, <em>Refresh favicons</em> and <em>Save a copy on this disk</em> act on all of them. Each was already on a single row's menu, which is where the tedium was: a filter that finds forty bookmarks with no preview is exactly the case for doing them at once. They run one at a time with a bar that counts, since each one fetches a page belonging to somebody else."
+        }
+      ]
+    },
+    {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Uptime, as a reading rather than a count.</strong> <em>Statistics → Health</em> said how many bookmarks you monitor and never how well they did. It now shows how much of the time they answered over the last day, week and month, how many are failing right now, the average response and how many outages are on record."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Certificates that are running out</strong>, counted per site rather than per bookmark, using the warning window you set. Nothing is shown when none are close, which is the ordinary case and reads correctly as nothing to do."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How much of your collection has a copy kept here.</strong> A dead link with a saved copy is still readable; one without it is gone. That number was only ever on a widget you had to have added."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Everything that is not a bookmark, counted.</strong> A new panel on <em>Statistics → Content</em> says how many widgets are on your pages and of what kind, how many feeds and import sources you have, what is waiting in the trash and how many automatic backups are kept."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>“Healthy 100%” while two monitors were down.</strong> The healthy share left out the bookmarks that are failing a check and the ones answering with the wrong content — so the headline could read 100% directly above a row saying two are down. Those two also get rows of their own now, along with the ones that changed since you last looked and the ones in a category that no longer exists."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The cleanup score says your own threshold.</strong> You can set when a bookmark counts as neglected; the score always claimed 90 days. Set to seven, the page read <em>120 bookmarks have not been opened in 7 days</em> and, four lines below, <em>120 not opened in 90 days</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Category names, not the ids underneath them.</strong> The category panels and the CSV export showed the raw name a category is stored under — <em>dev</em> instead of <em>Development</em> — unless you happened to have opened <em>Config → Bookmarks</em> first in the same visit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The time under the figures is on your clock.</strong> With the 24-hour setting on, the header read <em>15:10</em> and Statistics read <em>03:10 PM</em> on the same screen. Every clock in the app follows the setting now."
+        }
+      ]
+    },
+    {
+      "title": "Cards and previews",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A card says what the page says about itself.</strong> Who published it, who wrote it and when, alongside the title and image it already showed — and for the video providers, a player you can start from the card."
+        }
+      ]
+    },
+    {
+      "title": "Finding things",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Your browser's address bar is a nextDash search box.</strong> Type the keyword, <kbd>Tab</kbd>, a term, <kbd>Enter</kbd>, and you land in your bookmarks with the results already on screen. No extension, no dashboard to open first. Your browser offers it after one visit; give it a short keyword in its own settings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A search has an address.</strong> Which means a search can be bookmarked, shared or opened from anywhere — every other view had one already."
+        }
+      ]
+    },
+    {
+      "title": "Telling other programs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Outgoing webhooks.</strong> A bookmark added, changed or removed, and a monitored link going down or coming back, are pushed to whatever you have built around nextDash — an automation, a script, a home dashboard. Every delivery is signed, so the receiver can tell it came from your install. Set them up under <em>Config → Data &amp; backups → Webhooks</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An assistant can search your bookmarks.</strong> On the same tab, and off until you switch it on: an AI assistant that speaks MCP can search your collection, look one bookmark up, list your tags and add a new bookmark. It reads everything you have filed, which is why it starts closed."
+        }
+      ]
+    },
+    {
+      "title": "Backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A backup carries your whole data directory.</strong> Files had been left out one at a time, each for a reason that held on its own — until together they made a restore an install that had lost its history and had to earn it back over weeks. The uptime chart alone needs thirty days before the window it claims is real."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Saved pages and stored tokens are yours to include or leave out.</strong> Two switches under <em>What a backup carries</em>. Local copies are by far the largest thing in a backup; including tokens means a restore needs nothing typed in again, and that the backup file is itself a secret."
+        }
+      ]
+    },
+    {
+      "title": "Config and the dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong><em>What's new</em> opens on the release.</strong> A third of this window used to go to an update notice, a boxed summary and a request for support before the first word of a release. The version is the headline now, the summary is its subtitle, and everything older is one line each that opens when you ask."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Panels fold shut.</strong> <em>Sources</em> and <em>Backups &amp; data</em> stacked every panel open, which is a wall to scroll past before reaching the one you came for. They open on a click and remember they were open."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The slow actions show progress.</strong> Refreshing every link preview is one request per bookmark — well over a minute for a real collection, and it used to sit there looking hung."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new install starts with the button bar in the corner.</strong> It began centred above the bookmarks, floating over the thing you opened the dashboard to look at. If you have ever chosen a position, yours is untouched."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A fifth setup step, for the bookmarks you already have.</strong> Quick setup ended by asking how you would like to begin, and one of the answers is <em>start from scratch</em> — which left you looking at an empty dashboard, with nothing in the app saying you need not type it all in. It now points at both ways in: a file you already have, and a list that keeps arriving."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>About three hundred translations that had been written and never shown.</strong> Widget names and descriptions, the weather, layout and background presets, the figure formats — all translated in all four languages, and all of them displaying in English."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The lists and the overview look like the rest of config.</strong> Pages, categories, tags and finders were columns of empty rectangles on the Classic layout, and <em>Config → Overview</em> was bare text between hairlines while every other section is made of cards."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help has a Widgets tab.</strong> Five articles: what a widget is, the thirteen kinds and what each one answers, how to add one and where it ends up, the Custom widget in full, and the twenty-eight services it already knows how to read. It used to be a single paragraph filed under <em>Pages &amp; bookmarks</em>, which is why almost nobody found the Custom widget."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing <em>:config</em> lists the config you actually have.</strong> It offered sections from two rewrites ago — <em>Theme &amp; colors</em>, <em>Collections</em> — and never offered Overview, Appearance, Behavior, Widgets or About. Worse, every one of them opened the same screen: whichever you picked, you landed on Overview, after a full page reload. They open the right section now, in place, and the old names that became sub-tabs still work and take you to their tab."
+        }
+      ]
+    },
+    {
+      "title": "Safety",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The API answers this dashboard, not every page on the internet.</strong> It used to answer any site that asked. A bookmark collection is not a password, but it is a list of where you work, bank and read — and any page open in a tab could have asked for the lot. The browser extension is unaffected. If you serve a page of your own against the API, name its address under <em>NEXTDASH_CORS_ORIGINS</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A stored sign-in stays on the service it was stored for.</strong> A watched host that answered <em>go and look over there</em> received it at whatever address it named. It is dropped at the boundary now, and the check goes on anonymously."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A custom widget's address and key stay on the server.</strong> Both came back to the browser with the rest of the page's layout. The tile never needed them — it asks the server by widget name."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A webhook cannot be talked into delivering somewhere else.</strong> The address is checked when you save it; it is checked again at delivery now, and a receiver that answers <em>go and look over there</em> is not followed."
+        }
+      ]
+    }
+  ]
+}

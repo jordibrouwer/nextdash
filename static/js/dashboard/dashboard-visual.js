@@ -69,16 +69,17 @@ class DashboardVisual {
         body.classList.remove('has-custom-background', 'bg-gradient', 'bg-image');
         document.documentElement.style.removeProperty('--custom-background-image');
 
-        const showDots = d.settings.showBackgroundDots !== false;
+
 
         if (type === 'none') {
-            body.classList.toggle('no-background-dots', !showDots);
-            window.ThemeLoader?.syncBackgroundDots?.(showDots);
+            window.ThemeLoader?.syncBackgroundDots?.(true);
             return;
         }
 
         const forceNoDots = (type === 'image');
-        body.classList.toggle('no-background-dots', forceNoDots || !showDots);
+        // A photo is the one backdrop the texture gives way to; a speckle over
+        // a picture is noise whatever the theme would otherwise draw.
+        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
 
         let presetName = '';
         if (type === 'auto') {
@@ -98,14 +99,14 @@ class DashboardVisual {
         }
 
         if (!customBackground) {
-            window.ThemeLoader?.syncBackgroundDots?.(showDots);
+            window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
             return;
         }
 
         document.documentElement.style.setProperty('--custom-background-image', customBackground);
         body.classList.add('has-custom-background');
         body.classList.add(presetName ? 'bg-gradient' : 'bg-image');
-        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
+        window.ThemeLoader?.syncBackgroundDots?.(!forceNoDots);
     }
 
 
@@ -140,7 +141,6 @@ class DashboardVisual {
         if (window.ThemeLoader?.applyTheme) {
             window.ThemeLoader.applyTheme(
                 displayTheme,
-                d.settings.showBackgroundDots !== false,
                 d.settings.fontSize || 'm'
             );
         }
@@ -211,16 +211,6 @@ class DashboardVisual {
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.();
     }
 
-
-    applyBackgroundDots() {
-        const d = this.dash;
-        // Toggle background dots class
-        if (d.settings.showBackgroundDots !== false) {
-            document.body.classList.remove('no-background-dots');
-        } else {
-            document.body.classList.add('no-background-dots');
-        }
-    }
 
 
     applyAnimations() {
@@ -511,6 +501,20 @@ class DashboardVisual {
             // A null summary is a non-ok response, not an empty report — the
             // same thing a thrown error means for the backoff.
             if (!summary) return false;
+            /*
+             * Kept, so a health widget on the grid can read the same numbers.
+             *
+             * This request already happens on every dashboard load for the
+             * header badge, and it is the light `?view=facts` shape. A widget
+             * fetching for itself would double it, and counting for itself would
+             * eventually disagree with the badge two centimetres away.
+             */
+            d.healthSummary = summary;
+            d.renderCore?.refreshWidgets?.('health');
+            // The same response carries the certificates map, kept by
+            // HealthFacts; the certificates widget reads it from there rather
+            // than fetching a report of its own.
+            d.renderCore?.refreshWidgets?.('certs');
             // keepHref: the icon opens the view; its href is only the middle-click path.
             utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
                 keepHref: true,

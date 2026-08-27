@@ -45,14 +45,7 @@
         return global.dashboardInstance || null;
     }
 
-    function escape(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    const escape = window.NextDashHtml.escapeHtml;
 
     /**
      * Whether the corner is free and interrupting is reasonable at all.

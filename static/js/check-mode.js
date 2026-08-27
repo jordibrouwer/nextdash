@@ -302,9 +302,7 @@ const CheckMode = {
      */
     showExplainer() {
         const t = (key, fallback) => CheckMode.t(`config.${key}`, fallback);
-        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
+        const esc = window.NextDashHtml.escapeHtml;
         const row = (title, body) => `<div class="check-mode-explain-row"><h4>${esc(title)}</h4><p>${esc(body)}</p></div>`;
         const html = `<div class="check-mode-explain">
             ${row(t('checkModePeriodic', 'Periodic'), t('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.'))}
