@@ -11,8 +11,14 @@ func TestSlidingWindowLimiterBlocksAfterLimit(t *testing.T) {
 	t.Parallel()
 
 	limiter := newSlidingWindowLimiter(2, time.Minute)
-	if !limiter.allow("client-a") || !limiter.allow("client-a") {
-		t.Fatal("expected first two requests to pass")
+	// Two statements rather than one ||: short-circuiting meant a failing first
+	// request skipped the second call altogether, so the two that follow were
+	// asking about a limiter that had seen one request, not two.
+	if !limiter.allow("client-a") {
+		t.Fatal("expected the first request to pass")
+	}
+	if !limiter.allow("client-a") {
+		t.Fatal("expected the second request to pass")
 	}
 	if limiter.allow("client-a") {
 		t.Fatal("expected third request to be blocked")
