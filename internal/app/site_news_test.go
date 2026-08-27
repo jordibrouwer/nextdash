@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -53,10 +54,12 @@ func TestSiteNewsSkipsWhatItCannotDraw(t *testing.T) {
 	}
 }
 
-// Five is what the panel draws; a feed with ten posts must not hand over ten.
-func TestSiteNewsStopsAtFive(t *testing.T) {
+// The parse stops at siteNewsMaxItems, and that cap sits above the ten the
+// overview reserves — a feed longer than the cap must be cut, and a feed of ten
+// must arrive whole.
+func TestSiteNewsStopsAtTheCap(t *testing.T) {
 	feed := `<rss><channel>`
-	for i := 0; i < 12; i++ {
+	for i := 0; i < siteNewsMaxItems+5; i++ {
 		feed += `<item><title>Post</title><link>https://nextdash.cc/p/</link>` +
 			`<pubDate>Fri, 21 Aug 2026 14:07:57 +0000</pubDate></item>`
 	}
@@ -69,6 +72,27 @@ func TestSiteNewsStopsAtFive(t *testing.T) {
 
 // Anything that is not a feed — an error page served with a 200, a truncated
 // body — yields nothing, and the caller keeps whatever it had.
+// Ten is the floor the overview is built on: it reserves a place for ten of the
+// site's posts, so ten arriving as nine reads as a quiet feed rather than as a
+// cap doing its job. The cap must therefore never sit at ten itself.
+func TestSiteNewsKeepsTenPostsWhole(t *testing.T) {
+	if siteNewsMaxItems <= 10 {
+		t.Fatalf("siteNewsMaxItems is %d: at ten or below, an eleventh post silently drops the oldest", siteNewsMaxItems)
+	}
+
+	feed := `<rss><channel>`
+	for i := 0; i < 10; i++ {
+		feed += `<item><title>Post ` + strconv.Itoa(i) + `</title>` +
+			`<link>https://nextdash.cc/p/` + strconv.Itoa(i) + `</link>` +
+			`<pubDate>Fri, 21 Aug 2026 14:07:57 +0000</pubDate></item>`
+	}
+	feed += `</channel></rss>`
+
+	if got := len(parseSiteNews([]byte(feed))); got != 10 {
+		t.Fatalf("a feed of ten posts must arrive as ten, got %d", got)
+	}
+}
+
 func TestSiteNewsIgnoresRubbish(t *testing.T) {
 	for _, body := range []string{"", "<html><body>404</body></html>", "<rss><channel>"} {
 		if got := parseSiteNews([]byte(body)); len(got) != 0 {

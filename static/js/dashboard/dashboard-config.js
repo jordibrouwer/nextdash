@@ -3478,7 +3478,9 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const stream = this._newsStream;
         const filter = this.newsFilter || 'all';
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 6;
+        // Falls back to the module's own figure; the literal is only for a
+        // page where the stream module has not loaded, and must not disagree.
+        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
 
         let body;
         if (stream === undefined) {
@@ -3611,7 +3613,9 @@ class DashboardConfig {
         if (stream === undefined) return '';
         const filter = this.newsFilter || 'all';
         const matching = stream.filter((item) => filter === 'all' || item.source === filter).length;
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 6;
+        // The same figure the list above uses, or the foot would count rows the
+        // reader cannot see.
+        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
         const shown = Math.min(matching, limit);
         const offline = this._siteNewsEnabled === false
             ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')

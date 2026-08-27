@@ -34,8 +34,11 @@ var siteNewsFeedURL = "https://nextdash.cc/feed/"
 
 const (
 	// The feed carries whole post bodies, so it is large for what is taken from
-	// it. Read enough for the first handful of items and stop.
-	siteNewsMaxBytes = 512 << 10
+	// it: measured at 172KB for ten posts, with the tenth starting at 97% of
+	// the file. A truncated read loses the oldest items first and looks like a
+	// short feed rather than a failure, so the ceiling has to clear the whole
+	// document with room for it to grow, not just the posts wanted today.
+	siteNewsMaxBytes = 2 << 20
 	siteNewsTimeout  = 8 * time.Second
 	// How long a fetched copy is served without asking again.
 	//
@@ -50,9 +53,12 @@ const (
 	// A failed fetch is not retried immediately: a site that is down should not
 	// be hit on every config open.
 	siteNewsRetryAfter = 15 * time.Minute
-	// Ten rather than the five the overview shows: the drill-in lists the rest,
-	// and a longer tail here would only grow the state file for nothing.
-	siteNewsMaxItems = 10
+	// Ten posts must always survive the parse, so the cap sits above ten rather
+	// than on it: a feed carrying exactly ten and a cap of exactly ten agree
+	// only until the eleventh post is published, and then the oldest of the ten
+	// silently stops arriving. Twenty keeps ten a floor instead of a ceiling
+	// while the drill-in gets a longer tail to list.
+	siteNewsMaxItems = 20
 	// A summary is a hint, not the post. Long enough to say what it is about,
 	// short enough that a row stays a row.
 	siteNewsSummaryChars = 160

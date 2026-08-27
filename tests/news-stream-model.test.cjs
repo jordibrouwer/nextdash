@@ -118,6 +118,54 @@ assert.ok(!stream.some((i) => i.titleKey === 'c'), 'an undated feature reached t
         'a filtered window reserved a slot it was not asked to');
 }
 
+// Ten posts, and ten is what the overview shows.
+//
+// The reservation used to ask whether the window held a post at all, which was
+// a fair question while two were reserved: one post in the window meant the
+// stream was already mixed. At ten it is not — a single post would answer the
+// question and stand in for the other nine, which is the shape this pins.
+{
+    const many = news.buildStream({
+        site: {
+            items: Array.from({ length: 12 }, (_, i) => ({
+                title: `Post ${i}`,
+                url: `https://nextdash.cc/p/${i}`,
+                summary: '',
+                // Older than every release below, so plain date order puts them
+                // all past the window and only the reservation brings them back.
+                publishedAt: Date.UTC(2026, 0, 12 - i),
+            })),
+        },
+        releases: Array.from({ length: 8 }, (_, i) => ({
+            tag: `v2.${i}.0`,
+            releasedAt: '2026-08-24',
+            date: '24 August 2026',
+        })),
+        features: [],
+    });
+
+    const rows = news.overviewRows(many);
+    const posts = rows.filter((i) => i.source === 'site');
+    assert.strictEqual(posts.length, 10,
+        `the overview must show ten of the site's posts, got ${posts.length}`);
+    assert.ok(rows.length <= news.OVERVIEW_LIMIT,
+        'the window must not grow past its limit to fit them');
+    assert.ok(rows.some((i) => i.source === 'release'),
+        'reserving for posts must not push every release out of the window');
+    const at = rows.map((i) => i.at);
+    assert.deepStrictEqual(at, [...at].sort((a, b) => b - a),
+        'the window is still in date order');
+
+    // Fewer posts than the reservation is not a shortfall to pad.
+    const few = news.overviewRows(news.buildStream({
+        site: { items: [{ title: 'Only', url: 'https://nextdash.cc/p/only', summary: '', publishedAt: Date.UTC(2026, 0, 1) }] },
+        releases: Array.from({ length: 8 }, (_, i) => ({ tag: `v3.${i}.0`, releasedAt: '2026-08-24', date: 'd' })),
+        features: [],
+    }));
+    assert.strictEqual(few.filter((i) => i.source === 'site').length, 1,
+        'a feed with one post shows one post');
+}
+
 // A first visit stamps "now": everything ever published counting as unread
 // would put a badge of 156 on Overview and teach the reader to ignore it.
 const seenAt = news.readSeenAt();
