@@ -3,11 +3,15 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 
 	tmp := t.TempDir()
 	t.Chdir(tmp)
@@ -40,7 +44,7 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -52,7 +56,7 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,12 +88,12 @@ func TestGetSettingsRespectsExplicitAutoBackupDisabled(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark","autoBackupEnabled":false}`)
-	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,12 +110,12 @@ func TestMigrateConfigButtonDefaultOn(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark","showConfigButton":false}`)
-	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -126,12 +130,12 @@ func TestMigrateConfigButtonDefaultOn(t *testing.T) {
 	}
 
 	// Second boot: migration must not run again — an explicit off sticks.
-	raw, err := os.ReadFile("data/settings.json")
+	raw, err := os.ReadFile(filepath.Join(ResolveDataDir(), "settings.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	patched := strings.Replace(string(raw), `"showConfigButton": true`, `"showConfigButton": false`, 1)
-	if err := os.WriteFile("data/settings.json", []byte(patched), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), []byte(patched), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -147,12 +151,12 @@ func TestGetSettingsRespectsExplicitShowConfigButtonFalse(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark","showConfigButton":false,"configButtonDefaultOnMigrated":true}`)
-	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,12 +173,12 @@ func TestGetSettingsRespectsExplicitShowIconsFalse(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark","showIcons":false}`)
-	if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -211,7 +215,7 @@ func TestMonitorEmphasisDefaultsAndRejectsUnknownValues(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 			t.Chdir(dir)
-			if err := os.MkdirAll("data", 0755); err != nil {
+			if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 				t.Fatal(err)
 			}
 			body, err := json.Marshal(map[string]any{
@@ -221,7 +225,7 @@ func TestMonitorEmphasisDefaultsAndRejectsUnknownValues(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 				t.Fatal(err)
 			}
 			if got := NewStore().GetSettings().MonitorEmphasis; got != tc.want {
@@ -235,6 +239,9 @@ func TestMonitorEmphasisDefaultsAndRejectsUnknownValues(t *testing.T) {
 // and its visibility was a side effect of the group it sits in. An upgrade must
 // therefore leave it on, or every existing dashboard silently loses a button.
 func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
@@ -258,14 +265,14 @@ func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 			t.Chdir(dir)
-			if err := os.MkdirAll("data", 0755); err != nil {
+			if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 				t.Fatal(err)
 			}
 			body, err := json.Marshal(tc.settings)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 				t.Fatal(err)
 			}
 			if got := NewStore().GetSettings().ShowCollapseAllButton; got != tc.want {
@@ -301,14 +308,14 @@ func TestServerLogMaxEntriesDefault(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 			t.Chdir(dir)
-			if err := os.MkdirAll("data", 0755); err != nil {
+			if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 				t.Fatal(err)
 			}
 			body, err := json.Marshal(tc.settings)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 				t.Fatal(err)
 			}
 			if got := NewStore().GetSettings().ServerLogMaxEntries; got != tc.want {
@@ -327,6 +334,9 @@ func TestServerLogMaxEntriesDefault(t *testing.T) {
 // checkable from Go; the client pair is held to it by
 // tests/config-field-defaults.spec.js.
 func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 

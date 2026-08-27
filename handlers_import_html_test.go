@@ -84,6 +84,9 @@ func TestImportBookmarksHTMLKeepsWhatTheFileCarries(t *testing.T) {
 // the existing behaviour of the shared import path, and this proves the HTML
 // route goes through it rather than around it.
 func TestImportBookmarksHTMLSkipsWhatIsAlreadyThere(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 	store := NewStore()

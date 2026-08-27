@@ -15,7 +15,7 @@ func TestUploadIconOverwritesExistingFile(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	iconsDir := filepath.Join("data", "icons")
+	iconsDir := filepath.Join(ResolveDataDir(), "icons")
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestUploadFontUsesMagicBytesNotClientType(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	if _, err := os.Stat(filepath.Join("data", "font.woff")); err != nil {
+	if _, err := os.Stat(filepath.Join(ResolveDataDir(), "font.woff")); err != nil {
 		t.Fatalf("expected font.woff from magic bytes, not .woff2 filename: %v", err)
 	}
 

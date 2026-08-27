@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -30,22 +31,22 @@ func TestResetAllDataClearsUserAssets(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data/icons", 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(ResolveDataDir(), "icons"), 0755); err != nil {
 		t.Fatal(err)
 	}
 	removedAfterReset := map[string][]byte{
-		"data/icons/icon-test.png": []byte("icon"),
-		"data/preview-cache.json":  []byte(`{"cache":{}}`),
-		"data/health-cache.json":   []byte(`{}`),
-		"data/favicon.png":         []byte("fav"),
-		"data/font.woff2":          []byte("font"),
+		filepath.Join(ResolveDataDir(), "icons", "icon-test.png"): []byte("icon"),
+		filepath.Join(ResolveDataDir(), "preview-cache.json"):     []byte(`{"cache":{}}`),
+		filepath.Join(ResolveDataDir(), "health-cache.json"):      []byte(`{}`),
+		filepath.Join(ResolveDataDir(), "favicon.png"):            []byte("fav"),
+		filepath.Join(ResolveDataDir(), "font.woff2"):             []byte("font"),
 	}
 	for path, content := range removedAfterReset {
 		if err := os.WriteFile(path, content, 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := os.WriteFile("data/colors.json", []byte(`{"custom":{"old":{}}}`), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "colors.json"), []byte(`{"custom":{"old":{}}}`), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,11 +60,11 @@ func TestResetAllDataClearsUserAssets(t *testing.T) {
 			t.Fatalf("expected %s removed after reset, stat err=%v", path, err)
 		}
 	}
-	if _, err := os.Stat("data/icons"); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(ResolveDataDir(), "icons")); !os.IsNotExist(err) {
 		t.Fatal("expected data/icons directory removed after reset")
 	}
 
-	colors, err := os.ReadFile("data/colors.json")
+	colors, err := os.ReadFile(filepath.Join(ResolveDataDir(), "colors.json"))
 	if err != nil {
 		t.Fatalf("expected default colors.json recreated, err=%v", err)
 	}

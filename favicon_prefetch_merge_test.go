@@ -37,6 +37,9 @@ func TestMergePrefetchBookmarkIconsPreservesOtherFields(t *testing.T) {
 }
 
 func TestMergePrefetchBookmarkIconsSkipsWhenURLOrIconChanged(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -24,11 +25,11 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 	t.Run("existing install that had them on", func(t *testing.T) {
 		dir := t.TempDir()
 		t.Chdir(dir)
-		if err := os.MkdirAll("data", 0755); err != nil {
+		if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 			t.Fatal(err)
 		}
 		body, _ := json.Marshal(map[string]any{"currentPage": 1, "showShortcutTooltips": true})
-		if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 			t.Fatal(err)
 		}
 
@@ -37,7 +38,7 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 		}
 
 		// And the migration recorded that it ran.
-		raw, err := os.ReadFile("data/settings.json")
+		raw, err := os.ReadFile(filepath.Join(ResolveDataDir(), "settings.json"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +54,7 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 	t.Run("switching them back on sticks", func(t *testing.T) {
 		dir := t.TempDir()
 		t.Chdir(dir)
-		if err := os.MkdirAll("data", 0755); err != nil {
+		if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 			t.Fatal(err)
 		}
 		// A file that has already been migrated and then turned back on by hand.
@@ -62,7 +63,7 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 			"showShortcutTooltips":        true,
 			"shortcutTooltipsOffMigrated": true,
 		})
-		if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
 			t.Fatal(err)
 		}
 		if got := NewStore().GetSettings().ShowShortcutTooltips; !got {

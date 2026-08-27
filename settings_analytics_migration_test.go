@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -13,10 +14,10 @@ func writeSettings(t *testing.T, raw string) Settings {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile("data/settings.json", []byte(raw), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), []byte(raw), 0644); err != nil {
 		t.Fatal(err)
 	}
 

@@ -21,14 +21,14 @@ func TestBookmarkURLExistsUsesCanonicalURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join("data", "bookmarks-1.json"), data, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "bookmarks-1.json"), data, 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	fs := &FileStore{dataDir: "data"}
+	fs := &FileStore{dataDir: ResolveDataDir()}
 	if !fs.BookmarkURLExists("https://example.com/") {
 		t.Fatal("expected trailing-slash variant to match bookmark")
 	}

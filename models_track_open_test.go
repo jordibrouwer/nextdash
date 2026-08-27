@@ -23,14 +23,14 @@ func TestTrackBookmarkOpenIncrementsAtomically(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join("data", "bookmarks-1.json"), data, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "bookmarks-1.json"), data, 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	fs := &FileStore{dataDir: "data"}
+	fs := &FileStore{dataDir: ResolveDataDir()}
 	const opens = 50
 	var wg sync.WaitGroup
 	for i := 0; i < opens; i++ {
@@ -57,10 +57,13 @@ func TestTrackBookmarkOpenIncrementsAtomically(t *testing.T) {
 }
 
 func TestTrackBookmarkOpenRejectsInvalidIndex(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	fs := &FileStore{dataDir: "data"}
+	fs := &FileStore{dataDir: ResolveDataDir()}
 	err := fs.TrackBookmarkOpen(1, 0)
 	if err == nil {
 		t.Fatal("expected error for missing page file")

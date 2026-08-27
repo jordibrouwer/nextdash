@@ -45,6 +45,9 @@ func TestTakeDefaultBookmarkIconPrefetch(t *testing.T) {
 }
 
 func TestNewHandlersConsumesPrefetchFlag(t *testing.T) {
+	// Its own store: this one describes a fresh install, so it must not
+	// inherit whatever an earlier test in the run left behind.
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
@@ -80,7 +83,7 @@ func TestSaveIconBytesSanitizesSVG(t *testing.T) {
 		t.Fatal("expected saved svg file name")
 	}
 
-	stored, err := os.ReadFile(filepath.Join("data", "icons", fileName))
+	stored, err := os.ReadFile(filepath.Join(ResolveDataDir(), "icons", fileName))
 	if err != nil {
 		t.Fatal(err)
 	}
