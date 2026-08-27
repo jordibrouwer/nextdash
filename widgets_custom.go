@@ -312,7 +312,10 @@ func formatCustomValue(raw any, format string) string {
 	switch format {
 	case "count":
 		if number, ok := toFloat(raw); ok {
-			return formatThousands(int64(number))
+			// Rounded, not truncated: a service reporting 9.99 items means ten
+			// of something, and showing "9" is a wrong figure rather than a
+			// rounded one.
+			return formatThousands(int64(math.Round(number)))
 		}
 	case "bytes":
 		if number, ok := toFloat(raw); ok {
@@ -325,7 +328,11 @@ func formatCustomValue(raw any, format string) string {
 			if number > 0 && number <= 1 {
 				number *= 100
 			}
-			return strconv.FormatFloat(number, 'f', -1, 64) + "%"
+			// One decimal, and never a trailing ".0". Printing every digit the
+			// float carried showed "43.729183739999996%" on a tile the size of
+			// a stamp: the scaling above turns a clean ratio into a value no
+			// shortest-representation format can tidy up again.
+			return trimTrailingZeroDecimal(strconv.FormatFloat(number, 'f', 1, 64)) + "%"
 		}
 	case "duration":
 		if number, ok := toFloat(raw); ok {
@@ -337,6 +344,12 @@ func formatCustomValue(raw any, format string) string {
 		}
 	}
 	return trimToLength(fmt.Sprint(raw), 120)
+}
+
+// trimTrailingZeroDecimal drops a ".0" tail so a whole percentage reads as
+// "50%" rather than "50.0%", while 43.7% keeps its digit.
+func trimTrailingZeroDecimal(text string) string {
+	return strings.TrimSuffix(text, ".0")
 }
 
 func toFloat(raw any) (float64, bool) {
