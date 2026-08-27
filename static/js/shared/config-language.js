@@ -117,17 +117,39 @@ class ConfigLanguage {
      * @param {string} key - Translation key (e.g., 'config.title')
      * @returns {string} Translated text or key if not found
      */
+    /*
+     * Look a key up, treating a dot as either a level or part of a name.
+     *
+     * The dot was only ever a level, and the locale files do not agree: a
+     * little under eighty keys are stored as one literal name with a dot in
+     * it -- "widgetAbout.health" sitting directly under "config" rather than
+     * a "widgetAbout" object holding "health". Walking alone never reached
+     * any of them, so about three hundred translations across the four
+     * languages were written, kept in step, and never once displayed. What a
+     * reader saw instead was the English hardcoded beside the call, which is
+     * why it looked like nobody had translated widget names, weather, layout
+     * presets or background presets rather than like a lookup that misses.
+     *
+     * At every level the rest of the path is tried as one literal name before
+     * the next dot is treated as another level. Measured across all four
+     * files first: no key is reachable both ways, so nothing that resolved
+     * before resolves differently now.
+     */
     t(key) {
         if (typeof key !== 'string') return String(key);
-        const keys = key.split('.');
-        let value = this.translations ?? {};
-        for (const k of keys) {
-            if (value == null || typeof value !== 'object') {
+        const parts = key.split('.');
+        let node = this.translations ?? {};
+        for (let at = 0; at < parts.length; at += 1) {
+            if (node == null || typeof node !== 'object') {
                 return key;
             }
-            value = value[k];
+            const literal = node[parts.slice(at).join('.')];
+            if (typeof literal === 'string') {
+                return literal;
+            }
+            node = node[parts[at]];
         }
-        return typeof value === 'string' ? value : key;
+        return typeof node === 'string' ? node : key;
     }
 
     /** Debounced search index rebuild after translated DOM text changes. */
