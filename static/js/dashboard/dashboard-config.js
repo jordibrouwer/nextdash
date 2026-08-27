@@ -10104,7 +10104,7 @@ class DashboardConfig {
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
         showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         // Appearance
-        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: true },
+        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: false },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },

@@ -18,6 +18,21 @@ async function loadDashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
+/**
+ * Open every fold on Data & backups.
+ *
+ * Its panels are native <details> and all but *Create a backup* start shut, so
+ * the buttons below are one click away by design rather than on screen. These
+ * two tests are about the controls existing and working, not about which fold
+ * they sit behind.
+ */
+async function openBackupFolds(page) {
+    await page.evaluate(() => {
+        document.querySelectorAll('#config-section-panel details[data-fold], .config-view details[data-fold]')
+            .forEach((d) => { d.open = true; });
+    });
+}
+
 test.describe('config dashboard view (scaffold)', () => {
     test('opening #config activates the config view', async ({ page }) => {
         await loadDashboard(page);
@@ -309,6 +324,7 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+        await openBackupFolds(page);
 
         for (const action of ['csv-export', 'browser-import', 'settings-export', 'settings-import']) {
             await expect(page.locator(`[data-backup-action="${action}"]`)).toBeVisible();
@@ -334,6 +350,7 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+        await openBackupFolds(page);
 
         const [download] = await Promise.all([
             page.waitForEvent('download'),

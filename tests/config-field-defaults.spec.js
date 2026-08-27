@@ -18,7 +18,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady 
 
 /** The literal defaults from the `defaultSettings := Settings{...}` block. */
 function serverDefaults() {
-    const go = fs.readFileSync(path.join(__dirname, '..', 'models.go'), 'utf8');
+    const go = fs.readFileSync(path.join(__dirname, '..', 'internal', 'app', 'models.go'), 'utf8');
     // `defaultSettings := Settings{...}` — the block used when no settings file
     // exists, which is what a fresh install actually gets. models.go has a
     // second `settings := Settings{...}` further down for the unreadable-file

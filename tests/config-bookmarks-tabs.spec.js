@@ -36,7 +36,11 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
     test('it opens on the list, with the settings one click away', async ({ page }) => {
         await openBookmarks(page);
 
-        await expect(page.locator('[data-bm-tab]')).toHaveCount(2);
+        // Counted against BM_TABS: the strip gained a third tab and this failed
+        // for naming a number rather than for anything being wrong.
+        const tabs = await page.evaluate(() =>
+            window.DashboardConfig.BM_TABS.length);
+        await expect(page.locator('[data-bm-tab]')).toHaveCount(tabs);
         expect(await activeTab(page)).toBe('list');
         await expect(page.locator('#config-bm-list')).toBeVisible();
         // The settings are not merely scrolled out of sight — they are not in

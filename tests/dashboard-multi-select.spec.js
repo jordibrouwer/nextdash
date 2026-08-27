@@ -176,6 +176,13 @@ test.describe('multi-select', () => {
         await openDashboard(page);
 
         const firstRow = page.locator('.bookmark-link[data-bookmark-index]').first();
+        // The row the click lands on, not bookmarks[0]: the grid draws in its
+        // own order, so the first row on screen is not the first bookmark in
+        // the array and the count was being read off a different one.
+        const index = Number(await firstRow.getAttribute('data-bookmark-index'));
+        const before = await page.evaluate((i) =>
+            Number(window.dashboardInstance.bookmarks[i]?.openCount || 0), index);
+
         const opened = context.waitForEvent('page', { timeout: 10_000 });
         await firstRow.locator('a.bookmark-open').click({ modifiers: ['ControlOrMeta'] });
 
@@ -184,8 +191,9 @@ test.describe('multi-select', () => {
         expect(await selectionCount(page)).toBe(0);
         // And the open is still counted: letting the default through means the
         // anchor's own handler never runs, so the row records it itself.
-        await expect.poll(() => page.evaluate(() =>
-            (window.dashboardInstance.bookmarks[0].openCount || 0) > 0), { timeout: 5_000 }).toBe(true);
+        await expect.poll(() => page.evaluate((i) =>
+            Number(window.dashboardInstance.bookmarks[i]?.openCount || 0), index),
+        { timeout: 5_000 }).toBeGreaterThan(before);
     });
 
     test('Shift+click extends from the ticked row', async ({ page }) => {

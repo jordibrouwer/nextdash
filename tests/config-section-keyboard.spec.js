@@ -21,11 +21,13 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await openSection(page, 'overview');
         const tabs = page.locator('[data-config-section]');
         const searchJump = page.locator('[data-config-action="settings-jump"]');
-        // Overview, Bookmarks, Pages & tags, Appearance, Behavior, Data &
-        // backups, Statistics, Help — and About, which the overview rebuild gave
-        // the rail (v1.3.3).
-        const count = await tabs.count();
-        expect(count).toBe(9);
+        // Counted against SECTIONS rather than a literal: the rail has grown
+        // twice — About with the overview rebuild, Widgets in v1.4.0 — and each
+        // time this failed for being out of date rather than for anything being
+        // wrong.
+        const sections = await page.evaluate(() =>
+            (window.DashboardConfig || window.DashboardConfigLoader).SECTIONS.length);
+        await expect(tabs).toHaveCount(sections);
 
         await tabs.first().focus();
         await page.keyboard.press('ArrowDown');

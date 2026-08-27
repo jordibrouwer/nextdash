@@ -59,6 +59,11 @@ async function addWidget(page, type) {
     await page.locator('[data-widget-catalogue]').click();
     await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
+    // The count arriving is not the list settling: the dashboard redraws behind
+    // config and the new row is then scrolled to and its title focused. The
+    // caret landing is the last of it, so it is the signal to act on.
+    await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))
+        .toBeFocused({ timeout: 10_000 });
     const index = await page.locator('[data-widget-settings]').last().getAttribute('data-widget-settings');
     await page.locator(`[data-widget-settings="${index}"]`).click();
     await expect(page.locator(`[data-widget-row="${index}"] .config-widget-settings`)).toBeVisible();

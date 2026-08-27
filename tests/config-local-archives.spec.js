@@ -20,6 +20,12 @@ test.describe('local copies', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
         await page.click('[data-db-tab="sources"]');
         await expect(page.locator('[data-local-archive-panel]')).toBeVisible({ timeout: 15_000 });
+        // The Sources panels are native <details> and start shut, so the
+        // controls below are one click away by design. These tests are about
+        // what the controls do, not about which fold they sit behind.
+        await page.evaluate(() => {
+            document.querySelectorAll('details[data-fold]').forEach((d) => { d.open = true; });
+        });
     });
 
     test('it says whether monolith is there, and what to do if not', async ({ page }) => {

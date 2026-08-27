@@ -12,7 +12,7 @@ const extensionPath = path.join(__dirname, '..', 'extension');
 test.describe('extension popup', () => {
     test.setTimeout(60_000);
 
-    test('loads popup, saves settings, and saves a bookmark', async () => {
+    test('loads popup, saves settings, and saves a bookmark', async ({ baseURL }) => {
         const userDataDir = path.join(__dirname, '..', '.playwright-extension-profile');
         const context = await chromium.launchPersistentContext(userDataDir, {
             // Bundled Chromium (CI installs chromium only). Extensions need a headed
@@ -33,8 +33,10 @@ test.describe('extension popup', () => {
             expect(extensionId).toBeTruthy();
 
             const page = await context.newPage();
-            const e2ePort = process.env.PORT || '18080';
-            const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${e2ePort}`;
+            // The worker's own server, taken from the fixture. Guessing
+            // localhost:18080 was right while the suite ran one server; with a
+            // server per worker the OS hands out the port, so the popup was
+            // being pointed at nothing and its page list stayed empty.
             await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
             await expect(page.locator('#save-tab')).toBeVisible();

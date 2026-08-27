@@ -80,7 +80,7 @@ test.describe('finding out which bookmarks publish', () => {
 
     test('a count still wins over the quiet mark', async ({ page }) => {
         await openDashboard(page);
-        await page.evaluate(() => {
+        const url = await page.evaluate(() => {
             const d = window.dashboardInstance;
             const bookmark = d.bookmarks[0];
             d.settings.feedsMarkQuiet = true;
@@ -89,9 +89,18 @@ test.describe('finding out which bookmarks publish', () => {
                 feedUrl: 'https://blog.example/feed.xml', newCount: 3, lastItemAt: Date.now(),
             }]]);
             d.renderDashboard({ animate: false, forceFull: true });
+            return bookmark.url;
         });
 
         await expect(page.locator('.bookmark-fresh-badge.is-quiet')).toHaveCount(0);
-        await expect(page.locator('.bookmark-fresh-badge').first()).toHaveText('3');
+        // The badge on the row the count was put on. Every row carries a badge
+        // element — empty when it has nothing to say — so .first() is whichever
+        // bookmark happens to be drawn first, not this one.
+        const badge = page.locator('.bookmark-link')
+            .filter({ has: page.locator(`[href="${url}"]`) })
+            .or(page.locator(`.bookmark-link[href="${url}"]`))
+            .first()
+            .locator('.bookmark-fresh-badge');
+        await expect(badge).toHaveText('3');
     });
 });

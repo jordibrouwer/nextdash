@@ -113,6 +113,17 @@ test.describe('the inbox can undo a read', () => {
 
     test('the fetched summary is shown on the row and carried into the export', async ({ page }) => {
         await dashboard(page);
+        // dashboard() waits for the pages to arrive, which is the dashboard
+        // being ready to draw. The inbox is a separate module and lands on its
+        // own schedule, so on a loaded machine it can still be undefined here —
+        // the evaluate below then throws inside the browser rather than failing
+        // an assertion, which is how this read as flaky in a full run and never
+        // in isolation.
+        await page.waitForFunction(
+            () => typeof window.dashboardInstance?.inbox?.createItemElement === 'function',
+            null,
+            { timeout: 15_000 },
+        );
         const shown = await page.evaluate(() => {
             const inbox = window.dashboardInstance.inbox;
             const item = {

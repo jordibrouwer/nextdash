@@ -155,7 +155,11 @@ test.describe('tag filter view', () => {
 
         expect(Math.abs(placement.modalLeft - placement.toggleLeft)).toBeLessThan(120);
         expect(Math.abs(placement.modalCenterX - placement.viewportCenterX)).toBeGreaterThan(80);
-        expect(placement.tooltip).toBeNull();
+        // The button names its key. It carried no tooltip when this was
+        // written; the toolbar gives every control one now — dashboard-toolbar
+        // lists this one as `/` — and asserting the absence of it had this
+        // failing for something the test is not about.
+        expect(placement.tooltip).toContain('/');
         expect(placement.modalTop).toBeGreaterThan(180);
     });
 

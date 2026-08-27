@@ -80,17 +80,22 @@ test.describe('scroll position', () => {
         await dashboard(page);
         const state = await page.evaluate(() => {
             const d = window.dashboardInstance;
+            const key = `nextdash:page-scroll:${d.currentPageId}`;
             d.settings.rememberScrollPosition = true;
             d.data.rememberScrollForPage(Number(d.currentPageId));
-            return {
-                remembered: d.data.takeRememberedScroll(Number(d.currentPageId)),
-                key: `nextdash:page-scroll:${d.currentPageId}`,
-            };
+            // Read before taking: takeRememberedScroll consumes from the Map
+            // and from sessionStorage, which is the whole point of it — an
+            // offset that survived being restored sent every later visit to
+            // that page back to where you once left it.
+            const storedBefore = sessionStorage.getItem(key) !== null;
+            const remembered = d.data.takeRememberedScroll(Number(d.currentPageId));
+            return { remembered, key, storedBefore, storedAfter: sessionStorage.getItem(key) !== null };
         });
         // Zero is a legitimate offset at the top of a short page; what matters is
-        // that the read does not throw and the key exists.
+        // that the read does not throw and the key was written.
         expect(Number.isFinite(state.remembered)).toBe(true);
-        expect(await page.evaluate((k) => sessionStorage.getItem(k) !== null, state.key)).toBe(true);
+        expect(state.storedBefore).toBe(true);
+        expect(state.storedAfter).toBe(false);
 
         // Off writes nothing and hands back nothing, so every arrival is the top.
         expect(await page.evaluate(() => {

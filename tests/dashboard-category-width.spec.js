@@ -261,9 +261,18 @@ test.describe('the column count is the ceiling', () => {
         test.skip(id === null, 'no stored category with three bookmarks in this fixture');
         await setSpread(page, id, true);
 
-        // One per column and three bookmarks: it asks for three, and gets what
+        // What it asks for is its own row count at one per column, read from
+        // the fixture rather than assumed: categoryWith takes a category with
+        // *at least* three, and the one it finds here has four. Hardcoding
+        // three passed at three columns only because the grid clamped it, and
+        // then failed the moment the grid was widened past it.
+        const wanted = await page.evaluate((categoryId) => (window.dashboardInstance.bookmarks || [])
+            .filter((b) => b.category === categoryId).length, id);
+        expect(wanted).toBeGreaterThanOrEqual(3);
+
+        // One per column: it asks for one column per bookmark, and gets what
         // the grid has.
-        expect((await stateOf(page, id)).span).toBe(3);
+        expect((await stateOf(page, id)).span).toBe(Math.min(wanted, 3));
 
         // Opened once so the lazily loaded config module exists — changing the
         // column count is something you do in config, and its own setBehavior
@@ -288,9 +297,8 @@ test.describe('the column count is the ceiling', () => {
         expect(narrowed.visible).toBe(2);
 
         await setColumns(4);
-        // Back to what it asks for, not to what the grid now allows: three
-        // bookmarks at one per column need three columns, not four.
-        expect((await stateOf(page, id)).span).toBe(3);
+        // Back to what it asks for, not to whatever the grid now allows.
+        expect((await stateOf(page, id)).span).toBe(Math.min(wanted, 4));
     });
 });
 
@@ -314,7 +322,13 @@ test.describe('a spread category shows that it is one category', () => {
         const spread = await page.evaluate((categoryId) => {
             const el = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(categoryId)}"]`);
             const body = el.querySelector('.category-body').getBoundingClientRect();
-            const rows = [...el.querySelectorAll('.bookmark-link')].map((r) => r.getBoundingClientRect());
+            // Laid-out rows only. With a limit of one there is an overflow row
+            // in the DOM that is not drawn, and its rect is all zeros — which
+            // made Math.min(...lefts) nought and every block look as though it
+            // started to the right of its own first column.
+            const rows = [...el.querySelectorAll('.bookmark-link')]
+                .map((r) => r.getBoundingClientRect())
+                .filter((r) => r.width > 0 && r.height > 0);
             const badge = el.querySelector('.category-spread-badge');
             return {
                 // The header's own fading rule is the only line here now: a
@@ -623,11 +637,19 @@ test.describe('config points the way to the new setting', () => {
 
         // The twinkle marked the way to categories across columns when that was
         // new, in v1.3.0. A mark that outlives its release teaches people to
-        // ignore the mark, so Appearance, Layout and the panel are quiet again —
-        // and nothing else has taken the trail over.
-        expect(await page.evaluate(() => document.querySelectorAll(
-            '.config-nav-item--animated, .config-subtab--animated, .config-panel--animated',
-        ).length)).toBe(0);
+        // ignore the mark, so Appearance, its Layout tab and the panel are quiet
+        // again.
+        //
+        // Scoped to those three rather than to the whole view: a later release
+        // marks its own new section — NEW_THIS_RELEASE names Widgets — and a
+        // global assertion made that read as the old trail never having been
+        // cleared.
+        expect(await page.evaluate(() => {
+            const marked = (sel) => document.querySelectorAll(sel).length;
+            return marked('[data-config-section="appearance"].config-nav-item--animated')
+                + marked('[data-appearance-tab="layout"].config-subtab--animated')
+                + marked('#config-appearance-body .config-panel--animated');
+        })).toBe(0);
     });
 });
 

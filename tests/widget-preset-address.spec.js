@@ -47,6 +47,12 @@ async function addCustom(page) {
     await page.locator('[data-widget-catalogue]').click();
     await page.locator('.modal--widget-catalogue [data-widget-add="custom"]').click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
+    // The count arriving is not the list settling: adding a widget redraws the
+    // dashboard behind config and then scrolls the new row into view and puts
+    // the caret in its title. Clicking between those detaches the button. The
+    // focused title is the last thing that happens, so it is the signal.
+    await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))
+        .toBeFocused({ timeout: 10_000 });
 
     const toggle = page.locator('[data-widget-settings]').last();
     const index = await toggle.getAttribute('data-widget-settings');

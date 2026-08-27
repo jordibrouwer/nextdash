@@ -40,6 +40,13 @@ test.describe('dashboard inbox phase 1', () => {
 
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Triage works on the filtered list, and an empty one answers "Nothing
+        // to triage" and draws no overlay. Waited on the list triage itself
+        // reads rather than on a rendered row: the view is up before the items
+        // are, so the button was being pressed against an empty queue.
+        await page.waitForFunction(
+            () => (window.dashboardInstance.inbox?.getFilteredItems?.() || []).length > 0,
+            null, { timeout: 15_000 });
         await page.locator('.inbox-triage-btn').click();
         await expect(page.locator('#inbox-triage-overlay')).toBeVisible();
         await page.keyboard.press('Escape');

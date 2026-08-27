@@ -459,6 +459,11 @@ test.describe('health dashboard view', () => {
             // The capture itself, and the offer to keep it: the listing above is
             // for browsing, this is the way out of a link that is gone.
             'Use the last archived copy…',
+            // And the copy kept here rather than out there: v1.4.0 can capture
+            // a whole page to this disk, so the menu offers both making one and
+            // seeing what is already stored for this bookmark.
+            'Save a copy on this disk…',
+            'Copies on this disk',
             // Same two the dashboard's right-click menu carries: a row here is a
             // bookmark like any other, and copying or sending one should not mean
             // going back to the dashboard first. The second names the copy rather

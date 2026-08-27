@@ -115,7 +115,11 @@ test.describe('editing a bookmark where you read it', () => {
         await pill.click();
         const input = page.locator('.config-bm-inline-input--shortcut').first();
         await expect(input).toBeVisible({ timeout: 5_000 });
-        await input.type(taken.key);
+        // fill rather than type: the row repaints while the field is open, and
+        // typing character by character had the input detached out from under
+        // it mid-word. fill dispatches the same input event the conflict check
+        // listens for, in one go.
+        await input.fill(taken.key);
 
         // Said while the field is open, naming the bookmark that has it.
         const warning = page.locator('.config-bm-inline-conflict').first();

@@ -131,7 +131,10 @@ test.describe('config statistics visualisations', () => {
         const health = page.locator('#config-stats-health');
         await expect(health.locator('.config-stat-detail').first()).toContainText('6');
         await expect(health).toContainText('2');
-        // 6 healthy of 9 counted → 67%
-        await expect(health.locator('.config-ratio-value')).toContainText('67%');
+        // 6 healthy of 10 counted → 60%. The denominator is every state a
+        // bookmark can be in, monitorDown and content included: the server
+        // splits those out precisely so the three add up, and leaving them out
+        // let a collection with monitors down report "Healthy 100%".
+        await expect(health.locator('.config-ratio-value')).toContainText('60%');
     });
 });

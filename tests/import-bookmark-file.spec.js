@@ -33,6 +33,12 @@ async function openBackups(page) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
     await page.waitForSelector('#config-browser-import-input', { timeout: 15_000, state: 'attached' });
+    // Import and export live inside a collapsed <details>, which is right for a
+    // screen someone came to on purpose and means the buttons are not clickable
+    // until it is open. These tests are about what the buttons do.
+    await page.evaluate(() => {
+        document.querySelectorAll('details[data-fold]').forEach((d) => { d.open = true; });
+    });
 }
 
 async function chooseFile(page) {

@@ -228,8 +228,15 @@ test.describe('the feature catalogue announces it', () => {
             .find((f) => f.titleKey === 'config.overviewNewFeatureMonitorEmphasisTitle'));
         expect(entry, 'the monitor entry is still in the catalogue').toBeTruthy();
 
-        const row = page.locator('.config-news-item')
-            .filter({ hasText: /monitored|gemonitorde|überwachte|surveillés/i }).first();
+        // Found by its own title, resolved in whichever language is running,
+        // rather than by a word five entries in the stream happen to share —
+        // "monitored" also appears in the widgets, webhooks, rot and health
+        // entries, and .first() of that set stopped being this one the moment
+        // a newer release was added above it.
+        const title = await page.evaluate((key) => window.dashboardInstance.config
+            .t(key, ''), 'config.overviewNewFeatureMonitorEmphasisTitle');
+        expect(title, 'the monitor entry has a title in this language').toBeTruthy();
+        const row = page.locator('.config-news-item').filter({ hasText: title }).first();
         await expect(row).toBeVisible();
         // Real copy in every locale, not a bare key.
         await expect(row).not.toContainText('config.overviewNewFeature');
@@ -262,16 +269,24 @@ test.describe('the new setting is marked as new', () => {
         await page.waitForSelector('[data-behavior-tab="status"]', { timeout: 15_000 });
 
         // The monitor-emphasis setting carried the twinkle when it was new;
-        // Appearance → Layout took it over in v1.3.0, and now nothing holds it.
-        // A mark that outlives its release teaches people to ignore the mark,
-        // so the check is that the trail is empty rather than that it moved.
+        // Appearance → Layout took it over in v1.3.0, and Behavior holds none of
+        // it now. A mark that outlives its release teaches people to ignore the
+        // mark, so the check is that this trail is empty rather than that it
+        // moved.
+        //
+        // The rail is excluded: NEW_THIS_RELEASE always marks one section, and
+        // asserting that no section anywhere twinkles made every later release
+        // read as this trail never having been cleared.
         const marked = await page.evaluate(() => ({
-            tabs: document.querySelectorAll('.config-subtab--animated').length,
-            panels: document.querySelectorAll('.config-panel--animated').length,
-            sections: document.querySelectorAll('.config-nav-item--animated').length,
+            tabs: document.querySelectorAll('#config-behavior-body .config-subtab--animated, [data-behavior-tab].config-subtab--animated').length,
+            panels: document.querySelectorAll('#config-behavior-body .config-panel--animated').length,
             status: getComputedStyle(document.querySelector('[data-behavior-tab="status"]')).animationName,
         }));
-        expect(marked).toEqual({ tabs: 0, panels: 0, sections: 0, status: 'none' });
+        expect(marked).toEqual({ tabs: 0, panels: 0, status: 'none' });
+
+        // And the section this release does mark is not this one.
+        expect(await page.evaluate(() =>
+            window.DashboardConfig.NEW_THIS_RELEASE.section)).not.toBe('behavior');
 
         // The setting itself is still there — it is the mark that went, not the
         // panel it pointed at.
