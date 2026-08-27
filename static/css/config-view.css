@@ -761,12 +761,31 @@
 /* The sub-tab strip and the page scope share a row: the scope applies to
    every tab, so it belongs beside them rather than inside one. Wraps under the
    tabs on a narrow window. */
+/*
+ * The rule under the tabs belongs to this row, not to the tabs.
+ *
+ * .config-subtabs draws its own border-bottom, which is right on every other
+ * screen because there it is the only thing on its line. Statistics puts the
+ * scope picker beside it, so the strip is a flex item sized to its own content
+ * and the rule stopped under the last tab with the rest of the width bare.
+ * Moved out here it runs the full width and passes under the picker too, which
+ * is what makes the two read as one row.
+ */
 .config-stats-head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-stats-head .config-subtabs {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
 }
 
 .config-stats-scope {
