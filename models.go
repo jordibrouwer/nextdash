@@ -625,17 +625,16 @@ type ThemeIconStylingEntry struct {
 	Intensity float64 `json:"intensity"`
 }
 
-// defaultThemeIconStyling switches favicon harmonisation on for the default
-// theme of a fresh install, so mismatched site favicons blend with Retro CRT
-// out of the box. Existing installs keep whatever map they already stored.
+// defaultThemeIconStyling writes out, for the two themes a fresh install starts
+// on, what the dashboard would now assume anyway: harmonisation on, muted, at
+// half intensity.
 //
-// Both variants are listed because the setting is keyed by the *displayed*
-// theme id, and auto dark mode (also on by default) swaps between the dark and
-// light Retro CRT. With only one entry, harmonisation would silently apply for
-// half the day.
-//
-// Values match the fallback the config UI assumes for an absent entry, so the
-// form shows the same style and intensity it would have defaulted to.
+// It is no longer what makes the feature default to on -- an absent entry means
+// on, decided in normalizeEntry in theme-icon-styling.js, because seeding could
+// only ever name a couple of the two hundred-odd themes and every other one was
+// silently off. This stays because config's "Only changed" filter compares a
+// setting against the stored defaults, and a field that has no default recorded
+// reads as changed on an install nobody has touched.
 func defaultThemeIconStyling() map[string]ThemeIconStylingEntry {
 	entry := ThemeIconStylingEntry{Enabled: true, Style: "muted", Intensity: 0.5}
 	return map[string]ThemeIconStylingEntry{

@@ -365,7 +365,13 @@ class SearchComponent {
         }
         const currentTheme = document.documentElement.getAttribute('data-theme') || this.settings.theme || 'default';
         const map = this.settings?.themeIconStyling || {};
-        return map[currentTheme] || { enabled: false, style: 'muted', intensity: 0.5 };
+        const entry = map[currentTheme] || {};
+        // Absent means on -- see normalizeEntry in theme-icon-styling.js.
+        return {
+            enabled: entry.enabled !== false,
+            style: entry.style || 'muted',
+            intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
+        };
     }
 
     _highlightQuery(text, query) {

@@ -294,8 +294,10 @@ class ConfigThemesController {
         enableCheckbox.dataset.themeIconBound = '1';
     
         const getTheme = () => this.c.settingsData.theme || document.documentElement.getAttribute('data-theme') || 'default';
+        // Absent means on, the same rule the dashboard reads by -- see
+        // normalizeEntry in theme-icon-styling.js.
         const getEntry = (theme) => (this.c.settingsData.themeIconStyling && this.c.settingsData.themeIconStyling[theme])
-            || { enabled: false, style: 'muted', intensity: 0.5 };
+            || { enabled: true, style: 'muted', intensity: 0.5 };
     
         const applyEntry = (partial) => {
             const theme = getTheme();
@@ -348,7 +350,7 @@ class ConfigThemesController {
         const styleSelect = document.getElementById('theme-iconstyling-style');
         const intensityRange = document.getElementById('theme-iconstyling-intensity');
         if (!preview || !styleSelect || !intensityRange) return;
-        const entry = (this.c.settingsData.themeIconStyling && this.c.settingsData.themeIconStyling[theme]) || { enabled: false, style: 'muted', intensity: 0.5 };
+        const entry = (this.c.settingsData.themeIconStyling && this.c.settingsData.themeIconStyling[theme]) || { enabled: true, style: 'muted', intensity: 0.5 };
         const elems = Array.from(preview.querySelectorAll('.preview-icon'));
         elems.forEach((el) => {
             el.classList.remove('icon-themed', 'icon-themed--muted', 'icon-themed--tinted', 'icon-themed--overlay');

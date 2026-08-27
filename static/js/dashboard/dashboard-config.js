@@ -9522,7 +9522,8 @@ class DashboardConfig {
         const map = this.dash.settings?.themeIconStyling || {};
         const entry = map[this.iconStylingThemeKey()] || {};
         return {
-            enabled: entry.enabled === true,
+            // Absent means on -- see normalizeEntry in theme-icon-styling.js.
+            enabled: entry.enabled !== false,
             style: entry.style || 'muted',
             intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
         };

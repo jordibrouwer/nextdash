@@ -24,10 +24,22 @@
         return mode !== 'off';
     }
 
+    /**
+     * An entry, with the defaults filled in for whatever it does not say.
+     *
+     * No entry means on. Harmonisation is stored per displayed theme id and
+     * there are over two hundred themes, so reading an absent entry as "off"
+     * meant the feature was on for exactly the two ids a fresh install seeds
+     * and silently off for every other theme -- switch away from Retro CRT in
+     * setup and it was never seen again, without any switch having been moved.
+     *
+     * Only an explicit `enabled: false` turns it off, which is what the config
+     * toggle writes, so a deliberate "off" is still a deliberate "off".
+     */
     function normalizeEntry(entry) {
         const value = entry || {};
         return {
-            enabled: value.enabled === true,
+            enabled: value.enabled !== false,
             style: value.style || 'muted',
             intensity: Number.isFinite(Number(value.intensity)) ? Number(value.intensity) : 0.5,
         };
