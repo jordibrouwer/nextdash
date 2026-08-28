@@ -10,7 +10,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, w
  * line here is a feature most people never meet. This pins the ones added since
  * v1.2.1: the shortcut modes, the cross-page duplicate question, coming back
  * where you were, Fresh, the review session, the Rot report, finding a setting
- * by its value, and the capture routes.
+ * by its value, the capture routes, and what the server log says about itself.
  *
  * Matched on the rendered help text rather than on locale keys: what the reader
  * sees is the thing under test, and a key that renders nowhere passes a key
@@ -41,6 +41,9 @@ const CASES = [
     { tab: 'health', needles: [/ten links, two minutes/i, /rot report/i] },
     { tab: 'config', needles: [/what it is set to/i, /all devices/i, /duplicate/i] },
     { tab: 'inbox', needles: [/integrations\//i, /share sheet/i] },
+    // The log rebuild: a level and a component on every line, one control for
+    // how much is written and another for what goes into the trail.
+    { tab: 'data', needles: [/detail level/i, /activity trail/i, /docker logs/i] },
 ];
 
 for (const { tab, needles } of CASES) {
