@@ -1,0 +1,17 @@
+{
+  "tag": "v1.4.2.1",
+  "date": "28 August 2026",
+  "releasedAt": "2026-08-28",
+  "modalLead": "A custom widget keeps its figures up to date on its own, without the page being reloaded.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A custom widget refreshes itself.</strong> It was the one tile that reads from a service of your own, and the only way to see a newer figure was to reload the page &mdash; so a dashboard left open all day showed the download speed it found at breakfast. Each custom tile now keeps its own clock, set by <em>How long an answer keeps</em> in its settings: 60 seconds for a download speed, five minutes for a queue, an hour for something measured hourly. Nothing to switch on, and the presets already carry a sensible figure per service. While the tab is in the background nothing is asked at all, so a dashboard on a second monitor does not spend the day questioning your own machines."
+        }
+      ]
+    }
+  ]
+}

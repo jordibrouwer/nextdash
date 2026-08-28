@@ -994,7 +994,15 @@ the only widget that talks to anything outside.
   entries as rows, up to twenty: the downloads running now, the last few errors.
 - **Schedule** — anywhere between 30 seconds and a day, five minutes by default.
   One answer is shared by everyone looking at the dashboard, so a wall display
-  costs the service nothing extra.
+  costs the service nothing extra. Since **v1.4.2.1** it is also how often the
+  tile refreshes itself: the figures follow this interval **without the page
+  being reloaded**, so a dashboard left open all day no longer shows the
+  download speed it found at breakfast. Each custom tile keeps its own clock, so
+  a queue on five minutes and a speed test on an hour each get what they asked
+  for. **While the tab is in the background nothing is asked at all** — a
+  dashboard on a second monitor does not spend the day questioning your own
+  machines — and on your return the tile shows what it had until its next beat,
+  rather than every tile saying *Loading…* at once.
 
 **Refresh** on the widget skips the cache, including the short retry window a
 failure gets, and needs the write token if your install uses one.

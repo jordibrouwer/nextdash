@@ -139,26 +139,24 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it, which is the part a release gets wrong:
     // a flag left on hides a release nobody meant to hide, and a flag taken off
     // without bumping the tokens announces it to nobody.
-    test('v1.4.2 leads the index and the modal, with nothing hidden in between', async ({ page }) => {
+    test('v1.4.2.1 leads the index while the modal still leads with v1.4.2', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
-        // v1.4.2 is a release in its own right, so it is announced rather than
-        // hidden: the newest entry leads the tag, Config → Overview and the
-        // modal all at once.
-        expect(index[0].tag).toBe('v1.4.2');
-        expect(index[0].hideFromModal).toBeUndefined();
-        // The two that shipped between v1.4.0 and here were held back while
-        // they were fresh, so a large release would not be pushed aside by a
-        // round of fixes. They are announced now, which is what keeps the notes
-        // continuous: a reader stepping back finds them rather than a gap.
-        expect(index[1].tag).toBe('v1.4.1.2');
+        // The newest entry is the one the release tag and Config → Overview
+        // read, flag or no flag — and this time the newest is itself hidden,
+        // which is the arrangement the flag exists for: one addition recorded
+        // and versioned normally, without reopening the notes in front of
+        // readers who have just been shown v1.4.2.
+        expect(index[0].tag).toBe('v1.4.2.1');
+        expect(index[0].hideFromModal).toBe(true);
+        // The release under it is announced, and is what the modal falls
+        // through to.
+        expect(index[1].tag).toBe('v1.4.2');
         expect(index[1].hideFromModal).toBeUndefined();
-        expect(index[2].tag).toBe('v1.4.1.1');
-        expect(index[2].hideFromModal).toBeUndefined();
-        // And the hidden one further down stays hidden: lifting the flag on two
-        // recent releases is a decision about those two, not a general amnesty.
+        // And the hidden one further down stays hidden: a release recorded but
+        // not announced does not become announced because a later one shipped.
         const hidden = index.find((e) => e.tag === 'v1.2.1');
         expect(hidden.hideFromModal).toBe(true);
 
@@ -174,15 +172,15 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // v1.4.2 leads, and v1.2.1 is skipped wherever the reader looks — which
-        // is what hideFromModal still promises at the other end of the list.
+        // v1.4.2 leads the modal even though v1.4.2.1 is newer, and v1.2.1 is
+        // skipped wherever the reader looks — which is the whole of what
+        // hideFromModal promises, at both ends of the list.
         expect(await shownTags()).toContain('v1.4.2');
         expect(await shownTags()).not.toContain('v1.2.1');
 
-        // Everything older than the newest release is one row each under
-        // Earlier, so the releases below are on screen rather than a scroll
-        // away. The scroll is left in: it costs nothing and the assertion has to
-        // hold wherever the reader is.
+        // Everything older than the newest announced release is one row each
+        // under Earlier. The scroll is left in: it costs nothing and the
+        // assertion has to hold wherever the reader is.
         await expect.poll(async () => {
             await modal.evaluate((m) => {
                 const body = m.querySelector('.modal-body') || m;
@@ -190,21 +188,19 @@ test.describe('a release flagged hideFromModal', () => {
             });
             return shownTags();
         }, { timeout: 20_000 }).toContain('v1.4.1.2');
-        expect(await shownTags()).toContain('v1.4.1.1');
         expect(await shownTags()).not.toContain('v1.2.1');
     });
 
     // These two tokens are what reopens the modal for everyone, so they follow
-    // the newest *announced* release: bumped here, where v1.2.1 deliberately
-    // left them alone. A feature release nobody is shown is not a release.
+    // the newest *announced* release: bumped for v1.4.2, left alone here.
     test('the release constants name v1.4.2, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        // Both move this time: v1.4.2 is announced, so an install that has seen
-        // v1.4.0 should meet the notes once on its next visit.
+        // The release token stays on v1.4.2 on purpose: v1.4.2.1 is flagged
+        // hideFromModal, and moving this would reopen the notes for everyone.
         expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.2'");
-        // The data token always moves, or a browser holding the old index never
-        // learns v1.4.2 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v261'");
+        // The data token does move, or a browser holding the old index never
+        // learns v1.4.2.1 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v262'");
     });
 });
