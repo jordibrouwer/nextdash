@@ -1927,7 +1927,7 @@
     "widgetCertsNone": "Geen certificaat verloopt binnen {n} dagen.",
     "widgetCertsExpired": "verlopen",
     "widgetCertsDays": "{n}d",
-    "widgetUptimeWaiting": "Open Health één keer om dit te vullen.",
+    "widgetUptimeWaiting": "Controleren…",
     "widgetUptimeNone": "Er worden geen bookmarks gemonitord.",
     "widgetUptimeAllUp": "Alles wat gemonitord wordt is bereikbaar.",
     "widgetUptimeDown": "down",

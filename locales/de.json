@@ -1927,7 +1927,7 @@
     "widgetCertsNone": "Kein Zertifikat läuft in {n} Tagen ab.",
     "widgetCertsExpired": "abgelaufen",
     "widgetCertsDays": "{n}T",
-    "widgetUptimeWaiting": "Öffne Health einmal, um dies zu füllen.",
+    "widgetUptimeWaiting": "Wird geprüft…",
     "widgetUptimeNone": "Es werden keine Lesezeichen überwacht.",
     "widgetUptimeAllUp": "Alles Überwachte ist erreichbar.",
     "widgetUptimeDown": "down",

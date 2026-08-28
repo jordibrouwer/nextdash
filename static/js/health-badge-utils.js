@@ -101,6 +101,27 @@
     const healthFacts = new Map();
     let healthFactsAt = 0;
 
+    /*
+     * The heartbeat, as a list of states and nothing else.
+     *
+     * That is all the sparkline draws, and it is what lets the compact view
+     * send a letter per bucket instead of an object of six fields. Both shapes
+     * arrive here so a reader who has opened Health and one who has not get the
+     * same bar.
+     */
+    const HEARTBEAT_STATES = { u: 'up', d: 'down', x: 'degraded', '.': 'empty' };
+
+    function heartbeatFromStates(compact) {
+        const text = String(compact || '');
+        if (!text) return [];
+        return [...text].map((letter) => HEARTBEAT_STATES[letter] || 'empty');
+    }
+
+    function heartbeatFromBuckets(buckets) {
+        if (!Array.isArray(buckets)) return [];
+        return buckets.map((bucket) => String(bucket?.state || 'empty'));
+    }
+
     function factsKey(url) {
         const raw = String(url || '').trim();
         if (!raw) return '';
@@ -151,15 +172,41 @@
                 ? Number(entry?.uptime30d || 0)
                 : Number(entry?.monitorStats?.uptime30d?.ratio || 0);
             const cert = entry?.certHost ? certificates[entry.certHost] : null;
+            /*
+             * The uptime tile's three fields, beside the preview card's four.
+             *
+             * The tile reads what a monitored row has been doing lately — seven
+             * days, whether it is down now, and the shape of the bar — and used
+             * to get them only from the full report, which arrives when the
+             * health view is opened and never before. So a tile added to the
+             * dashboard sat empty until the reader went and opened Health once.
+             * Both shapes are read here: `rows` carries the heartbeat as one
+             * letter per bucket, `issues` as the buckets themselves.
+             */
+            const week = rows
+                ? { ratio: Number(entry?.uptime7d || 0), samples: Number(entry?.uptime7dSamples || 0) }
+                : {
+                    ratio: Number(entry?.monitorStats?.uptime7d?.ratio || 0),
+                    samples: Number(entry?.monitorStats?.uptime7d?.samples || 0),
+                };
             const facts = {
                 monitor: Boolean(entry?.monitor),
                 uptime30d: samples > 0 ? ratio : null,
                 uptimeSamples: samples,
+                uptime7d: week.samples > 0 ? week.ratio : null,
+                uptime7dSamples: week.samples,
+                downSince: Number(rows ? entry?.downSince : entry?.monitorStats?.downSince) || 0,
+                heartbeat: rows
+                    ? heartbeatFromStates(entry?.heartbeat)
+                    : heartbeatFromBuckets(entry?.monitorStats?.heartbeat),
                 certExpiresAt: Number(cert?.expiresAt || 0) || 0,
                 brokenSince: Number(entry?.brokenSince || 0) || 0,
                 lastError: String(entry?.lastError || '').trim(),
             };
-            if (facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
+            // A monitored bookmark is kept whatever it has to say: it is the
+            // subject of the uptime tile, and one switched on this morning has
+            // nothing else to report yet.
+            if (!facts.monitor && facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
             healthFacts.set(key, facts);
         });
         healthFactsAt = Date.now();

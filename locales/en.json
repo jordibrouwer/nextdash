@@ -1927,7 +1927,7 @@
     "widgetCertsNone": "No certificate expires within {n} days.",
     "widgetCertsExpired": "expired",
     "widgetCertsDays": "{n}d",
-    "widgetUptimeWaiting": "Open Health once to fill this in.",
+    "widgetUptimeWaiting": "Checking…",
     "widgetUptimeNone": "No bookmarks are being monitored.",
     "widgetUptimeAllUp": "Everything monitored is up.",
     "widgetUptimeDown": "down",

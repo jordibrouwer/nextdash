@@ -55,3 +55,84 @@ func TestFactsViewKeepsNoDataApartFromZero(t *testing.T) {
 		t.Fatalf("uptime was invented from no samples: %+v", facts.Rows[0])
 	}
 }
+
+/*
+The uptime widget's row, without a trip through the health view.
+
+The tile needs four things per monitored bookmark and used to get them only
+from the full report, which is loaded when the health view is opened — so a tile
+added to the dashboard read "Open Health once to fill this in" until the reader
+went and did that. These fields are what let the badge's own request fill it.
+*/
+func TestFactsViewCarriesWhatTheUptimeTileDraws(t *testing.T) {
+	report := BookmarkHealthReport{Issues: []HealthIssue{{
+		URL: "https://watched.example", Monitor: true,
+		MonitorStats: &MonitorStats{
+			Uptime7d:  UptimeWindow{Ratio: 0.98, Samples: 300},
+			Uptime30d: UptimeWindow{Ratio: 0.99, Samples: 1200},
+			DownSince: 1234,
+			Heartbeat: []HeartbeatBucket{
+				{State: heartbeatUp, Up: 3},
+				{State: heartbeatDown, Down: 3},
+				{State: heartbeatDegraded, Up: 1, Down: 1},
+				{State: "", Up: 0},
+			},
+		},
+	}}}
+
+	facts := buildHealthFactsReport(report)
+
+	if len(facts.Rows) != 1 {
+		t.Fatalf("expected the monitored row, got %+v", facts.Rows)
+	}
+	row := facts.Rows[0]
+	if row.Uptime7d != 0.98 || row.Uptime7dCount != 300 {
+		t.Errorf("seven-day uptime did not survive: %+v", row)
+	}
+	if row.DownSince != 1234 {
+		t.Errorf("downSince did not survive: %+v", row)
+	}
+	// One letter per bucket: the sparkline reads the state and nothing else, and
+	// forty objects of six fields per monitor is the weight this view avoids.
+	if row.Heartbeat != "udx." {
+		t.Errorf("heartbeat = %q, want \"udx.\"", row.Heartbeat)
+	}
+}
+
+// Only the tail is sent, because only the tail is drawn.
+func TestFactsViewHeartbeatKeepsTheTail(t *testing.T) {
+	buckets := make([]HeartbeatBucket, 40)
+	for i := range buckets {
+		buckets[i] = HeartbeatBucket{State: heartbeatUp}
+	}
+	buckets[len(buckets)-1].State = heartbeatDown
+
+	states := heartbeatStates(buckets)
+
+	if len(states) != factsHeartbeatBuckets {
+		t.Fatalf("sent %d buckets, want %d", len(states), factsHeartbeatBuckets)
+	}
+	if states[len(states)-1] != 'd' {
+		t.Errorf("the newest bucket was dropped: %q", states)
+	}
+}
+
+/*
+A monitor switched on this morning keeps its row.
+
+It has no samples, no certificate and no failure, which is precisely the shape
+the row filter drops — and it is the bookmark the reader just said they wanted
+to watch, so dropping it left the tile empty for the ones it was added for.
+*/
+func TestFactsViewKeepsAFreshMonitor(t *testing.T) {
+	report := BookmarkHealthReport{Issues: []HealthIssue{
+		{URL: "https://fresh-monitor.example", Monitor: true},
+		{URL: "https://plain.example"},
+	}}
+
+	facts := buildHealthFactsReport(report)
+
+	if len(facts.Rows) != 1 || facts.Rows[0].URL != "https://fresh-monitor.example" {
+		t.Fatalf("expected the fresh monitor and nothing else: %+v", facts.Rows)
+	}
+}

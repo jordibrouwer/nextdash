@@ -1927,7 +1927,7 @@
     "widgetCertsNone": "Aucun certificat n’expire dans {n} jours.",
     "widgetCertsExpired": "expiré",
     "widgetCertsDays": "{n}j",
-    "widgetUptimeWaiting": "Ouvrez Health une fois pour remplir ceci.",
+    "widgetUptimeWaiting": "Vérification…",
     "widgetUptimeNone": "Aucun signet n’est surveillé.",
     "widgetUptimeAllUp": "Tout ce qui est surveillé répond.",
     "widgetUptimeDown": "hors service",
