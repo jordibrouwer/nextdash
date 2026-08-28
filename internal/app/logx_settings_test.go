@@ -1,6 +1,9 @@
 package app
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // The setting wins when it is set, and stays out of the way when it is not.
 func TestApplyLogSettingsPrecedence(t *testing.T) {
@@ -49,5 +52,30 @@ func TestApplyLogSettingsKeepsPersistence(t *testing.T) {
 	}
 	if !cfg.enabled["health"] || cfg.enabled[activityCategoryMutate] {
 		t.Fatalf("the channel list was not replaced: %v", cfg.enabled)
+	}
+}
+
+// Verbose reaches the call sites, and Normal shuts them off again — the loop
+// someone follows when they turn the level up to find something out.
+func TestVerboseTurnsDebugLinesOnAndOff(t *testing.T) {
+	buf := captureLog(t)
+	setLogLevelForTest(t, logLevelInfoName)
+
+	logDebug(logComponentFeeds, "example.com answered 304, nothing new")
+	if strings.Contains(buf.String(), "304") {
+		t.Fatalf("a debug line was written at Normal: %q", buf.String())
+	}
+
+	applyLogSettings(Settings{ServerLogLevel: "debug"})
+	logDebug(logComponentFeeds, "example.com answered 304, nothing new")
+	if !strings.Contains(buf.String(), "DEBUG feeds example.com answered 304") {
+		t.Fatalf("no debug line at Verbose: %q", buf.String())
+	}
+
+	applyLogSettings(Settings{ServerLogLevel: "info"})
+	buf.Reset()
+	logDebug(logComponentFeeds, "example.com answered 304, nothing new")
+	if strings.TrimSpace(buf.String()) != "" {
+		t.Fatalf("debug lines did not stop at Normal: %q", buf.String())
 	}
 }

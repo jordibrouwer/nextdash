@@ -144,7 +144,7 @@ func logRequestLine(format string, args ...any) {
 // health channel is off by default and this line should appear either way.
 func logCheckRound(checked, failed int, took time.Duration) {
 	took = took.Round(100 * time.Millisecond)
-	logInfo(logComponentHealth, "checked %d bookmarks, %d failed, %s", checked, failed, took)
+	logInfo(logComponentHealth, "checked %s, %d failed, %s", plural(checked, "bookmark", "bookmarks"), failed, took)
 	if activityEnabled(activityCategoryHealth) {
 		logActivity(activityCategoryHealth, "health.round", map[string]any{
 			"checked": checked,
@@ -175,4 +175,19 @@ func applyLogSettings(s Settings) {
 		}
 		setActivityChannelsForRuntime(enabled)
 	}
+}
+
+/*
+plural is "1 feed" rather than "1 feeds".
+
+Only for the log's own sentences, which are English by design — these lines go
+to the container log, where they are read by whoever runs the server, and they
+are deliberately not translated. Anything shown in the app goes through the
+locale files instead.
+*/
+func plural(n int, singular, pluralForm string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, singular)
+	}
+	return fmt.Sprintf("%d %s", n, pluralForm)
 }

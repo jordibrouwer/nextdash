@@ -627,7 +627,7 @@ persist:
 		}
 	}
 	if len(polled) > 0 {
-		logInfo(logComponentFeeds, "polled %d feeds, %d had something new", len(polled), fresh)
+		logInfo(logComponentFeeds, "polled %s, %d had something new", plural(len(polled), "feed", "feeds"), fresh)
 		if activityEnabled(activityCategoryFeeds) {
 			logActivity(activityCategoryFeeds, "feeds.poll", map[string]any{
 				"polled": len(polled),

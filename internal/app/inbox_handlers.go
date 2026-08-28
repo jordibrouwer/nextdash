@@ -200,7 +200,7 @@ func (h *Handlers) backfillInboxIconsAsync() {
 			}
 		}
 		if applied > 0 {
-			logInfo(logComponentServer, "fetched icons for %d items in the inbox", applied)
+			logInfo(logComponentServer, "fetched icons for %s in the inbox", plural(applied, "item", "items"))
 		}
 	}()
 }

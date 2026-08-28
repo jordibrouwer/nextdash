@@ -119,5 +119,5 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 	if err := h.markHealthAutoRecheck(time.Now()); err != nil {
 		logWarn(logComponentHealth, "the re-check ran but its run time could not be recorded (%v); the next one may come early", err)
 	}
-	logInfo(logComponentHealth, "the scheduled re-check covered %d bookmarks", result.Tested)
+	logInfo(logComponentHealth, "the scheduled re-check covered %s", plural(result.Tested, "bookmark", "bookmarks"))
 }

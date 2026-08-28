@@ -249,7 +249,7 @@ func pruneAutoBackups() error {
 		removed++
 	}
 	if removed > 0 {
-		logInfo(logComponentBackup, "removed %d backups past the limit of %d", removed, keep)
+		logInfo(logComponentBackup, "removed %s past the limit of %d", plural(removed, "backup", "backups"), keep)
 		if activityEnabled(activityCategoryBackup) {
 			logActivity(activityCategoryBackup, "backup.prune", map[string]any{
 				"removed": removed,

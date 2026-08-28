@@ -179,7 +179,7 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 		}
 	}
 	if totalApplied > 0 {
-		logInfo(logComponentServer, "fetched icons for %d starter bookmarks on page %d", totalApplied, pageID)
+		logInfo(logComponentServer, "fetched icons for %s on page %d", plural(totalApplied, "starter bookmark", "starter bookmarks"), pageID)
 	}
 }
 

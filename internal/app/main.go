@@ -76,7 +76,7 @@ func Run(files assetFS) {
 	if removed, err := store.PruneTrash(); err != nil {
 		logWarn(logComponentStore, "expired trash could not be cleared away (%v); it will be tried again at the next start", err)
 	} else if removed > 0 {
-		logInfo(logComponentStore, "cleared %d expired items from the trash", removed)
+		logInfo(logComponentStore, "cleared %s from the trash", plural(removed, "expired item", "expired items"))
 	}
 
 	// Initialize handlers
