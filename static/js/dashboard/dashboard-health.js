@@ -48,6 +48,10 @@ class DashboardHealth {
         'unchecked', 'stale', 'unused', 'missing-preview', 'drift',
     ]);
 
+    // Repeated from health-filter-scroll-hint.js, which is checked before that
+    // script is fetched at all. Both must agree.
+    static FILTER_SCROLL_PROMO_ID = 'health-filter-scroll-v1';
+
     /** How long z snoozes for. Long enough to be a season, short enough to come back. */
     static SNOOZE_DAYS = 30;
 
@@ -493,10 +497,37 @@ class DashboardHealth {
         this.syncUrlState();
         this.startLiveRefresh();
         window.HealthTutorial?.maybeShow?.();
+        void this.maybeShowFilterScrollHint();
         return true;
     }
 
+    /**
+     * Say once that the filter row scrolls, if it does.
+     *
+     * The strip holds a dozen pills and fits about seven; the ones past the edge
+     * are the tidy-up filters, and nothing announces them but a fade that reads
+     * as decoration. The cheap guards are repeated before the fetch so a reader
+     * who has answered, or has tips off, never asks for the script at all.
+     */
+    async maybeShowFilterScrollHint() {
+        if (window.DiscoverabilityState?.hasSeenSettingPromo?.(DashboardHealth.FILTER_SCROLL_PROMO_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        if (typeof window.HealthFilterScrollHint === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/health-filter-scroll-hint.js', 'healthFilterScrollHint',
+                    () => typeof window.HealthFilterScrollHint !== 'undefined');
+            } catch {
+                // A hint that cannot be fetched is not worth an error toast.
+                return;
+            }
+        }
+        window.HealthFilterScrollHint?.maybeShow?.();
+    }
+
     closeHealthView() {
+        // Without an answer: leaving the view is not "I have read it", so the
+        // hint is still owed on the next visit.
+        window.HealthFilterScrollHint?.close?.({ answered: false });
         const d = this.dash;
         if (d.activeView !== DashboardHealth.VIEW) {
             return false;

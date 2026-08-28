@@ -889,6 +889,8 @@
     "healthFetchPreviewsError": "Die Vorschauen konnten nicht geholt werden.",
     "healthFilterHealthy": "Gesund",
     "healthFilterIgnored": "Ignoriert",
+    "healthFilterScrollHint": "Es gibt mehr Filter als Platz. Die Reihe lässt sich seitlich scrollen — Veraltet, Ungenutzt, Drift und der Rest liegen hinter dem Rand.",
+    "healthFilterScrollHintDone": "Verstanden",
     "healthMenuIgnore": "Melden",
     "healthIgnoreFlag": "„{flag}“ ignorieren",
     "healthSnoozeFlag": "„{flag}“ für {days} Tage ignorieren",

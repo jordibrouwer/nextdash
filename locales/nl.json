@@ -889,6 +889,8 @@
     "healthFetchPreviewsError": "Kon de previews niet ophalen.",
     "healthFilterHealthy": "Gezond",
     "healthFilterIgnored": "Genegeerd",
+    "healthFilterScrollHint": "Er zijn meer filters dan er passen. De rij scrolt zijwaarts — Verouderd, Ongebruikt, Drift en de rest staan voorbij de rand.",
+    "healthFilterScrollHintDone": "Duidelijk",
     "healthMenuIgnore": "Rapporteren",
     "healthIgnoreFlag": "Negeer “{flag}”",
     "healthSnoozeFlag": "Negeer “{flag}” voor {days} dagen",
