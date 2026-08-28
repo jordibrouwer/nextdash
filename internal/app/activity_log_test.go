@@ -1,8 +1,6 @@
 package app
 
 import (
-	"bytes"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,21 +9,34 @@ import (
 	"testing"
 )
 
+// captureActivityLogs runs fn and hands back the JSON the trail recorded.
+//
+// It reads the activity file rather than the container log: since the two
+// channels were split, the container log carries the readable sentence and the
+// JSON goes only to the trail. The caller's config is reused as given, with
+// persistence pointed at a temp file so the trail has somewhere to land.
 func captureActivityLogs(t *testing.T, fn func()) []string {
 	t.Helper()
 	t.Cleanup(clearActivityLogTestOverride)
-	var buf bytes.Buffer
-	original := log.Writer()
-	log.SetOutput(&buf)
-	t.Cleanup(func() {
-		log.SetOutput(original)
-	})
+
+	cfg := activityConfig()
+	cfg.persist = true
+	cfg.filePath = filepath.Join(t.TempDir(), "activity.log")
+	resetActivityLogForTest(cfg)
+
 	fn()
-	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+
+	raw, err := os.ReadFile(cfg.filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		t.Fatalf("read the activity trail: %v", err)
+	}
 	var activity []string
-	for _, line := range lines {
-		if idx := strings.Index(line, "activity: "); idx >= 0 {
-			activity = append(activity, strings.TrimSpace(line[idx+len("activity: "):]))
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			activity = append(activity, line)
 		}
 	}
 	return activity
@@ -206,5 +217,52 @@ func TestActivitySourceFromRequest(t *testing.T) {
 				t.Fatalf("source = %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// The trail keeps its JSON; the container log gets a sentence instead of it.
+func TestActivityWritesSentenceNotJSONToTheLog(t *testing.T) {
+	buf := captureLog(t)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryMutate: true}})
+	t.Cleanup(clearActivityLogTestOverride)
+	setLogLevelForTest(t, logLevelInfoName)
+
+	logActivity(activityCategoryMutate, "bookmark.add", map[string]any{"url": "https://example.com"},
+		"added “Example” to page 1")
+
+	out := buf.String()
+	if strings.Contains(out, "{") {
+		t.Fatalf("JSON reached the container log: %q", out)
+	}
+	if !strings.Contains(out, "INFO mutate added “Example” to page 1") {
+		t.Fatalf("the sentence is missing: %q", out)
+	}
+}
+
+// A denied write is worth seeing without switching a channel on, so security
+// is the one category that logs above INFO.
+func TestActivitySecurityLogsAsAWarning(t *testing.T) {
+	buf := captureLog(t)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategorySecurity: true}})
+	t.Cleanup(clearActivityLogTestOverride)
+	setLogLevelForTest(t, logLevelWarnName)
+
+	logActivity(activityCategorySecurity, "auth.denied", nil, "refused a write from 10.0.0.2: no valid token")
+
+	if !strings.Contains(buf.String(), "WARN security refused a write from 10.0.0.2") {
+		t.Fatalf("the warning is missing: %q", buf.String())
+	}
+}
+
+// A channel that is switched off writes nothing at all, as before.
+func TestActivityRespectsItsChannels(t *testing.T) {
+	buf := captureLog(t)
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{}})
+	t.Cleanup(clearActivityLogTestOverride)
+
+	logActivity(activityCategoryMutate, "bookmark.add", nil, "added something")
+
+	if strings.TrimSpace(buf.String()) != "" {
+		t.Fatalf("a disabled channel still wrote: %q", buf.String())
 	}
 }

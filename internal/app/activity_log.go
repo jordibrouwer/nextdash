@@ -2,7 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -101,7 +101,12 @@ func clearActivityLogTestOverride() {
 	activityCfgTest = nil
 }
 
-func logActivity(category, event string, fields map[string]any) {
+// logActivity records one event twice, for two readers. The JSON goes to the
+// activity file and the buffer, where a machine or a later search can find it;
+// the sentence goes to the container log, where a person watching it can read
+// what happened without parsing anything. Until this split the container log
+// carried the JSON between its readable lines.
+func logActivity(category, event string, fields map[string]any, sentence string) {
 	if !activityEnabled(category) {
 		return
 	}
@@ -124,7 +129,15 @@ func logActivity(category, event string, fields map[string]any) {
 		return
 	}
 	line := append(payload, '\n')
-	log.Printf("activity: %s", string(payload))
+	if trimmed := strings.TrimSpace(sentence); trimmed != "" {
+		// Security is the exception to the INFO default: a denied write or a
+		// rate limit hit should be visible without switching a channel on.
+		if category == activityCategorySecurity {
+			logWarn(category, "%s", trimmed)
+		} else {
+			logInfo(category, "%s", trimmed)
+		}
+	}
 	writeActivityLogLine(line)
 }
 
@@ -336,6 +349,22 @@ func (c *statusDedupeCache) shouldLog(urlKey, status string, force bool) bool {
 	return true
 }
 
+// bookmarkStatusSentence says what a check found, in the terms a reader cares
+// about: reachable or not, and when not, what stood in the way.
+func bookmarkStatusSentence(url string, result PingResult) string {
+	detail := strings.TrimSpace(result.ErrorDetail)
+	switch {
+	case detail != "" && result.HTTPStatus > 0:
+		return fmt.Sprintf("%s answered %d: %s", url, result.HTTPStatus, detail)
+	case detail != "":
+		return fmt.Sprintf("%s could not be reached: %s", url, detail)
+	case result.HTTPStatus > 0:
+		return fmt.Sprintf("%s answered %d (%s)", url, result.HTTPStatus, result.Status)
+	default:
+		return fmt.Sprintf("%s is %s", url, result.Status)
+	}
+}
+
 func logBookmarkStatus(url string, result PingResult, source string, force bool) {
 	if !activityEnabled(activityCategoryStatus) {
 		return
@@ -358,7 +387,8 @@ func logBookmarkStatus(url string, result PingResult, source string, force bool)
 	if result.HTTPStatus > 0 {
 		fields["httpStatus"] = result.HTTPStatus
 	}
-	logActivity(activityCategoryStatus, "bookmark.status", fields)
+	logActivity(activityCategoryStatus, "bookmark.status", fields,
+		bookmarkStatusSentence(url, result))
 }
 
 func logBookmarkStatusBatch(tested, online, offline int, source string) {
@@ -370,7 +400,7 @@ func logBookmarkStatusBatch(tested, online, offline int, source string) {
 		"online":  online,
 		"offline": offline,
 		"source":  source,
-	})
+	}, fmt.Sprintf("checked %d bookmarks (%s): %d reachable, %d not", tested, source, online, offline))
 }
 
 func logAuthDenied(r *http.Request, reason string) {
@@ -379,7 +409,8 @@ func logAuthDenied(r *http.Request, reason string) {
 	}
 	fields := activityFieldsFromRequest(r)
 	fields["reason"] = reason
-	logActivity(activityCategorySecurity, "auth.denied", fields)
+	logActivity(activityCategorySecurity, "auth.denied", fields,
+		fmt.Sprintf("refused %s %s: %s", r.Method, r.URL.Path, reason))
 }
 
 func logRateLimitHit(r *http.Request, endpoint string) {
@@ -388,5 +419,6 @@ func logRateLimitHit(r *http.Request, endpoint string) {
 	}
 	fields := activityFieldsFromRequest(r)
 	fields["endpoint"] = endpoint
-	logActivity(activityCategorySecurity, "rate_limit.hit", fields)
+	logActivity(activityCategorySecurity, "rate_limit.hit", fields,
+		fmt.Sprintf("too many requests to %s; this one was turned away", endpoint))
 }
