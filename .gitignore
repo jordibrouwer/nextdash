@@ -37,3 +37,7 @@ nextDash
 main
 scripts/debug-config-save.mjs
 nextDash.code-workspace
+
+# Design specs and implementation plans: working notes, kept out of the
+# published branches.
+docs/superpowers/
