@@ -5024,6 +5024,41 @@ class DashboardConfig {
             ['count', this.t('config.logRetentionModeCount', 'By number of entries')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${(v === 'count') === byCount ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        /*
+         * The detail level and the display filter are different questions, and
+         * conflating them is how "why do I see nothing" got two possible
+         * answers. This one decides what the server records at all; the filter
+         * below only searches what was recorded.
+         */
+        const detail = String(s.serverLogLevel || 'info');
+        const detailOptions = [
+            ['warn', this.t('config.logDetailQuiet', 'Quiet — problems only')],
+            ['info', this.t('config.logDetailNormal', 'Normal — what the server did')],
+            ['debug', this.t('config.logDetailVerbose', 'Verbose — every step')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === detail ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
+            ? s.activityChannels.map((c) => String(c).toLowerCase())
+            : ['mutate', 'status'];
+        const channelBoxes = [
+            ['mutate', this.t('config.logChannelMutate', 'Changes')],
+            ['status', this.t('config.logChannelStatus', 'Check results')],
+            ['security', this.t('config.logChannelSecurity', 'Refused access')],
+            ['health', this.t('config.logChannelHealth', 'Health rounds')],
+            ['sources', this.t('config.logChannelSources', 'Imports')],
+            ['feeds', this.t('config.logChannelFeeds', 'Feed polls')],
+            ['archive', this.t('config.logChannelArchive', 'Saved copies')],
+            ['backup', this.t('config.logChannelBackup', 'Backups')],
+            ['store', this.t('config.logChannelStore', 'Failed writes')],
+            ['widgets', this.t('config.logChannelWidgets', 'Widget requests')],
+            ['notify', this.t('config.logChannelNotify', 'Alerts sent')],
+            ['open', this.t('config.logChannelOpen', 'Bookmarks opened')],
+        ].map(([key, label]) => `
+                    <label class="config-toggle">
+                        <input type="checkbox" data-activity-channel="${esc(key)}" ${activeChannels.includes(key) ? 'checked' : ''}>
+                        <span>${esc(label)}</span>
+                    </label>`).join('');
+
         const levelOptions = [
             ['', this.t('config.logLevelAll', 'Everything')],
             ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
@@ -5066,6 +5101,17 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(byCount
                     ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
                     : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
+                    <select class="config-select" data-log-select="detail">${detailOptions}</select>
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log. What is not written costs nothing.'))}</p>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
+                ${channelBoxes}
             </div>
 
             <div class="config-panel">
@@ -5074,6 +5120,7 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
                     <select class="config-select" data-log-select="level">${levelOptions}</select>
                 </div>
+                <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
                 <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
                     'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
                 <div class="config-field">
@@ -5097,6 +5144,24 @@ class DashboardConfig {
                 </div>
             </div>
         `;
+    }
+
+    /*
+     * What the floor is, said under the display filter.
+     *
+     * The two controls are easy to confuse — one decides what exists, the other
+     * decides what is shown — and someone who filtered for Everything and still
+     * sees nothing has been given no way to tell which one is the reason.
+     */
+    serverLogFloorNote() {
+        const level = String(this.dash.settings?.serverLogLevel || 'info');
+        if (level === 'debug') {
+            return this.t('config.logFloorVerbose', 'Recording at Verbose — every step is kept.');
+        }
+        if (level === 'warn' || level === 'error') {
+            return this.t('config.logFloorQuiet', 'Recording at Quiet — only problems are kept, so this list will be short.');
+        }
+        return this.t('config.logFloorNormal', 'Recording at Normal — debug lines are not kept.');
     }
 
     /** Summary tiles above the log, in the same shape the other tabs use. */
@@ -5331,6 +5396,16 @@ class DashboardConfig {
                     this.repaintDbTabBody();
                     return;
                 }
+                if (kind === 'detail') {
+                    this.dash.settings.serverLogLevel = value;
+                    void this.saveSettingsWithFeedback();
+                    // The note under the display filter reads the floor, so it
+                    // is the one thing that has to follow. Updated in place
+                    // rather than repainted, to keep the focus on the select.
+                    const floorNote = container.querySelector('[data-log-floor-note]');
+                    if (floorNote) floorNote.textContent = this.serverLogFloorNote();
+                    return;
+                }
                 if (kind === 'level') {
                     this.logLevelFilter = value;
                     // Toggled rather than repainted: rebuilding the panel to
@@ -5340,6 +5415,22 @@ class DashboardConfig {
                     if (note) note.hidden = value !== 'activity';
                     void this.loadServerLog({ reset: true });
                 }
+            });
+        });
+
+        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
+                    .filter((input) => input.checked)
+                    .map((input) => input.dataset.activityChannel);
+                /*
+                 * An empty list would mean "the environment decides" to the
+                 * server, which is not what unticking everything looks like it
+                 * means. 'none' is a channel nothing writes to, so it records
+                 * the choice as made.
+                 */
+                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
+                void this.saveSettingsWithFeedback();
             });
         });
 

@@ -127,7 +127,12 @@ test.describe('Data & backups → Server log', () => {
         const sources = await page.evaluate(() =>
             [...document.querySelectorAll('.config-log-line')]
                 .map((el) => el.textContent || ''));
-        expect(sources.every((text) => text.includes('activity'))).toBe(true);
+        // Trail lines carry their channel now, not the word "activity": the
+        // JSON moved to the trail file and the log line became a sentence
+        // under the channel it belongs to.
+        const channels = ['mutate', 'status', 'open', 'security', 'health', 'sources',
+            'feeds', 'archive', 'backup', 'store', 'widgets', 'notify'];
+        expect(sources.every((text) => channels.some((c) => text.includes(c)))).toBe(true);
         expect(sources.some((text) => text.includes('GET /api/'))).toBe(false);
 
         // The one line of explanation appears with it, and goes away again.

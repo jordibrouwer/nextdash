@@ -635,9 +635,28 @@ func logLevelAtLeast(entry, min string) bool {
 // three of its values and a source for the fourth.
 func logEntryMatchesFilter(e serverLogEntry, filter string) bool {
 	if filter == logFilterActivity {
-		return e.Source == logSourceActivity
+		return isActivityComponent(e.Source)
 	}
 	return logLevelAtLeast(e.Level, filter)
+}
+
+/*
+isActivityComponent reports whether a line came from the activity trail.
+
+It used to be one source name: every trail line was written as "activity: {…}"
+and carried that word. Now the trail writes a sentence under the channel it
+belongs to — "INFO mutate added …" — so the filter matches the channel names
+instead. Anything else, a request line or a plain server line, is not activity.
+*/
+func isActivityComponent(source string) bool {
+	switch source {
+	case logSourceActivity,
+		activityCategoryMutate, activityCategoryStatus, activityCategoryOpen, activityCategorySecurity,
+		activityCategoryHealth, activityCategorySources, activityCategoryFeeds, activityCategoryArchive,
+		activityCategoryBackup, activityCategoryStore, activityCategoryWidgets, activityCategoryNotify:
+		return true
+	}
+	return false
 }
 
 // Counts for the summary tiles, over the whole buffer rather than the current
