@@ -16985,6 +16985,7 @@ class DashboardConfig {
                     placeholder="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}"
                     aria-label="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}">
                 <button type="button" class="config-btn config-btn--small" data-copies-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-copies-action="delete-all" hidden></button>
             </div>
             <p class="config-panel-note" id="config-copies-state"></p>
             <div id="config-copies-list" class="config-copies"></div>
@@ -17008,6 +17009,86 @@ class DashboardConfig {
         scope.querySelectorAll('[data-copies-action="refresh"]').forEach((btn) => {
             btn.addEventListener('click', () => void this.loadBookmarkCopies());
         });
+        scope.querySelectorAll('[data-copies-action="delete-all"]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deleteShownBookmarkCopies());
+        });
+    }
+
+    /**
+     * Label the delete-all button with the number it would act on.
+     *
+     * Hidden when there is nothing to delete: a button that can only disappoint
+     * is worse than no button. The wording changes with the filter -- "Delete
+     * all 12" against "Delete 5 shown" -- because those are different promises
+     * and the reader is entitled to know which one is being made.
+     */
+    syncCopiesDeleteAllButton(captures, filtered) {
+        const btn = document.querySelector('[data-copies-action="delete-all"]');
+        if (!btn) return;
+        const count = captures.length;
+        btn.hidden = count === 0;
+        if (!count) return;
+        btn.textContent = filtered
+            ? this.t('config.bmCopiesDeleteShown', 'Delete {n} shown').replace('{n}', String(count))
+            : this.t('config.bmCopiesDeleteAll', 'Delete all {n}').replace('{n}', String(count));
+    }
+
+    /*
+     * Delete every copy the list is showing.
+     *
+     * One request per file rather than a route that empties the directory: this
+     * is the only place a capture goes for good, and a loop that reports how far
+     * it got is worth more than a single call that either worked or did not. A
+     * failure part-way leaves the rest deleted and says so, which is the honest
+     * outcome -- the ones that went are gone either way.
+     */
+    async deleteShownBookmarkCopies() {
+        const captures = Array.isArray(this._copiesShown) ? [...this._copiesShown] : [];
+        if (!captures.length) return;
+
+        const bytes = captures.reduce((sum, capture) => sum + (Number(capture.bytes) || 0), 0);
+        const ok = await this.confirmAction(
+            this.t('config.bmCopiesDeleteAllConfirm',
+                'Delete {n} saved page(s) ({size})? The pages they came from are not affected, and this cannot be undone.')
+                .replace('{n}', String(captures.length))
+                .replace('{size}', this.formatBytes(bytes)),
+            { confirmLabel: this.t('config.localArchiveDeleteBtn', 'Delete'), danger: true });
+        if (!ok) return;
+
+        const btn = document.querySelector('[data-copies-action="delete-all"]');
+        const original = btn?.textContent;
+        if (btn) btn.disabled = true;
+
+        let done = 0;
+        let failed = 0;
+        for (const capture of captures) {
+            const name = String(capture.url || '').split('/').pop();
+            if (!name) continue;
+            if (btn) {
+                btn.textContent = this.t('config.bmCopiesDeleting', 'Deleting… {done}/{total}')
+                    .replace('{done}', String(done))
+                    .replace('{total}', String(captures.length));
+            }
+            try {
+                const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                done += 1;
+            } catch {
+                failed += 1;
+            }
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            if (original) btn.textContent = original;
+        }
+        this.notify(
+            failed
+                ? this.t('config.bmCopiesDeletedSome', '{done} deleted, {failed} could not be removed.')
+                    .replace('{done}', String(done)).replace('{failed}', String(failed))
+                : this.t('config.bmCopiesDeletedAll', '{n} saved page(s) deleted.').replace('{n}', String(done)),
+            failed ? 'error' : 'success');
+        await this.loadBookmarkCopies();
     }
 
     /** Read the captures once and draw them grouped. */
@@ -17056,6 +17137,11 @@ class DashboardConfig {
                 .replace('{n}', String(all.length))
                 .replace('{size}', this.formatBytes(data.totalBytes || 0))
             : this.t('config.bmCopiesEmpty', 'Nothing saved yet. Save a page from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.');
+
+        // The button offers exactly what is on screen, so it can never take away
+        // more than the reader can see. Its own count, not the total.
+        this._copiesShown = captures;
+        this.syncCopiesDeleteAllButton(captures, Boolean(query));
 
         if (!captures.length) {
             list.innerHTML = all.length
