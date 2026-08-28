@@ -79,22 +79,22 @@ second is why long pages are excluded entirely.
 func TestSoftNotFoundByComparisonRefusesToGuess(t *testing.T) {
 	verdict := softControlVerdict{SoftNotFound: true, Length: 500, CheckedAt: time.Now()}
 
-	if !softNotFoundByComparison(verdict, 500) {
+	if !softNotFoundByComparison(verdict, 500, "https://example.com/page") {
 		t.Error("a page identical in length to the host's not-found page was not flagged")
 	}
-	if !softNotFoundByComparison(verdict, 520) {
+	if !softNotFoundByComparison(verdict, 520, "https://example.com/page") {
 		t.Error("a page within a fifth was not flagged")
 	}
 	// Three times the length is a page, not a notice.
-	if softNotFoundByComparison(verdict, 1500) {
+	if softNotFoundByComparison(verdict, 1500, "https://example.com/page") {
 		t.Error("flagged a page three times the length of the not-found page")
 	}
 	// An article is an article whatever the host does with unknown addresses.
-	if softNotFoundByComparison(softControlVerdict{SoftNotFound: true, Length: 5000}, 5000) {
+	if softNotFoundByComparison(softControlVerdict{SoftNotFound: true, Length: 5000}, 5000, "https://example.com/page") {
 		t.Error("flagged a page over the length ceiling")
 	}
 	// A host that behaves properly can never trigger this.
-	if softNotFoundByComparison(softControlVerdict{Length: 500}, 500) {
+	if softNotFoundByComparison(softControlVerdict{Length: 500}, 500, "https://example.com/page") {
 		t.Error("flagged a page on a host with real 404s")
 	}
 }
@@ -117,5 +117,62 @@ func TestSoftControlProbeURLIsUnguessable(t *testing.T) {
 	}
 	if softControlProbeURL("not a url at all") != "" {
 		t.Error("built a probe from something that is not an address")
+	}
+}
+
+/*
+A login page is not a not-found page, and it looks exactly like one.
+
+Every address a gated site does not hand out -- the probe's and the bookmark's
+alike -- lands on the same sign-in page, with the same 200 and the same body.
+Length alone therefore condemns a bookmark that is perfectly there; the user is
+simply not signed in. Found in production on Prowlarr and on a Portainer behind
+Tailscale, both reported down with "Page says it does not exist".
+*/
+func TestSoftNotFoundByComparisonSpareAGatedSite(t *testing.T) {
+	resetSoftControlCache()
+	h := newTestHandlers(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/login") {
+			http.Redirect(w, r, "/login?returnUrl="+r.URL.Path, http.StatusFound)
+			return
+		}
+		fmt.Fprint(w, "<html><head><title>Login</title></head><body><p>Please sign in to continue.</p></body></html>")
+	}))
+	defer server.Close()
+
+	verdict := h.hostSoftNotFound(context.Background(), server.URL+"/settings")
+	if !verdict.SoftNotFound {
+		t.Fatal("the gate answers 200 to anything, which the probe must still notice")
+	}
+	if verdict.Landing == "" {
+		t.Fatal("the probe was redirected and no landing address was recorded")
+	}
+
+	// The bookmark lands on that same sign-in page, carrying its own returnUrl.
+	page := server.URL + "/login?returnUrl=/settings"
+	if softNotFoundByComparison(verdict, verdict.Length, page) {
+		t.Error("a bookmark behind a login was reported as a page that does not exist")
+	}
+
+	// A host that redirects its probe still catches a page that answers on its
+	// own address and matches the not-found page in length.
+	if !softNotFoundByComparison(verdict, verdict.Length, server.URL+"/settings") {
+		t.Error("the length comparison stopped working for a page that stayed put")
+	}
+}
+
+// The query is where a gate puts the address it turned away, so it cannot count
+// towards which page was reached.
+func TestSoftControlAddressDropsTheQuery(t *testing.T) {
+	first := softControlAddress("https://Example.com/login?returnUrl=%2Fnextdash-probe-1a2b#top")
+	second := softControlAddress("https://example.com/login?returnUrl=%2F")
+
+	if first != second {
+		t.Errorf("%q != %q, so one sign-in page read as two", first, second)
+	}
+	if softControlAddress("not a url at all") != "" {
+		t.Error("made an address out of something that is not one")
 	}
 }

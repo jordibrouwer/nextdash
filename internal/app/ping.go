@@ -211,7 +211,7 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 				 * rather than fifty times.
 				 */
 				if verdict := h.hostSoftNotFound(ctx, urlStr); verdict.SoftNotFound {
-					if softNotFoundByComparison(verdict, readableTextLength(body)) {
+					if softNotFoundByComparison(verdict, readableTextLength(body), finalRequestURL(resp)) {
 						return down("Page says it does not exist")
 					}
 				}
