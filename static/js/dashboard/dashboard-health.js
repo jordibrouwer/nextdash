@@ -343,6 +343,29 @@ class DashboardHealth {
         return this._loadPromise;
     }
 
+    /**
+     * Come back to the row that was acted on.
+     *
+     * Every row action reloads the report, and a render rebuilds the whole list
+     * — so the view returned to the top and the reader had to find their place
+     * again after doing nothing but act on the row in front of them. Measured on
+     * a list scrolled to 727px: it came back at 299.
+     *
+     * The view already knows how to land on a row (applyPendingIssueFocus, for
+     * ?hv_id= deep links); it just was not told which one. Setting it here, at
+     * the start of an action, is what makes every action keep its place rather
+     * than each one remembering separately.
+     */
+    keepPlaceAt(issue) {
+        const key = issue && this.issueKey(issue);
+        if (key) this.focusIssueKey = key;
+        // The offset, not just the row: landing the row back on screen is not
+        // the same as leaving the reader where they were. Measured on a list
+        // scrolled to 727px, the row-only version came back at 299 — in view,
+        // but half a screen from where the eye had been.
+        this._keepScrollY = window.scrollY || 0;
+    }
+
     async loadAndRender({ refresh = false } = {}) {
         this.loading = !this.report;
         if (this.loading) {
@@ -1905,6 +1928,7 @@ class DashboardHealth {
      */
     async toggleIgnore(issue, { snooze = false } = {}) {
         if (!issue) return;
+        this.keepPlaceAt(issue);
         const already = this.ignoredFlagsOf(issue);
         /*
          * On the Ignored list the gesture means one thing: give it back.
@@ -1957,6 +1981,7 @@ class DashboardHealth {
     }
 
     async recheckIssue(issue, { silent = false } = {}) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
@@ -2269,6 +2294,7 @@ class DashboardHealth {
      * marked busy for the duration rather than looking frozen.
      */
     async captureLocalCopy(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
@@ -2373,6 +2399,7 @@ class DashboardHealth {
     }
 
     async recoverFromArchive(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:archive-recover');
@@ -2531,6 +2558,7 @@ class DashboardHealth {
     }
 
     async refreshFavicon(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         this.closeAllMenus();
@@ -2576,6 +2604,7 @@ class DashboardHealth {
     }
 
     async detectRedirect(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:detect-redirect');
@@ -2629,6 +2658,7 @@ class DashboardHealth {
     }
 
     async refreshTitle(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:refresh-title');
@@ -3027,6 +3057,32 @@ class DashboardHealth {
         return true;
     }
 
+    /**
+     * Put the page back where it was before a row action.
+     *
+     * Once, and only when something asked for it: a filter change or a search
+     * is a new list, and arriving at the top of one is right. The correction
+     * repeats for a couple of frames because the list is rebuilt from nothing —
+     * the document is briefly shorter than the offset being restored, and a
+     * browser clamps a scroll it cannot honour yet.
+     */
+    restoreKeptPlace() {
+        const target = this._keepScrollY;
+        if (typeof target !== 'number') {
+            return;
+        }
+        this._keepScrollY = null;
+        const settle = (attempt) => {
+            if (Math.abs((window.scrollY || 0) - target) > 1) {
+                window.scrollTo({ top: target, behavior: 'instant' });
+            }
+            if (attempt < 3) {
+                requestAnimationFrame(() => settle(attempt + 1));
+            }
+        };
+        settle(0);
+    }
+
     /** Scroll to and select a row after render — for `?hv_id=` deep links. */
     applyPendingIssueFocus() {
         const key = this.focusIssueKey;
@@ -3103,6 +3159,7 @@ class DashboardHealth {
         }
         this.syncKeyboardSelectionAfterRender();
         this.applyPendingIssueFocus();
+        this.restoreKeptPlace();
         container.tabIndex = -1;
         const active = document.activeElement;
         const focusInToolbar = active?.closest?.('.health-view-toolbar, .page-nav-btn');
