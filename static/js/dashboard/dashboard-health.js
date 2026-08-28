@@ -2208,6 +2208,20 @@ class DashboardHealth {
         return issue?.status === 'broken' && Boolean(String(issue?.url || '').trim());
     }
 
+    /**
+     * Whether reaching for an archived copy makes sense on this row.
+     *
+     * Wider than isHealable: a page that has drifted into something else, or one
+     * nothing has checked yet, is a fair reason to want what the web remembers.
+     * A link answering normally is not.
+     */
+    canRecoverFromArchive(issue) {
+        if (!String(issue?.url || '').trim()) return false;
+        const flags = Array.isArray(issue?.flags) ? issue.flags : [];
+        const conditions = ['broken', 'content', 'drift', 'unchecked'];
+        return conditions.some((flag) => flags.includes(flag) || issue?.status === flag);
+    }
+
     /** Leave the view and land on the bookmark in its own page. */
     openIssueInDashboard(issue) {
         const d = this.dash;
