@@ -105,7 +105,7 @@
                 label: label(dash, 'dashboard.widgetDuplicatesWorst', 'worst group'),
                 tone: found[0].refs.length > 2 ? 'warn' : null,
             },
-        ]));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
 
         const list = u.rowList();
         found.slice(0, maxRows).forEach((group) => {
@@ -113,7 +113,8 @@
                 prettyURL(group.url),
                 `×${group.refs.length}`,
                 'warn',
-                open));
+                open,
+                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
         });
         u.appendOverflowRow(list, dash, found.length - maxRows, open);
         panel.appendChild(list);

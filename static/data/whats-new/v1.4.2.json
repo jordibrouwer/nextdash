@@ -1,0 +1,93 @@
+{
+  "tag": "v1.4.2",
+  "date": "28 August 2026",
+  "releasedAt": "2026-08-28",
+  "modalLead": "Widgets answer to the right-click and the keyboard the way categories do, Health can be told to stop reporting a condition you have already decided about, and the server log finally says what it is doing in sentences you can act on.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Right-click a widget and it says what it can do.</strong> Rename it, switch it between one and two columns, fold it, open its settings, or close it &mdash; all from its own header, without going to <em>Config &rarr; Widgets</em> to find the switch. The name you give it is the name that appears there too."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The keyboard goes into a widget, not around it.</strong> Arrow keys step into a widget and move through its rows the way they move through a category, <em>Enter</em> opens the link under the cursor, and the same actions the right-click menu offers have keys of their own. Widgets used to be the one block the keyboard skipped."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A short tour explains what a custom widget can reach.</strong> It opens the first time you visit <em>Config &rarr; Widgets</em> and shows what a widget of your own can pull in from your own services."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The uptime widget fills itself in.</strong> It used to sit there asking you to open <em>Health</em> once before it would show anything. It now arrives with its figures already in place."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Switching a widget between one and two columns keeps your place.</strong> The page jumped to the top every time, so a widget halfway down took you away from what you were reading."
+        }
+      ]
+    },
+    {
+      "title": "Status &amp; health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A bookmark can be told to stop reporting one condition.</strong> A link you know is fine but keeps being flagged as stale, unused or broken can be set aside with <em>n</em> or <em>z</em>, or from the row's menu. It stays in your collection and keeps being checked &mdash; it simply stops raising that one flag. An <em>Ignored</em> filter shows everything you have set aside, and one click puts a bookmark back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Acting on a row leaves you at that row.</strong> Saving a copy or changing a setting sent you back to the top of the list, so finding your place again was part of every action."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The row menu is short enough to read.</strong> It had grown long enough to need scrolling on many screens, which meant the option you wanted was often out of sight."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Saving a copy says what happened.</strong> A copy that cannot be made now names the reason, pages up to 52 MB can be saved where the limit used to be 32 MB, and a page that saved as an empty shell says so instead of leaving you to discover it on opening."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every saved copy can be cleared at once.</strong> <em>Config &rarr; Bookmarks &rarr; Local copies</em> has a button that removes them all, after asking and telling you how many and how much space it frees."
+        }
+      ]
+    },
+    {
+      "title": "Data &amp; backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The server log says what it is doing.</strong> Every line now names how serious it is and which part of nextDash it came from &mdash; <em>checked 110 bookmarks, 2 failed</em>, or <em>dash.example could not be saved</em> &mdash; written for someone running nextDash rather than reading its source. Whole parts of the server that used to pass in silence now say what they did: a check round, a feed poll, an import, a saved copy, a scheduled backup, a failed write to disk."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>You choose how much the server writes.</strong> <em>Detail level</em> under <em>Server log</em> offers <em>Quiet</em>, <em>Normal</em> and <em>Verbose</em>, and takes effect on the very next line &mdash; no restart, nothing to change in your setup. A line beneath it says what is being recorded as of now, so &ldquo;why do I see nothing&rdquo; has one answer instead of two guesses."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The activity trail is picked from a list.</strong> Twelve things can be recorded &mdash; changes, check results, health rounds, imports, feed polls, saved copies, backups, failed writes, and more &mdash; each with its own switch. Changes and check results are on to begin with, and <em>Reset panel</em> puts the list back whenever you have wandered from it."
+        }
+      ]
+    },
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Coming back to the window leaves you where you were.</strong> Switching to another window and back sent the dashboard to the top, which was disorienting halfway down a long page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed load says why, and only when you asked for one.</strong> <em>Failed to load bookmarks for this page</em> had been appearing on its own while nothing was actually wrong."
+        }
+      ]
+    }
+  ]
+}

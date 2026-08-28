@@ -1731,19 +1731,31 @@ described.
 
 ### Server log (Data & backups → Server log)
 
-What the server has been doing, without shell access to the container. Every line the server writes — background jobs, imports, health checks, and one line per API request — is captured as it is written and shown here. Nothing changes about the container log: the same lines still go to stderr, so `docker logs` is unaffected.
+What the server has been doing, without shell access to the container. Every line the server writes — background jobs, imports, health checks, and one line per API request — is captured as it is written and shown here. The same lines still go to stderr, so `docker logs` shows exactly what this tab shows.
+
+Every line names its level and the part of the server it came from, in one shape:
+
+```
+INFO   health   checked 110 bookmarks, 2 failed, 1.4s
+WARN   archive  dash.cloudflare.com could not be saved: monolith failed: Error: could not retrieve target document
+ERROR  store    bookmarks.json could not be written: no space left on device
+```
+
+The sentence after that is written for whoever runs nextDash rather than for whoever wrote it: which address, which status, what was skipped and what follows from it. The parts that used to say nothing at all — a check round, a feed poll, an import, a capture, a scheduled backup, a failed write to the data directory, a widget's request to your own services, an alert going out — now say what they did.
 
 - **Collect server log** — **off by default**, and the switch that starts and stops collecting. While it is off nothing is captured, no file is written, and the log costs the server nothing at all; turning it off keeps whatever has already been collected rather than clearing it. Switch it on when you want to watch something, off again when you are done.
 - **Refresh** — **Off** by default, or every **2 / 5 / 15 / 30 seconds**. Off means no polling at all; a poll only asks for the lines that arrived since the last one, so leaving it on 2s is cheap. The interval stops the moment you leave the tab or close Config.
 - **Limit the log** — by **age** or by **number of entries**, never both. Whichever you pick, the other control is greyed out, because a log capped two ways drops lines for a reason neither setting explains on its own.
   - **By age** → **Keep entries for** 1, 2, 4, 12 or 24 hours, 7 or 30 days, or **Until cleared**. Older lines drop away on their own; how many there are does not matter.
   - **By number of entries** → **Keep at most** 100, 500, 1000, 2500 or 5000. Only the newest that many are kept and older ones fall off as new lines arrive; how old they are does not matter.
-- **Show** — everything, warnings and errors, errors only, or **Activity only** (**v1.1.1**). The last one is not a severity but a source: activity lines are what *was done* — a bookmark saved, a page added, a check run — and they have always been written into this same log, findable only by knowing to search for the word. **Search** filters on the message and on the subsystem name. All of it is applied by the server, so it covers the whole buffer rather than what is on screen.
+- **Detail level** — what the server writes **at all**, here and in the container log alike: **Quiet** (problems only), **Normal** (what the server did — the default), or **Verbose** (every step, down to each checked bookmark and each polled feed). It takes effect on the very next line, with no restart and nothing to change in your compose file; a line under the control says what `docker logs` is showing as of now. What is not written costs nothing — a level that is switched off is a comparison, not a formatted string thrown away.
+- **Show** — everything, warnings and errors, errors only, or **Activity only** (**v1.1.1**). This is a different question from Detail level, and the two are easy to confuse: **Detail level decides what exists, Show decides what you are looking at**. A note under Show says which level is recording, so "why do I see nothing" has one answer rather than two guesses. **Search** filters on the message and on the component name. All of it is applied by the server, so it covers the whole buffer rather than what is on screen.
+- **Activity trail** — a panel of its own, deciding what goes into the machine-readable record: **Changes**, **Check results**, **Refused access**, **Health rounds**, **Imports**, **Feed polls**, **Saved copies**, **Backups**, **Failed writes**, **Widget requests**, **Alerts sent** and **Bookmarks opened**. Changes and check results are on to begin with; the rest stay off until you ask for them, so an upgrade does not quietly start filling a file. **Reset panel** appears once the list differs from those two and puts it back in one click.
 - **Scroll to newest lines** — follows the tail, and stops following while you are scrolled up reading something.
 - **Copy**, **Download** — the current lines to the clipboard, or the whole buffer as a `.log` file.
 - **Clear log** — empties the buffer **and** deletes `server.log` and its rotated copies from the data directory. It asks first, and cannot be undone.
 
-Severity is inferred rather than declared: a request line takes its level from the HTTP status (5xx is an error, 4xx a warning), and other lines from their wording. Lines are held in memory — the most recent **2000** when limiting by age, or however many you chose when limiting by count — and mirrored to `server.log` in the data directory, capped at **2MB** with two rotated copies, so the history survives a restart.
+Severity is declared by the line itself rather than guessed from its wording. Only two kinds of line are still read rather than told: a request line takes its level from the HTTP status (5xx is an error, 4xx a warning), and anything from the Go runtime falls back to the old inference. That change fixed a real misreading — a summary saying *"checked 110 bookmarks, 2 failed"* used to be filed as an error because it contains the word *failed*. Lines are held in memory — the most recent **2000** when limiting by age, or however many you chose when limiting by count — and mirrored to `server.log` in the data directory, capped at **2MB** with two rotated copies, so the history survives a restart.
 
 > Anyone who can open Config can read this log, including full webhook URLs where those were logged. If your instance is reachable by people who should not see that, clear the log or keep retention short.
 
@@ -2251,7 +2263,11 @@ add anything.
 
 Structured JSON lines for bookmark mutations and status checks (opens optional). See [README.md → Activity log](README.md#activity-log-bookmark-events) for `NEXTDASH_ACTIVITY_LOG`, `NEXTDASH_ACTIVITY_LOG_PERSIST`, and example lines. Treat logs as sensitive — URLs are included.
 
-They are also readable in the app: **Config → Data & backups → Server log**, with **Show → Activity only**. That needs **Collect server log** switched on, since it is the same buffer. Which events are written stays an environment setting; the viewer only decides what you look at.
+They are also readable in the app: **Config → Data & backups → Server log**, with **Show → Activity only**. That needs **Collect server log** switched on, since it is the same buffer.
+
+Which events are written is now chosen in the app too, under **Activity trail** on that same tab — twelve channels, of which changes and check results are on by default. `NEXTDASH_ACTIVITY_LOG` still works and still means the same thing, so an existing compose file behaves exactly as it did; the setting simply wins over it once you tick something. The same applies to the detail level: `NEXTDASH_LOG_LEVEL` is read at start-up, and a level chosen in the app takes precedence.
+
+The trail and the readable log are two records of the same events, kept apart on purpose. The trail is JSON, for a machine or a later search, and goes to the activity file and this buffer. The container log gets the sentence instead — with twelve channels the old arrangement, which printed `activity: {…}` between the readable lines, would have made `docker logs` unreadable. **Verbose lines never reach the trail**: it exists to be read back later, and a line per checked bookmark would make it useless within a day.
 
 ### Rate limits
 
@@ -2406,7 +2422,7 @@ Set manual city or browser location permission; save general settings; check ref
 - If `NEXTDASH_WRITE_TOKEN` is set, paste it in extension **Settings → Write token**.  
 - The extension's origin is allowed by default; `NEXTDASH_CORS_ORIGINS` does not need an entry for it.  
 - **401** = missing/wrong write token; **403** = CORS origin not allowed; **409** = duplicate shortcut on that page.  
-- Check browser console and server logs (enable `NEXTDASH_ACTIVITY_LOG=security` for auth/rate-limit lines).
+- Check browser console and server logs. Refused writes and rate-limit hits need the **Refused access** channel on (Config → Data & backups → Server log → Activity trail, or `NEXTDASH_ACTIVITY_LOG=security`); once on, they are logged as warnings, so they show at any detail level above Quiet.
 
 ---
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -180,7 +179,7 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 		}
 	}
 	if totalApplied > 0 {
-		log.Printf("nextDash: prefetched favicons for %d default bookmarks on page %d", totalApplied, pageID)
+		logInfo(logComponentServer, "fetched icons for %s on page %d", plural(totalApplied, "starter bookmark", "starter bookmarks"), pageID)
 	}
 }
 

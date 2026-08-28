@@ -22,6 +22,9 @@ class DashboardHealth {
         unused: 7,
         'missing-preview': 8,
         healthy: 9,
+        // Last, because it is not a condition but the absence of reporting: a
+        // row whose every problem is muted has nothing left to rank it by.
+        ignored: 10,
     };
 
     /**
@@ -32,6 +35,25 @@ class DashboardHealth {
      * certificate quietly approaching expiry.
      */
     static MONITOR_GROUP_RANK = { down: 0, drift: 1, cert: 2, healthy: 3 };
+
+    /*
+     * The conditions a row can be told to stop reporting.
+     *
+     * Mirrors knownHealthFlags in models.go, which validates what this sends.
+     * "healthy" is not one: it is the absence of a problem, and nothing is
+     * served by hiding it.
+     */
+    static IGNORABLE_FLAGS = new Set([
+        'broken', 'content', 'duplicate', 'shortcut-conflict', 'orphaned-category',
+        'unchecked', 'stale', 'unused', 'missing-preview', 'drift',
+    ]);
+
+    // Repeated from health-filter-scroll-hint.js, which is checked before that
+    // script is fetched at all. Both must agree.
+    static FILTER_SCROLL_PROMO_ID = 'health-filter-scroll-v1';
+
+    /** How long z snoozes for. Long enough to be a season, short enough to come back. */
+    static SNOOZE_DAYS = 30;
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -162,6 +184,58 @@ class DashboardHealth {
         return `health-view-band-${this.scoreClass(score)}`;
     }
 
+    /**
+     * What this row has been told not to report, as the server hid it.
+     *
+     * A report cached before ignores existed carries none, which reads as an
+     * empty list rather than an error — the same fallback the flags have.
+     */
+    ignoredFlagsOf(issue) {
+        const entries = Array.isArray(issue?.ignoredFlags) ? issue.ignoredFlags : [];
+        return entries.filter((entry) => entry && typeof entry.flag === 'string');
+    }
+
+    /**
+     * The condition an ignore key acts on for this row.
+     *
+     * On a filter it is that filter: you narrowed to Stale and are saying "not
+     * this one". On All or Ignored there is no such answer, so it falls back to
+     * the row's own status — the worst thing that holds, which is what the row
+     * is showing you. Filters that are not conditions (all, monitored,
+     * certificates, ignored) never answer.
+     */
+    ignoreTargetFlag(issue) {
+        const fromFilter = DashboardHealth.IGNORABLE_FLAGS.has(this.filter) ? this.filter : '';
+        if (fromFilter) return fromFilter;
+        const status = String(issue?.status || '');
+        return DashboardHealth.IGNORABLE_FLAGS.has(status) ? status : '';
+    }
+
+    /**
+     * What this row is not reporting, said on the row itself.
+     *
+     * Without it an ignore is invisible from everywhere except the Ignored
+     * list, and a toggle with no visible state is a toggle nobody trusts. A
+     * snooze says when it comes back, because "hidden" and "hidden until March"
+     * are different promises.
+     */
+    renderIgnoredBadge(issue) {
+        const ignored = this.ignoredFlagsOf(issue);
+        if (!ignored.length) return '';
+        const names = ignored.map((entry) => this.flagLabel(entry.flag)).join(', ');
+        const soonest = ignored
+            .map((entry) => Number(entry.until) || 0)
+            .filter((until) => until > 0)
+            .sort((a, b) => a - b)[0] || 0;
+        const title = soonest
+            ? this.t('dashboard.healthIgnoredUntil', 'Not reported until {date}',
+                { date: new Date(soonest).toLocaleDateString() })
+            : this.t('dashboard.healthIgnoredHint', 'Not reported for this bookmark');
+        return `<span class="health-view-ignored-badge" title="${this.escape(title)}">${this.escape(
+            this.t('dashboard.healthIgnoredBadge', 'ignored: {flags}', { flags: names })
+        )}</span>`;
+    }
+
     /** Stable identity for a row across re-renders: page + index. */
     issueKey(issue) {
         return `${issue.pageId}:${issue.index}`;
@@ -267,6 +341,29 @@ class DashboardHealth {
                 this._loadPromiseRefresh = false;
             });
         return this._loadPromise;
+    }
+
+    /**
+     * Come back to the row that was acted on.
+     *
+     * Every row action reloads the report, and a render rebuilds the whole list
+     * — so the view returned to the top and the reader had to find their place
+     * again after doing nothing but act on the row in front of them. Measured on
+     * a list scrolled to 727px: it came back at 299.
+     *
+     * The view already knows how to land on a row (applyPendingIssueFocus, for
+     * ?hv_id= deep links); it just was not told which one. Setting it here, at
+     * the start of an action, is what makes every action keep its place rather
+     * than each one remembering separately.
+     */
+    keepPlaceAt(issue) {
+        const key = issue && this.issueKey(issue);
+        if (key) this.focusIssueKey = key;
+        // The offset, not just the row: landing the row back on screen is not
+        // the same as leaving the reader where they were. Measured on a list
+        // scrolled to 727px, the row-only version came back at 299 — in view,
+        // but half a screen from where the eye had been.
+        this._keepScrollY = window.scrollY || 0;
     }
 
     async loadAndRender({ refresh = false } = {}) {
@@ -423,10 +520,37 @@ class DashboardHealth {
         this.syncUrlState();
         this.startLiveRefresh();
         window.HealthTutorial?.maybeShow?.();
+        void this.maybeShowFilterScrollHint();
         return true;
     }
 
+    /**
+     * Say once that the filter row scrolls, if it does.
+     *
+     * The strip holds a dozen pills and fits about seven; the ones past the edge
+     * are the tidy-up filters, and nothing announces them but a fade that reads
+     * as decoration. The cheap guards are repeated before the fetch so a reader
+     * who has answered, or has tips off, never asks for the script at all.
+     */
+    async maybeShowFilterScrollHint() {
+        if (window.DiscoverabilityState?.hasSeenSettingPromo?.(DashboardHealth.FILTER_SCROLL_PROMO_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        if (typeof window.HealthFilterScrollHint === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/health-filter-scroll-hint.js', 'healthFilterScrollHint',
+                    () => typeof window.HealthFilterScrollHint !== 'undefined');
+            } catch {
+                // A hint that cannot be fetched is not worth an error toast.
+                return;
+            }
+        }
+        window.HealthFilterScrollHint?.maybeShow?.();
+    }
+
     closeHealthView() {
+        // Without an answer: leaving the view is not "I have read it", so the
+        // hint is still owed on the next visit.
+        window.HealthFilterScrollHint?.close?.({ answered: false });
         const d = this.dash;
         if (d.activeView !== DashboardHealth.VIEW) {
             return false;
@@ -527,6 +651,9 @@ class DashboardHealth {
         // is answered from the report's certificate map instead of from the
         // row's own flags -- certFor() already does that lookup for the badge.
         if (filter === 'certificates') return Boolean(this.certFor(issue));
+        // Ignored is answered from what the report hid rather than from flags:
+        // the whole point is that those conditions are no longer in flags.
+        if (filter === 'ignored') return this.ignoredFlagsOf(issue).length > 0;
 
         const flags = Array.isArray(issue?.flags) ? issue.flags : null;
         if (flags) return flags.includes(filter);
@@ -954,6 +1081,23 @@ class DashboardHealth {
             this.multiSelect?.toggle(this.selectedKey);
             this.moveKeyboardSelection(1, rows);
             return true;
+        }
+        /*
+         * n ignores the condition you are looking at, z snoozes it for a month.
+         *
+         * Both are toggles: pressed on a row that already ignores that
+         * condition, they give it back. One letter each way is what makes this
+         * usable on a filtered list — narrow to Stale, walk down, press n on the
+         * ones that are allowed to be old.
+         */
+        if ((e.key === 'n' || e.key === 'z') && this.selectedKey) {
+            const issue = this.selectedIssue();
+            if (issue) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.toggleIgnore(issue, { snooze: e.key === 'z' });
+                return true;
+            }
         }
         // X takes everything the current filter shows — the whole broken list in
         // one key, which is the case this view exists for.
@@ -1721,7 +1865,123 @@ class DashboardHealth {
      *   and the re-render, so a bulk run reports once at the end instead of
      *   stacking one toast and one full reload per bookmark.
      */
+    /*
+     * Tell the report to stop -- or start again -- reporting one condition.
+     *
+     * One endpoint for a row and for a selection, because the health view sends
+     * a single target from the row menu and the whole selection from the bulk
+     * bar, and two routes would be two things to keep in step.
+     *
+     * The toast carries the way back. Ignoring is by definition the act of
+     * making something invisible, which is exactly when a misclick goes
+     * unnoticed, so every one of these can be undone from where it happened.
+     */
+    async writeIgnores(targets, { add = [], remove = [], clear = false, untilMs = 0 } = {}) {
+        const list = (Array.isArray(targets) ? targets : [targets])
+            .filter(Boolean)
+            .map((issue) => ({ pageId: issue.pageId, index: issue.index, url: issue.url }));
+        if (!list.length) return null;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+        try {
+            const res = await fetcher('/api/health/ignore', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ targets: list, add, remove, clear, untilMs }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            await this.loadAndRender({ refresh: true });
+            return body;
+        } catch {
+            this.dash.showNotification(
+                this.t('dashboard.healthIgnoreFailed', 'Could not change what this bookmark reports.'),
+                'error');
+            return null;
+        }
+    }
+
+    /** The label for one condition, as the filter pills name it. */
+    flagLabel(flag) {
+        const labels = {
+            broken: this.t('dashboard.healthFilterBroken', 'Broken'),
+            content: this.t('dashboard.healthFilterContent', 'Content'),
+            duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
+            'shortcut-conflict': this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts'),
+            'orphaned-category': this.t('dashboard.healthFilterOrphanedCategory', 'Missing category'),
+            unchecked: this.t('dashboard.healthFilterUnchecked', 'Unchecked'),
+            stale: this.t('dashboard.healthFilterStale', 'Stale'),
+            unused: this.t('dashboard.healthFilterUnused', 'Unused'),
+            'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
+            drift: this.t('dashboard.healthFilterDrift', 'Drift'),
+        };
+        return labels[flag] || flag;
+    }
+
+    /**
+     * Ignore or un-ignore one condition on one row, from the key or the menu.
+     *
+     * A toggle rather than two actions: if the row already ignores what this
+     * would ignore, the same gesture takes it back. That is what makes one
+     * letter enough for both directions.
+     */
+    async toggleIgnore(issue, { snooze = false } = {}) {
+        if (!issue) return;
+        this.keepPlaceAt(issue);
+        const already = this.ignoredFlagsOf(issue);
+        /*
+         * On the Ignored list the gesture means one thing: give it back.
+         *
+         * Not "ignore whatever this row still shows" — a row can be hiding one
+         * condition and reporting another, and on the list of things you have
+         * silenced the only sensible reading of the key is undo.
+         */
+        const onIgnoredList = this.filter === 'ignored';
+        const fromFilter = onIgnoredList ? '' : this.ignoreTargetFlag(issue);
+        if (!fromFilter && already.length) {
+            const body = await this.writeIgnores(issue, { clear: true });
+            if (body) {
+                this.dash.showNotification(
+                    this.t('dashboard.healthIgnoreCleared', 'Reporting this bookmark again.'), 'success');
+            }
+            return;
+        }
+        if (!fromFilter) {
+            this.dash.showNotification(
+                this.t('dashboard.healthIgnoreNothing', 'Nothing to ignore on this row.'), 'info');
+            return;
+        }
+        const isIgnored = already.some((entry) => entry.flag === fromFilter);
+        if (isIgnored) {
+            const body = await this.writeIgnores(issue, { remove: [fromFilter] });
+            if (body) {
+                this.dash.showNotification(
+                    this.t('dashboard.healthIgnoreRemoved', 'Reporting “{flag}” again.',
+                        { flag: this.flagLabel(fromFilter) }), 'success');
+            }
+            return;
+        }
+        const untilMs = snooze
+            ? Date.now() + DashboardHealth.SNOOZE_DAYS * 24 * 60 * 60 * 1000
+            : 0;
+        const body = await this.writeIgnores(issue, { add: [fromFilter], untilMs });
+        if (!body) return;
+        const message = snooze
+            ? this.t('dashboard.healthIgnoreSnoozed', '“{flag}” hidden for {days} days.',
+                { flag: this.flagLabel(fromFilter), days: DashboardHealth.SNOOZE_DAYS })
+            : this.t('dashboard.healthIgnoreAdded', '“{flag}” hidden for this bookmark.',
+                { flag: this.flagLabel(fromFilter) });
+        this.dash.showNotification(message, 'success', {
+            duration: 8000,
+            undoCallback: async () => {
+                await this.writeIgnores(issue, { remove: [fromFilter] });
+            },
+        });
+    }
+
     async recheckIssue(issue, { silent = false } = {}) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
@@ -1973,6 +2233,20 @@ class DashboardHealth {
         return issue?.status === 'broken' && Boolean(String(issue?.url || '').trim());
     }
 
+    /**
+     * Whether reaching for an archived copy makes sense on this row.
+     *
+     * Wider than isHealable: a page that has drifted into something else, or one
+     * nothing has checked yet, is a fair reason to want what the web remembers.
+     * A link answering normally is not.
+     */
+    canRecoverFromArchive(issue) {
+        if (!String(issue?.url || '').trim()) return false;
+        const flags = Array.isArray(issue?.flags) ? issue.flags : [];
+        const conditions = ['broken', 'content', 'drift', 'unchecked'];
+        return conditions.some((flag) => flags.includes(flag) || issue?.status === flag);
+    }
+
     /** Leave the view and land on the bookmark in its own page. */
     openIssueInDashboard(issue) {
         const d = this.dash;
@@ -2020,6 +2294,7 @@ class DashboardHealth {
      * marked busy for the duration rather than looking frozen.
      */
     async captureLocalCopy(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
@@ -2053,12 +2328,23 @@ class DashboardHealth {
                 d.showNotification(message, 'error');
                 return;
             }
+            /*
+             * A page that builds itself in the browser is stored as a shell.
+             *
+             * The file is real and weighs megabytes, and it opens blank: its
+             * scripts cannot run from an archive, and allowed they would want
+             * the network the archive exists to do without. Saying so now is
+             * the difference between a copy you chose to keep and a copy you
+             * find empty a year from now.
+             */
+            const blank = body?.noReadableText === true;
+            const message = blank
+                ? this.t('dashboard.healthLocalCopyBlank',
+                    'Copy saved, but it opens blank: this page builds itself with JavaScript, so only the shell could be stored.')
+                : this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.');
             window.ProgressOverlay?.finish(
                 this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'));
-            d.showNotification(
-                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'),
-                'success'
-            );
+            d.showNotification(message, blank ? 'info' : 'success', blank ? { duration: 9000 } : undefined);
             // The row can now say a copy exists, which it reads off the report.
             await this.loadAndRender({ refresh: true });
         } catch {
@@ -2113,6 +2399,7 @@ class DashboardHealth {
     }
 
     async recoverFromArchive(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:archive-recover');
@@ -2271,6 +2558,7 @@ class DashboardHealth {
     }
 
     async refreshFavicon(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         this.closeAllMenus();
@@ -2316,6 +2604,7 @@ class DashboardHealth {
     }
 
     async detectRedirect(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:detect-redirect');
@@ -2369,6 +2658,7 @@ class DashboardHealth {
     }
 
     async refreshTitle(issue) {
+        this.keepPlaceAt(issue);
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         window.nextdashTrack?.('health:refresh-title');
@@ -2767,6 +3057,32 @@ class DashboardHealth {
         return true;
     }
 
+    /**
+     * Put the page back where it was before a row action.
+     *
+     * Once, and only when something asked for it: a filter change or a search
+     * is a new list, and arriving at the top of one is right. The correction
+     * repeats for a couple of frames because the list is rebuilt from nothing —
+     * the document is briefly shorter than the offset being restored, and a
+     * browser clamps a scroll it cannot honour yet.
+     */
+    restoreKeptPlace() {
+        const target = this._keepScrollY;
+        if (typeof target !== 'number') {
+            return;
+        }
+        this._keepScrollY = null;
+        const settle = (attempt) => {
+            if (Math.abs((window.scrollY || 0) - target) > 1) {
+                window.scrollTo({ top: target, behavior: 'instant' });
+            }
+            if (attempt < 3) {
+                requestAnimationFrame(() => settle(attempt + 1));
+            }
+        };
+        settle(0);
+    }
+
     /** Scroll to and select a row after render — for `?hv_id=` deep links. */
     applyPendingIssueFocus() {
         const key = this.focusIssueKey;
@@ -2843,6 +3159,7 @@ class DashboardHealth {
         }
         this.syncKeyboardSelectionAfterRender();
         this.applyPendingIssueFocus();
+        this.restoreKeptPlace();
         container.tabIndex = -1;
         const active = document.activeElement;
         const focusInToolbar = active?.closest?.('.health-view-toolbar, .page-nav-btn');
@@ -4530,6 +4847,10 @@ class DashboardHealth {
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['certificates', this.t('dashboard.healthFilterCertificates', 'Certificates')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
+            // Last, and only once there is something in it: a list of what you
+            // have chosen not to see is worth having, and worth being able to
+            // audit, but it is not where anyone starts.
+            ['ignored', this.t('dashboard.healthFilterIgnored', 'Ignored')],
         ];
         return secondary.filter(([key]) => this.filterCount(key) > 0 || this.filter === key);
     }
@@ -6114,11 +6435,25 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        /*
+         * Putting an archived copy back is an act of repair.
+         *
+         * Offered where there is something to repair — a failure, a drifted
+         * page, one nothing has checked yet. On a link that answers today it is
+         * not a lesser option, it is a mistake waiting to be clicked, and it was
+         * costing a row of a menu that had grown past the height of the window.
+         */
+        if (this.canRecoverFromArchive(issue)) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        }
         // A copy on this disk, for the case the Web Archive cannot help with:
         // a page nobody else archived, or one still up today that will not be.
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copy">${this.escape(this.t('dashboard.healthLocalCopy', 'Save a copy on this disk…'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
+        // Only when there is something to list. Without a copy this opens an
+        // empty dialog, which is a menu entry that exists to disappoint.
+        if (Number(issue?.localCopyAt) > 0) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
+        }
         // Same two entries the dashboard's right-click menu carries, under the
         // same labels. A row here is a bookmark like any other, and having to go
         // back to the dashboard to copy or send one is the kind of detour this
@@ -6133,6 +6468,32 @@ class DashboardHealth {
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="checkmode">${this.escape(
             this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: this.checkModeMeta(this.checkModeOf(issue)).label })
         )}</button>`);
+        /*
+         * Stop reporting one condition, and take it back.
+         *
+         * The key does the common case; the menu is where you can see which
+         * condition is being acted on before you act -- and the only place a row
+         * with several problems can be told which one to hide.
+         */
+        const ignored = this.ignoredFlagsOf(issue);
+        const target = this.ignoreTargetFlag(issue);
+        if (target || ignored.length) {
+            items.push(`<p class="health-view-menu-label" role="presentation">${this.escape(this.t('dashboard.healthMenuIgnore', 'Reporting'))}</p>`);
+        }
+        if (target && !ignored.some((entry) => entry.flag === target)) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="ignore">${this.escape(
+                this.t('dashboard.healthIgnoreFlag', 'Ignore “{flag}”', { flag: this.flagLabel(target) })
+            )}<kbd>n</kbd></button>`);
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="snooze">${this.escape(
+                this.t('dashboard.healthSnoozeFlag', 'Ignore “{flag}” for {days} days',
+                    { flag: this.flagLabel(target), days: DashboardHealth.SNOOZE_DAYS })
+            )}<kbd>z</kbd></button>`);
+        }
+        ignored.forEach((entry) => {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="unignore" data-flag="${this.escape(entry.flag)}">${this.escape(
+                this.t('dashboard.healthUnignoreFlag', 'Report “{flag}” again', { flag: this.flagLabel(entry.flag) })
+            )}</button>`);
+        });
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${this.escape(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-menu-action="delete">${this.escape(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
 
@@ -6195,6 +6556,7 @@ class DashboardHealth {
                         <span>${this.escape(domain)}</span>
                         ${this.renderCertBadge(issue)}
                         ${this.renderDriftBadge(issue)}
+                        ${this.renderIgnoredBadge(issue)}
                         ${this.renderMutedBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
@@ -6319,11 +6681,27 @@ class DashboardHealth {
             // Hand off to the popover rather than duplicating the three options
             // here, so there is one place that explains what the modes mean.
             checkmode: () => this.toggleMenu(key, 'check'),
+            ignore: () => void this.toggleIgnore(issue),
+            snooze: () => void this.toggleIgnore(issue, { snooze: true }),
         };
         row.querySelectorAll('[data-menu-action]').forEach((item) => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                menuActions[item.getAttribute('data-menu-action')]?.();
+                const action = item.getAttribute('data-menu-action');
+                // The un-ignore entries name their own condition, so they are
+                // one handler rather than one entry each in the map above.
+                if (action === 'unignore') {
+                    const flag = item.getAttribute('data-flag');
+                    void this.writeIgnores(issue, { remove: [flag] }).then((body) => {
+                        if (body) {
+                            this.dash.showNotification(
+                                this.t('dashboard.healthIgnoreRemoved', 'Reporting “{flag}” again.',
+                                    { flag: this.flagLabel(flag) }), 'success');
+                        }
+                    });
+                    return;
+                }
+                menuActions[action]?.();
             });
         });
 

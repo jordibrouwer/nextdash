@@ -240,7 +240,7 @@ class DashboardRenderCore {
         target.setAttribute('role', 'grid');
         target.setAttribute(
             'aria-label',
-            d.language?.t('dashboard.tagFilterGridLabel') || 'Filtered bookmarks'
+            d.formatDashboardLabel('tagFilterGridLabel', {}, 'Filtered bookmarks')
         );
     }
 
@@ -375,6 +375,9 @@ class DashboardRenderCore {
         // something else would need its own answer to both. The second class is
         // what the styling and the block builder tell them apart by.
         block.className = 'category dashboard-widget';
+        // A rowgroup like the category block beside it: the header below is a
+        // rowheader, and the grid around them expects the pair.
+        block.setAttribute('role', 'rowgroup');
         block.dataset.categoryId = widget.id;
         block.dataset.widgetId = widget.id;
         block.dataset.widgetType = widget.type || '';
@@ -482,16 +485,68 @@ class DashboardRenderCore {
         title.addEventListener('click', () => {
             setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
         });
+        /*
+         * The header's keys, the category's keys.
+         *
+         * Fold on Enter or Space, rename on F2, close on Delete, and the menu
+         * on Shift+F10 or the Menu key -- the same keys a category header
+         * answers to, because a reader who has learned them there has learned
+         * them for every block on the page. Shift+W for the width is not here:
+         * it is answered where the category's is, in keyboard-navigation.js,
+         * which sees the key first and would otherwise swallow it.
+         */
         title.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const menu = d.categoryMenu;
+            // Nothing here acts while the header is being renamed: the input
+            // sits inside this element, so every key typed into it bubbles out
+            // to here -- and Delete would then close the widget mid-rename.
+            if (e.target.closest('input, textarea')) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
+                return;
+            }
+            if (e.key === 'F2' && !title.classList.contains('category-title--renaming')) {
+                e.preventDefault();
+                menu?.startWidgetRename?.(title, widget);
+                return;
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                void menu?.closeWidget?.(widget);
+                return;
+            }
+            if (e.key === 'F10' && e.shiftKey) {
+                e.preventDefault();
+                const box = title.getBoundingClientRect();
+                menu?.showWidget?.(title, widget, { x: box.left + 8, y: box.bottom });
+            }
+        });
+        // Renaming, by the two pointer gestures a category header answers to.
+        // The long press blocks the click it ends with, so holding the header
+        // renames instead of folding it.
+        this._attachBlockTitleLongPress(title, () => d.categoryMenu?.startWidgetRename?.(title, widget));
+        title.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.category-reorder-handle')) return;
             e.preventDefault();
-            setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
+            e.stopPropagation();
+            d.categoryMenu?.startWidgetRename?.(title, widget);
         });
 
         block.appendChild(title);
 
         const body = document.createElement('div');
         body.className = 'dashboard-widget-body';
+        /*
+         * Presentation, deliberately.
+         *
+         * What a widget draws is figures and buttons, not rows of a grid, and
+         * the keyboard stops inside it are those buttons themselves. Leaving the
+         * subtree in the grid's structure would have a screen reader announce
+         * them as cells of a table that does not exist -- the bookmark list
+         * under a category does the same thing for the same reason.
+         */
+        body.setAttribute('role', 'presentation');
         const renderer = window.DashboardWidgets?.[widget.type];
         if (typeof renderer === 'function') {
             renderer(body, widget, d);
@@ -508,6 +563,7 @@ class DashboardRenderCore {
         bodyWrap.className = 'category-body';
         bodyWrap.appendChild(body);
         block.appendChild(bodyWrap);
+        d.categoryMenu?.bindWidget?.(block, widget);
         return block;
     }
 
@@ -546,6 +602,17 @@ class DashboardRenderCore {
 
     refreshWidgets(type) {
         const d = this.dash;
+        /*
+         * Where the keyboard was, before the rows it was on are replaced.
+         *
+         * The badge's report lands every few seconds on an install that
+         * monitors anything, and each arrival redraws these bodies -- so a
+         * reader sitting on a row inside a tile lost the cursor to a refresh
+         * they never asked for, and the next arrow key started over at the top
+         * of the grid. The row objects cannot survive the redraw; their place
+         * in the tile can.
+         */
+        const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
         document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
             .forEach((block) => {
                 const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
@@ -555,6 +622,7 @@ class DashboardRenderCore {
                 body.classList.remove('dashboard-widget-body--empty');
                 renderer(body, widget, d);
             });
+        if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
     }
 
     /**
@@ -1477,6 +1545,174 @@ class DashboardRenderCore {
         }, 1000);
     }
 
+    /*
+     * One widget changed on the dashboard: write it, and keep config in step.
+     *
+     * The dashboard can now rename a widget, set its width and close it from
+     * the header, which used to be three trips through Config -> Widgets. All
+     * three land here so there is one place that knows how a widget is written
+     * from the grid.
+     *
+     * Only `widgets` goes on the wire, the way saveBlockOrder sends only
+     * `order`: the handler keeps whichever half it is not given, so a drag
+     * whose debounce is still running is not undone by this write and vice
+     * versa.
+     *
+     * Returns false when nothing was saved, with the change already rolled back
+     * -- a caller that has drawn the new state optimistically has to put the old
+     * one back, and every one of them does.
+     */
+    async saveWidgetPatch(widgetId, patch) {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId);
+        const widgets = Array.isArray(d.widgets) ? d.widgets : [];
+        const index = widgets.findIndex((w) => String(w?.id) === String(widgetId));
+        if (!Number.isFinite(pageId) || index < 0) return false;
+
+        const before = widgets[index];
+        const next = { ...before };
+        if ('title' in patch) next.title = String(patch.title ?? '');
+        if (patch.config) {
+            const config = { ...(before.config || {}), ...patch.config };
+            // undefined means "back to the default", and the default is the key
+            // being absent -- the same thing the config panel writes.
+            Object.keys(patch.config).forEach((key) => {
+                if (patch.config[key] === undefined) delete config[key];
+            });
+            next.config = config;
+        }
+        widgets[index] = next;
+        d.widgets = widgets;
+
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+            const res = await fetcher(`/api/pages/${pageId}/blocks`, {
+                method: 'PUT', headers, body: JSON.stringify({ widgets }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch (_error) {
+            widgets[index] = before;
+            // Only when this is still the page being looked at. The reader can
+            // change page while the write is in flight, and d.widgets is then
+            // the new page's -- putting the old array back would hand one page
+            // the other's blocks, which is worse than the failed edit.
+            if (this.onSamePage(pageId)) d.widgets = widgets;
+            d.showErrorNotification?.(d.formatDashboardLabel?.('widgetSaveFailed', {},
+                'Could not save the widget.') || 'Could not save the widget.');
+            return false;
+        }
+
+        // Same reason: blockOrder belongs to whichever page is loaded now, and
+        // writing it under this page's id would cache an order from elsewhere.
+        if (this.onSamePage(pageId)) {
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order: d.blockOrder || [] } });
+        }
+        this.forgetWidgetConfigCache();
+        return true;
+    }
+
+    /*
+     * Redraw the grid without moving the page under the reader.
+     *
+     * A widget changing width or leaving the page reflows every block after it,
+     * so the draw has to be a full one -- and a full draw starts at the top of
+     * the document with a scroll position of zero. The reader was looking at a
+     * widget halfway down; putting the scroll back is what makes the change
+     * happen where they are looking instead of sending them back up to find it.
+     *
+     * Focus is restored too, so Shift+W twice in a row acts on the same header
+     * rather than on nothing the second time. Written by hand rather than
+     * through scrollIntoView: the reader's offset is the thing to preserve, not
+     * the block's position in the viewport.
+     */
+    redrawKeepingPlace(blockId) {
+        const d = this.dash;
+        const selector = blockId
+            ? `#dashboard-layout .category[data-category-id="${CSS.escape(String(blockId))}"]`
+            : null;
+        const before = selector ? document.querySelector(selector) : null;
+        const hadFocus = before ? document.activeElement?.closest?.(selector) != null : false;
+        const scrollY = window.scrollY || 0;
+        // Where the block sat in the viewport, which is the thing to keep. The
+        // absolute offset alone is not enough: the blocks after this one reflow,
+        // so the same offset can put a different part of the page under the
+        // reader's eyes.
+        const anchorTop = before ? before.getBoundingClientRect().top : null;
+
+        d.renderDashboard?.({ animate: false, forceFull: true });
+
+        // Returns whether it had to move anything, which is what tells the
+        // caller the layout is still settling.
+        const settle = () => {
+            const el = selector ? document.querySelector(selector) : null;
+            let moved = false;
+            if (el && anchorTop !== null) {
+                const drift = el.getBoundingClientRect().top - anchorTop;
+                if (Math.abs(drift) > 1) {
+                    window.scrollBy({ top: drift, behavior: 'instant' });
+                    moved = true;
+                }
+            } else if (Math.abs((window.scrollY || 0) - scrollY) > 1) {
+                // The block is gone -- it was just closed -- so the offset is
+                // all there is to go on.
+                window.scrollTo({ top: scrollY, behavior: 'instant' });
+                moved = true;
+            }
+            if (hadFocus) {
+                el?.querySelector('.category-title')?.focus({ preventScroll: true });
+            }
+            return moved;
+        };
+
+        /*
+         * Once now, then every frame until the page stops moving.
+         *
+         * The grid is masonry and packed mode positions its blocks inside a
+         * requestAnimationFrame, so right after the draw the document is a
+         * different height than it will be a frame or two later -- and a browser
+         * clamps the scroll to whatever fits in the meantime. Correcting only
+         * once writes a position the page is about to outgrow, which is the jump
+         * the reader sees. So the correction repeats while it still finds drift,
+         * and stops as soon as it does not.
+         *
+         * Bounded, because a layout that never settles must not turn into a
+         * scroll that never stops. In the test fixture the first pass is enough
+         * on both the plain grid and in packed mode; the loop is here for the
+         * pages where it is not, and costs a single measurement when it is.
+         */
+        settle();
+        let attempts = 0;
+        const again = () => {
+            if (attempts >= 6 || !settle()) return;
+            attempts += 1;
+            requestAnimationFrame(again);
+        };
+        requestAnimationFrame(again);
+    }
+
+    /** Whether the dashboard still shows the page a write started on. */
+    onSamePage(pageId) {
+        return Number(this.dash.currentPageId) === Number(pageId);
+    }
+
+    /*
+     * Drop what Config -> Widgets is holding, so it reloads.
+     *
+     * That panel skips its fetch while `_widgetLoadedFor` still names the page
+     * it has -- which is what makes it fast, and what would otherwise show the
+     * reader the rows as they were before this change. Opening config is the
+     * moment the answer has to be right, and it cannot know a write happened
+     * here.
+     */
+    forgetWidgetConfigCache() {
+        const config = this.dash.config?.instance || this.dash.config;
+        if (!config) return;
+        config._widgetBlocks = null;
+        config._widgetLoadedFor = null;
+    }
+
     async saveBlockOrder(pageId, order) {
         if (!Number.isFinite(pageId) || !Array.isArray(order) || order.length === 0) return;
         try {
@@ -1557,6 +1793,18 @@ class DashboardRenderCore {
 
 
     _attachCategoryTitleLongPress(titleEl, nameSpan, category) {
+        this._attachBlockTitleLongPress(titleEl, () => this._startCategoryRename(titleEl, nameSpan, category));
+    }
+
+    /*
+     * Hold the header to rename it, for a category and for a widget alike.
+     *
+     * The gesture is the whole of what is shared -- the timer, the movement
+     * slop, the parts of the header that must not arm it, and the one-shot
+     * click blocker that stops the press from also folding the block. What is
+     * renamed is the caller's business.
+     */
+    _attachBlockTitleLongPress(titleEl, startRename) {
         const longMs = window.DashboardInlineEditLoader?.ROW_LONG_PRESS_MS
             ?? window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
         const slop = 8;
@@ -1600,7 +1848,7 @@ class DashboardRenderCore {
                 if (titleEl.classList.contains('category-title--renaming')) {
                     return;
                 }
-                this._startCategoryRename(titleEl, nameSpan, category);
+                startRename();
                 const blockClick = (ev) => {
                     ev.preventDefault();
                     ev.stopPropagation();
@@ -1641,20 +1889,54 @@ class DashboardRenderCore {
 
     _startCategoryRename(titleEl, nameSpan, category) {
         const d = this.dash;
-        if (titleEl.querySelector('.category-rename-input')) return;
         // Uncategorized and orphan headers are synthesized views, not stored
         // categories (see the category-menu's identical guard) — renaming one
         // would fabricate a real category from a virtual one.
         if (category?.isVirtualCategory) return;
 
-        const originalName = category.name;
+        this._startBlockRename(titleEl, nameSpan, {
+            value: category.name,
+            ariaKey: 'renameCategoryAria',
+            ariaFallback: 'Rename category',
+            // A category has to be called something: an empty name would leave a
+            // header with nothing in it and a category nothing can name.
+            allowEmpty: false,
+            onCommit: async (newName) => {
+                category.name = newName;
+                // Orphan categories (bookmarks referencing a non-existent category ID) are not
+                // in d.categories, so the save would skip them. Add the category first.
+                if (!d.categories.some(c => String(c.id) === String(category.id))) {
+                    d.categories.push({ id: category.id, name: newName });
+                }
+                await this.saveCategoryOrder();
+            },
+        });
+    }
+
+    /*
+     * The inline rename on a block header, whatever kind of block it is.
+     *
+     * One editor rather than two: a category and a widget both put an input
+     * where their name is, both commit on Enter and on blur, both put the old
+     * text back on Escape, and both have to re-fit the title afterwards. What
+     * differs is what the name is saved to, and whether an empty one is a name
+     * at all -- a widget with no title falls back to its type, which is what the
+     * placeholder in Config -> Widgets has always said.
+     */
+    _startBlockRename(titleEl, nameSpan, {
+        value, ariaKey, ariaFallback, allowEmpty = false, displayFor = (name) => name, onCommit,
+    }) {
+        const d = this.dash;
+        if (titleEl.querySelector('.category-rename-input')) return;
+
+        const originalName = String(value ?? '');
         titleEl.classList.add('category-title--renaming');
 
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'category-rename-input';
         input.value = originalName;
-        input.setAttribute('aria-label', d.formatDashboardLabel('renameCategoryAria', {}, 'Rename category'));
+        input.setAttribute('aria-label', d.formatDashboardLabel(ariaKey, {}, ariaFallback));
         nameSpan.replaceWith(input);
         input.focus();
         input.select();
@@ -1667,19 +1949,17 @@ class DashboardRenderCore {
             titleEl.classList.remove('category-title--renaming');
             const newName = input.value.trim();
             input.replaceWith(nameSpan);
-            if (!newName || newName === originalName) {
-                nameSpan.textContent = originalName.toLowerCase();
+            const unchanged = newName === originalName || (!newName && !allowEmpty);
+            if (unchanged) {
+                nameSpan.textContent = String(displayFor(originalName)).toLowerCase();
                 window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
                 return;
             }
-            category.name = newName;
-            nameSpan.textContent = newName.toLowerCase();
-            // Orphan categories (bookmarks referencing a non-existent category ID) are not
-            // in d.categories, so the save would skip them. Add the category first.
-            if (!d.categories.some(c => String(c.id) === String(category.id))) {
-                d.categories.push({ id: category.id, name: newName });
-            }
-            await this.saveCategoryOrder();
+            // On screen before the write: the header is what the reader just
+            // typed into, and a name that only appears once the server has
+            // answered reads as a rename that did not take.
+            nameSpan.textContent = String(displayFor(newName)).toLowerCase();
+            await onCommit(newName);
             window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
 
@@ -1688,7 +1968,7 @@ class DashboardRenderCore {
             done = true;
             titleEl.classList.remove('category-title--renaming');
             input.replaceWith(nameSpan);
-            nameSpan.textContent = originalName.toLowerCase();
+            nameSpan.textContent = String(displayFor(originalName)).toLowerCase();
             window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
 
@@ -2092,6 +2372,12 @@ class DashboardRenderCore {
         });
         titleElement.addEventListener('keydown', (e) => {
             if (e.target.closest('.category-sort-controls')) {
+                return;
+            }
+            // The rename input is a child of this header, so its keys bubble
+            // out to here: without this, Delete while renaming deletes the
+            // category the reader is in the middle of naming.
+            if (e.target.closest('input, textarea')) {
                 return;
             }
             if (e.key === 'Enter' || e.key === ' ') {

@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -462,7 +461,7 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 		req, err := buildWebhookRequest(ctx, endpoint, event, data, time.Now())
 		if err != nil {
 			cancel()
-			log.Printf("webhook: failed to build %s for %s: %v", event, endpoint.URL, err)
+			logError(logComponentNotify, "the %s message for %s could not be prepared and was not sent: %v", event, endpoint.URL, err)
 			return
 		}
 		resp, err := client.Do(req)
@@ -471,10 +470,18 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 			drainAndCloseResponse(resp)
 			cancel()
 			if status < 400 {
+				logInfo(logComponentNotify, "%s delivered to %s", event, endpoint.URL)
+				if activityEnabled(activityCategoryNotify) {
+					logActivity(activityCategoryNotify, "notify.delivered", map[string]any{
+						"event":  event,
+						"url":    endpoint.URL,
+						"status": status,
+					}, "")
+				}
 				return
 			}
 			if status < 500 {
-				log.Printf("webhook: %s refused %s with HTTP %d", endpoint.URL, event, status)
+				logWarn(logComponentNotify, "%s answered %d and did not accept %s", endpoint.URL, status, event)
 				return
 			}
 			err = errors.New("HTTP " + strconv.Itoa(status))
@@ -482,8 +489,8 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 			cancel()
 		}
 		if attempt == webhookAttempts {
-			log.Printf("webhook: gave up on %s for %s after %d attempts: %v",
-				event, endpoint.URL, webhookAttempts, err)
+			logError(logComponentNotify, "gave up on %s after %d attempts; %s was not delivered: %v",
+				endpoint.URL, webhookAttempts, event, err)
 			return
 		}
 		// Growing gap: a receiver that is restarting is usually back within

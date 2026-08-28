@@ -46,6 +46,11 @@ class DashboardCategoryAdd {
         const hosts = [...container.querySelectorAll('.category')].filter((el) => (
             el.getAttribute('data-smart-collection') !== 'true'
             && !el.classList.contains('tag-filter-chunk')
+            // A widget is a `.category` to the grid and to DragReorder, and it
+            // has the same header -- so it qualified, and the button offering
+            // to add a category ended up in the title bar of the Feeds tile.
+            // It is not somewhere a category can be created either.
+            && !el.classList.contains('dashboard-widget')
             && el.querySelector('.category-title-trailing')
         ));
         if (!hosts.length) {

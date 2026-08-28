@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -50,8 +51,10 @@ const (
 	monolithTimeout = 90 * time.Second
 	// monolithMaxBytes caps a stored capture. Everything is inlined as base64,
 	// so a media-heavy page can be tens of megabytes -- past this it is not a
-	// page worth keeping whole.
-	monolithMaxBytes = 32 << 20
+	// page worth keeping whole. Raised from 32 MB, which was turning away pages
+	// people had asked to keep: the cap is there to stop one capture filling
+	// the disk, not to pick which pages count.
+	monolithMaxBytes = 52 << 20
 	// monolithPerRequestTimeout bounds one asset fetch inside a run, so a single
 	// stuck image cannot spend the whole capture budget.
 	monolithPerRequestTimeout = 20 * time.Second
@@ -70,38 +73,56 @@ var (
 )
 
 /*
-monolithQuietFlag finds this build's spelling of "be quiet", or "" if neither.
+boundedTail keeps the last of a command's stderr and drops the rest.
 
-The flag was renamed between releases: 2.8, which is what Alpine ships and
-therefore what the Docker image has, spells it -s; 2.10, which Homebrew ships,
-spells it -q and rejects -s outright. Hardcoding either means every capture dies
-in the argument parser on half the installs -- which is exactly what happened
-with -s against 2.10, and would have happened again in the container with -q.
-
-Read from --help once and remembered, because this cannot change while the
-process runs. Neither flag is fatal: quiet is a courtesy to the log, so a build
-with a third spelling simply gets a chattier run rather than no run at all.
+A capture logs one line per asset, so a page with three hundred images would
+otherwise be three hundred lines held in memory for the sake of the one at the
+end. What is worth keeping is the tail: monolith prints its failure last.
 */
-var monolithQuietOnce sync.Once
-var monolithQuietCached string
+type boundedTail struct {
+	buf []byte
+}
 
-func monolithQuietFlag(binary string) string {
-	monolithQuietOnce.Do(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, binary, "--help").CombinedOutput()
-		if err != nil && len(out) == 0 {
-			return
+// monolithTailBytes is how much of the tail to hold. Two kilobytes is several
+// lines of progress plus any error, and nothing anyone would print on purpose.
+const monolithTailBytes = 2 << 10
+
+func (b *boundedTail) Write(p []byte) (int, error) {
+	b.buf = append(b.buf, p...)
+	if len(b.buf) > monolithTailBytes {
+		b.buf = b.buf[len(b.buf)-monolithTailBytes:]
+	}
+	return len(p), nil
+}
+
+/*
+reason is the last thing the command said that reads like a failure.
+
+The line beginning "Error:" when there is one -- monolith ends with it -- and
+otherwise the final non-empty line. Either way it is the sentence a reader can
+act on rather than the asset list that came before it.
+*/
+func (b *boundedTail) reason() string {
+	lines := strings.Split(strings.TrimSpace(string(b.buf)), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(line, "Error:") {
+			return trimReason(line)
 		}
-		help := string(out)
-		switch {
-		case strings.Contains(help, "--quiet"):
-			monolithQuietCached = "-q"
-		case strings.Contains(help, "--silent"):
-			monolithQuietCached = "-s"
+	}
+	for i := len(lines) - 1; i >= 0; i-- {
+		if line := strings.TrimSpace(lines[i]); line != "" {
+			return trimReason(line)
 		}
-	})
-	return monolithQuietCached
+	}
+	return ""
+}
+
+func trimReason(line string) string {
+	if len(line) > 300 {
+		return line[:300]
+	}
+	return line
 }
 
 // MonolithAvailable reports whether the binary can be found.
@@ -183,6 +204,20 @@ type LocalCapture struct {
 	URLKey string `json:"urlKey,omitempty"`
 	Bytes  int64  `json:"bytes"`
 	/*
+	 * NoReadableText marks a capture that opens blank.
+	 *
+	 * A page that builds itself in the browser is stored as its container and
+	 * its scripts, and those scripts cannot run from an archive: the copy is
+	 * served under a policy that forbids them, and allowed they would want the
+	 * network the archive exists to do without. The file is real and weighs
+	 * megabytes; there is simply nothing in it to read.
+	 *
+	 * Reported rather than refused, because the shell is occasionally what
+	 * somebody wants -- and either way the moment to say so is now, not a year
+	 * later when the copy is opened.
+	 */
+	NoReadableText bool `json:"noReadableText,omitempty"`
+	/*
 	 * URL is where the browser can open it: /api/archives/{name}, behind the
 	 * write token.
 	 *
@@ -209,8 +244,31 @@ no shell in the picture, so nothing in a URL can be read as a command. Output
 goes to a file this chooses rather than to one monolith derives, so the path is
 never influenced by what the page or the address says.
 */
-func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapture, error) {
+func (h *Handlers) CaptureLocally(ctx context.Context, target string) (capture LocalCapture, err error) {
 	target = strings.TrimSpace(target)
+
+	// Every path out of here says what became of the capture. There are eight
+	// of them and they all matter to whoever pressed Save a copy, so the log
+	// happens once on the way out rather than eight times on the way down.
+	defer func() {
+		switch {
+		case err != nil:
+			logWarn(logComponentArchive, "%s could not be saved: %v", hostOf(target), err)
+		case capture.NoReadableText:
+			logWarn(logComponentArchive, "%s was saved (%s) but holds no readable text; it is probably a page that builds itself in the browser",
+				hostOf(target), formatCaptureSize(capture.Bytes))
+		default:
+			logInfo(logComponentArchive, "saved %s, %s on disk", hostOf(target), formatCaptureSize(capture.Bytes))
+		}
+		if activityEnabled(activityCategoryArchive) {
+			fields := map[string]any{"url": target, "bytes": capture.Bytes}
+			if err != nil {
+				fields["error"] = err.Error()
+			}
+			logActivity(activityCategoryArchive, "archive.capture", fields, "")
+		}
+	}()
+
 	if err := h.validateBookmarkURL(target); err != nil {
 		return LocalCapture{}, err
 	}
@@ -256,9 +314,6 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 		"-I",
 		"-t", fmt.Sprint(int(monolithPerRequestTimeout.Seconds())),
 	}
-	if quiet := monolithQuietFlag(binary); quiet != "" {
-		args = append(args, quiet)
-	}
 	args = append(args, target)
 	cmd := exec.CommandContext(runCtx, binary, args...)
 	// No inherited environment: this is a network fetch on the reader's behalf
@@ -277,7 +332,24 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 	 * the pipes regardless, so cancelling means the call returns.
 	 */
 	cmd.WaitDelay = 2 * time.Second
-	output, runErr := cmd.CombinedOutput()
+	/*
+	 * Progress thrown away, the reason kept.
+	 *
+	 * monolith writes both to stderr -- a line per asset while it works, and
+	 * its error at the end when it cannot. We used to ask it to be quiet
+	 * instead, which silenced the error along with the progress: a capture that
+	 * could not reach the page came back as "exit status 1" and there was
+	 * nothing to act on. Measured against the binary: with the flag a DNS
+	 * failure leaves stdout and stderr both empty; without it stderr ends with
+	 * "Error: could not retrieve target document".
+	 *
+	 * Bounded, because the progress log is one line per asset and a page can
+	 * have hundreds; the tail is where the failure is.
+	 */
+	var stderr boundedTail
+	cmd.Stdout = io.Discard
+	cmd.Stderr = &stderr
+	runErr := cmd.Run()
 
 	if runErr != nil {
 		// Whatever it managed to write is not a capture; leaving it would make
@@ -286,10 +358,7 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 		if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
 			return LocalCapture{}, fmt.Errorf("monolith took longer than %s", monolithTimeout)
 		}
-		detail := strings.TrimSpace(string(output))
-		if len(detail) > 300 {
-			detail = detail[:300]
-		}
+		detail := stderr.reason()
 		if detail == "" {
 			detail = runErr.Error()
 		}
@@ -311,12 +380,127 @@ func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapt
 	}
 
 	return LocalCapture{
-		Path:   path,
-		URLKey: canonicalBookmarkURLKey(target),
-		Bytes:  info.Size(),
-		URL:    "/api/archives/" + filepath.Base(path),
-		At:     at.UnixMilli(),
+		Path:           path,
+		URLKey:         canonicalBookmarkURLKey(target),
+		Bytes:          info.Size(),
+		URL:            "/api/archives/" + filepath.Base(path),
+		At:             at.UnixMilli(),
+		NoReadableText: !captureHasReadableText(path),
 	}, nil
+}
+
+/*
+captureHasReadableText reports whether there is anything to read in a capture.
+
+Scanned rather than sampled. A capture inlines every stylesheet and script, so
+it opens with hundreds of kilobytes of CSS before the first word of the page --
+and reading a fixed head of the file and stripping <style>...</style> only works
+while both ends fall inside the window. On a real capture the closing tag did
+not, and 129,805 characters of @layer declarations read as prose.
+
+So this walks the file with a small state machine, counting only what is outside
+a tag and outside script and style, and stops the moment it has seen enough. A
+page with words is answered in the first kilobytes; only a shell is read to the
+end, and a shell is mostly base64 the scanner skips without allocating.
+
+The threshold is deliberately low: this is not judging whether a page is worth
+keeping, it is telling a page apart from an empty container, and a container
+carries a title and a noscript line at most.
+*/
+const (
+	/*
+	 * Measured on real captures rather than guessed: a claude.ai shell counts
+	 * 225 visible characters (hidden noscript text, invisible in a browser), a
+	 * self-hosted app's shell 6, and an ars technica article 7,894. Five hundred
+	 * sits well clear of both shells and well under any page with prose.
+	 *
+	 * A genuinely short page — a status notice of two sentences — would be
+	 * called blank by this. It costs a sentence in a toast, and the copy is kept
+	 * either way.
+	 */
+	captureTextMinimum = 500
+	captureScanChunk   = 64 << 10
+)
+
+func captureHasReadableText(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		// Unreadable is not a claim that it is empty: the file is there, and
+		// its size was checked a moment ago.
+		return true
+	}
+	defer file.Close()
+
+	var (
+		buf     = make([]byte, captureScanChunk)
+		scanner captureTextScanner
+	)
+	for {
+		n, readErr := file.Read(buf)
+		if n > 0 && scanner.count(buf[:n]) >= captureTextMinimum {
+			return true
+		}
+		if readErr != nil {
+			return scanner.chars >= captureTextMinimum
+		}
+	}
+}
+
+/*
+captureTextScanner counts visible characters across chunk boundaries.
+
+Deliberately not a parser: it needs to know whether it is inside a tag, and
+whether that tag was script or style, which is four states and a small buffer
+for the tag name. Anything more would be reimplementing an HTML parser to answer
+"is this page blank".
+*/
+type captureTextScanner struct {
+	chars    int
+	inTag    bool
+	inScript bool
+	inStyle  bool
+	// tag collects the opening of a tag name so the scanner can tell <script>
+	// from <span>, and </style> from </strong>.
+	tag []byte
+	// pending holds the tail of a chunk that might be the start of a tag name
+	// split across a read.
+	closing bool
+}
+
+func (s *captureTextScanner) count(chunk []byte) int {
+	for _, b := range chunk {
+		switch {
+		case b == '<':
+			s.inTag = true
+			s.closing = false
+			s.tag = s.tag[:0]
+		case b == '>' && s.inTag:
+			s.inTag = false
+			name := strings.ToLower(string(s.tag))
+			switch {
+			case strings.HasPrefix(name, "script"):
+				s.inScript = !s.closing
+			case strings.HasPrefix(name, "style"):
+				s.inStyle = !s.closing
+			}
+			s.tag = s.tag[:0]
+		case s.inTag:
+			if len(s.tag) == 0 && b == '/' {
+				s.closing = true
+				continue
+			}
+			// Only the name is worth keeping; attributes can be megabytes of
+			// inlined data.
+			if len(s.tag) < 8 {
+				s.tag = append(s.tag, b)
+			}
+		case s.inScript || s.inStyle:
+			// Their contents are code, whatever they look like.
+		case b > ' ':
+			s.chars++
+		}
+	}
+	return s.chars
 }
 
 // CaptureLocallyHandler answers POST /api/archives/capture.
@@ -562,4 +746,13 @@ func localCopyIndex() map[string]struct {
 		index[stem] = entry
 	}
 	return index
+}
+
+// formatCaptureSize is the size as a reader would say it, not as a machine
+// would: whole kilobytes or one decimal of a megabyte.
+func formatCaptureSize(bytes int64) string {
+	if bytes >= 1<<20 {
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(1<<20))
+	}
+	return fmt.Sprintf("%d KB", bytes>>10)
 }

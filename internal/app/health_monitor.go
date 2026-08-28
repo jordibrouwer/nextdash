@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"strings"
 	"sync"
@@ -200,7 +199,7 @@ func (h *Handlers) runDueMonitors() {
 	// reclaims its history without needing a due check to trigger it.
 	if len(targets) == 0 {
 		if err := h.sweepHealthHistory(known); err != nil {
-			log.Printf("health-monitor: history sweep failed: %v", err)
+			logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 		}
 		h.pruneCertificates(liveHosts)
 		return
@@ -268,6 +267,7 @@ func (h *Handlers) runDueMonitors() {
 				}
 			}
 			mu.Lock()
+			logDebug(logComponentHealth, "%s is %s (%dms)", t.url, result.Status, result.PingMs)
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
 			mu.Unlock()
 		}(target)
@@ -329,13 +329,13 @@ func (h *Handlers) runDueMonitors() {
 	}
 
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
-		log.Printf("health-monitor: failed to append history: %v", err)
+		logWarn(logComponentHealth, "this round could not be added to the history (%v); the graph will show a gap", err)
 	}
 	if err := h.sweepHealthHistory(known); err != nil {
-		log.Printf("health-monitor: history sweep failed: %v", err)
+		logWarn(logComponentHealth, "old history could not be cleared away (%v); it will be tried again next round", err)
 	}
 	if err := h.mergeHealthCacheUpdates(cacheUpdates); err != nil {
-		log.Printf("health-monitor: failed to persist health cache: %v", err)
+		logWarn(logComponentHealth, "the results could not be saved (%v); Health will check again rather than read them back", err)
 	}
 	certResults := make([]PingResult, 0, len(outcomes))
 	for _, out := range outcomes {
@@ -360,6 +360,16 @@ func (h *Handlers) runDueMonitors() {
 	}
 	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults)
 	h.invalidateHealthReportCache()
+
+	// What the round did, in one line. Until this existed a sweep of a hundred
+	// bookmarks passed without the log saying anything at all.
+	failed := 0
+	for _, out := range outcomes {
+		if out.result.Status != "online" {
+			failed++
+		}
+	}
+	logCheckRound(len(outcomes), failed, time.Since(now))
 
 	h.dispatchMonitorNotifications(ctx, pending)
 }
@@ -398,7 +408,7 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 			return current, nil
 		})
 		if err != nil {
-			log.Printf("health-monitor: failed to update bookmarks on page %d: %v", page.ID, err)
+			logError(logComponentStore, "page %d could not be saved: %v", page.ID, err)
 		}
 	}
 }

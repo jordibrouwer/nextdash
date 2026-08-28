@@ -147,12 +147,17 @@ Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the resp
 
 ### Activity log (bookmark events)
 
-Structured JSON activity lines are written to the server log for bookmark mutations and status checks by default. Opens are off unless enabled.
+A machine-readable trail of what happened, kept apart from the readable log. Bookmark changes and status checks are recorded by default; opens and the eight channels added in **v1.4.2** are off unless asked for.
+
+Since **v1.4.2** the channels are also chosen in the app, under **Config → Data & backups → Server log → Activity trail**. The environment variables below keep working and mean the same thing; a choice made in the app wins over them.
 
 ```bash
 # Default: mutate + status (opens off)
 NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
 NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
+
+# The channels added in v1.4.2, all off unless named
+NEXTDASH_ACTIVITY_LOG=mutate,status,health,sources,feeds,archive,backup,store,widgets,notify
 
 # Automatic backups: how many are kept, and where they live
 NEXTDASH_AUTO_BACKUP_KEEP=3                        # 1–50; default 3
@@ -166,13 +171,15 @@ NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/acti
 NEXTDASH_ACTIVITY_LOG=mutate,status,security
 ```
 
-Example log line:
+Example trail line, as written to `activity.log` and to the in-app buffer:
 
 ```text
-activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
+{"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
 ```
 
-To read them without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only** — the same lines, with the request traffic around them filtered out. It needs **Collect server log** switched on, because it is the same buffer; which events get written is still decided by the environment variables above.
+The container log gets a sentence for the same event instead of the JSON (**v1.4.2**) — `INFO mutate added "GitHub" (https://github.com)`. With twelve channels available, printing the JSON between the readable lines would have made `docker logs` unreadable.
+
+To read the trail without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only**. It needs **Collect server log** switched on, because it is the same buffer.
 
 Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
 
@@ -313,7 +320,8 @@ environment:
 | `NEXTDASH_DATA_DIR` | `./data` | Pages, bookmarks, settings, uploads |
 | `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
 | `NEXTDASH_CORS_ORIGINS` | *(unset)* | Extra `Origin` allowlist for API CORS, comma-separated. Extension origins always allowed; `*` answers everyone |
-| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security` (comma-separated) |
+| `NEXTDASH_LOG_LEVEL` | `info` | How much the server writes: `error`, `warn`, `info`, `debug`. Overridden by **Detail level** in the app when set |
+| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security`, `health`, `sources`, `feeds`, `archive`, `backup`, `store`, `widgets`, `notify` (comma-separated). Overridden by **Activity trail** in the app when set |
 | `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
 | `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
 | `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for server outbound fetches |
@@ -497,6 +505,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **A key legend under the grid** (**v1.2.0**) — appears after the first keystroke, goes on `Enter`. **Config → Behavior → General**; on for new installs. *Show shortcut hints on toolbar icons* now starts **off**, for existing installs too
 - **Undo a move** (**v1.2.0**) — one bookmark or a whole selection, including a cross-page bulk move; each bookmark returns to the category it actually came from, not all to one
 - **Category icons and `Alt+←/→`** (**v1.2.0**) — right-click a category header for **Icon…** with a live preview in the heading; `Alt` with the arrows moves the category itself
+- **The server log says what it is doing** (**v1.4.2**) — every line names how serious it is and which part of nextDash it came from, in a sentence written for someone running it rather than reading its source: *checked 110 bookmarks, 2 failed*, or *dash.example could not be saved*. Whole parts of the server that used to pass in silence now say what they did — a check round, a feed poll, an import, a saved copy, a scheduled backup, a write to disk that did not work. **Detail level** decides how much is written, here and in `docker logs` alike (*Quiet*, *Normal*, *Verbose*), and takes effect on the very next line with no restart; **Activity trail** beside it picks which twelve things are recorded in machine-readable form, with **Reset panel** restoring the default pair
 - **Read the activity log in config** (**v1.1.1**) — **Data & backups → Server log → Show → Activity only**
 - **Config → Bookmarks has two sub-tabs** (**v1.1.0**) — **List** and **Settings**; the settings used to sit under a list of fifty to five hundred rows
 - **A filtered list is a link** (**v1.3.1**) — what you searched, the page, the category, the tag and the sort all ride in the address, so "the 41 untagged on Work" survives a reload and can be sent to someone. An empty list says which filter emptied it, a selection survives a filter change (the bar says how many are hidden by it), and bulk tags, pins and availability can be undone from the same toast delete uses
@@ -523,7 +532,8 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 ### Keeping a copy of a page
 
 - **Ask the Web Archive to keep a copy the day you save a link** (**v1.4.0**) — everything else in the health view is diagnosis: it tells you a link is dead and offers whatever copy somebody else happened to take, which for a page nobody else bookmarked is usually none. Switch it on under **Config → Data & backups → Sources**, with an archive.org key pair and a one-page test capture to prove them
-- **Local copies on your own disk** (**v1.4.0**) — a whole page, text, styling and images, saved as one file in your data directory through [monolith](https://github.com/Y2Z/monolith), so it stays readable when the site and the Web Archive are both gone. **Config → Bookmarks → Local copies** lists what you have, grouped by the bookmark it belongs to
+- **Local copies on your own disk** (**v1.4.0**) — a whole page, text, styling and images, saved as one file in your data directory through [monolith](https://github.com/Y2Z/monolith), so it stays readable when the site and the Web Archive are both gone. **Config → Bookmarks → Local copies** lists what you have, grouped by the bookmark it belongs to, and since **v1.4.2** a button clears them all at once, after asking and saying how many and how much space it frees
+- **A copy says why it failed, and when it is blank** (**v1.4.2**) — a capture that cannot be made now names the reason instead of an exit status, pages up to **52 MB** can be saved where the ceiling was 32 MB, and a page that saved as an empty shell — one that builds itself in the browser — says so rather than leaving you to find out on opening it
 - **archive.today** (**v1.4.0**) — the two archives disagree by design. The Web Archive honours a site that turns it away and drops what a site later withdraws; archive.today keeps what it captured. For a link that died behind a paywall, *no copy* from the first is routinely not *no copy*
 - **The date the web lost a page** (**v1.4.0**) — reading the archive's own index rather than asking for the capture nearest to now, which for a dead link is usually a copy of the error page
 
@@ -567,6 +577,8 @@ widget already on the page**, so the feature is visible rather than something
 you have to go and find.
 
 - **A block on a page can hold something other than links** (**v1.4.0**) — a widget is drawn among the categories, dragged into place like one, and can be one or two columns wide. Add, name and arrange them under **Config → Widgets**; the block order is the same list that orders categories, so there is one answer to where anything sits
+- **A widget is renamed, resized and closed from its own header** (**v1.4.2**) — right-click a widget title for rename, one column or two, fold, its settings, and close. Renaming writes the name **Config → Widgets** shows, and closing is *disable it there* rather than a delete, so the widget and its settings survive being put away
+- **The keyboard goes into a widget instead of around it** (**v1.4.2**) — arrow keys step inside and move through its rows the way they move through a category's, **Enter** opens the row under the cursor, and every action in the right-click menu has a key of its own. Widgets had been the one block on the page the keyboard skipped
 - **A widget folds away like a category** (**v1.4.1.2**) — click its title to fold it shut, or **Enter**/**Space** with it focused; the same gesture on the same header categories have always had, so a page of open summaries no longer pushes the block you want below the fold. **Fold all** and the `.` key take widgets with them, and each block stays as you left it
 - **Thirteen types, each reading something nextDash already keeps** (**v1.4.0**) — no configuration beyond adding the tile, because the data is already there. **Health** and **Uptime** report what the health view reports, worst first, with a heartbeat per monitored link; **Trend** draws the last thirty days; **Inbox** says what is waiting; **Neglected** surfaces what you saved and never opened; **Unchecked** and **Duplicates** name what the collection has quietly accumulated; **Trash** counts what is still recoverable and **Backups** how old the newest one is; **Archive** says how much has a copy kept locally; and **Sources**, **Feeds** and **Certificates** show the three things that were previously visible only by going looking — a failed import, a feed gone quiet, a certificate running out
 - **A custom widget, with 28 services already filled in** (**v1.4.0**) — the fourteenth type points at any address that answers with JSON, so a service nextDash has never heard of needs no code. Pick a **preset** and the address shape, the fields and the labels arrive already written; the list covers **Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Bazarr, Overseerr / Jellyseerr, Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent, SABnzbd and NZBGet** for media, **Pi-hole (v5 and v6), AdGuard Home, Traefik and Speedtest Tracker** for the network, **Proxmox VE, TrueNAS, Glances and Syncthing** for the machine, and **Nextcloud, Paperless-ngx, Home Assistant, Grafana and ntfy** alongside. Nothing is hard-coded per service — a preset is a starting point you can edit, and writing your own from scratch is the same form with the fields left blank
@@ -652,6 +664,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - **Check a service you have to be signed in to** (**v1.4.0**) — a self-hosted service bookmarked at its web interface answers *not signed in* to an anonymous check, so the row read broken while the service was fine, and the only way to stop that was to stop watching the bookmark most worth watching. Store the sign-in once under **Config → Data & backups → Sources → Health sign-ins** and point any number of bookmarks at it; the bookmark keeps only a name, and the secret stays out of your backups unless you ask for it
 - **Buttons on a downtime alert** (**v1.4.0**) — an alert reaching your phone through **ntfy** carries **Open link** and **Health**, so you can act on it without finding a laptop. A failure is sent above the default priority so it breaks a quiet-hours rule, a recovery below it. Give nextDash its own address under **Downtime alerts** for the second button to appear
 - **Three slow jobs on a whole selection** (**v1.4.0**) — tick rows in the health view and **Rebuild previews**, **Refresh favicons** and **Save a copy on this disk** act on all of them. Each was already on a single row's menu, which is where the tedium was: a filter that finds forty bookmarks with no preview is exactly the case for doing them at once. They run one request at a time behind a bar that counts, because each one fetches a page belonging to somebody else
+- **A bookmark can stop reporting one condition** (**v1.4.2**) — a link you have already looked at and judged fine kept being flagged as stale, unused or broken on every visit, and the only ways to quiet it were to delete the bookmark or stop checking it. Press **n** or **z** on a row, or use its menu, to set that one flag aside: the bookmark stays in the collection and keeps being checked, it simply stops raising that condition. An **Ignored** filter lists everything set aside, and one click puts a bookmark back
 - **A bot check is not a dead link** (**v1.4.0**) — a site asking *are you a robot* was counted as gone. Only the answers that say the page or the host no longer exists count now; the rest read as unknown, which is the difference between a monitor people trust and one they switch off
 ### Bookmarks
 

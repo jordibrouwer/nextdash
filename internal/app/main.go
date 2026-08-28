@@ -56,6 +56,10 @@ func Run(files assetFS) {
 	// it. Off by default, so a dashboard nobody debugs pays nothing for the
 	// viewer and its log stays genuinely empty.
 	startupSettings := store.GetSettings()
+	// The environment first, then the settings on top of it: NEXTDASH_LOG_LEVEL
+	// keeps working for anyone who set it, and a level chosen in the app wins.
+	setLogLevel(os.Getenv("NEXTDASH_LOG_LEVEL"))
+	applyLogSettings(startupSettings)
 	ConfigureServerLog(
 		startupSettings.ServerLogEnabled,
 		startupSettings.ServerLogRetentionMode,
@@ -63,16 +67,16 @@ func Run(files assetFS) {
 		startupSettings.ServerLogMaxEntries,
 	)
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
-		log.Printf("Using data directory: %s", ResolveDataDir())
+		logInfo(logComponentServer, "data directory: %s", ResolveDataDir())
 	}
 
 	// Expire trashed bookmarks past their 30 days. Retention otherwise rides
 	// along with writes, so an instance that was off for a month would keep
 	// showing items it should have dropped until the next delete.
 	if removed, err := store.PruneTrash(); err != nil {
-		log.Printf("trash: prune failed: %v", err)
+		logWarn(logComponentStore, "expired trash could not be cleared away (%v); it will be tried again at the next start", err)
 	} else if removed > 0 {
-		log.Printf("trash: pruned %d expired item(s)", removed)
+		logInfo(logComponentStore, "cleared %s from the trash", plural(removed, "expired item", "expired items"))
 	}
 
 	// Initialize handlers
@@ -195,6 +199,7 @@ func Run(files assetFS) {
 	// The same fields for a list of bookmarks, so muting a dozen during a known
 	// outage is one request rather than a dozen dialogs.
 	r.HandleFunc("/api/health/expectations-bulk", handlers.SetBookmarkExpectationsBulk).Methods("POST")
+	r.HandleFunc("/api/health/ignore", handlers.SetBookmarkHealthIgnores).Methods("POST")
 	r.HandleFunc("/api/health/accept-drift", handlers.AcceptDrift).Methods("POST")
 	r.HandleFunc("/api/health/check-url", handlers.CheckBookmarkHealthURL).Methods("POST")
 	r.HandleFunc("/api/health/open-broken", handlers.OpenBroken).Methods("POST")
@@ -276,7 +281,7 @@ func Run(files assetFS) {
 
 	// Locales: prefer on-disk files in dev/Docker mounts, fall back to embed.
 	if info, err := os.Stat("locales"); err == nil && info.IsDir() {
-		log.Printf("Serving /locales/ from disk (./locales)")
+		logInfo(logComponentServer, "serving /locales/ from ./locales on disk")
 	}
 	// One handler for both sources: it reads from disk when there is a disk copy
 	// and from the embedded set otherwise, and it can narrow the file to a scope
@@ -286,7 +291,7 @@ func Run(files assetFS) {
 	// Static: prefer on-disk files so container/dev picks up JS/CSS without rebuild.
 	var staticHandler http.Handler
 	if info, err := os.Stat("static"); err == nil && info.IsDir() {
-		log.Printf("Serving /static/ from disk (./static)")
+		logInfo(logComponentServer, "serving /static/ from ./static on disk")
 		staticHandler = http.FileServer(http.Dir("static"))
 	} else {
 		staticFS, _ := fs.Sub(embeddedFiles, "static")
@@ -332,9 +337,9 @@ func Run(files assetFS) {
 	handlers.StartUpdateCheckScheduler(schedulerStop)
 
 	go func() {
-		log.Printf("Server starting on port %s", port)
-		log.Printf("Dashboard: http://localhost:%s", port)
-		log.Printf("Configuration: http://localhost:%s/#config", port)
+		logInfo(logComponentServer, "starting on port %s", port)
+		logInfo(logComponentServer, "dashboard: http://localhost:%s", port)
+		logInfo(logComponentServer, "configuration: http://localhost:%s/#config", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}
@@ -344,14 +349,14 @@ func Run(files assetFS) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 
-	log.Printf("Shutting down server...")
+	logInfo(logComponentServer, "shutting down")
 	close(schedulerStop)
 	handlers.FlushCaches()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Shutdown error: %v", err)
+		logError(logComponentServer, "the shutdown did not finish cleanly: %v", err)
 	}
-	log.Printf("Server stopped")
+	logInfo(logComponentServer, "stopped")
 }

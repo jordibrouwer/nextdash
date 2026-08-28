@@ -3,7 +3,6 @@ package app
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -66,7 +65,7 @@ func requestLogging(next http.Handler) http.Handler {
 		if status == 0 {
 			status = http.StatusOK
 		}
-		log.Printf("%s %s %s %d %dB %s",
+		logRequestLine("%s %s %s %d %dB %s",
 			reqID,
 			r.Method,
 			r.URL.Path,

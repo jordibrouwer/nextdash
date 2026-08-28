@@ -532,12 +532,15 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	resp, err := client.Do(req)
 	if err != nil {
 		result.Error = "no answer from that address"
+		logWarn(logComponentWidgets, "%s could not be reached; the tile will show what it has: %v", hostOf(spec.URL), err)
 		return result
 	}
 	defer drainAndCloseResponse(resp)
 
+	logDebug(logComponentWidgets, "%s answered %d", hostOf(spec.URL), resp.StatusCode)
 	if resp.StatusCode >= 400 {
 		result.Error = fmt.Sprintf("the service answered %d", resp.StatusCode)
+		logWarn(logComponentWidgets, "%s answered %d; the tile will show what it has", hostOf(spec.URL), resp.StatusCode)
 		return result
 	}
 

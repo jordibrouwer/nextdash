@@ -25,6 +25,56 @@ type HealthFactsRow struct {
 	// "no data" and "0% up" are different answers.
 	Uptime30d      float64 `json:"uptime30d,omitempty"`
 	Uptime30dCount int     `json:"uptime30dSamples,omitempty"`
+	// The three fields below are the uptime widget's, and are sent for
+	// monitored rows only.
+	//
+	// The widget used to insist on the full report, which is loaded when the
+	// health view is opened and never before it — so a tile added to the
+	// dashboard read "Open Health once to fill this in" until the reader went
+	// and did that. It needs four things per row and the row already carries
+	// the first, so these are the rest.
+	Uptime7d      float64 `json:"uptime7d,omitempty"`
+	Uptime7dCount int     `json:"uptime7dSamples,omitempty"`
+	DownSince     int64   `json:"downSince,omitempty"`
+	// Heartbeat is the bar's states and nothing else: the sparkline colours a
+	// tick per bucket and reads no other field, while a full HeartbeatBucket
+	// carries from, to, up, down, avgMs and reason. Forty of those per monitor
+	// on every dashboard load would be the weight this view exists to avoid,
+	// so the shape here is one letter per bucket -- see heartbeatStates.
+	Heartbeat string `json:"heartbeat,omitempty"`
+}
+
+// factsHeartbeatBuckets is how much of the bar the compact view carries.
+//
+// The widget draws the last 24 of whatever it is given, so sending 40 would be
+// sending sixteen the reader never sees.
+const factsHeartbeatBuckets = 24
+
+/*
+heartbeatStates compresses a heartbeat to one letter per bucket.
+
+u=up, d=down, x=degraded, .=no samples in that bucket. A letter rather than a
+word because this rides on every dashboard load: twenty monitors is 480 bytes
+this way against about 4KB as JSON objects, for a bar that draws the same.
+*/
+func heartbeatStates(buckets []HeartbeatBucket) string {
+	if len(buckets) > factsHeartbeatBuckets {
+		buckets = buckets[len(buckets)-factsHeartbeatBuckets:]
+	}
+	out := make([]byte, 0, len(buckets))
+	for _, bucket := range buckets {
+		switch bucket.State {
+		case heartbeatUp:
+			out = append(out, 'u')
+		case heartbeatDown:
+			out = append(out, 'd')
+		case heartbeatDegraded:
+			out = append(out, 'x')
+		default:
+			out = append(out, '.')
+		}
+	}
+	return string(out)
 }
 
 // HealthFactsReport is the badge's and the preview card's half of the report.
@@ -54,11 +104,24 @@ func buildHealthFactsReport(report BookmarkHealthReport) HealthFactsReport {
 			BrokenSince: issue.BrokenSince,
 			LastError:   issue.LastError,
 		}
-		if issue.MonitorStats != nil && issue.MonitorStats.Uptime30d.Samples > 0 {
-			row.Uptime30d = issue.MonitorStats.Uptime30d.Ratio
-			row.Uptime30dCount = issue.MonitorStats.Uptime30d.Samples
+		if stats := issue.MonitorStats; stats != nil {
+			if stats.Uptime30d.Samples > 0 {
+				row.Uptime30d = stats.Uptime30d.Ratio
+				row.Uptime30dCount = stats.Uptime30d.Samples
+			}
+			if stats.Uptime7d.Samples > 0 {
+				row.Uptime7d = stats.Uptime7d.Ratio
+				row.Uptime7dCount = stats.Uptime7d.Samples
+			}
+			row.DownSince = stats.DownSince
+			row.Heartbeat = heartbeatStates(stats.Heartbeat)
 		}
-		if row.Uptime30dCount == 0 && row.CertHost == "" && row.BrokenSince == 0 && row.LastError == "" {
+		// A monitored bookmark keeps its row whatever it has to say. It is the
+		// subject of the uptime widget, and a monitor switched on this morning
+		// -- no samples, no certificate, no failure -- is exactly the one the
+		// reader is watching; dropping it here left the tile empty for the
+		// bookmarks it was added for.
+		if !row.Monitor && row.Uptime30dCount == 0 && row.CertHost == "" && row.BrokenSince == 0 && row.LastError == "" {
 			continue
 		}
 		out.Rows = append(out.Rows, row)

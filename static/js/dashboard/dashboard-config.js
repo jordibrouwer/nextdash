@@ -1514,6 +1514,7 @@ class DashboardConfig {
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
             void this.loadCredentialNames();
+            void this.maybeShowWidgetsTutorial();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
@@ -3967,6 +3968,16 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Data & backups has a strip as well, and was the last section a
+            // spotlight could name a tab for and land on the wrong one — the
+            // server log sits three tabs along from where it opens.
+            if (target.dbTab && target.section === 'data-backups') {
+                this.dbTab = target.dbTab;
+                if (this.section === 'data-backups') {
+                    this.render();
+                    return;
+                }
+            }
             // Bookmarks has a strip too, now that its settings live on one.
             if (target.bmTab && target.section === 'bookmarks') {
                 this.bmTab = target.bmTab;
@@ -5023,6 +5034,45 @@ class DashboardConfig {
             ['count', this.t('config.logRetentionModeCount', 'By number of entries')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${(v === 'count') === byCount ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        /*
+         * The detail level and the display filter are different questions, and
+         * conflating them is how "why do I see nothing" got two possible
+         * answers. This one decides what the server records at all; the filter
+         * below only searches what was recorded.
+         */
+        const detail = String(s.serverLogLevel || 'info');
+        const detailOptions = [
+            ['warn', this.t('config.logDetailQuiet', 'Quiet — problems only')],
+            ['info', this.t('config.logDetailNormal', 'Normal — what the server did')],
+            ['debug', this.t('config.logDetailVerbose', 'Verbose — every step')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === detail ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
+            ? s.activityChannels.map((c) => String(c).toLowerCase())
+            : DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
+        // Same rule the ↺ follows elsewhere in config: offered only when there
+        // is something to undo, so it is not a permanent button that usually
+        // does nothing.
+        const channelsAtDefault = this.activityChannelsAreDefault(activeChannels);
+        const channelBoxes = [
+            ['mutate', this.t('config.logChannelMutate', 'Changes')],
+            ['status', this.t('config.logChannelStatus', 'Check results')],
+            ['security', this.t('config.logChannelSecurity', 'Refused access')],
+            ['health', this.t('config.logChannelHealth', 'Health rounds')],
+            ['sources', this.t('config.logChannelSources', 'Imports')],
+            ['feeds', this.t('config.logChannelFeeds', 'Feed polls')],
+            ['archive', this.t('config.logChannelArchive', 'Saved copies')],
+            ['backup', this.t('config.logChannelBackup', 'Backups')],
+            ['store', this.t('config.logChannelStore', 'Failed writes')],
+            ['widgets', this.t('config.logChannelWidgets', 'Widget requests')],
+            ['notify', this.t('config.logChannelNotify', 'Alerts sent')],
+            ['open', this.t('config.logChannelOpen', 'Bookmarks opened')],
+        ].map(([key, label]) => `
+                    <label class="config-toggle">
+                        <input type="checkbox" data-activity-channel="${esc(key)}" ${activeChannels.includes(key) ? 'checked' : ''}>
+                        <span>${esc(label)}</span>
+                    </label>`).join('');
+
         const levelOptions = [
             ['', this.t('config.logLevelAll', 'Everything')],
             ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
@@ -5065,6 +5115,20 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(byCount
                     ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
                     : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
+                    <select class="config-select" data-log-select="detail">${detailOptions}</select>
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
+                <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}${channelsAtDefault ? '' : `<button type="button"
+                        class="config-panel-reset" data-activity-reset
+                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`}</h3>
+                <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
+                ${channelBoxes}
             </div>
 
             <div class="config-panel">
@@ -5073,6 +5137,7 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
                     <select class="config-select" data-log-select="level">${levelOptions}</select>
                 </div>
+                <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
                 <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
                     'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
                 <div class="config-field">
@@ -5096,6 +5161,108 @@ class DashboardConfig {
                 </div>
             </div>
         `;
+    }
+
+    /*
+     * The two channels the server records when nobody has chosen.
+     *
+     * Named here rather than written out at each use, because three places
+     * depend on them agreeing: the checkboxes when the setting is empty, the
+     * reset button, and the test that says what "default" means. The server
+     * has the same pair in loadActivityLogConfig.
+     */
+    static ACTIVITY_CHANNEL_DEFAULTS = ['mutate', 'status'];
+
+    /*
+     * Reset panel puts the trail back to the two channels nextDash records by
+     * default. Bound separately from the rest of the panel because the button
+     * comes and goes with the value, so a freshly inserted one has to be bound
+     * again rather than relying on the panel's own one-time pass.
+     */
+    bindActivityResetButton(container) {
+        const button = container.querySelector('[data-activity-reset]');
+        if (!button || button.dataset.bound === '1') return;
+        button.dataset.bound = '1';
+        button.addEventListener('click', () => {
+            this.dash.settings.activityChannels = DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
+            void this.saveSettingsWithFeedback();
+            // Twelve boxes change at once and the button itself goes away, so
+            // the panel is rebuilt rather than patched. Nothing worth keeping
+            // the focus on: the button the user clicked is what disappears.
+            this.repaintDbTabBody();
+        });
+    }
+
+    /*
+     * Put Reset panel on screen, or take it away.
+     *
+     * The button exists only while the channels differ from the defaults, so
+     * this adds and removes it rather than showing and hiding it. Done in place
+     * so the checkbox the user just clicked keeps the focus — repainting the
+     * whole tab body would take it away mid-click.
+     */
+    syncActivityResetButton(container, channels) {
+        const title = container.querySelector('.config-panel-title [data-activity-reset]')?.closest('.config-panel-title')
+            || [...container.querySelectorAll('.config-panel-title')]
+                .find((el) => el.parentElement?.querySelector('[data-activity-channel]'));
+        if (!title) return;
+        const existing = title.querySelector('[data-activity-reset]');
+        if (this.activityChannelsAreDefault(channels)) {
+            existing?.remove();
+            return;
+        }
+        if (existing) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        title.insertAdjacentHTML('beforeend', `<button type="button"
+                        class="config-panel-reset" data-activity-reset
+                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`);
+        this.bindActivityResetButton(container);
+    }
+
+    /** Whether a channel list is the default pair, in any order. */
+    activityChannelsAreDefault(channels) {
+        const chosen = [...new Set((channels || []).map((c) => String(c).toLowerCase()))].sort();
+        const defaults = [...DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS].sort();
+        return chosen.length === defaults.length && chosen.every((c, i) => c === defaults[i]);
+    }
+
+    /*
+     * What the floor is, said under the display filter.
+     *
+     * The two controls are easy to confuse — one decides what exists, the other
+     * decides what is shown — and someone who filtered for Everything and still
+     * sees nothing has been given no way to tell which one is the reason.
+     */
+    /*
+     * What the container log is doing right now, in the present tense.
+     *
+     * The setting acts on the next line written, with no restart, and that is
+     * the thing readers do not expect from a log level — so it is said as a
+     * fact about the running server rather than as a promise about the future.
+     */
+    serverLogLiveNote() {
+        const level = String(this.dash.settings?.serverLogLevel || 'info');
+        if (level === 'debug') {
+            return this.t('config.logDetailLiveVerbose',
+                'docker logs is now showing every step, from the next line onwards.');
+        }
+        if (level === 'warn' || level === 'error') {
+            return this.t('config.logDetailLiveQuiet',
+                'docker logs is now showing problems only, from the next line onwards.');
+        }
+        return this.t('config.logDetailLiveNormal',
+            'docker logs is now showing what the server does, from the next line onwards.');
+    }
+
+    serverLogFloorNote() {
+        const level = String(this.dash.settings?.serverLogLevel || 'info');
+        if (level === 'debug') {
+            return this.t('config.logFloorVerbose', 'Recording at Verbose — every step is kept.');
+        }
+        if (level === 'warn' || level === 'error') {
+            return this.t('config.logFloorQuiet', 'Recording at Quiet — only problems are kept, so this list will be short.');
+        }
+        return this.t('config.logFloorNormal', 'Recording at Normal — debug lines are not kept.');
     }
 
     /** Summary tiles above the log, in the same shape the other tabs use. */
@@ -5330,6 +5497,22 @@ class DashboardConfig {
                     this.repaintDbTabBody();
                     return;
                 }
+                if (kind === 'detail') {
+                    this.dash.settings.serverLogLevel = value;
+                    void this.saveSettingsWithFeedback();
+                    // The note under the display filter reads the floor, so it
+                    // is the one thing that has to follow. Updated in place
+                    // rather than repainted, to keep the focus on the select.
+                    const floorNote = container.querySelector('[data-log-floor-note]');
+                    if (floorNote) floorNote.textContent = this.serverLogFloorNote();
+                    // Says what docker logs is doing differently as of now.
+                    // The point of this control is that it acts at once, and a
+                    // line that changes under your hand shows that better than
+                    // a sentence promising it.
+                    const liveNote = container.querySelector('[data-log-detail-live]');
+                    if (liveNote) liveNote.textContent = this.serverLogLiveNote();
+                    return;
+                }
                 if (kind === 'level') {
                     this.logLevelFilter = value;
                     // Toggled rather than repainted: rebuilding the panel to
@@ -5341,6 +5524,29 @@ class DashboardConfig {
                 }
             });
         });
+
+        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
+                    .filter((input) => input.checked)
+                    .map((input) => input.dataset.activityChannel);
+                /*
+                 * An empty list would mean "the environment decides" to the
+                 * server, which is not what unticking everything looks like it
+                 * means. 'none' is a channel nothing writes to, so it records
+                 * the choice as made.
+                 */
+                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
+                void this.saveSettingsWithFeedback();
+                // Reset panel appears the moment the list leaves the defaults
+                // and goes again when it returns. Rebuilt rather than toggled,
+                // because the button is only in the DOM when it has something
+                // to do — the same rule the other panels follow.
+                this.syncActivityResetButton(container, chosen);
+            });
+        });
+
+        this.bindActivityResetButton(container);
 
         const search = container.querySelector('[data-log-search]');
         if (search) {
@@ -14751,6 +14957,10 @@ class DashboardConfig {
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
     static WIDGETS_TABS = ['widgets', 'types'];
 
+    // Repeated from widgets-tutorial.js, which is checked before the script is
+    // fetched at all. Both must agree.
+    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
+
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups', 'custom'];
@@ -15659,6 +15869,40 @@ class DashboardConfig {
             const title = target.closest('[data-widget="title"]');
             if (title) void this.renameWidget(Number(title.getAttribute('data-index')), title.value);
         });
+    }
+
+    /**
+     * The one-time tour, the first time this section is opened.
+     *
+     * The cheap guards are repeated before the fetch so a reader who has seen
+     * it, or has session tips off, never asks for the script at all; everything
+     * else — an open modal, active search, a phone — is left to the module,
+     * which checks the same tip id again.
+     *
+     * Here rather than on the dashboard because this is where a widget is
+     * added, and because the thing worth saying — that the custom tile reaches
+     * any address answering JSON — is invisible from a list of your own
+     * widgets and one button.
+     */
+    async maybeShowWidgetsTutorial() {
+        // Once per visit to the section, whatever the section does afterwards:
+        // binding runs again on every repaint of the tab, and a second call
+        // lands while the first tour is still on screen -- replacing it with a
+        // fresh copy whose Skip then acts on a step nobody is looking at.
+        if (this._widgetsTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.WIDGETS_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._widgetsTutorialAsked = true;
+        if (typeof window.WidgetsTutorial === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
+                    () => typeof window.WidgetsTutorial !== 'undefined');
+            } catch {
+                // A tour that cannot be fetched is not worth an error toast.
+                return;
+            }
+        }
+        window.WidgetsTutorial?.maybeShow?.();
     }
 
     /*
@@ -16946,6 +17190,7 @@ class DashboardConfig {
                     placeholder="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}"
                     aria-label="${esc(this.t('config.bmCopiesSearch', 'Search saved pages'))}">
                 <button type="button" class="config-btn config-btn--small" data-copies-action="refresh">${esc(this.t('config.localArchiveRefreshBtn', 'Refresh list'))}</button>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-copies-action="delete-all" hidden></button>
             </div>
             <p class="config-panel-note" id="config-copies-state"></p>
             <div id="config-copies-list" class="config-copies"></div>
@@ -16969,6 +17214,86 @@ class DashboardConfig {
         scope.querySelectorAll('[data-copies-action="refresh"]').forEach((btn) => {
             btn.addEventListener('click', () => void this.loadBookmarkCopies());
         });
+        scope.querySelectorAll('[data-copies-action="delete-all"]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deleteShownBookmarkCopies());
+        });
+    }
+
+    /**
+     * Label the delete-all button with the number it would act on.
+     *
+     * Hidden when there is nothing to delete: a button that can only disappoint
+     * is worse than no button. The wording changes with the filter -- "Delete
+     * all 12" against "Delete 5 shown" -- because those are different promises
+     * and the reader is entitled to know which one is being made.
+     */
+    syncCopiesDeleteAllButton(captures, filtered) {
+        const btn = document.querySelector('[data-copies-action="delete-all"]');
+        if (!btn) return;
+        const count = captures.length;
+        btn.hidden = count === 0;
+        if (!count) return;
+        btn.textContent = filtered
+            ? this.t('config.bmCopiesDeleteShown', 'Delete {n} shown').replace('{n}', String(count))
+            : this.t('config.bmCopiesDeleteAll', 'Delete all {n}').replace('{n}', String(count));
+    }
+
+    /*
+     * Delete every copy the list is showing.
+     *
+     * One request per file rather than a route that empties the directory: this
+     * is the only place a capture goes for good, and a loop that reports how far
+     * it got is worth more than a single call that either worked or did not. A
+     * failure part-way leaves the rest deleted and says so, which is the honest
+     * outcome -- the ones that went are gone either way.
+     */
+    async deleteShownBookmarkCopies() {
+        const captures = Array.isArray(this._copiesShown) ? [...this._copiesShown] : [];
+        if (!captures.length) return;
+
+        const bytes = captures.reduce((sum, capture) => sum + (Number(capture.bytes) || 0), 0);
+        const ok = await this.confirmAction(
+            this.t('config.bmCopiesDeleteAllConfirm',
+                'Delete {n} saved page(s) ({size})? The pages they came from are not affected, and this cannot be undone.')
+                .replace('{n}', String(captures.length))
+                .replace('{size}', this.formatBytes(bytes)),
+            { confirmLabel: this.t('config.localArchiveDeleteBtn', 'Delete'), danger: true });
+        if (!ok) return;
+
+        const btn = document.querySelector('[data-copies-action="delete-all"]');
+        const original = btn?.textContent;
+        if (btn) btn.disabled = true;
+
+        let done = 0;
+        let failed = 0;
+        for (const capture of captures) {
+            const name = String(capture.url || '').split('/').pop();
+            if (!name) continue;
+            if (btn) {
+                btn.textContent = this.t('config.bmCopiesDeleting', 'Deleting… {done}/{total}')
+                    .replace('{done}', String(done))
+                    .replace('{total}', String(captures.length));
+            }
+            try {
+                const res = await this.writeFetch(`/api/archives/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                done += 1;
+            } catch {
+                failed += 1;
+            }
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            if (original) btn.textContent = original;
+        }
+        this.notify(
+            failed
+                ? this.t('config.bmCopiesDeletedSome', '{done} deleted, {failed} could not be removed.')
+                    .replace('{done}', String(done)).replace('{failed}', String(failed))
+                : this.t('config.bmCopiesDeletedAll', '{n} saved page(s) deleted.').replace('{n}', String(done)),
+            failed ? 'error' : 'success');
+        await this.loadBookmarkCopies();
     }
 
     /** Read the captures once and draw them grouped. */
@@ -17017,6 +17342,11 @@ class DashboardConfig {
                 .replace('{n}', String(all.length))
                 .replace('{size}', this.formatBytes(data.totalBytes || 0))
             : this.t('config.bmCopiesEmpty', 'Nothing saved yet. Save a page from a bookmark\u2019s menu in Health, or from Data & backups \u2192 Sources.');
+
+        // The button offers exactly what is on screen, so it can never take away
+        // more than the reader can see. Its own count, not the total.
+        this._copiesShown = captures;
+        this.syncCopiesDeleteAllButton(captures, Boolean(query));
 
         if (!captures.length) {
             list.innerHTML = all.length

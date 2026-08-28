@@ -11,6 +11,13 @@
     'use strict';
 
     function label(dash, key, fallback) {
+        // A missing key means "use the fallback", and it has to be checked
+        // before asking: t() answers a non-string with String(key), so an
+        // absent key came back as the literal text "undefined" and a caller
+        // that only had a fallback to give put that on screen.
+        if (typeof key !== 'string' || !key) {
+            return fallback;
+        }
         const value = dash?.language?.t?.(key);
         return value && value !== key ? value : fallback;
     }
@@ -33,8 +40,35 @@
             .replace('{n}', String(hiddenCount));
 
         row.appendChild(name);
-        if (onOpen) row.addEventListener('click', onOpen);
+        if (onOpen) {
+            bindRowAction(row, dash, {
+                labelKey: 'widgetActionOpenAll',
+                labelFallback: 'Show all',
+                run: onOpen,
+            });
+        }
         list.appendChild(row);
+    }
+
+    /*
+     * Bind what a row does, and let it say so.
+     *
+     * A click handler is a closure: it works for the pointer and tells nothing
+     * else what the row is for. The right-click menu and the keyboard both need
+     * that answer -- "Open Health, broken", "Open Inbox" -- so the action is
+     * written onto the element as it is bound, in one place rather than at every
+     * call site remembering to do both.
+     *
+     * `href` is for a row that stands for an address: the menu can then offer to
+     * open it in a new tab, and Ctrl/Cmd+Enter does the same from the keyboard.
+     * Rows that merely lead somewhere in this app leave it empty.
+     */
+    function bindRowAction(element, dash, { labelKey, labelFallback, run, href } = {}) {
+        if (!element || typeof run !== 'function') return element;
+        element.dataset.widgetAction = label(dash, labelKey, labelFallback);
+        if (href) element.dataset.widgetHref = String(href);
+        element.addEventListener('click', run);
+        return element;
     }
 
     /** The row count a widget was given, within the bounds the server enforces. */
@@ -146,7 +180,7 @@
      * broken is the best news a dashboard can carry and still belongs in the
      * broken row. Two across a narrow tile, four across a wide one.
      */
-    function statGrid(stats) {
+    function statGrid(stats, action) {
         const grid = document.createElement('div');
         grid.className = 'dashboard-widget-stats';
         const cells = (stats || []).filter(Boolean);
@@ -181,7 +215,16 @@
 
             if (stat.title) cell.title = stat.title;
             cell.append(value, name);
-            if (stat.onOpen) cell.addEventListener('click', stat.onOpen);
+            if (stat.onOpen) {
+                // The grid's own description unless the figure carries one:
+                // "Open Health" for a tile of health figures, "Open the trash"
+                // for the trash, rather than a menu entry reading "Open".
+                bindRowAction(cell, stat.dash || action?.dash, {
+                    labelKey: stat.actionKey || action?.labelKey,
+                    labelFallback: stat.actionLabel || action?.labelFallback || 'Open',
+                    run: stat.onOpen,
+                });
+            }
             grid.appendChild(cell);
         });
         return grid;
@@ -247,7 +290,7 @@
     }
 
     /** One row: a name, and optionally the figure or verdict beside it. */
-    function row(name, detail, tone, onOpen) {
+    function row(name, detail, tone, onOpen, action) {
         const element = document.createElement(onOpen ? 'button' : 'div');
         if (onOpen) element.type = 'button';
         element.className = 'dashboard-widget-row';
@@ -265,7 +308,14 @@
             side.textContent = String(detail);
             element.appendChild(side);
         }
-        if (onOpen) element.addEventListener('click', onOpen);
+        if (onOpen) {
+            bindRowAction(element, action?.dash, {
+                labelKey: action?.labelKey,
+                labelFallback: action?.labelFallback || 'Open',
+                run: onOpen,
+                href: action?.href,
+            });
+        }
         return element;
     }
 
@@ -334,6 +384,7 @@
 
     window.DashboardWidgetUtils = {
         appendOverflowRow, rowLimit, label, openHealthFiltered, openConfigTab, authFetch,
+        bindRowAction,
         panel, statGrid, meter, headline, footnote, rowList, row, say,
         daysSince, bytes, host, bookmarksOf, onPage, isBroken, DAY_MS,
     };

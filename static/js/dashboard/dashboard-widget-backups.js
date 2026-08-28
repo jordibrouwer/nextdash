@@ -125,7 +125,7 @@
                 tone: enabled ? null : 'warn',
                 onOpen: open,
             },
-        ]));
+        ], { dash, labelKey: 'widgetActionOpenBackups', labelFallback: 'Open Backups' }));
 
         if (failure) {
             panel.appendChild(u.footnote(label(dash, 'dashboard.widgetBackupsFailed',
@@ -147,7 +147,8 @@
                 made ? new Date(made).toLocaleDateString() : String(backup?.name || ''),
                 u.bytes(backup?.size),
                 null,
-                open));
+                open,
+                { dash, labelKey: 'widgetActionOpenBackups', labelFallback: 'Open Backups' }));
         });
         u.appendOverflowRow(list, dash, sorted.length - maxRows, open);
         panel.appendChild(list);

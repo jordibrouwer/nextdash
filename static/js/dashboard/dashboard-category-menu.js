@@ -66,6 +66,326 @@ class DashboardCategoryMenu {
         });
     }
 
+    /**
+     * Bind a widget header to the same menu.
+     *
+     * A widget block is a `.category` to the grid and to DragReorder, and from
+     * here it is one more kind of block with a name, a width and a way to be
+     * put away. Renaming, resizing and closing one meant three trips through
+     * Config -> Widgets; they are on the header now, where the category beside
+     * it has had them all along.
+     */
+    bindWidget(blockEl, widget) {
+        if (!(blockEl instanceof HTMLElement) || blockEl.dataset.widgetMenuBound === '1') {
+            return;
+        }
+        const titleEl = blockEl.querySelector('.category-title');
+        if (!titleEl || !widget?.id) {
+            return;
+        }
+        blockEl.dataset.widgetMenuBound = '1';
+
+        const openFor = (e, anchorEl, rowEl) => {
+            const d = this.dash;
+            if (e.shiftKey) return; // escape hatch to the native menu
+            if (d.uiHelpers?.isModalOpen?.()) return;
+            if (titleEl.querySelector('.category-rename-input')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            // The Menu key and Shift+F10 raise this with no pointer behind them;
+            // taken literally the menu lands in the corner of the window.
+            const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+            const box = anchorEl.getBoundingClientRect();
+            this.showWidget(titleEl, widget, fromPointer
+                ? { x: e.clientX, y: e.clientY }
+                : { x: box.left + 8, y: box.bottom }, rowEl);
+        };
+
+        titleEl.addEventListener('contextmenu', (e) => openFor(e, titleEl, null));
+
+        /*
+         * The same menu from a row inside the widget.
+         *
+         * A row that does something should say what, wherever the reader asks --
+         * and asking is right-click, or Shift+F10 with the cursor on it, both of
+         * which arrive here as one event. The row's own action leads the menu;
+         * the widget's actions follow it, because the block under the row is
+         * still the thing being pointed at.
+         */
+        const bodyEl = blockEl.querySelector('.dashboard-widget-body');
+        bodyEl?.addEventListener('contextmenu', (e) => {
+            const rowEl = e.target instanceof Element
+                ? e.target.closest('button[data-widget-action]')
+                : null;
+            openFor(e, rowEl || bodyEl, rowEl);
+        });
+    }
+
+    /** The menu for a widget: its name, its width, and putting it away. */
+    showWidget(titleEl, widget, point, rowEl = null) {
+        const wide = this.widgetIsWide(widget);
+        const canWiden = this.widgetCanWiden();
+        const rowEntries = this.widgetRowEntries(rowEl);
+        const entries = [
+            ...rowEntries,
+            { id: 'rename', label: this.t('widgetMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            {
+                // The label says what the click will do, like the category's
+                // spread entry above -- this list is verbs, and a tick beside a
+                // constant label belongs to a radio submenu instead.
+                id: 'width',
+                label: wide
+                    ? this.t('widgetMenuWidthOne', 'Back to one column')
+                    : this.t('widgetMenuWidthTwo', 'Across two columns'),
+                icon: '↔',
+                key: 'Shift+W',
+                detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
+                disabled: !canWiden && !wide,
+            },
+            {
+                // Folding is on the header already -- click it, Enter, or the
+                // fold-all key -- but the menu is where a reader looks to find
+                // out what a block can do, and it was the one action missing.
+                id: 'fold',
+                label: this.widgetIsFolded(titleEl)
+                    ? this.t('widgetMenuUnfold', 'Unfold')
+                    : this.t('widgetMenuFold', 'Fold'),
+                icon: '⌃',
+                key: 'Enter',
+            },
+            {
+                // Straight to this widget's own row in Config -> Widgets, rather
+                // than opening the section and hunting for it among the others.
+                id: 'settings',
+                label: this.t('widgetMenuSettings', 'Settings…'),
+                icon: '⚙',
+            },
+            {
+                // Closing is not deleting: the widget keeps its settings and any
+                // sign-in it holds, and the Shown switch in Config -> Widgets is
+                // the same flag. Deleting stays there, where the consequences
+                // are spelled out.
+                id: 'close',
+                label: this.t('widgetMenuClose', 'Close'),
+                icon: '✕',
+                key: 'Delete',
+                danger: true,
+            },
+        ];
+
+        this._openMenu({
+            id: 'widget-context-menu',
+            ariaLabel: this.t('widgetMenuTitle', 'Widget actions'),
+            // The row when the menu was opened on one: the hint says what is
+            // being acted on, and on a row that is the row.
+            hint: rowEl ? this.widgetRowName(rowEl) : this.widgetName(widget),
+            entries,
+            point,
+            onPick: (action) => { void this.runWidgetAction(action, titleEl, widget, rowEl); },
+        });
+    }
+
+    /**
+     * What the row under the pointer offers, if anything.
+     *
+     * Read off the row rather than guessed: the widget wrote its action there
+     * when it bound the click, so the menu names the same thing that happens on
+     * a click instead of a second description that can drift from it. A row that
+     * carries an address gets the second entry a bookmark row has.
+     */
+    widgetRowEntries(rowEl) {
+        const action = rowEl?.dataset?.widgetAction;
+        if (!action) {
+            return [];
+        }
+        const entries = [{ id: 'row-open', label: action, icon: '→', key: 'Enter' }];
+        if (rowEl.dataset.widgetHref) {
+            entries.push({
+                id: 'row-open-tab',
+                label: this.t('widgetMenuOpenNewTab', 'Open in a new tab'),
+                icon: '↗',
+                key: 'Ctrl+Enter',
+            });
+        }
+        entries.push({ separator: true });
+        return entries;
+    }
+
+    /** The row's own text, trimmed to something a menu hint can carry. */
+    widgetRowName(rowEl) {
+        const text = String(rowEl?.textContent || '').trim().replace(/\s+/g, ' ');
+        return text.length > 48 ? `${text.slice(0, 47)}…` : (text || '—');
+    }
+
+    /*
+     * Open a row's address, if it is an address worth opening.
+     *
+     * The server refuses anything but http(s) when a bookmark is saved, so this
+     * is not a hole being closed -- it is the check that keeps a collection
+     * written before that validation, or restored from an old backup, from
+     * handing window.open a javascript: or data: URL.
+     */
+    openWidgetHref(href) {
+        const address = String(href || '').trim();
+        if (!/^https?:\/\//i.test(address)) return false;
+        window.open(address, '_blank', 'noopener');
+        return true;
+    }
+
+    /** Whether the block behind this header is folded shut. */
+    widgetIsFolded(titleEl) {
+        return titleEl?.closest('.category')?.getAttribute('data-collapsed') === 'true';
+    }
+
+    /** What the header shows: the widget's own title, or its type's name. */
+    widgetName(widget) {
+        const given = String(widget?.title || '').trim();
+        return given || this.dash.renderCore?.widgetTypeLabel?.(widget?.type) || 'widget';
+    }
+
+    widgetIsWide(widget) {
+        return Number(widget?.config?.columns) === 2;
+    }
+
+    /*
+     * Whether there is a second column to spread into.
+     *
+     * The grid narrows a wide widget to what it has rather than dropping it, so
+     * offering the width on a one-column dashboard would be offering a setting
+     * with no visible effect. A widget that is already wide keeps the entry, so
+     * a reader on a narrow window can still put it back.
+     */
+    widgetCanWiden() {
+        return Number(this.dash.renderCore?.getEffectiveColumnsPerRow?.()) > 1;
+    }
+
+    async runWidgetAction(action, titleEl, widget, rowEl = null) {
+        const d = this.dash;
+        window.nextdashTrack?.('widget:context-menu', { action });
+
+        if (action === 'row-open') {
+            rowEl?.click();
+            return;
+        }
+        if (action === 'row-open-tab') {
+            this.openWidgetHref(rowEl?.dataset?.widgetHref);
+            return;
+        }
+        if (action === 'fold') {
+            // Through the header's own click handler, so folding from the menu
+            // and folding by clicking cannot end up as two behaviours.
+            titleEl?.click();
+            return;
+        }
+        if (action === 'settings') {
+            window.DashboardWidgetUtils?.openConfigTab?.(d, 'widgets');
+            return;
+        }
+        if (action === 'rename') {
+            this.startWidgetRename(titleEl, widget);
+            return;
+        }
+        if (action === 'width') {
+            await this.toggleWidgetWidth(widget);
+            return;
+        }
+        if (action === 'close') {
+            await this.closeWidget(widget);
+        }
+    }
+
+    /**
+     * Rename from the header, through the editor the category next to it uses.
+     *
+     * An empty title is a title here: the widget falls back to its type's name,
+     * which is what the placeholder in Config -> Widgets has always promised.
+     */
+    startWidgetRename(titleEl, widget) {
+        const d = this.dash;
+        const nameSpan = titleEl?.querySelector('.category-title-name');
+        if (!nameSpan) return;
+        d.renderCore?._startBlockRename?.(titleEl, nameSpan, {
+            value: String(widget.title || ''),
+            ariaKey: 'renameWidgetAria',
+            ariaFallback: 'Rename widget',
+            allowEmpty: true,
+            displayFor: (name) => String(name || '').trim() || this.widgetName({ ...widget, title: '' }),
+            onCommit: async (title) => {
+                const previous = String(widget.title || '');
+                widget.title = title;
+                if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { title })) {
+                    widget.title = previous;
+                    nameSpan.textContent = this.widgetName(widget).toLowerCase();
+                }
+            },
+        });
+    }
+
+    /** One column to two and back, from the header or from Shift+W. */
+    async toggleWidgetWidth(widget) {
+        const d = this.dash;
+        const wide = this.widgetIsWide(widget);
+        if (!wide && !this.widgetCanWiden()) {
+            d.showNotification?.(this.t('widgetMenuWidthUnavailable',
+                'There is only one column to work with — a widget needs at least two to span.'), 'info');
+            return false;
+        }
+        // undefined rather than 1: the default is the key being absent, which is
+        // what the config panel and the server both store for one column.
+        const next = wide ? undefined : 2;
+        if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { columns: next } })) {
+            return false;
+        }
+        widget.config = { ...(widget.config || {}) };
+        if (next === undefined) delete widget.config.columns; else widget.config.columns = next;
+        // Not renderDashboard directly: a full draw resets the scroll to the top
+        // of the document, and the reader is looking at this widget.
+        d.renderCore?.redrawKeepingPlace?.(widget.id);
+        return true;
+    }
+
+    /**
+     * Put a widget away.
+     *
+     * `enabled: false` is the Shown switch in Config -> Widgets, so this is the
+     * same state reached from either side rather than a second kind of hidden.
+     * No confirm -- nothing is lost and the toast carries the way back, both to
+     * undo it here and to the switch that turns it on again later.
+     */
+    async closeWidget(widget) {
+        const d = this.dash;
+        const name = this.widgetName(widget);
+        if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { enabled: false } })) {
+            return false;
+        }
+        widget.config = { ...(widget.config || {}), enabled: false };
+        d.renderCore?.redrawKeepingPlace?.(widget.id);
+        // The toast carries this for anyone looking at it; the live region
+        // carries it for anyone who is not. A block leaving the page is exactly
+        // the kind of change a screen reader is otherwise never told about.
+        d.keyboardNavigation?.announce?.(
+            this.t('widgetClosedAnnounce', '{name} closed', { name }));
+        d.showNotification?.(
+            this.t('widgetClosed', '“{name}” closed. Switch it back on under Config → Widgets.', { name }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { enabled: undefined } })) {
+                        return;
+                    }
+                    widget.config = { ...(widget.config || {}) };
+                    delete widget.config.enabled;
+                    d.renderCore?.redrawKeepingPlace?.(widget.id);
+                    d.keyboardNavigation?.announce?.(
+                        this.t('widgetClosedUndone', 'Widget back on the page.'));
+                    d.showNotification?.(this.t('widgetClosedUndone', 'Widget back on the page.'), 'success');
+                },
+            },
+        );
+        return true;
+    }
+
     show(titleEl, category, point) {
         // `key` is the keyboard route to the same action, shown as a chip so the
         // menu teaches its own shortcuts. Untranslated, like every other key
@@ -295,6 +615,14 @@ class DashboardCategoryMenu {
 
         const items = [];
         entries.forEach((action) => {
+            // A rule of its own, for a menu built of two halves -- what the row
+            // does, then what the block does.
+            if (action.separator) {
+                const rule = document.createElement('div');
+                rule.className = 'move-popover-divider';
+                pop.appendChild(rule);
+                return;
+            }
             if (action.danger) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,7 +39,7 @@ const (
 )
 
 func logPushError(format string, args ...any) {
-	log.Printf("web-push: "+format, args...)
+	logWarn(logComponentNotify, format, args...)
 }
 
 // webPushMessage is the JSON the service worker receives and renders.

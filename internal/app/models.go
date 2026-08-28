@@ -175,11 +175,115 @@ type Bookmark struct {
 	// bookmark saved before this existed and silently mute the whole collection.
 	// Muted-by-absence is the migration-free direction.
 	NotifyMuted bool `json:"notifyMuted,omitempty"`
+	/*
+	 * HealthIgnored is the health conditions this bookmark has been told to stop
+	 * reporting -- an archive page that is allowed to be stale, a link behind a
+	 * bot wall that will always read broken.
+	 *
+	 * Per condition rather than per bookmark, because "leave this one alone"
+	 * about being unopened must not also silence it the year it dies. Each entry
+	 * carries an expiry: zero means for good, a timestamp means snoozed until
+	 * then and the condition comes back on its own.
+	 */
+	HealthIgnored []HealthIgnore `json:"healthIgnored,omitempty"`
 	// CertHost is the hostname a check's TLS handshake was actually served for,
 	// which after a redirect can differ from this bookmark's own URL. Certificates
 	// are stored per host, not per bookmark (health_cert.go), so the report needs
 	// this to look one up under the right key instead of guessing from URL.
 	CertHost string `json:"certHost,omitempty"`
+}
+
+/*
+HealthIgnore silences one health condition on one bookmark.
+
+Until is Unix milliseconds and zero means no end: "ignore" and "snooze" are the
+same record with and without a date, so the report answers one question — is
+this condition muted right now — instead of two.
+*/
+type HealthIgnore struct {
+	Flag  string `json:"flag"`
+	Until int64  `json:"until,omitempty"`
+}
+
+/*
+knownHealthFlags is every condition a bookmark can be told to ignore.
+
+The health report builds these names, the view filters by them and this list
+validates what a client may send, so a condition added there and forgotten here
+would be silently unignorable. "healthy" is not among them: it is the absence of
+a problem, and nothing is served by hiding it.
+*/
+var knownHealthFlags = map[string]bool{
+	"broken":            true,
+	"content":           true,
+	"duplicate":         true,
+	"shortcut-conflict": true,
+	"orphaned-category": true,
+	"unchecked":         true,
+	"stale":             true,
+	"unused":            true,
+	"missing-preview":   true,
+	"drift":             true,
+}
+
+/*
+normalizeHealthIgnores keeps what a client sent that means something.
+
+Unknown flags are dropped rather than stored: a typo would otherwise sit in the
+file forever, hiding nothing and explaining nothing. Expired entries go too --
+a snooze that has run out is not a record worth keeping, and dropping it here is
+what makes "it comes back on its own" true in the file as well as on screen.
+The result is sorted so two identical sets compare equal in a diff and in a test.
+*/
+func normalizeHealthIgnores(entries []HealthIgnore, now time.Time) []HealthIgnore {
+	if len(entries) == 0 {
+		return nil
+	}
+	nowMs := now.UnixMilli()
+	seen := make(map[string]HealthIgnore, len(entries))
+	for _, entry := range entries {
+		flag := strings.ToLower(strings.TrimSpace(entry.Flag))
+		if !knownHealthFlags[flag] {
+			continue
+		}
+		if entry.Until > 0 && entry.Until <= nowMs {
+			continue
+		}
+		// The longer of two entries for one flag wins, and "for good" beats any
+		// date: asking twice should never shorten what was already asked for.
+		if existing, ok := seen[flag]; ok {
+			if existing.Until == 0 || (entry.Until != 0 && entry.Until <= existing.Until) {
+				continue
+			}
+		}
+		seen[flag] = HealthIgnore{Flag: flag, Until: entry.Until}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]HealthIgnore, 0, len(seen))
+	for _, entry := range seen {
+		out = append(out, entry)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Flag < out[j].Flag })
+	return out
+}
+
+/** healthIgnoreSet answers "is this condition muted right now" in constant time. */
+func healthIgnoreSet(entries []HealthIgnore, now time.Time) map[string]HealthIgnore {
+	active := map[string]HealthIgnore{}
+	nowMs := now.UnixMilli()
+	for _, entry := range entries {
+		flag := strings.ToLower(strings.TrimSpace(entry.Flag))
+		if !knownHealthFlags[flag] {
+			continue
+		}
+		if entry.Until > 0 && entry.Until <= nowMs {
+			continue
+		}
+		active[flag] = HealthIgnore{Flag: flag, Until: entry.Until}
+	}
+	return active
 }
 
 type Finder struct {
@@ -524,9 +628,18 @@ type Settings struct {
 	// nothing for it: while this is false the sink returns before taking a lock
 	// or touching the disk. No "omitempty" — with it a false value drops out of
 	// the JSON entirely and the switch reads back as undefined in the config UI.
-	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
-	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
-	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	ServerLogEnabled bool `json:"serverLogEnabled"` // Capture server log lines for the in-app viewer (default off)
+	// ServerLogLevel is the floor for what the server records at all, to the
+	// container log and to the viewer alike: error, warn, info or debug. Empty
+	// means the environment decides, and failing that the default (info). A
+	// value here wins over NEXTDASH_LOG_LEVEL, so the app is the place to
+	// change it and an existing compose file keeps working.
+	ServerLogLevel string `json:"serverLogLevel,omitempty"`
+	// ActivityChannels are the JSON trail's channels. Empty means the
+	// environment's choice, and failing that the defaults (mutate, status).
+	ActivityChannels     []string `json:"activityChannels,omitempty"`
+	MonitorNotifyURL     string   `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries int      `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.
@@ -3975,6 +4088,10 @@ type HealthSummary struct {
 	// orphaned-category rows land in the same place.
 	OrphanedCategoryCount int `json:"orphanedCategoryCount"`
 	PinnedCount           int `json:"pinnedCount"`
+	// IgnoredCount is bookmarks with at least one condition muted right now.
+	// Counted like the others so the tile and the filter of the same name read
+	// from one source.
+	IgnoredCount int `json:"ignoredCount"`
 	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
 	// title, or content change since the watched baseline. Layered on top of
 	// whatever other status a bookmark has, so it is not one of the three
@@ -4046,7 +4163,16 @@ type HealthIssue struct {
 	// and never opened is counted under Unused *and* appears when that filter is
 	// picked. Matching filters on Status instead made the two disagree: the tile
 	// counted it, the filter did not list it, and the tile became a dead end.
-	Flags          []string       `json:"flags,omitempty"`
+	Flags []string `json:"flags,omitempty"`
+	/*
+	 * IgnoredFlags is what this bookmark would have been flagged for, and is
+	 * not, because it was told to ignore that condition.
+	 *
+	 * Sent so the Ignored list can name what it is hiding — a row there saying
+	 * only "ignored" would be a list nobody can audit — and so the view can
+	 * offer exactly those conditions back.
+	 */
+	IgnoredFlags   []HealthIgnore `json:"ignoredFlags,omitempty"`
 	Score          int            `json:"score"`
 	Reasons        []string       `json:"reasons"`
 	ReasonDetails  []HealthReason `json:"reasonDetails,omitempty"`

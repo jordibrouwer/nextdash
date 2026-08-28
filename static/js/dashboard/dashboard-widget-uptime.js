@@ -31,16 +31,14 @@
      * whose only job is to show a shape, and it redraws whenever the report
      * does.
      */
-    function sparkline(buckets) {
+    function sparkline(states) {
         const wrap = document.createElement('span');
         wrap.className = 'dashboard-widget-spark';
-        const shown = buckets.slice(-24);
-        shown.forEach((bucket) => {
+        states.slice(-24).forEach((state) => {
             const tick = document.createElement('span');
             // up, down or degraded, as health_uptime.go sets them; a bucket
             // with no samples carries no state at all and stays neutral.
-            const state = String(bucket?.state || 'empty');
-            tick.className = `dashboard-widget-spark-tick dashboard-widget-spark-tick--${state}`;
+            tick.className = `dashboard-widget-spark-tick dashboard-widget-spark-tick--${state || 'empty'}`;
             wrap.appendChild(tick);
         });
         return wrap;
@@ -49,20 +47,54 @@
     /**
      * The rows, from whichever report is in hand.
      *
-     * The badge's ?view=facts response carries uptime over 30 days per row but
-     * no heartbeat and no incidents; the full report carries monitorStats. Both
-     * are read, and what is missing is simply not drawn.
+     * The full report is read first when it is there — it is the same data and
+     * it is already parsed. It is only there once the health view has been
+     * opened, though, and that used to be the whole story: a tile on the
+     * dashboard said "Open Health once to fill this in" until the reader went
+     * and did that, which is a chore invented by where the data happened to be
+     * loaded. The `?view=facts` response the badge fetches on every load now
+     * carries the same four things per monitored row, so the tile fills itself.
      */
     function rowsFrom(dash) {
         const report = dash.healthReport || dash.health?.report || null;
         if (report?.issues) {
             return report.issues.filter((issue) => issue?.monitor).map((issue) => ({
                 url: issue.url,
-                stats: issue.monitorStats || null,
+                uptime7d: issue.monitorStats?.uptime7d || null,
+                heartbeat: (issue.monitorStats?.heartbeat || []).map((bucket) => String(bucket?.state || 'empty')),
                 down: Boolean(issue.monitorStats?.downSince),
             }));
         }
-        return null;
+        return rowsFromFacts(dash);
+    }
+
+    /**
+     * The same rows out of the facts store the badge fills.
+     *
+     * Read through the bookmarks rather than the store's own keys: the store is
+     * keyed by canonical URL, and a row has to name the address the tile opens
+     * and the host it prints.
+     */
+    function rowsFromFacts(dash) {
+        const facts = window.HealthFacts;
+        // updatedAt, not size: a collection where nothing is monitored has an
+        // empty store and a perfectly good answer — "nothing is being
+        // monitored" — while a store that has never been filled has none.
+        if (!facts?.get || !facts.updatedAt) return null;
+        const rows = [];
+        (dash.allBookmarks || dash.bookmarks || []).forEach((bookmark) => {
+            const entry = facts.get(bookmark?.url);
+            if (!entry?.monitor) return;
+            rows.push({
+                url: bookmark.url,
+                uptime7d: entry.uptime7dSamples > 0
+                    ? { ratio: entry.uptime7d, samples: entry.uptime7dSamples }
+                    : null,
+                heartbeat: Array.isArray(entry.heartbeat) ? entry.heartbeat : [],
+                down: Boolean(entry.downSince),
+            });
+        });
+        return rows;
     }
 
     function render(body, widget, dash) {
@@ -71,9 +103,9 @@
         if (!rows) {
             const waiting = document.createElement('p');
             waiting.className = 'dashboard-widget-waiting';
-            // The full report is loaded when the health view is opened; the
-            // dashboard's own request is the lighter facts shape.
-            waiting.textContent = label(dash, 'dashboard.widgetUptimeWaiting', 'Open Health once to fill this in.');
+            // Neither report has arrived yet — the badge's request is in flight
+            // on a load this early, and the tile redraws when it lands.
+            waiting.textContent = label(dash, 'dashboard.widgetUptimeWaiting', 'Checking…');
             body.appendChild(waiting);
             return;
         }
@@ -98,7 +130,7 @@
         // five that need attention.
         shown = [...shown].sort((a, b) => {
             if (a.down !== b.down) return a.down ? -1 : 1;
-            return (a.stats?.uptime7d?.ratio ?? 1) - (b.stats?.uptime7d?.ratio ?? 1);
+            return (a.uptime7d?.ratio ?? 1) - (b.uptime7d?.ratio ?? 1);
         });
 
         if (!shown.length) {
@@ -125,7 +157,7 @@
 
             const detail = document.createElement('span');
             detail.className = 'dashboard-widget-row-detail';
-            const window7d = row.stats?.uptime7d;
+            const window7d = row.uptime7d;
             if (row.down) {
                 detail.textContent = label(dash, 'dashboard.widgetUptimeDown', 'down');
             } else if (Number(window7d?.samples) > 0) {
@@ -138,11 +170,24 @@
             }
 
             button.append(name, detail);
-            if (wantSpark && Array.isArray(row.stats?.heartbeat) && row.stats.heartbeat.length) {
-                button.appendChild(sparkline(row.stats.heartbeat));
+            if (wantSpark && row.heartbeat?.length) {
+                button.appendChild(sparkline(row.heartbeat));
             }
-            button.addEventListener('click', () => {
-                window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored');
+            /*
+             * A monitored row stands for a bookmark, so it carries its address.
+             *
+             * Clicking still opens Health on the monitored list -- that is what
+             * the tile is for -- but the menu can now offer the site itself, and
+             * Ctrl/Cmd+Enter opens it from the keyboard the way it does on a
+             * bookmark row.
+             */
+            window.DashboardWidgetUtils?.bindRowAction(button, dash, {
+                labelKey: 'widgetActionOpenHealth',
+                labelFallback: 'Open Health',
+                href: row.url,
+                run: () => {
+                    window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored');
+                },
             });
             list.appendChild(button);
         });

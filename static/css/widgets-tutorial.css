@@ -1,0 +1,419 @@
+/**
+ * The one-time Widgets tour.
+ *
+ * Same shape as inbox-tutorial.css and health-tutorial.css: the app's modal
+ * chrome carries the title and the buttons, and only the reading column between
+ * them is styled here, in a sheet of its own so no tour's visuals drift into
+ * another's.
+ *
+ * The one thing this tour has that the others do not is the opening animation.
+ * What a custom widget does is a movement — ask an address, draw what came back
+ * — and a still picture of that is a paragraph asking to be read twice. It is
+ * three keyframed elements on a loop rather than a video, so it costs nothing
+ * to ship and cannot fall out of step with the interface it describes.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.widgets-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.widgets-tutorial-progress {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 0.4rem;
+}
+
+.widgets-tutorial-step-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.widgets-tutorial-step-body p {
+    margin: 0 0 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.widgets-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---- The opening animation -------------------------------------------- */
+
+.widgets-tutorial-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.5rem minmax(0, 1.2fr);
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem 0.85rem;
+    margin: 0 0 0.9rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.6rem;
+    background: var(--background-secondary);
+    overflow: hidden;
+}
+
+.widgets-tutorial-hero-source {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.widgets-tutorial-hero-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.widgets-tutorial-hero-url {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    padding: 0.28rem 0.45rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The wire, and the request travelling along it. */
+.widgets-tutorial-hero-wire {
+    position: relative;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--border-secondary);
+}
+
+.widgets-tutorial-hero-pulse {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    animation: widgets-tutorial-travel 3.2s cubic-bezier(0.5, 0, 0.2, 1) infinite;
+}
+
+@keyframes widgets-tutorial-travel {
+    0% { left: 0; opacity: 0; transform: scale(0.6); }
+    12% { opacity: 1; transform: scale(1); }
+    55% { left: calc(100% - 8px); opacity: 1; transform: scale(1); }
+    70%, 100% { left: calc(100% - 8px); opacity: 0; transform: scale(0.6); }
+}
+
+.widgets-tutorial-hero-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.45rem;
+    background: var(--background-primary);
+    animation: widgets-tutorial-tile-wake 3.2s ease-out infinite;
+}
+
+@keyframes widgets-tutorial-tile-wake {
+    0%, 45% { border-color: var(--border-secondary); }
+    60% { border-color: color-mix(in srgb, var(--accent-primary) 60%, var(--border-secondary)); }
+    100% { border-color: var(--border-secondary); }
+}
+
+.widgets-tutorial-hero-tile-title {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+.widgets-tutorial-hero-figures {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/*
+ * The figures arrive one after the other, in the order the eye reads them.
+ * --at staggers them off one keyframe set rather than three, so the timing is
+ * in one place.
+ */
+.widgets-tutorial-hero-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+    opacity: 0;
+    animation: widgets-tutorial-figure-in 3.2s ease-out infinite;
+    animation-delay: calc(var(--at, 0) * 0.12s);
+}
+
+.widgets-tutorial-hero-figure b {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.widgets-tutorial-hero-figure i {
+    font-style: normal;
+    font-size: 0.64rem;
+    color: var(--text-tertiary);
+}
+
+@keyframes widgets-tutorial-figure-in {
+    0%, 50% { opacity: 0; transform: translateY(4px); }
+    62% { opacity: 1; transform: translateY(0); }
+    92% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(0); }
+}
+
+/* ---- The step visuals -------------------------------------------------- */
+
+.widgets-tutorial-visual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    margin: 0 0 0.9rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.5rem;
+    background: var(--background-secondary);
+}
+
+.widgets-tutorial-visual-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.widgets-tutorial-chip {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+}
+
+.widgets-tutorial-chip.is-on {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-secondary));
+    color: var(--text-primary);
+}
+
+.widgets-tutorial-chip.is-quiet {
+    color: var(--text-tertiary);
+    border-style: dashed;
+}
+
+/* Two stand-in tiles side by side, so "a widget" is a shape before it is a
+   sentence. */
+.widgets-tutorial-visual--tiles {
+    gap: 0.5rem;
+}
+
+.widgets-tutorial-tile {
+    flex: 1 1 9rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.45rem;
+    background: var(--background-primary);
+}
+
+.widgets-tutorial-tile-title {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+.widgets-tutorial-tile-body {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.widgets-tutorial-stat {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.widgets-tutorial-stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.widgets-tutorial-stat-label {
+    font-size: 0.64rem;
+    color: var(--text-tertiary);
+}
+
+/* The JSON on the left, the paths it becomes on the right. */
+.widgets-tutorial-visual--map {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.widgets-tutorial-json {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+    border: 1px solid var(--border-secondary);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    overflow-x: auto;
+}
+
+.widgets-tutorial-json b {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.widgets-tutorial-arrow {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+}
+
+.widgets-tutorial-paths {
+    flex: 0 0 auto;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.widgets-tutorial-paths .widgets-tutorial-chip {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.68rem;
+}
+
+/* Nineteen names is a wall unless it is allowed to be one — small, quiet, and
+   scrollable rather than pushing the prose off the modal. */
+.widgets-tutorial-visual--presets {
+    gap: 0.3rem;
+    max-height: 6.5rem;
+    overflow-y: auto;
+}
+
+.widgets-tutorial-visual--presets .widgets-tutorial-chip {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+}
+
+.widgets-tutorial-visual--keys {
+    gap: 0.55rem;
+}
+
+.widgets-tutorial-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.widgets-tutorial-key kbd {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.widgets-tutorial-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.2rem;
+}
+
+.widgets-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--border-secondary);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.widgets-tutorial-dot.is-active {
+    background: var(--accent-primary);
+    transform: scale(1.3);
+}
+
+/*
+ * Still, for anyone who asked for still.
+ *
+ * The animation is decoration over a picture that already says the thing, so
+ * switching it off leaves the finished state rather than an empty frame: the
+ * request sitting at the tile, and the figures in place.
+ */
+@media (prefers-reduced-motion: reduce) {
+    body:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-tutorial-modal) .modal,
+    body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.widgets-tutorial-modal) .modal {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .widgets-tutorial-dot {
+        transition: none;
+    }
+
+    .widgets-tutorial-hero-pulse,
+    .widgets-tutorial-hero-tile,
+    .widgets-tutorial-hero-figure {
+        animation: none !important;
+    }
+
+    .widgets-tutorial-hero-pulse {
+        left: calc(100% - 8px);
+    }
+
+    .widgets-tutorial-hero-figure {
+        opacity: 1;
+    }
+}
+
+body.no-animations .widgets-tutorial-hero-pulse,
+body.no-animations .widgets-tutorial-hero-tile,
+body.no-animations .widgets-tutorial-hero-figure {
+    animation: none !important;
+}
+
+body.no-animations .widgets-tutorial-hero-pulse {
+    left: calc(100% - 8px);
+}
+
+body.no-animations .widgets-tutorial-hero-figure {
+    opacity: 1;
+}

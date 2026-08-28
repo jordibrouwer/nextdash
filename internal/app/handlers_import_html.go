@@ -183,6 +183,6 @@ func (h *Handlers) ExportBookmarksHTML(w http.ResponseWriter, r *http.Request) {
 		// only be recorded, never reported to the caller.
 		logActivity(activityCategoryMutate, "bookmarks.export_html_failed", map[string]any{
 			"error": err.Error(),
-		})
+		}, "the bookmark export was cut short; the downloaded file is incomplete")
 	}
 }

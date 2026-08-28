@@ -6,7 +6,28 @@ import (
 	"path/filepath"
 )
 
-func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+/*
+writeFileAtomic is every write to the data directory, so it is also where a
+failed one is finally said out loud.
+
+Callers vary in what they do with the error — some report it, several drop it —
+and a disk that has filled up or a directory that turned read-only is the kind
+of thing a reader needs to hear the first time it happens, not the third time
+something quietly did not save.
+*/
+func writeFileAtomic(path string, data []byte, perm os.FileMode) (err error) {
+	defer func() {
+		if err != nil {
+			logError(logComponentStore, "%s could not be written: %v", filepath.Base(path), err)
+			if activityEnabled(activityCategoryStore) {
+				logActivity(activityCategoryStore, "store.write_failed", map[string]any{
+					"file":  filepath.Base(path),
+					"error": err.Error(),
+				}, "")
+			}
+		}
+	}()
+
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err

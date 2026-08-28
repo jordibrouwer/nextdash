@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -272,7 +271,7 @@ func (h *Handlers) markOutagesAlerted(keys map[string]bool) {
 	}
 	history.GeneratedAt = time.Now().UnixMilli()
 	if err := writeHealthHistoryFile(history); err != nil {
-		log.Printf("health-notify: failed to record alert state: %v", err)
+		logWarn(logComponentNotify, "the alert state could not be recorded (%v); the same alert may be sent again", err)
 	}
 }
 
@@ -339,7 +338,7 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 	if settings.MonitorNotifyPreset != "pushover" {
 		allowLocal := h.allowLocalBookmarks()
 		if err := validateHTTPURL(target, allowLocal); err != nil {
-			log.Printf("health-notify: webhook URL rejected: %v", err)
+			logWarn(logComponentNotify, "the webhook address was refused (%v); no alert was sent", err)
 			return
 		}
 	}
@@ -404,17 +403,17 @@ func buildMonitorNotificationRequest(ctx context.Context, target string, setting
 func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Client, target string, settings Settings, n monitorNotification) {
 	req, err := buildMonitorNotificationRequest(ctx, target, settings, n)
 	if err != nil {
-		log.Printf("health-notify: failed to encode notification: %v", err)
+		logError(logComponentNotify, "the alert could not be prepared and was not sent: %v", err)
 		return
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("health-notify: post failed for %s: %v", n.URL, err)
+		logWarn(logComponentNotify, "%s could not be reached, so the alert did not arrive: %v", n.URL, err)
 		return
 	}
 	defer drainAndCloseResponse(resp)
 	if resp.StatusCode >= 400 {
-		log.Printf("health-notify: webhook returned HTTP %d for %s", resp.StatusCode, n.URL)
+		logWarn(logComponentNotify, "%s answered %d; the alert was not accepted", n.URL, resp.StatusCode)
 	}
 }
 

@@ -6491,3 +6491,18 @@ button.config-bm-shortcut-pill {
     /* Whatever the reader set config to, a path is a path. */
     font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 }
+
+/*
+ * The line under Detail level that says what docker logs is doing now.
+ *
+ * Set apart from the ordinary panel notes because it is not advice: it changes
+ * under the reader's hand the moment the select does, and that is the whole
+ * point of the control.
+ */
+.config-log-live-note {
+    margin-top: 4px;
+    padding-left: 10px;
+    border-left: 2px solid color-mix(in srgb, var(--accent-color, #4a90d9) 55%, transparent);
+    color: var(--text-secondary, #666);
+    font-variant-numeric: tabular-nums;
+}

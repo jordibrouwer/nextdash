@@ -332,6 +332,23 @@ caller: an importer holds its copy for the length of a network round trip, and
 writing that copy back whole would undo a token the reader changed while it ran.
 Only the four fields a round actually produces are touched.
 */
+// sourceLabel is what to call a source in a sentence: its own name where it
+// has one, its id otherwise.
+func sourceLabel(source SourceState, id string) string {
+	if label := strings.TrimSpace(source.Label); label != "" {
+		return label
+	}
+	return id
+}
+
+// sourceRunOutcome keeps an empty summary from reading as a broken sentence.
+func sourceRunOutcome(result string) string {
+	if summary := strings.TrimSpace(result); summary != "" {
+		return summary
+	}
+	return "nothing new"
+}
+
 func RecordSourceRun(id string, cursor string, result string, runErr error) {
 	id = normalizeSourceID(id)
 	if id == "" {
@@ -346,6 +363,13 @@ func RecordSourceRun(id string, cursor string, result string, runErr error) {
 	}
 	source.LastRun = time.Now().UnixMilli()
 	if runErr != nil {
+		logWarn(logComponentSources, "%s brought nothing in: %v", sourceLabel(source, id), runErr)
+		if activityEnabled(activityCategorySources) {
+			logActivity(activityCategorySources, "sources.run", map[string]any{
+				"source": id,
+				"error":  runErr.Error(),
+			}, "")
+		}
 		source.LastError = truncateForState(runErr.Error(), sourceMaxResultLen)
 		// The summary of the last successful round is cleared: a panel showing
 		// "34 new" beside a failure reads as though the failure was harmless.
@@ -355,6 +379,13 @@ func RecordSourceRun(id string, cursor string, result string, runErr error) {
 		state.Sources[id] = source
 		_ = writeSourceStateFile(state)
 		return
+	}
+	logInfo(logComponentSources, "%s: %s", sourceLabel(source, id), sourceRunOutcome(result))
+	if activityEnabled(activityCategorySources) {
+		logActivity(activityCategorySources, "sources.run", map[string]any{
+			"source": id,
+			"result": result,
+		}, "")
 	}
 	source.LastError = ""
 	source.LastResult = truncateForState(result, sourceMaxResultLen)

@@ -515,6 +515,9 @@ class DashboardVisual {
             // HealthFacts; the certificates widget reads it from there rather
             // than fetching a report of its own.
             d.renderCore?.refreshWidgets?.('certs');
+            // And the per-row uptime the same store now keeps, which is what
+            // fills the uptime tile without a trip through the health view.
+            d.renderCore?.refreshWidgets?.('uptime');
             // keepHref: the icon opens the view; its href is only the middle-click path.
             utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
                 keepHref: true,

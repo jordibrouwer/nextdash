@@ -169,6 +169,8 @@ class KeyboardNavigation {
             // that returns early. Reachable only by stripping a row's data
             // attributes by hand, so this closes a gap rather than a reported
             // fault.
+            // A widget stop never resolves to a bookmark, so this family falls
+            // through on one without a check of its own.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
                 && this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
                 if (e.code === 'KeyM') {
@@ -251,11 +253,11 @@ class KeyboardNavigation {
                 }
             }
 
-            // Shift+W — spread the focused category across columns, or put it
-            // back. Outside the Shift block above because that one acts on a
-            // bookmark row, and a category needs no row selected.
+            // Shift+W — set the width of the block the cursor is in, category or
+            // widget. Outside the Shift block above because that one acts on a
+            // bookmark row, and a block needs no row selected.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyW') {
-                if (this.toggleFocusedCategorySpread()) {
+                if (this.toggleFocusedBlockWidth()) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
@@ -382,6 +384,30 @@ class KeyboardNavigation {
                 return;
             }
 
+            /*
+             * Ctrl/Cmd+Enter on a widget row that stands for an address.
+             *
+             * Above the modifier guard for the same reason Ctrl/Cmd+A is: the
+             * guard below sends every chord to the browser, which is right for a
+             * bookmark row -- its Enter target is a link, so the browser opens
+             * the new tab itself. A widget row is a button, and nothing would
+             * happen at all.
+             */
+            if (
+                (e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'Enter')
+                && this._gridNavActive()
+            ) {
+                const href = this.navigableElements[this.currentIndex]?.dataset?.widgetHref;
+                // Through the menu's own opener, so the address is checked in
+                // one place rather than twice with room to differ.
+                if (href && this.dashboard?.categoryMenu?.openWidgetHref) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.dashboard.categoryMenu.openWidgetHref(href);
+                    return;
+                }
+            }
+
             // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
@@ -415,11 +441,20 @@ class KeyboardNavigation {
 
             this._focusInLayout = dashboardLayout;
             this._focusInHandler = (e) => {
+                /*
+                 * Focus landing on a stop moves the cursor to it.
+                 *
+                 * A bookmark row delegates focus to its link, so that is what
+                 * arrives here and the row above it is the stop. A widget's
+                 * button is the stop itself -- and until it was one, tabbing
+                 * into a widget left the cursor behind on a bookmark, so the
+                 * next Enter acted somewhere else entirely.
+                 */
                 const link = e.target.closest?.('a.bookmark-open');
-                if (!link) {
-                    return;
-                }
-                const row = link.closest('.bookmark-link');
+                const widgetButton = this._isWidgetElement(e.target)
+                    ? e.target.closest('button')
+                    : null;
+                const row = link ? link.closest('.bookmark-link') : widgetButton;
                 if (!row) {
                     return;
                 }
@@ -472,6 +507,23 @@ class KeyboardNavigation {
 
     _gridNavActive() {
         return this.currentIndex >= 0;
+    }
+
+    /**
+     * Whether the cursor is on a bookmark, rather than somewhere else on the grid.
+     *
+     * The row keys -- edit, delete, tick, the popovers -- all read the selected
+     * element as a bookmark: its url, its id, its category. Now that the cursor
+     * also stops inside widgets, one gate answers for all of them rather than
+     * each key learning the difference separately, and the key falls through to
+     * whoever else wants it instead of acting on a row that is not there.
+     */
+    _cursorOnBookmarkRow() {
+        if (!this._gridNavActive()) {
+            return false;
+        }
+        const current = this.navigableElements[this.currentIndex];
+        return !!current?.classList?.contains('bookmark-link');
     }
 
     /**
@@ -535,20 +587,136 @@ class KeyboardNavigation {
         return !!el && el.classList?.contains('category-show-more');
     }
 
+    /** A stop inside a widget rather than a bookmark row. */
+    _isWidgetElement(el) {
+        return !!el?.closest?.('.dashboard-widget .dashboard-widget-body');
+    }
+
     /**
-     * Turn spreading on or off for the category the cursor is in.
+     * Whether a widget's row or figure is worth stopping on.
+     *
+     * Only the ones that do something: a widget builds a <button> where there is
+     * an action behind the row and a <div> where the row is a readout, so the
+     * element itself says which it is. Parking the cursor on a line that answers
+     * to nothing is a stop the reader has to press through twice.
+     *
+     * A folded widget offers nothing, the same rule a folded category follows.
+     */
+    _isNavigableWidgetElement(el) {
+        if (!el || el.tagName !== 'BUTTON' || el.disabled) {
+            return false;
+        }
+        const block = el.closest('.category');
+        if (block && block.getAttribute('data-collapsed') === 'true') {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The cursor's place inside a widget, as something a redraw cannot destroy.
+     *
+     * A widget's rows are rebuilt from scratch whenever its data arrives, so the
+     * element the cursor is on stops existing. What survives is which widget it
+     * was and how far down that widget's own buttons the cursor had walked --
+     * enough to land on the same row, or on the last one when the tile came back
+     * shorter.
+     *
+     * Returns null when the cursor is not in a widget, which is the common case.
+     */
+    captureWidgetCursor() {
+        if (!this._gridNavActive()) {
+            return null;
+        }
+        const current = this.navigableElements[this.currentIndex];
+        if (!this._isWidgetElement(current)) {
+            return null;
+        }
+        const block = current.closest('.dashboard-widget');
+        const body = block?.querySelector('.dashboard-widget-body');
+        if (!block || !body) {
+            return null;
+        }
+        const buttons = [...body.querySelectorAll('button')];
+        return {
+            widgetId: block.dataset.widgetId || '',
+            at: Math.max(0, buttons.indexOf(current)),
+            focused: document.activeElement === current,
+        };
+    }
+
+    /** Put the cursor back where captureWidgetCursor found it. */
+    restoreWidgetCursor(cursor) {
+        if (!cursor?.widgetId) {
+            return false;
+        }
+        const block = document.querySelector(
+            `.dashboard-widget[data-widget-id="${CSS.escape(String(cursor.widgetId))}"]`,
+        );
+        const buttons = [...(block?.querySelectorAll('.dashboard-widget-body button') || [])];
+        if (!buttons.length) {
+            return false;
+        }
+        const target = buttons[Math.min(cursor.at, buttons.length - 1)];
+        this.updateNavigableElements();
+        const index = this.navigableElements.indexOf(target);
+        if (index < 0) {
+            return false;
+        }
+        this.currentIndex = index;
+        // Focus only where it had focus: a refresh landing while the reader is
+        // typing elsewhere must not pull the caret into the grid.
+        this.highlightCurrentElement({ focus: cursor.focused === true });
+        return true;
+    }
+
+    /**
+     * What actually takes focus for a stop.
+     *
+     * A bookmark row delegates to the link inside it; a show-more toggle and
+     * anything in a widget are the focusable element themselves. Written once
+     * because three places need the same answer and two of them used to assume
+     * the bookmark case and silently skip everything else -- which left a widget
+     * row selected but never focused, so the tab stop stayed on a bookmark.
+     */
+    _focusTargetFor(el) {
+        if (!el) {
+            return null;
+        }
+        if (this._isShowMoreElement(el) || this._isWidgetElement(el)) {
+            return el;
+        }
+        return el.querySelector?.('a.bookmark-open') || null;
+    }
+
+    /**
+     * Set the width of the block the cursor is in — a category or a widget.
+     *
+     * A widget block carries data-category-id too, because the grid and
+     * DragReorder know it as a category, so the resolver finds it either way.
+     * It is not one, though: its width is a number in its own config rather
+     * than the spread flag, and asking categoryFromEl about it would invent a
+     * category from a widget id and then spread nothing.
      *
      * Returns false when there was nothing to act on, so the caller can leave
      * the key to whoever else wants it rather than swallowing it — the same
      * rule the Shift+letter block follows.
      */
-    toggleFocusedCategorySpread() {
+    toggleFocusedBlockWidth() {
         const span = window.DashboardCategorySpan;
         const d = this.dashboard;
-        const categoryEl = span?.resolveFocusedCategoryEl(d, { fallbackToFirst: false });
-        if (!categoryEl || !d.categoryMenu) {
+        const blockEl = span?.resolveFocusedCategoryEl(d, { fallbackToFirst: false });
+        if (!blockEl || !d.categoryMenu) {
             return false;
         }
+        const widgetId = blockEl.getAttribute('data-widget-id');
+        if (widgetId) {
+            const widget = (d.widgets || []).find((w) => String(w?.id) === String(widgetId));
+            if (!widget) return false;
+            void d.categoryMenu.toggleWidgetWidth(widget);
+            return true;
+        }
+        const categoryEl = blockEl;
         const category = span.categoryFromEl(d, categoryEl);
         const name = categoryEl.querySelector('.category-title-name')?.textContent?.trim() || '';
         const on = d.categoryMenu.toggleSpread(category);
@@ -644,6 +812,22 @@ class KeyboardNavigation {
         live.textContent = name ? `${name}: ${label}` : label;
     }
 
+    /**
+     * Say something once, to whoever is listening rather than looking.
+     *
+     * The live region already exists for the cursor; this hands it to the rest
+     * of the dashboard, so an action whose only feedback is a toast — closing a
+     * widget, say — is not silent for a reader who never sees one.
+     */
+    announce(message) {
+        const text = String(message || '').trim();
+        if (!text) return;
+        const live = this._ensureKbdLiveRegion();
+        // Cleared first: the same sentence twice is not re-announced otherwise.
+        live.textContent = '';
+        requestAnimationFrame(() => { live.textContent = text; });
+    }
+
     _ensureKbdLiveRegion() {
         if (this._kbdLiveRegion && document.body.contains(this._kbdLiveRegion)) {
             return this._kbdLiveRegion;
@@ -665,8 +849,8 @@ class KeyboardNavigation {
         if (!row) {
             return;
         }
-        const name = this._isShowMoreElement(row)
-            ? row.textContent?.trim()
+        const name = (this._isShowMoreElement(row) || this._isWidgetElement(row))
+            ? row.textContent?.trim().replace(/\s+/g, ' ')
             : (row.querySelector('.bookmark-text')?.textContent?.trim()
                 || row.querySelector('a.bookmark-open')?.textContent?.trim()
                 || row.getAttribute('data-bookmark-url')
@@ -879,11 +1063,7 @@ class KeyboardNavigation {
     syncRovingTabStops(options = {}) {
         const doFocus = options.focus !== false;
         this.navigableElements.forEach((row, i) => {
-            // The show-more toggle is itself the focusable element; bookmark rows
-            // delegate their tab stop to the inner open link.
-            const focusTarget = this._isShowMoreElement(row)
-                ? row
-                : (row.querySelector && row.querySelector('a.bookmark-open'));
+            const focusTarget = this._focusTargetFor(row);
             if (!focusTarget) {
                 return;
             }
@@ -897,9 +1077,7 @@ class KeyboardNavigation {
             this.currentIndex < this.navigableElements.length
         ) {
             const current = this.navigableElements[this.currentIndex];
-            const focusTarget = this._isShowMoreElement(current)
-                ? current
-                : current.querySelector('a.bookmark-open');
+            const focusTarget = this._focusTargetFor(current);
             if (focusTarget && typeof focusTarget.focus === 'function') {
                 try {
                     focusTarget.focus({ preventScroll: true });
@@ -914,23 +1092,47 @@ class KeyboardNavigation {
         const previousRow = this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length
             ? this.navigableElements[this.currentIndex]
             : null;
-        // Include the "+ N more" / "show less" toggles so long categories can be
-        // expanded from the keyboard. Querying both in one pass keeps them in DOM
-        // order, which is what arrow navigation follows.
+        /*
+         * Every stop on the grid, in DOM order.
+         *
+         * Bookmarks, the "+ N more" / "show less" toggles so a long category can
+         * be opened from the keyboard, and what a widget offers -- its rows and
+         * figures. A widget used to be a wall: the cursor walked past the block
+         * and there was no key that went into it, while the same rows opened
+         * with a click. They are the buttons the widget already builds, so
+         * Enter on one does what clicking it does.
+         *
+         * One pass, because DOM order is the order arrow navigation falls back
+         * on when the geometry gives no answer.
+         */
         const bookmarkElements = document.querySelectorAll(
-            '.bookmark-link:not(.recent-bookmark-link), .category-show-more'
+            '.bookmark-link:not(.recent-bookmark-link), .category-show-more, '
+            // Any button a widget drew, rather than a list of the classes each
+            // type happens to use: the tiles name their rows differently
+            // (dashboard-widget-row, -health-row, -stat) and a new one would
+            // arrive unreachable. A <button> in a widget body is an action by
+            // construction -- the builders render a <div> where there is none.
+            + '.dashboard-widget .dashboard-widget-body button'
         );
         this.navigableElements = Array.from(bookmarkElements)
-            .filter((el) => el.classList.contains('category-show-more')
-                ? this._isNavigableShowMore(el)
-                : this._isNavigableRow(el));
+            .filter((el) => {
+                if (el.classList.contains('category-show-more')) {
+                    return this._isNavigableShowMore(el);
+                }
+                if (this._isWidgetElement(el)) {
+                    return this._isNavigableWidgetElement(el);
+                }
+                return this._isNavigableRow(el);
+            });
 
         if (previousRow) {
             const nextIndex = this.navigableElements.indexOf(previousRow);
             if (nextIndex === -1) {
                 previousRow.classList.remove('keyboard-selected');
                 previousRow.removeAttribute('aria-current');
-                previousRow.setAttribute('aria-selected', 'false');
+                if (previousRow.classList.contains('bookmark-link')) {
+                    previousRow.setAttribute('aria-selected', 'false');
+                }
                 this.restoreKbdSelection();
             }
             this.currentIndex = nextIndex;
@@ -1126,7 +1328,7 @@ class KeyboardNavigation {
                 break;
 
             case ';':
-                if (!this._gridNavActive()) {
+                if (!this._cursorOnBookmarkRow()) {
                     break;
                 }
                 if (this.dashboard && typeof this.dashboard.tryOpenInlineBookmarkEdit === 'function') {
@@ -1141,7 +1343,7 @@ class KeyboardNavigation {
             // x toggles the row under the cursor; X takes the whole category.
             case 'x':
             case 'X':
-                if (!this._gridNavActive() || !this.dashboard?.multiSelect) {
+                if (!this._cursorOnBookmarkRow() || !this.dashboard?.multiSelect) {
                     break;
                 }
                 e.preventDefault();
@@ -1170,7 +1372,7 @@ class KeyboardNavigation {
                     void this.dashboard.multiSelect.deleteSelected();
                     break;
                 }
-                if (this.currentIndex >= 0) {
+                if (this._cursorOnBookmarkRow()) {
                     e.preventDefault();
                     this.deleteCurrentBookmark();
                 }
@@ -1572,11 +1774,21 @@ class KeyboardNavigation {
             this.dashboard.hideBookmarkPreviewCard();
         }
 
-        // Remove previous highlights
+        // Remove previous highlights. aria-selected belongs to a row in the
+        // grid; a widget's button is a button inside a presentation subtree, and
+        // telling a screen reader it is a selected grid row would describe a
+        // structure that is not there. aria-current says the same thing without
+        // claiming a role.
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
             element.removeAttribute('aria-current');
-            element.setAttribute('aria-selected', 'false');
+            // A class test rather than _isWidgetElement: this runs for every
+            // stop on every cursor move, and closest() up the tree per row is a
+            // walk of the whole grid per arrow key on a page of two hundred
+            // bookmarks. Only a bookmark row is a row of the grid.
+            if (element.classList.contains('bookmark-link')) {
+                element.setAttribute('aria-selected', 'false');
+            }
         });
 
         // Highlight current element
@@ -1584,7 +1796,9 @@ class KeyboardNavigation {
             const currentElement = this.navigableElements[this.currentIndex];
             currentElement.classList.add('keyboard-selected');
             currentElement.setAttribute('aria-current', 'true');
-            currentElement.setAttribute('aria-selected', 'true');
+            if (currentElement.classList.contains('bookmark-link')) {
+                currentElement.setAttribute('aria-selected', 'true');
+            }
 
             // Scroll into view if needed
             currentElement.scrollIntoView({
@@ -1784,6 +1998,23 @@ class KeyboardNavigation {
             const currentElement = this.navigableElements[this.currentIndex];
             if (this._isShowMoreElement(currentElement)) {
                 this.toggleShowMoreForCurrent(currentElement);
+                return;
+            }
+            /*
+             * A widget row that stands for an address opens it in a new tab.
+             *
+             * Plain Enter still does what a click does -- the tile's own job,
+             * which for a monitored row is the health view. The address is only
+             * reached deliberately, the same split a bookmark row has between
+             * opening here and opening beside.
+             *
+             * Dispatched as window.open rather than a ctrl-click on the button:
+             * the button's handler would run as well, so the reader would get
+             * the tab and be moved off the dashboard at once.
+             */
+            const widgetHref = currentElement.dataset?.widgetHref;
+            if (widgetHref && newTab) {
+                window.open(widgetHref, '_blank', 'noopener');
                 return;
             }
             const openLink = currentElement.querySelector && currentElement.querySelector('a.bookmark-open');

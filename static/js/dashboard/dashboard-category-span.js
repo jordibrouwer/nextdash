@@ -424,18 +424,14 @@
      * the reader's hands.
      */
     function refreshCategorySpreadUi(dash, categoryId) {
-        const scrollY = window.scrollY || 0;
         const selector = `#dashboard-layout .category[data-category-id="${CSS.escape(String(categoryId))}"]`;
-        const hadFocus = document.activeElement?.closest?.(selector) != null;
-
-        dash.renderDashboard?.({ animate: false, forceFull: true });
-
-        const el = document.querySelector(selector);
-        if (hadFocus) {
-            el?.querySelector('.category-title')?.focus({ preventScroll: true });
-        }
-        window.scrollTo({ top: scrollY, behavior: 'instant' });
-        return effectiveSpanFromElement(el);
+        // Through the shared redraw rather than a scrollTo of its own: this used
+        // to put the old offset back in the same tick, before the masonry
+        // columns had been measured, so a page that was briefly shorter clamped
+        // the scroll and kept the clamped value once it grew again. That is the
+        // jump to the top a reader sees after flipping a width.
+        dash.renderCore?.redrawKeepingPlace?.(categoryId);
+        return effectiveSpanFromElement(document.querySelector(selector));
     }
 
     /**

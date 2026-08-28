@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -371,7 +370,7 @@ func credentialRedirectCheck(credential HealthCredential, next func(*http.Reques
 		for _, name := range names {
 			req.Header.Del(name)
 		}
-		log.Printf("health: %s redirected to %s; the stored credential was not sent on",
+		logWarn(logComponentHealth, "%s redirected to %s; the stored credential was not sent on",
 			via[0].URL.Host, req.URL.Host)
 		return nil
 	}
