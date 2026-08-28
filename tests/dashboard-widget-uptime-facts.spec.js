@@ -88,3 +88,36 @@ test.describe('the uptime tile on a dashboard that has never opened Health', () 
         expect(facts.heartbeat).toEqual(['up', 'down', 'degraded', 'empty']);
     });
 });
+
+/*
+And the tile speaks the reader's language.
+
+Thirty-nine widget strings were asked for as `dashboard.widgetXxx` while living
+under `config` in the locale files. t() looks up exactly that path, finds
+nothing, and label() falls back to the English written beside the call — so on a
+Dutch, German or French dashboard those tiles were in English, with the
+translations sitting in the file unused. The uptime tile is one of them.
+*/
+test.describe('a widget tile in the reader\'s language', () => {
+    test('draws the Dutch string rather than the English fallback', async ({ page }) => {
+        await dashboardWithAMonitor(page);
+
+        const dutch = await page.evaluate(async () => {
+            await window.dashboardInstance.language.loadTranslations('nl');
+            const t = (key) => window.dashboardInstance.language.t(key);
+            return {
+                uptimeNone: t('dashboard.widgetUptimeNone'),
+                uptimeNoSamples: t('dashboard.widgetUptimeNoSamples'),
+                feedsWaiting: t('dashboard.widgetFeedsWaiting'),
+                more: t('dashboard.widgetMore'),
+            };
+        });
+
+        // A key that does not resolve comes back as the key itself, which is
+        // what every one of these did before the strings were moved.
+        Object.entries(dutch).forEach(([name, value]) => {
+            expect(value, `${name} did not resolve`).not.toContain('dashboard.widget');
+        });
+        expect(dutch.uptimeNone).toBe('Er worden geen bookmarks gemonitord.');
+    });
+});
