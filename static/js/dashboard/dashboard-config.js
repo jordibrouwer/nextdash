@@ -5039,7 +5039,11 @@ class DashboardConfig {
 
         const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
             ? s.activityChannels.map((c) => String(c).toLowerCase())
-            : ['mutate', 'status'];
+            : DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
+        // Same rule the ↺ follows elsewhere in config: offered only when there
+        // is something to undo, so it is not a permanent button that usually
+        // does nothing.
+        const channelsAtDefault = this.activityChannelsAreDefault(activeChannels);
         const channelBoxes = [
             ['mutate', this.t('config.logChannelMutate', 'Changes')],
             ['status', this.t('config.logChannelStatus', 'Check results')],
@@ -5105,11 +5109,14 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
                     <select class="config-select" data-log-select="detail">${detailOptions}</select>
                 </div>
-                <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log. What is not written costs nothing.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
+                <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}${channelsAtDefault ? '' : `<button type="button"
+                        class="config-panel-reset" data-activity-reset
+                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`}</h3>
                 <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
                 ${channelBoxes}
             </div>
@@ -5147,12 +5154,96 @@ class DashboardConfig {
     }
 
     /*
+     * The two channels the server records when nobody has chosen.
+     *
+     * Named here rather than written out at each use, because three places
+     * depend on them agreeing: the checkboxes when the setting is empty, the
+     * reset button, and the test that says what "default" means. The server
+     * has the same pair in loadActivityLogConfig.
+     */
+    static ACTIVITY_CHANNEL_DEFAULTS = ['mutate', 'status'];
+
+    /*
+     * Reset panel puts the trail back to the two channels nextDash records by
+     * default. Bound separately from the rest of the panel because the button
+     * comes and goes with the value, so a freshly inserted one has to be bound
+     * again rather than relying on the panel's own one-time pass.
+     */
+    bindActivityResetButton(container) {
+        const button = container.querySelector('[data-activity-reset]');
+        if (!button || button.dataset.bound === '1') return;
+        button.dataset.bound = '1';
+        button.addEventListener('click', () => {
+            this.dash.settings.activityChannels = DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
+            void this.saveSettingsWithFeedback();
+            // Twelve boxes change at once and the button itself goes away, so
+            // the panel is rebuilt rather than patched. Nothing worth keeping
+            // the focus on: the button the user clicked is what disappears.
+            this.repaintDbTabBody();
+        });
+    }
+
+    /*
+     * Put Reset panel on screen, or take it away.
+     *
+     * The button exists only while the channels differ from the defaults, so
+     * this adds and removes it rather than showing and hiding it. Done in place
+     * so the checkbox the user just clicked keeps the focus — repainting the
+     * whole tab body would take it away mid-click.
+     */
+    syncActivityResetButton(container, channels) {
+        const title = container.querySelector('.config-panel-title [data-activity-reset]')?.closest('.config-panel-title')
+            || [...container.querySelectorAll('.config-panel-title')]
+                .find((el) => el.parentElement?.querySelector('[data-activity-channel]'));
+        if (!title) return;
+        const existing = title.querySelector('[data-activity-reset]');
+        if (this.activityChannelsAreDefault(channels)) {
+            existing?.remove();
+            return;
+        }
+        if (existing) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        title.insertAdjacentHTML('beforeend', `<button type="button"
+                        class="config-panel-reset" data-activity-reset
+                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`);
+        this.bindActivityResetButton(container);
+    }
+
+    /** Whether a channel list is the default pair, in any order. */
+    activityChannelsAreDefault(channels) {
+        const chosen = [...new Set((channels || []).map((c) => String(c).toLowerCase()))].sort();
+        const defaults = [...DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS].sort();
+        return chosen.length === defaults.length && chosen.every((c, i) => c === defaults[i]);
+    }
+
+    /*
      * What the floor is, said under the display filter.
      *
      * The two controls are easy to confuse — one decides what exists, the other
      * decides what is shown — and someone who filtered for Everything and still
      * sees nothing has been given no way to tell which one is the reason.
      */
+    /*
+     * What the container log is doing right now, in the present tense.
+     *
+     * The setting acts on the next line written, with no restart, and that is
+     * the thing readers do not expect from a log level — so it is said as a
+     * fact about the running server rather than as a promise about the future.
+     */
+    serverLogLiveNote() {
+        const level = String(this.dash.settings?.serverLogLevel || 'info');
+        if (level === 'debug') {
+            return this.t('config.logDetailLiveVerbose',
+                'docker logs is now showing every step, from the next line onwards.');
+        }
+        if (level === 'warn' || level === 'error') {
+            return this.t('config.logDetailLiveQuiet',
+                'docker logs is now showing problems only, from the next line onwards.');
+        }
+        return this.t('config.logDetailLiveNormal',
+            'docker logs is now showing what the server does, from the next line onwards.');
+    }
+
     serverLogFloorNote() {
         const level = String(this.dash.settings?.serverLogLevel || 'info');
         if (level === 'debug') {
@@ -5404,6 +5495,12 @@ class DashboardConfig {
                     // rather than repainted, to keep the focus on the select.
                     const floorNote = container.querySelector('[data-log-floor-note]');
                     if (floorNote) floorNote.textContent = this.serverLogFloorNote();
+                    // Says what docker logs is doing differently as of now.
+                    // The point of this control is that it acts at once, and a
+                    // line that changes under your hand shows that better than
+                    // a sentence promising it.
+                    const liveNote = container.querySelector('[data-log-detail-live]');
+                    if (liveNote) liveNote.textContent = this.serverLogLiveNote();
                     return;
                 }
                 if (kind === 'level') {
@@ -5431,8 +5528,15 @@ class DashboardConfig {
                  */
                 this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
                 void this.saveSettingsWithFeedback();
+                // Reset panel appears the moment the list leaves the defaults
+                // and goes again when it returns. Rebuilt rather than toggled,
+                // because the button is only in the DOM when it has something
+                // to do — the same rule the other panels follow.
+                this.syncActivityResetButton(container, chosen);
             });
         });
+
+        this.bindActivityResetButton(container);
 
         const search = container.querySelector('[data-log-search]');
         if (search) {
