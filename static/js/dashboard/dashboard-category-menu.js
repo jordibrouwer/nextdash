@@ -153,6 +153,21 @@ class DashboardCategoryMenu {
                 icon: '⌃',
                 key: 'Enter',
             },
+            /*
+             * Only the custom tile reads from outside, so it is the only one
+             * where asking again means anything: every other widget draws from
+             * what nextDash already holds and is redrawn by whatever changed it.
+             *
+             * It earns a place because the tile's own clock and the short hold
+             * on a failure combine badly for one reader: someone who has just
+             * corrected a wrong API key sees the same error for another half
+             * minute with no way to hurry it. This is that way.
+             */
+            ...(widget?.type === 'custom' ? [{
+                id: 'refresh',
+                label: this.t('widgetMenuRefresh', 'Refresh now'),
+                icon: '↻',
+            }] : []),
             {
                 // Straight to this widget's own row in Config -> Widgets, rather
                 // than opening the section and hunting for it among the others.
@@ -275,6 +290,10 @@ class DashboardCategoryMenu {
             // Through the header's own click handler, so folding from the menu
             // and folding by clicking cannot end up as two behaviours.
             titleEl?.click();
+            return;
+        }
+        if (action === 'refresh') {
+            await d.renderCore?.refreshCustomWidgetNow?.(widget);
             return;
         }
         if (action === 'settings') {

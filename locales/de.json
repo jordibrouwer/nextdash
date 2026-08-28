@@ -1774,6 +1774,7 @@
     "widgetMenuOpenNewTab": "In neuem Tab öffnen",
     "widgetMenuFold": "Einklappen",
     "widgetMenuUnfold": "Ausklappen",
+    "widgetMenuRefresh": "Jetzt aktualisieren",
     "widgetMenuSettings": "Einstellungen…",
     "widgetActionOpenHealthFilter": "Health öffnen — {name}",
     "widgetActionOpenTrash": "Papierkorb öffnen",

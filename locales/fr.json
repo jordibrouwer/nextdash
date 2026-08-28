@@ -1774,6 +1774,7 @@
     "widgetMenuOpenNewTab": "Ouvrir dans un nouvel onglet",
     "widgetMenuFold": "Replier",
     "widgetMenuUnfold": "Déplier",
+    "widgetMenuRefresh": "Rafraîchir maintenant",
     "widgetMenuSettings": "Réglages…",
     "widgetActionOpenHealthFilter": "Ouvrir Health — {name}",
     "widgetActionOpenTrash": "Ouvrir la corbeille",

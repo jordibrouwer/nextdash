@@ -1774,6 +1774,7 @@
     "widgetMenuOpenNewTab": "Open in a new tab",
     "widgetMenuFold": "Fold",
     "widgetMenuUnfold": "Unfold",
+    "widgetMenuRefresh": "Refresh now",
     "widgetMenuSettings": "Settings…",
     "widgetActionOpenHealthFilter": "Open Health — {name}",
     "widgetActionOpenTrash": "Open the trash",

@@ -308,3 +308,76 @@ test('the add-category button never lands in a widget header', async ({ page }) 
     // It still exists somewhere — on a category, which is what it is for.
     expect(await page.locator('.category-add-inline-btn').count()).toBeGreaterThan(0);
 });
+
+/*
+ * Asking a custom tile again, now rather than at its next beat.
+ *
+ * The tile refreshes itself on its own interval, and a failure is held for
+ * thirty seconds so a service that is down does not turn every open dashboard
+ * into a retry loop against it. Both are right, and together they mean someone
+ * who has just fixed a wrong API key sees the same error for another half
+ * minute with nothing to do about it. This is the way out — and it is the one
+ * request here that skips the cache, so it is only offered on the tile that
+ * reads from outside.
+ */
+test.describe('a custom tile can be asked again now', () => {
+    async function dashboardWithACustomWidget(page) {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = {
+                'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+            };
+            await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({
+                widgets: [{ id: 'w_ask', type: 'custom', title: 'Service', config: {
+                    url: 'https://example.invalid/api', ttl: 300,
+                } }] }) });
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+        await expect(page.locator('.dashboard-widget[data-widget-type="custom"]')).toBeVisible({ timeout: 15_000 });
+    }
+
+    test('the menu offers it, and the request skips the cache', async ({ page }) => {
+        await dashboardWithACustomWidget(page);
+
+        // Count what the tile asks for, and whether it says "now".
+        const asked = await page.evaluate(() => {
+            window.__widgetCalls = [];
+            const real = window.fetch;
+            window.fetch = async (url, ...rest) => {
+                if (String(url).includes('/api/widgets/custom')) window.__widgetCalls.push(String(url));
+                return real(url, ...rest);
+            };
+            return true;
+        });
+        expect(asked).toBe(true);
+
+        await page.locator('.dashboard-widget[data-widget-type="custom"] .category-title')
+            .click({ button: 'right' });
+        const menu = page.locator('#widget-context-menu');
+        await expect(menu).toBeVisible({ timeout: 10_000 });
+
+        const refresh = menu.locator('[data-action="refresh"]');
+        await expect(refresh).toBeVisible();
+        await refresh.click();
+
+        // refresh=1 is what gets past the thirty seconds a failure is held for.
+        await expect.poll(async () => page.evaluate(
+            () => (window.__widgetCalls || []).some((u) => u.includes('refresh=1'))
+        ), { timeout: 15_000 }).toBe(true);
+    });
+
+    test('a tile that reads nothing outside is not offered it', async ({ page }) => {
+        await dashboardWithAWidget(page);
+        const menu = await openMenu(page);
+        // The health tile draws from what nextDash already holds; asking a
+        // service again means nothing there, and an entry that does nothing is
+        // worse than no entry.
+        await expect(menu.locator('[data-action="refresh"]')).toHaveCount(0);
+    });
+});

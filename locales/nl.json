@@ -1774,6 +1774,7 @@
     "widgetMenuOpenNewTab": "In nieuw tabblad openen",
     "widgetMenuFold": "Invouwen",
     "widgetMenuUnfold": "Uitvouwen",
+    "widgetMenuRefresh": "Nu verversen",
     "widgetMenuSettings": "Instellingen…",
     "widgetActionOpenHealthFilter": "Health openen — {name}",
     "widgetActionOpenTrash": "Prullenbak openen",
