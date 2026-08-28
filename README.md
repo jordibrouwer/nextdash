@@ -24,7 +24,7 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 
 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
 
-🧩 **Save a link from anywhere:** [`integrations/`](integrations/) holds a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension for Linux, and recipes for Alfred and Apple Shortcuts — every one of them a few lines on top of the same `GET /add` route, so anything that can open a URL or run `curl` can save to your **Inbox**. The [Dropzone 5 script](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has a repository of its own.
+🧩 **Save a link from anywhere:** a browser extension, a shell one-liner, Raycast, Dropzone 5, Alfred, Apple Shortcuts and Ulauncher — see [What nextDash talks to](#what-nextdash-talks-to).
 
 ---
 
@@ -245,153 +245,18 @@ each thing works and why it behaves the way it does.
 
 - One Go binary and a data directory of plain JSON. No database, no account, no telemetry. *[Manual §21](MANUAL.md#21-security-and-self-hosting)*
 - A write token, a CORS allowlist, rate limits, SSRF protection and an activity log, for when it faces a network. *[Security](#security)*
-- A browser extension, an HTTP endpoint for scripts, outgoing webhooks and an MCP endpoint. *[Manual §18](MANUAL.md#18-browser-extension), [§21](MANUAL.md#21-security-and-self-hosting)*
+- It talks to other things: a browser extension, a route for scripts, outgoing webhooks, an MCP endpoint. *[What nextDash talks to](#what-nextdash-talks-to)*
 
 ---
 
-## Mouse gestures
+## What nextDash talks to
 
-| Gesture | Action |
-|---|---|
-| Right-click a bookmark | Actions in one place: open in new tab, copy URL, **share**, edit, tags, move, availability checking, **select** / **select all in category**, delete (`Shift` + right-click gives the browser's own menu). Right-clicking a bookmark inside an open selection switches the menu to the whole selection, with the count named |
-| Drag the left strip of a bookmark | Reorder within category or move to another category |
-| Long press a bookmark row (~500 ms) | Open inline edit (save with **Save** or **Ctrl+Enter**) |
-| Hover over a bookmark | Show the preview card (unless set to keyboard only or off in Config → Appearance → Display) |
-| Long press a category header (~500 ms) | Rename the category (not on sort buttons; double-click still works) |
-| `Shift + W` on a category | Spread it across columns, or put it back to one |
-| Double-click a page tab | Rename the page |
-
----
-
-## Browser Extension
-
-The **nextDash Bookmark Saver** extension (`extension/`) lets you save the current browser tab directly to a nextDash page.
-
-### Install (Chrome / Chromium)
-
-1. Open `chrome://extensions/`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select the `extension/` folder from this repository
-
-### First-time setup
-
-1. Click the extension icon
-2. Open the **Settings** tab
-3. Enter your nextDash server URL (e.g. `http://localhost:8080`)
-4. If the server uses `NEXTDASH_WRITE_TOKEN`, paste the same value under **Write token (optional)**
-5. Choose a default page and save
-
-### Save tab
-
-- Pre-filled title and URL; optional **shortcut** (auto-suggested from the name when left empty)
-- Pick page/category, tags, and note — or **Save to Inbox** for a quick capture without choosing a page
-- Duplicate URL warning; **409** when the shortcut is already taken on that page
-- If a dashboard tab is open on the same server, it may toast and refresh
-
-The extension needs no CORS configuration: its origin is allowed by default, and its host permissions let the browser grant the request regardless. `NEXTDASH_CORS_ORIGINS` is only for pages of your own.
-
-See `extension/README.md` for full usage and development notes.
-
----
-
-## Integrations
-
-The extension covers Chrome and its relatives. [`integrations/`](integrations/)
-covers everything else, and it is all one route:
-
-```
-GET /add?url=<address>&title=<optional title>[&token=<capture token>]
-```
-
-It saves to the **Inbox** — the same place the extension and the share sheet
-save to, with the same duplicate handling — and answers with a page a person can
-read, so a bookmarklet or a Shortcut can simply open it. Anything that can open
-a URL or run `curl` is therefore an integration; these are the ones worth
-keeping around.
-
-| | |
-|---|---|
-| [`shell/nextdash-add`](integrations/shell/nextdash-add) | The one-line saver. Quick Actions, Keyboard Maestro, cron, an alias — anything that runs a command |
-| [`raycast/save-to-nextdash.sh`](integrations/raycast/save-to-nextdash.sh) | Raycast: type a URL, save it |
-| [`raycast/save-current-tab.sh`](integrations/raycast/save-current-tab.sh) | Raycast: save the front tab of Safari, Chrome, Arc, Brave or Edge |
-| [`dropzone/nextDash.dzbundle.rb`](integrations/dropzone/nextDash.dzbundle.rb) | **Dropzone 5**: drop a link on the target, or click it to save the clipboard |
-| [`alfred/README.md`](integrations/alfred/README.md) | Alfred: a keyword workflow, and a hotkey for the front tab |
-| [`shortcuts/README.md`](integrations/shortcuts/README.md) | Apple Shortcuts, for the macOS and iOS share sheets — the route that works on iOS, where Safari does not implement the web share target |
-| [`ulauncher/`](integrations/ulauncher/) | Ulauncher, on Linux: `nd <url>` |
-
-Two environment variables configure all of them: **`NEXTDASH_URL`** (default
-`http://localhost:8080`) and **`NEXTDASH_TOKEN`**, which is only needed when the
-install runs with a write token. Give it the `NEXTDASH_CAPTURE_TOKEN` rather
-than the write token: that one opens the two capture routes and nothing else, so
-a copy sitting in a script or a browser's history can at worst add a link to
-your inbox.
-
-```sh
-curl -s --get --data-urlencode "url=https://example.com/article" \
-     --data-urlencode "title=An article" \
-     https://nextdash.example.com/add >/dev/null
-```
-
-Use `--data-urlencode` rather than building the query by hand — an address
-carrying its own `?x=1&y=2`, or a title with an ampersand, is exactly what
-breaks that. [`integrations/README.md`](integrations/README.md) has the rest,
-including which scripts were run against a live install and which could only be
-syntax-checked, since several of them need a host app to exercise at all.
-
-The **Dropzone 5** action also has [a repository of its
-own](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
-
-### Outgoing: telling other programs what happened
-
-Everything above sends a link *in*. nextDash can also push *out*,
-so nothing has to poll it to find out that something changed.
-
-**Webhooks** — **Config → Data & backups → Webhooks**. Five events: a bookmark
-added, changed or removed, and a monitored bookmark going down or coming back.
-A receiver can subscribe to all of them or to a few.
-
-Every delivery is signed with the [Standard
-Webhooks](https://www.standardwebhooks.com/) scheme, so a receiver that already
-verifies those needs no special case:
-
-```
-POST /your-endpoint
-content-type: application/json
-webhook-id: msg_2b7f…
-webhook-timestamp: 1756253400
-webhook-signature: v1,K5s0…
-
-{"type":"bookmark.added","timestamp":"2026-08-27T09:30:00Z","data":{…}}
-```
-
-The signature is an HMAC-SHA256 over `{id}.{timestamp}.{payload}` with the
-endpoint's own key, base64-encoded. The id and the timestamp are signed rather
-than merely sent: the id is how a receiver recognises a redelivery it already
-acted on, and the timestamp is how it refuses one replayed at it a day later.
-
-The key is generated when you save the endpoint and shown **once**, in the answer
-to that save — copy it into the receiver then. Keys live in `webhooks.json` at
-`0600` beside the health sign-ins, and are excluded from backups unless you ask
-for them. A failed delivery is retried twice with a growing gap; a `4xx` is not
-retried, since that is the receiver saying the request itself is wrong.
-
-**MCP**, for an AI assistant — same tab, and **off until you switch it on**. One
-endpoint at `POST /mcp` speaking JSON-RPC 2.0, with four tools: search the
-collection, look one bookmark up, list the tags in use, and add a bookmark.
-
-```json
-{"jsonrpc":"2.0","id":1,"method":"tools/list"}
-```
-
-It is off by default because it answers questions about every bookmark in the
-install, which is not something to add to a default install quietly. `Origin` is
-checked on every request — a browser will POST to `localhost` from any site on
-the internet — and adding a bookmark goes through the same handler the dashboard
-posts to, so the duplicate check, the URL validation and the outgoing webhook all
-still apply. If the install runs with a write token, the assistant needs it to
-write.
-
+- **Browser extension** (`extension/`) — saves the current tab to a page or to the inbox. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and pick the `extension/` folder. *[Manual §18](MANUAL.md#18-browser-extension)*
+- **A capture route for everything else** — `GET /add?url=…&title=…` saves to the Inbox and answers with a readable page, so anything that can open a URL or run `curl` can save to it. *[Manual §21](MANUAL.md#the-capture-route-for-scripts-and-launchers)*
+- **[`integrations/`](integrations/)** — a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension for Linux, and recipes for Alfred and Apple Shortcuts, all built on that one route. The [Dropzone 5 action](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has a repository of its own. *[`integrations/README.md`](integrations/README.md)*
+- **A bookmarklet, and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet carrying this install's own address; installed as an app, nextDash joins the system share sheet. *[Manual §15](MANUAL.md#15-status-monitoring-and-health), [§19](MANUAL.md#19-mobile-pwa-and-touch)*
+- **Outgoing webhooks** — five events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme, so nothing has to poll nextDash to learn that something changed. *[Manual §21](MANUAL.md#outgoing-webhooks-v140)*
+- **An MCP endpoint** for an AI assistant — four tools, off until you switch it on. *[Manual §21](MANUAL.md#an-mcp-endpoint-for-an-ai-assistant-v140)*
 
 ---
 

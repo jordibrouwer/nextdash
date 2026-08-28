@@ -34,7 +34,7 @@ This manual is for new users and anyone who wants a structured reference. It goe
 13. [Smart collections and custom collections](#13-smart-collections-and-custom-collections)
 14. [Layouts, themes, and appearance](#14-layouts-themes-and-appearance)
 15. [Status monitoring and health](#15-status-monitoring-and-health)
-16. [Config — complete walkthrough](#16-config--complete-walkthrough)
+16. [Config — complete walkthrough](#16-config-complete-walkthrough)
 17. [Import, export, and backup](#17-import-export-and-backup)
 18. [Browser extension](#18-browser-extension)
 19. [Mobile, PWA, and touch](#19-mobile-pwa-and-touch)
@@ -170,7 +170,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 - Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once. Since **v1.4.1.2** a **widget** folds the same way, from the same header, and `.` takes widgets with it.  
 - Drag the **`//` prefix** in a category title to reorder sections.  
-- Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal--shiftb-or-ctrlshifta).  
+- Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal-shiftb-or-ctrlshifta).  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
 - In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
@@ -435,7 +435,7 @@ Right-click any bookmark on the dashboard for its actions in one place:
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
 | **Show in Health** | Opens the [health view](#15-status-monitoring-and-health) with this bookmark's row selected (also `Shift + R`). Offered for **every** bookmark, including ones with checking switched off — the report covers the whole library, and that row is where checking gets turned on |
 | **Select** / **Select all in category** | Starts a [multi-selection](#94-selecting-several-bookmarks) with this row, or with every row in its category. Placed above the divider: below it is the destructive zone, and selecting is not destructive |
-| **Delete** | Asks for confirmation first, then deletes with undo in the toast. The bookmark goes to the [trash](#trash-data--backups--trash) for 30 days |
+| **Delete** | Asks for confirmation first, then deletes with undo in the toast. The bookmark goes to the [trash](#trash-data-backups-trash) for 30 days |
 
 Right-click a bookmark that is **part of an open selection** and the menu switches to the selection as a whole — *Move 5 selected*, *Open 5 selected*, *Copy 5 links*, *Delete 5 selected*, *Clear selection* — with the count named, so it is never in doubt what an action will touch. Right-click a row **outside** the selection and you get the ordinary single-row menu, because that is the row you pointed at. One ticked row is not a bulk operation, so it keeps the single-row menu too.
 
@@ -541,6 +541,20 @@ Use **`:duplicate`** in search or the Health view to find duplicates already in 
 - **Opening a bookmark flashes the row.** A brief ripple spreads from where you clicked and fades. Opening a link is one of the few actions here whose result appears somewhere else entirely — a new tab, another window, sometimes an application that takes a second to come to the front — so without it a click that worked and a click that missed look identical for as long as that takes. The flash is the row saying it heard you. It plays wherever a bookmark opens: a click, `Enter` or `Space` on the selected row, a shortcut typed into the search line. Under `prefers-reduced-motion` it does not animate, and the row confirms the open without moving.
 - **Right-click** a bookmark for its actions — open in new tab, copy URL, edit, tags, move, delete. See [Right-click menu](#75-right-click-menu). **`Shift` + right-click** gives the browser's own menu.
 - **Long-press** (~500 ms, not on the drag strip) opens the [inline editor](#74-inline-edit-after-long-press).
+
+Every mouse gesture on the dashboard, in one place:
+
+| Gesture | What it does |
+|---|---|
+| Click a bookmark | Opens it, and counts the open |
+| Right-click a bookmark | The [actions menu](#75-right-click-menu). Inside an open selection it switches to the whole selection, with the count named. `Shift` + right-click gives the browser's own menu |
+| Drag a bookmark | [Reorder](#reorder-bookmarks) within its category, or drop it on another |
+| Long-press a bookmark (~500 ms) | The [inline editor](#74-inline-edit-after-long-press) — save with **Save** or `Ctrl+Enter` |
+| Hover a bookmark | The [preview card](#the-link-preview-card), unless set to keyboard only or off |
+| Long-press a category header (~500 ms) | Rename it — not on the sort buttons; double-click still works |
+| Right-click a category header | Rename, spread across columns, add and delete, and **Icon…** |
+| Drag the `//` in a category title | [Reorder the categories](#reorder-categories) |
+| Double-click a page tab | [Rename the page](#page-customisation), set its emoji and colour dot |
 
 ### ⌨️ Keyboard
 
@@ -676,7 +690,7 @@ A toolbar appears above the grid while a selection is open, with **Move**, **Tag
 
 **Tags** lists every tag you already use, each showing how it sits across the selection: a **✓** when every selected bookmark has it, so clicking takes it off; a **–** and *on 2 of 3* when only some do, so clicking fills in the rest; and plain when none do. The count is spelled out because *add* and *remove* mean different things for a mixed selection. Since **v2026.09.05.1**.
 
-**Deleting a selection can be undone** (v1.0.4). The toast offers **Undo** for eight seconds and puts every bookmark back in the position it held; the [trash](#trash-data--backups--trash) still catches it for 30 days after that. If the save does not go through, the rows come back and an error says so, rather than disappearing from the screen in silence.
+**Deleting a selection can be undone** (v1.0.4). The toast offers **Undo** for eight seconds and puts every bookmark back in the position it held; the [trash](#trash-data-backups-trash) still catches it for 30 days after that. If the save does not go through, the rows come back and an error says so, rather than disappearing from the screen in silence.
 
 A **plain click while a selection is open clears it** instead of opening the bookmark, so a stray click cannot act on rows you had forgotten were ticked. A bookmark that appears in a [smart collection](#13-smart-collections-and-custom-collections) as well as its own category lights up in both places, because it is one bookmark shown twice.
 
@@ -885,7 +899,7 @@ Neither has to start in config (**v2026.09.06**). Both gestures live where the t
 - **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **`c`** does the same from the keyboard. The **⋯** button next to those chips opens the sort menu with **`ArrowDown`** as well as with a click (**v1.3.3.1**) — it advertised as much all along, but a bare arrow started grid navigation and took the focus off the button on the way. Both act on the page on screen, so neither asks which page you meant. The key acts on the first press: it used to wait out a hold of about 300 ms so a tap could still reach the shortcut search, and it was one of only two keys that did. The `+` appears in whichever header ends the grid, and costs no space of its own.
 - **From the bookmark form** — the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form.
 
-**Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation (**v1.1.1**) — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
+**Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation (**v1.1.1**) — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data-backups-trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
 
 A category you have just created **stays visible** even with *hide empty categories* on, until you leave the page — otherwise it would vanish in the moment between creating it and putting something in it.
 
@@ -1161,7 +1175,7 @@ Enabled in **config → pages & tags → collections**:
 | **Most used** | Highest open counts |
 | **Stale** | Not opened within threshold days |
 | **Recently added** | What you have just saved. **Off by default**, with its own item limit and choice of pages like the rest. Every other collection here keys on what you *open*, so *what did I save this week* was the one question none of them could answer — and a link saved and not yet filed is exactly the one worth putting back in front of you |
-| **Fresh** (**v1.3.0**) | Bookmarks whose page has published something since you last opened it — see [Fresh](#fresh-what-changed-since-you-looked) below |
+| **Fresh** (**v1.3.0**) | Bookmarks whose page has published something since you last opened it — see [Fresh](#fresh-what-changed-since-you-looked-v130) below |
 
 Each can be limited to certain pages and item limits (`0` = unlimited).
 
@@ -1447,7 +1461,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Monitored filter** | Offered as soon as there are bookmarks, not only once something is already monitored — it used to be invisible to anyone who had not already found the feature. An empty Monitored list explains what monitoring does and how to switch it on (`c` on a row) rather than reporting "no issues found" |
 | **Export** | Downloads the **current filter and search** as CSV — name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. When the exported list holds monitored bookmarks it also carries **interval, the three uptime windows, last response time and total checks** — but only then, since otherwise they would be six empty columns on every line. Uptime is written as a plain number so a spreadsheet can average the column, and a window with no samples stays **blank** rather than becoming a `0` that reads as total downtime. For working through findings beside a spreadsheet, or handing someone the list. Values starting `=` `+` `-` `@` are prefixed so a spreadsheet treats them as text instead of formulas; a UTF-8 BOM keeps accented titles intact in Excel |
 | **Export history** | Appears on the **Monitored** filter. Downloads the individual up/down checks behind an uptime percentage — one row per check, with its timestamp, whether the site was up, ping time and HTTP status. The ordinary Export gives you the current state of each bookmark; this gives you the record over time, for charting an outage or seeing when a site started getting slow. Same formula guard and BOM |
-| **Bulk actions** | Tick the box on any row — or press **`x`** to tick the one under the cursor and move on, **`X`** or **`Ctrl/Cmd+A`** for everything the current filter shows; **`Alt`**+click and **`Shift`**+click work with the mouse. A bar appears above the list with **Set checking**, **Re-check**, **Open**, **Copy links**, **Delete** and **Clear selection** — deliberately the same bar, in the same place, that **Config → Bookmarks** has. Deletes go to the [trash](#trash-data--backups--trash) like any other, and a row that changed since the report was built is skipped and reported rather than deleted, so a list a few minutes old cannot remove the wrong bookmark. Ticks survive a filter change, so the bar names how many the current filter is hiding and offers **Select only these**. **`Esc`** clears the selection without leaving the view (**v2026.09.05.1**) |
+| **Bulk actions** | Tick the box on any row — or press **`x`** to tick the one under the cursor and move on, **`X`** or **`Ctrl/Cmd+A`** for everything the current filter shows; **`Alt`**+click and **`Shift`**+click work with the mouse. A bar appears above the list with **Set checking**, **Re-check**, **Open**, **Copy links**, **Delete** and **Clear selection** — deliberately the same bar, in the same place, that **Config → Bookmarks** has. Deletes go to the [trash](#trash-data-backups-trash) like any other, and a row that changed since the report was built is skipped and reported rather than deleted, so a list a few minutes old cannot remove the wrong bookmark. Ticks survive a filter change, so the bar names how many the current filter is hiding and offers **Select only these**. **`Esc`** clears the selection without leaving the view (**v2026.09.05.1**) |
 | **Work through the list** | Filtering to **Broken** tells you what is wrong and then leaves every fix costing the same three moves: find the row again after the list re-renders, aim at its action, decide. **Work through** in the toolbar — or **`f`** — puts one row on screen at a time with its actions large and the rest of the page out of the way: **Re-check** (`p`), **Open** (`Enter`), **Delete** (`d`), **Skip** (`j`), and `k` to go back. It starts on the row your cursor is on rather than the top of the list, because the way in is usually *I am looking at this one*. `Esc` leaves and puts the cursor on the row you had reached, so dipping in for three fixes and back out is not a mode switch. It is the same list and the same actions throughout — nothing is available only here — and stepping past either end says so rather than quietly wrapping round to the start. A row deleted from the card drops out of the queue and the next one takes its place |
 | **Ten links, two minutes** (**v1.3.0**) | Work through is the mechanic; this is the invitation. When enough links want attention, a card appears in the bottom-left corner of the dashboard naming what is waiting — *"10 links to review: 4 broken, 3 never opened, 3 not opened in a year"* — and **Start** opens Health and runs a session over the worst ten. A session **ends**: it says how many you dealt with, offers **Another ten** when more are waiting, and **Done for today** puts the offer away until tomorrow. Bounded and finishable is the point — a number that never ends is one people learn to ignore. Skipping is not handling, so the count at the end is honest. Below five waiting links the card stays quiet |
 | **Accept drift** | A drift finding is a prompt, not a verdict: a rebrand, a docs reorganisation or a deliberate move to a new domain trips drift on **every** bookmark pointing at that site at once, and all of them are fine. Tick those rows and use **Accept drift** in the bulk bar — it appears only when the selection actually holds findings, and counts just those. Accepting does two things in one write: it clears the finding **and** drops the baseline the finding was measured against, so the next check records the page as it is today. Clearing only the finding would not work, because the stored baseline still describes the page as it was *before* the change and the identical drift would be reported again on the very next check. Note what accepting asserts: that the new page is the right one — a page that genuinely rotted would be marked healthy, which is why there is no *accept everything* and the rows are always ones you picked |
@@ -2084,7 +2098,15 @@ All bookmarks: localized column headers — Name, URL, Category (display name), 
 
 ## 18. 🔌 Browser extension
 
-Folder: `extension/` (Chrome “Load unpacked”).
+The **nextDash Bookmark Saver** extension lives in `extension/` and saves the
+current browser tab straight to a nextDash page or to the inbox.
+
+### Install (Chrome / Chromium)
+
+1. Open `chrome://extensions/`.
+2. Enable **Developer mode** (top right).
+3. Click **Load unpacked**.
+4. Select the `extension/` folder from this repository.
 
 ### Setup
 
@@ -2117,7 +2139,7 @@ If a dashboard tab is open on the same server, it may toast and refresh.
 ### Write token & CORS
 
 - If the server sets `NEXTDASH_WRITE_TOKEN`, paste the same value in extension **Settings → Write token**.  
-- The extension needs no CORS entry: its origin is allowed by default, whatever `NEXTDASH_CORS_ORIGINS` is set to.
+- The extension needs no CORS configuration at all: its origin is allowed by default, and its host permissions let the browser grant the request regardless of what `NEXTDASH_CORS_ORIGINS` says. That variable is only for pages of your own.
 
 See `extension/README.md` for development notes.
 
@@ -2281,6 +2303,43 @@ NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension
 ```
 
 Only matching `Origin` headers receive CORS headers; extension origins are always allowed and need no entry. Set `NEXTDASH_CORS_ORIGINS=*` to restore the pre-1.4 behaviour of answering every origin.
+
+### The capture route, for scripts and launchers
+
+The browser extension covers Chrome and its relatives. Everything else goes
+through one route, which is why [`integrations/`](integrations/) can be a folder
+of short scripts rather than a folder of clients:
+
+```
+GET /add?url=<address>&title=<optional title>[&token=<capture token>]
+```
+
+It saves to the **Inbox** — the same place the extension and the share sheet
+save to, with the same duplicate handling — and answers with a page a person can
+read, so a bookmarklet or an Apple Shortcut can simply open it and let the
+browser show the result. Anything that can open a URL or run `curl` is therefore
+an integration.
+
+Two environment variables configure every script in `integrations/`:
+**`NEXTDASH_URL`** (default `http://localhost:8080`) and **`NEXTDASH_TOKEN`**,
+which is needed only when the install runs with a write token. Give it the
+`NEXTDASH_CAPTURE_TOKEN` rather than the write token: that one opens the two
+capture routes and nothing else, so a copy sitting in a script or in a browser's
+history can at worst add a link to your inbox.
+
+```sh
+curl -s --get --data-urlencode "url=https://example.com/article" \
+     --data-urlencode "title=An article" \
+     https://nextdash.example.com/add >/dev/null
+```
+
+Use `--data-urlencode` rather than building the query by hand. An address
+carrying its own `?x=1&y=2`, or a title with an ampersand, is exactly what breaks
+a hand-built query string.
+
+[`integrations/README.md`](integrations/README.md) lists what is in the folder
+and which scripts were run against a live install rather than only
+syntax-checked — several of them need a host app to exercise at all.
 
 ### Outgoing webhooks (v1.4.0)
 
