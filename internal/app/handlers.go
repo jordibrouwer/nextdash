@@ -665,6 +665,57 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			isDrifting := bm.Monitor && bm.WatchDrift && strings.TrimSpace(bm.DriftNoticed) != ""
 
+			/*
+			 * Conditions this bookmark has been told to stop reporting.
+			 *
+			 * Applied here, before the blocks below, rather than filtered out of
+			 * the finished issue: status, flags, score and the summary counters
+			 * are all built from these booleans in one pass, and that is what
+			 * keeps a tile from disagreeing with the filter of the same name. A
+			 * condition that is ignored has to be false everywhere at once, so
+			 * this is the only place it can be turned off.
+			 *
+			 * What was hidden is kept, because the Ignored list has to be able
+			 * to say what it is hiding and offer it back.
+			 */
+			ignores := healthIgnoreSet(bm.HealthIgnored, time.Now())
+			hidden := make([]HealthIgnore, 0, len(ignores))
+			suppress := func(flag string, holds bool) bool {
+				if !holds {
+					return false
+				}
+				entry, muted := ignores[flag]
+				if !muted {
+					return true
+				}
+				hidden = append(hidden, entry)
+				return false
+			}
+			// Broken splits two ways before it is suppressed: a host that
+			// answered with the wrong content is a different condition, and a
+			// reader who ignored one has not ignored the other.
+			if isBroken {
+				if isContentFailure(strings.TrimSpace(bm.LastError)) {
+					isBroken = suppress("content", true)
+				} else {
+					isBroken = suppress("broken", true)
+				}
+			}
+			isDuplicate = suppress("duplicate", isDuplicate)
+			isShortcutConflict = suppress("shortcut-conflict", isShortcutConflict)
+			isOrphanedCategory = suppress("orphaned-category", isOrphanedCategory)
+			// Never run and overdue share a flag, so they share the switch.
+			if entry, muted := ignores["unchecked"]; muted && (isUnchecked || isStaleCheck) {
+				hidden = append(hidden, entry)
+				isUnchecked = false
+				isStaleCheck = false
+			}
+			isStale = suppress("stale", isStale)
+			isUnused = suppress("unused", isUnused)
+			isMissingPreview = suppress("missing-preview", isMissingPreview)
+			isDrifting = suppress("drift", isDrifting)
+			sort.Slice(hidden, func(i, j int) bool { return hidden[i].Flag < hidden[j].Flag })
+
 			status := "healthy"
 			// Every condition that holds, in the same priority order as status.
 			// status keeps only the first; flags keep them all, and the summary
@@ -861,10 +912,35 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			 * counter, because a tile whose number cannot be found by the filter
 			 * of the same name is the one thing this loop is built to prevent.
 			 */
-			isLinkHealthy := !isBroken
+			/*
+			 * A hidden failure is not a healthy link.
+			 *
+			 * Ignoring "stale" says the bookmark is allowed to sit unopened, and
+			 * such a bookmark is still healthy — nothing about the link is
+			 * wrong. Ignoring "broken" says nothing of the sort: it says do not
+			 * tell me. Counting that as healthy would inflate the one figure the
+			 * reader trusts, so it counts as neither, and the Ignored tile is
+			 * where it is found.
+			 */
+			hidFailure := false
+			for _, entry := range hidden {
+				if entry.Flag == "broken" || entry.Flag == "content" {
+					hidFailure = true
+				}
+			}
+			isLinkHealthy := !isBroken && !hidFailure
 			if isLinkHealthy {
 				report.Summary.HealthyCount++
 				flags = append(flags, "healthy")
+			}
+			if len(hidden) > 0 {
+				report.Summary.IgnoredCount++
+				// Status is the worst thing that holds; with everything that held
+				// now hidden, the honest answer is that this row is being ignored
+				// rather than that it is fine.
+				if status == "healthy" {
+					status = "ignored"
+				}
 			}
 
 			var monitorStats *MonitorStats
@@ -897,6 +973,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				LastOpened:             bm.LastOpened,
 				LastChecked:            bm.LastChecked,
 				LastError:              bm.LastError,
+				IgnoredFlags:           hidden,
 				BrokenSince:            bm.BrokenSince,
 				ArchiveDiedAt:          bm.ArchiveDiedAt,
 				FailureUncertain:       failureIsUncertain(bm.LastError),

@@ -303,6 +303,7 @@ class DashboardHealthMultiSelect {
                     <button type="button" class="config-btn config-btn--small" data-bulk="unmute">${esc(
                         this.t('dashboard.healthBulkUnmute', 'Unmute')
                     )}</button>
+                    ${this.renderIgnoreButtons()}
                 </div>
                 <!-- Three things that fetch a page rather than reading the
                      report: what it looks like, what its icon is, and a copy of
@@ -351,6 +352,8 @@ class DashboardHealthMultiSelect {
             heal: () => void this.bulkFollowRedirects(),
             mute: () => void this.bulkSetMuted(true),
             unmute: () => void this.bulkSetMuted(false),
+            ignore: () => void this.bulkIgnore(),
+            unignore: () => void this.bulkClearIgnores(),
             'accept-drift': () => void this.bulkAcceptDrift(),
             preview: () => void this.bulkRebuildPreviews(),
             favicon: () => void this.bulkRefreshFavicons(),
@@ -844,6 +847,95 @@ class DashboardHealthMultiSelect {
             stillBroken > 0 ? 'warning' : 'success',
             { duration: 5000 }
         );
+    }
+
+    /*
+     * Ignore what this filter is about, or give everything back.
+     *
+     * The button names the condition, because "Ignore" alone on a bar above a
+     * filtered list is the sort of button people press once and regret. On the
+     * Ignored list it turns around: there the selection exists to be handed
+     * back.
+     */
+    renderIgnoreButtons() {
+        const esc = (v) => this.health.escape(v);
+        if (this.health.filter === 'ignored') {
+            return `<button type="button" class="config-btn config-btn--small" data-bulk="unignore">${esc(
+                this.t('dashboard.healthBulkUnignore', 'Report these again')
+            )}</button>`;
+        }
+        const flag = this.health.constructor.IGNORABLE_FLAGS?.has(this.health.filter)
+            ? this.health.filter
+            : '';
+        if (!flag) return '';
+        return `<button type="button" class="config-btn config-btn--small" data-bulk="ignore">${esc(
+            this.t('dashboard.healthBulkIgnore', 'Ignore “{flag}”', { flag: this.health.flagLabel(flag) })
+        )}</button>`;
+    }
+
+    /** The ticked rows as write targets, dropping anything the report cannot place. */
+    ignoreTargets() {
+        return this.selectedIssues()
+            .map((issue) => ({
+                pageId: Number(issue.pageId ?? issue.pageID ?? 0),
+                index: Number(issue.index ?? -1),
+                url: issue.url || '',
+            }))
+            .filter((t) => t.pageId > 0 && t.index >= 0 && t.url);
+    }
+
+    async bulkIgnore() {
+        const flag = this.health.constructor.IGNORABLE_FLAGS?.has(this.health.filter)
+            ? this.health.filter
+            : '';
+        const targets = this.ignoreTargets();
+        if (!flag || !targets.length) return;
+        window.nextdashTrack?.('health:bulk-ignore', { count: targets.length, flag });
+
+        const body = await this.health.writeIgnores(targets, { add: [flag] });
+        if (!body) return;
+        this.clear();
+        this.health.dash.showNotification(
+            this.t('dashboard.healthBulkIgnored', '“{flag}” hidden for {count} bookmark(s).',
+                { flag: this.health.flagLabel(flag), count: Number(body.changed) || targets.length }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    await this.health.writeIgnores(targets, { remove: [flag] });
+                },
+            });
+    }
+
+    async bulkClearIgnores() {
+        const targets = this.ignoreTargets();
+        if (!targets.length) return;
+        window.nextdashTrack?.('health:bulk-unignore', { count: targets.length });
+
+        // What each row was hiding, so the undo can put back exactly that
+        // rather than a guess.
+        const before = this.selectedIssues().map((issue) => ({
+            issue,
+            flags: (this.health.ignoredFlagsOf(issue) || []).map((entry) => entry.flag),
+        }));
+
+        const body = await this.health.writeIgnores(targets, { clear: true });
+        if (!body) return;
+        this.clear();
+        this.health.dash.showNotification(
+            this.t('dashboard.healthBulkUnignored', 'Reporting {count} bookmark(s) again.',
+                { count: Number(body.changed) || targets.length }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    for (const entry of before) {
+                        if (entry.flags.length) {
+                            await this.health.writeIgnores(entry.issue, { add: entry.flags });
+                        }
+                    }
+                },
+            });
     }
 
     async bulkSetMuted(muted) {

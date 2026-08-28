@@ -2765,3 +2765,22 @@ body[data-layout-version="modern"] .health-view-empty {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     color: var(--accent-primary);
 }
+
+/*
+ * What a row is not reporting.
+ *
+ * Quiet, because it is the absence of a problem rather than one: it sits in the
+ * meta line beside the domain, in the tertiary colour the other badges use for
+ * context rather than alarm. Without it an ignore would be invisible everywhere
+ * except the Ignored list, and a toggle with no visible state is one nobody
+ * trusts.
+ */
+.health-view-ignored-badge {
+    flex: none;
+    font-size: 0.7rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    border: 1px dashed var(--border-secondary);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}

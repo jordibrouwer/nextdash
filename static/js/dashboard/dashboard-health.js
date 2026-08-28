@@ -22,6 +22,9 @@ class DashboardHealth {
         unused: 7,
         'missing-preview': 8,
         healthy: 9,
+        // Last, because it is not a condition but the absence of reporting: a
+        // row whose every problem is muted has nothing left to rank it by.
+        ignored: 10,
     };
 
     /**
@@ -32,6 +35,21 @@ class DashboardHealth {
      * certificate quietly approaching expiry.
      */
     static MONITOR_GROUP_RANK = { down: 0, drift: 1, cert: 2, healthy: 3 };
+
+    /*
+     * The conditions a row can be told to stop reporting.
+     *
+     * Mirrors knownHealthFlags in models.go, which validates what this sends.
+     * "healthy" is not one: it is the absence of a problem, and nothing is
+     * served by hiding it.
+     */
+    static IGNORABLE_FLAGS = new Set([
+        'broken', 'content', 'duplicate', 'shortcut-conflict', 'orphaned-category',
+        'unchecked', 'stale', 'unused', 'missing-preview', 'drift',
+    ]);
+
+    /** How long z snoozes for. Long enough to be a season, short enough to come back. */
+    static SNOOZE_DAYS = 30;
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -160,6 +178,58 @@ class DashboardHealth {
 
     bandClass(score) {
         return `health-view-band-${this.scoreClass(score)}`;
+    }
+
+    /**
+     * What this row has been told not to report, as the server hid it.
+     *
+     * A report cached before ignores existed carries none, which reads as an
+     * empty list rather than an error — the same fallback the flags have.
+     */
+    ignoredFlagsOf(issue) {
+        const entries = Array.isArray(issue?.ignoredFlags) ? issue.ignoredFlags : [];
+        return entries.filter((entry) => entry && typeof entry.flag === 'string');
+    }
+
+    /**
+     * The condition an ignore key acts on for this row.
+     *
+     * On a filter it is that filter: you narrowed to Stale and are saying "not
+     * this one". On All or Ignored there is no such answer, so it falls back to
+     * the row's own status — the worst thing that holds, which is what the row
+     * is showing you. Filters that are not conditions (all, monitored,
+     * certificates, ignored) never answer.
+     */
+    ignoreTargetFlag(issue) {
+        const fromFilter = DashboardHealth.IGNORABLE_FLAGS.has(this.filter) ? this.filter : '';
+        if (fromFilter) return fromFilter;
+        const status = String(issue?.status || '');
+        return DashboardHealth.IGNORABLE_FLAGS.has(status) ? status : '';
+    }
+
+    /**
+     * What this row is not reporting, said on the row itself.
+     *
+     * Without it an ignore is invisible from everywhere except the Ignored
+     * list, and a toggle with no visible state is a toggle nobody trusts. A
+     * snooze says when it comes back, because "hidden" and "hidden until March"
+     * are different promises.
+     */
+    renderIgnoredBadge(issue) {
+        const ignored = this.ignoredFlagsOf(issue);
+        if (!ignored.length) return '';
+        const names = ignored.map((entry) => this.flagLabel(entry.flag)).join(', ');
+        const soonest = ignored
+            .map((entry) => Number(entry.until) || 0)
+            .filter((until) => until > 0)
+            .sort((a, b) => a - b)[0] || 0;
+        const title = soonest
+            ? this.t('dashboard.healthIgnoredUntil', 'Not reported until {date}',
+                { date: new Date(soonest).toLocaleDateString() })
+            : this.t('dashboard.healthIgnoredHint', 'Not reported for this bookmark');
+        return `<span class="health-view-ignored-badge" title="${this.escape(title)}">${this.escape(
+            this.t('dashboard.healthIgnoredBadge', 'ignored: {flags}', { flags: names })
+        )}</span>`;
     }
 
     /** Stable identity for a row across re-renders: page + index. */
@@ -527,6 +597,9 @@ class DashboardHealth {
         // is answered from the report's certificate map instead of from the
         // row's own flags -- certFor() already does that lookup for the badge.
         if (filter === 'certificates') return Boolean(this.certFor(issue));
+        // Ignored is answered from what the report hid rather than from flags:
+        // the whole point is that those conditions are no longer in flags.
+        if (filter === 'ignored') return this.ignoredFlagsOf(issue).length > 0;
 
         const flags = Array.isArray(issue?.flags) ? issue.flags : null;
         if (flags) return flags.includes(filter);
@@ -954,6 +1027,23 @@ class DashboardHealth {
             this.multiSelect?.toggle(this.selectedKey);
             this.moveKeyboardSelection(1, rows);
             return true;
+        }
+        /*
+         * n ignores the condition you are looking at, z snoozes it for a month.
+         *
+         * Both are toggles: pressed on a row that already ignores that
+         * condition, they give it back. One letter each way is what makes this
+         * usable on a filtered list — narrow to Stale, walk down, press n on the
+         * ones that are allowed to be old.
+         */
+        if ((e.key === 'n' || e.key === 'z') && this.selectedKey) {
+            const issue = this.selectedIssue();
+            if (issue) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.toggleIgnore(issue, { snooze: e.key === 'z' });
+                return true;
+            }
         }
         // X takes everything the current filter shows — the whole broken list in
         // one key, which is the case this view exists for.
@@ -1721,6 +1811,120 @@ class DashboardHealth {
      *   and the re-render, so a bulk run reports once at the end instead of
      *   stacking one toast and one full reload per bookmark.
      */
+    /*
+     * Tell the report to stop -- or start again -- reporting one condition.
+     *
+     * One endpoint for a row and for a selection, because the health view sends
+     * a single target from the row menu and the whole selection from the bulk
+     * bar, and two routes would be two things to keep in step.
+     *
+     * The toast carries the way back. Ignoring is by definition the act of
+     * making something invisible, which is exactly when a misclick goes
+     * unnoticed, so every one of these can be undone from where it happened.
+     */
+    async writeIgnores(targets, { add = [], remove = [], clear = false, untilMs = 0 } = {}) {
+        const list = (Array.isArray(targets) ? targets : [targets])
+            .filter(Boolean)
+            .map((issue) => ({ pageId: issue.pageId, index: issue.index, url: issue.url }));
+        if (!list.length) return null;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
+        try {
+            const res = await fetcher('/api/health/ignore', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ targets: list, add, remove, clear, untilMs }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            await this.loadAndRender({ refresh: true });
+            return body;
+        } catch {
+            this.dash.showNotification(
+                this.t('dashboard.healthIgnoreFailed', 'Could not change what this bookmark reports.'),
+                'error');
+            return null;
+        }
+    }
+
+    /** The label for one condition, as the filter pills name it. */
+    flagLabel(flag) {
+        const labels = {
+            broken: this.t('dashboard.healthFilterBroken', 'Broken'),
+            content: this.t('dashboard.healthFilterContent', 'Content'),
+            duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
+            'shortcut-conflict': this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts'),
+            'orphaned-category': this.t('dashboard.healthFilterOrphanedCategory', 'Missing category'),
+            unchecked: this.t('dashboard.healthFilterUnchecked', 'Unchecked'),
+            stale: this.t('dashboard.healthFilterStale', 'Stale'),
+            unused: this.t('dashboard.healthFilterUnused', 'Unused'),
+            'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
+            drift: this.t('dashboard.healthFilterDrift', 'Drift'),
+        };
+        return labels[flag] || flag;
+    }
+
+    /**
+     * Ignore or un-ignore one condition on one row, from the key or the menu.
+     *
+     * A toggle rather than two actions: if the row already ignores what this
+     * would ignore, the same gesture takes it back. That is what makes one
+     * letter enough for both directions.
+     */
+    async toggleIgnore(issue, { snooze = false } = {}) {
+        if (!issue) return;
+        const already = this.ignoredFlagsOf(issue);
+        /*
+         * On the Ignored list the gesture means one thing: give it back.
+         *
+         * Not "ignore whatever this row still shows" — a row can be hiding one
+         * condition and reporting another, and on the list of things you have
+         * silenced the only sensible reading of the key is undo.
+         */
+        const onIgnoredList = this.filter === 'ignored';
+        const fromFilter = onIgnoredList ? '' : this.ignoreTargetFlag(issue);
+        if (!fromFilter && already.length) {
+            const body = await this.writeIgnores(issue, { clear: true });
+            if (body) {
+                this.dash.showNotification(
+                    this.t('dashboard.healthIgnoreCleared', 'Reporting this bookmark again.'), 'success');
+            }
+            return;
+        }
+        if (!fromFilter) {
+            this.dash.showNotification(
+                this.t('dashboard.healthIgnoreNothing', 'Nothing to ignore on this row.'), 'info');
+            return;
+        }
+        const isIgnored = already.some((entry) => entry.flag === fromFilter);
+        if (isIgnored) {
+            const body = await this.writeIgnores(issue, { remove: [fromFilter] });
+            if (body) {
+                this.dash.showNotification(
+                    this.t('dashboard.healthIgnoreRemoved', 'Reporting “{flag}” again.',
+                        { flag: this.flagLabel(fromFilter) }), 'success');
+            }
+            return;
+        }
+        const untilMs = snooze
+            ? Date.now() + DashboardHealth.SNOOZE_DAYS * 24 * 60 * 60 * 1000
+            : 0;
+        const body = await this.writeIgnores(issue, { add: [fromFilter], untilMs });
+        if (!body) return;
+        const message = snooze
+            ? this.t('dashboard.healthIgnoreSnoozed', '“{flag}” hidden for {days} days.',
+                { flag: this.flagLabel(fromFilter), days: DashboardHealth.SNOOZE_DAYS })
+            : this.t('dashboard.healthIgnoreAdded', '“{flag}” hidden for this bookmark.',
+                { flag: this.flagLabel(fromFilter) });
+        this.dash.showNotification(message, 'success', {
+            duration: 8000,
+            undoCallback: async () => {
+                await this.writeIgnores(issue, { remove: [fromFilter] });
+            },
+        });
+    }
+
     async recheckIssue(issue, { silent = false } = {}) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
@@ -4530,6 +4734,10 @@ class DashboardHealth {
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['certificates', this.t('dashboard.healthFilterCertificates', 'Certificates')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
+            // Last, and only once there is something in it: a list of what you
+            // have chosen not to see is worth having, and worth being able to
+            // audit, but it is not where anyone starts.
+            ['ignored', this.t('dashboard.healthFilterIgnored', 'Ignored')],
         ];
         return secondary.filter(([key]) => this.filterCount(key) > 0 || this.filter === key);
     }
@@ -6133,6 +6341,32 @@ class DashboardHealth {
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="checkmode">${this.escape(
             this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: this.checkModeMeta(this.checkModeOf(issue)).label })
         )}</button>`);
+        /*
+         * Stop reporting one condition, and take it back.
+         *
+         * The key does the common case; the menu is where you can see which
+         * condition is being acted on before you act -- and the only place a row
+         * with several problems can be told which one to hide.
+         */
+        const ignored = this.ignoredFlagsOf(issue);
+        const target = this.ignoreTargetFlag(issue);
+        if (target || ignored.length) {
+            items.push(`<p class="health-view-menu-label" role="presentation">${this.escape(this.t('dashboard.healthMenuIgnore', 'Reporting'))}</p>`);
+        }
+        if (target && !ignored.some((entry) => entry.flag === target)) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="ignore">${this.escape(
+                this.t('dashboard.healthIgnoreFlag', 'Ignore “{flag}”', { flag: this.flagLabel(target) })
+            )}<kbd>n</kbd></button>`);
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="snooze">${this.escape(
+                this.t('dashboard.healthSnoozeFlag', 'Ignore “{flag}” for {days} days',
+                    { flag: this.flagLabel(target), days: DashboardHealth.SNOOZE_DAYS })
+            )}<kbd>z</kbd></button>`);
+        }
+        ignored.forEach((entry) => {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="unignore" data-flag="${this.escape(entry.flag)}">${this.escape(
+                this.t('dashboard.healthUnignoreFlag', 'Report “{flag}” again', { flag: this.flagLabel(entry.flag) })
+            )}</button>`);
+        });
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${this.escape(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-menu-action="delete">${this.escape(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
 
@@ -6195,6 +6429,7 @@ class DashboardHealth {
                         <span>${this.escape(domain)}</span>
                         ${this.renderCertBadge(issue)}
                         ${this.renderDriftBadge(issue)}
+                        ${this.renderIgnoredBadge(issue)}
                         ${this.renderMutedBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
@@ -6319,11 +6554,27 @@ class DashboardHealth {
             // Hand off to the popover rather than duplicating the three options
             // here, so there is one place that explains what the modes mean.
             checkmode: () => this.toggleMenu(key, 'check'),
+            ignore: () => void this.toggleIgnore(issue),
+            snooze: () => void this.toggleIgnore(issue, { snooze: true }),
         };
         row.querySelectorAll('[data-menu-action]').forEach((item) => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                menuActions[item.getAttribute('data-menu-action')]?.();
+                const action = item.getAttribute('data-menu-action');
+                // The un-ignore entries name their own condition, so they are
+                // one handler rather than one entry each in the map above.
+                if (action === 'unignore') {
+                    const flag = item.getAttribute('data-flag');
+                    void this.writeIgnores(issue, { remove: [flag] }).then((body) => {
+                        if (body) {
+                            this.dash.showNotification(
+                                this.t('dashboard.healthIgnoreRemoved', 'Reporting “{flag}” again.',
+                                    { flag: this.flagLabel(flag) }), 'success');
+                        }
+                    });
+                    return;
+                }
+                menuActions[action]?.();
             });
         });
 
