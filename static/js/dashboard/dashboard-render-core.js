@@ -240,7 +240,7 @@ class DashboardRenderCore {
         target.setAttribute('role', 'grid');
         target.setAttribute(
             'aria-label',
-            d.language?.t('dashboard.tagFilterGridLabel') || 'Filtered bookmarks'
+            d.formatDashboardLabel('tagFilterGridLabel', {}, 'Filtered bookmarks')
         );
     }
 

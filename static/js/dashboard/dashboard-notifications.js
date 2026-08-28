@@ -50,7 +50,12 @@ class DashboardNotifications {
         const notifOpts = { ...options };
         if (typeof options.retry === 'function') {
             notifOpts.onAction = options.retry;
-            notifOpts.actionLabel = d.language?.t('dashboard.retry') || 'Retry';
+            // Through tDashboard, which compares the answer against the key it
+            // asked for: t() returns the key itself when there is no string, so
+            // `t(...) || 'Retry'` puts "dashboard.retry" on the button rather
+            // than the fallback -- which is what the button read for as long as
+            // the key was missing.
+            notifOpts.actionLabel = this.tDashboard('retry', 'Retry');
             delete notifOpts.retry;
         }
         this.showNotification(message, 'error', notifOpts);

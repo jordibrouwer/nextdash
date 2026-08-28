@@ -673,6 +673,8 @@
     "bookmarkOrderChangesReverted": "Les modifications ont été annulées.",
     "shortcutConflictOnBookmark": "Le raccourci « {shortcut} » existe déjà sur un autre favori.",
     "loadPageBookmarksFailed": "Impossible de charger les favoris de cette page.",
+    "retry": "Réessayer",
+    "tagFilterGridLabel": "Signets filtrés",
     "refreshGlobalShortcutsFailed": "Impossible d'actualiser les raccourcis globaux.",
     "staleSectionNotVisible": "Section inactifs non visible (désactivée dans les réglages, mauvais filtre de page ou aucune entrée inactifs).",
     "pageTabsAria": "Pages du tableau de bord",

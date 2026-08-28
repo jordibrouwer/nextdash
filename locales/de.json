@@ -673,6 +673,8 @@
     "bookmarkOrderChangesReverted": "Änderungen wurden zurückgesetzt.",
     "shortcutConflictOnBookmark": "Kürzel \"{shortcut}\" existiert bereits bei einem anderen Lesezeichen.",
     "loadPageBookmarksFailed": "Lesezeichen für diese Seite konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "tagFilterGridLabel": "Gefilterte Lesezeichen",
     "refreshGlobalShortcutsFailed": "Globale Kürzel konnten nicht aktualisiert werden.",
     "staleSectionNotVisible": "Bereich „Veraltet“ nicht sichtbar (in Einstellungen deaktiviert, falscher Seitenfilter oder keine veralteten Einträge).",
     "pageTabsAria": "Dashboard-Seiten",

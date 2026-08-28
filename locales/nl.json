@@ -676,6 +676,8 @@
     "bookmarkOrderChangesReverted": "Wijzigingen zijn teruggedraaid.",
     "shortcutConflictOnBookmark": "Sneltoets \"{shortcut}\" bestaat al op een andere bladwijzer.",
     "loadPageBookmarksFailed": "Bladwijzers voor deze pagina laden mislukt.",
+    "retry": "Opnieuw",
+    "tagFilterGridLabel": "Gefilterde bookmarks",
     "refreshGlobalShortcutsFailed": "Globale sneltoetsen vernieuwen mislukt.",
     "staleSectionNotVisible": "Verouderde sectie niet zichtbaar (uitgeschakeld in instellingen, verkeerd paginafilter of geen verouderde rijen).",
     "pageTabsAria": "Dashboardpagina's",

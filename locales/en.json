@@ -676,6 +676,8 @@
     "bookmarkOrderChangesReverted": "Changes were reverted.",
     "shortcutConflictOnBookmark": "Shortcut \"{shortcut}\" already exists on another bookmark.",
     "loadPageBookmarksFailed": "Failed to load bookmarks for this page.",
+    "retry": "Retry",
+    "tagFilterGridLabel": "Filtered bookmarks",
     "refreshGlobalShortcutsFailed": "Failed to refresh global shortcuts.",
     "staleSectionNotVisible": "Stale section not visible (disabled in settings, wrong page filter, or no stale rows).",
     "pageTabsAria": "Dashboard pages",
