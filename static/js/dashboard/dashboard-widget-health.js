@@ -90,10 +90,17 @@
             name.textContent = label(dash, figure.labelKey, figure.fallback);
 
             row.append(value, name);
-            row.addEventListener('click', () => {
-                // Straight to the rows behind the number: a count you cannot act
-                // on is a decoration.
-                window.DashboardWidgetUtils?.openHealthFiltered(dash, figure.filter);
+            // Bound through the shared helper so the row also carries what it
+            // does: the right-click menu and the keyboard read that, and a
+            // closure says nothing to either.
+            window.DashboardWidgetUtils?.bindRowAction(row, dash, {
+                labelKey: 'widgetActionOpenHealth',
+                labelFallback: 'Open Health',
+                run: () => {
+                    // Straight to the rows behind the number: a count you cannot
+                    // act on is a decoration.
+                    window.DashboardWidgetUtils?.openHealthFiltered(dash, figure.filter);
+                },
             });
             list.appendChild(row);
         });

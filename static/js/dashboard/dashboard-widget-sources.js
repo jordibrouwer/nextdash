@@ -94,8 +94,12 @@
             if (ran) detail.title = ran;
 
             row.append(name, detail);
-            row.addEventListener('click', () => {
-                dash.config?.openConfigView?.('sources') ?? dash.showView?.('config');
+            window.DashboardWidgetUtils?.bindRowAction(row, dash, {
+                labelKey: 'widgetActionOpenSources',
+                labelFallback: 'Open Sources',
+                run: () => {
+                    dash.config?.openConfigView?.('sources') ?? dash.showView?.('config');
+                },
             });
             list.appendChild(row);
         });

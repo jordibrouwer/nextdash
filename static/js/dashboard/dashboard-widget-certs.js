@@ -101,8 +101,12 @@
             detail.title = new Date(entry.expiry).toLocaleDateString();
 
             row.append(name, detail);
-            row.addEventListener('click', () => {
-                window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates');
+            window.DashboardWidgetUtils?.bindRowAction(row, dash, {
+                labelKey: 'widgetActionOpenHealth',
+                labelFallback: 'Open Health',
+                run: () => {
+                    window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates');
+                },
             });
             list.appendChild(row);
         });

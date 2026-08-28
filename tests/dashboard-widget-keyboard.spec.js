@@ -170,3 +170,89 @@ test('Shift+Home from inside a widget lands on the widget header', async ({ page
     });
     expect(focused).toEqual({ isHeader: true, inWidget: true });
 });
+
+/*
+The row says what it does, and the menu repeats it.
+
+A click handler is a closure: it works for the pointer and tells nothing else
+what the row is for. Right-click on a row — and Shift+F10 with the cursor on it,
+which arrives as the same event — leads the menu with that row's own action,
+followed by the widget's, because the block under the row is still what is being
+pointed at.
+*/
+test.describe('the menu on a widget row', () => {
+    test('leads with what the row does, then the widget actions', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        const row = page.locator('.dashboard-widget button[data-widget-action]').first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.click({ button: 'right' });
+
+        const menu = page.locator('#widget-context-menu');
+        await expect(menu).toBeVisible({ timeout: 10_000 });
+        const actions = await menu.evaluate((m) =>
+            [...m.querySelectorAll('[data-action]')].map((el) => el.getAttribute('data-action')));
+        expect(actions[0]).toBe('row-open');
+        expect(actions).toContain('rename');
+        expect(actions).toContain('width');
+        expect(actions).toContain('close');
+        // Named after the row's own action rather than a second description
+        // written in the menu.
+        await expect(menu.locator('[data-action="row-open"]')).toContainText('Health');
+    });
+
+    test('picking that entry does what clicking the row does', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        const row = page.locator('.dashboard-widget button[data-widget-action]').first();
+        await row.click({ button: 'right' });
+        await page.locator('#widget-context-menu [data-action="row-open"]').click();
+
+        await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 15_000 })
+            .toContain('health');
+    });
+
+    test('the header menu carries no row entry', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        await page.locator('.dashboard-widget .category-title').click({ button: 'right' });
+        const menu = page.locator('#widget-context-menu');
+        await expect(menu).toBeVisible({ timeout: 10_000 });
+        await expect(menu.locator('[data-action="row-open"]')).toHaveCount(0);
+    });
+
+    test('a row standing for an address offers the address, and Ctrl+Enter opens it', async ({ page }) => {
+        // The uptime tile's rows are monitored bookmarks, so they carry one.
+        await dashboardWithAWidget(page, { widgets: [{ type: 'uptime', title: 'Uptime' }] });
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = {
+                'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+            };
+            await f('/api/bookmarks/add', { method: 'POST', headers: h, body: JSON.stringify({ page: 1, bookmark: {
+                // An address this test can actually reach, so the new tab lands
+                // somewhere rather than failing to resolve.
+                name: 'Watched', url: `${location.origin}/?watched=1`, checkStatus: true, monitor: true } }) });
+            await f('/api/bookmark-health?view=facts&refresh=1');
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+
+        const row = page.locator('.dashboard-widget button[data-widget-href]').first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.click({ button: 'right' });
+        await expect(page.locator('#widget-context-menu [data-action="row-open-tab"]')).toBeVisible({ timeout: 10_000 });
+        await page.keyboard.press('Escape');
+
+        // From the keyboard: plain Enter is the tile's own action, Ctrl+Enter is
+        // the address — the same split a bookmark row has. Focus is put on the
+        // row the way Tab would, which the cursor has to follow.
+        await row.focus();
+        await expect.poll(() => cursor(page).then((at) => at?.widget), { timeout: 10_000 }).toBe(true);
+        const opened = page.waitForEvent('popup', { timeout: 10_000 });
+        await page.keyboard.press('Control+Enter');
+        const tab = await opened;
+        await tab.waitForLoadState('domcontentloaded').catch(() => {});
+        expect(tab.url()).toContain('watched=1');
+    });
+});

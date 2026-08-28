@@ -173,8 +173,21 @@
             if (wantSpark && row.heartbeat?.length) {
                 button.appendChild(sparkline(row.heartbeat));
             }
-            button.addEventListener('click', () => {
-                window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored');
+            /*
+             * A monitored row stands for a bookmark, so it carries its address.
+             *
+             * Clicking still opens Health on the monitored list -- that is what
+             * the tile is for -- but the menu can now offer the site itself, and
+             * Ctrl/Cmd+Enter opens it from the keyboard the way it does on a
+             * bookmark row.
+             */
+            window.DashboardWidgetUtils?.bindRowAction(button, dash, {
+                labelKey: 'widgetActionOpenHealth',
+                labelFallback: 'Open Health',
+                href: row.url,
+                run: () => {
+                    window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored');
+                },
             });
             list.appendChild(button);
         });

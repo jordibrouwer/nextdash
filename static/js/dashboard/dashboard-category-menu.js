@@ -85,28 +85,49 @@ class DashboardCategoryMenu {
         }
         blockEl.dataset.widgetMenuBound = '1';
 
-        titleEl.addEventListener('contextmenu', (e) => {
+        const openFor = (e, anchorEl, rowEl) => {
             const d = this.dash;
             if (e.shiftKey) return; // escape hatch to the native menu
             if (d.uiHelpers?.isModalOpen?.()) return;
             if (titleEl.querySelector('.category-rename-input')) return;
             e.preventDefault();
             e.stopPropagation();
-            // The Menu key raises this with no pointer behind it; taken
-            // literally the menu lands in the corner of the window.
+            // The Menu key and Shift+F10 raise this with no pointer behind them;
+            // taken literally the menu lands in the corner of the window.
             const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
-            const box = titleEl.getBoundingClientRect();
+            const box = anchorEl.getBoundingClientRect();
             this.showWidget(titleEl, widget, fromPointer
                 ? { x: e.clientX, y: e.clientY }
-                : { x: box.left + 8, y: box.bottom });
+                : { x: box.left + 8, y: box.bottom }, rowEl);
+        };
+
+        titleEl.addEventListener('contextmenu', (e) => openFor(e, titleEl, null));
+
+        /*
+         * The same menu from a row inside the widget.
+         *
+         * A row that does something should say what, wherever the reader asks --
+         * and asking is right-click, or Shift+F10 with the cursor on it, both of
+         * which arrive here as one event. The row's own action leads the menu;
+         * the widget's actions follow it, because the block under the row is
+         * still the thing being pointed at.
+         */
+        const bodyEl = blockEl.querySelector('.dashboard-widget-body');
+        bodyEl?.addEventListener('contextmenu', (e) => {
+            const rowEl = e.target instanceof Element
+                ? e.target.closest('button[data-widget-action]')
+                : null;
+            openFor(e, rowEl || bodyEl, rowEl);
         });
     }
 
     /** The menu for a widget: its name, its width, and putting it away. */
-    showWidget(titleEl, widget, point) {
+    showWidget(titleEl, widget, point, rowEl = null) {
         const wide = this.widgetIsWide(widget);
         const canWiden = this.widgetCanWiden();
+        const rowEntries = this.widgetRowEntries(rowEl);
         const entries = [
+            ...rowEntries,
             { id: 'rename', label: this.t('widgetMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             {
                 // The label says what the click will do, like the category's
@@ -137,11 +158,45 @@ class DashboardCategoryMenu {
         this._openMenu({
             id: 'widget-context-menu',
             ariaLabel: this.t('widgetMenuTitle', 'Widget actions'),
-            hint: this.widgetName(widget),
+            // The row when the menu was opened on one: the hint says what is
+            // being acted on, and on a row that is the row.
+            hint: rowEl ? this.widgetRowName(rowEl) : this.widgetName(widget),
             entries,
             point,
-            onPick: (action) => { void this.runWidgetAction(action, titleEl, widget); },
+            onPick: (action) => { void this.runWidgetAction(action, titleEl, widget, rowEl); },
         });
+    }
+
+    /**
+     * What the row under the pointer offers, if anything.
+     *
+     * Read off the row rather than guessed: the widget wrote its action there
+     * when it bound the click, so the menu names the same thing that happens on
+     * a click instead of a second description that can drift from it. A row that
+     * carries an address gets the second entry a bookmark row has.
+     */
+    widgetRowEntries(rowEl) {
+        const action = rowEl?.dataset?.widgetAction;
+        if (!action) {
+            return [];
+        }
+        const entries = [{ id: 'row-open', label: action, icon: '→', key: 'Enter' }];
+        if (rowEl.dataset.widgetHref) {
+            entries.push({
+                id: 'row-open-tab',
+                label: this.t('widgetMenuOpenNewTab', 'Open in a new tab'),
+                icon: '↗',
+                key: 'Ctrl+Enter',
+            });
+        }
+        entries.push({ separator: true });
+        return entries;
+    }
+
+    /** The row's own text, trimmed to something a menu hint can carry. */
+    widgetRowName(rowEl) {
+        const text = String(rowEl?.textContent || '').trim().replace(/\s+/g, ' ');
+        return text.length > 48 ? `${text.slice(0, 47)}…` : (text || '—');
     }
 
     /** What the header shows: the widget's own title, or its type's name. */
@@ -166,10 +221,19 @@ class DashboardCategoryMenu {
         return Number(this.dash.renderCore?.getEffectiveColumnsPerRow?.()) > 1;
     }
 
-    async runWidgetAction(action, titleEl, widget) {
+    async runWidgetAction(action, titleEl, widget, rowEl = null) {
         const d = this.dash;
         window.nextdashTrack?.('widget:context-menu', { action });
 
+        if (action === 'row-open') {
+            rowEl?.click();
+            return;
+        }
+        if (action === 'row-open-tab') {
+            const href = rowEl?.dataset?.widgetHref;
+            if (href) window.open(href, '_blank', 'noopener');
+            return;
+        }
         if (action === 'rename') {
             this.startWidgetRename(titleEl, widget);
             return;
@@ -497,6 +561,14 @@ class DashboardCategoryMenu {
 
         const items = [];
         entries.forEach((action) => {
+            // A rule of its own, for a menu built of two halves -- what the row
+            // does, then what the block does.
+            if (action.separator) {
+                const rule = document.createElement('div');
+                rule.className = 'move-popover-divider';
+                pop.appendChild(rule);
+                return;
+            }
             if (action.danger) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';

@@ -88,7 +88,11 @@
                 source.textContent = String(item.source).trim();
                 row.appendChild(source);
             }
-            row.addEventListener('click', () => { dash.showView?.('inbox'); });
+            window.DashboardWidgetUtils?.bindRowAction(row, dash, {
+                labelKey: 'widgetActionOpenInbox',
+                labelFallback: 'Open Inbox',
+                run: () => { dash.showView?.('inbox'); },
+            });
             list.appendChild(row);
         });
         // What did not fit is stated rather than dropped: five rows out of

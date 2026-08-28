@@ -384,6 +384,28 @@ class KeyboardNavigation {
                 return;
             }
 
+            /*
+             * Ctrl/Cmd+Enter on a widget row that stands for an address.
+             *
+             * Above the modifier guard for the same reason Ctrl/Cmd+A is: the
+             * guard below sends every chord to the browser, which is right for a
+             * bookmark row -- its Enter target is a link, so the browser opens
+             * the new tab itself. A widget row is a button, and nothing would
+             * happen at all.
+             */
+            if (
+                (e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'Enter')
+                && this._gridNavActive()
+            ) {
+                const href = this.navigableElements[this.currentIndex]?.dataset?.widgetHref;
+                if (href) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    window.open(href, '_blank', 'noopener');
+                    return;
+                }
+            }
+
             // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
@@ -417,11 +439,20 @@ class KeyboardNavigation {
 
             this._focusInLayout = dashboardLayout;
             this._focusInHandler = (e) => {
+                /*
+                 * Focus landing on a stop moves the cursor to it.
+                 *
+                 * A bookmark row delegates focus to its link, so that is what
+                 * arrives here and the row above it is the stop. A widget's
+                 * button is the stop itself -- and until it was one, tabbing
+                 * into a widget left the cursor behind on a bookmark, so the
+                 * next Enter acted somewhere else entirely.
+                 */
                 const link = e.target.closest?.('a.bookmark-open');
-                if (!link) {
-                    return;
-                }
-                const row = link.closest('.bookmark-link');
+                const widgetButton = this._isWidgetElement(e.target)
+                    ? e.target.closest('button')
+                    : null;
+                const row = link ? link.closest('.bookmark-link') : widgetButton;
                 if (!row) {
                     return;
                 }
@@ -1888,6 +1919,23 @@ class KeyboardNavigation {
             const currentElement = this.navigableElements[this.currentIndex];
             if (this._isShowMoreElement(currentElement)) {
                 this.toggleShowMoreForCurrent(currentElement);
+                return;
+            }
+            /*
+             * A widget row that stands for an address opens it in a new tab.
+             *
+             * Plain Enter still does what a click does -- the tile's own job,
+             * which for a monitored row is the health view. The address is only
+             * reached deliberately, the same split a bookmark row has between
+             * opening here and opening beside.
+             *
+             * Dispatched as window.open rather than a ctrl-click on the button:
+             * the button's handler would run as well, so the reader would get
+             * the tab and be moved off the dashboard at once.
+             */
+            const widgetHref = currentElement.dataset?.widgetHref;
+            if (widgetHref && newTab) {
+                window.open(widgetHref, '_blank', 'noopener');
                 return;
             }
             const openLink = currentElement.querySelector && currentElement.querySelector('a.bookmark-open');
