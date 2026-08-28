@@ -3968,6 +3968,16 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Data & backups has a strip as well, and was the last section a
+            // spotlight could name a tab for and land on the wrong one — the
+            // server log sits three tabs along from where it opens.
+            if (target.dbTab && target.section === 'data-backups') {
+                this.dbTab = target.dbTab;
+                if (this.section === 'data-backups') {
+                    this.render();
+                    return;
+                }
+            }
             // Bookmarks has a strip too, now that its settings live on one.
             if (target.bmTab && target.section === 'bookmarks') {
                 this.bmTab = target.bmTab;

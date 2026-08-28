@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.2 — 28 August 2026](#v142--28-august-2026)
 - [v1.4.1.2 — 28 August 2026](#v1412--28-august-2026)
 - [v1.4.1.1 — 27 August 2026](#v1411--27-august-2026)
 - [v1.4.0 — 27 August 2026](#v140--27-august-2026)
@@ -179,6 +180,59 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.2 — 28 August 2026
+
+Widgets answer to the right-click and the keyboard the way categories do, Health
+can be told to stop reporting a condition you have already judged, and the
+server log was rebuilt to say what it is doing in sentences someone running
+nextDash can act on.
+
+### Widgets
+
+- **new** — **a widget is renamed, resized and closed from its own header.** Right-click a widget title for rename, one-column/two-column, fold, settings and close. Rename reuses the category long-press/F2 route rather than a second one, so the same input, the same Escape and the same save path serve both; the name it writes is the one Config → Widgets shows. Close is *disable in Config → Widgets*, not a delete, so the widget and its settings survive being put away. `dashboard-category-menu.js` gained `bindWidget`/`showWidget`, and `saveWidgetPatch` in `dashboard-render-core.js` sends only the `widgets` key, rolls back on failure and guards on the page still being the one that was edited.
+- **new** — **the keyboard goes into a widget instead of around it.** Arrow keys step into a widget body and move through its rows the way they move through a category's, Enter opens the row under the cursor, and every action in the right-click menu has a key. `keyboard-navigation.js` now counts widget-body buttons as navigable, and the cursor is captured and restored across a widget refresh so a live-updating tile does not throw the reader out.
+- **new** — **a tour of what a custom widget can reach**, opening the first time Config → Widgets is visited. Seven steps with a CSS hero animation; `static/js/widgets-tutorial.js` and its stylesheet, loaded lazily.
+- **fix** — **the uptime tile fills itself in.** It rendered *Open Health once to fill this in* until the Health view had been visited, because the tile read a store that only that view populated. `?view=facts` now carries `uptime7d`, `downSince` and a per-bucket `heartbeat` string, and the row filter keeps monitored rows that have no samples yet rather than dropping them.
+- **fix** — **a width change leaves the block where the reader is looking.** Switching one column to two rebuilt the grid and sent the page to the top. `redrawKeepingPlace` anchors on the block's viewport offset and settles in a bounded loop.
+- **fix** — **three ways the grid lost track of a widget.** The rename input's keys reached the header handler, so Delete deleted the category being renamed and Backspace closed the widget; Shift+W was swallowed because the width toggle built a category id from a widget id; and only an address is opened by the menu's open action, http(s) only.
+- **fix** — **thirty-nine widget strings were looked up where they were not stored.** They resolved to their own key names on screen. A `label()` helper also returned the literal `"undefined"` for a missing key, since `t()` answers a non-string with `String(key)`.
+
+### Status & health
+
+- **new** — **a bookmark can be told to stop reporting one condition.** *n* or *z* on a row, or the row menu, sets aside a stale, unused or broken flag for a bookmark you have already judged. The bookmark stays in the collection and keeps being checked; only that flag stops being raised. An *Ignored* filter lists everything set aside and one click puts a bookmark back. `internal/app/health_ignore.go` with `add`/`remove`/`clear`/`untilMs`, `Bookmark.HealthIgnored`, and `HealthIssue.IgnoredFlags` so the tiles and the filters cannot disagree.
+- **new** — **the filter row says once that it scrolls.** A one-time popover, shown only where the row actually overflows (`scrollWidth - clientWidth > 8`).
+- **fix** — **acting on a row leaves you at that row.** Saving a copy or changing a setting scrolled the list back to the top. The first attempt at this landed the row at 299px where it had been at 727px, because `scrollIntoView({block:'nearest'})` is not the same as staying put; the offset is captured and restored instead.
+- **fix** — **the row menu is short enough to read.** It had grown past the height of many screens, so the entry you wanted needed a scroll to reach.
+- **fix** — **a capture says why it failed, how big it may be, and when it is blank.** The *monolith failed: exit status 1* message carried no reason: the quiet flag was suppressing the one line that said what went wrong. The limit moved from 32 MB to 52 MB. And a page that captures as an empty shell is detected rather than discovered on opening — `captureTextScanner` walks the file counting only text outside tags, script and style, because reading a fixed head of the file counted 129,805 characters of CSS as prose. The threshold of 500 characters was measured against real captures: 6 and 225 for two shells, 7,894 for an article.
+
+### Bookmarks
+
+- **new** — **every saved copy can be cleared at once.** Config → Bookmarks → Local copies gained a delete-all, confirming with the count and the space it frees.
+
+### Data & backups
+
+- **new** — **every log line carries a level and a component.** `internal/app/logx.go` wraps the standard logger with `logError`/`logWarn`/`logInfo`/`logDebug` and thirteen component constants, writing one shape: `LEVEL component message`. The floor is an atomic read, so a level that is switched off costs a comparison rather than a formatted string thrown away. A guard test forbids `log.Printf` outside that file.
+- **new** — **all 67 existing log calls were rewritten.** Not a search and replace: each got a level, a component, and a sentence written for someone who runs nextDash rather than one who reads its source. Request lines keep their established shape through `logRequestLine`, since the viewer reads their level from the status code.
+- **new** — **eight silent subsystems now say what they did.** A check round, a feed poll, an import, a capture, backup pruning, a failed write to the data directory, a custom widget's outbound fetch, and webhook delivery. `writeFileAtomic` is the one funnel every write to the data directory passes through, so it is where a failed one is finally reported — several callers had been dropping the error.
+- **new** — **Detail level and Activity trail, in Data & backups → Server log.** *Quiet*, *Normal* and *Verbose* decide what is written at all, taking effect on the next line rather than at the next restart; twelve channels decide what goes into the JSON trail, with *Reset panel* restoring the default pair. `Settings.ServerLogLevel` and `Settings.ActivityChannels`, applied by `applyLogSettings` at start-up and on save. `NEXTDASH_LOG_LEVEL` and `NEXTDASH_ACTIVITY_LOG` keep working and are overridden by the settings when those are set.
+- **new** — **the activity trail leaves the container log.** `logActivity` gained a sentence: the JSON goes to the trail file and the buffer, and the container log gets prose instead of `activity: {…}` between its readable lines. With twelve channels the old arrangement would have made `docker logs` unreadable. Security events log at WARN. Debug lines never reach the trail — it exists to be read back later, and a line per checked bookmark would make it useless within a day.
+- **fix** — **the viewer reads the level a line declares instead of guessing it.** `parseServerLogLine` now takes the level and component from the line itself, falling back to inference only for lines that predate this and for the Go runtime's own output. That fixed a real misreading: `checked 110 bookmarks, 2 failed` was filed as an error because it contains the word *failed*. The *Activity only* filter matches on the channel names rather than on the word `activity`, which no longer appears in a trail line.
+
+### The dashboard
+
+- **fix** — **coming back to the window leaves you where you were.** Switching to another window and back sent the app to the top of the page.
+- **fix** — **a failed load says why, and only when you asked for one.** *Failed to load bookmarks for this page* had been appearing unprompted while nothing was wrong.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.2.json`, the `index.json` entry, the constants spec, this changelog, `MANUAL.md`, and the Config → Help Data paragraph in all four locales.
+- **`hideFromModal` is lifted from v1.4.1.1 and v1.4.1.2.** Both were held back while they were fresh, so a round of fixes would not push aside a large release. They are announced now, which keeps the notes continuous: a reader stepping back from v1.4.2 finds them rather than a gap.
+- **Both tokens move.** `DASHBOARD_RELEASE` goes to `2026.08-dashboard-release-v1.4.2` so an upgraded install meets the notes once on its next visit, and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v261` so a browser holding the old index learns the release exists.
+- `docs/` is no longer committed at all: design specs and implementation plans are working notes and stay out of the published branches.
+- `go generate ./...` for the changed CSS, JS and locales.
 
 ---
 

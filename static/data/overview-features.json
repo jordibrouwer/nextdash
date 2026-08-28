@@ -2,6 +2,55 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureLogRebuildTitle",
+      "titleFallback": "The server log says what it is doing",
+      "whatKey": "config.overviewNewFeatureLogRebuildWhat",
+      "whatFallback": "The log was a wall of lines with no way to tell a note from a failure, and whole parts of the server said nothing at all — a check round, a feed poll, an import, a saved copy, a scheduled backup, a write to disk that did not work. When something went wrong there was nothing to read, and when nothing went wrong there was no way to watch it work.",
+      "howKey": "config.overviewNewFeatureLogRebuildHow",
+      "howFallback": "Every line now says how serious it is and which part of nextDash it came from, in a sentence written for someone running it rather than reading its source. Detail level chooses how much is written — Quiet, Normal or Verbose — and takes effect on the very next line, with no restart. Activity trail beside it picks which twelve things are recorded in machine-readable form.",
+      "enableKey": "config.overviewNewFeatureLogRebuildEnable",
+      "enableFallback": "Switch on Collect server log to read it in the app; the container log has it either way.",
+      "ctaKey": "config.overviewNewFeatureLogRebuildCta",
+      "ctaFallback": "Open Server log →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "logs"
+      },
+      "since": "v1.4.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetMenuTitle",
+      "titleFallback": "A widget answers to the right-click and the keyboard",
+      "whatKey": "config.overviewNewFeatureWidgetMenuWhat",
+      "whatFallback": "Renaming a widget or changing its width meant leaving the dashboard for Config → Widgets to find the switch, and the keyboard stepped around widgets rather than into them — they were the one block on the page arrow keys could not enter.",
+      "howKey": "config.overviewNewFeatureWidgetMenuHow",
+      "howFallback": "Right-click a widget title for rename, one column or two, fold, settings and close. Arrow keys now step inside and move through its rows the way they move through a category, Enter opens the row under the cursor, and every action in the menu has a key of its own.",
+      "enableKey": "config.overviewNewFeatureWidgetMenuEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureWidgetMenuCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthIgnoreTitle",
+      "titleFallback": "A bookmark can stop reporting one condition",
+      "whatKey": "config.overviewNewFeatureHealthIgnoreWhat",
+      "whatFallback": "A link you have already looked at and decided is fine kept being flagged as stale, unused or broken on every visit. The only ways to quiet it were to delete the bookmark or to stop checking it, and both throw away more than the flag.",
+      "howKey": "config.overviewNewFeatureHealthIgnoreHow",
+      "howFallback": "Press n or z on a row in Health, or use its menu, to set one flag aside. The bookmark stays in your collection and keeps being checked — it simply stops raising that condition. The Ignored filter lists everything set aside, and one click puts a bookmark back.",
+      "enableKey": "config.overviewNewFeatureHealthIgnoreEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureHealthIgnoreCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.4.2"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWidgetFoldTitle",
       "titleFallback": "A widget folds away like the categories beside it",
       "whatKey": "config.overviewNewFeatureWidgetFoldWhat",
