@@ -38,6 +38,10 @@ main
 scripts/debug-config-save.mjs
 nextDash.code-workspace
 
-# Design specs and implementation plans: working notes, kept out of the
-# published branches.
-docs/superpowers/
+# Working notes -- design specs, implementation plans, anything written while
+# building. They are for whoever wrote them, not for whoever clones the
+# repository, so nothing under docs/ is committed. The two files below predate
+# this rule and are already public; they stay tracked until removed on purpose.
+docs/
+!docs/dashboard-refactor.md
+!docs/dashboard-smoke-checklist.md
