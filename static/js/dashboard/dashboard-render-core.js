@@ -375,6 +375,9 @@ class DashboardRenderCore {
         // something else would need its own answer to both. The second class is
         // what the styling and the block builder tell them apart by.
         block.className = 'category dashboard-widget';
+        // A rowgroup like the category block beside it: the header below is a
+        // rowheader, and the grid around them expects the pair.
+        block.setAttribute('role', 'rowgroup');
         block.dataset.categoryId = widget.id;
         block.dataset.widgetId = widget.id;
         block.dataset.widgetType = widget.type || '';
@@ -534,6 +537,16 @@ class DashboardRenderCore {
 
         const body = document.createElement('div');
         body.className = 'dashboard-widget-body';
+        /*
+         * Presentation, deliberately.
+         *
+         * What a widget draws is figures and buttons, not rows of a grid, and
+         * the keyboard stops inside it are those buttons themselves. Leaving the
+         * subtree in the grid's structure would have a screen reader announce
+         * them as cells of a table that does not exist -- the bookmark list
+         * under a category does the same thing for the same reason.
+         */
+        body.setAttribute('role', 'presentation');
         const renderer = window.DashboardWidgets?.[widget.type];
         if (typeof renderer === 'function') {
             renderer(body, widget, d);

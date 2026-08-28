@@ -5673,8 +5673,18 @@ button.dashboard-widget-row {
 }
 
 button.dashboard-widget-row:hover,
-button.dashboard-widget-row:focus-visible {
+button.dashboard-widget-row:focus-visible,
+button.dashboard-widget-row.keyboard-selected {
     background: rgba(127, 127, 127, 0.09);
+}
+
+/* The cursor has to read as "here" even without :focus-visible, which browsers
+   withhold after a click — the same reason the show-more toggle carries a ring
+   of its own. Inside a widget it also has to stand apart from the hover above,
+   since a reader arrowing through a tile is often hovering something else. */
+.dashboard-widget-body button.keyboard-selected {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    outline: none;
 }
 
 .dashboard-widget-row-name {
@@ -5940,6 +5950,12 @@ button.dashboard-widget-row--more {
 
 button.dashboard-widget-stat {
     cursor: pointer;
+}
+
+button.dashboard-widget-stat:hover,
+button.dashboard-widget-stat:focus-visible,
+button.dashboard-widget-stat.keyboard-selected {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--dashboard-widget-cell));
 }
 
 button.dashboard-widget-stat:hover,

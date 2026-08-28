@@ -1,0 +1,172 @@
+// @ts-check
+const { test, expect } = require('./fixtures');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+
+/**
+ * The keyboard goes into a widget, not around it.
+ *
+ * The grid's cursor collected `.bookmark-link` and the show-more toggles and
+ * nothing else, so a widget was a wall: arrowing down the column walked past
+ * the block, and no key reached the rows a mouse could click. Widgets build
+ * their actionable rows as <button> already — the work is letting the cursor
+ * see them, and keeping the bookmark keys off them.
+ */
+
+async function dashboardWithAWidget(page, { widgets } = {}) {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(async ([list]) => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        for (let n = 0; n < 4; n += 1) {
+            await f('/api/bookmarks/add', { method: 'POST', headers: h, body: JSON.stringify({ page: 1, bookmark: {
+                name: `Row ${n}`, url: `https://row.example/${n}`, category: 'one' } }) });
+        }
+        await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({ widgets: list }) });
+    }, [widgets || [{ type: 'health', title: 'Status' }]]);
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(page.locator('.dashboard-widget').first()).toBeVisible({ timeout: 15_000 });
+}
+
+/** What the grid cursor is sitting on, described in a way a test can read. */
+const cursor = (page) => page.evaluate(() => {
+    const kn = window.dashboardInstance.keyboardNavigation;
+    const el = kn.navigableElements[kn.currentIndex] || null;
+    if (!el) return null;
+    return {
+        widget: Boolean(el.closest('.dashboard-widget')),
+        bookmark: el.classList.contains('bookmark-link'),
+        text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40),
+        focused: document.activeElement === el,
+        selected: el.classList.contains('keyboard-selected'),
+    };
+});
+
+/** Walk the cursor with real key presses until it lands inside a widget. */
+async function arrowIntoWidget(page, limit = 40) {
+    for (let n = 0; n < limit; n += 1) {
+        await page.keyboard.press('ArrowDown');
+        const at = await cursor(page);
+        if (at?.widget) return at;
+    }
+    return null;
+}
+
+test.describe('arrowing through a widget', () => {
+    test('the cursor stops on a widget figure and the figure has focus', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        const at = await arrowIntoWidget(page);
+        expect(at, 'the cursor never reached the widget').not.toBe(null);
+        expect(at.focused).toBe(true);
+        expect(at.selected).toBe(true);
+    });
+
+    test('Enter on a widget figure does what clicking it does', async ({ page }) => {
+        await dashboardWithAWidget(page);
+        await arrowIntoWidget(page);
+
+        await page.keyboard.press('Enter');
+        // The health tile's figures are filters into the health view.
+        await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 15_000 })
+            .toContain('health');
+    });
+
+    test('a readout that does nothing is not a stop', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        const stops = await page.evaluate(() => {
+            const kn = window.dashboardInstance.keyboardNavigation;
+            kn.updateNavigableElements();
+            return kn.navigableElements
+                .filter((el) => el.closest('.dashboard-widget'))
+                .map((el) => el.tagName);
+        });
+        expect(stops.length).toBeGreaterThan(0);
+        expect(stops.every((tag) => tag === 'BUTTON')).toBe(true);
+    });
+
+    test('a folded widget offers nothing to walk into', async ({ page }) => {
+        await dashboardWithAWidget(page);
+
+        await page.locator('.dashboard-widget .category-title').click();
+        await expect(page.locator('.dashboard-widget')).toHaveAttribute('data-collapsed', 'true');
+
+        const inside = await page.evaluate(() => {
+            const kn = window.dashboardInstance.keyboardNavigation;
+            kn.updateNavigableElements();
+            return kn.navigableElements.filter((el) => el.closest('.dashboard-widget')).length;
+        });
+        expect(inside).toBe(0);
+    });
+});
+
+test.describe('the bookmark keys stay off a widget', () => {
+    test('e and Delete do nothing with the cursor in a widget', async ({ page }) => {
+        await dashboardWithAWidget(page);
+        const at = await arrowIntoWidget(page);
+        expect(at).not.toBe(null);
+
+        const before = await page.evaluate(() =>
+            (window.dashboardInstance.bookmarks || []).length);
+
+        await page.keyboard.press('Shift+E');
+        await page.keyboard.press('Delete');
+        await page.waitForTimeout(600);
+
+        // Nothing opened, nothing was removed, and the cursor did not wander.
+        expect(await page.locator('.bookmark-inline-editing').count()).toBe(0);
+        expect(await page.evaluate(() => (window.dashboardInstance.bookmarks || []).length)).toBe(before);
+        expect((await cursor(page))?.widget).toBe(true);
+    });
+
+    test('x does not tick a widget figure into the bookmark selection', async ({ page }) => {
+        await dashboardWithAWidget(page);
+        const at = await arrowIntoWidget(page);
+        expect(at).not.toBe(null);
+
+        await page.keyboard.press('x');
+        await page.waitForTimeout(400);
+
+        // This is the dangerous one. x hands the selected element straight to
+        // multiSelect, which then holds a widget button as though it were a
+        // bookmark — and Delete acts on that selection.
+        const picked = await page.evaluate(() => ({
+            active: Boolean(window.dashboardInstance.multiSelect?.isActive?.()),
+            count: window.dashboardInstance.multiSelect?.selected?.size ?? 0,
+        }));
+        expect(picked.active).toBe(false);
+        expect(picked.count).toBe(0);
+    });
+});
+
+/*
+Out of the widget and onto its header.
+
+Shift+Home steps from a row to the header above it, where the block's own keys
+live — rename, width, the menu. It resolves the block by data-category-id, which
+a widget carries, so it should land on a widget header exactly as it lands on a
+category one.
+*/
+test('Shift+Home from inside a widget lands on the widget header', async ({ page }) => {
+    await dashboardWithAWidget(page);
+    const at = await arrowIntoWidget(page);
+    expect(at).not.toBe(null);
+
+    await page.keyboard.press('Shift+Home');
+
+    const focused = await page.evaluate(() => {
+        const el = document.activeElement;
+        return {
+            isHeader: Boolean(el?.classList?.contains('category-title')),
+            inWidget: Boolean(el?.closest('.dashboard-widget')),
+        };
+    });
+    expect(focused).toEqual({ isHeader: true, inWidget: true });
+});
