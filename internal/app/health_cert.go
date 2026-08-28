@@ -1,7 +1,6 @@
 package app
 
 import (
-	"log"
 	"math"
 	"sort"
 	"strings"
@@ -237,7 +236,7 @@ func (h *Handlers) pruneCertificates(liveHosts map[string]struct{}) {
 		return
 	}
 	if err := writeHealthCacheFile(cache); err != nil {
-		log.Printf("health-monitor: failed to persist pruned certificates: %v", err)
+		logWarn(logComponentHealth, "the pruned certificate list could not be saved (%v); it will be pruned again next round", err)
 	}
 }
 

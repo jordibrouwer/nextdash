@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	neturl "net/url"
 	"strings"
@@ -431,7 +430,7 @@ func (h *Handlers) archiveNewBookmark(target string) {
 // the level the rest of the outbound work uses: the reader did not ask for this
 // request and should not be interrupted by it failing.
 func logArchiveCaptureFailure(target string, err error) {
-	log.Printf("archive: could not queue a capture for %s: %v", target, err)
+	logWarn(logComponentArchive, "%s was not queued for saving: %v", target, err)
 }
 
 /*

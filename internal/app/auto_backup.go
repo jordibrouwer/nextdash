@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -174,7 +173,7 @@ func recordAutoBackupRun(runErr error) {
 		return
 	}
 	if err := writeFileAtomic(autoBackupStatePath(), data, 0644); err != nil {
-		log.Printf("auto-backup: failed to record run state: %v", err)
+		logWarn(logComponentBackup, "the backup ran but its run time could not be recorded (%v); the next one may come early", err)
 	}
 }
 
@@ -311,12 +310,12 @@ func (h *Handlers) maybeRunAutoBackup() {
 		return
 	}
 	if err := h.writeAutoBackup(); err != nil {
-		log.Printf("auto-backup: failed to create scheduled backup: %v", err)
+		logError(logComponentBackup, "the scheduled backup could not be written: %v", err)
 		recordAutoBackupRun(err)
 		h.pushAutoBackupResult(context.Background(), err)
 		return
 	}
-	log.Printf("auto-backup: created scheduled backup")
+	logInfo(logComponentBackup, "scheduled backup written")
 	recordAutoBackupRun(nil)
 	h.pushAutoBackupResult(context.Background(), nil)
 }
@@ -426,7 +425,7 @@ func (h *Handlers) DeleteAutoBackup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Backup not found", http.StatusNotFound)
 			return
 		}
-		log.Printf("auto-backup: failed to delete %q: %v", name, err)
+		logWarn(logComponentBackup, "the old backup %q could not be removed (%v); it still takes up space", name, err)
 		http.Error(w, "Failed to delete backup", http.StatusInternalServerError)
 		return
 	}
@@ -539,7 +538,7 @@ func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Backup not found", http.StatusNotFound)
 			return
 		}
-		log.Printf("auto-backup: restore read %q failed: %v", name, err)
+		logError(logComponentBackup, "the backup %q could not be read, so nothing was restored: %v", name, err)
 		http.Error(w, "Failed to read backup", http.StatusInternalServerError)
 		return
 	}
@@ -553,12 +552,12 @@ func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
 	dataDir := ResolveDataDir()
 	skipped, impErr := h.applyStagedImport(dataDir, staged)
 	if impErr != nil {
-		log.Printf("auto-backup: restore %q: %v", name, impErr)
+		logError(logComponentBackup, "restoring from %q did not finish: %v", name, impErr)
 		http.Error(w, impErr.Error(), impErr.status())
 		return
 	}
 
-	log.Printf("auto-backup: restored from %q (%d bookmarks skipped)", name, skipped)
+	logInfo(logComponentBackup, "restored from %q, %d bookmarks skipped", name, skipped)
 	logDataImport("auto_backup_restore", len(staged), skipped, r)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -573,7 +572,7 @@ func (h *Handlers) RunAutoBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.writeAutoBackup(); err != nil {
-		log.Printf("auto-backup: manual run failed: %v", err)
+		logError(logComponentBackup, "the backup you started could not be made: %v", err)
 		http.Error(w, "Failed to create backup", http.StatusInternalServerError)
 		return
 	}

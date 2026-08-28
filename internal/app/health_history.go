@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"sort"
 	"time"
@@ -195,7 +194,7 @@ func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code in
 	}
 	sample := HealthSample{T: time.Now().UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail)}
 	if err := h.appendHealthSamples(map[string][]HealthSample{key: {sample}}); err != nil {
-		log.Printf("health history: failed to record manual check for %s: %v", key, err)
+		logWarn(logComponentHealth, "the check of %s could not be added to the history (%v); the graph will show a gap", key, err)
 	}
 }
 

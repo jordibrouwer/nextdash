@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
-	"log"
 	"net/url"
 	"os"
 	"path"
@@ -103,7 +102,7 @@ func assetHash(rel string) string {
 	if err != nil {
 		// Not fatal: a missing asset is a template/typo bug, and failing the whole
 		// page render over it would turn a broken icon into a blank dashboard.
-		log.Printf("asset hash: %s: %v", rel, err)
+		logWarn(logComponentServer, "the fingerprint of %s could not be read (%v); it will be served without one", rel, err)
 		sum = ""
 	}
 

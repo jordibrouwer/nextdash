@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -111,7 +110,7 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 			return current, nil
 		})
 		if err != nil {
-			log.Printf("check-mode: failed to update page %d: %v", page.ID, err)
+			logError(logComponentStore, "page %d could not be saved: %v", page.ID, err)
 			http.Error(w, "Failed to update bookmarks", http.StatusInternalServerError)
 			return
 		}

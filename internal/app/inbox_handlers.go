@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -201,7 +200,7 @@ func (h *Handlers) backfillInboxIconsAsync() {
 			}
 		}
 		if applied > 0 {
-			log.Printf("nextDash: backfilled favicons for %d inbox items", applied)
+			logInfo(logComponentServer, "fetched icons for %d items in the inbox", applied)
 		}
 	}()
 }

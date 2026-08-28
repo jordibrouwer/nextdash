@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -118,7 +117,7 @@ func (h *Handlers) SetBookmarkHealthIgnores(w http.ResponseWriter, r *http.Reque
 			return current, nil
 		})
 		if err != nil {
-			log.Printf("health-ignore: failed to update page %d: %v", pageID, err)
+			logError(logComponentStore, "page %d could not be saved: %v", pageID, err)
 			http.Error(w, "Failed to update bookmarks", http.StatusInternalServerError)
 			return
 		}

@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -141,7 +140,7 @@ func (h *Handlers) AcceptDrift(w http.ResponseWriter, r *http.Request) {
 			return current, nil
 		})
 		if err != nil {
-			log.Printf("drift-accept: failed to update page %d: %v", pageID, err)
+			logError(logComponentStore, "page %d could not be saved: %v", pageID, err)
 			http.Error(w, "Failed to update bookmarks", http.StatusInternalServerError)
 			return
 		}

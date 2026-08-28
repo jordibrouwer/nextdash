@@ -116,3 +116,20 @@ func logInfo(component, format string, args ...any) {
 func logDebug(component, format string, args ...any) {
 	logAt(logLevelDebugName, component, format, args...)
 }
+
+/*
+Request lines are the one exception to the shape above.
+
+They have carried "<id> METHOD /path STATUS BYTES DURATION" since before this
+layer existed, the viewer reads their level from the status code rather than
+from a word, and there are thousands of them. Prefixing them would cost the
+parser its cheapest branch and gain nothing a reader wants. They still pass
+through here, so logx stays the only door to the logger, and they still answer
+to the floor: at Quiet, request lines stop.
+*/
+func logRequestLine(format string, args ...any) {
+	if !logEnabled(logLevelInfoName) {
+		return
+	}
+	log.Printf(format, args...)
+}

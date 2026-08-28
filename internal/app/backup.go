@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -96,7 +95,7 @@ func resolveImportAllowLocalBookmarks(staged []stagedImportFile, fallback bool) 
 		}
 		allowLocal, err := allowLocalBookmarksFromSettingsJSON(item.content)
 		if err != nil {
-			log.Printf("import: could not read allowLocalBookmarks from settings.json: %v; using fallback", err)
+			logWarn(logComponentStore, "settings.json could not be read for allowLocalBookmarks (%v); the safe default applies", err)
 			return fallback
 		}
 		return allowLocal
@@ -250,13 +249,13 @@ func mergeImportCategoriesIntoPrepared(prepared []preparedImportFile, categories
 
 		var pageWithBookmarks PageWithBookmarks
 		if err := json.Unmarshal(file.content, &pageWithBookmarks); err != nil {
-			log.Printf("import: skip merging categories into %s: invalid bookmarks JSON: %v", file.relPath, err)
+			logWarn(logComponentImport, "%s holds unreadable bookmark JSON (%v); its categories were left as they were", file.relPath, err)
 			continue
 		}
 		pageWithBookmarks.Categories = cats
 		data, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
 		if err != nil {
-			log.Printf("import: skip merging categories into %s: marshal failed: %v", file.relPath, err)
+			logWarn(logComponentImport, "the merged categories for %s could not be written back (%v); that page was left as it was", file.relPath, err)
 			continue
 		}
 		prepared[i].content = data
@@ -574,7 +573,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	// Ensure base data directory exists before writing imported files.
 	dataDir := ResolveDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		log.Printf("import: failed to prepare data directory: %v", err)
+		logError(logComponentImport, "the data directory could not be prepared, so the import stopped: %v", err)
 		http.Error(w, "Failed to prepare data directory", http.StatusInternalServerError)
 		return
 	}
@@ -583,7 +582,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	// Keep this comfortably above typical icon-heavy backups.
 	err := r.ParseMultipartForm(256 << 20) // 256MB max
 	if err != nil {
-		log.Printf("import: failed to parse multipart form: %v", err)
+		logWarn(logComponentImport, "the uploaded file could not be read (%v); nothing was imported", err)
 		http.Error(w, "Failed to parse form (backup may be too large)", http.StatusBadRequest)
 		return
 	}
@@ -606,10 +605,10 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 	staged := make([]stagedImportFile, 0, len(files))
 	for _, fileHeader := range files {
 		filename := normalizeImportFilename(fileHeader.Filename)
-		log.Printf("import: staging %s", filename)
+		logDebug(logComponentImport, "staging %s", filename)
 
 		if !h.isValidImportFilename(filename) {
-			log.Printf("import: rejected invalid filename: %s", filename)
+			logWarn(logComponentImport, "%s was refused: that name is not one nextDash writes", filename)
 			http.Error(w, fmt.Sprintf("Invalid filename: %s", filename), http.StatusBadRequest)
 			return
 		}
@@ -631,7 +630,7 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
-			log.Printf("import: invalid JSON in file: %s", filename)
+			logWarn(logComponentImport, "%s does not hold valid JSON and was skipped", filename)
 			http.Error(w, fmt.Sprintf("Invalid JSON content in file: %s", filename), http.StatusBadRequest)
 			return
 		}
@@ -641,12 +640,12 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	skippedBookmarks, impErr := h.applyStagedImport(dataDir, staged)
 	if impErr != nil {
-		log.Printf("import: %v", impErr)
+		logError(logComponentImport, "the import did not finish: %v", impErr)
 		http.Error(w, impErr.Error(), impErr.status())
 		return
 	}
 
-	log.Printf("import: success (%d bookmarks skipped)", skippedBookmarks)
+	logInfo(logComponentImport, "import finished, %d bookmarks skipped", skippedBookmarks)
 	logDataImport("backup_zip", len(staged), skippedBookmarks, r)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -680,9 +679,9 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	// import proceeds — refusing to import because the safety copy could not be
 	// written would leave someone stuck with no way forward and no way back.
 	if err := h.writeAutoBackup(); err != nil {
-		log.Printf("import: safety backup before replacing data failed: %v", err)
+		logWarn(logComponentImport, "the safety backup could not be made (%v); the import went ahead without one", err)
 	} else {
-		log.Printf("import: safety backup written before replacing data")
+		logInfo(logComponentImport, "safety backup written before the data was replaced")
 	}
 
 	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
@@ -914,12 +913,12 @@ func (h *Handlers) importFromZipUpload(w http.ResponseWriter, r *http.Request, d
 
 	skipped, impErr := h.applyStagedImport(dataDir, staged)
 	if impErr != nil {
-		log.Printf("import: zip upload %q: %v", fh.Filename, impErr)
+		logError(logComponentImport, "the archive %q could not be restored: %v", fh.Filename, impErr)
 		http.Error(w, impErr.Error(), impErr.status())
 		return
 	}
 
-	log.Printf("import: restored from uploaded archive %q (%d bookmarks skipped)", fh.Filename, skipped)
+	logInfo(logComponentImport, "restored from the uploaded archive %q, %d bookmarks skipped", fh.Filename, skipped)
 	logDataImport("backup_zip_import", len(staged), skipped, r)
 
 	w.Header().Set("Content-Type", "application/json")

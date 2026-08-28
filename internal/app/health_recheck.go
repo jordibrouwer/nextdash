@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log"
 	"time"
 )
 
@@ -112,13 +111,13 @@ func (h *Handlers) maybeRunHealthAutoRecheck() {
 
 	result, err := h.runHealthRetest(ctx, true, healthAutoRecheckSource)
 	if err != nil {
-		log.Printf("health-recheck: scheduled run failed: %v", err)
+		logError(logComponentHealth, "the scheduled re-check did not run: %v", err)
 		return
 	}
 	// Stamp completion even when nothing was eligible, so an empty dashboard does not
 	// re-run the (cheap but pointless) scan every check interval.
 	if err := h.markHealthAutoRecheck(time.Now()); err != nil {
-		log.Printf("health-recheck: failed to record run time: %v", err)
+		logWarn(logComponentHealth, "the re-check ran but its run time could not be recorded (%v); the next one may come early", err)
 	}
-	log.Printf("health-recheck: scheduled run re-checked %d bookmarks", result.Tested)
+	logInfo(logComponentHealth, "the scheduled re-check covered %d bookmarks", result.Tested)
 }

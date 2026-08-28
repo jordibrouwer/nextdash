@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"sort"
@@ -155,7 +154,7 @@ func (h *Handlers) recordHealthTrend(report BookmarkHealthReport) {
 
 	if err := writeHealthTrendFile(trend); err != nil {
 		// A trend that cannot be written is not worth failing a report over.
-		log.Printf("health trend: failed to record today's point: %v", err)
+		logWarn(logComponentHealth, "today's point could not be added to the trend (%v); the graph will show a gap", err)
 	}
 }
 
