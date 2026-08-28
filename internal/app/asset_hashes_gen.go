@@ -48,6 +48,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/theme-depth.css":                                    "1df116375675",
 	"css/theme.css":                                          "5db03d601a1b",
 	"css/view-explainers.css":                                "c670b2598b36",
+	"css/widgets-tutorial.css":                               "f2cb01c809b7",
 	"js/analytics-notice.js":                                 "63a2b9605e03",
 	"js/analytics.js":                                        "2fab4cfe9dd3",
 	"js/app-notification.js":                                 "f7521c9ab17b",
@@ -78,7 +79,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-config-loader.js":                "1efcfc8ec72a",
 	"js/dashboard/dashboard-config-stats.js":                 "fc6d9e6ebd46",
 	"js/dashboard/dashboard-config-sync.js":                  "a9780922c654",
-	"js/dashboard/dashboard-config.js":                       "95e5d015fe67",
+	"js/dashboard/dashboard-config.js":                       "adedeb46ae91",
 	"js/dashboard/dashboard-context-menu.js":                 "f616746db133",
 	"js/dashboard/dashboard-data.js":                         "cd3aee2441e7",
 	"js/dashboard/dashboard-date-weather.js":                 "3baae8f6d68f",
@@ -205,5 +206,6 @@ var precomputedAssetHashes = map[string]string{
 	"js/weather.js":                                          "2e4cddbdcd40",
 	"js/whats-new-modal.js":                                  "f1fc9abf760e",
 	"js/whats-new-stub.js":                                   "32586e3f1c48",
+	"js/widgets-tutorial.js":                                 "4bd39fee3746",
 	"js/write-api.js":                                        "25afcd408905",
 }

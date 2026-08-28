@@ -1514,6 +1514,7 @@ class DashboardConfig {
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
             void this.loadCredentialNames();
+            void this.maybeShowWidgetsTutorial();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
@@ -14751,6 +14752,10 @@ class DashboardConfig {
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
     static WIDGETS_TABS = ['widgets', 'types'];
 
+    // Repeated from widgets-tutorial.js, which is checked before the script is
+    // fetched at all. Both must agree.
+    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
+
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups', 'custom'];
@@ -15659,6 +15664,40 @@ class DashboardConfig {
             const title = target.closest('[data-widget="title"]');
             if (title) void this.renameWidget(Number(title.getAttribute('data-index')), title.value);
         });
+    }
+
+    /**
+     * The one-time tour, the first time this section is opened.
+     *
+     * The cheap guards are repeated before the fetch so a reader who has seen
+     * it, or has session tips off, never asks for the script at all; everything
+     * else — an open modal, active search, a phone — is left to the module,
+     * which checks the same tip id again.
+     *
+     * Here rather than on the dashboard because this is where a widget is
+     * added, and because the thing worth saying — that the custom tile reaches
+     * any address answering JSON — is invisible from a list of your own
+     * widgets and one button.
+     */
+    async maybeShowWidgetsTutorial() {
+        // Once per visit to the section, whatever the section does afterwards:
+        // binding runs again on every repaint of the tab, and a second call
+        // lands while the first tour is still on screen -- replacing it with a
+        // fresh copy whose Skip then acts on a step nobody is looking at.
+        if (this._widgetsTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.WIDGETS_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._widgetsTutorialAsked = true;
+        if (typeof window.WidgetsTutorial === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
+                    () => typeof window.WidgetsTutorial !== 'undefined');
+            } catch {
+                // A tour that cannot be fetched is not worth an error toast.
+                return;
+            }
+        }
+        window.WidgetsTutorial?.maybeShow?.();
     }
 
     /*
