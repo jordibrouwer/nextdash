@@ -178,7 +178,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/escape-html.js":                               "02f8bbe16272",
 	"js/shared/field-popover.js":                             "52ba2d1b6cc1",
 	"js/shared/inline-create-row.js":                         "d610d93ab25f",
-	"js/shared/keyboard-cheat-sheet-registry.js":             "c683ac090b03",
+	"js/shared/keyboard-cheat-sheet-registry.js":             "d2a826913e1f",
 	"js/shared/keyboard-view-legends.js":                     "06202dfb3bb4",
 	"js/shared/last-opened-format.js":                        "a968982d0c81",
 	"js/shared/menu-icons.js":                                "a19adda93424",

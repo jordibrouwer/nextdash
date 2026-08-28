@@ -138,6 +138,31 @@
                 { keys: 'Drag // in category title', cheatKey: 'bmDragCategory', fallback: 'Reorder categories (grab the // prefix in the header)' },
             ],
         },
+        /*
+         * A block of its own, because a widget is a block of its own.
+         *
+         * The keys are the ones the grid and a category header already use --
+         * that is the point of them -- but a reader looking for "how do I get
+         * into that tile" will not find the answer under bookmark actions.
+         */
+        {
+            id: 'sectionWidgets',
+            titleKey: 'sectionWidgets',
+            titleFallback: 'Widgets on the page',
+            contextId: 'bookmarks',
+            rows: [
+                { keys: '↑ ↓ ← →', cheatKey: 'wgMove', fallback: 'Walk into a widget and through its rows, the same as through bookmarks — rows that do nothing are skipped', print: true, printFallback: 'Move through a widget\u2019s rows' },
+                { keys: 'Enter', cheatKey: 'wgOpen', fallback: 'Do what clicking the row does — open Health on that figure, the inbox, the source', print: true },
+                { keys: 'Ctrl/Cmd + Enter', cheatKey: 'wgOpenNewTab', fallback: 'Open the address a row stands for in a new tab, where it has one (the uptime rows do)' },
+                { keys: 'Shift + F10 on row', cheatKey: 'wgRowMenu', fallback: 'Menu for the row and its widget — the row\u2019s own action first, then rename, width, close (right-click does the same)' },
+                { keys: 'Shift + Home', cheatKey: 'wgHeader', fallback: 'Step from a widget row up to its header, where the widget\u2019s own keys act' },
+                { keys: 'Enter / Space on header', cheatKey: 'wgFold', fallback: 'Fold the widget shut, or open it again; . folds every block on the page', print: true, printFallback: 'Fold a widget' },
+                { keys: 'F2 on widget', cheatKey: 'wgRename', fallback: 'Rename the widget — an empty name falls back to the type\u2019s own', print: true, printFallback: 'Rename widget' },
+                { keys: 'Shift + W on widget', cheatKey: 'wgWidth', fallback: 'One column or two, the same key a category uses for its width', print: true, printFallback: 'Widget across two columns' },
+                { keys: 'Delete on widget', cheatKey: 'wgClose', fallback: 'Close the widget — it keeps its settings, and Config → Widgets switches it back on', print: true, printFallback: 'Close widget (Config → Widgets brings it back)' },
+                { keys: 'Long-press widget title', cheatKey: 'wgRenameHold', fallback: 'Rename it with the pointer, as on a category header (double-click does the same)' },
+            ],
+        },
         // A mode of its own rather than more bookmark actions: every row here acts
         // on the selection, not on the focused bookmark, and the keys mean nothing
         // until one is open.
