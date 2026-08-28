@@ -105,6 +105,7 @@
                 'tipTuneSmartCollections',
                 'tipTuneFresh',
                 'tipTuneWidgets',
+                'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneCommands',
             ],

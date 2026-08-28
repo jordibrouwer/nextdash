@@ -1,0 +1,26 @@
+{
+  "tag": "v1.4.1.2",
+  "date": "28 August 2026",
+  "releasedAt": "2026-08-28",
+  "modalLead": "Widgets fold away like the categories beside them, and a site that asks you to sign in is no longer reported as a page that has vanished.",
+  "sections": [
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A widget folds away like a category.</strong> Several widgets on one page put the block you wanted below the fold. Click a widget's title to fold it shut, or press <em>Enter</em> with it focused &mdash; the same gesture a category has always had, on the same header. <em>Fold all</em> and the <em>.</em> key take widgets with them, and each stays as you left it."
+        }
+      ]
+    },
+    {
+      "title": "Status &amp; health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A site behind a login is not a page that vanished.</strong> With <em>Spot pages that answer 200 but say \"not found\"</em> switched on, bookmarks pointing at an app that asks you to sign in &mdash; a media server, a container manager, anything on your own network &mdash; were reported down with <em>Page says it does not exist</em> while the site was perfectly up. They read as healthy again, and a page that really is gone is still caught."
+        }
+      ]
+    }
+  ]
+}

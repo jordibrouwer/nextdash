@@ -168,7 +168,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 **Categories** are sections within a page (e.g. `dev`, `news`, `tools`). In config they have an ID and display name. Bookmarks belong to one category (or uncategorised).
 
-- Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once.  
+- Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once. Since **v1.4.1.2** a **widget** folds the same way, from the same header, and `.` takes widgets with it.  
 - Drag the **`//` prefix** in a category title to reorder sections.  
 - Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal--shiftb-or-ctrlshifta).  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
@@ -324,7 +324,7 @@ The button bar can appear as a **floating bottom bar** (default), a **corner doc
 | `?` | `?` | Finders (external search shortcuts) |
 | `*` | `*` | Recent bookmarks on this page |
 | `!` | `!` / `F1` | Keyboard cheat sheet |
-| `.` | `.` | Fold or unfold every category |
+| `.` | `.` | Fold or unfold every category — and every widget (**v1.4.1.2**) |
 
 Each button can be shown or hidden individually under **Config → Appearance → Button bar**, under the position control (**v1.3.0** — it was two tabs away, on Toolbar & tabs). `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off. **A fresh install starts without the fold-all button** — the key still works, and it is one switch away — while a dashboard that already had it keeps it: an existing `settings.json` with no such key reads as an upgrade, not as a new install.
 
@@ -341,7 +341,7 @@ Each button can be shown or hidden individually under **Config → Appearance �
 | | `/` | `/` | Tag cloud (directly under recent in the rail flow) |
 | *(separator)* | — | — | — |
 | | `!` | `!` / `F1` | Keyboard cheat sheet |
-| | `.` | `.` | Fold or unfold every category |
+| | `.` | `.` | Fold or unfold every category — and every widget (**v1.4.1.2**) |
 | Bottom | `★` | — | What's new |
 
 **Off by default.** The shortcut popovers are a switch under **config → behavior → general** — *Show shortcut hints on toolbar icons* — and they now start off, for existing dashboards as well as new ones: the setting has been on since it existed and is written into every stored settings file, so changing the default alone would have left everybody exactly where they were. A one-time migration turns them off; switching them back on sticks, because the migration records that it ran and never runs again. With them on, hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail. The header icons — **pages**, **inbox**, **health**, **config** — carry the same tooltips (**v2026.08.08.6**) and open **below** the icon, since there is no room above them at the top of the window (**v2026.09.2**).
@@ -942,6 +942,17 @@ same list the **Categories** tab arranges.
 
 And a fourteenth that is a capability rather than a report: the **Custom** widget, below.
 
+**Folding one away** (**v1.4.1.2**)
+
+A widget is a summary, and a page carrying several of them has the problem a
+page of long categories has: the block you want is below the fold because the
+ones above it are open. Click a widget's title to fold it shut — or press
+**Enter** or **Space** with the header focused — exactly as you would a
+category, since it is the same gesture on the same header rather than a second
+one to learn. **Fold all**, the `.` key and the fold-all button take widgets with
+them, and each block stays folded or open as you left it, per page, until you
+change it.
+
 **Adding one**
 
 **Config → Widgets** opens on the widgets you have, with one *Add a widget*
@@ -1316,7 +1327,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Score breakdown** | Click the score badge — or press `s` — to unfold how the score was reached: every bookmark starts at 100, each issue lists what it costs (broken −60, duplicate −15, shortcut conflict −15, never checked −10, stale check −5, no preview −5), down to the total. **Usage costs nothing** (**v1.2.1**): *never opened* and *not opened in 30 days* are listed under *worth knowing, at no cost to the score*, and still drive the **Unused** and **Stale** tiles and filters. They used to cost −10 each, which meant opening a bookmark — the thing this view asks you to do — raised its score and, under the worst-first sort, sent the row hundreds of places down the list you were working through |
 | **Summary tiles** | Compact stat tiles; click a tile to jump to that filter. **Monitored** sits directly after **Healthy** and colours itself from live state: the whole tile turns **red** while any monitored bookmark is unreachable, **green** while they all answer, and stays neutral at zero. Its tooltip names the split (*1 of 3 not responding*); clicking opens the monitored list and is remembered. A monitor awaiting its first check counts as neither, since unknown is not the same as failing. Each tile explains its rule on hover — which matters most for the pair that sound alike: **Stale** is *not opened in over 30 days*, **Unused** is *never opened at all* |
 | **How long it has been failing** | Every checked bookmark records when its current run of failures started, so the row says *failing for 3d 4h* with the first failure date in the tooltip. Only a monitored row had this before, which meant a link that died four months ago looked exactly like one that broke this morning |
-| **Gone without saying so** | The most common form of rot is a page that answers **200** and shows *page not found*. With **Config → Behavior → Status & health → Spot pages that answer 200 but say "not found"**, a monitored check reads the page — the same single bounded read drift and the keyword rule already share — and judges the title first, then the opening of the body, in five languages. A hit is a failure with its own class, not a content failure: clearing an expectation does not clear it, because an expectation did not cause it. An explicit expectation still wins |
+| **Gone without saying so** | The most common form of rot is a page that answers **200** and shows *page not found*. With **Config → Behavior → Status & health → Spot pages that answer 200 but say "not found"**, a monitored check reads the page — the same single bounded read drift and the keyword rule already share — and judges the title first, then the opening of the body, in five languages. A hit is a failure with its own class, not a content failure: clearing an expectation does not clear it, because an expectation did not cause it. An explicit expectation still wins. For the pages that never say so in words, the check also asks the host itself what it does with an address that cannot exist — once per site per day — and treats a page matching that answer in length as the same page. **A site that sends every address to a sign-in page is left alone** (**v1.4.1.2**): a gated app answers the probe and the bookmark with the same login screen, which looks identical to a not-found page and is not one. What separates them is that a not-found page answers where it was asked and a gate redirects elsewhere |
 | **Group by site** | A button beside the sort. One host down takes every bookmark on it with it, and grouped by site that reads as one problem with a count rather than ten problems. Works under every filter and sort |
 | **A tile counts what its filter shows** | The Broken tile reads the Broken filter rather than the report's own `brokenCount`, which deliberately keeps a down monitor apart from an ordinary dead link. On screen that split read as *Broken 0* beside a pill saying *Broken 1* — and once empty tiles were dropped, as no tile at all while the filter still had a row. The split is still there and still visible, in the Monitored tile that names it in full, and in the tile's own tooltip |
 | **Every tile is a filter** | Including **Certificates** (**v1.3.3.3**), which did nothing when clicked until then: certificates are recorded per host rather than per bookmark, so it was drawn as a plain figure — indistinguishable from the tiles beside it that all narrow the list. The count still reads in hosts; clicking it shows the bookmarks on them |

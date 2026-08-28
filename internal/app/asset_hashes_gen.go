@@ -170,7 +170,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/clock-format.js":                              "2fb45e03f722",
 	"js/shared/config-custom-themes.js":                      "505ee4249345",
 	"js/shared/config-favicon-prefetch.js":                   "58550ec7ccc2",
-	"js/shared/config-help-tips.js":                          "eda1c159e269",
+	"js/shared/config-help-tips.js":                          "8bab7e84f713",
 	"js/shared/config-language.js":                           "b5858c72b8db",
 	"js/shared/config-setting-promo.js":                      "e9801a14ce26",
 	"js/shared/config-setting-promos.js":                     "962afbb5378e",
@@ -204,6 +204,6 @@ var precomputedAssetHashes = map[string]string{
 	"js/visual-settings.js":                                  "c373da16066f",
 	"js/weather.js":                                          "2e4cddbdcd40",
 	"js/whats-new-modal.js":                                  "f1fc9abf760e",
-	"js/whats-new-stub.js":                                   "336238c0097f",
+	"js/whats-new-stub.js":                                   "32586e3f1c48",
 	"js/write-api.js":                                        "25afcd408905",
 }
