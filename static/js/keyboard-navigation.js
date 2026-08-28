@@ -251,11 +251,11 @@ class KeyboardNavigation {
                 }
             }
 
-            // Shift+W — spread the focused category across columns, or put it
-            // back. Outside the Shift block above because that one acts on a
-            // bookmark row, and a category needs no row selected.
+            // Shift+W — set the width of the block the cursor is in, category or
+            // widget. Outside the Shift block above because that one acts on a
+            // bookmark row, and a block needs no row selected.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyW') {
-                if (this.toggleFocusedCategorySpread()) {
+                if (this.toggleFocusedBlockWidth()) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
@@ -536,19 +536,33 @@ class KeyboardNavigation {
     }
 
     /**
-     * Turn spreading on or off for the category the cursor is in.
+     * Set the width of the block the cursor is in — a category or a widget.
+     *
+     * A widget block carries data-category-id too, because the grid and
+     * DragReorder know it as a category, so the resolver finds it either way.
+     * It is not one, though: its width is a number in its own config rather
+     * than the spread flag, and asking categoryFromEl about it would invent a
+     * category from a widget id and then spread nothing.
      *
      * Returns false when there was nothing to act on, so the caller can leave
      * the key to whoever else wants it rather than swallowing it — the same
      * rule the Shift+letter block follows.
      */
-    toggleFocusedCategorySpread() {
+    toggleFocusedBlockWidth() {
         const span = window.DashboardCategorySpan;
         const d = this.dashboard;
-        const categoryEl = span?.resolveFocusedCategoryEl(d, { fallbackToFirst: false });
-        if (!categoryEl || !d.categoryMenu) {
+        const blockEl = span?.resolveFocusedCategoryEl(d, { fallbackToFirst: false });
+        if (!blockEl || !d.categoryMenu) {
             return false;
         }
+        const widgetId = blockEl.getAttribute('data-widget-id');
+        if (widgetId) {
+            const widget = (d.widgets || []).find((w) => String(w?.id) === String(widgetId));
+            if (!widget) return false;
+            void d.categoryMenu.toggleWidgetWidth(widget);
+            return true;
+        }
+        const categoryEl = blockEl;
         const category = span.categoryFromEl(d, categoryEl);
         const name = categoryEl.querySelector('.category-title-name')?.textContent?.trim() || '';
         const on = d.categoryMenu.toggleSpread(category);

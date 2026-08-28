@@ -66,6 +66,206 @@ class DashboardCategoryMenu {
         });
     }
 
+    /**
+     * Bind a widget header to the same menu.
+     *
+     * A widget block is a `.category` to the grid and to DragReorder, and from
+     * here it is one more kind of block with a name, a width and a way to be
+     * put away. Renaming, resizing and closing one meant three trips through
+     * Config -> Widgets; they are on the header now, where the category beside
+     * it has had them all along.
+     */
+    bindWidget(blockEl, widget) {
+        if (!(blockEl instanceof HTMLElement) || blockEl.dataset.widgetMenuBound === '1') {
+            return;
+        }
+        const titleEl = blockEl.querySelector('.category-title');
+        if (!titleEl || !widget?.id) {
+            return;
+        }
+        blockEl.dataset.widgetMenuBound = '1';
+
+        titleEl.addEventListener('contextmenu', (e) => {
+            const d = this.dash;
+            if (e.shiftKey) return; // escape hatch to the native menu
+            if (d.uiHelpers?.isModalOpen?.()) return;
+            if (titleEl.querySelector('.category-rename-input')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            // The Menu key raises this with no pointer behind it; taken
+            // literally the menu lands in the corner of the window.
+            const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+            const box = titleEl.getBoundingClientRect();
+            this.showWidget(titleEl, widget, fromPointer
+                ? { x: e.clientX, y: e.clientY }
+                : { x: box.left + 8, y: box.bottom });
+        });
+    }
+
+    /** The menu for a widget: its name, its width, and putting it away. */
+    showWidget(titleEl, widget, point) {
+        const wide = this.widgetIsWide(widget);
+        const canWiden = this.widgetCanWiden();
+        const entries = [
+            { id: 'rename', label: this.t('widgetMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            {
+                // The label says what the click will do, like the category's
+                // spread entry above -- this list is verbs, and a tick beside a
+                // constant label belongs to a radio submenu instead.
+                id: 'width',
+                label: wide
+                    ? this.t('widgetMenuWidthOne', 'Back to one column')
+                    : this.t('widgetMenuWidthTwo', 'Across two columns'),
+                icon: '↔',
+                key: 'Shift+W',
+                detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
+                disabled: !canWiden && !wide,
+            },
+            {
+                // Closing is not deleting: the widget keeps its settings and any
+                // sign-in it holds, and the Shown switch in Config -> Widgets is
+                // the same flag. Deleting stays there, where the consequences
+                // are spelled out.
+                id: 'close',
+                label: this.t('widgetMenuClose', 'Close'),
+                icon: '✕',
+                key: 'Delete',
+                danger: true,
+            },
+        ];
+
+        this._openMenu({
+            id: 'widget-context-menu',
+            ariaLabel: this.t('widgetMenuTitle', 'Widget actions'),
+            hint: this.widgetName(widget),
+            entries,
+            point,
+            onPick: (action) => { void this.runWidgetAction(action, titleEl, widget); },
+        });
+    }
+
+    /** What the header shows: the widget's own title, or its type's name. */
+    widgetName(widget) {
+        const given = String(widget?.title || '').trim();
+        return given || this.dash.renderCore?.widgetTypeLabel?.(widget?.type) || 'widget';
+    }
+
+    widgetIsWide(widget) {
+        return Number(widget?.config?.columns) === 2;
+    }
+
+    /*
+     * Whether there is a second column to spread into.
+     *
+     * The grid narrows a wide widget to what it has rather than dropping it, so
+     * offering the width on a one-column dashboard would be offering a setting
+     * with no visible effect. A widget that is already wide keeps the entry, so
+     * a reader on a narrow window can still put it back.
+     */
+    widgetCanWiden() {
+        return Number(this.dash.renderCore?.getEffectiveColumnsPerRow?.()) > 1;
+    }
+
+    async runWidgetAction(action, titleEl, widget) {
+        const d = this.dash;
+        window.nextdashTrack?.('widget:context-menu', { action });
+
+        if (action === 'rename') {
+            this.startWidgetRename(titleEl, widget);
+            return;
+        }
+        if (action === 'width') {
+            await this.toggleWidgetWidth(widget);
+            return;
+        }
+        if (action === 'close') {
+            await this.closeWidget(widget);
+        }
+    }
+
+    /**
+     * Rename from the header, through the editor the category next to it uses.
+     *
+     * An empty title is a title here: the widget falls back to its type's name,
+     * which is what the placeholder in Config -> Widgets has always promised.
+     */
+    startWidgetRename(titleEl, widget) {
+        const d = this.dash;
+        const nameSpan = titleEl?.querySelector('.category-title-name');
+        if (!nameSpan) return;
+        d.renderCore?._startBlockRename?.(titleEl, nameSpan, {
+            value: String(widget.title || ''),
+            ariaKey: 'renameWidgetAria',
+            ariaFallback: 'Rename widget',
+            allowEmpty: true,
+            displayFor: (name) => String(name || '').trim() || this.widgetName({ ...widget, title: '' }),
+            onCommit: async (title) => {
+                const previous = String(widget.title || '');
+                widget.title = title;
+                if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { title })) {
+                    widget.title = previous;
+                    nameSpan.textContent = this.widgetName(widget).toLowerCase();
+                }
+            },
+        });
+    }
+
+    /** One column to two and back, from the header or from Shift+W. */
+    async toggleWidgetWidth(widget) {
+        const d = this.dash;
+        const wide = this.widgetIsWide(widget);
+        if (!wide && !this.widgetCanWiden()) {
+            d.showNotification?.(this.t('widgetMenuWidthUnavailable',
+                'There is only one column to work with — a widget needs at least two to span.'), 'info');
+            return false;
+        }
+        // undefined rather than 1: the default is the key being absent, which is
+        // what the config panel and the server both store for one column.
+        const next = wide ? undefined : 2;
+        if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { columns: next } })) {
+            return false;
+        }
+        widget.config = { ...(widget.config || {}) };
+        if (next === undefined) delete widget.config.columns; else widget.config.columns = next;
+        d.renderDashboard?.({ animate: false, forceFull: true });
+        return true;
+    }
+
+    /**
+     * Put a widget away.
+     *
+     * `enabled: false` is the Shown switch in Config -> Widgets, so this is the
+     * same state reached from either side rather than a second kind of hidden.
+     * No confirm -- nothing is lost and the toast carries the way back, both to
+     * undo it here and to the switch that turns it on again later.
+     */
+    async closeWidget(widget) {
+        const d = this.dash;
+        const name = this.widgetName(widget);
+        if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { enabled: false } })) {
+            return false;
+        }
+        widget.config = { ...(widget.config || {}), enabled: false };
+        d.renderDashboard?.({ animate: false, forceFull: true });
+        d.showNotification?.(
+            this.t('widgetClosed', '“{name}” closed. Switch it back on under Config → Widgets.', { name }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { config: { enabled: undefined } })) {
+                        return;
+                    }
+                    widget.config = { ...(widget.config || {}) };
+                    delete widget.config.enabled;
+                    d.renderDashboard?.({ animate: false, forceFull: true });
+                    d.showNotification?.(this.t('widgetClosedUndone', 'Widget back on the page.'), 'success');
+                },
+            },
+        );
+        return true;
+    }
+
     show(titleEl, category, point) {
         // `key` is the keyboard route to the same action, shown as a chip so the
         // menu teaches its own shortcuts. Untranslated, like every other key
