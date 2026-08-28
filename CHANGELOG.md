@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.2.2 — 29 August 2026](#v1422--29-august-2026)
 - [v1.4.2.1 — 28 August 2026](#v1421--28-august-2026)
 - [v1.4.2 — 28 August 2026](#v142--28-august-2026)
 - [v1.4.1.2 — 28 August 2026](#v1412--28-august-2026)
@@ -181,6 +182,28 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.2.2 — 29 August 2026
+
+The refresh interval added in v1.4.2.1 turned out to be unusable without
+knowing three things the interface never said, and a cached failure had no way
+out but waiting.
+
+### Widgets
+
+- **new** — **Refresh now, in the widget's own menu.** `refresh=1` has been on the server since the custom widget shipped, behind the write token, and nothing in the app ever sent it. So a reader who corrected a wrong API key kept seeing the same error for the thirty seconds a failure is held for — a hold that is right, since it stops a service that is down being retried by every open dashboard, and wrong only for the one person who has just fixed the reason. `refreshCustomWidgetNow` in `dashboard-render-core.js` sends it, writes the answer straight into the tile's own store so the redraw does not spend a second call at the service, carries the keyboard cursor across, and restarts the clock so a beat does not arrive a second later. Offered only on `custom`: every other tile draws from what nextDash already holds, and a menu entry that does nothing is worse than no entry.
+
+- **new** — **the interval says what it accepts, and an ℹ says how to choose.** The bounds were on the `<input>` element, where a browser can read them and a person cannot. The field now carries a hint line — *Between 30 seconds and 24 hours. Leave empty for 5 minutes.* — and an ℹ opening the same `AppModal` dialog every setting in config uses, reached through a new `info` property on the widget field table rather than through `FIELD_META`, which is keyed by settings-field name and cannot see widget keys. The label changed from *Ask again after (seconds)* to *Refresh every (seconds)*: the old name described the cache, which has been half the story since the tile started refreshing itself.
+
+- **fix** — **a number outside its range is clamped, not dropped.** `sanitizeWidgetConfig` stored an int only when it was already within `field.Min..field.Max`, so `ttl: 5` vanished from the saved config and the tile fell back to `undefined || 300` — five minutes, with nothing on screen saying the value had been refused. It clamps through `clampInt` now, for every int field: `rows`, `days`, `warnDays` and `ttl` alike. A negative is still refused rather than clamped, and so is a string or a fraction: those are a caller sending the wrong shape rather than a reader choosing badly, and absent is what the renderer reads as "use the default". Both existing tests that pinned the old behaviour were rewritten rather than deleted — `TestOutOfRangeValuesFallBackToTheDefault` became `TestOutOfRangeNumbersAreClampedAndNonsenseIsDropped`, and the custom-widget test now asserts the floor instead of absence.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.2.2.json`, the `index.json` entry carrying `hideFromModal`, the constants spec, this changelog, `MANUAL.md`, and the Config → Help widgets and version paragraphs in all four locales.
+- **`NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v263` and `DASHBOARD_RELEASE` does not.** Two hidden releases deep now: this counts toward the version number and leads Config → Overview, while the modal keeps leading with v1.4.2. A round of additions to one tile is not a reason to reopen the notes for everyone.
+- `go generate ./...` for the changed CSS and JS.
 
 ---
 

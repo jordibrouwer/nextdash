@@ -653,6 +653,54 @@ class DashboardRenderCore {
         this._customWidgetTimers?.clear();
     }
 
+    /*
+     * Ask this tile's service again, now.
+     *
+     * refresh=1 is the one request here that costs a call at somebody else's
+     * service with this install's stored credential on it, so the server keeps
+     * it behind the write token -- and it is the only thing that gets past the
+     * thirty seconds a failure is held for. That hold is right: it stops a
+     * service that is down being retried by every open dashboard. It is wrong
+     * only for the reader who has just fixed the reason it was failing, which
+     * is who reaches for this.
+     */
+    async refreshCustomWidgetNow(widget) {
+        if (!widget || widget.type !== 'custom' || !widget.id) return;
+        const d = this.dash;
+        const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
+
+        const block = document.querySelector(
+            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const body = block?.querySelector('.dashboard-widget-body');
+        if (!body) return;
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const url = `/api/widgets/custom?pageId=${encodeURIComponent(pageId)}`
+                + `&id=${encodeURIComponent(widget.id)}&refresh=1`;
+            const res = await fetcher(url);
+            if (res.ok) {
+                // Written straight into the tile's own store, so the redraw
+                // below reads this answer rather than asking a second time and
+                // spending another call at the service.
+                const result = await res.json();
+                d._widgetCustom = d._widgetCustom || {};
+                const ttl = Math.max(Number(widget?.config?.ttl) || 300, 30) * 1000;
+                d._widgetCustom[`${pageId}:${widget.id}`] = { result, until: Date.now() + ttl };
+            }
+        } catch (_error) {
+            // The redraw below says whatever the tile can say; a failed ask is
+            // not worth a second message on top of the one it will show.
+        }
+
+        const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
+        await window.DashboardWidgets?.custom?.(body, widget, d);
+        if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
+        // The clock restarts from now, so pressing this does not leave a beat
+        // arriving a second later.
+        this.startCustomWidgetTimer(widget);
+    }
+
     /* How many are running -- for the test that one tile keeps one clock. */
     customWidgetTimerCount() {
         return this._customWidgetTimers?.size || 0;

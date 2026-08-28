@@ -241,8 +241,20 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 				clean[field.Key] = value
 			}
 		case "int":
-			if value, ok := widgetConfigInt(raw); ok && value >= field.Min && value <= field.Max {
-				clean[field.Key] = value
+			/*
+			 * Brought into range rather than dropped.
+			 *
+			 * Someone asking for a refresh every 5 seconds means it; they just
+			 * did not know the floor is 30. Dropping the key sent them back to
+			 * the default with nothing on screen saying why, which reads as a
+			 * setting that will not save. A negative number is different --
+			 * that is a caller sending the wrong shape, not a reader choosing
+			 * badly -- so a negative is refused here and a non-number by
+			 * widgetConfigInt, and both fall through to the default. No field
+			 * in the table has a negative range, so this costs nothing.
+			 */
+			if value, ok := widgetConfigInt(raw); ok && value >= 0 {
+				clean[field.Key] = clampInt(value, field.Min, field.Max)
 			}
 		case "string":
 			if value, isString := raw.(string); isString {
