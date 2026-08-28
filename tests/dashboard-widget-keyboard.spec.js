@@ -256,3 +256,29 @@ test.describe('the menu on a widget row', () => {
         expect(tab.url()).toContain('watched=1');
     });
 });
+
+/*
+The cursor survives the tile being redrawn.
+
+A widget's rows are rebuilt whenever its data arrives — every few seconds on an
+install that monitors anything — and the element under the cursor stops
+existing. The cursor went with it: currentIndex fell to -1 and focus dropped to
+the body, so a reader working through a tile was thrown back to the grid by a
+refresh they never asked for.
+*/
+test('a widget refresh leaves the cursor where it was', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    await page.locator('.dashboard-widget button').first().focus();
+    await expect.poll(() => cursor(page).then((at) => at?.widget), { timeout: 10_000 }).toBe(true);
+    const before = await cursor(page);
+
+    // What the health badge does every time its report lands.
+    await page.evaluate(() => window.dashboardInstance.renderCore.refreshWidgets('health'));
+    await page.waitForTimeout(500);
+
+    const after = await cursor(page);
+    expect(after?.widget).toBe(true);
+    expect(after?.text).toBe(before?.text);
+    expect(after?.focused).toBe(true);
+});

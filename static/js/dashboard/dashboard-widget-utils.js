@@ -11,6 +11,13 @@
     'use strict';
 
     function label(dash, key, fallback) {
+        // A missing key means "use the fallback", and it has to be checked
+        // before asking: t() answers a non-string with String(key), so an
+        // absent key came back as the literal text "undefined" and a caller
+        // that only had a fallback to give put that on screen.
+        if (typeof key !== 'string' || !key) {
+            return fallback;
+        }
         const value = dash?.language?.t?.(key);
         return value && value !== key ? value : fallback;
     }

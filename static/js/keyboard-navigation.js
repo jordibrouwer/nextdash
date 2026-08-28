@@ -612,6 +612,63 @@ class KeyboardNavigation {
     }
 
     /**
+     * The cursor's place inside a widget, as something a redraw cannot destroy.
+     *
+     * A widget's rows are rebuilt from scratch whenever its data arrives, so the
+     * element the cursor is on stops existing. What survives is which widget it
+     * was and how far down that widget's own buttons the cursor had walked --
+     * enough to land on the same row, or on the last one when the tile came back
+     * shorter.
+     *
+     * Returns null when the cursor is not in a widget, which is the common case.
+     */
+    captureWidgetCursor() {
+        if (!this._gridNavActive()) {
+            return null;
+        }
+        const current = this.navigableElements[this.currentIndex];
+        if (!this._isWidgetElement(current)) {
+            return null;
+        }
+        const block = current.closest('.dashboard-widget');
+        const body = block?.querySelector('.dashboard-widget-body');
+        if (!block || !body) {
+            return null;
+        }
+        const buttons = [...body.querySelectorAll('button')];
+        return {
+            widgetId: block.dataset.widgetId || '',
+            at: Math.max(0, buttons.indexOf(current)),
+            focused: document.activeElement === current,
+        };
+    }
+
+    /** Put the cursor back where captureWidgetCursor found it. */
+    restoreWidgetCursor(cursor) {
+        if (!cursor?.widgetId) {
+            return false;
+        }
+        const block = document.querySelector(
+            `.dashboard-widget[data-widget-id="${CSS.escape(String(cursor.widgetId))}"]`,
+        );
+        const buttons = [...(block?.querySelectorAll('.dashboard-widget-body button') || [])];
+        if (!buttons.length) {
+            return false;
+        }
+        const target = buttons[Math.min(cursor.at, buttons.length - 1)];
+        this.updateNavigableElements();
+        const index = this.navigableElements.indexOf(target);
+        if (index < 0) {
+            return false;
+        }
+        this.currentIndex = index;
+        // Focus only where it had focus: a refresh landing while the reader is
+        // typing elsewhere must not pull the caret into the grid.
+        this.highlightCurrentElement({ focus: cursor.focused === true });
+        return true;
+    }
+
+    /**
      * What actually takes focus for a stop.
      *
      * A bookmark row delegates to the link inside it; a show-more toggle and
@@ -1055,7 +1112,7 @@ class KeyboardNavigation {
             if (nextIndex === -1) {
                 previousRow.classList.remove('keyboard-selected');
                 previousRow.removeAttribute('aria-current');
-                if (!this._isWidgetElement(previousRow)) {
+                if (previousRow.classList.contains('bookmark-link')) {
                     previousRow.setAttribute('aria-selected', 'false');
                 }
                 this.restoreKbdSelection();
@@ -1707,7 +1764,11 @@ class KeyboardNavigation {
         this.navigableElements.forEach(element => {
             element.classList.remove('keyboard-selected');
             element.removeAttribute('aria-current');
-            if (!this._isWidgetElement(element)) {
+            // A class test rather than _isWidgetElement: this runs for every
+            // stop on every cursor move, and closest() up the tree per row is a
+            // walk of the whole grid per arrow key on a page of two hundred
+            // bookmarks. Only a bookmark row is a row of the grid.
+            if (element.classList.contains('bookmark-link')) {
                 element.setAttribute('aria-selected', 'false');
             }
         });
@@ -1717,7 +1778,7 @@ class KeyboardNavigation {
             const currentElement = this.navigableElements[this.currentIndex];
             currentElement.classList.add('keyboard-selected');
             currentElement.setAttribute('aria-current', 'true');
-            if (!this._isWidgetElement(currentElement)) {
+            if (currentElement.classList.contains('bookmark-link')) {
                 currentElement.setAttribute('aria-selected', 'true');
             }
 

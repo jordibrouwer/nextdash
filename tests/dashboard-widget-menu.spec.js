@@ -273,3 +273,38 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
 
     expect(Math.abs((await topOf()) - before)).toBeLessThan(24);
 });
+
+/*
+The "add a category" button belongs to a category.
+
+It is placed on the block that ends the grid, found by the `.category` class —
+which a widget carries, because the grid and DragReorder know it as one. So the
+button offering to add a category could land in the title bar of the Feeds tile,
+where it means nothing and sits among the widget's own controls.
+*/
+test('the add-category button never lands in a widget header', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    // Several tiles, so one of them is bound to end the grid.
+    await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({
+            widgets: ['health', 'feeds', 'trend', 'inbox', 'archive', 'unchecked']
+                .map((type) => ({ type, title: type })) }) });
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(page.locator('.dashboard-widget').first()).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(800);
+
+    expect(await page.locator('.dashboard-widget .category-add-inline-btn').count()).toBe(0);
+    // It still exists somewhere — on a category, which is what it is for.
+    expect(await page.locator('.category-add-inline-btn').count()).toBeGreaterThan(0);
+});

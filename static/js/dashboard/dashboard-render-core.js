@@ -602,6 +602,17 @@ class DashboardRenderCore {
 
     refreshWidgets(type) {
         const d = this.dash;
+        /*
+         * Where the keyboard was, before the rows it was on are replaced.
+         *
+         * The badge's report lands every few seconds on an install that
+         * monitors anything, and each arrival redraws these bodies -- so a
+         * reader sitting on a row inside a tile lost the cursor to a refresh
+         * they never asked for, and the next arrow key started over at the top
+         * of the grid. The row objects cannot survive the redraw; their place
+         * in the tile can.
+         */
+        const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
         document.querySelectorAll(`.dashboard-widget[data-widget-type="${CSS.escape(String(type))}"]`)
             .forEach((block) => {
                 const widget = (d.widgets || []).find((w) => w.id === block.dataset.widgetId);
@@ -611,6 +622,7 @@ class DashboardRenderCore {
                 body.classList.remove('dashboard-widget-body--empty');
                 renderer(body, widget, d);
             });
+        if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
     }
 
     /**
@@ -1582,13 +1594,21 @@ class DashboardRenderCore {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } catch (_error) {
             widgets[index] = before;
-            d.widgets = widgets;
+            // Only when this is still the page being looked at. The reader can
+            // change page while the write is in flight, and d.widgets is then
+            // the new page's -- putting the old array back would hand one page
+            // the other's blocks, which is worse than the failed edit.
+            if (this.onSamePage(pageId)) d.widgets = widgets;
             d.showErrorNotification?.(d.formatDashboardLabel?.('widgetSaveFailed', {},
                 'Could not save the widget.') || 'Could not save the widget.');
             return false;
         }
 
-        d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order: d.blockOrder || [] } });
+        // Same reason: blockOrder belongs to whichever page is loaded now, and
+        // writing it under this page's id would cache an order from elsewhere.
+        if (this.onSamePage(pageId)) {
+            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order: d.blockOrder || [] } });
+        }
         this.forgetWidgetConfigCache();
         return true;
     }
@@ -1670,6 +1690,11 @@ class DashboardRenderCore {
             requestAnimationFrame(again);
         };
         requestAnimationFrame(again);
+    }
+
+    /** Whether the dashboard still shows the page a write started on. */
+    onSamePage(pageId) {
+        return Number(this.dash.currentPageId) === Number(pageId);
     }
 
     /*
