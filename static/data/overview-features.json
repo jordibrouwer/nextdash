@@ -2,6 +2,22 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureWidgetFoldTitle",
+      "titleFallback": "A widget folds away like the categories beside it",
+      "whatKey": "config.overviewNewFeatureWidgetFoldWhat",
+      "whatFallback": "A widget is a summary, and a page carrying several of them has the problem a page of long categories has: the block you want is below the fold because the ones above it are open. Categories have folded since long before widgets existed; widgets could only be dragged, hidden or removed.",
+      "howKey": "config.overviewNewFeatureWidgetFoldHow",
+      "howFallback": "Click a widget's title to fold it shut, or press Enter or Space with the header focused — the same gesture on the same header, rather than a second one to learn. Fold all, the . key and the fold-all button take widgets with them, and each block stays folded or open as you left it, per page.",
+      "enableKey": "config.overviewNewFeatureWidgetFoldEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureWidgetFoldCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.1.2"
+    },
+    {
       "titleKey": "config.overviewNewFeatureStatsReadingTitle",
       "titleFallback": "Statistics reports what the app already knows",
       "whatKey": "config.overviewNewFeatureStatsReadingWhat",

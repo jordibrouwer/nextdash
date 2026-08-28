@@ -48,7 +48,12 @@ type softControlVerdict struct {
 	SoftNotFound bool
 	// Length of that answer, so a real page can be compared against it: a page
 	// whose body matches the host's not-found page in size is that page.
-	Length    int
+	Length int
+	// Landing is where the probe ended up when the host sent it somewhere else
+	// -- an address without its query, so a login page that carries the asked-for
+	// path in a returnUrl still compares equal. Empty when the probe stayed on
+	// its own address, which is the ordinary not-found template.
+	Landing   string
 	CheckedAt time.Time
 }
 
@@ -117,6 +122,9 @@ func (h *Handlers) hostSoftNotFound(ctx context.Context, target string) softCont
 			if resp.StatusCode == http.StatusOK {
 				verdict.SoftNotFound = true
 				verdict.Length = readableTextLength(string(body))
+				if landing := softControlAddress(finalRequestURL(resp)); landing != "" && landing != softControlAddress(probe) {
+					verdict.Landing = landing
+				}
 			}
 		}
 	}
@@ -144,8 +152,26 @@ Deliberately conservative: within a fifth of the probe's length, and only for
 pages short enough to be a notice rather than an article. Telling somebody their
 working bookmark is dead is the failure worth avoiding.
 */
-func softNotFoundByComparison(verdict softControlVerdict, pageLength int) bool {
+func softNotFoundByComparison(verdict softControlVerdict, pageLength int, pageFinalURL string) bool {
 	if !verdict.SoftNotFound || verdict.Length <= 0 || pageLength <= 0 {
+		return false
+	}
+	/*
+	 * The gate case, which looks identical to a soft 404 and is not one.
+	 *
+	 * A site behind a login sends every address it does not hand out -- the
+	 * probe's and the bookmark's alike -- to the same sign-in page, with the
+	 * same 200 and the same body. Length alone therefore says "this page is the
+	 * host's not-found page" about a page that is perfectly there; the user is
+	 * simply not signed in. Prowlarr, Portainer and their kind all behave this
+	 * way, so this is the common case, not a curiosity.
+	 *
+	 * What separates the two is where the probe went. A not-found template
+	 * answers on the address that was asked for; a gate redirects elsewhere. So
+	 * a probe that landed somewhere else, and a bookmark that landed on that
+	 * same somewhere else, is a gate -- and a gate is not evidence of anything.
+	 */
+	if verdict.Landing != "" && verdict.Landing == softControlAddress(pageFinalURL) {
 		return false
 	}
 	// A long page is an article, whatever the host does with unknown addresses.
@@ -157,4 +183,18 @@ func softNotFoundByComparison(verdict softControlVerdict, pageLength int) bool {
 		diff = -diff
 	}
 	return diff*5 <= verdict.Length
+}
+
+// softControlAddress reduces a URL to what identifies the page it landed on:
+// scheme, host and path, lowercased host, no query and no fragment.
+//
+// The query has to go because a gate puts the address it turned away into it --
+// /login?returnUrl=%2Fnextdash-probe-1a2b against /login?returnUrl=%2F is the
+// same page reached twice, and comparing them whole would say otherwise.
+func softControlAddress(raw string) string {
+	parsed, err := neturl.Parse(strings.TrimSpace(raw))
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	return strings.ToLower(parsed.Scheme+"://"+parsed.Host) + parsed.Path
 }

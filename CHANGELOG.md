@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.1.2 — 28 August 2026](#v1412--28-august-2026)
 - [v1.4.1.1 — 27 August 2026](#v1411--27-august-2026)
 - [v1.4.0 — 27 August 2026](#v140--27-august-2026)
 - [v1.3.3.5 — 25 August 2026](#v1335--25-august-2026)
@@ -178,6 +179,27 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.1.2 — 28 August 2026
+
+A gesture widgets should have had from the day they arrived, and a health check
+that had started calling working sites dead.
+
+### The dashboard
+
+- **new** — **a widget folds away like the categories beside it.** A widget is a summary, and a page carrying several of them has the problem a page of long categories has: the block you want is below the fold because the ones above it are open. Categories have folded since long before widgets existed, so this is the same gesture on the same header rather than a second one to learn — click it, or **Enter**/**Space** with it focused. Built out of what categories already have: the state goes into the same `collapsedCategories` map under the same page-scoped key (widget ids prefixed `w_` so they cannot collide, and the existing prune of stale keys covers them without knowing they exist), the body moved inside the same `.category-body` wrapper so the collapse animation is the one already written, and **Fold all** picked widgets up for no new code at all because it works on `data-collapsed`. One rule did not follow for free: the body reserves `min-height: 3.5rem` so the packed layout does not shift when its figures arrive, and it is later in the stylesheet and equally specific, so a collapsed widget stopped 56px short of closed. The reservation answers a question that does not exist while the block is folded, so it lifts at `data-collapsed="true"` — measured at 0px closed against 154px open.
+
+### Status & health
+
+- **fix** — **a site behind a login is not a page that does not exist.** Two bookmarks on a tailnet were reported down with *Page says it does not exist* while both sites were up. Neither said anything about being gone; it was the control-URL test in `health_soft404_control.go` that condemned them. A gated site sends every address it does not hand out to the same sign-in page, the probe's random path included, so the probe comes back **200** and the bookmark's body *is* that sign-in page — identical in length, well inside the fifth the comparison allows, and short enough to pass for a notice. Both signals agree and both are wrong. What separates the two cases is where the probe went: a not-found template answers on the address that was asked for, a gate redirects elsewhere. `softControlVerdict` now records that landing address — without its query, since a gate puts the path it turned away into a `returnUrl` — and a bookmark landing on the same address ends the comparison before length is consulted. A real soft 404, answering on its own address, is untouched.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.1.2.json`, the `index.json` entry carrying `hideFromModal`, the constants spec, this changelog, `README.md`, `MANUAL.md`, the Config → Help widget and health paragraphs and the version paragraph in all four locales, a keyboard tip in `config-help-tips.js`, and a spotlight in `static/data/overview-features.json` with `since: "v1.4.1.2"` for Config → Overview and About → News & features.
+- **`NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v260` and `DASHBOARD_RELEASE` does not.** Same reasoning as v1.4.1.1, and now two hidden releases deep: this one counts toward the version number and leads Config → Overview, while the modal keeps leading with v1.4.0. Without the data token a browser holding the old index would never learn the release exists.
+- `go generate ./...` for the changed CSS, JS and locales.
 
 ---
 

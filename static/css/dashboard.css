@@ -2717,7 +2717,11 @@ body[data-category-spacing="airy"] {
     grid-template-rows: 0fr;
 }
 
-.category-body > .bookmarks-list {
+/* A widget's body collapses on the same terms: it sits in the same
+   .category-body wrapper, so it needs the same two properties for the grid row
+   to shrink past its content. */
+.category-body > .bookmarks-list,
+.category-body > .dashboard-widget-body {
     min-height: 0;          /* required: lets the grid row shrink below content height */
     overflow: hidden;
     opacity: 1;
@@ -2728,14 +2732,28 @@ body[data-category-spacing="airy"] {
     overflow-x: visible;
 }
 
-.category[data-collapsed="true"] .category-body > .bookmarks-list {
+.category[data-collapsed="true"] .category-body > .bookmarks-list,
+.category[data-collapsed="true"] .category-body > .dashboard-widget-body {
     opacity: 0;
+}
+
+/* The height a widget body reserves is there so the packed layout does not
+   shift when the figures arrive — a question that does not exist while the
+   block is collapsed, and 3.5rem of reserved space is exactly what would keep a
+   collapsed widget from closing. Scoped tightly enough to beat the rule that
+   sets it, which is later in the file and equally specific. */
+.dashboard-widget[data-collapsed="true"] .category-body > .dashboard-widget-body {
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
 }
 
 body.no-animations .category-body {
     transition: none !important;
 }
-body.no-animations .category-body > .bookmarks-list {
+body.no-animations .category-body > .bookmarks-list,
+body.no-animations .category-body > .dashboard-widget-body {
     transition: none !important;
 }
 
