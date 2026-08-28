@@ -2201,7 +2201,11 @@ Duplicate URL detection (`:duplicate` in search, Health view, and `GET /api/dupl
 
 ### Optional `NEXTDASH_CORS_ORIGINS`
 
-By default only an installed extension's origin receives `Access-Control-Allow-Origin`; a web page on another origin gets none and cannot read the API. Before 1.4 the default was `*`, which let any site open in a tab read your bookmarks from a nextDash it could guess the address of. To allow a page of your own, set a comma-separated allowlist:
+By default, only an installed browser extension's origin (`chrome-extension://…`, `moz-extension://…`, `safari-web-extension://…`) receives `Access-Control-Allow-Origin`. A web page on another origin gets no CORS header at all and cannot read the API.
+
+Before 1.4 the default was `Access-Control-Allow-Origin: *`, which meant any site open in a tab could read your bookmarks from a nextDash whose address it could guess — the read routes need no token. The extension is unaffected by the change: a Manifest V3 extension with host permissions is granted cross-origin access by the browser itself, without CORS.
+
+Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to restrict cross-origin reads and writes, for example:
 
 ```bash
 NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
@@ -2258,6 +2262,13 @@ request itself is wrong. Redirects are not followed, and a local address is
 reachable only on an install that allows local bookmarks. **Send a test** posts
 one delivery and reports the receiver's own status code.
 
+An endpoint URL goes through the same address rules as a bookmark ping, and it
+is checked **twice**: once when you save it, so the screen can refuse it while
+you are still looking at the field, and again at delivery, because a name is
+resolved again then and may since have come to point somewhere else. Reading the
+endpoint list needs the write token — an endpoint URL is not a description of a
+webhook, it *is* the webhook.
+
 ### An MCP endpoint for an AI assistant (v1.4.0)
 
 On the same tab, and **off until you switch it on**. An assistant that speaks
@@ -2283,17 +2294,56 @@ add anything.
 
 ### Activity log
 
-Structured JSON lines for bookmark mutations and status checks (opens optional). See [README.md → Activity log](README.md#activity-log-bookmark-events) for `NEXTDASH_ACTIVITY_LOG`, `NEXTDASH_ACTIVITY_LOG_PERSIST`, and example lines. Treat logs as sensitive — URLs are included.
+A machine-readable trail of what happened, kept apart from the readable log. Bookmark changes and status checks are recorded by default; opens and the eight later channels are off unless you ask for them. The README carries the same thing in brief, under [Activity log (bookmark events)](README.md#activity-log-bookmark-events).
 
-They are also readable in the app: **Config → Data & backups → Server log**, with **Show → Activity only**. That needs **Collect server log** switched on, since it is the same buffer.
+Which events are written is chosen in the app, under **Config → Data & backups → Server log → Activity trail** — twelve channels, of which changes and check results are on by default. The environment variables below keep working and mean exactly the same thing, so an existing compose file behaves as it always did; a choice made in the app simply wins over them once you tick something. The same applies to the detail level: `NEXTDASH_LOG_LEVEL` is read at start-up, and a level chosen in the app takes precedence.
 
-Which events are written is now chosen in the app too, under **Activity trail** on that same tab — twelve channels, of which changes and check results are on by default. `NEXTDASH_ACTIVITY_LOG` still works and still means the same thing, so an existing compose file behaves exactly as it did; the setting simply wins over it once you tick something. The same applies to the detail level: `NEXTDASH_LOG_LEVEL` is read at start-up, and a level chosen in the app takes precedence.
+```bash
+# Default: mutate + status (opens off)
+NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
+NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
 
-The trail and the readable log are two records of the same events, kept apart on purpose. The trail is JSON, for a machine or a later search, and goes to the activity file and this buffer. The container log gets the sentence instead — with twelve channels the old arrangement, which printed `activity: {…}` between the readable lines, would have made `docker logs` unreadable. **Verbose lines never reach the trail**: it exists to be read back later, and a line per checked bookmark would make it useless within a day.
+# The eight later channels, all off unless named
+NEXTDASH_ACTIVITY_LOG=mutate,status,health,sources,feeds,archive,backup,store,widgets,notify
+
+# Automatic backups: how many are kept, and where they live
+NEXTDASH_AUTO_BACKUP_KEEP=3                        # 1–50; default 3
+NEXTDASH_AUTO_BACKUP_DIR=/mnt/backups/nextdash     # absolute path; default data/auto-backups
+
+# Optional rotating file under the data directory
+NEXTDASH_ACTIVITY_LOG_PERSIST=1
+NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/activity.log
+
+# Optional security events (auth denied, rate limits)
+NEXTDASH_ACTIVITY_LOG=mutate,status,security
+```
+
+An example trail line, as written to `activity.log` and to the in-app buffer:
+
+```text
+{"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
+```
+
+To read the trail without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only**. It needs **Collect server log** switched on, because it is the same buffer.
+
+The trail and the readable log are two records of the same events, kept apart on purpose. The trail is JSON, for a machine or a later search, and goes to the activity file and this buffer. The container log gets a sentence for the same event instead — `INFO mutate added "GitHub" (https://github.com)`. With twelve channels available, printing the JSON between the readable lines would have made `docker logs` unreadable. **Verbose lines never reach the trail**: it exists to be read back later, and a line per checked bookmark would make it useless within a day.
+
+Status pings are deduplicated for the same URL and result for ten minutes, unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on a shared host.
 
 ### Rate limits
 
-Per-client limits on outbound fetches and SSRF-sensitive APIs (`NEXTDASH_OUTBOUND_REQUESTS_PER_MIN`, default 120; `NEXTDASH_SSRF_API_RATE_PER_MIN`, default 60). Returns **429** when exceeded.
+Optional per-IP limits on the fetches the server starts itself, and on the user-triggered endpoints where a URL you supply decides where the server connects:
+
+```bash
+NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120   # preview, ping, favicon, auto-heal (default 120)
+NEXTDASH_SSRF_API_RATE_PER_MIN=60        # /api/bookmark-preview, /api/ping, icon uploads (default 60)
+```
+
+When a limit is exceeded the API answers **429**, and — if the `security` channel is enabled — writes an activity event saying so.
+
+### DNS rebinding (IP pinning)
+
+An outbound HTTP or HTTPS dial pins the public IP address it resolved for roughly two minutes, so a hostname cannot switch to a private address in the gap between the safety check and the connection itself. The pinning does not apply when **allow localhost bookmarks** is enabled, since private addresses are then permitted anyway.
 
 ### Content-Security-Policy
 
@@ -2358,9 +2408,13 @@ These statistics exist to answer exactly those questions — **which features ge
 | Settings you change | the **name** of the setting only — never what you typed into it. A toggle also reports `true`/`false`, since on/off is the whole point of measuring one; free-text fields such as the dashboard title or a webhook URL report the name alone |
 | List shape | which filter or sort you picked in health or inbox, and whether you used a summary tile or a filter pill. The search box in either view is never reported |
 | Settings snapshot | once per page load: which features you have switched on, as plain yes/no values and small enums — layout and density, what a bookmark row shows, search behaviour, inbox and paste, availability checking and its interval, and the rest — plus the **release you are running** (`v1.1.1`) so the numbers can be read per version rather than as one blur across every release. A theme you built yourself is reported as `custom`, never by its id |
-| Size of your install | once per page load, and every figure **rounded into a bucket**: how many bookmarks, pages, categories, distinct tags, finders and collections you have, how many bookmarks are monitored or merely checked, and the inbox totals — what is waiting now, and how many links have ever been added, promoted or deleted. `500+` rather than 1274, because an exact count would follow one install from release to release. Nothing is counted at all while analytics is off (**v1.1.1**) |
+| Size of your install | once per page load, and every figure **rounded into a bucket**: how many bookmarks, pages, categories, distinct tags, finders and collections you have, how many bookmarks are monitored or merely checked, and the inbox totals — what is waiting now, and how many links have ever been added, promoted or deleted. `500+` rather than 1274, because an exact count would follow one install from release to release. Counted on the server, since the page you have open only knows about itself. Nothing is counted at all while analytics is off |
 
-The settings snapshot is what makes it possible to see, for example, that a given option is used by almost nobody and could be simplified away — or that one is popular and deserves more attention.
+Every row above is an event name plus a small set of properties. The names come from a fixed list in the code; nothing you type is ever a property value.
+
+The settings snapshot is what makes it possible to see, for example, that a given option is used by almost nobody and could be simplified away — or that one is popular and deserves more attention. It carries the published release tag, not your hostname, install or machine: without it, a default that changed between releases looks like a gradual drift rather than the switch it actually was.
+
+Both snapshots are capped at Umami's limit of fifty properties per event, and say so with `truncated: true` rather than letting the tail be dropped in silence.
 
 #### What is never measured
 
@@ -2375,6 +2429,22 @@ Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_D
 ### Production Docker
 
 Use `docker-compose.prod.yml` for deployments: assets ship inside the binary via `go:embed`; only `./data` is mounted. Since **v2026.08.02** the image is slimmer (~40% smaller), precomputes static asset hashes at build time, caches parsed templates and store reads in memory, and applies HTTP read/write/idle timeouts. Since **v2026.08.02.1** the container starts as root so host Docker hooks (e.g. Tailscale on Unraid) can run, then drops to user `nextdash` via `scripts/docker-entrypoint.sh` (`NEXTDASH_RUN_AS_ROOT=1` keeps root when required). The compose file sets a 256 MB memory limit; for TLS and long-cache static assets in front of the app, see `docker-compose.proxy.yml` and `deploy/Caddyfile`. Commented environment examples live in the prod compose file and [README.md → Production Docker example](README.md#production-docker-example).
+
+A reasonable environment block for a LAN or VPS deployment:
+
+```yaml
+environment:
+  - PORT=8080
+  - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
+  - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
+  - NEXTDASH_ACTIVITY_LOG=mutate,status,security
+  - NEXTDASH_ACTIVITY_LOG_PERSIST=1
+  # Optional tuning:
+  # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
+  # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
+  # - NEXTDASH_CSP=off
+  # - NEXTDASH_DISABLE_PREFETCH=1
+```
 
 ### Build metadata & cross-tab sync
 

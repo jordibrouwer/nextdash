@@ -60,6 +60,30 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
       <br />
       <sub><b>Inbox</b> — See trends of your bookmarks usage.</sub>
     </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-6.png" alt="Dashboard with combined columns" width="100%" />
+      <br />
+      <sub><b>Dashboard</b> with combined columns.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-8.png" alt="Dashboard with widgets" width="100%" />
+      <br />
+      <sub><b>Dashboard</b> with widgets.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-7.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widgets</b> — Adding and configuring a widget.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-9.png" alt="Widget settings" width="100%" />
+      <br />
+      <sub><b>Widgets</b> — The full widget settings panel.</sub>
+    </td>
     <td width="50%"></td>
   </tr>
 </table>
@@ -109,190 +133,33 @@ By default, data is stored in `./data`. Override with `NEXTDASH_DATA_DIR` (absol
 
 ## Security
 
-nextDash is built for **personal or small-team use on a trusted network**. There are no user accounts — anyone who can reach the URL can read and change data unless you add protection.
+nextDash is built to run on your own machine, for **personal or small-team use on a trusted network**. There are no user accounts: anyone who can reach the URL can read and change data unless you put something in front of it.
 
 **Do not expose nextDash directly to the public internet.** Recommended setups:
 
-- **Private overlay network** — [Tailscale](https://tailscale.com/) or another mesh VPN so nextDash never gets a public listener.
-- **Reverse proxy with auth** — Traefik, Caddy, or nginx inside your home/lab/VPC, with HTTP basic auth, OAuth2 Proxy, or SSO in front.
-- **Local-only** — bind to `127.0.0.1` and use SSH port forwarding or a same-machine browser.
+- **Private overlay network** — [Tailscale](https://tailscale.com/) or another mesh VPN, so nextDash never gets a public listener.
+- **Reverse proxy with auth** — Traefik, Caddy, or nginx inside your home, lab or VPC, with HTTP basic auth, OAuth2 Proxy, or SSO in front.
+- **Local-only** — bind to `127.0.0.1` and reach it over an SSH tunnel or from a browser on the same machine.
 
-### Optional write token (LAN / VPS)
+Everything below is the short version. **[MANUAL § 21 — Security and self-hosting](MANUAL.md#21-security-and-self-hosting)** explains each of these properly, along with the full list of protected endpoints, outgoing webhooks, and the MCP endpoint.
 
-Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard injects the token automatically when you open it in a browser.
+### Write token
 
-The two capture routes — `GET /share` (the PWA share target) and `GET /add` (the bookmarklet) — cannot send a header: a phone's share sheet and a `javascript:` bookmark have no way to set one. On an install with a write token they therefore need a token in the address. Set `NEXTDASH_CAPTURE_TOKEN` to a second long random string and use that one: it opens capture and nothing else, so a bookmarklet sitting in a browser's history can at worst add a link to your inbox. The write token is accepted there too, for a script that already carries it.
+Set `NEXTDASH_WRITE_TOKEN` to a long random string and every destructive API call — resets, imports, deletes, uploads, saves — requires the header `X-NextDash-Token` with that value. The dashboard supplies it automatically when you open it in a browser, so normal use is unaffected. Leave it unset and nothing requires a token, which is what you want for local development.
 
-Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **list, download, run, restore or delete an automatic backup**, **delete page**, **bookmark preview fetch**, **bookmark ping** (`/api/ping`), **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
+The two capture routes, `GET /share` and `GET /add`, cannot send a header, so on a token-protected install they take a token in the address instead — set `NEXTDASH_CAPTURE_TOKEN` to a second random string, which opens capture and nothing else. See *MANUAL § 21*.
 
-When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard injects the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
+### CORS
 
-Outbound fetches (preview, ping, icons, auto-heal, the health view's check-a-URL) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings, and each is rate-limited (`NEXTDASH_SSRF_API_RATE_PER_MIN`).
-
-**The data directory is not served** (**v1.3.3**). `/data/` publishes `data/icons/` and an uploaded favicon or font, and nothing else — `settings.json`, the bookmark files, `inbox.json`, `trash.json`, the monitoring history and the automatic backup ZIPs are reachable only through the APIs above, which the write token guards. Icons are content-named and never reused, so they are served `immutable`. Bookmarks put into the **trash** are validated on the way in — URL scheme, private addresses, icon path — because a restore puts them straight back on their page.
-
-### Optional CORS allowlist (LAN / VPS / extension)
-
-By default, only an installed browser extension's origin (`chrome-extension://…`, `moz-extension://…`, `safari-web-extension://…`) receives `Access-Control-Allow-Origin`. A web page on another origin gets no CORS header and cannot read the API.
-
-Before 1.4 the default was `Access-Control-Allow-Origin: *`, which meant any site open in a tab could read your bookmarks from a nextDash whose address it could guess — the read routes need no token. The extension is unaffected by the change: a Manifest V3 extension with host permissions is granted cross-origin access by the browser itself, without CORS.
-
-Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist when you want to restrict cross-origin reads/writes, for example:
-
-```bash
-NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
-```
-
-Only matching `Origin` headers receive `Access-Control-Allow-Origin` in the response; extension origins are always allowed. Set `NEXTDASH_CORS_ORIGINS=*` to restore the pre-1.4 behaviour of answering every origin.
+Only an installed browser extension's origin receives `Access-Control-Allow-Origin`; any other web page gets no CORS header and cannot read the API. Set `NEXTDASH_CORS_ORIGINS` to a comma-separated allowlist to permit a page of your own, or to `*` to answer every origin. See *MANUAL § 21*.
 
 ### Activity log (bookmark events)
 
-A machine-readable trail of what happened, kept apart from the readable log. Bookmark changes and status checks are recorded by default; opens and the eight channels added in **v1.4.2** are off unless asked for.
-
-Since **v1.4.2** the channels are also chosen in the app, under **Config → Data & backups → Server log → Activity trail**. The environment variables below keep working and mean the same thing; a choice made in the app wins over them.
-
-```bash
-# Default: mutate + status (opens off)
-NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
-NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
-
-# The channels added in v1.4.2, all off unless named
-NEXTDASH_ACTIVITY_LOG=mutate,status,health,sources,feeds,archive,backup,store,widgets,notify
-
-# Automatic backups: how many are kept, and where they live
-NEXTDASH_AUTO_BACKUP_KEEP=3                        # 1–50; default 3
-NEXTDASH_AUTO_BACKUP_DIR=/mnt/backups/nextdash     # absolute path; default data/auto-backups
-
-# Optional rotating file under the data directory
-NEXTDASH_ACTIVITY_LOG_PERSIST=1
-NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/activity.log
-
-# Optional security events (auth denied, rate limits)
-NEXTDASH_ACTIVITY_LOG=mutate,status,security
-```
-
-Example trail line, as written to `activity.log` and to the in-app buffer:
-
-```text
-{"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
-```
-
-The container log gets a sentence for the same event instead of the JSON (**v1.4.2**) — `INFO mutate added "GitHub" (https://github.com)`. With twelve channels available, printing the JSON between the readable lines would have made `docker logs` unreadable.
-
-To read the trail without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only**. It needs **Collect server log** switched on, because it is the same buffer.
-
-Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
-
-### Outgoing endpoints (webhooks, MCP)
-
-Both are **off until you configure them**, and both are described in full under
-[Integrations](#outgoing-telling-other-programs-what-happened).
-
-The **MCP endpoint** answers questions about every bookmark in the install, so
-`POST /mcp` returns `404` until *Answer assistants at this address* is ticked
-under **Config → Data & backups → Webhooks**. When it is on, every request's
-`Origin` is checked against the host it arrived on: a browser will POST to
-`localhost` from any page on the internet, and a local server that answers those
-is one visited page away from being read. A client that is not a browser sends no
-`Origin` at all, which is the normal case and passes.
-
-**Webhook** endpoint URLs go through the same address rules as a bookmark ping —
-a local receiver is reachable only on an install that has allowed local
-addresses — and they are checked twice: when you save the endpoint, so the screen
-can refuse it while you are looking at the field, and again at delivery, because
-a name is resolved again then. Redirects are not followed. The signing keys live
-in `webhooks.json` at `0600`; reading the endpoint list needs the write token,
-since an endpoint URL is not a description of a webhook, it *is* the webhook.
-
-### Rate limits (outbound & SSRF APIs)
-
-Optional per-IP limits on server-initiated fetches and user-triggered SSRF-sensitive endpoints:
-
-```bash
-NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120   # preview, ping, favicon, auto-heal (default 120)
-NEXTDASH_SSRF_API_RATE_PER_MIN=60        # /api/bookmark-preview, /api/ping, icon uploads (default 60)
-```
-
-When exceeded, the API returns **429** and (if enabled) logs a `security` activity event.
-
-### Content-Security-Policy
-
-nextDash sends a restrictive CSP on HTML pages by default. Set `NEXTDASH_CSP=off` only when a reverse proxy or custom integration requires it.
-
-### Analytics & privacy
-
-nextDash can record **anonymous, privacy-friendly usage statistics** through a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **opt-in**: off until you turn it on, and nothing is measured before then.
-
-On a fresh install a card offers **Turn on**, **What is recorded?**, or **No thanks**. Upgrading does not change a setting you already made — if you had analytics on, it stays on.
-
-#### Turn it on or off
-
-**Config → Behavior → Privacy** → tick or clear **Privacy-friendly analytics**. It applies after the page reloads.
-
-From the keyboard: press <kbd>:</kbd> and run **`:telemetry on`** (or `:telemetry off`). Typing `:telemetry` on its own shows the current state. It writes the same setting and reloads the page for you.
-
-#### Disable it for the whole instance
-
-Set the environment variable **`DISABLE_TELEMETRY=true`** to switch analytics off server-wide, regardless of what any user has configured:
-
-```yaml
-environment:
-  - DISABLE_TELEMETRY=true
-```
-
-The tracker is then never emitted, the setting cannot be turned back on through the API or the `:telemetry` command, and the **Privacy** checkbox in config renders disabled with a note explaining why. `:telemetry` shows a single row saying it is off for this server, rather than an **on** option that could not take effect. Accepts `true`, `1`, `yes`, or `on`; unset or `false` leaves analytics under user control.
-
-Each user's own preference is left stored and untouched, so it returns exactly as it was if you ever unset the variable.
-
-When it is off, the tracker script is **not emitted into the page at all** — it is never even downloaded, and **no request leaves your machine**. There is no client-side flag quietly suppressing calls; the code simply is not there. The choice is stored per user in `settings.json` as `analyticsOptIn`, so it follows you across devices.
-
-#### Why it exists
-
-nextDash was built without any picture of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, or the inbox? Where do people abandon the add-bookmark form? Without answers, every decision about what to build, fix, or remove is guesswork.
-
-These statistics exist to answer exactly that — **which features get used, and what can be improved** — and nothing else. They are explicitly **not** for following individual users. The measurement is abstract and technical: flow through the app and feature usage, aggregated across everyone.
-
-#### What is measured
-
-Everything below is an event name plus a small set of properties. Names come from a fixed list in the code; nothing you type is ever a property value.
-
-- **Page views** — the dashboard, config, health, and colors pages.
-- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut. Within config, which of the eight **sections** you open, which **sub-tab** you land on and whether you got there by click or by arrow key, whether an overview *needs attention* row was followed, whether a summary tile handed off to another view, and whether the **Only changed** filter is on.
-- **Settings changes** — the **name** of the setting you changed, never what you typed into it. Toggles also report `true`/`false`, since on/off is the whole point of measuring one and cannot identify anyone. Free-text fields — dashboard title, webhook URL, custom text — report the name alone, and search boxes are not reported at all. A panel's **Reset** and its **Show all / Hide all** report how many fields they touched.
-- **List shape in health and inbox** — which filter or sort you picked, and whether you used a summary tile or a filter pill. The search box in either view is never reported.
-- **Overlays** — opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form.
-- **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, `recent`, or `health`).
-- **Commands** — which command palette command was run, by its name (`theme`, `config`, `density`, …). Only names from the built-in command list are recorded; anything else you typed is discarded.
-- **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), reordering by drag or by keyboard, changing a bookmark's checking mode, and which entry you picked from a right-click menu — on a bookmark or on a category header.
-- **Outcomes** — whether adding or editing a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, stale edit, or failure. This shows where the form trips people up.
-- **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; rechecks, retest-all, redirect detection, title refresh, delete, muting alerts, accepting drift, auto-heal, recovering from the archive, opening the expectations or monitor-stats panels, stepping through a review session, reading the trend chart, and exporting history. Bulk actions and exports also report **how many rows they touched**, rounded into a band (`1`, `2`, `5`, `10`, `25`, `50`, `100`, `100+`).
-- **Category width** — switching a category to spread across columns, or back.
-- **Fresh** — turning it on from its walkthrough, and opening the card that offers it.
-- **First-run help** — a tour or walkthrough being shown, and whether it was finished or abandoned, with the step you left on: the spread, inbox, health and Fresh walkthroughs, and which session **tip** was shown.
-- **A settings snapshot** — once per page load, which features you have switched on: theme (built-in id, or just `custom`), layout, density, spacing, font, background, button-bar position, columns, the row toggles, search options, inbox and health settings, smart collections, and a dozen more, as plain booleans and small enums with numbers bucketed. It carries the **release you are running**, so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
-- **A content snapshot** — once per page load, **how much** is in the install: bookmarks, pages, categories, tags, finders, your own smart collections, how many bookmarks are monitored and how many merely checked, and four inbox figures (waiting now, plus lifetime added, promoted and deleted). Every one is bucketed before it leaves the browser — `500+`, never `1274` — because an exact total is distinctive enough to follow one install across releases. Counted on the server, since the page you have open only knows about itself.
-
-Both snapshots are capped at Umami's 50 properties per event and say so (`truncated: true`) rather than letting the tail be dropped in silence.
-
-#### What is never measured
-
-No bookmark names, URLs, search queries, page or category names, notes, or tags. No personal profile is built, and there is no tracking across other websites. Every number is rounded into a band before it leaves the browser — `500+` rather than `1274`, `25` rather than `23` — and the rounding sits in the one function all events pass through, so a new event cannot reintroduce an exact figure by forgetting to round it. The two exceptions are a page position and a walkthrough step, which are small fixed ranges that describe nothing about your collection. No cookies are set, and the instance is self-hosted, so nothing is shared with an advertising network.
-
-The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP (`script-src` and `connect-src`).
-
-Separately from analytics, the config overview shows the latest posts from **nextdash.cc**. That feed is fetched by your server, not your browser: one request every six hours for the whole install, carrying no query, no identifier and nothing about you. **Behavior → Privacy → Show posts from nextdash.cc** switches it off, and off means the request is never made.
-
-### DNS rebinding (IP pinning)
-
-Outbound HTTP(S) dials pin resolved public IPs for ~2 minutes so a hostname cannot switch to a private address between the safety check and the connection (unless **allow localhost bookmarks** is enabled).
-
-### Startup validation
-
-On boot, nextDash validates `PORT` (1–65535, default `8080`) and ensures `NEXTDASH_DATA_DIR` exists and is writable. Invalid config exits with a clear error before listening.
+A machine-readable JSON trail of bookmark changes and status checks, written alongside the readable server log. Twelve channels; changes and check results are on by default. Choose them under **Config → Data & backups → Server log → Activity trail**, or with `NEXTDASH_ACTIVITY_LOG`. URLs appear in the trail, so treat the log files as sensitive on a shared host. See *MANUAL § 21*.
 
 ### Production Docker example
 
-`docker-compose.prod.yml` serves CSS/JS from the embedded binary (only `./data` is mounted). As of **v2026.08.02** the production image ships only the Go binary (~40% smaller), sets a 256 MB memory cap, and caches hot server paths (parsed templates, store reads, precomputed asset hashes). Since **v2026.08.02.1** the entrypoint starts as root for host Docker hooks, then runs the app as `nextdash` (`NEXTDASH_RUN_AS_ROOT=1` optional). Optional TLS and long-cache static serving: `docker compose -f docker-compose.proxy.yml up -d` with `deploy/Caddyfile`.
+`docker-compose.prod.yml` serves CSS and JS from the embedded binary, mounts only `./data`, and sets a 256 MB memory cap. The entrypoint starts as root so host Docker hooks can run, then drops to the `nextdash` user (`NEXTDASH_RUN_AS_ROOT=1` keeps root when you need it). For TLS and long-cache static serving, run `docker compose -f docker-compose.proxy.yml up -d` with `deploy/Caddyfile`.
 
 Recommended LAN/VPS environment block:
 
@@ -310,7 +177,7 @@ environment:
   # - NEXTDASH_DISABLE_PREFETCH=1
 ```
 
-`GET /version` returns build metadata (version, commit). `GET /api/data-revision` returns a hash so open dashboard tabs detect bookmark/settings changes without a full reload.
+`GET /version` returns build metadata (version, commit). `GET /api/data-revision` returns a hash, so open dashboard tabs detect bookmark and settings changes without a full reload.
 
 ### Environment variables (reference)
 
@@ -330,34 +197,6 @@ environment:
 | `NEXTDASH_DISABLE_PREFETCH` | off | `1` = skip background favicon prefetch on startup |
 
 ---
-
-## Screenshots
-<table border="0" width="100%">
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-6.png" alt="Dashboard with combined columns" width="100%" />
-      <br />
-      <sub><b>Dashboard</b> with combined columns.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-7.png" alt="Widget settings" width="100%" />
-      <br />
-      <sub><b>Widget</b> settings.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-8.png" alt="Dashboard with widgets" width="100%" />
-      <br />
-      <sub><b>Dashboard</b>  with widgets.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-9.png" alt="Widget settings" width="100%" />
-      <br />
-      <sub><b>Widgets</b> settings.</sub>
-    </td>
-  </tr>
-</table>
 
 ## Features
 
