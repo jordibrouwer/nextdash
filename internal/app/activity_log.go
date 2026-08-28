@@ -43,6 +43,10 @@ type activityLogConfig struct {
 }
 
 var (
+	// activityCfgMu guards a runtime replacement of the config; the read path
+	// is unsynchronised and hot, so the swap is done whole rather than field by
+	// field.
+	activityCfgMu    sync.Mutex
 	activityCfgOnce  sync.Once
 	activityCfg      activityLogConfig
 	activityCfgTest  *activityLogConfig
@@ -91,6 +95,29 @@ func activityConfig() activityLogConfig {
 		activityCfg = loadActivityLogConfig()
 	})
 	return activityCfg
+}
+
+/*
+setActivityChannelsForRuntime replaces which channels are recorded, leaving
+where they are written alone.
+
+persist and filePath stay as the environment set them: choosing which channels
+to record is a different question from whether the trail goes to disk, and
+answering the first should not silently answer the second.
+*/
+func setActivityChannelsForRuntime(enabled map[string]bool) {
+	cfg := activityConfig()
+	cfg.enabled = enabled
+	// A channel list that was asked for is an answer to "off", too.
+	cfg.disabled = false
+	activityCfgMu.Lock()
+	defer activityCfgMu.Unlock()
+	if activityCfgTest != nil {
+		*activityCfgTest = cfg
+		return
+	}
+	activityCfgOnce.Do(func() {})
+	activityCfg = cfg
 }
 
 func activityEnabled(category string) bool {

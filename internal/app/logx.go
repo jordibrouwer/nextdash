@@ -153,3 +153,26 @@ func logCheckRound(checked, failed int, took time.Duration) {
 		}, "")
 	}
 }
+
+/*
+applyLogSettings puts the reader's choices in charge.
+
+Anything they have not chosen is left to the environment: an empty level does
+not reset the floor a compose file set, and an empty channel list does not
+override NEXTDASH_ACTIVITY_LOG. That is the whole precedence rule — the app
+wins where it has an opinion, and stays quiet where it does not.
+*/
+func applyLogSettings(s Settings) {
+	if level := strings.TrimSpace(s.ServerLogLevel); level != "" {
+		setLogLevel(level)
+	}
+	if len(s.ActivityChannels) > 0 {
+		enabled := make(map[string]bool, len(s.ActivityChannels))
+		for _, channel := range s.ActivityChannels {
+			if key := strings.ToLower(strings.TrimSpace(channel)); key != "" {
+				enabled[key] = true
+			}
+		}
+		setActivityChannelsForRuntime(enabled)
+	}
+}

@@ -2143,6 +2143,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		settings.ServerLogMaxEntries,
 	)
 	serverLog.SetPaused(!settings.ServerLogEnabled)
+	// The detail level and the channel list take effect on the next line
+	// written, not at the next restart: someone turning Verbose on is usually
+	// mid-investigation and wants the next thing that happens.
+	applyLogSettings(settings)
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]any{"status": "success"}
 	if len(droppedCollections) > 0 {

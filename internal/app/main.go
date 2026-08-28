@@ -56,6 +56,10 @@ func Run(files assetFS) {
 	// it. Off by default, so a dashboard nobody debugs pays nothing for the
 	// viewer and its log stays genuinely empty.
 	startupSettings := store.GetSettings()
+	// The environment first, then the settings on top of it: NEXTDASH_LOG_LEVEL
+	// keeps working for anyone who set it, and a level chosen in the app wins.
+	setLogLevel(os.Getenv("NEXTDASH_LOG_LEVEL"))
+	applyLogSettings(startupSettings)
 	ConfigureServerLog(
 		startupSettings.ServerLogEnabled,
 		startupSettings.ServerLogRetentionMode,

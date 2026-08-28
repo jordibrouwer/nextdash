@@ -628,9 +628,18 @@ type Settings struct {
 	// nothing for it: while this is false the sink returns before taking a lock
 	// or touching the disk. No "omitempty" — with it a false value drops out of
 	// the JSON entirely and the switch reads back as undefined in the config UI.
-	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
-	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
-	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	ServerLogEnabled bool `json:"serverLogEnabled"` // Capture server log lines for the in-app viewer (default off)
+	// ServerLogLevel is the floor for what the server records at all, to the
+	// container log and to the viewer alike: error, warn, info or debug. Empty
+	// means the environment decides, and failing that the default (info). A
+	// value here wins over NEXTDASH_LOG_LEVEL, so the app is the place to
+	// change it and an existing compose file keeps working.
+	ServerLogLevel string `json:"serverLogLevel,omitempty"`
+	// ActivityChannels are the JSON trail's channels. Empty means the
+	// environment's choice, and failing that the defaults (mutate, status).
+	ActivityChannels     []string `json:"activityChannels,omitempty"`
+	MonitorNotifyURL     string   `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries int      `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.
