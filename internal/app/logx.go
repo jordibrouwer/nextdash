@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 /*
@@ -132,4 +133,23 @@ func logRequestLine(format string, args ...any) {
 		return
 	}
 	log.Printf(format, args...)
+}
+
+// logCheckRound is the one line a finished sweep writes, and the trail entry
+// that goes with it. A helper rather than each call site's own formatting,
+// because the round is reported from two places — the scheduler and a manual
+// re-check — and they must read the same.
+//
+// The sentence is written here rather than handed to logActivity, because the
+// health channel is off by default and this line should appear either way.
+func logCheckRound(checked, failed int, took time.Duration) {
+	took = took.Round(100 * time.Millisecond)
+	logInfo(logComponentHealth, "checked %d bookmarks, %d failed, %s", checked, failed, took)
+	if activityEnabled(activityCategoryHealth) {
+		logActivity(activityCategoryHealth, "health.round", map[string]any{
+			"checked": checked,
+			"failed":  failed,
+			"ms":      took.Milliseconds(),
+		}, "")
+	}
 }

@@ -244,8 +244,31 @@ no shell in the picture, so nothing in a URL can be read as a command. Output
 goes to a file this chooses rather than to one monolith derives, so the path is
 never influenced by what the page or the address says.
 */
-func (h *Handlers) CaptureLocally(ctx context.Context, target string) (LocalCapture, error) {
+func (h *Handlers) CaptureLocally(ctx context.Context, target string) (capture LocalCapture, err error) {
 	target = strings.TrimSpace(target)
+
+	// Every path out of here says what became of the capture. There are eight
+	// of them and they all matter to whoever pressed Save a copy, so the log
+	// happens once on the way out rather than eight times on the way down.
+	defer func() {
+		switch {
+		case err != nil:
+			logWarn(logComponentArchive, "%s could not be saved: %v", hostOf(target), err)
+		case capture.NoReadableText:
+			logWarn(logComponentArchive, "%s was saved (%s) but holds no readable text; it is probably a page that builds itself in the browser",
+				hostOf(target), formatCaptureSize(capture.Bytes))
+		default:
+			logInfo(logComponentArchive, "saved %s, %s on disk", hostOf(target), formatCaptureSize(capture.Bytes))
+		}
+		if activityEnabled(activityCategoryArchive) {
+			fields := map[string]any{"url": target, "bytes": capture.Bytes}
+			if err != nil {
+				fields["error"] = err.Error()
+			}
+			logActivity(activityCategoryArchive, "archive.capture", fields, "")
+		}
+	}()
+
 	if err := h.validateBookmarkURL(target); err != nil {
 		return LocalCapture{}, err
 	}
@@ -723,4 +746,13 @@ func localCopyIndex() map[string]struct {
 		index[stem] = entry
 	}
 	return index
+}
+
+// formatCaptureSize is the size as a reader would say it, not as a machine
+// would: whole kilobytes or one decimal of a megabyte.
+func formatCaptureSize(bytes int64) string {
+	if bytes >= 1<<20 {
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(1<<20))
+	}
+	return fmt.Sprintf("%d KB", bytes>>10)
 }

@@ -18,6 +18,18 @@ const (
 	activityCategoryOpen     = "open"
 	activityCategorySecurity = "security"
 
+	// The eight channels the rest of the server writes to. All off unless
+	// asked for: a trail nobody switched on should not start filling the disk
+	// the moment someone upgrades.
+	activityCategoryHealth  = "health"
+	activityCategorySources = "sources"
+	activityCategoryFeeds   = "feeds"
+	activityCategoryArchive = "archive"
+	activityCategoryBackup  = "backup"
+	activityCategoryStore   = "store"
+	activityCategoryWidgets = "widgets"
+	activityCategoryNotify  = "notify"
+
 	activityLogMaxBytes     = 5 << 20
 	activityLogBackupCount  = 3
 	activityStatusDedupeTTL = 10 * time.Minute

@@ -470,6 +470,14 @@ func deliverWebhook(endpoint WebhookEndpoint, event string, data map[string]any)
 			drainAndCloseResponse(resp)
 			cancel()
 			if status < 400 {
+				logInfo(logComponentNotify, "%s delivered to %s", event, endpoint.URL)
+				if activityEnabled(activityCategoryNotify) {
+					logActivity(activityCategoryNotify, "notify.delivered", map[string]any{
+						"event":  event,
+						"url":    endpoint.URL,
+						"status": status,
+					}, "")
+				}
 				return
 			}
 			if status < 500 {

@@ -267,6 +267,7 @@ func (h *Handlers) runDueMonitors() {
 				}
 			}
 			mu.Lock()
+			logDebug(logComponentHealth, "%s is %s (%dms)", t.url, result.Status, result.PingMs)
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
 			mu.Unlock()
 		}(target)
@@ -359,6 +360,16 @@ func (h *Handlers) runDueMonitors() {
 	}
 	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults)
 	h.invalidateHealthReportCache()
+
+	// What the round did, in one line. Until this existed a sweep of a hundred
+	// bookmarks passed without the log saying anything at all.
+	failed := 0
+	for _, out := range outcomes {
+		if out.result.Status != "online" {
+			failed++
+		}
+	}
+	logCheckRound(len(outcomes), failed, time.Since(now))
 
 	h.dispatchMonitorNotifications(ctx, pending)
 }

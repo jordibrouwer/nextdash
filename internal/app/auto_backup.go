@@ -241,9 +241,20 @@ func pruneAutoBackups() error {
 	}
 	keep := maxAutoBackups()
 	// names is newest-first; anything past the limit is oldest and gets removed.
+	removed := 0
 	for _, name := range names[min(len(names), keep):] {
 		if err := os.Remove(filepath.Join(autoBackupDir(), name)); err != nil && !os.IsNotExist(err) {
 			return err
+		}
+		removed++
+	}
+	if removed > 0 {
+		logInfo(logComponentBackup, "removed %d backups past the limit of %d", removed, keep)
+		if activityEnabled(activityCategoryBackup) {
+			logActivity(activityCategoryBackup, "backup.prune", map[string]any{
+				"removed": removed,
+				"keep":    keep,
+			}, "")
 		}
 	}
 	return nil

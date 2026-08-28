@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -476,6 +477,7 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
 		state.Failures++
+		logFeedFailure(feedURL, state.Failures, "it could not be reached")
 		return state
 	}
 	defer resp.Body.Close()
@@ -483,10 +485,12 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 	state.CheckedAt = time.Now().UnixMilli()
 	if resp.StatusCode == http.StatusNotModified {
 		state.Failures = 0
+		logDebug(logComponentFeeds, "%s answered 304, nothing new", hostOf(feedURL))
 		return state
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		state.Failures++
+		logFeedFailure(feedURL, state.Failures, fmt.Sprintf("it answered %d", resp.StatusCode))
 		return state
 	}
 
@@ -497,6 +501,7 @@ func (h *Handlers) pollFeed(ctx context.Context, state FeedState) FeedState {
 	}
 	times := feedEntryTimestamps(body)
 	if len(times) == 0 {
+		logFeedFailure(feedURL, state.Failures+1, "what came back is not a feed nextDash can read")
 		// Reachable but unreadable — an HTML error page served with a 200, or a
 		// feed whose dates cannot be parsed. Counted as a failure so it retires
 		// rather than being polled forever for nothing.
@@ -613,7 +618,36 @@ persist:
 	}
 	current.LastPoll = time.Now().UnixMilli()
 	_ = writeFeedStateFile(current)
+
+	// What the round did. A poll of thirty feeds used to pass in silence.
+	fresh := 0
+	for key, feed := range polled {
+		if before, ok := targets[key]; ok && feed.LastItemAt > before.LastItemAt {
+			fresh++
+		}
+	}
+	if len(polled) > 0 {
+		logInfo(logComponentFeeds, "polled %d feeds, %d had something new", len(polled), fresh)
+		if activityEnabled(activityCategoryFeeds) {
+			logActivity(activityCategoryFeeds, "feeds.poll", map[string]any{
+				"polled": len(polled),
+				"fresh":  fresh,
+			}, "")
+		}
+	}
 	return len(polled)
+}
+
+// logFeedFailure says a feed round did not work, and says it louder on the
+// round that retires the feed — that is the one where it stops being polled at
+// all, and until now nothing anywhere said so.
+func logFeedFailure(feedURL string, failures int, reason string) {
+	host := hostOf(feedURL)
+	if failures >= feedMaxFailures {
+		logWarn(logComponentFeeds, "%s failed %d times in a row (%s) and is no longer polled", host, failures, reason)
+		return
+	}
+	logDebug(logComponentFeeds, "%s did not answer usefully (%s), attempt %d of %d", host, reason, failures, feedMaxFailures)
 }
 
 // FeedFresh is what one bookmark's feed says, as the dashboard needs it.
