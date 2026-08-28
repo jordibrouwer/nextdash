@@ -6506,3 +6506,24 @@ button.config-bm-shortcut-pill {
     color: var(--text-secondary, #666);
     font-variant-numeric: tabular-nums;
 }
+
+/*
+ * The line under a widget setting that says what it accepts.
+ *
+ * The bounds were on the input element, where a browser can read them and a
+ * person cannot: someone testing the refresh typed 5, it was brought up to 30,
+ * and nothing on screen had said 30 was the floor.
+ */
+.config-widget-field-hint {
+    margin: 4px 0 0;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.829);
+    line-height: 1.4;
+}
+
+/* The ℹ sits with the label it explains, not on a line of its own. */
+.config-widget-field > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}

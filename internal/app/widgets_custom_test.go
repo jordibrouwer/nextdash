@@ -208,10 +208,11 @@ func TestCustomWidgetConfigIsNarrowed(t *testing.T) {
 	if _, present := clean["method"]; present {
 		t.Errorf("method = %v, want it dropped", clean["method"])
 	}
-	// Below the floor, so the default applies rather than a dashboard on a wall
-	// polling every five seconds.
-	if _, present := clean["ttl"]; present {
-		t.Errorf("ttl = %v, want it dropped", clean["ttl"])
+	// Below the floor, so it is brought up to it: a dashboard on a wall still
+	// cannot poll every five seconds, and the reader who asked for it gets the
+	// closest thing allowed rather than silently getting the default back.
+	if clean["ttl"] != customWidgetMinTTL {
+		t.Errorf("ttl = %v, want %d", clean["ttl"], customWidgetMinTTL)
 	}
 	fields, _ := clean["fields"].([]any)
 	if len(fields) != 2 {

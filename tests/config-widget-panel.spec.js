@@ -148,3 +148,34 @@ test.describe('the widgets panel remembers a saved widget', () => {
         });
     }
 });
+
+/*
+ * The refresh interval says what it is for, and what it accepts.
+ *
+ * It was a bare number box labelled "Ask again after (seconds)" with the range
+ * nowhere on screen. Someone testing the refresh typed 5, the server dropped
+ * the value as out of range, the tile fell back to five minutes, and nothing
+ * said any of that had happened — which reads as a setting that will not save.
+ */
+test.describe('the custom widget explains its refresh interval', () => {
+    test('the field carries its range, and an ℹ that explains the choice', async ({ page }) => {
+        await openWidgets(page);
+        await addWidget(page, 'custom');
+
+        // The bounds and the default are on screen, not only in the validator.
+        const hint = page.locator('[data-widget-field-hint="ttl"]');
+        await expect(hint).toBeVisible({ timeout: 15_000 });
+        await expect(hint).toContainText(/30/);
+        await expect(hint).toContainText(/5 minutes|5 minuten/i);
+
+        // The same ℹ config uses elsewhere, opening the same dialog.
+        const info = page.locator('[data-widget-info="ttl"]');
+        await expect(info).toBeVisible();
+        await info.click();
+
+        const dialog = page.locator('.modal-overlay:visible, .app-modal:visible').first();
+        await expect(dialog).toBeVisible({ timeout: 10_000 });
+        await expect(dialog).toContainText(/30 seconds|30 seconden/i);
+        await expect(dialog).toContainText(/24 hours|24 uur/i);
+    });
+});

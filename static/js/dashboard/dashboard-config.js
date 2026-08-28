@@ -15061,7 +15061,13 @@ class DashboardConfig {
               label: ['config.widgetCustomUrl', 'Address to read'],
               placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
             { key: 'ttl', kind: 'int', min: 30, max: 86400,
-              label: ['config.widgetCustomTtl', 'Ask again after (seconds)'] },
+              // Renamed: it was called "Ask again after", which described the
+              // cache. Since the tile refreshes itself on this interval it is
+              // the refresh rate, and the old name told half the story.
+              label: ['config.widgetCustomTtl', 'Refresh every (seconds)'],
+              hint: ['config.widgetCustomTtlHint',
+                     'Between 30 seconds and 24 hours. Leave empty for 5 minutes.'],
+              info: ['widgetCustomTtlInfoTitle', 'widgetCustomTtlInfoMessage'] },
             { key: 'itemsPath', kind: 'text', maxlength: 200,
               label: ['config.widgetCustomItemsPath', 'List from (path, optional)'],
               placeholder: ['config.widgetCustomPathPlaceholder', 'server.recent[0].name'] },
@@ -15328,6 +15334,28 @@ class DashboardConfig {
      * moment a config can compute, it is a second product with its own bugs and
      * no debugger — and a widget only ever needs a number out of a response.
      */
+    /*
+     * What a widget setting means, in the dialog config already uses.
+     *
+     * The settings panels reach their explanations through FIELD_META, keyed by
+     * the name of a settings field. A widget's settings are their own table
+     * with their own keys, so the text is found there instead -- the same two
+     * locale keys, the same AppModal, the same "Got it".
+     */
+    openWidgetFieldInfo(key) {
+        if (!key || !window.AppModal?.alert) return;
+        const field = Object.values(DashboardConfig.WIDGET_SETTINGS)
+            .flat()
+            .find((entry) => entry.key === key && entry.info);
+        if (!field) return;
+        const [titleKey, messageKey] = field.info;
+        window.AppModal.alert({
+            title: this.t(`config.${titleKey}`, ''),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${messageKey}`, '')).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
     renderCustomWidgetFields(widget, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = Array.isArray(widget?.config?.fields) ? widget.config.fields : [];
@@ -15486,14 +15514,31 @@ class DashboardConfig {
                     </label>`;
             }
             if (field.kind === 'int') {
+                /*
+                 * The bounds were on the input and nowhere a reader looks.
+                 *
+                 * Someone testing the refresh typed 5, the server brought it up
+                 * to 30, and with the range unwritten there was no way to know
+                 * that had happened or why. So the field says what it takes,
+                 * and where the choice needs more than a line, an ℹ opens the
+                 * same dialog every other setting in config uses.
+                 */
+                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+                const info = field.info
+                    ? `<button type="button" class="config-info-btn" data-widget-info="${esc(field.key)}"
+                            data-widget-index="${index}"
+                            aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
+                            title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`
+                    : '';
                 return `
                     <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
+                        <label for="${id}">${label}${info}</label>
                         <input type="number" id="${id}" class="config-text config-text--number"
                             data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                             data-widget-kind="int" min="${field.min}" max="${field.max}"
                             value="${esc(config[field.key] ?? '')}"
                             placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                        ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
                     </div>`;
             }
             if (field.kind === 'text') {
@@ -15743,6 +15788,16 @@ class DashboardConfig {
         body.addEventListener('click', (event) => {
             const target = event.target;
             if (!target?.closest) return;
+
+            // The ℹ beside a widget setting, opening the same dialog every
+            // other setting in config uses. Checked before the catalogue so a
+            // click on it is never read as something else.
+            const info = target.closest('[data-widget-info]');
+            if (info) {
+                event.preventDefault();
+                this.openWidgetFieldInfo(info.getAttribute('data-widget-info'));
+                return;
+            }
 
             const catalogue = target.closest('[data-widget-catalogue]');
             if (catalogue) { this.openWidgetCatalogue(); return; }

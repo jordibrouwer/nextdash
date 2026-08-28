@@ -35,26 +35,63 @@ func TestUnknownConfigKeysNeverReachStorage(t *testing.T) {
 }
 
 /*
-A value outside its range becomes absent, not an error.
+A number the reader typed is brought into range; nonsense is still dropped.
 
-Absent is what the renderer already reads as "use the default", so a widget
-written by a newer version -- or edited by hand -- degrades to what this version
-understands rather than refusing to load.
+The two cases are not the same mistake. Someone asking for a refresh every 5
+seconds means it -- they just did not know the floor is 30, because nothing on
+screen said so -- and dropping the key sent them back to the default with no
+sign anything had happened. Clamping answers what they meant.
+
+A string, a fraction or a negative is a caller sending the wrong shape, not a
+reader choosing badly. Those still become absent, which the renderer reads as
+"use the default", so a widget written by a newer version degrades rather than
+refusing to load.
 */
-func TestOutOfRangeValuesFallBackToTheDefault(t *testing.T) {
+func TestOutOfRangeNumbersAreClampedAndNonsenseIsDropped(t *testing.T) {
+	// rows is bounded by widgetMinRows..widgetMaxRows.
+	for name, tc := range map[string]struct {
+		in   any
+		want int
+	}{
+		"past the ceiling": {5000, widgetMaxRows},
+		"below the floor":  {0, widgetMinRows},
+	} {
+		clean := sanitizeWidgetConfig(WidgetTypeInbox, map[string]any{"rows": tc.in})
+		if clean["rows"] != tc.want {
+			t.Errorf("%s: rows = %v, want %d", name, clean["rows"], tc.want)
+		}
+	}
+
+	// The custom widget's ttl is the case this was written for: 5 seconds is a
+	// reader who wants it often, not a caller sending rubbish.
+	clean := sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url": "https://example.com/api",
+		"ttl": 5,
+	})
+	if clean["ttl"] != customWidgetMinTTL {
+		t.Errorf("ttl = %v, want %d", clean["ttl"], customWidgetMinTTL)
+	}
+	clean = sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url": "https://example.com/api",
+		"ttl": 999999,
+	})
+	if clean["ttl"] != customWidgetMaxTTL {
+		t.Errorf("ttl = %v, want %d", clean["ttl"], customWidgetMaxTTL)
+	}
+
+	// Not a whole number at all: still dropped, so the default applies.
 	for name, config := range map[string]map[string]any{
-		"rows past the ceiling": {"rows": 5000},
-		"rows below the floor":  {"rows": 0},
-		"negative rows":         {"rows": -3},
-		"rows as a string":      {"rows": "12"},
-		"rows as a fraction":    {"rows": 3.7},
+		"negative rows":      {"rows": -3},
+		"rows as a string":   {"rows": "12"},
+		"rows as a fraction": {"rows": 3.7},
 	} {
 		clean := sanitizeWidgetConfig(WidgetTypeInbox, config)
 		if _, present := clean["rows"]; present {
 			t.Errorf("%s: stored %v", name, clean["rows"])
 		}
 	}
-	// A value inside the range survives, including the float64 that JSON gives.
+
+	// A value inside the range survives untouched, including the float64 JSON gives.
 	for name, raw := range map[string]any{"int": 8, "float from JSON": float64(8)} {
 		clean := sanitizeWidgetConfig(WidgetTypeInbox, map[string]any{"rows": raw})
 		if clean["rows"] != 8 {
