@@ -1,0 +1,25 @@
+{
+  "tag": "v1.4.2.2",
+  "date": "29 August 2026",
+  "releasedAt": "2026-08-29",
+  "modalLead": "A custom widget says how often it looks and what that setting accepts, and can be asked again the moment you have fixed something.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Ask a custom tile again, now.</strong> Right-click its title for <em>Refresh now</em>. When a service turns nextDash away &mdash; a key that has expired, a machine that was asleep &mdash; the answer is held for half a minute so a service that is down is not asked again by every open dashboard. That is right until you have just fixed the reason it was failing, and then it is half a minute of watching an error you have already dealt with. This asks again straight away."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The refresh interval says what it takes.</strong> The box was labelled <em>Ask again after (seconds)</em> with nothing on screen saying that under 30 was refused, or that leaving it empty means five minutes. It now carries both, and an <em>&#8505;</em> beside it explains how to choose: 30 to 60 seconds for a download speed, five minutes for a queue, an hour for something measured hourly."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A number outside its range is brought into range, not thrown away.</strong> Typing 5 there did nothing at all: the value was dropped, the tile went back to five minutes, and nothing said so &mdash; which reads as a setting that will not save. It becomes 30 now, the closest thing allowed, and the same holds for every widget setting that takes a number."
+        }
+      ]
+    }
+  ]
+}

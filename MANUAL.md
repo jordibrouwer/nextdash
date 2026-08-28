@@ -992,9 +992,17 @@ the only widget that talks to anything outside.
   percentage, and a date arrives as seconds, milliseconds or an ISO string.
 - **Or a list instead of figures** — point at an array and the tile draws its
   entries as rows, up to twenty: the downloads running now, the last few errors.
-- **Schedule** — anywhere between 30 seconds and a day, five minutes by default.
-  One answer is shared by everyone looking at the dashboard, so a wall display
-  costs the service nothing extra. Since **v1.4.2.1** it is also how often the
+- **Refresh every** — anywhere between 30 seconds and a day, five minutes by
+  default. Called *Schedule* before **v1.4.2.2**, and *Ask again after* in the
+  panel: both described the cache, which has been half the story since the tile
+  started refreshing itself. The field says its range and its default now, and
+  the **ℹ** beside it explains how to choose — 30 to 60 seconds for a download
+  speed or processor load, five minutes for a queue or a count, an hour for
+  something measured hourly. Asking more often than the service itself measures
+  returns the same answer. A number outside the range is brought into it rather
+  than refused: typing 5 gives you 30, where it used to be dropped and silently
+  leave the default in place. One answer is shared by everyone looking at the
+  dashboard, so a wall display costs the service nothing extra. Since **v1.4.2.1** it is also how often the
   tile refreshes itself: the figures follow this interval **without the page
   being reloaded**, so a dashboard left open all day no longer shows the
   download speed it found at breakfast. Each custom tile keeps its own clock, so
@@ -1004,8 +1012,14 @@ the only widget that talks to anything outside.
   machines — and on your return the tile shows what it had until its next beat,
   rather than every tile saying *Loading…* at once.
 
-**Refresh** on the widget skips the cache, including the short retry window a
-failure gets, and needs the write token if your install uses one.
+**Refresh now** — right-click the widget's title (**v1.4.2.2**). It skips the
+cache, including the half minute a failure is held for, and needs the write
+token if your install uses one. That hold is deliberate: a service that is down
+should not be asked again by every open dashboard. It is only in the way when
+you have *just* fixed the reason it was failing — a key that had expired, a
+machine that was asleep — and would otherwise watch an error you have already
+dealt with for another thirty seconds. It is offered on the custom tile alone,
+since every other widget reads what nextDash already holds.
 
 It will not change anything: a tile reads, and the two methods it offers are the
 two that ask a question. An answer has **eight seconds** to arrive and is read up
