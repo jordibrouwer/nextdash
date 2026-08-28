@@ -247,3 +247,139 @@ test.describe('the custom widget', () => {
         expect(geometry.hasHeader).toBe(true);
     });
 });
+
+/*
+ * A custom tile refreshes itself, on its own clock.
+ *
+ * Every other tile reads something nextDash already keeps, so a repaint is
+ * enough to bring it up to date. This one is the only tile that asks the
+ * outside world, and there is nothing on a dashboard left open that would ever
+ * ask again — the TTL it carries is a cache expiry, not a schedule, so the
+ * figures sat at whatever they were when the page loaded.
+ *
+ * The presets set that TTL per service with a reason: 60s for a download speed,
+ * 300s for a queue, 3600s for a speed test that runs hourly. So the clock is
+ * per widget rather than one shared tick — a 60x spread cannot be one number.
+ */
+test.describe('a custom widget refreshes itself', () => {
+    test('on its own TTL, and only while the tab is watched', async ({ page }) => {
+        await open(page);
+        const outcome = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            let calls = 0;
+            const realFetch = window.fetch;
+            window.fetch = async (url, ...rest) => {
+                if (String(url).includes('/api/widgets/custom')) {
+                    calls += 1;
+                    return new Response(JSON.stringify({
+                        fetchedAt: Date.now(),
+                        values: [{ label: 'down/s', value: String(calls) }],
+                    }), { headers: { 'Content-Type': 'application/json' } });
+                }
+                return realFetch(url, ...rest);
+            };
+
+            const widget = { id: 'w_speed', type: 'custom', title: 'Speed', config: { ttl: 30 } };
+            // Shaped like a real tile on the grid: the clock finds the body by
+            // the widget's own id, the way it does after any repaint.
+            const block = document.createElement('div');
+            block.className = 'dashboard-widget';
+            block.dataset.widgetId = widget.id;
+            const body = document.createElement('div');
+            body.className = 'dashboard-widget-body';
+            block.appendChild(body);
+            document.body.appendChild(block);
+
+            const timers = () => d.renderCore?.customWidgetTimerCount?.() ?? -1;
+            // Earlier tests in this file draw custom tiles too, and drawing one
+            // starts its clock. Counting from whatever they left running would
+            // make this test's numbers depend on the order it happens to run in.
+            d.renderCore?.stopCustomWidgetTimers?.();
+
+            /*
+             * The clocks themselves are counted, not the map that tracks them.
+             *
+             * The map is keyed by widget id, so starting a second interval for
+             * the same tile silently replaces the entry: the count still reads
+             * 1 while the first interval keeps firing forever. Watching
+             * setInterval/clearInterval is what sees that leak — and it has to
+             * be installed before the first clock starts, or the one that leaks
+             * is the one it never saw.
+             */
+            const liveIntervals = new Set();
+            const realSet = window.setInterval;
+            const realClear = window.clearInterval;
+            const trackedSet = (...args) => {
+                const id = realSet(...args);
+                liveIntervals.add(id);
+                return id;
+            };
+            const trackedClear = (id) => { liveIntervals.delete(id); return realClear(id); };
+            window.setInterval = trackedSet;
+            window.clearInterval = trackedClear;
+
+            await window.DashboardWidgets.custom(body, widget, d);
+            d.renderCore?.startCustomWidgetTimer?.(widget);
+            const afterFirst = { calls, timers: timers(), intervals: liveIntervals.size };
+
+            // Drawn again, as a repaint does.
+
+            await window.DashboardWidgets.custom(body, widget, d);
+            d.renderCore?.startCustomWidgetTimer?.(widget);
+            const afterRepaint = { timers: timers(), intervals: liveIntervals.size };
+
+            window.setInterval = realSet;
+            window.clearInterval = realClear;
+
+            /*
+             * A beat, with the cache left exactly as the tile left it.
+             *
+             * Emptying it here first would test nothing: dropping this tile's
+             * entry is the beat's own job, and a tick that forgot to would
+             * quietly redraw the same figures forever.
+             */
+            await d.renderCore?.tickCustomWidget?.(widget);
+            const afterExpiry = { calls };
+
+            // Hidden tab: a dashboard on a second monitor must not keep asking
+            // a service of the reader's own.
+            Object.defineProperty(document, 'visibilityState',
+                { value: 'hidden', configurable: true });
+            await d.renderCore?.tickCustomWidget?.(widget);
+            const afterHidden = { calls };
+
+            Object.defineProperty(document, 'visibilityState',
+                { value: 'visible', configurable: true });
+            // Counted as intervals again: the map is emptied by .clear() either
+            // way, so only the clocks themselves show whether they were stopped.
+            const beforeStop = liveIntervals.size;
+            window.setInterval = trackedSet;
+            window.clearInterval = trackedClear;
+            d.renderCore?.stopCustomWidgetTimers?.();
+            window.setInterval = realSet;
+            window.clearInterval = realClear;
+            const afterStop = { timers: timers(), intervals: liveIntervals.size, beforeStop };
+
+            window.fetch = realFetch;
+            block.remove();
+            return { afterFirst, afterRepaint, afterExpiry, afterHidden, afterStop };
+        });
+
+        expect(outcome.afterFirst.calls).toBe(1);
+        expect(outcome.afterFirst.timers).toBe(1);
+        expect(outcome.afterFirst.intervals).toBe(1);
+        // One tile, one timer — however often it is drawn. The interval count
+        // is the assertion that bites: the map alone cannot see a leak.
+        expect(outcome.afterRepaint.timers).toBe(1);
+        expect(outcome.afterRepaint.intervals).toBe(1);
+        // Past its TTL it asks again.
+        expect(outcome.afterExpiry.calls).toBe(2);
+        // Hidden, it does not.
+        expect(outcome.afterHidden.calls).toBe(2);
+        // And leaving the page takes the clocks with it — the map is emptied
+        // either way, so the intervals are what prove they stopped.
+        expect(outcome.afterStop.beforeStop).toBe(1);
+        expect(outcome.afterStop.timers).toBe(0);
+        expect(outcome.afterStop.intervals).toBe(0);
+    });
+});
