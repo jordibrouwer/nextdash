@@ -557,3 +557,38 @@ func TestServerLogSeedsFromDisk(t *testing.T) {
 		t.Error("seeding wrote the replayed line back to the file")
 	}
 }
+
+// The line says what it is now, so the viewer stops guessing from wording.
+func TestParseServerLogLineReadsTheDeclaredLevel(t *testing.T) {
+	entry := parseServerLogLine("2026/08/28 17:42:04 WARN archive dash.example refused the request (403)")
+	if entry.Level != logLevelWarn {
+		t.Fatalf("level = %q, want %q", entry.Level, logLevelWarn)
+	}
+	if entry.Source != "archive" {
+		t.Fatalf("source = %q, want archive", entry.Source)
+	}
+	if entry.Message != "dash.example refused the request (403)" {
+		t.Fatalf("message = %q", entry.Message)
+	}
+}
+
+// A declared level wins over the words in the sentence. "failed" in an INFO
+// summary is a count, not a severity, and the old inference read it as an error.
+func TestParseServerLogLineDeclaredLevelBeatsTheWording(t *testing.T) {
+	entry := parseServerLogLine("2026/08/28 17:42:04 INFO health checked 110 bookmarks, 2 failed in 1.4s")
+	if entry.Level != logLevelInfo {
+		t.Fatalf("level = %q, want %q", entry.Level, logLevelInfo)
+	}
+	if entry.Source != "health" {
+		t.Fatalf("source = %q, want health", entry.Source)
+	}
+}
+
+// Lines from before this change, and from the Go runtime, still land somewhere
+// sensible rather than being dropped.
+func TestParseServerLogLineStillHandlesAnUnlabelledLine(t *testing.T) {
+	entry := parseServerLogLine("2026/08/28 17:42:04 http: TLS handshake error from 10.0.0.2")
+	if entry.Level != logLevelError {
+		t.Fatalf("level = %q, want the inferred %q", entry.Level, logLevelError)
+	}
+}

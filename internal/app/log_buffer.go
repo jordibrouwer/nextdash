@@ -99,9 +99,9 @@ func clampServerLogRetentionHours(hours int) int {
 	return hours
 }
 
-// Severity labels. Derived rather than declared: the call sites are plain
-// log.Printf with no level of their own, so the level has to be inferred from
-// what was written.
+// Severity labels. Declared by the writer: every line from logx opens with its
+// level, and these are the names the viewer filters on. Inference survives only
+// for lines that predate logx and for the Go runtime's own output.
 const (
 	logLevelInfo  = "info"
 	logLevelWarn  = "warn"
@@ -328,6 +328,16 @@ func parseServerLogLine(raw string) serverLogEntry {
 		entry.Message = after
 	}
 
+	// A line written through logx says its own level and component: "WARN
+	// archive dash… ". Read them rather than guessing, so a summary that
+	// mentions "2 failed" is not filed as an error.
+	if level, source, msg, ok := splitDeclaredLevel(rest); ok {
+		entry.Level = level
+		entry.Source = source
+		entry.Message = msg
+		return entry
+	}
+
 	if status, ok := requestLogStatus(rest); ok {
 		entry.Source = "request"
 		switch {
@@ -405,8 +415,28 @@ func requestLogStatus(rest string) (int, bool) {
 	return status, true
 }
 
-// Best-effort severity for non-request lines, from the words the call sites
-// actually use. Deliberately conservative: anything unrecognised stays info.
+// splitDeclaredLevel reads the "LEVEL component message" shape logx writes.
+// Both words have to be there and the level has to be one of the four, so a
+// sentence that happens to open with a capitalised word is not mistaken for one.
+func splitDeclaredLevel(text string) (level, source, message string, ok bool) {
+	levelWord, rest, found := strings.Cut(text, " ")
+	if !found {
+		return "", "", "", false
+	}
+	_, known := logLevelRank[strings.ToLower(levelWord)]
+	if !known || levelWord != strings.ToUpper(levelWord) {
+		return "", "", "", false
+	}
+	component, msg, found := strings.Cut(rest, " ")
+	if !found || component == "" {
+		return "", "", "", false
+	}
+	return strings.ToLower(levelWord), component, msg, true
+}
+
+// Best-effort severity for lines that do not declare one: those written before
+// logx existed, and those from the Go runtime. Deliberately conservative:
+// anything unrecognised stays info.
 func levelFromText(text string) string {
 	lower := strings.ToLower(text)
 	for _, w := range []string{"failed", "error", "could not", "cannot", "invalid", "rejected", "panic"} {
