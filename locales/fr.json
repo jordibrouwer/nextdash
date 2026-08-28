@@ -1039,6 +1039,7 @@
     "healthLocalCopy": "Enregistrer une copie sur ce disque…",
     "healthLocalCopies": "Copies sur ce disque",
     "healthLocalCopySaved": "Copie de cette page enregistrée.",
+    "healthLocalCopyBlank": "Copie enregistrée, mais elle s’ouvre vide : cette page se construit en JavaScript, seule la coquille a pu être conservée.",
     "healthLocalCopyError": "Impossible d'enregistrer une copie de cette page.",
     "healthLocalCopyMissing": "monolith n'est pas installé — voir Config → Données et sauvegardes → Sources.",
     "healthLocalCopiesNone": "Aucune copie de cette page n'est encore stockée ici.",

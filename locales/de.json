@@ -1039,6 +1039,7 @@
     "healthLocalCopy": "Kopie auf dieser Festplatte speichern…",
     "healthLocalCopies": "Kopien auf dieser Festplatte",
     "healthLocalCopySaved": "Kopie dieser Seite gespeichert.",
+    "healthLocalCopyBlank": "Kopie gespeichert, aber sie öffnet leer: Diese Seite baut sich mit JavaScript auf, also konnte nur die Hülle gespeichert werden.",
     "healthLocalCopyError": "Es konnte keine Kopie dieser Seite gespeichert werden.",
     "healthLocalCopyMissing": "monolith ist nicht installiert — siehe Config → Daten & Backups → Quellen.",
     "healthLocalCopiesNone": "Von dieser Seite sind hier noch keine Kopien gespeichert.",

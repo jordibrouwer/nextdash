@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -169,40 +169,6 @@ nothing here noticed. This asserts the flags rather than the behaviour, which is
 usually the wrong test to write -- but the flags are an interface with a program
 outside this repo, and getting them wrong fails every capture at once.
 */
-/*
-The quiet flag is whichever letter this build spells it with.
-
-It was renamed between releases: 2.8 -- what Alpine ships, and therefore what the
-Docker image has -- takes -s and rejects -q; 2.10, from Homebrew, is the other
-way round. Hardcoding either kills every capture on half the installs, and both
-halves of that were verified against real binaries before this was written.
-*/
-func TestMonolithQuietFlagFollowsTheBuild(t *testing.T) {
-	cases := map[string]string{
-		`  -q, --quiet   Suppress verbosity`: "-q",
-		`  -s, --silent  Suppress verbosity`: "-s",
-		`  -o, --output  Write output to`:    "",
-	}
-	for help, want := range cases {
-		resetMonolithQuiet()
-		dir := t.TempDir()
-		binary := filepath.Join(dir, "monolith")
-		if err := os.WriteFile(binary, []byte("#!/bin/sh\ncat <<'EOF'\n"+help+"\nEOF\n"), 0755); err != nil {
-			t.Fatalf("write stub: %v", err)
-		}
-		if got := monolithQuietFlag(binary); got != want {
-			t.Errorf("help %q gave %q, want %q", help, got, want)
-		}
-	}
-	resetMonolithQuiet()
-}
-
-// resetMonolithQuiet clears the once-only lookup so a test can ask again.
-func resetMonolithQuiet() {
-	monolithQuietOnce = sync.Once{}
-	monolithQuietCached = ""
-}
-
 func TestCaptureLocallyPassesTheFlagsMonolithHas(t *testing.T) {
 	h := newTestHandlers(t)
 	argsFile := filepath.Join(t.TempDir(), "args.txt")
@@ -225,9 +191,9 @@ done`)
 	args := string(raw)
 
 	// -I isolate (the saved page must not reach the network when it is opened
-	// years later) and -t a per-request timeout. The quiet flag is not asserted
-	// here: which letter it is depends on the build, and its own test covers
-	// that.
+	// years later) and -t a per-request timeout. No quiet flag: it silenced the
+	// failure along with the progress, which is what left a broken capture
+	// saying only "exit status 1".
 	for _, want := range []string{"-o", "-I", "-t", "https://example.com/page"} {
 		if !strings.Contains(args, want) {
 			t.Errorf("monolith called without %q; got: %s", want, args)
@@ -506,4 +472,218 @@ func TestLocalCopyIndexCountsPerPage(t *testing.T) {
 	if index[localArchiveSlug("https://example.com/")].Newest == 0 {
 		t.Error("no timestamp recorded for the newest copy")
 	}
+}
+
+/*
+A failed capture has to say why it failed.
+
+monolith writes its progress and its errors to stderr, and the quiet flag we
+were passing silenced both — so a capture that could not reach the page came
+back as "monolith failed: exit status 1", which tells the reader nothing they
+can act on. Reproduced against the real binary: with the flag, a DNS failure
+produces empty stdout and empty stderr; without it, stderr ends with
+"Error: could not retrieve target document".
+*/
+func TestCaptureLocallyReportsWhyMonolithFailed(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `echo "https://example.com/asset.js" >&2
+echo "Error: could not retrieve target document" >&2
+exit 1`)
+
+	_, err := h.CaptureLocally(context.Background(), "https://example.com/page")
+
+	if err == nil {
+		t.Fatal("a failing monolith reported success")
+	}
+	if !strings.Contains(err.Error(), "could not retrieve target document") {
+		t.Fatalf("error = %q, want it to carry monolith's own reason", err.Error())
+	}
+	// And not drowned in the asset list that precedes it: the last thing said
+	// is the thing that went wrong.
+	if strings.Contains(err.Error(), "asset.js") {
+		t.Fatalf("error = %q, want the reason rather than the progress log", err.Error())
+	}
+}
+
+/*
+And it is not asked to be quiet in the first place.
+
+The quiet flag exists in two spellings and we probed --help to pick one. Both
+suppress the error as well as the progress, which is why a failure could not
+explain itself. Nothing needs suppressing: stdout is discarded and stderr is
+only read when the run fails.
+*/
+func TestCaptureLocallyDoesNotSilenceMonolith(t *testing.T) {
+	h := newTestHandlers(t)
+	dir := t.TempDir()
+	argsFile := filepath.Join(dir, "args.txt")
+	// Answers --help the way monolith 2.10 does, which is what made the code
+	// reach for -q. A stub that says nothing would let this test pass against
+	// the very behaviour it is here to prevent.
+	withFakeMonolith(t, `case "$1" in --help) echo "  -q, --quiet   Suppress verbosity"; exit 0;; esac
+echo "$@" > `+argsFile+`
+echo "<html>captured</html>" > "$2"`)
+
+	if _, err := h.CaptureLocally(context.Background(), "https://example.com/page"); err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatalf("read args: %v", err)
+	}
+	for _, flag := range []string{" -q", " -s", "--quiet", "--silent"} {
+		if strings.Contains(string(args), flag) {
+			t.Fatalf("args = %q, want no quiet flag", strings.TrimSpace(string(args)))
+		}
+	}
+}
+
+/*
+The size cap, at the two sizes that matter.
+
+Everything a capture references is inlined as base64, so a page with a video or
+a gallery is legitimately tens of megabytes. The cap exists to stop one page
+filling the disk, not to refuse the pages people actually want kept — 32 MB was
+turning away captures that were worth having.
+
+Sparse files: os.Stat reports the size the cap reads, and writing 60 real
+megabytes to test a limit would be the slowest test in the suite.
+*/
+func TestCaptureLocallySizeCap(t *testing.T) {
+	cases := []struct {
+		name string
+		megs int
+		kept bool
+	}{
+		{name: "a heavy page is kept", megs: 40, kept: true},
+		{name: "an absurd one is refused", megs: 60, kept: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newTestHandlers(t)
+			withFakeMonolith(t, `dd if=/dev/zero of="$2" bs=1 count=0 seek=`+strconv.Itoa(tc.megs)+`m 2>/dev/null`)
+
+			_, err := h.CaptureLocally(context.Background(), "https://example.com/page")
+
+			if tc.kept && err != nil {
+				t.Fatalf("%d MB was refused: %v", tc.megs, err)
+			}
+			if !tc.kept {
+				if err == nil {
+					t.Fatalf("%d MB was stored, past the limit", tc.megs)
+				}
+				if !strings.Contains(err.Error(), "limit") {
+					t.Fatalf("error = %q, want it to name the limit", err.Error())
+				}
+			}
+		})
+	}
+}
+
+/*
+A page that builds itself with JavaScript is saved as an empty shell.
+
+monolith stores what the server sent, and for a single-page app that is a
+container plus scripts. Those scripts cannot run from the archive — the copy is
+served under a policy that forbids them, and even allowed they would want the
+network the archive exists to do without. So the capture succeeds, weighs
+megabytes, and shows nothing when opened.
+
+Reproduced against the real thing: a claude.ai capture of 4.5 MB renders zero
+characters of text, while an ars technica one of 40 MB renders eight thousand.
+Saying so at the moment of saving is the difference between a copy you chose to
+keep and a copy you discover is blank a year later.
+*/
+func TestCaptureLocallyFlagsAShellWithNoReadableText(t *testing.T) {
+	h := newTestHandlers(t)
+	// A single-page app as monolith stores it: a mount point and a script.
+	withFakeMonolith(t, `cat > "$2" <<'HTML'
+<!doctype html><html><head><title>App</title></head>
+<body><div id="root"></div><script>window.boot=1</script></body></html>
+HTML`)
+
+	capture, err := h.CaptureLocally(context.Background(), "https://app.example/page")
+	if err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+	if !capture.NoReadableText {
+		t.Fatal("a shell with nothing to read was reported as an ordinary capture")
+	}
+}
+
+// And a page with words in it is not flagged, or the warning would mean nothing.
+func TestCaptureLocallyLeavesARealPageAlone(t *testing.T) {
+	h := newTestHandlers(t)
+	withFakeMonolith(t, `cat > "$2" <<'HTML'
+<!doctype html><html><head><title>Story</title></head><body>
+<h1>The tunnel under the harbour</h1>
+<p>It took nine years to dig, cost four times what was promised, and carries
+more traffic in a day than the ferries it replaced managed in a week. The
+engineers who built it are mostly retired now, and the tunnel is due for its
+first serious overhaul: new pumps, new lighting, and a ventilation system that
+was specified when lorries were smaller. The works will close one bore at a
+time, which the harbour authority insists will not affect crossing times, and
+which everyone who drives it every morning expects will affect little else.
+Estimates for the overhaul run to eleven years, one more than it took to build
+the thing in the first place, and nobody involved seems willing to say so out
+loud in a meeting that is being minuted.</p>
+</body></html>
+HTML`)
+
+	capture, err := h.CaptureLocally(context.Background(), "https://news.example/story")
+	if err != nil {
+		t.Fatalf("capture: %v", err)
+	}
+	if capture.NoReadableText {
+		t.Fatal("a page of prose was flagged as empty")
+	}
+}
+
+/*
+A style block bigger than the probe window is still not text.
+
+monolith inlines every stylesheet, so a capture opens with hundreds of kilobytes
+of CSS before the first word of the page. Reading a fixed head of the file and
+stripping <style>…</style> with a pattern only works while both ends are inside
+the window: on the real claude.ai capture the closing tag fell outside it, the
+CSS was counted as prose, and 129,805 characters of @layer declarations looked
+exactly like a page worth keeping.
+*/
+func TestCaptureLocallySeesPastAHugeStyleBlock(t *testing.T) {
+	filler := strings.Repeat(".cls-x{color:#abcdef;background:#123456}\n", 20000)
+
+	t.Run("a shell padded with CSS is still empty", func(t *testing.T) {
+		h := newTestHandlers(t)
+		withFakeMonolith(t, `{ printf '<!doctype html><html><head><style>'
+cat <<'CSS'
+`+filler+`
+CSS
+printf '</style></head><body><div id="root"></div></body></html>'; } > "$2"`)
+
+		capture, err := h.CaptureLocally(context.Background(), "https://app.example/page")
+		if err != nil {
+			t.Fatalf("capture: %v", err)
+		}
+		if !capture.NoReadableText {
+			t.Fatal("counted the stylesheet as something to read")
+		}
+	})
+
+	t.Run("a page behind the same CSS is not", func(t *testing.T) {
+		h := newTestHandlers(t)
+		withFakeMonolith(t, `{ printf '<!doctype html><html><head><style>'
+cat <<'CSS'
+`+filler+`
+CSS
+printf '</style></head><body><h1>The tunnel under the harbour</h1><p>It took nine years to dig, cost four times what was promised, and carries more traffic in a day than the ferries it replaced managed in a week. The engineers who built it are mostly retired now, and it is due for its first overhaul: new pumps, new lighting, and ventilation specified when lorries were smaller. The works will close one bore at a time, which the harbour authority insists will not affect crossing times. Estimates for the overhaul run to eleven years, one more than it took to build the thing in the first place, and nobody involved seems willing to say that out loud in a meeting that is being minuted. The ferries, meanwhile, are still tied up at the old quay, repainted twice since anyone last sold a ticket for one.</p></body></html>'; } > "$2"`)
+
+		capture, err := h.CaptureLocally(context.Background(), "https://news.example/story")
+		if err != nil {
+			t.Fatalf("capture: %v", err)
+		}
+		if capture.NoReadableText {
+			t.Fatal("a page whose words come after the stylesheet was called empty")
+		}
+	})
 }

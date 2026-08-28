@@ -1039,6 +1039,7 @@
     "healthLocalCopy": "Kopie op deze schijf bewaren…",
     "healthLocalCopies": "Kopieën op deze schijf",
     "healthLocalCopySaved": "Kopie van deze pagina bewaard.",
+    "healthLocalCopyBlank": "Kopie bewaard, maar hij opent leeg: deze pagina bouwt zichzelf met JavaScript, dus alleen de huls kon worden opgeslagen.",
     "healthLocalCopyError": "Kon geen kopie van die pagina bewaren.",
     "healthLocalCopyMissing": "monolith is niet geïnstalleerd — zie Config → Data & backups → Bronnen.",
     "healthLocalCopiesNone": "Er zijn hier nog geen kopieën van deze pagina.",

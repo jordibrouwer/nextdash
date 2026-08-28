@@ -2288,12 +2288,23 @@ class DashboardHealth {
                 d.showNotification(message, 'error');
                 return;
             }
+            /*
+             * A page that builds itself in the browser is stored as a shell.
+             *
+             * The file is real and weighs megabytes, and it opens blank: its
+             * scripts cannot run from an archive, and allowed they would want
+             * the network the archive exists to do without. Saying so now is
+             * the difference between a copy you chose to keep and a copy you
+             * find empty a year from now.
+             */
+            const blank = body?.noReadableText === true;
+            const message = blank
+                ? this.t('dashboard.healthLocalCopyBlank',
+                    'Copy saved, but it opens blank: this page builds itself with JavaScript, so only the shell could be stored.')
+                : this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.');
             window.ProgressOverlay?.finish(
                 this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'));
-            d.showNotification(
-                this.t('dashboard.healthLocalCopySaved', 'Saved a copy of this page.'),
-                'success'
-            );
+            d.showNotification(message, blank ? 'info' : 'success', blank ? { duration: 9000 } : undefined);
             // The row can now say a copy exists, which it reads off the report.
             await this.loadAndRender({ refresh: true });
         } catch {
@@ -6353,11 +6364,25 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        /*
+         * Putting an archived copy back is an act of repair.
+         *
+         * Offered where there is something to repair — a failure, a drifted
+         * page, one nothing has checked yet. On a link that answers today it is
+         * not a lesser option, it is a mistake waiting to be clicked, and it was
+         * costing a row of a menu that had grown past the height of the window.
+         */
+        if (this.canRecoverFromArchive(issue)) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
+        }
         // A copy on this disk, for the case the Web Archive cannot help with:
         // a page nobody else archived, or one still up today that will not be.
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copy">${this.escape(this.t('dashboard.healthLocalCopy', 'Save a copy on this disk…'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
+        // Only when there is something to list. Without a copy this opens an
+        // empty dialog, which is a menu entry that exists to disappoint.
+        if (Number(issue?.localCopyAt) > 0) {
+            items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="local-copies">${this.escape(this.t('dashboard.healthLocalCopies', 'Copies on this disk'))}</button>`);
+        }
         // Same two entries the dashboard's right-click menu carries, under the
         // same labels. A row here is a bookmark like any other, and having to go
         // back to the dashboard to copy or send one is the kind of detour this

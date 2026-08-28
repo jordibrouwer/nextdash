@@ -1039,6 +1039,7 @@
     "healthLocalCopy": "Save a copy on this disk…",
     "healthLocalCopies": "Copies on this disk",
     "healthLocalCopySaved": "Saved a copy of this page.",
+    "healthLocalCopyBlank": "Copy saved, but it opens blank: this page builds itself with JavaScript, so only the shell could be stored.",
     "healthLocalCopyError": "Could not save a copy of that page.",
     "healthLocalCopyMissing": "monolith is not installed — see Config → Data & backups → Sources.",
     "healthLocalCopiesNone": "No copies of this page are stored here yet.",
