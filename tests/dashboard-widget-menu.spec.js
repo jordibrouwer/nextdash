@@ -169,3 +169,107 @@ test('Config → Widgets shows the title, the width and the switch the header se
     await row.locator('[data-widget-settings]').click();
     await expect(row.locator('[data-widget-setting="columns"]')).toHaveValue('2', { timeout: 10_000 });
 });
+
+/*
+The widget stays where the reader is looking.
+
+Changing a width reflows every block after it and the page changes height, so
+the redraw has to put the reader back — and putting the old offset back in the
+same tick is not enough: the masonry columns have not been measured yet, so the
+correction is written against a page that is about to be a different height.
+Measured on a page whose height grows by 136px: the widget slid 140px down the
+viewport, out of the reader's eye, and they had to go looking for the block they
+had just acted on.
+*/
+test('the widget keeps its place in the viewport when its width changes', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        // Long enough to scroll, short enough that a width change moves the end
+        // of the document — which is the case that clamps.
+        for (let n = 0; n < 26; n += 1) {
+            await f('/api/bookmarks/add', { method: 'POST', headers: h, body: JSON.stringify({ page: 1, bookmark: {
+                name: `Filler ${n}`, url: `https://filler.example/${n}`, category: 'one' } }) });
+        }
+        await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({
+            widgets: [{ type: 'health', title: 'Status' }] }) });
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+
+    const block = page.locator('.dashboard-widget[data-widget-type="health"]');
+    await expect(block).toBeVisible({ timeout: 15_000 });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(400);
+
+    const topOf = () => page.evaluate(() =>
+        Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
+    const before = await topOf();
+    // A test that starts with the widget off screen would prove nothing.
+    expect(before).toBeLessThan(await page.evaluate(() => window.innerHeight));
+
+    await block.locator('.category-title').press('Shift+W');
+    await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
+    await page.waitForTimeout(600);
+
+    expect(Math.abs((await topOf()) - before)).toBeLessThan(24);
+});
+
+/*
+And with packed columns, where the layout is measured a frame later.
+
+Packed mode positions the blocks in a requestAnimationFrame, so a correction
+written in the same tick as the redraw is written against a page that has not
+been laid out yet. The second pass is what holds the widget still here.
+*/
+test('the widget keeps its place with packed columns too', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const h = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        for (let n = 0; n < 40; n += 1) {
+            await f('/api/bookmarks/add', { method: 'POST', headers: h, body: JSON.stringify({ page: 1, bookmark: {
+                name: `Filler ${n}`, url: `https://filler.example/${n}`, category: `cat${n % 3}` } }) });
+        }
+        await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({
+            widgets: [{ type: 'health', title: 'Status' }] }) });
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.packedColumns = true;
+        d.renderDashboard({ animate: false, forceFull: true });
+    });
+    await page.waitForTimeout(800);
+
+    const block = page.locator('.dashboard-widget[data-widget-type="health"]');
+    await expect(block).toBeVisible({ timeout: 15_000 });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(400);
+
+    const topOf = () => page.evaluate(() =>
+        Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
+    const before = await topOf();
+
+    await block.locator('.category-title').press('Shift+W');
+    await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
+    await page.waitForTimeout(700);
+
+    expect(Math.abs((await topOf()) - before)).toBeLessThan(24);
+});

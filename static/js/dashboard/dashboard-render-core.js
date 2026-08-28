@@ -1581,6 +1581,85 @@ class DashboardRenderCore {
     }
 
     /*
+     * Redraw the grid without moving the page under the reader.
+     *
+     * A widget changing width or leaving the page reflows every block after it,
+     * so the draw has to be a full one -- and a full draw starts at the top of
+     * the document with a scroll position of zero. The reader was looking at a
+     * widget halfway down; putting the scroll back is what makes the change
+     * happen where they are looking instead of sending them back up to find it.
+     *
+     * Focus is restored too, so Shift+W twice in a row acts on the same header
+     * rather than on nothing the second time. Written by hand rather than
+     * through scrollIntoView: the reader's offset is the thing to preserve, not
+     * the block's position in the viewport.
+     */
+    redrawKeepingPlace(blockId) {
+        const d = this.dash;
+        const selector = blockId
+            ? `#dashboard-layout .category[data-category-id="${CSS.escape(String(blockId))}"]`
+            : null;
+        const before = selector ? document.querySelector(selector) : null;
+        const hadFocus = before ? document.activeElement?.closest?.(selector) != null : false;
+        const scrollY = window.scrollY || 0;
+        // Where the block sat in the viewport, which is the thing to keep. The
+        // absolute offset alone is not enough: the blocks after this one reflow,
+        // so the same offset can put a different part of the page under the
+        // reader's eyes.
+        const anchorTop = before ? before.getBoundingClientRect().top : null;
+
+        d.renderDashboard?.({ animate: false, forceFull: true });
+
+        // Returns whether it had to move anything, which is what tells the
+        // caller the layout is still settling.
+        const settle = () => {
+            const el = selector ? document.querySelector(selector) : null;
+            let moved = false;
+            if (el && anchorTop !== null) {
+                const drift = el.getBoundingClientRect().top - anchorTop;
+                if (Math.abs(drift) > 1) {
+                    window.scrollBy({ top: drift, behavior: 'instant' });
+                    moved = true;
+                }
+            } else if (Math.abs((window.scrollY || 0) - scrollY) > 1) {
+                // The block is gone -- it was just closed -- so the offset is
+                // all there is to go on.
+                window.scrollTo({ top: scrollY, behavior: 'instant' });
+                moved = true;
+            }
+            if (hadFocus) {
+                el?.querySelector('.category-title')?.focus({ preventScroll: true });
+            }
+            return moved;
+        };
+
+        /*
+         * Once now, then every frame until the page stops moving.
+         *
+         * The grid is masonry and packed mode positions its blocks inside a
+         * requestAnimationFrame, so right after the draw the document is a
+         * different height than it will be a frame or two later -- and a browser
+         * clamps the scroll to whatever fits in the meantime. Correcting only
+         * once writes a position the page is about to outgrow, which is the jump
+         * the reader sees. So the correction repeats while it still finds drift,
+         * and stops as soon as it does not.
+         *
+         * Bounded, because a layout that never settles must not turn into a
+         * scroll that never stops. In the test fixture the first pass is enough
+         * on both the plain grid and in packed mode; the loop is here for the
+         * pages where it is not, and costs a single measurement when it is.
+         */
+        settle();
+        let attempts = 0;
+        const again = () => {
+            if (attempts >= 6 || !settle()) return;
+            attempts += 1;
+            requestAnimationFrame(again);
+        };
+        requestAnimationFrame(again);
+    }
+
+    /*
      * Drop what Config -> Widgets is holding, so it reloads.
      *
      * That panel skips its fetch while `_widgetLoadedFor` still names the page

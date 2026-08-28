@@ -227,7 +227,9 @@ class DashboardCategoryMenu {
         }
         widget.config = { ...(widget.config || {}) };
         if (next === undefined) delete widget.config.columns; else widget.config.columns = next;
-        d.renderDashboard?.({ animate: false, forceFull: true });
+        // Not renderDashboard directly: a full draw resets the scroll to the top
+        // of the document, and the reader is looking at this widget.
+        d.renderCore?.redrawKeepingPlace?.(widget.id);
         return true;
     }
 
@@ -246,7 +248,7 @@ class DashboardCategoryMenu {
             return false;
         }
         widget.config = { ...(widget.config || {}), enabled: false };
-        d.renderDashboard?.({ animate: false, forceFull: true });
+        d.renderCore?.redrawKeepingPlace?.(widget.id);
         d.showNotification?.(
             this.t('widgetClosed', '“{name}” closed. Switch it back on under Config → Widgets.', { name }),
             'success',
@@ -258,7 +260,7 @@ class DashboardCategoryMenu {
                     }
                     widget.config = { ...(widget.config || {}) };
                     delete widget.config.enabled;
-                    d.renderDashboard?.({ animate: false, forceFull: true });
+                    d.renderCore?.redrawKeepingPlace?.(widget.id);
                     d.showNotification?.(this.t('widgetClosedUndone', 'Widget back on the page.'), 'success');
                 },
             },
