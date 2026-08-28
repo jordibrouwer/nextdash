@@ -607,7 +607,7 @@ class DashboardData {
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
-        await this.loadPageBookmarks(d.currentPageId, { forceFetch: true, animate: false });
+        await this.loadPageBookmarks(d.currentPageId, { forceFetch: true, animate: false, quiet: true });
         return true;
     }
 
@@ -711,7 +711,7 @@ class DashboardData {
             return;
         }
         d._pageBookmarksHealInFlight = true;
-        void this.loadPageBookmarks(pid, { forceFetch: true, animate: false })
+        void this.loadPageBookmarks(pid, { forceFetch: true, animate: false, quiet: true })
             .finally(() => {
                 d._pageBookmarksHealInFlight = false;
             });
@@ -957,6 +957,18 @@ class DashboardData {
             skipRender = false,
             animate = false,
             forceFetch = false,
+            /*
+             * A load nobody asked for stays quiet when it fails.
+             *
+             * The heal after a render and the revision poll both reload the page
+             * behind the reader's back, at whatever moment they happen to run --
+             * a restarted container, a laptop waking up, a tailnet reconnecting.
+             * Each failure raised a toast for something that repairs itself on
+             * the next render, so a moment's interruption read as a fault in the
+             * page. A load the reader started -- opening a page, pressing Retry
+             * -- still says so, because there they are waiting for an answer.
+             */
+            quiet = false,
         } = options;
         const targetPageId = Number(pageId);
         if (!Number.isFinite(targetPageId)) {
@@ -1018,7 +1030,11 @@ class DashboardData {
                     return false;
                 }
                 if (!bookmarksRes.ok || !categoriesRes.ok) {
-                    throw new Error('Failed to load page bookmarks or categories');
+                    // Named, because "it failed" is what the reader was left
+                    // with: a 500 from the server, a 401 after a token change
+                    // and a container that is not there yet all read alike.
+                    const failed = !bookmarksRes.ok ? bookmarksRes : categoriesRes;
+                    throw new Error(`HTTP ${failed.status}`);
                 }
 
                 bookmarks = await bookmarksRes.json();
@@ -1044,8 +1060,17 @@ class DashboardData {
             if (rethrow) {
                 throw error;
             }
+            const reason = String(error?.message || '').trim();
+            if (quiet) {
+                // Console rather than screen: this one is worth finding when
+                // something is wrong, and not worth interrupting for.
+                console.warn('nextDash: background page load failed', reason || error);
+                return false;
+            }
+            const base = d.formatDashboardLabel(
+                'loadPageBookmarksFailed', {}, 'Failed to load bookmarks for this page.');
             d.showErrorNotification(
-                d.formatDashboardLabel('loadPageBookmarksFailed', {}, 'Failed to load bookmarks for this page.'),
+                reason ? `${base} (${reason})` : base,
                 {
                     retry: () => this.loadPageBookmarks(targetPageId),
                 }
