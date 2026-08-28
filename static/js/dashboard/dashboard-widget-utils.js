@@ -180,7 +180,7 @@
      * broken is the best news a dashboard can carry and still belongs in the
      * broken row. Two across a narrow tile, four across a wide one.
      */
-    function statGrid(stats) {
+    function statGrid(stats, action) {
         const grid = document.createElement('div');
         grid.className = 'dashboard-widget-stats';
         const cells = (stats || []).filter(Boolean);
@@ -216,9 +216,12 @@
             if (stat.title) cell.title = stat.title;
             cell.append(value, name);
             if (stat.onOpen) {
-                bindRowAction(cell, stat.dash, {
-                    labelKey: stat.actionKey,
-                    labelFallback: stat.actionLabel || 'Open',
+                // The grid's own description unless the figure carries one:
+                // "Open Health" for a tile of health figures, "Open the trash"
+                // for the trash, rather than a menu entry reading "Open".
+                bindRowAction(cell, stat.dash || action?.dash, {
+                    labelKey: stat.actionKey || action?.labelKey,
+                    labelFallback: stat.actionLabel || action?.labelFallback || 'Open',
                     run: stat.onOpen,
                 });
             }

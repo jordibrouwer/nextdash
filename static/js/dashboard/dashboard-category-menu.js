@@ -143,6 +143,24 @@ class DashboardCategoryMenu {
                 disabled: !canWiden && !wide,
             },
             {
+                // Folding is on the header already -- click it, Enter, or the
+                // fold-all key -- but the menu is where a reader looks to find
+                // out what a block can do, and it was the one action missing.
+                id: 'fold',
+                label: this.widgetIsFolded(titleEl)
+                    ? this.t('widgetMenuUnfold', 'Unfold')
+                    : this.t('widgetMenuFold', 'Fold'),
+                icon: '⌃',
+                key: 'Enter',
+            },
+            {
+                // Straight to this widget's own row in Config -> Widgets, rather
+                // than opening the section and hunting for it among the others.
+                id: 'settings',
+                label: this.t('widgetMenuSettings', 'Settings…'),
+                icon: '⚙',
+            },
+            {
                 // Closing is not deleting: the widget keeps its settings and any
                 // sign-in it holds, and the Shown switch in Config -> Widgets is
                 // the same flag. Deleting stays there, where the consequences
@@ -199,6 +217,11 @@ class DashboardCategoryMenu {
         return text.length > 48 ? `${text.slice(0, 47)}…` : (text || '—');
     }
 
+    /** Whether the block behind this header is folded shut. */
+    widgetIsFolded(titleEl) {
+        return titleEl?.closest('.category')?.getAttribute('data-collapsed') === 'true';
+    }
+
     /** What the header shows: the widget's own title, or its type's name. */
     widgetName(widget) {
         const given = String(widget?.title || '').trim();
@@ -232,6 +255,16 @@ class DashboardCategoryMenu {
         if (action === 'row-open-tab') {
             const href = rowEl?.dataset?.widgetHref;
             if (href) window.open(href, '_blank', 'noopener');
+            return;
+        }
+        if (action === 'fold') {
+            // Through the header's own click handler, so folding from the menu
+            // and folding by clicking cannot end up as two behaviours.
+            titleEl?.click();
+            return;
+        }
+        if (action === 'settings') {
+            window.DashboardWidgetUtils?.openConfigTab?.(d, 'widgets');
             return;
         }
         if (action === 'rename') {

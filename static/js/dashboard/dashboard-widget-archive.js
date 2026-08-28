@@ -110,7 +110,7 @@
                 label: label(dash, 'dashboard.widgetArchiveNoCopy', 'no copy'),
                 tone: null,
             },
-        ]));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
 
         /*
          * One list, not two: everything the figures counted, without a copy,
@@ -152,7 +152,8 @@
                 bookmark?.name || bookmark?.url || '',
                 detail,
                 broken ? 'bad' : null,
-                () => u.openHealthFiltered(dash, broken ? 'broken' : 'all')));
+                () => u.openHealthFiltered(dash, broken ? 'broken' : 'all'),
+                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
         });
         u.appendOverflowRow(list, dash, ranked.length - maxRows,
             () => u.openHealthFiltered(dash, 'broken'));

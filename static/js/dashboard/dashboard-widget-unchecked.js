@@ -105,7 +105,7 @@
                     'On the faster tier, with uptime history.'),
                 onOpen: () => u.openHealthFiltered(dash, 'monitored'),
             },
-        ]));
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
 
         // Never before stale, and within each the one waiting longest first —
         // the order someone would work the list in.
@@ -135,7 +135,8 @@
                 bookmark?.name || bookmark?.url || '',
                 detail,
                 bookmark?.checkStatus ? 'warn' : null,
-                () => u.openHealthFiltered(dash, last ? 'stale' : 'unchecked')));
+                () => u.openHealthFiltered(dash, last ? 'stale' : 'unchecked'),
+                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
         });
         u.appendOverflowRow(list, dash, candidates.length - maxRows,
             () => u.openHealthFiltered(dash, 'unchecked'));

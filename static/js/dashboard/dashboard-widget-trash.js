@@ -124,7 +124,7 @@
                     'Leaving within {n} days.').replace('{n}', String(warnDays)),
                 onOpen: open,
             },
-        ]));
+        ], { dash, labelKey: 'widgetActionOpenTrash', labelFallback: 'Open the trash' }));
 
         const list = u.rowList();
         sorted.slice(0, maxRows).forEach((item) => {
@@ -139,7 +139,8 @@
                 nameOf(item) || label(dash, 'dashboard.widgetTrashUnnamed', 'Untitled'),
                 detail,
                 left !== null && left <= warnDays ? 'warn' : null,
-                open));
+                open,
+                { dash, labelKey: 'widgetActionOpenTrash', labelFallback: 'Open the trash' }));
         });
         u.appendOverflowRow(list, dash, sorted.length - maxRows, open);
         panel.appendChild(list);

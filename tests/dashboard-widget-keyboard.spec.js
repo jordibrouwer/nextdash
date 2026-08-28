@@ -282,3 +282,54 @@ test('a widget refresh leaves the cursor where it was', async ({ page }) => {
     expect(after?.text).toBe(before?.text);
     expect(after?.focused).toBe(true);
 });
+
+/*
+And the menu names the figure, not just the view.
+
+All four rows of the health tile open the same view, so a menu reading "Open
+Health" four times says nothing about which row is under the pointer.
+*/
+test('the row entry names which figure it opens', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    const row = page.locator('.dashboard-widget button[data-widget-action]').first();
+    await row.click({ button: 'right' });
+    const menu = page.locator('#widget-context-menu');
+    await expect(menu).toBeVisible({ timeout: 10_000 });
+    await expect(menu.locator('[data-action="row-open"]')).toContainText('—');
+});
+
+/*
+Fold and Settings, where a reader looks for what a block can do.
+*/
+test('the menu offers folding and the widget’s settings', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    await page.locator('.dashboard-widget .category-title').click({ button: 'right' });
+    const menu = page.locator('#widget-context-menu');
+    await expect(menu).toBeVisible({ timeout: 10_000 });
+    await expect(menu.locator('[data-action="fold"]')).toBeVisible();
+
+    await menu.locator('[data-action="fold"]').click();
+    await expect(page.locator('.dashboard-widget[data-widget-type="health"]'))
+        .toHaveAttribute('data-collapsed', 'true', { timeout: 10_000 });
+
+    // And the label flips, so the same entry says what it will do next.
+    await page.locator('.dashboard-widget .category-title').click({ button: 'right' });
+    await expect(page.locator('#widget-context-menu [data-action="fold"]')).toContainText(/unfold/i);
+});
+
+test('Settings… opens Config → Widgets', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    await page.locator('.dashboard-widget .category-title').click({ button: 'right' });
+    await page.locator('#widget-context-menu [data-action="settings"]').click();
+
+    await expect.poll(() => page.evaluate(() => {
+        const config = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+        return config?.section || '';
+    }), { timeout: 15_000 }).toBe('widgets');
+    // And on screen, not only in the object: the reader asked for the panel.
+    await expect(page.locator('.config-widget-list, [data-widget-catalogue]').first())
+        .toBeVisible({ timeout: 15_000 });
+});

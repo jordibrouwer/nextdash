@@ -94,8 +94,11 @@
             // does: the right-click menu and the keyboard read that, and a
             // closure says nothing to either.
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
-                labelKey: 'widgetActionOpenHealth',
-                labelFallback: 'Open Health',
+                // Named after the figure, since all four rows open the same view
+                // and a menu saying "Open Health" four times says nothing about
+                // which one is under the pointer.
+                labelFallback: label(dash, 'dashboard.widgetActionOpenHealthFilter', 'Open Health — {name}')
+                    .replace('{name}', label(dash, figure.labelKey, figure.fallback)),
                 run: () => {
                     // Straight to the rows behind the number: a count you cannot
                     // act on is a decoration.
