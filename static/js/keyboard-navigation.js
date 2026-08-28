@@ -398,10 +398,12 @@ class KeyboardNavigation {
                 && this._gridNavActive()
             ) {
                 const href = this.navigableElements[this.currentIndex]?.dataset?.widgetHref;
-                if (href) {
+                // Through the menu's own opener, so the address is checked in
+                // one place rather than twice with room to differ.
+                if (href && this.dashboard?.categoryMenu?.openWidgetHref) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    window.open(href, '_blank', 'noopener');
+                    this.dashboard.categoryMenu.openWidgetHref(href);
                     return;
                 }
             }
@@ -808,6 +810,22 @@ class KeyboardNavigation {
             on ? 'spread across columns' : 'one column',
         ) || '';
         live.textContent = name ? `${name}: ${label}` : label;
+    }
+
+    /**
+     * Say something once, to whoever is listening rather than looking.
+     *
+     * The live region already exists for the cursor; this hands it to the rest
+     * of the dashboard, so an action whose only feedback is a toast — closing a
+     * widget, say — is not silent for a reader who never sees one.
+     */
+    announce(message) {
+        const text = String(message || '').trim();
+        if (!text) return;
+        const live = this._ensureKbdLiveRegion();
+        // Cleared first: the same sentence twice is not re-announced otherwise.
+        live.textContent = '';
+        requestAnimationFrame(() => { live.textContent = text; });
     }
 
     _ensureKbdLiveRegion() {

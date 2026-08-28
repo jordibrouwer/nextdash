@@ -1741,6 +1741,7 @@
     "widgetMenuWidthUnavailable": "Il n’y a qu’une colonne — un widget en demande au moins deux pour s’étendre.",
     "widgetMenuClose": "Fermer",
     "widgetClosed": "« {name} » fermé. Réactivez-le dans Config → Widgets.",
+    "widgetClosedAnnounce": "{name} fermé",
     "widgetClosedUndone": "Le widget est de retour sur la page.",
     "widgetSaveFailed": "Impossible d’enregistrer le widget.",
     "widgetActionOpenHealth": "Ouvrir Health",

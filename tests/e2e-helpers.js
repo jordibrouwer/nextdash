@@ -140,6 +140,24 @@ async function markInboxTutorialSeen(page) {
 }
 
 /**
+ * The same, for the one-time Widgets tour. Config → Widgets checks the tip
+ * before it fetches the tour at all, so marking it here keeps the modal out of
+ * every spec that only wants the widgets panel. The tour's own spec puts it
+ * back to unseen.
+ * @param {import('@playwright/test').Page} page
+ */
+async function markWidgetsTutorialSeen(page) {
+    // Persisted, unlike the other two: specs that open Config → Widgets usually
+    // write some blocks and reload first, and an in-memory marker does not
+    // survive that — the tour would then open over the panel the spec is about
+    // to click. The tour's own spec puts the tip back to unseen for itself.
+    await page.evaluate(async () => {
+        window.DiscoverabilityState?.markTipSeen?.('widgetsTutorialV1');
+        await window.DiscoverabilityState?.persistNow?.();
+    });
+}
+
+/**
  * Dismiss What's new, search promo, and grid keyboard promo when they block interaction.
  * @param {import('@playwright/test').Page} page
  */
@@ -149,6 +167,7 @@ async function dismissBlockingOverlays(page) {
     await suppressStatusEmptyHint(page);
     await markHealthTutorialSeen(page);
     await markInboxTutorialSeen(page);
+    await markWidgetsTutorialSeen(page);
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -501,6 +520,7 @@ module.exports = {
     suppressStatusEmptyHint,
     markHealthTutorialSeen,
     markInboxTutorialSeen,
+    markWidgetsTutorialSeen,
     dismissBlockingOverlays,
     prepareDashboardInteraction,
     dismissOnboardingIfPresent,

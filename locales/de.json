@@ -1741,6 +1741,7 @@
     "widgetMenuWidthUnavailable": "Es gibt nur eine Spalte — ein Widget braucht mindestens zwei, um sich zu erstrecken.",
     "widgetMenuClose": "Schließen",
     "widgetClosed": "„{name}“ geschlossen. Unter Config → Widgets wieder einschalten.",
+    "widgetClosedAnnounce": "{name} geschlossen",
     "widgetClosedUndone": "Widget ist wieder auf der Seite.",
     "widgetSaveFailed": "Das Widget konnte nicht gespeichert werden.",
     "widgetActionOpenHealth": "Health öffnen",

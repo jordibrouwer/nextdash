@@ -1741,6 +1741,7 @@
     "widgetMenuWidthUnavailable": "Er is maar één kolom — een widget heeft er minstens twee nodig om zich uit te spreiden.",
     "widgetMenuClose": "Sluiten",
     "widgetClosed": "“{name}” gesloten. Zet hem weer aan bij Config → Widgets.",
+    "widgetClosedAnnounce": "{name} gesloten",
     "widgetClosedUndone": "Widget staat weer op de pagina.",
     "widgetSaveFailed": "Kon de widget niet opslaan.",
     "widgetActionOpenHealth": "Health openen",

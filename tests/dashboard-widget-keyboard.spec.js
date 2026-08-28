@@ -333,3 +333,45 @@ test('Settings… opens Config → Widgets', async ({ page }) => {
     await expect(page.locator('.config-widget-list, [data-widget-catalogue]').first())
         .toBeVisible({ timeout: 15_000 });
 });
+
+/*
+An address is opened only when it is one.
+
+The server refuses anything but http(s) when a bookmark is saved, so this is the
+check that keeps a collection written before that validation — or restored from
+an old backup — from handing window.open a javascript: URL.
+*/
+test('a row carrying something other than an http address opens nothing', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    const opened = await page.evaluate(() => {
+        const menu = window.dashboardInstance.categoryMenu;
+        const tried = [];
+        const real = window.open;
+        window.open = (url) => { tried.push(url); return null; };
+        const results = ['javascript:alert(1)', 'data:text/html,x', 'file:///etc/passwd', '', 'https://ok.example/']
+            .map((href) => menu.openWidgetHref(href));
+        window.open = real;
+        return { results, tried };
+    });
+
+    expect(opened.results).toEqual([false, false, false, false, true]);
+    expect(opened.tried).toEqual(['https://ok.example/']);
+});
+
+/*
+Closing a widget is said out loud.
+
+The toast carries it for anyone looking at it. A block leaving the page is
+exactly the kind of change a screen reader is otherwise never told about.
+*/
+test('closing a widget reaches the live region', async ({ page }) => {
+    await dashboardWithAWidget(page);
+
+    await page.locator('.dashboard-widget .category-title').press('Delete');
+    await expect(page.locator('.dashboard-widget[data-widget-type="health"]')).toHaveCount(0, { timeout: 15_000 });
+
+    await expect.poll(() => page.evaluate(() =>
+        document.getElementById('dashboard-kbd-selection-live')?.textContent?.trim() || ''),
+    { timeout: 10_000 }).toContain('closed');
+});

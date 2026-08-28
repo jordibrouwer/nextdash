@@ -217,6 +217,21 @@ class DashboardCategoryMenu {
         return text.length > 48 ? `${text.slice(0, 47)}…` : (text || '—');
     }
 
+    /*
+     * Open a row's address, if it is an address worth opening.
+     *
+     * The server refuses anything but http(s) when a bookmark is saved, so this
+     * is not a hole being closed -- it is the check that keeps a collection
+     * written before that validation, or restored from an old backup, from
+     * handing window.open a javascript: or data: URL.
+     */
+    openWidgetHref(href) {
+        const address = String(href || '').trim();
+        if (!/^https?:\/\//i.test(address)) return false;
+        window.open(address, '_blank', 'noopener');
+        return true;
+    }
+
     /** Whether the block behind this header is folded shut. */
     widgetIsFolded(titleEl) {
         return titleEl?.closest('.category')?.getAttribute('data-collapsed') === 'true';
@@ -253,8 +268,7 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'row-open-tab') {
-            const href = rowEl?.dataset?.widgetHref;
-            if (href) window.open(href, '_blank', 'noopener');
+            this.openWidgetHref(rowEl?.dataset?.widgetHref);
             return;
         }
         if (action === 'fold') {
@@ -346,6 +360,11 @@ class DashboardCategoryMenu {
         }
         widget.config = { ...(widget.config || {}), enabled: false };
         d.renderCore?.redrawKeepingPlace?.(widget.id);
+        // The toast carries this for anyone looking at it; the live region
+        // carries it for anyone who is not. A block leaving the page is exactly
+        // the kind of change a screen reader is otherwise never told about.
+        d.keyboardNavigation?.announce?.(
+            this.t('widgetClosedAnnounce', '{name} closed', { name }));
         d.showNotification?.(
             this.t('widgetClosed', '“{name}” closed. Switch it back on under Config → Widgets.', { name }),
             'success',
@@ -358,6 +377,8 @@ class DashboardCategoryMenu {
                     widget.config = { ...(widget.config || {}) };
                     delete widget.config.enabled;
                     d.renderCore?.redrawKeepingPlace?.(widget.id);
+                    d.keyboardNavigation?.announce?.(
+                        this.t('widgetClosedUndone', 'Widget back on the page.'));
                     d.showNotification?.(this.t('widgetClosedUndone', 'Widget back on the page.'), 'success');
                 },
             },

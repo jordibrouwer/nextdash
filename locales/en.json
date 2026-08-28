@@ -1741,6 +1741,7 @@
     "widgetMenuWidthUnavailable": "There is only one column to work with — a widget needs at least two to span.",
     "widgetMenuClose": "Close",
     "widgetClosed": "“{name}” closed. Switch it back on under Config → Widgets.",
+    "widgetClosedAnnounce": "{name} closed",
     "widgetClosedUndone": "Widget back on the page.",
     "widgetSaveFailed": "Could not save the widget.",
     "widgetActionOpenHealth": "Open Health",
