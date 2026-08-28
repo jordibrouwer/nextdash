@@ -564,6 +564,10 @@ class DashboardRenderCore {
         bodyWrap.appendChild(body);
         block.appendChild(bodyWrap);
         d.categoryMenu?.bindWidget?.(block, widget);
+        // Only the custom tile has a clock; the others are redrawn by whatever
+        // changed their data. Starting it here rather than at the end of a
+        // render means a widget added or edited in config gets one too.
+        if (widget.type === 'custom') this.startCustomWidgetTimer(widget);
         return block;
     }
 
@@ -575,6 +579,85 @@ class DashboardRenderCore {
      * rebuilt for one block. A full render here would also throw away the
      * DragReorder instances mid-drag.
      */
+    /*
+     * A custom tile's own clock.
+     *
+     * Every other widget reads something nextDash already holds, so a repaint
+     * brings it up to date and no timer is needed. The custom tile is the only
+     * one that asks the outside world, and nothing on a dashboard left open
+     * ever asked again -- its ttl was a cache expiry, not a schedule, so the
+     * figures stayed at whatever they were when the page loaded.
+     *
+     * One timer per widget rather than one shared tick, because the presets set
+     * that ttl per service with a reason: 60s for a download speed, 300s for a
+     * queue, 3600s for a speed test that only runs hourly. A single tick on the
+     * shortest of those would redraw the hourly tile 1,440 times a day and make
+     * its own setting meaningless.
+     */
+    startCustomWidgetTimer(widget) {
+        if (!widget || widget.type !== 'custom' || !widget.id) return;
+        this._customWidgetTimers = this._customWidgetTimers || new Map();
+        // Drawn again -- a repaint, a drag ending, a health figure arriving --
+        // is not a second clock. Without this every redraw would double the
+        // requests the tile makes from then on.
+        this.stopCustomWidgetTimer(widget.id);
+
+        const seconds = Math.max(Number(widget?.config?.ttl) || 300, 30);
+        const timer = setInterval(() => {
+            void this.tickCustomWidget(widget);
+        }, seconds * 1000);
+        this._customWidgetTimers.set(widget.id, timer);
+    }
+
+    /*
+     * One beat: forget what this tile held, and draw it again.
+     *
+     * A hidden tab asks nothing. A dashboard open on a second monitor would
+     * otherwise keep questioning a service of the reader's own all day, and the
+     * health badge already pauses for the same reason. Nothing is caught up on
+     * the way back either: the tile shows what it had until its next beat,
+     * which is better than every tile saying "Loading..." at once the moment
+     * someone returns to the tab.
+     */
+    async tickCustomWidget(widget) {
+        if (document.visibilityState !== 'visible') return;
+        const d = this.dash;
+        const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
+        if (d._widgetCustom) delete d._widgetCustom[`${pageId}:${widget.id}`];
+
+        const block = document.querySelector(
+            `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
+        const body = block?.querySelector('.dashboard-widget-body');
+        // Gone from the page: the tile was closed or the reader moved on, and
+        // the clock has nothing left to draw into.
+        if (!body) {
+            this.stopCustomWidgetTimer(widget.id);
+            return;
+        }
+        const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
+        await window.DashboardWidgets?.custom?.(body, widget, d);
+        if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
+    }
+
+    stopCustomWidgetTimer(id) {
+        const timer = this._customWidgetTimers?.get(id);
+        if (timer) {
+            clearInterval(timer);
+            this._customWidgetTimers.delete(id);
+        }
+    }
+
+    /* Every clock at once: leaving the dashboard, or rebuilding the grid. */
+    stopCustomWidgetTimers() {
+        this._customWidgetTimers?.forEach((timer) => clearInterval(timer));
+        this._customWidgetTimers?.clear();
+    }
+
+    /* How many are running -- for the test that one tile keeps one clock. */
+    customWidgetTimerCount() {
+        return this._customWidgetTimers?.size || 0;
+    }
+
     /*
      * Forget what the widgets cached, so the next draw asks again.
      *
@@ -850,6 +933,11 @@ class DashboardRenderCore {
             return;
         }
 
+        // Every clock stops before the blocks are rebuilt, and each widget that
+        // survives starts its own again on the way through createWidgetElement.
+        // Stopping per removed widget instead would mean knowing which ones went
+        // -- and a widget closed in config is gone from the list by now.
+        this.stopCustomWidgetTimers();
         const columnBlocks = this.buildCategoryColumnBlocks().map((block) => (
             block.widget
                 ? this.createWidgetElement(block.widget)

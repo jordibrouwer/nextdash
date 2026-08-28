@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.2.1 — 28 August 2026](#v1421--28-august-2026)
 - [v1.4.2 — 28 August 2026](#v142--28-august-2026)
 - [v1.4.1.2 — 28 August 2026](#v1412--28-august-2026)
 - [v1.4.1.1 — 27 August 2026](#v1411--27-august-2026)
@@ -180,6 +181,29 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.2.1 — 28 August 2026
+
+The one tile that reads from outside now keeps itself up to date.
+
+### Widgets
+
+- **new** — **a custom widget refreshes itself, on its own clock.** Every other widget reads something nextDash already holds, so a repaint brings it up to date; the custom tile is the only one that asks the outside world, and nothing on a dashboard left open ever asked again. Its `ttl` was a cache expiry, not a schedule, so the figures stayed at whatever they were when the page loaded.
+
+  One timer **per widget** rather than one shared tick, because the 28 presets in `dashboard-widget-presets.js` already set that `ttl` per service with a reason: **60s** for qBittorrent, SABnzbd, NZBGet and Glances (down/s, cpu), **300s** for the 23 that read a queue or a count, **3600s** for Speedtest Tracker, whose measurement only arrives hourly. That is a 60× spread; a single tick on the shortest of them would redraw the hourly tile 1,440 times a day and make its own setting meaningless.
+
+  `startCustomWidgetTimer`, `tickCustomWidget`, `stopCustomWidgetTimer` and `stopCustomWidgetTimers` in `dashboard-render-core.js`. Started in `createWidgetElement`, so a widget added or edited in config gets one; every clock is stopped before the grid is rebuilt and each surviving widget starts its own again, since a widget closed in config is already gone from the list by then. A beat drops that tile's cache entry and redraws it, carrying the keyboard cursor across the way `refreshWidgets` does — a reader sitting on a row inside a tile is not thrown out by a refresh they did not ask for.
+
+  **A hidden tab asks nothing**, matching the health badge's own rule, and nothing is caught up on the way back: the tile shows what it had until its next beat, which beats every tile saying *Loading…* at once the moment someone returns. No new setting and no new bounds — `customWidgetMinTTL = 30` stays, because the floor exists so a dashboard left open on a wall does not become a load generator, and no preset picks it.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.2.1.json`, the `index.json` entry carrying `hideFromModal`, the constants spec, this changelog, `README.md`, `MANUAL.md`, and the Config → Help widgets and version paragraphs in all four locales.
+- **`NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v262` and `DASHBOARD_RELEASE` does not.** This release counts toward the version number and leads Config → Overview, while the modal keeps leading with v1.4.2: one addition should not reopen the notes in front of readers who have just been shown a large release. Without the data token a browser holding the old index would never learn the release exists.
+- No spotlight entry in `static/data/overview-features.json`: the widget-menu entry from v1.4.2 already sends the reader to the same place, and this introduces no setting to switch on.
+- `go generate ./...` for the changed JS.
 
 ---
 
