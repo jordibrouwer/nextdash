@@ -2854,9 +2854,15 @@ body[data-layout-version="modern"] .health-view-empty {
 
 /* Anchored to the ⋯ rather than to a row, and wide enough for the longest
    label ("Turn checking off for all 12 shown") without wrapping to two lines. */
+/*
+ * Anchored to the ⋯ itself, through the same wrap the row menus use.
+ *
+ * Pinning it to the action row instead put it at the far right of the window:
+ * that row is flex-basis 100%, so "right: 0" is the edge of the view rather
+ * than the edge of the button. The wrap is an inline-flex span around button
+ * and menu, which is exactly the box the menu should hang from.
+ */
 .health-view-menu--toolbar {
-    left: auto;
-    right: 0;
     min-width: 14rem;
 }
 

@@ -143,3 +143,24 @@ test('the filter sentence appears where it tells you something', async ({ page }
     await page.locator('[data-health-filter="all"]').click();
     await expect(page.locator('.health-view-filter-note')).toHaveCount(0);
 });
+
+test('the menu opens under the button, not at the edge of the window', async ({ page }) => {
+    await openHealth(page);
+    await page.locator('[data-health-toolbar-more]').click();
+
+    /*
+     * Anchored to the ⋯, not to the row it sits in.
+     *
+     * The action row is flex-basis 100%, so a menu positioned against it with
+     * "right: 0" landed at the far side of the view — a panel that appeared to
+     * belong to something else entirely. The wrap the row menus already use is
+     * the fix, and this is the assertion that keeps it.
+     */
+    const gap = await page.evaluate(() => {
+        const button = document.querySelector('[data-health-toolbar-more]').getBoundingClientRect();
+        const menu = document.querySelector('.health-view-menu--toolbar').getBoundingClientRect();
+        return { dx: Math.abs(menu.left - button.left), dy: menu.top - button.bottom };
+    });
+    expect(gap.dx, `menu sits ${Math.round(gap.dx)}px sideways from its button`).toBeLessThan(40);
+    expect(gap.dy, `menu sits ${Math.round(gap.dy)}px below its button`).toBeLessThan(24);
+});

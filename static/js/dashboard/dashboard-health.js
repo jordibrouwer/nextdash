@@ -4896,6 +4896,7 @@ class DashboardHealth {
             <div class="health-view-toolbar-actions">
                 <button type="button" class="health-view-focus-btn health-view-focus-btn--primary" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
                 <button type="button" class="health-view-rot-btn" title="${this.escape(this.t('dashboard.healthRotHint', 'What has gone, moved or been failing for a long time'))}">${this.escape(this.t('dashboard.healthRot', 'Rot report'))}</button>
+                <span class="health-view-menu-wrap">
                 <button type="button" class="health-view-toolbar-more" data-health-toolbar-more
                         data-menu-toggle="toolbar" data-menu-kind="toolbar"
                         aria-haspopup="menu" aria-expanded="false"
@@ -4916,6 +4917,7 @@ class DashboardHealth {
                 ${this.renderBulkEnableButtons()}
                 ${this.renderSettingsLink()}
                 </div>
+                </span>
                 <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                         aria-haspopup="dialog"
                         title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
