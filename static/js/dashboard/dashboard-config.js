@@ -137,8 +137,6 @@ class DashboardConfig {
         // the only one that reset to page order on every visit.
         this.bmSort = null;
         this.bmVisibleLimit = this.bmPageSize();
-        this.bmEditing = null;
-        this.bmDirty = false;
         this.bmSelected = new Set();
         /** Rows with an in-flight network action (recheck, favicon refresh, …). */
         this._bmBusyKeys = new Set();
@@ -913,12 +911,6 @@ class DashboardConfig {
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
-            if (this.bmEditing) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                void this.closeBookmarkEditorFromKeyboard();
-                return;
-            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;
@@ -2048,10 +2040,6 @@ class DashboardConfig {
         this.repaintBookmarkRowsOnly();
     }
 
-    focusBookmarkEditor() {
-        document.querySelector('.config-bm-editor [data-bm-field="name"], #config-bm-name')?.focus();
-    }
-
     async activateBookmarkKeyboardRow(key) {
         if (!key) return;
         void this.openBookmarkEditModal(key);
@@ -2110,15 +2098,6 @@ class DashboardConfig {
         if (!col) return;
         col.innerHTML = this.renderBookmarkUsageLine(bookmark);
         col.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
-    }
-
-    async closeBookmarkEditorFromKeyboard() {
-        if (!this.bmEditing) return false;
-        if (!(await this.confirmDiscardBookmarkEdit())) return true;
-        this.bmEditing = null;
-        this.bmDirty = false;
-        this.repaintBookmarksList();
-        return true;
     }
 
     appendBookmarkKeyboardLegend(host) {
@@ -13557,8 +13536,6 @@ class DashboardConfig {
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
 
-    finderQueryPlaceholder() { return '%s'; }
-
     renderFinders() {
         const esc = (v) => this.dash.escapeHtml(v);
         if (this._finders == null) {
@@ -15638,14 +15615,6 @@ class DashboardConfig {
         });
     }
 
-    renderCredentialOptionsFor(selected) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const list = this.dash.healthCredentials || {};
-        return Object.keys(list).sort().map((id) =>
-            `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(list[id] || id)}</option>`
-        ).join('');
-    }
-
     /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
     renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -17126,11 +17095,6 @@ class DashboardConfig {
         return this._bmDuplicateUrls;
     }
 
-    bookmarkIsDuplicate(b) {
-        const url = String(b?.url || '').trim().toLowerCase();
-        return url && this.ensureDuplicateUrlSet().has(url);
-    }
-
     bookmarksFiltersActive() {
         // bmTagFilter is a list, and an empty array is truthy — ask for its
         // length or an unfiltered view would claim to be filtered.
@@ -17698,7 +17662,6 @@ class DashboardConfig {
         const MIN_TO_WINDOW = 120;
         const OVERSCAN = 25;
         if (!Number.isFinite(total) || total <= MIN_TO_WINDOW) return null;
-        if (this.bmEditing) return null;
 
         const host = this.bookmarkListScrollHost();
         const rowHeight = this.bookmarkRowHeight();
@@ -18135,15 +18098,6 @@ class DashboardConfig {
         return tail || label;
     }
 
-    categoryLabelForBookmark(b) {
-        const id = String(b.category || '');
-        if (!id) return '';
-        const labels = this.categoryLabelIndex();
-        if (this.bmPageFilter) return labels.get(id) || id;
-        const composite = DashboardConfig.categoryFilterKey(b.pageId, id);
-        return labels.get(composite) || `${this.pageLabel(b.pageId)} · ${id}`;
-    }
-
     /*
      * Every page's categories, so a label can be a name rather than an id.
      *
@@ -18498,160 +18452,6 @@ class DashboardConfig {
 
 
     /**
-     * The full inline editor, carrying every field the old config's detail panel
-     * had. Laid out as a two-column grid: name and URL span both columns because
-     * they are the long values, the rest pairs up to keep the form short enough
-     * that Save stays near what you were typing. Save/Revert appear above *and*
-     * below, so neither end of a long form has to be scrolled to.
-     */
-    renderBookmarkEditor(b) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const pages = this.dash.pages || [];
-        const pageOpts = pages.map((p) =>
-            `<option value="${esc(p.id)}" ${String(p.id) === String(b.pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
-        ).join('');
-        const cats = this.knownCategories(b.pageId);
-        const catOpts = [`<option value="">${esc(this.t('config.noCategory', 'No category'))}</option>`]
-            .concat(cats.map((c) =>
-                `<option value="${esc(c.id)}" ${c.id === (b.category || '') ? 'selected' : ''}>${esc(c.label)}</option>`))
-            .concat([`<option value="__new__">${esc(this.t('config.addNewCategoryOption', '➕ New category…'))}</option>`])
-            .join('');
-
-        const mode = window.CheckMode?.of?.(b) || 'off';
-        const modeRadios = (window.CheckMode?.options?.() || []).map((o) => {
-            const id = `config-bm-mode-${o.mode}`;
-            return `<input type="radio" name="config-bm-mode" id="${id}" value="${esc(o.mode)}" class="bookmark-detail-checkmode-input" ${o.mode === mode ? 'checked' : ''}>`
-                + `<label for="${id}" class="bookmark-detail-checkmode-option">${esc(o.label)}</label>`;
-        }).join('');
-        const interval = window.CheckMode?.intervalOf?.(b) || 15;
-        // The choices come from CheckMode so this editor and the health view's
-        // interval picker cannot end up offering different cadences.
-        const intervalOpts = (window.CheckMode?.INTERVAL_CHOICES || [5, 15, 30, 60, 360, 1440]).map((m) => {
-            const label = window.CheckMode?.intervalLabel?.(m)
-                || (m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`));
-            return `<option value="${m}" ${m === interval ? 'selected' : ''}>${esc(label)}</option>`;
-        }).join('');
-
-        const icon = b.icon || '';
-        const iconPreview = icon
-            ? `<img src="${esc(this.resolveIconSrc(icon))}" alt="" class="config-bm-icon-img">`
-            : `<span class="config-bm-icon-empty">—</span>`;
-
-        const saveBar = (position) => `
-            <div class="config-bm-savebar config-bm-savebar--${position}">
-                <button type="button" class="config-btn config-btn--primary" data-bm-save="1">${esc(this.t('config.save', 'Save'))}</button>
-                <button type="button" class="config-btn" data-bm-revert="1">${esc(this.t('config.revert', 'Revert'))}</button>
-                <span class="config-bm-dirty" data-bm-dirty hidden>${esc(this.t('config.unsavedChanges', 'Unsaved changes'))}</span>
-            </div>`;
-
-        return `
-            <div class="config-bm-editor" data-bm-editor-key="${esc(this.bookmarkKey(b))}">
-                ${saveBar('top')}
-
-                <div class="config-bm-grid">
-                    <div class="config-bm-cell config-bm-cell--wide">
-                        <label class="config-bm-label" for="config-bm-name">${esc(this.t('config.bookmarkNamePlaceholder', 'Name'))}</label>
-                        <input type="text" id="config-bm-name" class="config-text" data-bm-field="name" value="${esc(b.name || '')}"
-                               placeholder="${esc(this.t('config.bookmarkNameAutoHint', 'Left blank, the page title is used'))}">
-                    </div>
-
-                    <div class="config-bm-cell config-bm-cell--wide">
-                        <label class="config-bm-label" for="config-bm-url">${esc(this.t('config.urlLabelShort', 'URL'))}</label>
-                        <div class="config-bm-url-row">
-                            <input type="url" id="config-bm-url" class="config-text" data-bm-field="url" value="${esc(b.url || '')}" placeholder="https://">
-                            <button type="button" class="config-btn config-btn--small" data-bm-refetch="1"
-                                    title="${esc(this.t('config.fetchMetaTitle', 'Fetch the icon and title for this URL'))}">${esc(this.t('config.fetchFaviconRetry', 'Retry'))}</button>
-                            <span class="config-bm-fetch-state" data-bm-fetch-state></span>
-                        </div>
-                        <p class="config-field-hint config-bm-conflict" data-bm-conflict="url" hidden></p>
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <label class="config-bm-label" for="config-bm-page">${esc(this.t('config.page', 'Page'))}</label>
-                        <select id="config-bm-page-sel" class="config-select" data-bm-field="pageId">${pageOpts}</select>
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <label class="config-bm-label" for="config-bm-cat">${esc(this.t('config.category', 'Category'))}</label>
-                        <select id="config-bm-cat" class="config-select" data-bm-field="category">${catOpts}</select>
-                        <div class="config-bm-newcat" data-bm-newcat hidden>
-                            <input type="text" class="config-text" data-bm-newcat-input placeholder="${esc(this.t('config.newCategoryNamePlaceholder', 'Category name'))}" maxlength="60">
-                            <button type="button" class="config-btn config-btn--small" data-bm-newcat-ok>${esc(this.t('config.confirm', 'Confirm'))}</button>
-                            <button type="button" class="config-btn config-btn--small" data-bm-newcat-cancel>${esc(this.t('config.cancel', 'Cancel'))}</button>
-                        </div>
-                    </div>
-
-                    <div class="config-bm-cell config-bm-cell--wide">
-                        <label class="config-bm-label" for="config-bm-tags">${esc(this.t('config.detailTagsLabel', 'Tags'))}
-                            <span class="config-bm-label-hint">${esc(this.t('config.commaSeparatedShort', 'comma-separated'))}</span></label>
-                        <input type="text" id="config-bm-tags" class="config-text" data-bm-field="tags" value="${esc((b.tags || []).join(', '))}"
-                               placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}" autocomplete="off">
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <label class="config-bm-label" for="config-bm-shortcut">${esc(this.t('config.shortcut', 'Shortcut'))}</label>
-                        <input type="text" id="config-bm-shortcut" class="config-text config-bm-shortcut" data-bm-field="shortcut" maxlength="5" value="${esc(b.shortcut || '')}"
-                               placeholder="${esc(this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC'))}">
-                        <p class="config-field-hint config-bm-conflict" data-bm-conflict="shortcut" hidden></p>
-                        <p class="config-field-hint config-bm-shortcut-hint" data-bm-shortcut-hint hidden></p>
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <label class="config-bm-label" for="config-bm-note">${esc(this.t('config.detailNoteLabel', 'Note'))}</label>
-                        <textarea id="config-bm-note" class="config-text config-bm-note" data-bm-field="note" rows="2">${esc(b.note || '')}</textarea>
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <span class="config-bm-label">${esc(this.t('config.placementLabel', 'Placement'))}</span>
-                        <label class="checkbox-label icon-toggle bookmark-detail-toggle config-bm-pin"
-                               title="${esc(this.t('config.pinnedToggleHint', 'Pin this bookmark to the top of its category'))}">
-                            <input type="checkbox" data-bm-field="pinned" ${b.pinned ? 'checked' : ''}>
-                            <span class="icon-toggle-indicator" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" focusable="false">
-                                    <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
-                                </svg>
-                            </span>
-                            <span class="bookmark-detail-toggle-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
-                        </label>
-                    </div>
-
-                    <div class="config-bm-cell">
-                        <span class="config-bm-label">${esc(this.t('config.checkModeLabel', 'Availability check'))}</span>
-                        <div class="bookmark-detail-checkmode-options" role="radiogroup" aria-label="${esc(this.t('config.checkModeLabel', 'Availability check'))}">
-                            ${modeRadios}
-                            <select class="bookmark-detail-toggle-select" data-bm-field="monitorIntervalMinutes" ${mode === 'monitor' ? '' : 'hidden'}>${intervalOpts}</select>
-                        </div>
-                        <p class="config-field-hint" data-bm-mode-hint></p>
-                    </div>
-
-                    <div class="config-bm-cell config-bm-cell--wide">
-                        <span class="config-bm-label">${esc(this.t('config.icon', 'Icon'))}</span>
-                        <div class="config-bm-icon-row">
-                            <div class="config-bm-icon-preview">${iconPreview}</div>
-                            <input type="text" class="config-text" data-bm-field="icon" value="${esc(icon)}" placeholder="${esc(this.t('config.iconUrlOptional', 'Icon URL (optional)'))}">
-                            <button type="button" class="config-btn config-btn--small" data-bm-icon="upload">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
-                            <button type="button" class="config-btn config-btn--small" data-bm-icon="clear">${esc(this.t('config.clearIcon', 'Clear icon'))}</button>
-                            <input type="file" data-bm-icon-file accept="image/*,.ico,.svg,.webp" hidden>
-                        </div>
-                    </div>
-
-                    <div class="config-bm-cell config-bm-cell--wide">
-                        <span class="config-bm-label">${esc(this.t('config.linkPreviewSectionTitle', 'Link preview'))}</span>
-                        <p class="config-field-hint" data-bm-preview-title>${b.previewTitle ? esc(b.previewTitle) : esc(this.t('config.noPreviewYet', 'No preview metadata yet.'))}</p>
-                        <div class="config-actions">
-                            <button type="button" class="config-btn config-btn--small" data-bm-preview="refresh">${esc(this.t('config.detailLinkPreviewRefresh', 'Refresh preview'))}</button>
-                            <button type="button" class="config-btn config-btn--small" data-bm-preview="clear">${esc(this.t('config.detailLinkPreviewClear', 'Clear preview'))}</button>
-                        </div>
-                    </div>
-
-                    ${this.renderBookmarkStats(b)}
-                </div>
-
-                ${saveBar('bottom')}
-            </div>`;
-    }
-
-    /**
      * A translator formatLastOpened can use. Its labels carry a {count}, and the
      * config t() takes only (key, fallback) — handed to it directly, the count
      * placeholder survives into the UI verbatim. Dashboard keys also arrive
@@ -18694,92 +18494,6 @@ class DashboardConfig {
         }
         const count = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
         return `${openedHtml}<span class="config-bm-usage" title="${esc(title)}">${esc(count)}</span>`;
-    }
-
-    /**
-     * Read-only usage figures for one bookmark, shown at the foot of its editor.
-     *
-     * Every value here is already stored on the bookmark — this reads, it never
-     * writes. That matters for the editor around it: saving spreads the form
-     * fields over the existing record, so openCount and friends survive an edit
-     * precisely because nothing in the form binds to them. None of these cells
-     * carry a data-bm-field for the same reason.
-     *
-     * Timestamps go through the shared formatLastOpened rather than a local
-     * format, so "yesterday" means the same thing here as it does in Health.
-     */
-    renderBookmarkStats(b) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const translate = this.lastOpenedTranslator();
-        const when = (ts) => window.formatLastOpened?.(ts, { t: translate })
-            || { label: '—', title: '', never: true };
-
-        const rows = [];
-        const created = when(b.createdAt);
-        rows.push([
-            this.t('config.bookmarkStatAdded', 'Added'),
-            created.never ? '—' : created.label,
-            created.never ? this.t('config.bookmarkStatUnknown', 'Not recorded') : created.title,
-        ]);
-
-        // Bookmarks stored before updatedAt existed have none, and no edit has
-        // happened since to give them one. A dash is honest; inventing the
-        // created date or "now" would not be.
-        const modified = when(b.updatedAt);
-        rows.push([
-            this.t('config.bookmarkStatModified', 'Modified'),
-            modified.never ? '—' : modified.label,
-            modified.never ? this.t('config.bookmarkStatUnknown', 'Not recorded') : modified.title,
-        ]);
-
-        const opens = Number(b.openCount || 0);
-        rows.push([
-            this.t('config.bookmarkStatOpens', 'Opened'),
-            this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens)),
-            '',
-        ]);
-
-        const lastOpened = when(b.lastOpened);
-        rows.push([
-            this.t('config.bookmarkStatLastOpened', 'Last opened'),
-            lastOpened.label,
-            lastOpened.never ? '' : lastOpened.title,
-        ]);
-
-        // Only bookmarks with availability checking on ever get a lastChecked,
-        // so the row would be a permanent dash for everything else.
-        if (b.lastChecked) {
-            const checked = when(b.lastChecked);
-            const outcome = b.lastError
-                ? String(b.lastError)
-                : this.t('config.bookmarkStatCheckOk', 'no errors');
-            rows.push([
-                this.t('config.bookmarkStatLastChecked', 'Last checked'),
-                `${checked.label} · ${outcome}`,
-                checked.title,
-            ]);
-        }
-
-        const cells = rows.map(([label, value, title]) => `
-            <div class="config-bm-stat">
-                <span class="config-bm-stat-label">${esc(label)}</span>
-                <span class="config-bm-stat-value"${title ? ` title="${esc(title)}"` : ''}>${esc(value)}</span>
-            </div>`).join('');
-
-        // Scale the bar against the busiest bookmark, so the bar answers "is this
-        // one of my heavily used links?" rather than restating the raw count.
-        const busiest = (this.dash.allBookmarks || [])
-            .reduce((max, bm) => Math.max(max, Number(bm.openCount || 0)), 0);
-        const meter = opens > 0 && busiest > 0
-            ? this.renderStatMeta(opens, opens / busiest, 'config.bookmarkStatOpenCount', '{count}×')
-            : '';
-
-        return `
-            <div class="config-bm-cell config-bm-cell--wide config-bm-stats" data-bm-stats>
-                <span class="config-bm-label">${esc(this.t('config.bookmarkStatsLabel', 'Statistics'))}</span>
-                <div class="config-bm-stat-grid">${cells}</div>
-                ${meter}
-            </div>`;
     }
 
     /** Bookmark icons are stored as bare filenames; the dashboard serves them from /data/icons/. */
@@ -19778,158 +19492,6 @@ class DashboardConfig {
         }
     }
 
-    /** Everything inside the open editor. */
-    bindBookmarkEditorControls(root) {
-        const editor = root.querySelector('.config-bm-editor');
-        if (!editor) return;
-
-        // The URL the current icon belongs to. Leaving the URL field re-fetches
-        // the favicon whenever the URL has moved away from this, so a changed
-        // address never keeps the previous site's icon.
-        this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
-
-        // Two save bars (top and bottom), so both dirty markers move together.
-        const markDirty = () => this.markEditorDirty(editor);
-
-        editor.querySelectorAll('[data-bm-field]').forEach((el) => {
-            const evt = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
-            el.addEventListener(evt, () => {
-                markDirty();
-                if (el.getAttribute('data-bm-field') === 'pageId') {
-                    void this.refreshEditorCategories(editor, el.value);
-                }
-                if (el.getAttribute('data-bm-field') === 'category' && el.value === '__new__') {
-                    this.openNewCategoryInput(editor);
-                }
-                if (el.getAttribute('data-bm-field') === 'icon') {
-                    this.syncEditorIconPreview(editor);
-                    // Typed by hand, so it belongs to the URL as it stands now
-                    // and a later blur must not fetch over it.
-                    this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
-                }
-            });
-        });
-
-        // Availability mode: show the interval only for Monitor, and explain the
-        // choice in the same words the add-bookmark modal and config panel use.
-        const syncMode = () => {
-            const picked = editor.querySelector('input[name="config-bm-mode"]:checked')?.value || 'off';
-            const sel = editor.querySelector('[data-bm-field="monitorIntervalMinutes"]');
-            if (sel) sel.hidden = picked !== 'monitor';
-            const hint = editor.querySelector('[data-bm-mode-hint]');
-            if (hint) {
-                const key = picked === 'monitor' ? 'checkModeMonitorHint'
-                    : (picked === 'periodic' ? 'checkModePeriodicHint' : 'checkModeOffHint');
-                const fallback = {
-                    checkModeOffHint: 'No availability checking.',
-                    checkModePeriodicHint: 'Checks once a day and flags the bookmark when it breaks.',
-                    checkModeMonitorHint: 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts.',
-                }[key];
-                hint.textContent = this.t(`config.${key}`, fallback);
-            }
-        };
-        editor.querySelectorAll('input[name="config-bm-mode"]').forEach((r) => {
-            r.addEventListener('change', () => { markDirty(); syncMode(); });
-        });
-        syncMode();
-
-        // Tag autocomplete, drawing on every tag already in use.
-        const tagsInput = editor.querySelector('[data-bm-field="tags"]');
-        if (tagsInput && typeof TagAutocomplete !== 'undefined') {
-            const pool = new Set();
-            (this.dash.allBookmarks || []).forEach((bm) => (bm.tags || []).forEach((t) => pool.add(String(t).toLowerCase())));
-            TagAutocomplete.attach(tagsInput, () => {
-                tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).forEach((t) => pool.add(t));
-                return [...pool];
-            });
-        }
-
-        // Inline "new category".
-        editor.querySelector('[data-bm-newcat-ok]')?.addEventListener('click', () => this.confirmNewCategory(editor));
-        editor.querySelector('[data-bm-newcat-cancel]')?.addEventListener('click', () => this.cancelNewCategory(editor));
-        editor.querySelector('[data-bm-newcat-input]')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); this.confirmNewCategory(editor); }
-            if (e.key === 'Escape') { e.preventDefault(); this.cancelNewCategory(editor); }
-        });
-
-        // Icon: upload a file, or clear it.
-        const fileInput = editor.querySelector('[data-bm-icon-file]');
-        editor.querySelectorAll('[data-bm-icon]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-bm-icon');
-                if (action === 'upload') fileInput?.click();
-                if (action === 'clear') {
-                    const f = editor.querySelector('[data-bm-field="icon"]');
-                    if (f) f.value = '';
-                    this.syncEditorIconPreview(editor);
-                    // Cleared on purpose: forget which URL the icon belonged to,
-                    // so the next blur is free to fetch one again.
-                    this._bmIconUrl = '';
-                    markDirty();
-                }
-            });
-        });
-        fileInput?.addEventListener('change', async () => {
-            const file = fileInput.files?.[0];
-            fileInput.value = '';
-            if (!file) return;
-            const name = await this.uploadBookmarkIcon(file);
-            if (name) {
-                const f = editor.querySelector('[data-bm-field="icon"]');
-                if (f) f.value = name;
-                this.syncEditorIconPreview(editor);
-                // An icon chosen by hand belongs to the URL as it stands now, so
-                // leaving the field must not fetch over it.
-                this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
-                markDirty();
-            }
-        });
-
-        editor.querySelectorAll('[data-bm-preview]').forEach((btn) => {
-            btn.addEventListener('click', () => this.handleEditorPreview(btn.getAttribute('data-bm-preview')));
-        });
-
-        // Both save bars (top and bottom) drive the same two actions.
-        editor.querySelectorAll('[data-bm-save]').forEach((btn) => {
-            btn.addEventListener('click', () => this.saveEditedBookmark());
-        });
-        editor.querySelectorAll('[data-bm-revert]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.bmDirty = false;
-                this.repaintBookmarksList();
-            });
-        });
-
-        // Live conflict hints for shortcut and URL, matching the add modal.
-        editor.querySelector('[data-bm-field="shortcut"]')?.addEventListener('input', () => this.updateEditorConflicts(editor));
-        this.updateEditorConflicts(editor);
-
-        // URL handling mirrors the add-bookmark modal: typing schedules a
-        // debounced metadata fetch, leaving the field normalises it to a full
-        // http(s) URL first. Both then pull the favicon and, if the name is
-        // still empty, the page title.
-        const urlInput = editor.querySelector('[data-bm-field="url"]');
-        if (urlInput) {
-            urlInput.addEventListener('input', () => {
-                this.updateEditorConflicts(editor);
-                this.scheduleEditorMetaFetch(editor);
-            });
-            urlInput.addEventListener('blur', () => {
-                this.normalizeEditorUrl(editor);
-                this.updateEditorConflicts(editor);
-                void this.autoFetchEditorMeta(editor, { force: false });
-            });
-        }
-        editor.querySelector('[data-bm-refetch]')?.addEventListener('click', () => {
-            this.normalizeEditorUrl(editor);
-            void this.autoFetchEditorMeta(editor, { force: true });
-        });
-        const editorPageId = editor.querySelector('[data-bm-field="pageId"]')?.value;
-        void this.loadBookmarkCategoriesForPage(editorPageId).then(() => {
-            void this.refreshEditorCategories(editor, editorPageId);
-        });
-    }
-
     /**
      * A stable key for "which URL is this icon for". Normalising first means
      * typing `example.com` and then having it completed to `https://example.com`
@@ -19939,169 +19501,6 @@ class DashboardConfig {
         const full = window.BookmarkUrlUtils?.ensureHttpUrl?.(raw) || String(raw || '').trim();
         if (!full) return '';
         return window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(full) ?? full.toLowerCase();
-    }
-
-    /** Write the URL back as a full http(s) URL, the way the add modal does. */
-    normalizeEditorUrl(editor) {
-        const input = editor.querySelector('[data-bm-field="url"]');
-        if (!input) return '';
-        const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(input.value) || String(input.value || '').trim();
-        if (normalized && normalized !== String(input.value || '').trim()) {
-            input.value = normalized;
-            this.markEditorDirty(editor);
-        }
-        return normalized;
-    }
-
-    scheduleEditorMetaFetch(editor) {
-        const run = () => void this.autoFetchEditorMeta(editor, { force: false });
-        if (window.BookmarkPreviewService?.scheduleDebounced) {
-            window.BookmarkPreviewService.scheduleDebounced('config-bm-url-meta', run, 500);
-            return;
-        }
-        clearTimeout(this._bmMetaTimer);
-        this._bmMetaTimer = setTimeout(run, 500);
-    }
-
-    markEditorDirty(editor) {
-        this.bmDirty = true;
-        editor.querySelectorAll('[data-bm-dirty]').forEach((el) => { el.hidden = false; });
-    }
-
-    /**
-     * Fetch the favicon and page title for whatever URL the field now holds.
-     * `force` re-fetches even when an icon is already set (the Retry button);
-     * without it an icon the user chose is left alone.
-     */
-    async autoFetchEditorMeta(editor, { force = false } = {}) {
-        if (!editor.isConnected) return;
-        const urlInput = editor.querySelector('[data-bm-field="url"]');
-        const iconInput = editor.querySelector('[data-bm-field="icon"]');
-        const nameInput = editor.querySelector('[data-bm-field="name"]');
-        const state = editor.querySelector('[data-bm-fetch-state]');
-        const url = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput?.value) || String(urlInput?.value || '').trim();
-        if (!url || !window.BookmarkUrlUtils?.isHttpUrl?.(url)) return;
-        if (this._bmFetchInFlight) return;
-
-        // Whether to replace the icon: a different URL than the one the current
-        // icon was fetched for means the old site's icon is simply wrong, so it
-        // is refreshed even though the field is filled. An unchanged URL leaves
-        // a hand-picked icon alone unless Retry asked for it.
-        const canon = this.canonicalMetaUrl(url);
-        const urlChanged = canon !== this._bmIconUrl;
-        const hasIcon = Boolean(String(iconInput?.value || '').trim());
-        const wantIcon = force || urlChanged || !hasIcon;
-        const wantName = !String(nameInput?.value || '').trim();
-        if (!wantIcon && !wantName) return;
-
-        this._bmFetchInFlight = true;
-        if (state) state.textContent = this.t('config.iconFetching', 'Fetching...');
-        try {
-            if (wantIcon) {
-                const icon = await window.BookmarkPreviewService?.fetchAndUploadFavicon?.(url);
-                if (icon && iconInput && editor.isConnected) {
-                    iconInput.value = icon;
-                    this.syncEditorIconPreview(editor);
-                    this.markEditorDirty(editor);
-                }
-                // Recorded either way: a URL whose icon could not be found must
-                // not be retried on every blur.
-                this._bmIconUrl = canon;
-                if (state) state.textContent = icon
-                    ? this.t('config.iconFound', 'Found')
-                    : this.t('config.iconNotFound', 'Not found');
-            } else if (state) {
-                state.textContent = '';
-            }
-
-            // The title only fills an empty name, and always feeds the preview line.
-            const preview = await window.BookmarkPreviewService?.fetchLinkPreview?.(url);
-            if (preview && editor.isConnected) {
-                if (nameInput && !String(nameInput.value || '').trim() && preview.title) {
-                    nameInput.value = preview.title;
-                    this.markEditorDirty(editor);
-                }
-                const line = editor.querySelector('[data-bm-preview-title]');
-                if (line && preview.title) line.textContent = preview.title;
-            }
-        } catch {
-            if (state) state.textContent = this.t('config.iconNotFound', 'Not found');
-        } finally {
-            this._bmFetchInFlight = false;
-        }
-    }
-
-    syncEditorIconPreview(editor) {
-        const host = editor.querySelector('.config-bm-icon-preview');
-        if (!host) return;
-        const val = editor.querySelector('[data-bm-field="icon"]')?.value || '';
-        host.innerHTML = val
-            ? `<img src="${this.dash.escapeHtml(this.resolveIconSrc(val))}" alt="" class="config-bm-icon-img">`
-            : `<span class="config-bm-icon-empty">—</span>`;
-    }
-
-    async refreshEditorCategories(editor, pageId) {
-        if (pageId) await this.loadBookmarkCategoriesForPage(pageId);
-        const sel = editor.querySelector('[data-bm-field="category"]');
-        if (!sel) return;
-        const current = sel.value;
-        const esc = (v) => this.dash.escapeHtml(v);
-        const cats = this.knownCategories(pageId);
-        sel.innerHTML = [`<option value="">${esc(this.t('config.noCategory', 'No category'))}</option>`]
-            .concat(cats.map((c) =>
-                `<option value="${esc(c.id)}" ${c.id === current ? 'selected' : ''}>${esc(c.label)}</option>`))
-            .concat([`<option value="__new__">${esc(this.t('config.addNewCategoryOption', '➕ New category…'))}</option>`])
-            .join('');
-        if (!cats.some((c) => c.id === current) && current !== '__new__') {
-            sel.value = '';
-        }
-    }
-
-    openNewCategoryInput(editor) {
-        const box = editor.querySelector('[data-bm-newcat]');
-        if (!box) return;
-        box.hidden = false;
-        box.querySelector('[data-bm-newcat-input]')?.focus();
-    }
-
-    cancelNewCategory(editor) {
-        const box = editor.querySelector('[data-bm-newcat]');
-        const sel = editor.querySelector('[data-bm-field="category"]');
-        if (box) { box.hidden = true; const i = box.querySelector('[data-bm-newcat-input]'); if (i) i.value = ''; }
-        if (sel && sel.value === '__new__') sel.value = '';
-    }
-
-    /**
-     * Offer the new name as a selected option and remember it as pending. The
-     * dashboard groups bookmarks by the *page's* category list, so saving the
-     * bookmark alone would leave it orphaned under "Unknown category" — the
-     * category itself is written to the target page in saveEditedBookmark.
-     */
-    confirmNewCategory(editor) {
-        const box = editor.querySelector('[data-bm-newcat]');
-        const input = box?.querySelector('[data-bm-newcat-input]');
-        const sel = editor.querySelector('[data-bm-field="category"]');
-        const name = String(input?.value || '').trim();
-        if (!name || !sel) return;
-        // Reuse an existing category whose id or label already matches, so
-        // typing the name of a category that exists does not duplicate it.
-        const pageId = editor.querySelector('[data-bm-field="pageId"]')?.value;
-        const existing = this.knownCategories(pageId)
-            .find((c) => c.id === name || c.label.toLowerCase() === name.toLowerCase());
-        const id = existing ? existing.id : `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-        if (!existing) {
-            this._pendingCategories = this._pendingCategories || new Map();
-            this._pendingCategories.set(id, name);
-        }
-        if (![...sel.options].some((o) => o.value === id)) {
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.textContent = name;
-            sel.insertBefore(opt, sel.querySelector('option[value="__new__"]'));
-        }
-        sel.value = id;
-        if (box) { box.hidden = true; if (input) input.value = ''; }
-        this.markEditorDirty(editor);
     }
 
     /**
@@ -20246,100 +19645,6 @@ class DashboardConfig {
             if (!DashboardConfig.isNameTaken(candidate, taken)) return candidate;
         }
         return `${base} ${Date.now()}`;
-    }
-
-    /** Warn about a shortcut or URL already used on the target page. */
-    updateEditorConflicts(editor) {
-        const key = editor.getAttribute('data-bm-editor-key');
-        const parsed = this.parseBookmarkKey(key);
-        const pageId = editor.querySelector('[data-bm-field="pageId"]')?.value || parsed?.pageId;
-        const shortcut = String(editor.querySelector('[data-bm-field="shortcut"]')?.value || '').trim().toUpperCase();
-        const url = String(editor.querySelector('[data-bm-field="url"]')?.value || '').trim();
-        const others = (this.dash.allBookmarks || []).filter((b) =>
-            String(b.pageId) === String(pageId) && !(String(b.pageId) === String(parsed?.pageId) && b.url === parsed?.url));
-
-        const show = (which, msg) => {
-            const el = editor.querySelector(`[data-bm-conflict="${which}"]`);
-            if (!el) return;
-            el.textContent = msg || '';
-            el.hidden = !msg;
-        };
-        // Two things can make a letter a poor choice: another bookmark already
-        // has it, or the dashboard itself uses it. Only the first was ever said.
-        const taken = shortcut && others.some((b) => String(b.shortcut || '').toUpperCase() === shortcut);
-        const gridNote = window.ShortcutKeys?.gridKeyNote?.(shortcut, (key, fallback) => this.t(key, fallback)) || '';
-        show('shortcut', taken
-            ? this.t('config.shortcutConflict', 'Shortcut already in use')
-            : gridNote);
-        const hint = editor.querySelector('[data-bm-shortcut-hint]');
-        if (hint) {
-            hint.textContent = window.ShortcutKeys?.usedShortcutsNote?.(
-                this.dash.allBookmarks, (key, fallback) => this.t(key, fallback), { pageId }) || '';
-            hint.hidden = !hint.textContent;
-        }
-        const canon = (u) => window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(u) ?? String(u || '').trim().toLowerCase();
-        show('url', url && others.some((b) => canon(b.url) === canon(url))
-            ? this.t('config.urlConflictHint', 'This URL already exists on this page.')
-            : '');
-    }
-
-    /** Same endpoint and payload the add-bookmark modal uses: POST /api/icon. */
-    async uploadBookmarkIcon(file) {
-        try {
-            const form = new FormData();
-            form.append('icon', file);
-            const res = await this.writeFetch('/api/icon', { method: 'POST', body: form });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            const name = data.icon || '';
-            if (!name) throw new Error('no filename');
-            this.notify(this.t('config.iconUploadSuccess', 'Icon uploaded.'), 'success');
-            return name;
-        } catch {
-            this.notify(this.t('config.iconUploadError', 'Could not upload the icon.'), 'error');
-            return '';
-        }
-    }
-
-    /**
-     * Refresh or clear this bookmark's preview metadata. The server's
-     * /api/previews/* endpoints act on everything at once, so a single card is
-     * done the way the bookmark forms do it: fetch the metadata for the URL and
-     * write the three preview fields onto the bookmark itself.
-     */
-    async handleEditorPreview(action) {
-        const parsed = this.parseBookmarkKey(this.bmEditing);
-        const editor = document.querySelector('.config-bm-editor');
-        if (!parsed || !editor) return;
-        const url = editor.querySelector('[data-bm-field="url"]')?.value?.trim() || parsed.url;
-
-        try {
-            let fields;
-            if (action === 'refresh') {
-                if (!window.BookmarkPreviewService?.fetchLinkPreview) {
-                    this.notify(this.t('config.bookmarkLinkPreviewRefreshFailed', 'Could not fetch link preview.'), 'error');
-                    return;
-                }
-                const data = await window.BookmarkPreviewService.fetchLinkPreview(url);
-                fields = {
-                    previewTitle: data.title || '',
-                    previewDesc: data.description || '',
-                    previewImage: data.image || '',
-                };
-            } else {
-                fields = { previewTitle: '', previewDesc: '', previewImage: '' };
-            }
-
-            const isTarget = DashboardConfig.matchesParsedKey(parsed);
-            await this.writePageBookmarks(parsed.pageId, (list) =>
-                list.map((b) => (isTarget(b) ? { ...b, ...fields } : b)));
-            this.notify(action === 'refresh'
-                ? this.t('config.bookmarkLinkPreviewRefreshed', 'Link preview updated.')
-                : this.t('config.bookmarkLinkPreviewCleared', 'Link preview cleared.'), 'success');
-            await this.refreshBookmarksAfterWrite();
-        } catch {
-            this.notify(this.t('config.bookmarkLinkPreviewRefreshFailed', 'Could not fetch link preview.'), 'error');
-        }
     }
 
     /**
@@ -20500,14 +19805,6 @@ class DashboardConfig {
             overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
             input.focus();
         });
-    }
-
-    async confirmDiscardBookmarkEdit() {
-        if (!this.bmDirty) return true;
-        return this.confirmAction(
-            this.t('config.discardChangesConfirm', 'Discard your unsaved changes?'),
-            { confirmLabel: this.t('config.confirmDiscard', 'Discard') }
-        );
     }
 
     /**
@@ -20720,7 +20017,6 @@ class DashboardConfig {
             await window.DashboardTrash?.record(trashed, 'config-bookmarks');
             await this.refreshTrashIfVisible();
             this.bmSelected.delete(key);
-            if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
                 duration: 8000,
                 undoCallback: async () => {
@@ -20740,69 +20036,6 @@ class DashboardConfig {
             await this.refreshBookmarksAfterWrite();
         } catch {
             this.notify(this.t('config.bookmarkDeleteError', 'Could not delete the bookmark.'), 'error');
-        }
-    }
-
-    async saveEditedBookmark() {
-        const parsed = this.parseBookmarkKey(this.bmEditing);
-        const editor = document.querySelector('.config-bm-editor');
-        if (!parsed || !editor) return;
-        const val = (field) => editor.querySelector(`[data-bm-field="${field}"]`)?.value ?? '';
-        const checked = (field) => editor.querySelector(`[data-bm-field="${field}"]`)?.checked === true;
-
-        const targetPage = String(val('pageId') || parsed.pageId);
-        const category = val('category') === '__new__' ? '' : val('category').trim();
-        const updated = {
-            name: val('name').trim(),
-            url: val('url').trim(),
-            category,
-            shortcut: val('shortcut').trim().toUpperCase(),
-            note: val('note').trim(),
-            pinned: checked('pinned'),
-            icon: val('icon').trim(),
-            tags: val('tags').split(',').map((t) => t.trim().toLowerCase()).filter((t, i, a) => t && a.indexOf(t) === i),
-        };
-        if (!updated.name || !updated.url) {
-            this.notify(this.t('config.nameUrlRequired', 'A name and URL are required.'), 'error');
-            return;
-        }
-
-        // Availability checking goes through CheckMode so the stored
-        // monitor/checkStatus/interval triple matches every other surface.
-        const mode = editor.querySelector('input[name="config-bm-mode"]:checked')?.value || 'off';
-        if (window.CheckMode) {
-            updated.monitorIntervalMinutes = Number(val('monitorIntervalMinutes')) || 15;
-            window.CheckMode.assign(updated, mode);
-        }
-
-        try {
-            // The category has to exist on the target page before the bookmark
-            // points at it, or it renders as an orphan. This covers a category
-            // invented in this editor and one carried to a page that has never
-            // used it — moving a bookmark across pages hits the latter.
-            if (category) await this.ensureCategoryOnPage(targetPage, category);
-            const findOriginal = DashboardConfig.matchesParsedKey(parsed);
-            const original = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(parsed.pageId))
-                .find(findOriginal) || {};
-            if (targetPage === String(parsed.pageId)) {
-                const isTarget = DashboardConfig.matchesParsedKey(parsed);
-                await this.writePageBookmarks(parsed.pageId, (list) =>
-                    list.map((b) => (isTarget(b) ? { ...b, ...updated } : b)));
-            } else {
-                // Moving pages is two writes: drop it from the old page, then
-                // append it to the new one so it cannot exist on both at once.
-                const isTarget = DashboardConfig.matchesParsedKey(parsed);
-                await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
-                await this.refreshBookmarksAfterWrite({ silent: true });
-                await this.writePageBookmarks(targetPage, (list) => [...list, { ...original, ...updated }]);
-            }
-            this.bmEditing = null;
-            this.bmDirty = false;
-            this.notify(this.t('config.bookmarkSaved', 'Bookmark saved.'), 'success');
-            await this.refreshBookmarksAfterWrite();
-        } catch {
-            this.notify(this.t('config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
         }
     }
 
@@ -21090,7 +20323,6 @@ class DashboardConfig {
         await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
         await this.refreshTrashIfVisible();
         this.bmSelected.clear();
-        this.bmEditing = null;
 
         const undoCallback = async () => {
             try {

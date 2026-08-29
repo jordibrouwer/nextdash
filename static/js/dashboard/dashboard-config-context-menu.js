@@ -62,9 +62,8 @@ class DashboardConfigContextMenu {
     handleContextMenu(e, row) {
         // Shift is the escape hatch to the browser's own menu, same as the grid.
         if (e.shiftKey) return;
-        // Inside the open editor the native menu is what someone wants: copy and
-        // paste into the URL and note fields has to keep working.
-        if (e.target.closest('.config-bm-editor')) return;
+        // In a field the native menu is what someone wants: copy and paste has
+        // to keep working.
         if (e.target.closest('input, textarea, select')) return;
 
         const key = row.getAttribute('data-bm-key');
