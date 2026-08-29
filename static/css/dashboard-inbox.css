@@ -1441,3 +1441,52 @@ body[data-layout-version="modern"] .inbox-empty {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 2px;
 }
+
+/*
+ * Where a link came from, beside the domain it points at.
+ *
+ * Quiet on purpose: it is a provenance note, not a status. Only rows that came
+ * from somewhere other than a paste carry one, so it stays rare enough to mean
+ * something.
+ */
+.inbox-item-source {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-text) * 0.76);
+    letter-spacing: 0.02em;
+}
+
+/* The line under the stats grid that says which way the week went. */
+.inbox-stats-trend {
+    margin: 10px 0 0;
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.inbox-stats-trend-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* Offered only where a filter is hiding something. */
+.inbox-empty-clear {
+    margin-top: 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.inbox-empty-clear:hover {
+    border-color: var(--accent-primary);
+}

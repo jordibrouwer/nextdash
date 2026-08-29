@@ -413,6 +413,71 @@ class DashboardInbox {
      * a link could be filed with tags the user was never shown. Clicking one
      * filters to it, the way the domain button beside them already works.
      */
+    /*
+     * Where the link came from, when that is worth a word.
+     *
+     * Every item has carried a source since capture -- paste, the extension, an
+     * import, the share sheet -- and it reached the CSV and the JSON export and
+     * never the screen. Config aggregates it into a table two screens away.
+     *
+     * Paste is left unsaid: it is how most links arrive, so printing it on
+     * every row would be a label that never distinguishes anything.
+     */
+    /*
+     * Of everything decided, how much became a bookmark.
+     *
+     * Against triaged rather than added, since links still waiting have not
+     * been decided and would drag the rate down for no reason.
+     *
+     * `kept` belongs in that sum and used to be missing here, so this panel and
+     * Config -> Stats printed materially different numbers under the same
+     * label -- and kept is the largest of the three, recorded on every
+     * mark-read. Config had already corrected it, with a comment saying the
+     * arithmetic otherwise failed to reconcile with the tiles beside it; the
+     * same reasoning applies on this side, so this is the half that moves.
+     */
+    /*
+     * Which way the backlog is going, in one line.
+     *
+     * The server keeps a bucket per day for four hundred days -- added,
+     * promoted, deleted, kept -- and this panel never touched it, so the inbox
+     * could say how many but never whether it was gaining on the pile. The
+     * chart that answers it lives in Config and is better than anything that
+     * fits here, so this states the week and points at it.
+     */
+    weekTrendFromStats(stats) {
+        const buckets = stats?.dailyBuckets;
+        if (!buckets || typeof buckets !== 'object') {
+            return null;
+        }
+        const cutoff = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+        let added = 0;
+        let handled = 0;
+        for (const [day, counts] of Object.entries(buckets)) {
+            if (day < cutoff) continue;
+            added += Number(counts?.added) || 0;
+            handled += (Number(counts?.promoted) || 0)
+                + (Number(counts?.deleted) || 0)
+                + (Number(counts?.kept) || 0);
+        }
+        // A week with nothing in it has no direction worth reporting.
+        return added || handled ? { added, handled } : null;
+    }
+
+    promoteRateFromStats(stats) {
+        const promoted = Number(stats?.totalPromoted) || 0;
+        const triaged = promoted + (Number(stats?.totalDeleted) || 0) + (Number(stats?.totalKept) || 0);
+        return triaged ? Math.round((promoted / triaged) * 100) : null;
+    }
+
+    renderItemSource(item) {
+        const source = String(item?.source || '').trim();
+        if (!source || source === 'paste') {
+            return '';
+        }
+        return `<span class="inbox-item-source" data-inbox-source>${this.escape(source)}</span>`;
+    }
+
     renderItemTags(item) {
         const tags = Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [];
         if (!tags.length) return '';
@@ -1792,6 +1857,26 @@ class DashboardInbox {
             void this.deleteItemWithUndo(selected.id);
             return true;
         }
+        /*
+         * Two actions that were reachable only by right-click.
+         *
+         * Both shipped as context-menu entries and nothing else -- no row
+         * button, no key -- so on a phone, where there is no right-click at
+         * all, neither could be done. `u` for unread and `l` for labels; `g` is
+         * taken by "go to first" and `t` by triage.
+         */
+        if (e.key === 'u' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.markUnreadFromRow(selected);
+            return true;
+        }
+        if (e.key === 'l' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.editTags(selected);
+            return true;
+        }
         if (e.key === 'g' || e.key === 'Home') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -2557,11 +2642,7 @@ class DashboardInbox {
         const avgRetention = retentionCount
             ? Number(s.sumRetentionMs) / retentionCount
             : 0;
-        // Of everything that left the inbox, how much became a bookmark. Against
-        // triaged rather than added, since items still waiting have not been
-        // decided yet and would drag the rate down for no reason.
-        const triaged = promoted + deleted;
-        const promoteRate = triaged ? Math.round((promoted / triaged) * 100) : null;
+        const promoteRate = this.promoteRateFromStats(s);
 
         // The hint is read, not hovered. As a title it was unreachable from the
         // keyboard and on touch, which is where "Promote rate 55%" beside
@@ -2572,6 +2653,17 @@ class DashboardInbox {
                 <span class="inbox-stat-value">${this.escape(String(value))}</span>
                 ${hint ? `<span class="inbox-stat-hint">${this.escape(hint)}</span>` : ''}
             </div>`;
+
+        const trend = this.weekTrendFromStats(s);
+        const trendLine = trend
+            ? `<p class="inbox-stats-trend" data-inbox-trend>${this.escape(
+                this.t('dashboard.inboxStatsWeek', '{added} arrived and {handled} were dealt with this week.')
+                    .replace('{added}', String(trend.added))
+                    .replace('{handled}', String(trend.handled))
+            )} <button type="button" class="inbox-stats-trend-link" data-inbox-trend-more>${this.escape(
+                this.t('dashboard.inboxStatsWeekMore', 'See the trend')
+            )}</button></p>`
+            : '';
 
         const since = Number(s.firstEventAt) || 0;
         const sinceLine = since
@@ -2602,7 +2694,14 @@ class DashboardInbox {
                         'How long a link sits here before you deal with it')
                 )}
             </div>
+            ${trendLine}
             ${sinceLine}`;
+        // The chart itself lives in Config -> Statistics -> Inbox, which draws
+        // the same buckets over a period you can pick. Building a second one in
+        // a panel this size would be a worse copy of it.
+        panel.querySelector('[data-inbox-trend-more]')?.addEventListener('click', () => {
+            window.DashboardWidgetUtils?.openConfigTab?.(this.dash, 'stats', 'inbox');
+        });
         return panel;
     }
 
@@ -3188,17 +3287,36 @@ class DashboardInbox {
             ],
         };
         const [title, hint] = messages[this.filter] || messages.all;
-        // A query or a site filter is a narrowing the user just applied, so the
-        // empty result is about that and not about the inbox being clear.
-        const narrowed = String(this.searchQuery || '').trim().length > 0
-            || String(this.domainFilter || '').trim().length > 0;
+        /*
+         * A narrowing the reader just applied, so the empty result is about
+         * that and not about the inbox being clear.
+         *
+         * This counted the search box and the site filter and forgot the tag
+         * filter, while isNarrowed() a few hundred lines up counts all three --
+         * so clicking a tag nothing carries answered "Inbox zero, nothing is
+         * waiting" while the links sat there, hidden by the filter.
+         */
+        const narrowed = this.isNarrowed();
 
         const empty = document.createElement('div');
         empty.className = 'inbox-empty-state';
         empty.innerHTML = `
             <p class="inbox-empty-title">${this.escape(narrowed ? this.t('dashboard.inboxNoMatches', 'No matching links') : title)}</p>
             <p class="inbox-empty-hint">${this.escape(narrowed ? this.t('dashboard.inboxNoMatchesHint', 'Try another filter or search term') : hint)}</p>
+            ${narrowed ? `<button type="button" class="inbox-empty-clear" data-inbox-clear-filters>${
+                this.escape(this.t('dashboard.inboxClearFilters', 'Clear filters'))}</button>` : ''}
         `;
+        // Offered only where there is something to clear, and it clears all
+        // three: telling someone which of the filters is the one hiding their
+        // links is work the view can do for them.
+        empty.querySelector('[data-inbox-clear-filters]')?.addEventListener('click', () => {
+            this.searchQuery = '';
+            this.domainFilter = '';
+            this.tagFilter = '';
+            const box = document.querySelector('[data-inbox-search]');
+            if (box) box.value = '';
+            this.render();
+        });
         return empty;
     }
 
@@ -3882,6 +4000,7 @@ class DashboardInbox {
                     <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
                     ${addedLabel ? `<span class="inbox-item-date" title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}">${this.escape(addedLabel)}</span>` : ''}
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
+                    ${this.renderItemSource(item)}
                     ${wakeLabel}
                 </p>
                 ${item.previewDesc ? `<p class="inbox-item-desc">${this.escape(item.previewDesc)}</p>` : ''}
