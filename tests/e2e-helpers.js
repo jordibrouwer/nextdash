@@ -505,6 +505,24 @@ async function resetDashboardData(page) {
     return result;
 }
 
+/**
+ * Open the inbox toolbar's ⋯ menu, where the rarely-used actions live.
+ *
+ * Mark read, Clear read, CSV, JSON, Import and Stats moved off the toolbar so
+ * the header stops standing between the heading and the first row. A test that
+ * clicks one of them has to open the menu first, the way a user does.
+ * Safe to call twice: an already-open menu is left open.
+ */
+async function openInboxToolbarMenu(page) {
+    const menu = page.locator('[data-inbox-menu]');
+    if (await menu.isVisible().catch(() => false)) {
+        return menu;
+    }
+    await page.locator('[data-inbox-toolbar-more]').click();
+    await menu.waitFor({ state: 'visible' });
+    return menu;
+}
+
 module.exports = {
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,
@@ -530,4 +548,5 @@ module.exports = {
     openShortcutSearch,
     tapShortcutLetter,
     selectKeyboardBookmark,
+    openInboxToolbarMenu,
 };

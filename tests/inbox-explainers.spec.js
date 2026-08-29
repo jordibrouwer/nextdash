@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
+    openInboxToolbarMenu } = require('./e2e-helpers');
 
 /**
  * In-view explanation for the inbox, matching the health view: a sentence about
@@ -160,7 +161,9 @@ test.describe('inbox view explanations', () => {
         await openInbox(page);
         await seed(page, 1);
 
-        // Mark the only link read through the toolbar, the way a user clears it.
+        // Mark the only link read through the toolbar, the way a user clears it:
+        // the bulk actions live behind the ⋯ menu now.
+        await openInboxToolbarMenu(page);
         await page.locator('[data-inbox-bulk="read"]').click();
         await page.locator('[data-inbox-filter="unread"]').click();
         await expect(page.locator('[data-inbox-filter="unread"]')).toHaveClass(/is-active/);

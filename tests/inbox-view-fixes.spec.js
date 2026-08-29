@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
+    openInboxToolbarMenu } = require('./e2e-helpers');
 
 /**
  * The inbox view, on the promises its own controls make.
@@ -107,6 +108,7 @@ test.describe('the numbers answer to the rows on screen', () => {
         await openInbox(page);
         await seed(page, [['c-host.example.com', 'Narrow me'], ['d-host.example.com', 'Leave me']]);
 
+        await openInboxToolbarMenu(page);
         const button = page.locator('[data-inbox-bulk="read"]');
         await expect(button).toHaveText(/all/i);
 
@@ -116,6 +118,9 @@ test.describe('the numbers answer to the rows on screen', () => {
         await expect(button).toHaveAttribute('title', /view/i);
 
         // And it acts on the row it names, leaving the one out of view unread.
+        // Typing in the search box re-renders the toolbar, which closes the
+        // menu the bulk actions live in, so it has to be reopened to click.
+        await openInboxToolbarMenu(page);
         await button.click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.inbox.items.filter((i) => i.readAt).length),
@@ -231,6 +236,7 @@ test.describe('what leaves and comes back', () => {
     test('the Import button is in the toolbar, beside the exports', async ({ page }) => {
         await openInbox(page);
         await seed(page, [['l-host.example.com', 'Toolbar']]);
+        await openInboxToolbarMenu(page);
         await expect(page.locator('[data-inbox-import]')).toBeVisible();
     });
 });
@@ -239,6 +245,7 @@ test.describe('what the view says in words', () => {
     test('the promote rate explains itself without a hover', async ({ page }) => {
         await openInbox(page);
         await seed(page, [['m-host.example.com', 'Stats']]);
+        await openInboxToolbarMenu(page);
         await page.locator('[data-inbox-stats]').click();
         const panel = page.locator('#inbox-stats-panel');
         await expect(panel).toBeVisible();

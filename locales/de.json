@@ -68,6 +68,7 @@
     "inboxTimeHours": "vor {count} Std.",
     "inboxTimeDays": "vor {count} T.",
     "inboxTriage": "Triage",
+    "inboxToolbarMore": "Weitere Aktionen",
     "inboxTriageProgress": "{current} / {total}",
     "inboxTriageDoneTitle": "Das war alles.",
     "inboxTriageDoneBody": "Du hast {n} Links durchgesehen.",

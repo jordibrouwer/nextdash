@@ -92,3 +92,74 @@ test('the rare actions are one click away, not seven buttons wide', async ({ pag
         await expect(page.locator(sel), `${sel} missing from the menu`).toBeVisible();
     }
 });
+
+test('the menu opens under the button, not at the edge of the window', async ({ page }) => {
+    await openInbox(page);
+    await page.locator('[data-inbox-toolbar-more]').click();
+
+    // The same assertion the health view carries: a menu positioned against the
+    // toolbar rather than its button lands at the far side of the view.
+    const gap = await page.evaluate(() => {
+        const button = document.querySelector('[data-inbox-toolbar-more]').getBoundingClientRect();
+        const menu = document.querySelector('[data-inbox-menu]').getBoundingClientRect();
+        return { dx: Math.abs(menu.left - button.left), dy: menu.top - button.bottom };
+    });
+    expect(gap.dx, `menu sits ${Math.round(gap.dx)}px sideways from its button`).toBeLessThan(40);
+    expect(gap.dy, `menu sits ${Math.round(gap.dy)}px below its button`).toBeLessThan(24);
+});
+
+test('the count sits on the subtitle line, level with the health view', async ({ page }) => {
+    await openInbox(page);
+
+    // Beside the heading the count rode a line higher than the health view's
+    // score badge, and switching between the two views is exactly where that
+    // shows. Both headers now put their meta on the second row.
+    const rows = await page.evaluate(() => {
+        const mid = (sel) => {
+            const el = document.querySelector(sel);
+            const box = el.getBoundingClientRect();
+            return box.top + box.height / 2;
+        };
+        return {
+            meta: mid('.inbox-header-meta'),
+            subtitle: mid('.inbox-subtitle'),
+            title: mid('.inbox-title'),
+        };
+    });
+    const offSubtitle = Math.abs(rows.meta - rows.subtitle);
+    expect(offSubtitle, `count sits ${Math.round(offSubtitle)}px off the subtitle line`).toBeLessThan(4);
+    expect(rows.meta, 'count is back up on the heading line').toBeGreaterThan(rows.title + 4);
+});
+
+test('Triage and the menu share a row, with the help button at the far end', async ({ page }) => {
+    await openInbox(page);
+
+    // The health view's shape: the action row is its own full-width line under
+    // the filters, so Triage and the ⋯ land where their health counterparts do
+    // instead of trailing the search box. The ℹ is pushed to the right end,
+    // where it cannot be hit while reaching for an action.
+    const row = await page.evaluate(() => {
+        const box = (sel) => {
+            const el = document.querySelector(sel);
+            const r = el.getBoundingClientRect();
+            return { left: r.left, right: r.right, mid: r.top + r.height / 2 };
+        };
+        return {
+            actions: box('.inbox-toolbar-actions'),
+            triage: box('.inbox-triage-btn--primary'),
+            more: box('[data-inbox-toolbar-more]'),
+            help: box('.inbox-help-btn'),
+            filters: box('.inbox-filter-group'),
+        };
+    });
+
+    // One row, below the filters.
+    expect(row.triage.mid, 'Triage is not on the action row').toBeCloseTo(row.more.mid, 0);
+    expect(row.help.mid, 'the help button dropped off the action row').toBeCloseTo(row.more.mid, 0);
+    expect(row.actions.mid, 'the action row is not below the filters').toBeGreaterThan(row.filters.mid + 4);
+
+    // Triage leads it; the ℹ closes it.
+    expect(row.triage.left).toBeLessThan(row.more.left);
+    const fromEnd = row.actions.right - row.help.right;
+    expect(fromEnd, `help button sits ${Math.round(fromEnd)}px short of the right edge`).toBeLessThan(8);
+});

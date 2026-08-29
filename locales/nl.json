@@ -91,6 +91,7 @@
     "inboxTimeHours": "{count} u geleden",
     "inboxTimeDays": "{count} d geleden",
     "inboxTriage": "Triage",
+    "inboxToolbarMore": "Meer acties",
     "inboxTriageProgress": "{current} / {total}",
     "inboxTriageDoneTitle": "Dat was het.",
     "inboxTriageDoneBody": "Je hebt {n} links doorgenomen.",

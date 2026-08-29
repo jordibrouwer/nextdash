@@ -1,5 +1,6 @@
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
+    openInboxToolbarMenu } = require('./e2e-helpers');
 
 test.describe('dashboard inbox phase 1', () => {
     test.beforeEach(async ({ page }) => {
@@ -532,6 +533,7 @@ test.describe('dashboard inbox phase 1', () => {
 
     test('CSV export downloads the filtered inbox list', async ({ page, context }) => {
         await seedInbox(page, ['Export row']);
+        await openInboxToolbarMenu(page);
         const downloadPromise = page.waitForEvent('download');
         await page.locator('[data-inbox-export="csv"]').click();
         const download = await downloadPromise;

@@ -1,5 +1,6 @@
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
+    openInboxToolbarMenu } = require('./e2e-helpers');
 
 /**
  * U2–U4 from the inbox audit: lifetime stats in the view, bulk promote, and a
@@ -59,6 +60,7 @@ test.describe('inbox extensions', () => {
         }));
 
         await expect(page.locator('#inbox-stats-panel')).toHaveCount(0);
+        await openInboxToolbarMenu(page);
         await page.locator('[data-inbox-stats]').click();
         await expect(page.locator('#inbox-stats-panel')).toBeVisible();
 
@@ -71,6 +73,7 @@ test.describe('inbox extensions', () => {
         // 3 days average stay, formatted the way config formats it.
         await expect(panel).toContainText('3d');
 
+        await openInboxToolbarMenu(page);
         await page.locator('[data-inbox-stats]').click();
         await expect(page.locator('#inbox-stats-panel')).toHaveCount(0);
     });
@@ -79,6 +82,7 @@ test.describe('inbox extensions', () => {
         await openInbox(page);
         await page.route('**/api/inbox-stats', (route) => route.fulfill({ status: 500, body: 'nope' }));
 
+        await openInboxToolbarMenu(page);
         await page.locator('[data-inbox-stats]').click();
         await expect(page.locator('#inbox-stats-panel')).toContainText(/could not load/i);
         // Zeros would read as real figures, which is the failure mode worth avoiding.

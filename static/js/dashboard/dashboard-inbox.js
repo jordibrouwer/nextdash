@@ -3483,15 +3483,22 @@ class DashboardInbox {
 
         const header = document.createElement('div');
         header.className = 'inbox-header';
+        // Two rows, the same shape as the health view's header: the heading owns
+        // the first line, and the count drops to the second to sit level with
+        // the subtitle. Beside the heading it rode a line higher than health's
+        // score badge, which is the one place the two views are seen in
+        // succession and the difference reads as a misalignment.
         header.innerHTML = `
             <div class="inbox-header-text">
                 <h2 class="inbox-title">${this.escape(title)}</h2>
                 <p class="inbox-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
-                <p class="inbox-subtitle">${this.escape(subtitle)}</p>
             </div>
-            <div class="inbox-header-meta">
-                <span class="inbox-count-badge">${count}</span>
-                ${unread > 0 ? `<span class="inbox-unread-badge">${unread} ${this.escape(this.t('dashboard.inboxUnread', 'unread'))}</span>` : ''}
+            <div class="inbox-header-second-row">
+                <p class="inbox-subtitle">${this.escape(subtitle)}</p>
+                <div class="inbox-header-meta">
+                    <span class="inbox-count-badge">${count}</span>
+                    ${unread > 0 ? `<span class="inbox-unread-badge">${unread} ${this.escape(this.t('dashboard.inboxUnread', 'unread'))}</span>` : ''}
+                </div>
             </div>
         `;
         container.appendChild(header);
@@ -3598,17 +3605,28 @@ class DashboardInbox {
             ${showDomainSelect ? `<select class="inbox-domain-select" data-inbox-domain-filter aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" data-inbox-search value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
             ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" data-inbox-sort aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
-            ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
-            ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
-            <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
-            <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
-            <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
-                    aria-haspopup="dialog"
-                    title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
-                    aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
+            <div class="inbox-toolbar-actions">
+                <button type="button" class="inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+                <span class="inbox-menu-wrap">
+                    <button type="button" class="inbox-toolbar-more" data-inbox-toolbar-more
+                            aria-haspopup="menu" aria-expanded="false"
+                            title="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}"
+                            aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">⋯</button>
+                    <div class="inbox-menu" role="menu" hidden data-inbox-menu
+                         aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">
+                ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
+                ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
+                <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
+                    </div>
+                </span>
+                <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
+                        aria-haspopup="dialog"
+                        title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
+                        aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
+            </div>
         `;
         const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
         const applyFilter = (key, via) => {
@@ -3707,6 +3725,53 @@ class DashboardInbox {
         toolbar.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
             this.toggleStats();
         });
+
+        /*
+         * The hamburger, and the six buttons behind it.
+         *
+         * Nine controls stood between the filters and the first link, of which
+         * Triage is the one anyone comes here for -- so it keeps the first slot
+         * and its own styling, the way Work through does in the health view,
+         * and the ℹ stays because it explains the view rather than acting on
+         * it. Export, import and the counts wait behind the ⋯.
+         *
+         * The wrap around button and menu is what anchors it: positioned
+         * against the toolbar instead, a menu lands at the far edge of the
+         * window, which is exactly what went wrong in health.
+         */
+        const moreBtn = toolbar.querySelector('[data-inbox-toolbar-more]');
+        const moreMenu = toolbar.querySelector('[data-inbox-menu]');
+        if (moreBtn && moreMenu) {
+            const closeMore = () => {
+                moreMenu.hidden = true;
+                moreBtn.setAttribute('aria-expanded', 'false');
+            };
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = moreMenu.hidden;
+                moreMenu.hidden = !open;
+                moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (!open) return;
+                const onOutside = (event) => {
+                    if (moreMenu.contains(event.target) || event.target === moreBtn) return;
+                    closeMore();
+                    document.removeEventListener('click', onOutside, true);
+                };
+                setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+            });
+            // Escape closes it, and an action inside it closes it too: the menu
+            // is a way to reach a button, not a place to stay.
+            moreMenu.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    closeMore();
+                    moreBtn.focus({ preventScroll: true });
+                }
+            });
+            moreMenu.addEventListener('click', (e) => {
+                if (e.target.closest('button')) closeMore();
+            });
+        }
 
         toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
