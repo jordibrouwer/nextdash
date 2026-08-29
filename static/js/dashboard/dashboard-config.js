@@ -515,11 +515,17 @@ class DashboardConfig {
         const base = this.hashForSection(this.section);
         const wanted = `#${panel && this.section === 'help' ? `${base}/${panel}` : base}`;
         if (window.location.hash !== wanted) {
-            history.replaceState(
-                history.state,
-                '',
-                `${window.location.pathname}${window.location.search}${wanted}`
-            );
+            const next = `${window.location.pathname}${window.location.search}${wanted}`;
+            /*
+             * Arriving at config is a history step; moving between its sections
+             * is not. A config visit is a rummage through several sections, and
+             * an entry per section would turn one Back into six -- so Back
+             * leaves config entirely, the way Escape does.
+             */
+            const wasOnConfig = String(window.location.hash || '').startsWith('#config');
+            if (wasOnConfig || !window.DashboardHistory?.pushLocation?.(next)) {
+                history.replaceState(history.state, '', next);
+            }
         }
         // Every move inside config comes through here — it is what writes the
         // section and sub-tab into the address bar — so this is also where the

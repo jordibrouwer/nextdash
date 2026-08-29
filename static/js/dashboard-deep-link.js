@@ -61,7 +61,10 @@
         if (!changed) return;
         const qs = params.toString();
         const next = `${location.pathname}${qs ? `?${qs}` : ''}${location.hash || ''}`;
-        global.history.replaceState(null, '', next);
+        // Pass the state through rather than null: every other write in the
+        // app preserves it, and clobbering it here would silently drop
+        // whatever a history entry is carrying.
+        global.history.replaceState(global.history.state, '', next);
     }
 
     global.DashboardDeepLink = {

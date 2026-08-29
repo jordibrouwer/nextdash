@@ -1464,13 +1464,17 @@ class DashboardInbox {
         d.pageNav?.updateInboxTabBadge?.();
     }
 
+    /**
+     * Make the address bar say #inbox. This is the moment the inbox's URL is
+     * final, so it is also the moment worth remembering: a push here is what
+     * lets Back leave the view. The filters that land later through
+     * syncUrlState stay replaceState -- they are not places you navigated to.
+     */
     restoreInboxHash() {
-        if (window.location.hash !== '#inbox') {
-            history.replaceState(
-                history.state,
-                '',
-                `${window.location.pathname}${window.location.search}#inbox`
-            );
+        if (window.location.hash === '#inbox') return;
+        const next = `${window.location.pathname}${window.location.search}#inbox`;
+        if (!window.DashboardHistory?.pushLocation?.(next)) {
+            history.replaceState(history.state, '', next);
         }
     }
 

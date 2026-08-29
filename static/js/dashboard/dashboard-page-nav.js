@@ -60,7 +60,12 @@ class DashboardPageNav {
             const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';
             const nextUrl = `${url.pathname}${query ? `?${query}` : ''}${nextHash}`;
             if (`${url.pathname}${url.search}${url.hash}` !== nextUrl) {
-                history.replaceState(history.state, '', nextUrl);
+                // Returning to the grid is a place you can go Back from, so it
+                // gets an entry. pushLocation declines while a popstate is
+                // being restored, which is when this runs as the restore.
+                if (!window.DashboardHistory?.pushLocation?.(nextUrl)) {
+                    history.replaceState(history.state, '', nextUrl);
+                }
             }
         } catch {
             if (pageIndex >= 0) {

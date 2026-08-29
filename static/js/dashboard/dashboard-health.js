@@ -469,13 +469,16 @@ class DashboardHealth {
 
     /* ── View lifecycle ────────────────────────────────────────────────── */
 
+    /**
+     * Make the address bar say #health. The moment the URL is final is the
+     * moment worth remembering: a push here is what lets Back leave the view,
+     * while the filters that follow through syncUrlState stay replaceState.
+     */
     restoreHealthHash() {
-        if (window.location.hash !== '#health') {
-            history.replaceState(
-                history.state,
-                '',
-                `${window.location.pathname}${window.location.search}#health`
-            );
+        if (window.location.hash === '#health') return;
+        const next = `${window.location.pathname}${window.location.search}#health`;
+        if (!window.DashboardHistory?.pushLocation?.(next)) {
+            history.replaceState(history.state, '', next);
         }
     }
 
