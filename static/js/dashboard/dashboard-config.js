@@ -10303,7 +10303,7 @@ class DashboardConfig {
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
-        calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'] },
+        calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'], def: '' },
         // Link previews
         linkPreviewMode: { info: ['linkPreviewModeInfoTitle', 'linkPreviewModeInfoMessage'], def: 'hover' },
         linkPreviewParts: { info: ['linkPreviewPartsInfoTitle', 'linkPreviewPartsInfoMessage'], def: null },
@@ -10341,6 +10341,14 @@ class DashboardConfig {
         // Data
         deviceSpecificSettings: { info: ['deviceSpecificSettingsInfoTitle', 'deviceSpecificSettingsInfoMessage'] },
         autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'], def: true },
+        monitorNotifyPreset: { def: '' },
+        monitorNotifyDashboardUrl: { def: '' },
+        monitorNotifyPushoverToken: { def: '' },
+        monitorNotifyPushoverUserKey: { def: '' },
+        monitorNotifyTelegramChatId: { def: '' },
+        backupExcludeArchives: { def: false },
+        backupExcludeSecrets: { def: false },
+        healthCheckTimeoutSeconds: { def: 0 },
     };
 
     fieldMeta(field) {

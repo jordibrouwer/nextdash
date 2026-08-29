@@ -98,6 +98,17 @@ test.describe('config info + reset affordances', () => {
             'newBookmarkCategory',
             // Reads as part of the toggle above it, which carries the ℹ.
             'rowTagsMax', 'smartAddedLimit',
+            // The control names its own default: the first option is
+            // "Default (3 seconds)", so an ℹ would repeat the select.
+            'healthCheckTimeoutSeconds',
+            // Credentials and addresses for one chosen service. Empty is the
+            // only sensible default and the label already says which service
+            // it belongs to; there is nothing an ℹ could add.
+            'monitorNotifyPreset', 'monitorNotifyDashboardUrl', 'monitorNotifyTelegramChatId',
+            'monitorNotifyPushoverToken', 'monitorNotifyPushoverUserKey',
+            // "Tokens and passwords" / "Saved page copies" — the label is the
+            // explanation, like the toolbar toggles above.
+            'backupExcludeSecrets', 'backupExcludeArchives',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
