@@ -9414,19 +9414,42 @@ class DashboardConfig {
         if (!vars) return;
         const style = document.createElement('style');
         style.id = 'config-theme-preview';
-        // /api/theme.css writes its variables on html[data-theme="…"], which is
-        // more specific than :root, so a :root block here would be overridden
-        // and the preview would silently do nothing. Match that selector — and
-        // the attribute value the document actually carries, since with auto
-        // dark mode the resolved theme differs from settings.theme.
-        const resolved = document.documentElement.getAttribute('data-theme');
-        const scope = resolved ? `html[data-theme="${CSS.escape(resolved)}"]` : ':root';
-        style.textContent = `${scope} { ${vars} }`;
+        /*
+         * Wear the candidate's name while previewing it.
+         *
+         * The colours alone are not the theme: theme-depth.css picks the
+         * backdrop's *shape* -- scanlines, grid, hatch, dots -- and its tint
+         * and depth with rules selecting on html[data-theme="…"]. Writing the
+         * candidate's variables under the *active* theme's selector, which is
+         * what this did, showed the new palette wearing the old theme's
+         * texture: a combination that matches no theme at all. Applying the
+         * theme is what random-theme rotation already does, and its backdrop
+         * has always followed.
+         *
+         * /api/theme.css writes on the same selector, so the block still has to
+         * name it rather than :root, which it would outrank.
+         */
+        if (this._themePreviewRestore === undefined) {
+            this._themePreviewRestore = document.documentElement.getAttribute('data-theme');
+        }
+        document.documentElement.setAttribute('data-theme', id);
+        style.textContent = `html[data-theme="${CSS.escape(id)}"] { ${vars} }`;
         document.head.appendChild(style);
     }
 
     clearThemePreview() {
         document.getElementById('config-theme-preview')?.remove();
+        // The preview borrowed the document's theme attribute to get the right
+        // backdrop; hand it back, or the page keeps the last thing hovered.
+        if (this._themePreviewRestore !== undefined) {
+            const previous = this._themePreviewRestore;
+            this._themePreviewRestore = undefined;
+            if (previous === null) {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', previous);
+            }
+        }
     }
 
     /** Warn when primary text on the primary background falls below WCAG AA. */
