@@ -179,3 +179,91 @@ test.describe('the custom widget explains its refresh interval', () => {
         await expect(dialog).toContainText(/24 hours|24 uur/i);
     });
 });
+
+/*
+ * Editing a figure that is already on a custom widget.
+ *
+ * The Save button is gated on the draft differing from what is stored, and
+ * that comparison could not see inside a field: it passed each config's own
+ * top-level keys to JSON.stringify as a replacer, which applies at every
+ * depth, so every object inside `fields` serialised as {} and a changed path,
+ * label or format compared equal to the one before it. Adding or removing a
+ * field still registered, because the array's length is visible from the top --
+ * which is why this looked like the panel refusing one particular widget
+ * rather than a comparison that was blind.
+ */
+test.describe('a figure already on a custom widget can be edited', () => {
+    /*
+     * Add a custom widget with one preset's figures already filled in, saved.
+     *
+     * Traefik rather than AdGuard, though AdGuard is the widget this was found
+     * on: saving a preset that signs in refuses a half-filled credential and
+     * returns before writing anything, which would leave the button enabled
+     * for a reason that has nothing to do with what these tests are about.
+     */
+    async function customWithFields(page) {
+        const index = await addWidget(page, 'custom');
+        const row = page.locator(`[data-widget-row="${index}"]`);
+        await row.locator('[data-widget-preset]').selectOption('traefik');
+        await expect(row.locator('[data-custom-field="format"]').first()).toBeVisible();
+        await row.locator('[data-widget-save]').click();
+        // Saved and settled: from here the panel and the store agree, so
+        // anything that turns the button back on is the edit under test.
+        await expect(row.locator('[data-widget-save]')).toBeDisabled({ timeout: 10_000 });
+        return { index, row };
+    }
+
+    for (const [what, field, act] of [
+        ['its format', 'format', (box) => box.selectOption('ms')],
+        ['its label', 'label', (box) => box.fill('average')],
+        ['its path', 'path', (box) => box.fill('num_replaced_safebrowsing')],
+    ]) {
+        test(`changing ${what} turns Save back on`, async ({ page }) => {
+            await openWidgets(page);
+            const { row } = await customWithFields(page);
+
+            // Through the control itself, which is what a reader touches.
+            const box = row.locator(`[data-custom-field="${field}"]`).last();
+            await act(box);
+            await box.blur();
+
+            await expect(row.locator('[data-widget-save]')).toBeEnabled();
+        });
+    }
+
+    test('the changed format is what gets stored', async ({ page }) => {
+        await openWidgets(page);
+        const { row } = await customWithFields(page);
+
+        const box = row.locator('[data-custom-field="format"]').last();
+        await box.selectOption('ms');
+        await box.blur();
+        await row.locator('[data-widget-save]').click();
+
+        // Saved, not merely enabled: the button going grey again is the panel
+        // saying it wrote something, and it has been wrong about that before.
+        await expect.poll(() => page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const blocks = await (await f('/api/pages/1/blocks')).json();
+            const fields = (blocks.widgets || []).at(-1)?.config?.fields || [];
+            return fields.at(-1)?.format;
+        }), { timeout: 10_000 }).toBe('ms');
+    });
+
+    test('typing a value back the way it was leaves Save off', async ({ page }) => {
+        await openWidgets(page);
+        const { row } = await customWithFields(page);
+
+        const box = row.locator('[data-custom-field="label"]').last();
+        const before = await box.inputValue();
+        await box.fill('something else');
+        await box.blur();
+        await expect(row.locator('[data-widget-save]')).toBeEnabled();
+
+        // Compared against what is stored rather than tracked with a flag, so
+        // undoing an edit by hand has to count as no edit at all.
+        await box.fill(before);
+        await box.blur();
+        await expect(row.locator('[data-widget-save]')).toBeDisabled();
+    });
+});

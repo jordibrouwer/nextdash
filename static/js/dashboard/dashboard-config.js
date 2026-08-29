@@ -15356,12 +15356,43 @@ class DashboardConfig {
         return (this._widgetBlocks || []).some((_, index) => this.widgetDraftDirty(index));
     }
 
+    /*
+     * A config as one comparable string, keys in a fixed order at every depth.
+     *
+     * The obvious shorthand -- JSON.stringify(config, Object.keys(config).sort())
+     * -- was wrong in a way that read as right: the second argument is a
+     * replacer, it applies at every level, and it was built from the top-level
+     * keys only. So every object inside `fields` kept none of its own keys and
+     * came out as {}, which made a changed path, label or format compare equal
+     * to the one before it and left Save greyed out over an edit that had
+     * plainly happened. Adding or removing a field still registered, because
+     * the array's length survives -- which is what made this look like one
+     * stubborn widget rather than a comparison that could not see.
+     *
+     * undefined is skipped rather than written as null, because a draft spells
+     * out `fields: undefined` for a widget that has none while the stored block
+     * simply has no such key, and those two are the same thing.
+     */
+    canonicalJSON(value) {
+        if (Array.isArray(value)) {
+            // Order is kept: the sequence of fields is the order of the figures
+            // on the tile, so moving one is a change like any other.
+            return `[${value.map((item) => this.canonicalJSON(item)).join(',')}]`;
+        }
+        if (value && typeof value === 'object') {
+            return `{${Object.keys(value).sort()
+                .filter((key) => value[key] !== undefined)
+                .map((key) => `${JSON.stringify(key)}:${this.canonicalJSON(value[key])}`)
+                .join(',')}}`;
+        }
+        return value === undefined ? 'null' : JSON.stringify(value);
+    }
+
     widgetDraftDirty(index) {
         const block = (this._widgetBlocks || [])[index];
         const draft = this.widgetDraft(index, { create: false });
         if (!block || !draft) return false;
-        const clean = (config) => JSON.stringify(config || {}, Object.keys(config || {}).sort());
-        if (clean(draft.config) !== clean(block.config)) return true;
+        if (this.canonicalJSON(draft.config || {}) !== this.canonicalJSON(block.config || {})) return true;
         const before = this.storedCredentialState(block);
         const now = draft.auth || {};
         // A secret that was typed is a change even when nothing else moved.
