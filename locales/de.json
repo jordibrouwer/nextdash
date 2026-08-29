@@ -5500,7 +5500,10 @@
     "sourceTokenRequired": "Zuerst ein Token einfügen — ohne Token kann diese Quelle nichts lesen.",
     "on": "An",
     "off": "Aus",
-    "overviewNewsSourceSite": "nextdash.cc"
+    "overviewNewsSourceSite": "nextdash.cc",
+    "widgetsDiscardDraftsTitle": "Ungespeicherte Änderungen verwerfen?",
+    "widgetsDiscardDraftsBody": "Ihre ungespeicherten Widget-Änderungen auf dieser Seite gehen verloren.",
+    "widgetsDiscardDraftsOk": "Verwerfen"
   },
   "colors": {
     "title": "themenanpassung",

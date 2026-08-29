@@ -8911,6 +8911,20 @@ class DashboardConfig {
     persistAppearance() {
         const savePromise = this.saveSettingsWithFeedback();
         if (this.isActiveView() && this.section === 'appearance') {
+            /*
+             * Capture before the save, restore after the repaint.
+             *
+             * This repaint lands when the save comes back, roughly twenty
+             * milliseconds after the one the change itself triggered -- and it
+             * replaces the body, so the control the reader is on is destroyed a
+             * second time. Restoring focus in the first repaint alone looked
+             * right and then lost it again here, which is why the caret still
+             * ended up on <body> and the next Tab restarted at the top.
+             *
+             * Captured synchronously: by the time the promise settles the
+             * control has already lost focus, so there would be nothing to read.
+             */
+            const restoreFocus = this.captureControlPanelFocus();
             void savePromise.finally(() => {
                 if (!this.isActiveView() || this.section !== 'appearance') {
                     return;
@@ -8921,6 +8935,7 @@ class DashboardConfig {
                     const container = document.getElementById('dashboard-layout');
                     if (container) this.bindAppearanceControls(container);
                 }
+                restoreFocus();
             });
         }
         return savePromise;
@@ -12978,16 +12993,30 @@ class DashboardConfig {
      * user was on no longer exists once innerHTML is replaced.
      */
     captureControlPanelFocus() {
+        /*
+         * The attributes a control is actually rendered with.
+         *
+         * This read data-appearance-field, which nothing emits -- Appearance's
+         * hand-written controls carry -toggle, -select, -text or -range, and
+         * only its schema-backed panels use the behavior prefix. So for every
+         * hand-written control the field came back empty, the no-op restorer
+         * was returned, and the repaint dropped focus to <body> with the next
+         * Tab starting from the top of the page: the exact hazard the comment
+         * above says this function exists to prevent.
+         */
+        const ATTRS = ['data-behavior-field', 'data-appearance-toggle',
+            'data-appearance-select', 'data-appearance-text', 'data-appearance-range'];
         const active = document.activeElement;
-        const field = active?.getAttribute?.('data-behavior-field')
-            || active?.getAttribute?.('data-appearance-field');
+        const attr = ATTRS.find((name) => active?.getAttribute?.(name));
+        const field = attr ? active.getAttribute(attr) : '';
         if (!field) return () => {};
         const selectionStart = active.selectionStart;
         const selectionEnd = active.selectionEnd;
         return () => {
-            const next = document.querySelector(
-                `[data-behavior-field="${CSS.escape(field)}"], [data-appearance-field="${CSS.escape(field)}"]`
-            );
+            // Matched on the attribute it was found under: the same name can
+            // exist under two prefixes, and returning focus to the other one
+            // would move the reader to a different control.
+            const next = document.querySelector(`[${attr}="${CSS.escape(field)}"]`);
             if (!next) return;
             next.focus?.();
             // Text inputs keep the caret too, or typing resumes at the wrong end.
@@ -15286,6 +15315,16 @@ class DashboardConfig {
      * typed and then typed back is not a change, and a flag would keep saying
      * it was.
      */
+    /**
+     * Is any widget on this page holding unsaved edits?
+     *
+     * widgetDraftDirty answers for one row; the page selector needs the whole
+     * list, because it throws every draft away at once.
+     */
+    widgetDraftsDirty() {
+        return (this._widgetBlocks || []).some((_, index) => this.widgetDraftDirty(index));
+    }
+
     widgetDraftDirty(index) {
         const block = (this._widgetBlocks || [])[index];
         const draft = this.widgetDraft(index, { create: false });
@@ -15975,12 +16014,42 @@ class DashboardConfig {
 
             const page = target.closest('[data-widget-page]');
             if (page) {
-                this._widgetPageId = Number(page.value);
-                this._widgetBlocks = null;
-                this._widgetLoadedFor = null;
-                this._widgetDrafts = {};
-                this.repaintWidgetsBody();
-                void this.loadWidgetsEditor();
+                /*
+                 * Ask before throwing away work.
+                 *
+                 * Widgets is the one section that does not save as you go, so
+                 * an open draft is real unsaved work -- and switching page
+                 * dropped every one of them without a word. The selector has
+                 * already moved by the time a change event arrives, so a
+                 * refusal has to put it back.
+                 */
+                const previousPageId = this._widgetPageId;
+                const goToPage = () => {
+                    this._widgetPageId = Number(page.value);
+                    this._widgetBlocks = null;
+                    this._widgetLoadedFor = null;
+                    this._widgetDrafts = {};
+                    this.repaintWidgetsBody();
+                    void this.loadWidgetsEditor();
+                };
+                if (!this.widgetDraftsDirty()) {
+                    goToPage();
+                    return;
+                }
+                void this.confirmAction(
+                    this.t('config.widgetsDiscardDraftsBody',
+                        'Your unsaved widget changes on this page will be lost.'),
+                    {
+                        title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
+                        confirmLabel: this.t('config.widgetsDiscardDraftsOk', 'Discard'),
+                    }
+                ).then((ok) => {
+                    if (ok) {
+                        goToPage();
+                        return;
+                    }
+                    page.value = String(previousPageId);
+                });
                 return;
             }
 
@@ -22032,6 +22101,13 @@ class DashboardConfig {
         });
         this.bindActivityChartTooltip(container);
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
+            // Guarded like the panel links below, and for a sharper reason:
+            // repaintStatsBody binds the replaced foot and then binds the whole
+            // dashboard container, which contains it. Export is not
+            // idempotent, so a second listener meant a second file in the
+            // user's downloads for one click.
+            if (btn.dataset.statsActionBound === '1') return;
+            btn.dataset.statsActionBound = '1';
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-stats-action');
                 if (action === 'export') void this.exportStatsCSV();

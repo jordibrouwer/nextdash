@@ -5500,7 +5500,10 @@
     "sourceTokenRequired": "Plak eerst een token — zonder token kan deze bron niets lezen.",
     "on": "Aan",
     "off": "Uit",
-    "overviewNewsSourceSite": "nextdash.cc"
+    "overviewNewsSourceSite": "nextdash.cc",
+    "widgetsDiscardDraftsTitle": "Niet-opgeslagen wijzigingen weggooien?",
+    "widgetsDiscardDraftsBody": "Je niet-opgeslagen widgetwijzigingen op deze pagina gaan verloren.",
+    "widgetsDiscardDraftsOk": "Weggooien"
   },
   "colors": {
     "title": "thema-aanpassing",

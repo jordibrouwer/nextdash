@@ -1287,6 +1287,28 @@ class DashboardData {
                 if (dropped.length) {
                     d._droppedCollections = dropped;
                 }
+                /*
+                 * Take back what the server actually stored.
+                 *
+                 * Several settings are clamped on the way in -- an archive URL
+                 * with no {url} placeholder becomes the default, counts are
+                 * pulled into range. Keeping the typed value meant the field
+                 * went on showing something the server had refused, under a
+                 * "Saved" indicator, until the next reload put it right.
+                 *
+                 * Only the keys that came back and only where they differ, so
+                 * this cannot clobber a change made while the save was in
+                 * flight with a value from before it.
+                 */
+                if (body?.settings && typeof body.settings === 'object') {
+                    for (const [key, value] of Object.entries(body.settings)) {
+                        if (key in d.settings && d.settings[key] !== value
+                            && JSON.stringify(d.settings[key]) !== JSON.stringify(value)
+                            && JSON.stringify(payload?.[key]) === JSON.stringify(d.settings[key])) {
+                            d.settings[key] = value;
+                        }
+                    }
+                }
             } catch { /* a body we cannot read must not fail an accepted save */ }
 
 
