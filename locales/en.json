@@ -1368,7 +1368,6 @@
     "healthNoteMissingPreview": "No title, description or image has been fetched yet, so these rows have little to show beyond their address.",
     "healthNoteCertificates": "These sit on a host whose TLS certificate expires soon. The count above is hosts; this list is the bookmarks on them.",
     "healthNoteHealthy": "Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.",
-    "healthNoteAll": "Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.",
     "healthTileContent": "Content",
     "healthTileContentHint": "The site answered, but not the way this bookmark expects",
     "healthFilterContent": "Content",

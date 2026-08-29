@@ -88,7 +88,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-health-focus.js":                 "e07d80aa42f6",
 	"js/dashboard/dashboard-health-loader.js":                "33eb0711375c",
 	"js/dashboard/dashboard-health-multi-select.js":          "9f24d6084efe",
-	"js/dashboard/dashboard-health.js":                       "b048b7a35dce",
+	"js/dashboard/dashboard-health.js":                       "9534fc37a0fb",
 	"js/dashboard/dashboard-inbox-loader.js":                 "33bb3eb39e3f",
 	"js/dashboard/dashboard-inbox-triage.js":                 "0cae9e4e855a",
 	"js/dashboard/dashboard-inbox.js":                        "4235f597e99c",

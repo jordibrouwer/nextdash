@@ -1368,7 +1368,6 @@
     "healthNoteMissingPreview": "Aucun titre, description ou image n'a encore été récupéré : ces lignes n'ont donc guère plus que leur adresse à montrer.",
     "healthNoteCertificates": "Ceux-ci sont sur un hôte dont le certificat TLS expire bientôt. Le compte ci-dessus porte sur les hôtes ; cette liste, sur les favoris qui s’y trouvent.",
     "healthNoteHealthy": "Rien ne cloche ici : joignables si elles sont vérifiées, ouvertes assez récemment, et sans conflit.",
-    "healthNoteAll": "Tous les favoris, quel que soit leur état. Triez par score pour faire remonter ce qui demande attention.",
     "healthTileContent": "Contenu",
     "healthTileContentHint": "Le site a répondu, mais pas comme ce favori l’attend",
     "healthFilterContent": "Contenu",

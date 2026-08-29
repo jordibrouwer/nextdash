@@ -125,3 +125,21 @@ test('the header no longer carries a settings button of its own', async ({ page 
     // heading and the rows.
     await expect(page.locator('.health-view-header .health-view-settings-link')).toHaveCount(0);
 });
+
+test('the filter sentence appears where it tells you something', async ({ page }) => {
+    await openHealth(page);
+
+    /*
+     * Every note explains a rule the pill has no room for -- what counts as
+     * stale, why a bookmark is called unused. Those earn their line.
+     *
+     * All is the exception: "Every bookmark, whatever its state" describes
+     * exactly what an unfiltered list looks like, to someone already looking at
+     * one. It is the one filter whose note is a line spent on nothing.
+     */
+    await page.locator('[data-health-filter="stale"]').click();
+    await expect(page.locator('.health-view-filter-note')).toBeVisible();
+
+    await page.locator('[data-health-filter="all"]').click();
+    await expect(page.locator('.health-view-filter-note')).toHaveCount(0);
+});

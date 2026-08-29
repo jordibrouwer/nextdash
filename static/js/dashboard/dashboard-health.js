@@ -3339,7 +3339,15 @@ class DashboardHealth {
             'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
             certificates: this.t('dashboard.healthNoteCertificates', 'These sit on a host whose TLS certificate expires soon. The count above is hosts; this list is the bookmarks on them.'),
             healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
-            all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
+            /*
+             * No note for All.
+             *
+             * The others name a rule the pill has no room for -- what makes a
+             * bookmark stale, why one counts as unused. "Every bookmark,
+             * whatever its state" names what an unfiltered list is, to someone
+             * already looking at one, and cost a line above every row to do it.
+             * The sorting tip it carried lives on the sort control itself.
+             */
         };
         return notes[filter] || '';
     }
