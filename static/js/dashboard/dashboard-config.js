@@ -904,7 +904,19 @@ class DashboardConfig {
                 this._bmContextMenu.handleEscape();
                 return;
             }
-            if (window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
+            /*
+             * The theme picker outranks a promo.
+             *
+             * A promo is ambient -- it appears on its own and is dismissed by
+             * doing almost anything. The picker was opened deliberately and is
+             * showing a live preview, so Escape means "cancel that". With the
+             * promo first, the ordinary case of an install that has not
+             * dismissed them yet ate the key: the first press cleared the
+             * promo, the picker stayed open still previewing, and only the
+             * second press closed it and put the theme back.
+             */
+            const pickerOpen = document.querySelector('[data-theme-picker-list]:not([hidden])');
+            if (!pickerOpen && window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 return;
