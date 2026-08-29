@@ -14,7 +14,7 @@
      *
      * DASHBOARD_RELEASE is the one that reopens this window: an install whose
      * stored value differs sees the notes once on its next visit. It stays on
-     * v1.4.2 through v1.4.2.1 and v1.4.2.2, both of which carry
+     * v1.4.2 through v1.4.2.1, v1.4.2.2 and v1.4.2.3, all three of which carry
      * `hideFromModal` — those releases count toward the version number and lead
      * Config -> Overview, but a round of additions to one tile should not
      * reopen the notes in front of readers who have just been shown a large
@@ -22,7 +22,7 @@
      *
      * NEXTDASH_WHATS_NEW_DATA_VERSION below is the `?v=` on every what's-new
      * file, and always has to move: without it a browser that already read the
-     * index keeps its copy and never learns v1.4.2.2 exists at all.
+     * index keeps its copy and never learns v1.4.2.3 exists at all.
      */
     const DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.2';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
@@ -33,7 +33,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v263';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v264';
 
     let loadPromise = null;
 

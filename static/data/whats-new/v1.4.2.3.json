@@ -1,0 +1,30 @@
+{
+  "tag": "v1.4.2.3",
+  "date": "29 August 2026",
+  "releasedAt": "2026-08-29",
+  "modalLead": "Any one guided tour can be asked for again without bringing back all the others, and every theme now carries the backdrop that suits it.",
+  "sections": [
+    {
+      "title": "Behavior",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Ask for one guided tour again.</strong> The tours &mdash; the welcome card, and the ones in <em>Health</em>, the inbox, <em>Fresh</em>, <em>Widgets</em> and the one about spreading a category across columns &mdash; each appear once and then never again. Wanting the Health one back meant pressing <em>Show quick-start card again</em>, which brings back all six and the welcome card with them. <strong>Config &rarr; Behavior &rarr; General</strong> now carries a button per tour under <em>Onboarding</em>: one click and that tour alone is waiting for you. None of them can play here &mdash; each belongs to the view it explains &mdash; so a message tells you where it will turn up. A tour you have not met yet is greyed out, since it is coming on its own anyway, and when <em>Show occasional keyboard tips</em> is off the panel says so rather than letting a click do nothing."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every theme brings the backdrop that suits it.</strong> The faint texture behind your bookmarks is part of a theme's character, but only fourteen of the 107 families ever chose one &mdash; the other ninety-three fell back to dots, so stepping through the theme browser changed the colours and left the page underneath looking the same. All of them now ask for what fits: hatch for the paper, cloth and earth ones like <em>Bone China</em>, <em>Wheat Field</em> and <em>Library Mahogany</em>; grid for the technical ones like <em>Copper Circuit</em>, <em>Emerald Matrix</em> and <em>Foundry Iron</em>; lines for the screens and the neon, <em>Terminal Amber</em>, <em>Midnight Neon</em>, <em>Chartreuse Static</em>; dots for the misty, watery and cool, <em>Nordic Frost</em>, <em>Harbour Fog</em>, <em>Sea Glass</em>. <em>Appearance &rarr; Backdrop</em> still overrides it on any theme, and <em>Follow the theme</em> now means something wherever you land."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A theme keeps its texture in both halves.</strong> Four families &mdash; the ones built to look like a screen &mdash; drew their scanlines in the dark and lost them the moment you switched to light, which made the light half look like an ordinary theme wearing the same name. Both halves match now."
+        }
+      ]
+    }
+  ]
+}
