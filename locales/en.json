@@ -1606,6 +1606,7 @@
     "healthHostGroup": "{host} — {count} bookmarks",
     "healthNoHost": "no address",
     "healthRot": "Rot report",
+    "healthToolbarMore": "More actions",
     "healthRotHint": "What has gone, moved or been failing for a long time",
     "healthRotTitle": "What has rotted",
     "healthRotMore": "…and {count} more",

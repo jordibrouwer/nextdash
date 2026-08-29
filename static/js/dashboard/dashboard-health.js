@@ -4216,7 +4216,6 @@ class DashboardHealth {
                         : ''}
                     ${this.renderReportAge()}
                 </div>
-                ${this.renderSettingsLink()}
             </div>
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
@@ -4225,10 +4224,6 @@ class DashboardHealth {
             e.preventDefault();
             e.stopPropagation();
             this.showTrendChart();
-        });
-        header.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.openStatusHealthSettings();
         });
         return header;
     }
@@ -4891,9 +4886,17 @@ class DashboardHealth {
                         title="${this.escape(this.t('dashboard.healthGroupByHostHint', 'One host down takes every bookmark on it with it. Grouped by site, that reads as one problem.'))}">${this.escape(this.t('dashboard.healthGroupByHost', 'Group by site'))}</button>
             </div>
             <div class="health-view-toolbar-actions">
-                <button type="button" class="health-view-focus-btn" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
-                <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
+                <button type="button" class="health-view-focus-btn health-view-focus-btn--primary" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
                 <button type="button" class="health-view-rot-btn" title="${this.escape(this.t('dashboard.healthRotHint', 'What has gone, moved or been failing for a long time'))}">${this.escape(this.t('dashboard.healthRot', 'Rot report'))}</button>
+                <button type="button" class="health-view-toolbar-more" data-health-toolbar-more
+                        data-menu-toggle="toolbar" data-menu-kind="toolbar"
+                        aria-haspopup="menu" aria-expanded="false"
+                        title="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}"
+                        aria-label="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}">⋯</button>
+                <div class="health-view-menu health-view-menu--toolbar" role="menu" hidden
+                     data-menu-for="toolbar" data-menu-owner="toolbar"
+                     aria-label="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}">
+                <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
                 ${this.renderHistoryExportButton()}
                 ${this.renderOpenBrokenButton()}
                 ${this.renderMergeDuplicateButton()}
@@ -4903,6 +4906,8 @@ class DashboardHealth {
                     ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                     : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
                 ${this.renderBulkEnableButtons()}
+                ${this.renderSettingsLink()}
+                </div>
                 <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                         aria-haspopup="dialog"
                         title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
@@ -4920,6 +4925,28 @@ class DashboardHealth {
 
         toolbar.querySelector('.health-view-rot-btn')?.addEventListener('click', () => {
             this.showRotReport();
+        });
+
+        /*
+         * The hamburger, and everything that moved behind it.
+         *
+         * Eight buttons stood on two lines between the filters and the first
+         * bookmark, of which Jordi named two he uses: Work through -- which
+         * keeps the first slot and its own styling -- and Rot report. The rest,
+         * plus the settings link that used to sit on the header, are one click
+         * away through the same menu machinery a row's ⋯ uses, so Escape,
+         * arrow keys and the outside-click dismiss come with it rather than
+         * being written a second time.
+         */
+        toolbar.querySelector('[data-health-toolbar-more]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMenu('toolbar', 'toolbar');
+        });
+
+        toolbar.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.closeAllMenus();
+            this.openStatusHealthSettings();
         });
 
         toolbar.querySelector('[data-health-help]')?.addEventListener('click', () => {

@@ -1606,6 +1606,7 @@
     "healthHostGroup": "{host} — {count} favoris",
     "healthNoHost": "sans adresse",
     "healthRot": "Rapport de pourrissement",
+    "healthToolbarMore": "Plus d’actions",
     "healthRotHint": "Ce qui a disparu, déménagé ou échoue depuis longtemps",
     "healthRotTitle": "Ce qui a pourri",
     "healthRotMore": "…et {count} de plus",

@@ -1606,6 +1606,7 @@
     "healthHostGroup": "{host} — {count} bookmarks",
     "healthNoHost": "geen adres",
     "healthRot": "Rot-rapport",
+    "healthToolbarMore": "Meer acties",
     "healthRotHint": "Wat er weg is, verhuisd is of al lang faalt",
     "healthRotTitle": "Wat er is weggerot",
     "healthRotMore": "…en nog {count}",

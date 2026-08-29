@@ -1606,6 +1606,7 @@
     "healthHostGroup": "{host} — {count} Lesezeichen",
     "healthNoHost": "keine Adresse",
     "healthRot": "Verfallsbericht",
+    "healthToolbarMore": "Weitere Aktionen",
     "healthRotHint": "Was weg ist, umgezogen ist oder lange fehlschlägt",
     "healthRotTitle": "Was verfallen ist",
     "healthRotMore": "…und {count} weitere",

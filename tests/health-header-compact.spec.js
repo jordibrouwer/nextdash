@@ -97,3 +97,31 @@ test('every filter pill is on screen without scrolling sideways', async ({ page 
     // A pill past the right edge is a filter the reader cannot see exists.
     expect(overflow.cut, JSON.stringify(overflow)).toEqual([]);
 });
+
+test('the rare actions are one click away, not eight buttons wide', async ({ page }) => {
+    await openHealth(page);
+
+    // The two Jordi named stay in the open, and so does the help button — that
+    // explains the view rather than acting on the list.
+    await expect(page.locator('.health-view-focus-btn')).toBeVisible();
+    await expect(page.locator('.health-view-rot-btn')).toBeVisible();
+    await expect(page.locator('.health-view-help-btn')).toBeVisible();
+
+    // Everything else waits behind the hamburger.
+    const more = page.locator('[data-health-toolbar-more]');
+    await expect(more).toBeVisible();
+    await expect(page.locator('.health-view-retest-btn')).toBeHidden();
+
+    await more.click();
+    for (const cls of ['.health-view-retest-btn', '.health-view-export-btn',
+        '.health-view-checkoff-btn', '.health-view-settings-link']) {
+        await expect(page.locator(cls), `${cls} missing from the menu`).toBeVisible();
+    }
+});
+
+test('the header no longer carries a settings button of its own', async ({ page }) => {
+    await openHealth(page);
+    // It moved into the menu; on the header it was one more thing between the
+    // heading and the rows.
+    await expect(page.locator('.health-view-header .health-view-settings-link')).toHaveCount(0);
+});

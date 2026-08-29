@@ -715,6 +715,9 @@ button.health-view-tile:hover .health-view-tile-value {
     flex-wrap: wrap;
     gap: 0.55rem;
     flex-basis: 100%;
+    /* The anchor for the ⋯ menu, which is absolutely placed like the row
+       menus it borrows its markup from. */
+    position: relative;
 }
 
 /* One row, always. It used to wrap, which turned the strip into a block and
@@ -2802,3 +2805,102 @@ body[data-layout-version="modern"] .health-view-empty {
     white-space: nowrap;
 }
 
+/*
+ * The toolbar's own ⋯, and what sits behind it.
+ *
+ * Eight buttons stood on two lines between the filters and the first bookmark.
+ * Two stay out — Work through, which is the reason to be on this screen at all,
+ * and Rot report — and the rest wait here with the settings link that used to
+ * live on the header.
+ *
+ * The menu reuses .health-view-menu wholesale, so it inherits the row menu's
+ * placement, elevation and keyboard behaviour; only the anchor differs, which
+ * is why the action row has to establish a positioning context.
+ */
+/*
+ * Sized to the buttons it stands among rather than to itself.
+ *
+ * Left to its own padding it came out 30x24 against their 34px, which on a row
+ * of soft-cornered buttons reads as a rendering fault rather than a control.
+ * The glyph is set larger than the labels beside it because three dots at
+ * 0.8rem are three specks.
+ */
+.health-view-toolbar-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.health-view-toolbar-more:hover,
+.health-view-toolbar-more[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    color: var(--text-primary);
+}
+
+.health-view-toolbar-more:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* Anchored to the ⋯ rather than to a row, and wide enough for the longest
+   label ("Turn checking off for all 12 shown") without wrapping to two lines. */
+.health-view-menu--toolbar {
+    left: auto;
+    right: 0;
+    min-width: 14rem;
+}
+
+/* Inside the menu the buttons are menu items, whatever they look like on a
+   toolbar: full width, left aligned, no box of their own. */
+.health-view-menu--toolbar > button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.4rem 0.7rem;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.health-view-menu--toolbar > button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.health-view-menu--toolbar > button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* The settings link is the one entry that leaves the view rather than acting
+   on the list, so it sits under a rule instead of among the actions. */
+.health-view-menu--toolbar > .health-view-settings-link {
+    margin-top: 0.3rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+}
+
+/* Work through is why anyone opens this view; it reads as the one thing to do
+   rather than the first of several. */
+.health-view-focus-btn--primary {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    font-weight: var(--font-weight-semibold);
+}
+
+.health-view-focus-btn--primary:hover {
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
+}
