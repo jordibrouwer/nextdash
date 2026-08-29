@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.2.4 — 29 August 2026](#v1424--29-august-2026)
 - [v1.4.2.3 — 29 August 2026](#v1423--29-august-2026)
 - [v1.4.2.2 — 29 August 2026](#v1422--29-august-2026)
 - [v1.4.2.1 — 28 August 2026](#v1421--28-august-2026)
@@ -185,6 +186,65 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.4.2.4 — 29 August 2026
+
+The browser's Back button works, a triage run can be finished, and the two
+list views lost the wall of controls between their heading and their first row.
+
+### Navigation
+
+- **new** — **Back and Forward move through nextDash.** Opening the inbox, health or config, or switching bookmark page, now leaves a history entry. Before, none of it did: `history.length` never moved, so Back stripped the address bar and left the view standing — the URL said one thing and the screen another. Worse, from a full-container view a numeric hash was actively reverted, so Back to a bookmarks page did nothing at all.
+
+  What counts as a step is deliberately narrow. **A filter is not a step**: change the inbox filter three times and one Back leaves the inbox rather than walking back through them. **A config section is not a step either** — a config visit is a rummage through several sections, and an entry each would turn one Back into six, so Back leaves config the way `Escape` does.
+
+  Two things it does not do, recorded rather than discovered: Back does not close a modal, and refusing the "discard your unsaved changes" dialog during a Back leaves the address bar one step ahead of the screen. The edit stays where it is; the next navigation puts the address right.
+
+### Inbox
+
+- **fix** — **a triage run can be finished.** Three faults at once. The queue held every link the filter showed **including ones already read**, so an inbox of 5 unread and 35 read handed back all 40 and asked you to decide again on work already done; it now walks only the unread, with the active filter still applying. The last card **ends the run** — "That is the lot. You went through 12 links." — instead of silently looping back to the first. And promoting a link **returns you to the run** where you left it: before, promoting closed triage, so clearing a backlog of 40 meant pressing `t` forty times.
+
+- **new** — **the inbox header reads like the health view's.** The two are siblings — same pills, same `j`/`k`, same shape of list — so the work that pulled health's rows up the page reached the inbox too. The count moved down to the subtitle line, where it sits level with health's score badge instead of a line above it. **Triage** and a new **⋯** get their own full-width row under the filters, so the button that matters most is where its health counterpart is. Mark read, Clear read, CSV, JSON, Import and Stats moved behind the ⋯, and the **ℹ** went to the far right where it cannot be hit while reaching for an action.
+
+- **fix** — **five things the inbox knew and did not say.** Rows show **where a link came from** — extension, import, share sheet — with `paste` left unlabelled, since that is how most links arrive and saying so on every row is noise. A **weekly trend line** reads "N arrived and N were dealt with this week", with a link through to the full chart. **Mark unread** and **tags** were right-click only, which a phone has not got: they are now `u` and `l`, both listed in the keyboard legend. An empty filtered list gains a **Clear filters** button. And a tag filter matching nothing no longer claims "Inbox zero, nothing is waiting" while the links sit there hidden — the empty-state check counted the search box and the site filter and forgot the tag.
+
+- **fix** — **the promote rate counts what left, not what was read.** It is labelled "of the links you decided on, how many became bookmarks", but the denominator also held every mark-read — and a link marked read is still sitting in the inbox with the decision to come. Two consequences: links that had gone nowhere counted as decisions, and any link read before being promoted counted twice. A store of **40 added links reported 43 of them decided**. Promoted and deleted are the two ways a link leaves, and they are the whole denominator now. The figure on your install will change, in some cases substantially.
+
+### Health
+
+- **fix** — **the summary reads as a line, not a wall of cards.** Ten bordered tiles became one compact strip of figures, **asserted under 48 pixels tall**. Six of the ten repeated a filter pill sitting directly beneath them. Clicking a figure still filters, and the strip wraps rather than scrolling sideways.
+
+- **fix** — **every filter is on screen.** The pill row wrapped instead of scrolling: at 1280 pixels **four filters — Missing category, Missing preview, Certificates and Healthy — were cut off past the right edge** with nothing to say they existed. Fifteen pills, roughly seven visible. The one-time "this row scrolls" hint went with it, since there is nothing left to explain.
+
+- **new** — **the toolbar keeps what you use and files the rest.** *Work through* and *Rot report* stay on the bar; Export rows, Re-test, Checking off, Open broken, Merge duplicates, the bulk-enable buttons and the settings link moved behind a **⋯**. Eight buttons across two lines became two and a menu. The menu opens **under its own button** rather than at the window's far edge, where it read as belonging to something else.
+
+- **fix** — **the filter note explains a filter you chose.** "Every bookmark, whatever its state" told a reader of an unfiltered list what they were already looking at. It stays on every other filter, where it explains a real rule — what makes a bookmark stale, why one counts as unused.
+
+- **fix** — **three ways the view moved without being asked.** A **re-check finishing after you left** no longer wipes the bookmark grid and paints the health list over it: health owns the app's slow work, a re-check of an unreachable host runs 10-20 seconds, and the render that landed afterwards never checked whether health was still on screen. The **Monitored list keeps your place** across its sixty-second refresh and its refresh on returning to the tab — measured, a reader at 400 pixels was put back at 266. And the **duplicate-group menu** no longer leaves a click handler bound for the life of the page, or a merge waiting on a promise that never settles, when a re-render takes it away.
+
+### Config
+
+- **fix** — **previewing a theme shows that theme's backdrop.** Scrolling the themes changed the colours and left the texture behind, so the preview showed a new palette wearing the old theme's pattern — a combination matching no theme at all. The backdrop's *shape* (scanlines, grid, hatch, dots) is chosen by rules that key on the theme's name, and the preview kept the old name. Both routes were affected, the dropdown and **Browse…**; picking **Random** never was, and that is what pointed at the fix.
+
+- **fix** — **`Escape` closes the theme picker on the first press.** With a promo card on screen — the ordinary state until they have been dismissed — the first press cleared the promo and left the picker open, still previewing; only a second press closed it and put your theme back. The picker was opened deliberately and is showing a live preview, so it takes the key first.
+
+- **fix** — **four ways config said one thing and did another.** One click on **Export** produced **two CSV files**, every stats action button having been given two click listeners. Changing an **Appearance** control dropped focus to the page body, so the next `Tab` restarted at the top. Switching page **threw away unsaved Widget edits** without asking — Widgets being the one section that does not save as you go — and now asks, putting the page selector back if you decline. And the **archive URL** said "Saved" while the server had quietly substituted the default, which it does when the address carries no `{url}` placeholder; the field now shows what was actually stored.
+
+- **fix** — **eight settings can tell you they changed.** A setting with no declared default reports itself unchanged whatever it holds, so it never offered its **↺** and never counted towards the Overview's "N settings differ from the default". Of the **93 fields the Behavior schema renders, 90 had a default and nine did not**; eight now do. *Keep settings on this device only* stays the documented exception, since it lives in this browser rather than in the settings file and there is no stored default to compare against.
+
+### Housekeeping
+
+- **fix** — the inline bookmark editor is gone: **757 lines of JavaScript and 193 of CSS** that could not run. Editing moved to a modal long ago and left the old editor behind with its gate permanently shut. Nothing changes on screen.
+
+### Docs
+
+- **`hideFromModal` is lifted from every release that carried it** — v1.4.2.1, v1.4.2.2, v1.4.2.3 and v1.2.1. Each was held back while it was fresh, so a round of additions would not push aside a large release. Four had accumulated, which is more than the flag was meant to cover: between them they hold the **guided-tour replay** and **every theme's backdrop**, neither of which is a footnote. They are announced now, along with v1.4.2.4 itself, so the modal says what this changelog has said all along.
+
+- Release notes `static/data/whats-new/v1.4.2.4.json` and its `index.json` entry, the constants spec, this changelog, `MANUAL.md` §4.5, and the Config → Help navigation and keyboard paragraphs in all four locales.
+
+- **Both tokens move.** `DASHBOARD_RELEASE` goes to `v1.4.2.4` — with nothing held back, the modal leads with the newest release and an install whose stored value is older sees the notes once. `NEXTDASH_WHATS_NEW_DATA_VERSION` goes to `whats-new-v265`, without which a browser holding the old index never learns v1.4.2.4 exists.
+
+- **A patch on the v1.4.2 line**, not a minor release. The work here is corrections and two additions to views that already existed; nothing changes what nextDash is. v1.4.3 stays unused — that number was taken by a round later corrected to v1.4.2.2, and reusing it would make two different sets of notes answer to one tag.
 
 ## v1.4.2.3 — 29 August 2026
 

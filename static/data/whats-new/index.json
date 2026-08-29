@@ -1,24 +1,27 @@
 [
   {
+    "id": "v1.4.2.4",
+    "tag": "v1.4.2.4",
+    "date": "29 August 2026",
+    "releasedAt": "2026-08-29"
+  },
+  {
     "id": "v1.4.2.3",
     "tag": "v1.4.2.3",
     "date": "29 August 2026",
-    "releasedAt": "2026-08-29",
-    "hideFromModal": true
+    "releasedAt": "2026-08-29"
   },
   {
     "id": "v1.4.2.2",
     "tag": "v1.4.2.2",
     "date": "29 August 2026",
-    "releasedAt": "2026-08-29",
-    "hideFromModal": true
+    "releasedAt": "2026-08-29"
   },
   {
     "id": "v1.4.2.1",
     "tag": "v1.4.2.1",
     "date": "28 August 2026",
-    "releasedAt": "2026-08-28",
-    "hideFromModal": true
+    "releasedAt": "2026-08-28"
   },
   {
     "id": "v1.4.2",
@@ -102,8 +105,7 @@
     "id": "v1.2.1",
     "tag": "v1.2.1",
     "date": "17 August 2026",
-    "releasedAt": "2026-08-17",
-    "hideFromModal": true
+    "releasedAt": "2026-08-17"
   },
   {
     "id": "v1.2.0",
