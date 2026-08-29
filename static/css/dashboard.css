@@ -5653,7 +5653,16 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-row {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    /*
+     * The name takes the slack, so the figure beside it does not.
+     *
+     * space-between put the gap wherever the name stopped, which left the
+     * numbers down the column starting at four different places -- barely
+     * visible on a narrow tile and plainly crooked on a wide one, since a
+     * wider tile gives the names more room to differ. Measured at 640px the
+     * spread was 63px, and the rule below this one already promised these were
+     * "lined up down the column".
+     */
     gap: 10px;
     width: 100%;
     /* Taller than it was: these rows sit under a block of figures now, and a
@@ -5688,14 +5697,22 @@ button.dashboard-widget-row.keyboard-selected {
 }
 
 .dashboard-widget-row-name {
+    /* min-width:0 or the ellipsis never happens: a flex item will not shrink
+       below the width of its own text without it. */
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-/* The number or the verdict, kept on one line and lined up down the column. */
+/* The number or the verdict, kept on one line and lined up down the column.
+   The width is a floor rather than a fixed size, so "100.0%" and "down" end at
+   the same edge without either being clipped. */
 .dashboard-widget-row-detail {
     flex: none;
+    min-width: 3.4rem;
+    text-align: right;
     font-variant-numeric: tabular-nums;
     color: var(--text-tertiary);
 }
