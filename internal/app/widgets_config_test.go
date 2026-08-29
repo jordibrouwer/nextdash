@@ -211,3 +211,47 @@ func TestEveryRegisteredTypeIsOffered(t *testing.T) {
 		}
 	}
 }
+
+/*
+A shape survives being saved, and a meter survives only where it means anything.
+
+The sanitiser builds a fresh object rather than narrowing the one it was given,
+so a setting it does not name is dropped -- silently, and only visible as a
+choice that would not stick. That is exactly what happened to the shape before
+this: the panel offered it, the tile could draw it, and the save threw it away
+in between.
+*/
+func TestSanitizeCustomWidgetFieldsKeepsShape(t *testing.T) {
+	fields := sanitizeCustomWidgetFields([]any{
+		map[string]any{"path": "cpu", "format": "percent", "shape": "meter", "tone": "bad"},
+		map[string]any{"path": "queries", "format": "count", "shape": "meter"},
+		map[string]any{"path": "name", "format": "text", "shape": "large"},
+		map[string]any{"path": "plain", "format": "count", "shape": "normal"},
+		map[string]any{"path": "odd", "format": "count", "shape": "sideways"},
+	})
+	if len(fields) != 5 {
+		t.Fatalf("got %d fields, want 5", len(fields))
+	}
+	get := func(i int, key string) string {
+		entry, _ := fields[i].(map[string]any)
+		value, _ := entry[key].(string)
+		return value
+	}
+	if get(0, "shape") != "meter" || get(0, "tone") != "bad" {
+		t.Errorf("a meter over a percentage was not kept: %v", fields[0])
+	}
+	// A bar with no whole to be a share of, and a shape nobody offers.
+	if got := get(1, "shape"); got != "" {
+		t.Errorf("a meter over a count was kept: %q", got)
+	}
+	if got := get(4, "shape"); got != "" {
+		t.Errorf("a shape nobody offers was kept: %q", got)
+	}
+	if get(2, "shape") != "large" {
+		t.Errorf("large was not kept: %v", fields[2])
+	}
+	// normal is the absence of a shape, so it is not worth storing.
+	if got := get(3, "shape"); got != "" {
+		t.Errorf("normal was written out rather than left off: %q", got)
+	}
+}

@@ -68,6 +68,40 @@ var customWidgetFormats = map[string]bool{
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
 }
 
+/*
+customWidgetShapes are the ways a figure may be drawn, as opposed to written.
+
+A tile of figures all the same size is a list of numbers the reader has to
+weigh themselves; the shape is what says which one they came for. Four, because
+the useful distinctions are "the one that matters", "the rest", "context for
+the rest", and "a proportion", and a fifth would be a preference rather than a
+difference.
+
+meter is not offered for every format. It draws a share of a whole, and only a
+percentage carries its own whole -- 1 049 808 blocked is not a proportion of
+anything this widget is allowed to work out, since working it out is the
+expression language this deliberately does not have.
+*/
+var customWidgetShapes = map[string]bool{
+	"large": true, "normal": true, "small": true, "meter": true,
+}
+
+/*
+customWidgetTones say which way a meter reads.
+
+The same bar means opposite things on two tiles: ninety per cent of a disk is
+bad news and ninety per cent of queries answered from cache is good. Nothing in
+the number says which, so the widget is told rather than left to guess.
+
+The colours themselves are never chosen here -- the browser paints them from
+the theme's own tokens, which every one of the themes defines. A widget that
+picked a green would be a widget that looks wrong on the themes whose palette
+has no room for it.
+*/
+var customWidgetTones = map[string]bool{
+	"good": true, "bad": true, "neutral": true,
+}
+
 // CustomWidgetValue is one figure as the tile should show it.
 type CustomWidgetValue struct {
 	Label string `json:"label"`
@@ -78,6 +112,14 @@ type CustomWidgetValue struct {
 	// Missing says the path found nothing. Different from a value of zero,
 	// which is a fact.
 	Missing bool `json:"missing,omitempty"`
+	// Shape and Tone are how to draw it. Empty means the tile decides, which is
+	// what every widget saved before these existed says.
+	Shape string `json:"shape,omitempty"`
+	Tone  string `json:"tone,omitempty"`
+	// Share is the meter's fill, 0..1, and is set only for a meter. Computed
+	// here because the browser would otherwise have to parse "42%" back out of
+	// the string this already formatted.
+	Share float64 `json:"share,omitempty"`
 }
 
 // CustomWidgetResult is what the tile draws.
@@ -150,6 +192,11 @@ type customFieldSpec struct {
 	Path   string
 	Label  string
 	Format string
+	// Shape is how the figure is drawn; Tone which way a meter reads. Both are
+	// presentation, and both are optional: a field that says neither is drawn
+	// the way every figure was drawn before there were shapes.
+	Shape string
+	Tone  string
 }
 
 // customWidgetSpec is the stored config, read into something typed.
@@ -218,10 +265,26 @@ func customWidgetSpecFrom(config map[string]any) (customWidgetSpec, error) {
 		if !customWidgetFormats[format] {
 			format = "text"
 		}
+		shape := strings.TrimSpace(stringOr(entry["shape"]))
+		if !customWidgetShapes[shape] {
+			shape = ""
+		}
+		// A meter over anything but a percentage would be a bar drawn against a
+		// whole nobody stated, so the shape is dropped rather than honoured and
+		// the figure is written out as it always was.
+		if shape == "meter" && format != "percent" {
+			shape = ""
+		}
+		tone := strings.TrimSpace(stringOr(entry["tone"]))
+		if !customWidgetTones[tone] {
+			tone = ""
+		}
 		spec.Fields = append(spec.Fields, customFieldSpec{
 			Path:   path,
 			Label:  trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60),
 			Format: format,
+			Shape:  shape,
+			Tone:   tone,
 		})
 	}
 
@@ -352,6 +415,21 @@ func formatCustomValue(raw any, format string) string {
 		}
 	}
 	return trimToLength(fmt.Sprint(raw), 120)
+}
+
+/*
+meterShare turns a percentage into a bar's fill, 0..1.
+
+The same ratio-or-percentage reading the percent format uses, for the same
+reason: both turn up in the wild and 0..1 is unambiguous enough. Clamped at
+both ends, because a service reporting 104% of a quota is reporting something
+true and a bar wider than its track is not a way to say it.
+*/
+func meterShare(number float64) float64 {
+	if number > 0 && number <= 1 {
+		number *= 100
+	}
+	return math.Max(0, math.Min(1, number/100))
 }
 
 // trimTrailingZeroDecimal drops a ".0" tail so a whole percentage reads as
@@ -578,6 +656,16 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 		} else {
 			value.Raw = found
 			value.Value = formatCustomValue(found, field.Format)
+		}
+		value.Shape = field.Shape
+		value.Tone = field.Tone
+		// A meter needs its fill as a number, and only the percent format has
+		// one to give. A missing value keeps its shape but fills nothing: an
+		// empty track says "no answer" where a full one would say zero.
+		if field.Shape == "meter" && !value.Missing {
+			if number, ok := toFloat(found); ok {
+				value.Share = meterShare(number)
+			}
 		}
 		result.Values = append(result.Values, value)
 	}

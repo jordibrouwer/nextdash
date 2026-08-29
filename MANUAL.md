@@ -1031,6 +1031,16 @@ the only widget that talks to anything outside.
   or *Text*. Sizes step through KB and MB, a ratio between 0 and 1 is read as a
   percentage, *Milliseconds* takes a value in seconds and shows whole
   milliseconds, and a date arrives as seconds, milliseconds or an ISO string.
+- **Size per figure** — *Normal*, *Large*, *Small* or *Bar*, so a tile of
+  figures is not a list you have to weigh yourself: the one you came for is
+  bigger than the ones giving it context. *Bar* is offered on a percentage only,
+  because a bar draws a share of a whole and a count carries no whole to be a
+  share of. Its colour comes from your theme, and says whether high is good news
+  — a full disk and a full cache do not mean the same thing.
+- **Started from a service?** Then the sizes are filled in for you, and a widget
+  you saved before this existed takes them too. Anything you pick yourself
+  wins. A few services ask for two columns where the figures earn it — granted
+  only when your dashboard is showing two.
 - **Or a list instead of figures** — point at an array and the tile draws its
   entries as rows, up to twenty: the downloads running now, the last few errors.
 - **Refresh every** — anywhere between 30 seconds and a day, five minutes by

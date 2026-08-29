@@ -15261,6 +15261,23 @@ class DashboardConfig {
     static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
 
     /*
+     * How a figure is drawn, as opposed to what it says.
+     *
+     * Four, because the useful distinctions are the one that matters, the rest,
+     * context for the rest, and a proportion. A meter is only offered on a
+     * percentage: it draws a share of a whole, and a count carries no whole for
+     * it to be a share of -- working one out is the arithmetic this widget
+     * deliberately cannot do.
+     */
+    static CUSTOM_SHAPES = ['normal', 'large', 'small', 'meter'];
+
+    /** Which shapes a format can wear. */
+    static shapesFor(format) {
+        return DashboardConfig.CUSTOM_SHAPES.filter(
+            (shape) => shape !== 'meter' || format === 'percent');
+    }
+
+    /*
      * The id this widget's own key is filed under.
      *
      * Derived from the widget rather than typed, because naming a secret is a
@@ -15586,6 +15603,16 @@ class DashboardConfig {
         const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
             `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
                 this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+        /*
+         * The shapes this format can wear, which is all of them but the meter.
+         *
+         * Left out rather than greyed out: an option that cannot be chosen on
+         * six formats out of seven is a question the reader has to answer every
+         * time they look at the row, and the answer is always the same.
+         */
+        const shapeOptions = (format, selected) => DashboardConfig.shapesFor(format).map((shape) =>
+            `<option value="${esc(shape)}" ${shape === selected ? 'selected' : ''}>${esc(
+                this.t(`config.widgetShape.${shape}`, shape))}</option>`).join('');
 
         /*
          * A header row, because three unlabelled boxes side by side is a puzzle.
@@ -15599,6 +15626,7 @@ class DashboardConfig {
                     <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
                     <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
                     <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
                     <span></span>
                 </div>` : '';
 
@@ -15616,6 +15644,10 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
                     formatOptions(field?.format || 'text')}</select>
+                <select class="config-select" data-custom-field="shape" data-custom-index="${index}"
+                    data-custom-row="${row}"
+                    aria-label="${esc(this.t('config.widgetCustomShape', 'Size'))}">${
+                    shapeOptions(field?.format || 'text', field?.shape || 'normal')}</select>
                 <button type="button" class="config-btn config-btn--small config-btn--danger"
                     data-custom-remove="${row}" data-custom-index="${index}"
                     aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
@@ -16147,12 +16179,21 @@ class DashboardConfig {
 
             const field = target.closest('[data-custom-field]');
             if (field) {
-                this.updateWidgetDraftField(
-                    indexOn(field, 'data-custom-index'),
-                    indexOn(field, 'data-custom-row'),
-                    field.getAttribute('data-custom-field'),
-                    field.value);
-                this.refreshWidgetSaveBar(indexOn(field, 'data-custom-index'));
+                const which = field.getAttribute('data-custom-field');
+                const at = indexOn(field, 'data-custom-index');
+                this.updateWidgetDraftField(at, indexOn(field, 'data-custom-row'), which, field.value);
+                /*
+                 * Changing the format changes which shapes are on offer, and a
+                 * meter left selected on a format that cannot carry one would
+                 * be a choice the server then drops without saying so. Redrawn
+                 * rather than patched in place: this is a dropdown being
+                 * changed, so there is no caret to lose.
+                 */
+                if (which === 'format') {
+                    this.dropMeterOnNonPercent(at, indexOn(field, 'data-custom-row'));
+                    this.repaintWidgetsBody();
+                }
+                this.refreshWidgetSaveBar(at);
                 return;
             }
 
@@ -16224,6 +16265,21 @@ class DashboardConfig {
         if (revert) revert.disabled = !dirty;
         const state = bar.querySelector('[data-widget-save-state]');
         if (state) state.textContent = dirty ? this.t('config.widgetUnsaved', 'Not saved yet') : '';
+    }
+
+    /*
+     * A meter cannot survive its format changing away from a percentage.
+     *
+     * Dropped here rather than left for the server to ignore: a row still
+     * reading "meter" over a count says the tile will draw one, and it will
+     * not. Better to show the reader what they are actually going to get.
+     */
+    dropMeterOnNonPercent(index, row) {
+        const field = this.widgetDraft(index)?.config?.fields?.[row];
+        if (field?.shape === 'meter' && field.format !== 'percent') {
+            delete field.shape;
+            delete field.tone;
+        }
     }
 
     /** Everything the server needs to store, from what is on screen. */

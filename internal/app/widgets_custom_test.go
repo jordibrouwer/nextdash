@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -70,6 +71,71 @@ func TestCustomWidgetFormatting(t *testing.T) {
 	for _, c := range cases {
 		if got := formatCustomValue(c.raw, c.format); got != c.want {
 			t.Errorf("%v as %s = %q, want %q", c.raw, c.format, got, c.want)
+		}
+	}
+}
+
+/*
+A shape is presentation, and a meter is presentation with a precondition.
+
+The precondition is the point: a bar draws a share of a whole, and only a
+percentage carries its own whole. Asking for one over a count is asking the
+widget to work out a denominator, which is the expression language it does not
+have -- so the shape is dropped and the figure is written out instead.
+*/
+func TestCustomWidgetShapes(t *testing.T) {
+	spec, err := customWidgetSpecFrom(map[string]any{
+		"url": "http://service.test/stats",
+		"fields": []any{
+			map[string]any{"path": "cpu", "format": "percent", "shape": "meter", "tone": "bad"},
+			map[string]any{"path": "queries", "format": "count", "shape": "meter"},
+			map[string]any{"path": "name", "format": "text", "shape": "large"},
+			map[string]any{"path": "other", "format": "count", "shape": "sideways"},
+			map[string]any{"path": "toned", "format": "percent", "shape": "meter", "tone": "purple"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("the config was refused: %v", err)
+	}
+	if len(spec.Fields) != 5 {
+		t.Fatalf("got %d fields, want 5", len(spec.Fields))
+	}
+	if spec.Fields[0].Shape != "meter" || spec.Fields[0].Tone != "bad" {
+		t.Errorf("a meter over a percentage was not kept: %+v", spec.Fields[0])
+	}
+	// The two that must not survive, each for its own reason.
+	if spec.Fields[1].Shape != "" {
+		t.Errorf("a meter over a count was kept: %q", spec.Fields[1].Shape)
+	}
+	if spec.Fields[3].Shape != "" {
+		t.Errorf("a shape nobody offers was kept: %q", spec.Fields[3].Shape)
+	}
+	if spec.Fields[4].Tone != "" {
+		t.Errorf("a tone nobody offers was kept: %q", spec.Fields[4].Tone)
+	}
+	// And the one that is simply allowed.
+	if spec.Fields[2].Shape != "large" {
+		t.Errorf("large was not kept: %q", spec.Fields[2].Shape)
+	}
+}
+
+// A bar's fill, from either of the two ways a service states a percentage.
+func TestCustomWidgetMeterShare(t *testing.T) {
+	cases := []struct {
+		raw  float64
+		want float64
+	}{
+		{0.42, 0.42},
+		{42, 0.42},
+		{0, 0},
+		{100, 1},
+		// Past the end at both ends: true of the service, not drawable as a bar.
+		{104, 1},
+		{-5, 0},
+	}
+	for _, c := range cases {
+		if got := meterShare(c.raw); math.Abs(got-c.want) > 0.0001 {
+			t.Errorf("meterShare(%v) = %v, want %v", c.raw, got, c.want)
 		}
 	}
 }

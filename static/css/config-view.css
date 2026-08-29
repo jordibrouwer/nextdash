@@ -5887,14 +5887,29 @@ button.config-bm-shortcut-pill {
     flex-wrap: wrap;
 }
 
-/* Path, label, format, remove — the same track sizes for the header and every
-   row, so the columns line up down the list. */
+/* Path, label, format, size, remove — the same track sizes for the header and
+   every row, so the columns line up down the list. */
 .config-custom-head,
 .config-custom-field {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(7rem, auto) auto;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(6.5rem, auto) minmax(5.5rem, auto) auto;
     gap: 8px;
     align-items: center;
+}
+
+/*
+ * The controls have to be allowed to shrink, or they push each other over.
+ *
+ * A grid track of minmax(0, 2fr) says the column may be narrow; it does not
+ * say the input inside it may be. An <input> carries an intrinsic width of its
+ * own -- around 200px -- and holds the track open at that width whatever the
+ * track was told, so with five controls in the row the last of them ended up
+ * drawn on top of the one before it. Measured rather than reasoned about:
+ * without this the row overlaps at 520px and still overlaps at 720px.
+ */
+.config-custom-field > .config-text,
+.config-custom-field > .config-select {
+    min-width: 0;
 }
 
 .config-custom-head > span {

@@ -439,6 +439,25 @@ func sanitizeCustomWidgetFields(raw any) []any {
 		if label := trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60); label != "" {
 			clean["label"] = label
 		}
+		/*
+		 * How the figure is drawn, kept on the same terms as the format.
+		 *
+		 * This builds a fresh object rather than narrowing the one that came
+		 * in, so anything not named here is dropped -- which is the point of
+		 * the function and the reason a new setting has to be added in two
+		 * places: here, where it is stored, and in the spec, where it is read.
+		 *
+		 * A meter over anything but a percentage is refused for the same
+		 * reason it is refused when read: the bar would be a share of a whole
+		 * nobody stated.
+		 */
+		shape := strings.TrimSpace(stringOr(entry["shape"]))
+		if customWidgetShapes[shape] && shape != "normal" && (shape != "meter" || format == "percent") {
+			clean["shape"] = shape
+			if tone := strings.TrimSpace(stringOr(entry["tone"])); customWidgetTones[tone] {
+				clean["tone"] = tone
+			}
+		}
 		out = append(out, clean)
 	}
 	if len(out) == 0 {

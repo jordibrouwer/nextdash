@@ -181,6 +181,51 @@ test.describe('the custom widget explains its refresh interval', () => {
 });
 
 /*
+ * How a figure is drawn, as opposed to what it says.
+ *
+ * A tile whose figures are all the same size is a list of numbers the reader
+ * has to weigh themselves. The shape is what says which one they came for --
+ * and the meter is the one with a precondition, because a bar draws a share of
+ * a whole and only a percentage carries its own whole.
+ */
+test.describe('a figure can be given a shape', () => {
+    test('the size box offers a bar on a percentage and not on a count', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addWidget(page, 'custom');
+        const row = page.locator(`[data-widget-row="${index}"]`);
+        // Glances: three percentages, so the meter is on offer from the start.
+        await row.locator('[data-widget-preset]').selectOption('glances');
+        const shape = row.locator('[data-custom-field="shape"]').first();
+        await expect(shape).toBeVisible();
+        await expect(shape.locator('option[value="meter"]')).toHaveCount(1);
+
+        // Move that same figure off percent and the bar has to go with it: a
+        // row still reading "bar" over a count promises a bar nobody draws.
+        await row.locator('[data-custom-field="format"]').first().selectOption('count');
+        await expect(row.locator('[data-custom-field="shape"]').first()
+            .locator('option[value="meter"]')).toHaveCount(0);
+    });
+
+    test('a chosen shape is what gets stored', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addWidget(page, 'custom');
+        const row = page.locator(`[data-widget-row="${index}"]`);
+        await row.locator('[data-widget-preset]').selectOption('traefik');
+
+        const shape = row.locator('[data-custom-field="shape"]').first();
+        await shape.selectOption('large');
+        await shape.blur();
+        await row.locator('[data-widget-save]').click();
+
+        await expect.poll(() => page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const blocks = await (await f('/api/pages/1/blocks')).json();
+            return ((blocks.widgets || []).at(-1)?.config?.fields || [])[0]?.shape;
+        }), { timeout: 10_000 }).toBe('large');
+    });
+});
+
+/*
  * Editing a figure that is already on a custom widget.
  *
  * The Save button is gated on the draft differing from what is stored, and

@@ -5865,6 +5865,55 @@ button.dashboard-widget-row--more {
     color: var(--text-tertiary);
 }
 
+/*
+ * Four shapes, so a tile of figures is not a list the reader has to weigh.
+ *
+ * Size carries the ranking and nothing else does: no borders, no boxes, no
+ * second colour. A figure that matters is bigger than one that gives it
+ * context, which is the whole of what the reader needs to be told and is
+ * legible on every theme, because it asks the palette for nothing.
+ */
+.dashboard-widget-figure--large .dashboard-widget-figure-value {
+    font-size: 2.1em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.dashboard-widget-figure--small .dashboard-widget-figure-value {
+    font-size: 1em;
+    color: var(--text-secondary);
+}
+
+/* A meter needs its own column: the bar belongs under the number it measures,
+   at the width of the figure rather than of the tile. */
+.dashboard-widget-figure--meter {
+    flex: 1 1 8rem;
+    min-width: 6rem;
+}
+
+.dashboard-widget-figure--meter .dashboard-widget-meter {
+    margin-top: 6px;
+}
+
+/*
+ * Wide enough to put the headline figure on its own line.
+ *
+ * The same breakpoint the panel's other layouts use, and for the same reason:
+ * it answers to the width the tile was given, not to the columns the dashboard
+ * was asked for. A widget set to two columns that the grid narrowed back to one
+ * never reaches this, which is the point -- the figures stay stacked rather
+ * than being spread across a width that is not there.
+ */
+@container (min-width: 22rem) {
+    .dashboard-widget-panel .dashboard-widget-figures {
+        gap: 14px 26px;
+    }
+
+    .dashboard-widget-panel .dashboard-widget-figure--large {
+        flex-basis: 100%;
+    }
+}
+
 .dashboard-widget-asof {
     margin: 8px 0 0;
     color: var(--text-tertiary);
