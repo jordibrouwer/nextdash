@@ -574,61 +574,71 @@
 /* ─── Summary tiles ─────────────────────────────────────────────────────── */
 
 /* One row: equal-width tiles that scroll horizontally on narrow viewports. */
+/*
+ * The summary, as a line rather than a wall.
+ *
+ * Ten cards stood between the heading and the first bookmark, and six of them
+ * repeated a filter pill sitting directly below. Asked which he used, Jordi
+ * reads these and rarely clicks them -- so they are a readout, and a readout
+ * does not need a card each. They are still buttons, and clicking one still
+ * filters; what went is the box around it.
+ *
+ * Wrapping rather than scrolling: at one line's height a wrap almost never
+ * fires, where the scroll it replaces hid tiles off the right edge with nothing
+ * to say they were there.
+ */
 .health-view-tiles {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.9rem;
     min-width: 0;
     max-width: 100%;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: thin;
     padding: 0 0.35rem;
 }
 
 .health-view-tile {
-    display: flex;
-    flex: 1 1 0;
-    flex-shrink: 0;
-    min-width: 5.5rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid var(--border-primary);
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.1rem 0.15rem;
+    border: 1px solid transparent;
     border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
+    background: none;
     font-family: inherit;
     text-align: left;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 button.health-view-tile {
     cursor: pointer;
 }
 
-button.health-view-tile:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+/* Without a card to tint, hover and the active filter show on the text. */
+button.health-view-tile:hover .health-view-tile-label,
+button.health-view-tile:hover .health-view-tile-value {
+    color: var(--accent-primary);
 }
 
 .health-view-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
 }
 
 .health-view-tile-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
     color: var(--text-tertiary);
+    order: 2;
 }
 
 .health-view-tile-value {
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    order: 1;
 }
 
 /* Only the Monitored tile ever sets this: the one tile whose title tooltip
