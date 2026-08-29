@@ -383,3 +383,50 @@ test.describe('a custom widget refreshes itself', () => {
         expect(outcome.afterStop.intervals).toBe(0);
     });
 });
+
+/*
+ * The size a preset would give a figure, on a widget that never stored one.
+ *
+ * Widgets saved before figures had sizes hold fields with no shape of their
+ * own. Rewriting them on load would change stored data nobody asked to have
+ * changed, so the shape is worked out when the tile is drawn: the widget still
+ * records which preset it came from, and the preset still knows what its own
+ * figures are for.
+ *
+ * Driven through the two functions the renderer actually calls rather than
+ * through a live tile, because a tile only draws figures once the service
+ * answers -- and a service that is not there produces no figures, no meters,
+ * and a result that looks exactly like the fallback having failed.
+ */
+test.describe('a figure takes its size from the preset it came from', () => {
+    test('a widget with a presetId and no shapes still draws meters', async ({ page }) => {
+        await open(page);
+        const shapes = await page.evaluate(() => {
+            const presets = window.DashboardWidgetPresets;
+            // Glances: three percentages, which is what a meter is for.
+            const widget = { config: { presetId: 'glances', fields: [
+                { path: 'cpu' }, { path: 'mem' }, { path: 'swap' },
+            ] } };
+            return widget.config.fields.map((field) => presets.shapeFor('glances', field.path));
+        });
+        expect(shapes).toHaveLength(3);
+        for (const shape of shapes) {
+            expect(shape).toEqual({ shape: 'meter', tone: 'bad' });
+        }
+    });
+
+    test('a path the preset does not know keeps the plain figure', async ({ page }) => {
+        await open(page);
+        const answers = await page.evaluate(() => ({
+            unknownPath: window.DashboardWidgetPresets.shapeFor('glances', 'something_else'),
+            unknownPreset: window.DashboardWidgetPresets.shapeFor('not_a_preset', 'cpu'),
+            noPreset: window.DashboardWidgetPresets.shapeFor('', 'cpu'),
+        }));
+        // null rather than a guess: a figure nobody described is drawn the way
+        // every figure was drawn before sizes existed.
+        expect(answers.unknownPath).toBeNull();
+        expect(answers.unknownPreset).toBeNull();
+        expect(answers.noPreset).toBeNull();
+    });
+});
+
