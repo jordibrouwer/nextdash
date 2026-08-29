@@ -6527,3 +6527,29 @@ button.config-bm-shortcut-pill {
     align-items: center;
     gap: 4px;
 }
+
+/*
+ * The row of "show this tour again" buttons.
+ *
+ * Six of them, so they wrap rather than pushing the panel wide; a disabled one
+ * is a tour nobody has seen yet, which will appear on its own and has nothing
+ * to put back.
+ */
+.config-actions--wrap {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.config-actions--wrap .config-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/*
+ * A note that says the thing above it will not work yet — here, that every tour
+ * is silenced while the tips switch is off. Coloured because it is a condition
+ * to fix, not background.
+ */
+.config-panel-note--warn {
+    color: var(--warn, #cf9014);
+}

@@ -148,10 +148,13 @@ test.describe('replaying the tour also replays the tips', () => {
         await openBehaviorGeneral(page);
         // The note in the button's own panel. Filtering on "quick-start card"
         // alone would also match the group note above it, which says the same
-        // words about something else.
+        // words about something else — and the panel now holds a second note,
+        // for the per-tour replay row, so this takes the first rather than
+        // both.
         const hint = page.locator('.config-panel')
             .filter({ has: page.locator('[data-behavior-action="reset-onboarding"]') })
-            .locator('.config-panel-note');
+            .locator('.config-panel-note')
+            .first();
         await expect(hint).toContainText(/tours/i);
         await expect(hint).toContainText(/keyboard tips/i);
     });
