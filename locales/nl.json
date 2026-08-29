@@ -3981,6 +3981,8 @@
     "backupRestoreConfirm": "Deze back-up terugzetten? De huidige gegevens worden overschreven.",
     "backupRunError": "Kon geen back-up maken.",
     "backupRunNow": "Nu een back-up maken",
+    "backupRunTitle": "Back-up maken…",
+    "backupRunStatus": "Je gegevens inpakken",
     "backupRunSuccess": "Back-up gemaakt.",
     "backupStoredTitle": "Opgeslagen back-ups",
     "behaviorIntro": "Hoe het dashboard zich gedraagt. Elke wijziging wordt direct toegepast en bewaard.",

@@ -3981,6 +3981,8 @@
     "backupRestoreConfirm": "Restore this backup? Current data will be replaced.",
     "backupRunError": "Could not create a backup.",
     "backupRunNow": "Make a backup now",
+    "backupRunTitle": "Making a backup…",
+    "backupRunStatus": "Packing up your data",
     "backupRunSuccess": "Backup created.",
     "backupStoredTitle": "Stored backups",
     "behaviorIntro": "How the dashboard behaves. Every change applies immediately and is saved.",

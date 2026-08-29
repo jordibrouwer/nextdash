@@ -98,4 +98,49 @@ test.describe('backup download and restore', () => {
             (await (await fetch('/api/bookmarks?all=true')).json()).some((b) => b.name === n), marker),
             { timeout: 15_000 }).toBe(false);
     });
+
+    /*
+     * Making a backup builds the whole archive in one request, and with local
+     * copies of pages in it that takes seconds. Without the overlay the button
+     * does nothing visible for that whole time, which reads as a dead button
+     * rather than as work in progress -- so the reader presses it again.
+     */
+    test('making a backup shows the same progress overlay the rest of the app uses', async ({ page }) => {
+        await openBackups(page);
+
+        // The archive is written fast enough here that the overlay would open
+        // and close between two polls. Holding the response open makes the
+        // in-progress state observable; it is the same request either way.
+        await page.route('**/api/auto-backups/run', async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await route.continue();
+        });
+
+        // Through the button a person actually presses, not the method behind it.
+        await page.locator('[data-backup-action="run"]').click();
+
+        const overlay = page.locator('#nextdash-progress-overlay');
+        await expect(overlay).toBeVisible({ timeout: 5_000 });
+        // Indeterminate while the length is unknown -- a bar parked at zero
+        // reads as frozen, which is the problem the overlay exists to solve.
+        await expect(overlay.locator('[data-progress-fill]'))
+            .toHaveClass(/progress-overlay-fill--indeterminate/);
+        await expect(overlay.locator('[data-progress-title]')).not.toHaveText('');
+
+        // And it goes again once the backup is written, rather than sitting there.
+        await expect(overlay).toBeHidden({ timeout: 15_000 });
+        await expect.poll(() => page.locator('[data-backup-item="restore"]').count(),
+            { timeout: 15_000 }).toBeGreaterThan(0);
+    });
+
+    test('a backup that fails takes the overlay down with it', async ({ page }) => {
+        await openBackups(page);
+        // The failure path used to be the one that left an overlay on screen
+        // with no way back: hide() has to run whether or not the write worked.
+        await page.route('**/api/auto-backups/run', (route) =>
+            route.fulfill({ status: 500, body: 'Failed to create backup' }));
+
+        await page.locator('[data-backup-action="run"]').click();
+        await expect(page.locator('#nextdash-progress-overlay')).toBeHidden({ timeout: 10_000 });
+    });
 });

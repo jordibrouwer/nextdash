@@ -6673,11 +6673,22 @@ class DashboardConfig {
 
     async runBackupNow() {
         try {
+            /*
+             * Indeterminate: the archive is built whole in one request, and how
+             * long that takes depends on what goes in it -- with local copies of
+             * pages included it is seconds. Nothing moved on screen for that
+             * whole time, so the button read as dead and got pressed twice.
+             */
+            this.showProgressOverlay(
+                this.t('config.backupRunTitle', 'Making a backup…'),
+                this.t('config.backupRunStatus', 'Packing up your data'));
             const res = await this.writeFetch('/api/auto-backups/run', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.finishProgressOverlay(this.t('config.backupRunSuccess', 'Backup created.'));
             this.notify(this.t('config.backupRunSuccess', 'Backup created.'), 'success');
             await this.loadBackupData();
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.backupRunError', 'Could not create a backup.'), 'error');
         }
     }

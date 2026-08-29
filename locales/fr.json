@@ -3981,6 +3981,8 @@
     "backupRestoreConfirm": "Restaurer cette sauvegarde ? Les données actuelles seront remplacées.",
     "backupRunError": "Impossible de créer la sauvegarde.",
     "backupRunNow": "Sauvegarder maintenant",
+    "backupRunTitle": "Création de la sauvegarde…",
+    "backupRunStatus": "Empaquetage de vos données",
     "backupRunSuccess": "Sauvegarde créée.",
     "backupStoredTitle": "Sauvegardes enregistrées",
     "behaviorIntro": "Le comportement du tableau de bord. Chaque changement s'applique aussitôt et est enregistré.",

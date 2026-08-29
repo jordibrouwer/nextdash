@@ -3981,6 +3981,8 @@
     "backupRestoreConfirm": "Dieses Backup wiederherstellen? Die aktuellen Daten werden überschrieben.",
     "backupRunError": "Backup konnte nicht erstellt werden.",
     "backupRunNow": "Jetzt Backup erstellen",
+    "backupRunTitle": "Backup wird erstellt…",
+    "backupRunStatus": "Deine Daten werden gepackt",
     "backupRunSuccess": "Backup erstellt.",
     "backupStoredTitle": "Gespeicherte Backups",
     "behaviorIntro": "Wie sich das Dashboard verhält. Jede Änderung gilt sofort und wird gespeichert.",
