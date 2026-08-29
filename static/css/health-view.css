@@ -728,19 +728,27 @@ button.health-view-tile:hover .health-view-tile-value {
     min-width: 0;
 }
 
+/*
+ * Every filter on screen, wrapped rather than scrolled.
+ *
+ * A "More" menu held the overflow once and was removed for hiding half the
+ * filters behind a click on every window size, wide ones included -- the
+ * comment recording that sits in dashboard-health.js. The sideways scroll that
+ * replaced it does the same thing by another mechanism: at 1280px the strip cut
+ * off Missing category, Missing preview, Certificates and Healthy, with nothing
+ * to say they existed.
+ *
+ * Wrapping costs a second line when there are fifteen of them and nothing at
+ * all when there are six. A filter you cannot see is a filter you do not have.
+ */
 .health-view-filter-group {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.2rem;
     padding: 0.15rem;
-    border-radius: 999px;
+    border-radius: var(--layout-radius-sm, 12px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
-    overflow-x: auto;
-    scrollbar-width: none;
-    /* The fade is a mask on the scroller itself, so it follows the strip at any
-       width without a second element painted over the pills. */
-    scroll-snap-type: x proximity;
 }
 
 .health-view-filter-group::-webkit-scrollbar {
@@ -781,7 +789,6 @@ button.health-view-tile:hover .health-view-tile-value {
     cursor: pointer;
     white-space: nowrap;
     flex: 0 0 auto;
-    scroll-snap-align: start;
 }
 
 .health-view-filter-btn.is-active {
@@ -2795,82 +2802,3 @@ body[data-layout-version="modern"] .health-view-empty {
     white-space: nowrap;
 }
 
-/*
- * The one-time "this row scrolls" hint.
- *
- * Fixed, because the toolbar sits inside a scrolling view and the strip it
- * points at has overflow of its own — an absolutely placed card would be
- * clipped by the very thing being explained. Small and quiet: it is a sentence
- * about a scrollbar, not an announcement.
- */
-.health-filter-hint {
-    position: fixed;
-    z-index: 60;
-    max-width: 20rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.7rem 0.8rem;
-    border-radius: 0.6rem;
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-    animation: health-filter-hint-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes health-filter-hint-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.health-filter-hint-body {
-    margin: 0;
-    font-size: 0.8rem;
-    line-height: 1.45;
-    color: var(--text-secondary);
-}
-
-.health-filter-hint-btn {
-    align-self: flex-end;
-    font-size: 0.72rem;
-    padding: 0.25rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid var(--border-secondary);
-    background: var(--background-secondary);
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
-.health-filter-hint-btn:hover,
-.health-filter-hint-btn:focus-visible {
-    border-color: var(--accent-primary);
-}
-
-/* The arrow points at the strip: down when the card sits above it, up when a
-   short window pushed the card underneath. */
-.health-filter-hint-arrow {
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    width: 10px;
-    height: 10px;
-    margin-left: -5px;
-    transform: rotate(45deg);
-    background: var(--background-primary);
-    border-right: 1px solid var(--border-primary);
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.health-filter-hint.is-below .health-filter-hint-arrow {
-    bottom: auto;
-    top: -5px;
-    border: 0;
-    border-left: 1px solid var(--border-primary);
-    border-top: 1px solid var(--border-primary);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .health-filter-hint {
-        animation: none;
-    }
-}

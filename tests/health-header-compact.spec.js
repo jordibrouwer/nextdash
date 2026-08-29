@@ -28,6 +28,29 @@ const REPORT = {
           status: 'broken', flags: ['broken'], score: 10, lastChecked: Date.now() },
         { pageId: 1, index: 3, name: 'Stale one', url: 'https://d.example.com/',
           status: 'stale', flags: ['stale'], score: 60, lastChecked: Date.now() - 400 * 86400000 },
+        // One row per remaining flag: most pills render only when their count
+        // is above zero, so a thin report measures a strip that is not the one
+        // a real install shows.
+        { pageId: 1, index: 4, name: 'Unused one', url: 'https://e.example.com/',
+          status: 'unused', flags: ['unused'], score: 70, lastChecked: Date.now() },
+        { pageId: 1, index: 5, name: 'Unchecked one', url: 'https://f.example.com/',
+          status: 'unchecked', flags: ['unchecked'], score: 50, lastChecked: 0 },
+        { pageId: 1, index: 6, name: 'Duplicate one', url: 'https://g.example.com/',
+          status: 'duplicate', flags: ['duplicate'], score: 80, lastChecked: Date.now() },
+        { pageId: 1, index: 7, name: 'Drifted one', url: 'https://h.example.com/',
+          status: 'drift', flags: ['drift'], score: 65, lastChecked: Date.now() },
+        { pageId: 1, index: 8, name: 'No preview', url: 'https://i.example.com/',
+          status: 'missing-preview', flags: ['missing-preview'], score: 95, lastChecked: Date.now() },
+        { pageId: 1, index: 9, name: 'Content changed', url: 'https://j.example.com/',
+          status: 'content', flags: ['content'], score: 75, lastChecked: Date.now() },
+        { pageId: 1, index: 10, name: 'Shortcut clash', url: 'https://k.example.com/',
+          status: 'shortcut-conflict', flags: ['shortcut-conflict'], score: 85, lastChecked: Date.now() },
+        { pageId: 1, index: 11, name: 'Lost category', url: 'https://l.example.com/',
+          status: 'orphaned-category', flags: ['orphaned-category'], score: 85, lastChecked: Date.now() },
+        { pageId: 1, index: 12, name: 'Monitored one', url: 'https://m.example.com/',
+          status: 'healthy', flags: ['healthy'], score: 100, monitor: true, lastChecked: Date.now() },
+        { pageId: 1, index: 13, name: 'Set aside', url: 'https://n.example.com/',
+          status: 'stale', flags: ['stale'], ignoredFlags: ['stale'], score: 60, lastChecked: Date.now() },
     ],
 };
 
@@ -54,4 +77,23 @@ test('the tiles read as one line, not a wall of cards', async ({ page }) => {
 
     // Still a way in: every figure that carried a filter keeps it.
     expect(await page.locator('[data-health-tile]').count()).toBeGreaterThan(3);
+});
+
+test('every filter pill is on screen without scrolling sideways', async ({ page }) => {
+    await openHealth(page);
+
+    const overflow = await page.evaluate(() => {
+        const strip = document.querySelector('.health-view-filter-strip');
+        if (!strip) return { error: 'no pill strip' };
+        const box = strip.getBoundingClientRect();
+        const cut = [...strip.querySelectorAll('[data-health-filter]')]
+            .filter((pill) => pill.getBoundingClientRect().right > box.right + 1)
+            .map((pill) => pill.textContent.trim());
+        return { cut, total: strip.querySelectorAll('[data-health-filter]').length };
+    });
+
+    expect(overflow.error).toBeUndefined();
+    expect(overflow.total).toBeGreaterThan(8);
+    // A pill past the right edge is a filter the reader cannot see exists.
+    expect(overflow.cut, JSON.stringify(overflow)).toEqual([]);
 });

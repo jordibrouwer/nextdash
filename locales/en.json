@@ -897,8 +897,6 @@
     "healthFetchPreviewsError": "Could not fetch the previews.",
     "healthFilterHealthy": "Healthy",
     "healthFilterIgnored": "Ignored",
-    "healthFilterScrollHint": "There are more filters than fit. The row scrolls sideways — Stale, Unused, Drift and the rest are past the edge.",
-    "healthFilterScrollHintDone": "Got it",
     "healthMenuIgnore": "Reporting",
     "healthIgnoreFlag": "Ignore “{flag}”",
     "healthSnoozeFlag": "Ignore “{flag}” for {days} days",

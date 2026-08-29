@@ -897,8 +897,6 @@
     "healthFetchPreviewsError": "Impossible de récupérer les aperçus.",
     "healthFilterHealthy": "Sains",
     "healthFilterIgnored": "Ignorés",
-    "healthFilterScrollHint": "Il y a plus de filtres que de place. La rangée défile latéralement — Périmés, Inutilisés, Dérive et les autres sont au-delà du bord.",
-    "healthFilterScrollHintDone": "Compris",
     "healthMenuIgnore": "Signalement",
     "healthIgnoreFlag": "Ignorer « {flag} »",
     "healthSnoozeFlag": "Ignorer « {flag} » pendant {days} jours",
