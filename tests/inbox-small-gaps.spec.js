@@ -72,23 +72,25 @@ test.describe('the inbox says what it knows', () => {
         /*
          * Against a figure where the difference shows.
          *
-         * On a fresh store kept is zero, so leaving it out of the sum gives the
-         * same answer and the test proves nothing. kept is recorded on every
+         * On a fresh store kept is zero, so a sum that wrongly includes it gives
+         * the same answer and the test proves nothing. kept is recorded on every
          * mark-read, which makes it the largest of the three on a real install
          * -- so the numbers are supplied rather than waited for.
          */
         const sample = { totalPromoted: 10, totalDeleted: 5, totalKept: 35 };
         const both = await page.evaluate((agg) => {
-            const triaged = agg.totalPromoted + agg.totalDeleted + agg.totalKept;
+            const triaged = agg.totalPromoted + agg.totalDeleted;
             return {
                 config: Math.round((agg.totalPromoted / triaged) * 100),
                 inbox: window.dashboardInstance.inbox.promoteRateFromStats(agg),
             };
         }, sample);
 
-        // 10 of 50 is 20%. Dropping kept would make it 10 of 15 — 67%, the same
-        // install reporting two different rates under one name.
-        expect(both.config).toBe(20);
+        // 10 of 15 is 67%: promoted and deleted are the two ways a link leaves,
+        // and they are the whole denominator. Adding the 35 kept would make it
+        // 10 of 50 — 20% — counting links that are still sitting in the inbox
+        // as decisions, against the label beside the figure.
+        expect(both.config).toBe(67);
         expect(both.inbox).toBe(both.config);
     });
 

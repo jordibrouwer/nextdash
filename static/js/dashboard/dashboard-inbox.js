@@ -464,9 +464,20 @@ class DashboardInbox {
         return added || handled ? { added, handled } : null;
     }
 
+    /*
+     * Of the links that were decided on, how many became bookmarks.
+     *
+     * Promoted and deleted are the two ways a link leaves, and they are the
+     * whole denominator. Kept is deliberately not in it: the server writes a
+     * kept event on every mark-read, and a link marked read is still sitting
+     * in the inbox waiting to be decided on. Counting it here contradicted the
+     * label beside the figure, and double-counted every link that was read
+     * before it was promoted -- which is why the stub of 40 added links could
+     * report 43 decisions.
+     */
     promoteRateFromStats(stats) {
         const promoted = Number(stats?.totalPromoted) || 0;
-        const triaged = promoted + (Number(stats?.totalDeleted) || 0) + (Number(stats?.totalKept) || 0);
+        const triaged = promoted + (Number(stats?.totalDeleted) || 0);
         return triaged ? Math.round((promoted / triaged) * 100) : null;
     }
 

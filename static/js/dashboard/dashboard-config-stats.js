@@ -1643,11 +1643,14 @@
             const added = Number(agg.totalAdded || 0);
             const promoted = Number(agg.totalPromoted || 0);
             const deleted = Number(agg.totalDeleted || 0);
-            // Kept counts as triaged: the server records it, the panel above shows
-            // it as its own tile, but the conversion sum left it out — so the
-            // arithmetic on screen never reconciled with the tiles beside it.
-            const kept = Number(agg.totalKept || 0);
-            const triaged = promoted + deleted + kept;
+            // Promoted and deleted are the two ways a link leaves the inbox, and
+            // they are the whole denominator. Kept is not triage: it is recorded
+            // on every mark-read, and a read link is still waiting to be decided
+            // on. The "Read (kept)" tile above counts the read items currently in
+            // the inbox, which is a different figure from the lifetime kept
+            // counter -- so including it here reconciled nothing and double-
+            // counted every link read before it was promoted.
+            const triaged = promoted + deleted;
             const pct = triaged > 0 ? Math.round((promoted / triaged) * 100) : 0;
             const avgRetention = Number(agg.retentionCount || 0) > 0
                 ? Number(agg.sumRetentionMs || 0) / Number(agg.retentionCount)

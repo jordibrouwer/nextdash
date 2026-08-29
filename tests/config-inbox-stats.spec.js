@@ -73,6 +73,36 @@ test.describe('config stats inbox block', () => {
         }, stamp);
     });
 
+    test('the conversion rate counts what left, not what was read', async ({ page }) => {
+        // Kept is recorded on every mark-read, and a read link is still sitting
+        // in the inbox waiting to be decided on. Counting it as triage put links
+        // that had gone nowhere into the denominator, and double-counted every
+        // link read before it was promoted.
+        await page.route('**/api/inbox-stats', (route) => route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                version: 1,
+                totalAdded: 40, totalPromoted: 10, totalDeleted: 5, totalKept: 35,
+                retentionCount: 0, sumRetentionMs: 0,
+            }),
+        }));
+
+        await page.goto('/');
+        await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+        await page.locator('[data-stats-tab="inbox"]').click();
+
+        const inbox = page.locator('#config-stats-inbox');
+        await expect(inbox.locator('.config-tile').first()).toBeVisible({ timeout: 15_000 });
+
+        // 10 of 15, not 10 of 50: the 35 kept never left the inbox.
+        await expect(inbox.locator('.config-ratio')).toContainText('67%');
+        await expect(inbox.locator('.config-ratio')).not.toContainText('20%');
+    });
+
     test('promote is attributed as a conversion in lifetime stats', async ({ page }) => {
         const stamp = Date.now();
 
