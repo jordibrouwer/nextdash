@@ -2152,6 +2152,12 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if len(droppedCollections) > 0 {
 		response["droppedCollections"] = droppedCollections
 	}
+	// The clamps above can rewrite what was sent -- an archive URL without a
+	// {url} placeholder becomes the default, a count outside its range is
+	// pulled back in. Saying only "success" left the client showing a value the
+	// server had refused, under a Saved indicator, until the next reload.
+	// Handing the stored settings back lets it correct itself.
+	response["settings"] = settings
 	json.NewEncoder(w).Encode(response)
 }
 

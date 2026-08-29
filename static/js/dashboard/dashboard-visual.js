@@ -27,7 +27,20 @@ class DashboardVisual {
             window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
             const d = this.dash;
             if (d.activeView === 'config' && d.config?.section === 'appearance') {
+                /*
+                 * Carry focus across the repaint.
+                 *
+                 * A theme toggle fires its change while the checkbox still has
+                 * focus, and this render() replaces the section body wholesale
+                 * -- so the control went with it, focus fell to <body>, and the
+                 * next Tab restarted at the top of the page. Config already
+                 * knows how to do this; this route in from the theme loader
+                 * simply never asked it to.
+                 */
+                const cfg = d.config.instance || d.config;
+                const restoreFocus = cfg?.captureControlPanelFocus?.bind(cfg)?.() || (() => {});
                 d.config.render?.();
+                restoreFocus();
             }
         });
     }

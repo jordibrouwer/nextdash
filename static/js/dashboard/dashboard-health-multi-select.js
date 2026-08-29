@@ -116,6 +116,11 @@ class DashboardHealthMultiSelect {
             }
         });
         if (changed) {
+            // Both, as every other mutator here does. syncRows() is what
+            // maintains .has-multi-select on the feed, so pruning with only a
+            // toolbar sync took the count to zero and left the checkbox column
+            // standing open with nothing ticked in it.
+            this.syncRows();
             this.syncToolbar();
         }
     }

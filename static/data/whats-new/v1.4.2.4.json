@@ -1,0 +1,80 @@
+{
+  "tag": "v1.4.2.4",
+  "date": "29 August 2026",
+  "releasedAt": "2026-08-29",
+  "modalLead": "The browser's Back button moves through nextDash, a triage run can be finished, and the inbox and health views lost the wall of controls between their heading and their first row.",
+  "sections": [
+    {
+      "title": "Navigation",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Back and Forward move through nextDash.</strong> Opening the inbox, health or config, or switching bookmark page, now leaves a history entry &mdash; before, none of it did, so Back stripped the address bar and left the view standing. What counts as a step is deliberately narrow: a <em>filter</em> is not one, so after changing the inbox filter three times a single Back leaves the inbox rather than walking back through them; and a <em>config section</em> is not one either, so Back leaves config the way <code>Escape</code> does instead of turning one press into six."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A triage run can be finished.</strong> The queue held every link the filter showed &mdash; including ones already read &mdash; so an inbox of 5 unread and 35 read handed back all 40 and asked you to decide again on work already done. It now walks only the unread. The last card ends the run rather than looping back to the first, and promoting a link returns you to where you left it: clearing a backlog of 40 used to mean pressing <code>t</code> forty times."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The inbox header reads like the health view's.</strong> The count moved down to the subtitle line, level with health's score badge. <em>Triage</em> and a new <strong>&ctdot;</strong> menu get their own row under the filters, and Mark read, Clear read, CSV, JSON, Import and Stats moved behind that menu. The <strong>&#8505;</strong> went to the far right, where it cannot be hit while reaching for an action."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Five things the inbox knew and did not say.</strong> Rows show where a link came from &mdash; extension, import, share sheet. A weekly line reads how many arrived and how many were dealt with. <em>Mark unread</em> and <em>tags</em> were right-click only, which a phone has not got: they are now <code>u</code> and <code>l</code>. An empty filtered list gains a <em>Clear filters</em> button. And a tag filter matching nothing no longer claims the inbox is empty while the links sit there hidden."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The promote rate counts what left, not what was read.</strong> It is labelled “of the links you decided on”, but the sum also counted every mark-read &mdash; and a link marked read is still in the inbox with the decision to come. A store of 40 added links reported 43 of them decided. Promoted and deleted are the two ways a link leaves, and they are the whole figure now, so the percentage on your install may change."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The summary reads as a line, not a wall of cards.</strong> Ten bordered tiles became one compact strip under 48 pixels tall &mdash; six of them repeated a filter pill sitting directly beneath. Clicking a figure still filters."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Every filter is on screen.</strong> The pill row scrolled sideways, and at 1280 pixels four filters &mdash; Missing category, Missing preview, Certificates and Healthy &mdash; sat past the right edge with nothing to say they existed. The row wraps now, and the hint explaining the scroll went with it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The toolbar keeps what you use and files the rest.</strong> <em>Work through</em> and <em>Rot report</em> stay on the bar; Export rows, Re-test, Checking off, Open broken, Merge duplicates and the settings link moved behind a <strong>&ctdot;</strong>. Eight buttons across two lines became two and a menu, and the menu opens under its own button rather than at the far edge of the window."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Three ways the view moved without being asked.</strong> A re-check finishing after you left no longer wipes your bookmark grid and paints the health list over it. The Monitored list keeps your place across its sixty-second refresh &mdash; measured, a reader at 400 pixels was put back at 266. And the duplicate-group menu no longer leaves a stray click handler behind when a refresh takes it away."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Previewing a theme shows that theme's backdrop.</strong> Scrolling the themes changed the colours and left the texture behind, so you saw a new palette wearing the old theme's pattern &mdash; a combination matching no theme at all. Both the dropdown and <em>Browse&hellip;</em> were affected; picking <em>Random</em> never was."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>Escape</code> closes the theme picker on the first press.</strong> With a promo card on screen, the first press cleared the promo and left the picker open, still previewing; only a second closed it and put your theme back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Four ways config said one thing and did another.</strong> One click on <em>Export</em> produced two CSV files. Changing an <em>Appearance</em> control dropped keyboard focus to the top of the page. Switching page threw away unsaved Widget edits without asking &mdash; Widgets being the one section that does not save as you go &mdash; and now asks first. And the archive URL said “Saved” while the server had quietly substituted the default, which it does when the address carries no <code>{url}</code> placeholder."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Eight settings can tell you they changed.</strong> A setting with no declared default reports itself unchanged whatever it holds, so it never offered its <strong>&#8635;</strong> and never counted towards “N settings differ from the default” on the Overview. Of the 93 settings the Behavior panels render, nine were in that state; eight now carry their default."
+        }
+      ]
+    }
+  ]
+}

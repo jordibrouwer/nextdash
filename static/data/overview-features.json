@@ -2,6 +2,70 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBrowserHistoryTitle",
+      "titleFallback": "The browser's Back button moves through nextDash",
+      "whatKey": "config.overviewNewFeatureBrowserHistoryWhat",
+      "whatFallback": "Opening the inbox, health or config, or switching bookmark page, left no trace in the browser's history. Back stripped the address bar and left the view standing, so the URL said one thing and the screen another — and from a view, Back to a bookmarks page did nothing at all.",
+      "howKey": "config.overviewNewFeatureBrowserHistoryHow",
+      "howFallback": "Each of those is a history entry now, so Back returns you where you were and Forward brings you back. What counts as a step is deliberately narrow: a filter is not one, so Back leaves the inbox rather than walking through the filters you tried in it, and a config section is not one either, so Back leaves config the way Escape does.",
+      "enableKey": "config.overviewNewFeatureBrowserHistoryEnable",
+      "enableFallback": "Nothing to switch on — it is how the buttons behave now.",
+      "ctaKey": "config.overviewNewFeatureBrowserHistoryCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.4.2.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTriageFinishTitle",
+      "titleFallback": "A triage run can be finished",
+      "whatKey": "config.overviewNewFeatureTriageFinishWhat",
+      "whatFallback": "The queue held every link the filter showed, including the ones already read, so an inbox of 5 unread and 35 read handed back all forty and asked you to decide again on work already done. The last card looped back to the first rather than ending, and promoting a link closed triage — clearing a backlog of forty meant pressing t forty times.",
+      "howKey": "config.overviewNewFeatureTriageFinishHow",
+      "howFallback": "A run now walks the unread only, with the active filter still applying. The last card ends it and says how many you went through. And promoting a link puts you back in the run where you left it, so one t clears the whole backlog.",
+      "enableKey": "config.overviewNewFeatureTriageFinishEnable",
+      "enableFallback": "Press t in the inbox, or use the Triage button above the list.",
+      "ctaKey": "config.overviewNewFeatureTriageFinishCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.4.2.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureListHeadersTitle",
+      "titleFallback": "The inbox and health lists start where the rows do",
+      "whatKey": "config.overviewNewFeatureListHeadersWhat",
+      "whatFallback": "Both views put a wall of controls between their heading and their first row: ten bordered summary tiles, a filter strip that scrolled sideways with four filters past its right edge, and eight action buttons across two lines. On a laptop the first bookmark sat below the fold.",
+      "howKey": "config.overviewNewFeatureListHeadersHow",
+      "howFallback": "The tiles read as one compact line, the filters wrap so every one of them is on screen, and the actions you rarely use moved behind a ⋯ — Work through and Triage stay where they are. The two views were changed to match each other, so switching between them no longer means learning a second layout.",
+      "enableKey": "config.overviewNewFeatureListHeadersEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureListHeadersCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "dashboard"
+      },
+      "since": "v1.4.2.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetTourTitle",
+      "titleFallback": "A tour of what a custom widget can reach",
+      "whatKey": "config.overviewNewFeatureWidgetTourWhat",
+      "whatFallback": "The Custom widget can read any address that answers with JSON, which is the most capable thing in the Widgets section and the hardest to discover: nothing on the page said what it could do or where to start.",
+      "howKey": "config.overviewNewFeatureWidgetTourHow",
+      "howFallback": "Seven steps, opening the first time you visit Config → Widgets. It walks the catalogue of ready-made services, the fields a custom widget maps, and how a figure gets from an endpoint onto your page. Ask for it again from Behavior → General → Onboarding.",
+      "enableKey": "config.overviewNewFeatureWidgetTourEnable",
+      "enableFallback": "Opens by itself on a first visit to Widgets.",
+      "ctaKey": "config.overviewNewFeatureWidgetTourCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.2"
+    },
+    {
       "titleKey": "config.overviewNewFeatureLogRebuildTitle",
       "titleFallback": "The server log says what it is doing",
       "whatKey": "config.overviewNewFeatureLogRebuildWhat",

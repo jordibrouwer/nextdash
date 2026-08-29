@@ -353,68 +353,53 @@ class Dashboard {
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
 
+            /*
+             * Back and Forward.
+             *
+             * A popstate that changes the hash fires hashchange too, so the
+             * same address would be routed twice for one press. Routing has to
+             * happen inside the restore guard -- every view opener writes its
+             * own URL when it settles, and an unguarded write pushes a fresh
+             * entry, which is Back walking in place -- so popstate takes the
+             * route and hands hashchange a claim to skip.
+             *
+             * Skipping matters beyond tidiness: requestPageNavigation awaits
+             * confirmInlineEditBeforeNavigation() before it changes the view,
+             * so a second run would ask a second time and show two discard
+             * dialogs for one press.
+             *
+             * The claim is keyed on the address rather than on a bare flag, so
+             * it cannot swallow an unrelated hashchange, and it is cleared on a
+             * timer in case a popstate arrives without the hashchange it was
+             * waiting for (the hash did not change, only the query string).
+             */
+            this._routeClaim = null;
+            const claimRoute = () => {
+                this._routeClaim = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                const claimed = this._routeClaim;
+                setTimeout(() => {
+                    if (this._routeClaim === claimed) this._routeClaim = null;
+                }, 0);
+            };
             window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.substring(1);
-                if (hash === 'inbox') {
-                    if (this.activeView !== 'inbox') {
-                        void this.inbox?.openInboxView?.();
-                    }
+                const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                if (this._routeClaim === here) {
+                    this._routeClaim = null;
                     return;
                 }
+                void this.routeFromHash();
+            });
+            window.addEventListener('popstate', (event) => {
                 /*
-                 * A search is a place you can be sent to.
-                 *
-                 * Every other view has an address -- #inbox, #health, #config --
-                 * and search did not, so a query could not be shared, bookmarked
-                 * or reached from outside the page. That last one is what makes
-                 * the browser's address bar usable as a nextDash search box; see
-                 * opensearch.xml.
+                 * Only a landing on an entry this app pushed is Back or
+                 * Forward. A bare `location.hash = '#1'` fires popstate with
+                 * the same shape, and treating that as a navigation let a
+                 * stale numeric hash pull the user out of the inbox -- which
+                 * is exactly what the digit branch exists to prevent.
                  */
-                if (hash === 'search' || hash.startsWith('search?')) {
-                    const query = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''))
-                        .get('q') || '';
-                    this.searchComponent?.openSearchWithQuery?.(query);
-                    return;
-                }
-                if (hash === 'health') {
-                    if (this.activeView !== 'health') {
-                        void this.health?.openHealthView?.();
-                    }
-                    return;
-                }
-                if (hash === 'config' || hash.startsWith('config/')) {
-                    const genericConfig = hash === 'config';
-                    const deferRestore = genericConfig && !this._configInitialHashRouted;
-                    if (this.activeView !== 'config') {
-                        void Promise.resolve(this.config?.openConfigView?.()).then(() => {
-                            if (deferRestore) {
-                                this.config?.restoreConfigSectionFromHash?.();
-                            }
-                            this._configInitialHashRouted = true;
-                        });
-                    } else {
-                        this.config?.restoreConfigSectionFromHash?.();
-                        this._configInitialHashRouted = true;
-                    }
-                    return;
-                }
-                if (hash && /^\d+$/.test(hash)) {
-                    if (this.activeView === 'inbox') {
-                        this.inbox?.restoreInboxHash?.();
-                        return;
-                    }
-                    if (this.activeView === 'health') {
-                        this.health?.restoreHealthHash?.();
-                        return;
-                    }
-                    const pageIndex = parseInt(hash, 10) - 1;
-                    if (pageIndex >= 0 && pageIndex < this.pages.length) {
-                        const page = this.pages[pageIndex];
-                        if (!this.samePageId(page.id, this.currentPageId)) {
-                            void this.requestPageNavigation(page.id);
-                        }
-                    }
-                }
+                if (!window.DashboardHistory?.isOwnEntry?.(event.state)) return;
+                claimRoute();
+                void window.DashboardHistory.runRestore(() => this.routeFromHash());
             });
 
             this._configRefreshReady = true;
@@ -944,6 +929,87 @@ class Dashboard {
      * @param {{ silent?: boolean }} [options] Pass silent:true for internal
      *   activeView sync that is not a user navigation (keyboard DOM repair).
      */
+    /**
+     * Route to whatever the hash names. Registered on hashchange, and
+     * reached again through popstate so Back and Forward land here too.
+     * Branches that open a view return their promise, so a popstate
+     * restore can hold its guard until the view has actually settled.
+     */
+    routeFromHash() {
+            const hash = window.location.hash.substring(1);
+            if (hash === 'inbox') {
+                if (this.activeView !== 'inbox') {
+                    return this.inbox?.openInboxView?.();
+                }
+                return;
+            }
+            /*
+             * A search is a place you can be sent to.
+             *
+             * Every other view has an address -- #inbox, #health, #config --
+             * and search did not, so a query could not be shared, bookmarked
+             * or reached from outside the page. That last one is what makes
+             * the browser's address bar usable as a nextDash search box; see
+             * opensearch.xml.
+             */
+            if (hash === 'search' || hash.startsWith('search?')) {
+                const query = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''))
+                    .get('q') || '';
+                this.searchComponent?.openSearchWithQuery?.(query);
+                return;
+            }
+            if (hash === 'health') {
+                if (this.activeView !== 'health') {
+                    return this.health?.openHealthView?.();
+                }
+                return;
+            }
+            if (hash === 'config' || hash.startsWith('config/')) {
+                const genericConfig = hash === 'config';
+                const deferRestore = genericConfig && !this._configInitialHashRouted;
+                if (this.activeView !== 'config') {
+                    return Promise.resolve(this.config?.openConfigView?.()).then(() => {
+                        if (deferRestore) {
+                            this.config?.restoreConfigSectionFromHash?.();
+                        }
+                        this._configInitialHashRouted = true;
+                    });
+                } else {
+                    this.config?.restoreConfigSectionFromHash?.();
+                    this._configInitialHashRouted = true;
+                }
+                return;
+            }
+            if (hash && /^\d+$/.test(hash)) {
+                /*
+                 * A numeric hash while a full-container view is open is normally
+                 * stale -- the view owns the layout and rewrites the hash back.
+                 * But when it arrives through Back or Forward it is the
+                 * navigation itself, and reverting it left the button doing
+                 * nothing at all.
+                 */
+                const restoring = window.DashboardHistory?.isRestoring?.() === true;
+                if (!restoring && this.activeView === 'inbox') {
+                    this.inbox?.restoreInboxHash?.();
+                    return;
+                }
+                if (!restoring && this.activeView === 'health') {
+                    this.health?.restoreHealthHash?.();
+                    return;
+                }
+                const pageIndex = parseInt(hash, 10) - 1;
+                if (pageIndex >= 0 && pageIndex < this.pages.length) {
+                    const page = this.pages[pageIndex];
+                    // Returning to the same page id from a view still has to
+                    // rebuild: the view owned the whole container.
+                    if (!this.samePageId(page.id, this.currentPageId)
+                        || !this.isBookmarksView()) {
+                        return this.requestPageNavigation(page.id);
+                    }
+                }
+            }
+    }
+
     setActiveView(view, options = {}) {
         const previous = this.activeView;
         if (previous === view) {

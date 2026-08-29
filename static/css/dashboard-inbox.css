@@ -11,11 +11,21 @@
 
 .inbox-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
+}
+
+/* Subtitle left, count and unread right, on one baseline — the twin of
+   .health-view-header-second-row, so the two views line up when switched
+   between. */
+.inbox-header-second-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
 }
 
 .inbox-title {
@@ -38,7 +48,7 @@
 }
 
 .inbox-subtitle {
-    margin: 0.25rem 0 0;
+    margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
@@ -74,53 +84,64 @@
    read as one system: auto-fit so the row reflows instead of overflowing when a
    sidebar or narrow window squeezes the container. Tiles that filter are real
    <button>s; the rest are plain readouts. */
+/*
+ * The summary, as a line rather than a wall — matching the health view.
+ *
+ * The two views are siblings: same pills, same j/k, same shape of list. Health
+ * lost its row of cards because they are read and rarely clicked, and a readout
+ * does not need a card each; the inbox reads the same way and so does this.
+ * They are still buttons, and clicking one still filters.
+ */
 .inbox-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.9rem;
     padding: 0 0.35rem;
 }
 
 .inbox-tile {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid var(--border-primary);
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.1rem 0.15rem;
+    border: 1px solid transparent;
     border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
+    background: none;
     font-family: inherit;
     text-align: left;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 button.inbox-tile {
     cursor: pointer;
 }
 
-button.inbox-tile:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+/* Without a card to tint, hover and the active filter show on the text. */
+button.inbox-tile:hover .inbox-tile-label,
+button.inbox-tile:hover .inbox-tile-value {
+    color: var(--accent-primary);
 }
 
 .inbox-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
 }
 
 .inbox-tile-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
     color: var(--text-tertiary);
+    order: 2;
 }
 
 .inbox-tile-value {
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    order: 1;
 }
 
 /* Unread is the number the inbox exists to drive down: tint it toward the accent
@@ -607,9 +628,6 @@ body.no-animations .inbox-item-actions {
         flex-wrap: wrap;
     }
 
-    .inbox-tiles {
-        grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
-    }
 }
 
 /* ─── Inbox toolbar & date groups (phase 2) ───────────────────────────── */
@@ -1389,4 +1407,212 @@ body[data-layout-version="modern"] .inbox-empty {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/*
+ * The card that ends a triage run.
+ *
+ * Centred and near-empty on purpose: everything else in triage is a decision to
+ * make, and this is the one screen with nothing left to decide. Keeping a link
+ * does not shorten the queue, so without this the last card wrapped round to
+ * the first and the run could be abandoned but never finished.
+ */
+.inbox-triage-done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 220px;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.inbox-triage-done-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.28);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.inbox-triage-done-body {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.inbox-triage-done-close {
+    margin-top: 6px;
+    padding: 8px 20px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.inbox-triage-done-close:hover {
+    border-color: var(--accent-primary);
+}
+
+.inbox-triage-done-close:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+/*
+ * Where a link came from, beside the domain it points at.
+ *
+ * Quiet on purpose: it is a provenance note, not a status. Only rows that came
+ * from somewhere other than a paste carry one, so it stays rare enough to mean
+ * something.
+ */
+.inbox-item-source {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-text) * 0.76);
+    letter-spacing: 0.02em;
+}
+
+/* The line under the stats grid that says which way the week went. */
+.inbox-stats-trend {
+    margin: 10px 0 0;
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.inbox-stats-trend-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* Offered only where a filter is hiding something. */
+.inbox-empty-clear {
+    margin-top: 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.inbox-empty-clear:hover {
+    border-color: var(--accent-primary);
+}
+
+/*
+ * The toolbar's ⋯, and what sits behind it — mirroring the health view.
+ *
+ * Nine controls stood between the filters and the first link. Triage stays out,
+ * being the reason to open the inbox at all, and so does the ℹ; the six that
+ * export, import or count wait in here.
+ *
+ * The wrap is what anchors the menu. Positioned against the toolbar instead it
+ * lands at the far edge of the window, which is what went wrong in health
+ * before the same wrap fixed it there.
+ */
+.inbox-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Triage, the ⋯ menu and the help button on their own full-width row, the
+   twin of .health-view-toolbar-actions. On the filter row Triage sat past the
+   search box and the sort select, so the button that matters most and the one
+   that hides the rest landed in a different place in each view; here they line
+   up with health's. The group wraps as one rather than each button wrapping
+   alone. */
+.inbox-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    flex-basis: 100%;
+    /* The anchor for the ⋯ menu, which is absolutely placed. */
+    position: relative;
+}
+
+.inbox-toolbar-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.inbox-toolbar-more:hover,
+.inbox-toolbar-more[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    color: var(--text-primary);
+}
+
+.inbox-toolbar-more:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.inbox-menu {
+    position: absolute;
+    top: calc(100% + 0.3rem);
+    left: 0;
+    z-index: 20;
+    min-width: 13rem;
+    padding: 0.35rem 0 0.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.65rem;
+    background: var(--background-secondary);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 28%);
+}
+
+.inbox-menu[hidden] {
+    display: none;
+}
+
+/* Inside the menu they are menu items, whatever they look like on a toolbar. */
+.inbox-menu > button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.4rem 0.7rem;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.inbox-menu > button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+/* Triage is why anyone opens the inbox; it reads as the one thing to do
+   rather than the first of several. */
+.inbox-triage-btn--primary {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+    font-weight: var(--font-weight-semibold);
+}
+
+.inbox-triage-btn--primary:hover {
+    background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
 }

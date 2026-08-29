@@ -419,7 +419,9 @@
 
 /* Tone in the number, the way Health does it. */
 .config-tiles--bookmarks .config-tile--good .config-tile-value { color: var(--accent-success); }
+
 .config-tiles--bookmarks .config-tile--warn .config-tile-value { color: var(--accent-warning); }
+
 .config-tiles--bookmarks .config-tile--crit .config-tile-value { color: var(--accent-error); }
 
 .config-tiles--bookmarks button.config-tile:hover {
@@ -477,9 +479,13 @@
 }
 
 .config-tile--accent  { --tile-stripe: var(--accent-color, #4a90d9); }
+
 .config-tile--good    { --tile-stripe: #2fa968; }
+
 .config-tile--warn    { --tile-stripe: #cf9014; }
+
 .config-tile--crit    { --tile-stripe: #d1493f; }
+
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
 .config-tile-label {
@@ -817,6 +823,7 @@
 }
 
 .config-stats-trend--good { color: var(--accent-success, #3fa45b); }
+
 .config-stats-trend--bad { color: var(--accent-danger, #c0524a); }
 
 .config-stats-trend-chart {
@@ -1258,7 +1265,6 @@
     color: var(--text-muted, #888);
 }
 
-
 /* ── "New in this release" twinkle ───────────────────────────────────────────
    Reuses the star markup and keyframes from the overview's New features panel
    (renderNewFeaturesPanelStars), so a highlighted sub-tab, that panel and the
@@ -1346,6 +1352,7 @@
     .config-bg-swatch {
         transition: none;
     }
+
     .config-bg-swatch:hover {
         transform: none;
     }
@@ -1907,24 +1914,6 @@
     gap: 10px;
 }
 
-.config-bm-title-row {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.config-bm-page-badge {
-    flex-shrink: 0;
-    padding: 1px 7px;
-    border-radius: 999px;
-    font-size: calc(var(--font-size-text) * 0.786);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 14%, transparent);
-    color: var(--text-color, inherit);
-}
-
 .config-overview-layout > .config-panel,
 .config-overview-top > .config-panel,
 .config-overview-about-row > .config-panel {
@@ -2351,22 +2340,34 @@
 }
 
 .config-new-features-panel-star:nth-child(1) { top: -0.05rem; left: 8%; animation-delay: 0s; }
+
 .config-new-features-panel-star:nth-child(2) { top: -0.35rem; left: 42%; animation-delay: 0.45s; }
+
 .config-new-features-panel-star:nth-child(2)::before { content: '✦'; font-size: 0.5rem; }
+
 .config-new-features-panel-star:nth-child(3) { top: -0.05rem; right: 6%; animation-delay: 0.9s; }
+
 .config-new-features-panel-star:nth-child(4) { top: 46%; right: -0.35rem; animation-delay: 1.35s; }
+
 .config-new-features-panel-star:nth-child(4)::before { content: '✦'; font-size: 0.48rem; }
+
 .config-new-features-panel-star:nth-child(5) { bottom: -0.1rem; right: 14%; animation-delay: 1.8s; }
+
 .config-new-features-panel-star:nth-child(6) { bottom: -0.35rem; left: 48%; animation-delay: 2.25s; }
+
 .config-new-features-panel-star:nth-child(6)::before { content: '✦'; font-size: 0.52rem; }
+
 .config-new-features-panel-star:nth-child(7) { bottom: -0.05rem; left: 10%; animation-delay: 2.7s; }
+
 .config-new-features-panel-star:nth-child(8) { top: 44%; left: -0.35rem; animation-delay: 3.15s; }
+
 .config-new-features-panel-star:nth-child(8)::before { content: '✦'; font-size: 0.46rem; }
 
 @keyframes config-new-features-panel-glow {
     0%, 100% {
         box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary, #4a7038) 0%, transparent);
     }
+
     50% {
         box-shadow: 0 0 0.85rem 0.16rem color-mix(in srgb, var(--accent-primary, #4a7038) 30%, transparent);
     }
@@ -2377,6 +2378,7 @@
         opacity: 0;
         transform: scale(0.45) rotate(-12deg);
     }
+
     45%, 55% {
         opacity: 1;
         transform: scale(1.12) rotate(10deg);
@@ -2442,7 +2444,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-attention-row--crit { border-left-color: var(--accent-error, #d1493f); }
+
 .config-attention-row--warn { border-left-color: var(--accent-warning, #cf9014); }
+
 .config-attention-row--neutral { border-left-color: var(--border-primary, rgba(128, 128, 128, 0.5)); }
 
 .config-attention-count {
@@ -2454,6 +2458,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-attention-row--crit .config-attention-count { color: var(--accent-error, #d1493f); }
+
 .config-attention-row--warn .config-attention-count { color: var(--accent-warning, #cf9014); }
 
 .config-attention-label {
@@ -2707,7 +2712,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-score-value--good { color: var(--accent-success, #2fa968); }
+
 .config-score-value--warn { color: var(--accent-warning, #cf9014); }
+
 .config-score-value--crit { color: var(--accent-error, #d1493f); }
 
 /* One bar primitive, reused by the score, the coverage ratios and the
@@ -2734,7 +2741,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bar-fill--good { background: var(--accent-success, #2fa968); }
+
 .config-bar-fill--warn { background: var(--accent-warning, #cf9014); }
+
 .config-bar-fill--crit { background: var(--accent-error, #d1493f); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2767,7 +2776,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-stat-detail--good { color: var(--accent-success, #2fa968); }
+
 .config-stat-detail--warn { color: var(--accent-warning, #cf9014); }
+
 .config-stat-detail--bad  { color: var(--accent-error, #d1493f); }
 
 .config-stat-penalty {
@@ -2789,6 +2800,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-stat-trend--up   { color: var(--accent-success, #2fa968); }
+
 .config-stat-trend--down { color: var(--accent-error, #d1493f); }
 
 /* The activity bar chart. Fixed height, full width, labels underneath. */
@@ -3288,13 +3300,6 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
 }
 
-.config-bm-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.6rem;
-}
-
 .config-bm-title {
     margin: 0;
     font-size: var(--font-size-controls);
@@ -3302,15 +3307,6 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-primary);
     line-height: 1.35;
     overflow-wrap: anywhere;
-}
-
-.config-bm-meta {
-    margin: 0.2rem 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
 }
 
 /*
@@ -3360,18 +3356,6 @@ body.no-animations .config-new-features-panel-star {
     align-items: center;
     gap: 0.3rem;
     min-width: 0;
-}
-
-.config-bm-domain {
-    color: var(--text-secondary);
-}
-
-.config-bm-note-line {
-    margin: 0.35rem 0 0;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-    overflow-wrap: anywhere;
 }
 
 .config-bm-shortcut-pill {
@@ -3526,10 +3510,6 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-feed .health-view-item.keyboard-selected .config-bm-tick:not(:checked),
 .config-bm-feed .health-view-item.is-checked .config-bm-tick:not(:checked) {
     opacity: 1;
-}
-
-.config-bm-page-badge {
-    font-weight: var(--font-weight-semibold);
 }
 
 .config-bm-meta-category {
@@ -3761,8 +3741,11 @@ body.no-animations .config-new-features-panel-star {
 /* --s0 is the base size the rule above already sets; it exists so every chip
    carries a step class and the scale reads as four deliberate steps. */
 .config-bm-cloud-tag--s0 { font-size: 0.74rem; }
+
 .config-bm-cloud-tag--s1 { font-size: 0.79rem; }
+
 .config-bm-cloud-tag--s2 { font-size: 0.85rem; }
+
 .config-bm-cloud-tag--s3 { font-size: 0.92rem; font-weight: var(--font-weight-semibold); }
 
 .config-bm-cloud-tag:hover {
@@ -3952,52 +3935,12 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
 }
 
-/* Editor layout: a two-column grid where each cell stacks its own label above
-   its control, so controls line up down the column without depending on the
-   label lengths. Long values (name, URL, tags) span both columns. */
-.config-bm-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 18px;
-    align-items: start;
-}
-
-.config-bm-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
-}
-
-.config-bm-cell--wide {
-    grid-column: 1 / -1;
-}
-
-.config-bm-label {
-    font-size: calc(var(--font-size-text) * 0.914);
-    font-weight: 600;
-    color: var(--text-secondary, #666);
-}
-
-.config-bm-label-hint {
-    font-weight: 400;
-    color: var(--text-muted, #888);
-    margin-left: 0.35em;
-}
-
 /* Inputs fill their cell rather than sitting at some default width. */
 .config-bm-cell .config-text,
 .config-bm-cell .config-select {
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-}
-
-.config-bm-url-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
 }
 
 .config-bm-url-row .config-text {
@@ -4009,60 +3952,14 @@ body.no-animations .config-new-features-panel-star {
     flex: none;
 }
 
-.config-bm-fetch-state {
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-muted, #888);
-    white-space: nowrap;
-    min-width: 4.5rem;
-}
-
-/* The pin uses the same pill the bookmark editor and add modal use, so it
-   picks up the theme rather than looking like a bare checkbox. */
-.config-bm-pin {
-    align-self: start;
-}
-
-.config-bm-icon-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 6px;
-}
-
 .config-bm-icon-row .config-text {
     flex: 1 1 12rem;
     min-width: 0;
 }
 
-.config-bm-icon-preview {
-    width: 34px;
-    height: 34px;
-    flex: none;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
-    border-radius: 8px;
-    overflow: hidden;
-}
-
 .config-bm-icon-img {
     max-width: 100%;
     max-height: 100%;
-}
-
-.config-bm-icon-empty {
-    color: var(--text-muted, #888);
-}
-
-.config-bm-note {
-    resize: vertical;
-    font-family: inherit;
-    line-height: 1.5;
-}
-
-.config-bm-shortcut {
-    text-transform: uppercase;
 }
 
 /* Under the narrow breakpoint the paired cells stack rather than squeezing. */
@@ -4072,59 +3969,9 @@ body.no-animations .config-new-features-panel-star {
     }
 }
 
-.config-bm-newcat {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin: -6px 0 14px;
-}
-
-.config-bm-newcat[hidden] {
-    display: none;
-}
-
 .config-bm-newcat .config-text {
     flex: 1 1 12rem;
     min-width: 0;
-}
-
-.config-bm-conflict {
-    color: var(--accent-error, #fb7185);
-    margin-top: -8px;
-}
-
-.config-bm-conflict[hidden] {
-    display: none;
-}
-
-/* Save/Revert sit above and below the form, so a long editor never hides them. */
-.config-bm-savebar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.config-bm-savebar--top {
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
-}
-
-.config-bm-savebar--bottom {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
-}
-
-.config-bm-dirty {
-    font-size: calc(var(--font-size-text) * 0.914);
-    color: var(--accent-warning, #f59e0b);
-}
-
-.config-bm-dirty[hidden] {
-    display: none;
 }
 
 .config-bm-editor .config-text,
@@ -4194,48 +4041,6 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-usage.is-never {
     color: var(--text-disabled, #9a9a9a);
     font-style: italic;
-}
-
-/* Statistics block at the foot of the editor. Read-only, so it is deliberately
-   quieter than the fields above and carries a rule to separate it from them. */
-.config-bm-stats {
-    padding-top: 12px;
-    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
-}
-
-.config-bm-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 8px 18px;
-}
-
-.config-bm-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.config-bm-stat-label {
-    font-size: calc(var(--font-size-text) * 0.821);
-    color: var(--text-muted, #888);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.config-bm-stat-value {
-    font-size: calc(var(--font-size-text) * 0.914);
-    color: var(--text-primary, inherit);
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-}
-
-/* The editor spans both columns on its own line. */
-.config-bm-editor {
-    grid-column: 1 / -1;
-    min-width: 0;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
 }
 
 .config-help-tips {
@@ -4462,6 +4267,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-help-state.is-on .config-help-state-dot { background: var(--accent-success, #3fa45b); }
+
 .config-help-state.is-off .config-help-state-dot { background: var(--text-muted, #888); }
 
 /* The full tip catalogue on its own tab. */
@@ -4535,7 +4341,6 @@ body.no-animations .config-new-features-panel-star {
         transition: none;
     }
 }
-
 
 /* The in-app replacement for window.confirm. The overlay, panel and buttons
    come from modal.css; only the message needs styling here. */
@@ -4639,7 +4444,9 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-theme-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+
 .config-theme-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+
 .config-theme-color-input::-moz-color-swatch { border: none; border-radius: 4px; }
 
 .config-theme-hex {
@@ -4890,9 +4697,13 @@ body[data-layout-version="modern"] .config-tile::before {
    hex besides. Re-point all five at the theme so a green accent gets a green
    stripe. Semantic colours stay semantic — only their source changes. */
 body[data-layout-version="modern"] .config-tile--accent  { --tile-stripe: var(--accent-primary); }
+
 body[data-layout-version="modern"] .config-tile--good     { --tile-stripe: var(--accent-success); }
+
 body[data-layout-version="modern"] .config-tile--warn     { --tile-stripe: var(--accent-warning); }
+
 body[data-layout-version="modern"] .config-tile--crit     { --tile-stripe: var(--accent-error); }
+
 body[data-layout-version="modern"] .config-tile--neutral  { --tile-stripe: var(--layout-surface-border); }
 
 body[data-layout-version="modern"] .config-tile--action {
@@ -5488,6 +5299,7 @@ button.config-bm-shortcut-pill {
 }
 
 .config-tile-delta--up { color: var(--accent-success, #2e7d32); }
+
 .config-tile-delta--down { color: var(--text-muted, #777); }
 
 .config-tile-delta-period {
@@ -5577,8 +5389,6 @@ button.config-bm-shortcut-pill {
     box-shadow: none;
 }
 
-
-
 /* About's addresses, one per line: the side column is too narrow for a row. */
 .config-about-links {
     list-style: none;
@@ -5615,7 +5425,6 @@ button.config-bm-shortcut-pill {
     width: 100%;
     justify-content: center;
 }
-
 
 /*
  * The list of stored page copies.
@@ -5688,11 +5497,11 @@ button.config-bm-shortcut-pill {
     .config-local-archive-row {
         grid-template-columns: minmax(0, 1fr) auto;
     }
+
     .config-local-archive-meta {
         grid-column: 1 / -1;
     }
 }
-
 
 /*
  * The saved-pages tab, grouped by bookmark.
@@ -6553,3 +6362,5 @@ button.config-bm-shortcut-pill {
 .config-panel-note--warn {
     color: var(--warn, #cf9014);
 }
+
+

@@ -48,10 +48,6 @@ class DashboardHealth {
         'unchecked', 'stale', 'unused', 'missing-preview', 'drift',
     ]);
 
-    // Repeated from health-filter-scroll-hint.js, which is checked before that
-    // script is fetched at all. Both must agree.
-    static FILTER_SCROLL_PROMO_ID = 'health-filter-scroll-v1';
-
     /** How long z snoozes for. Long enough to be a season, short enough to come back. */
     static SNOOZE_DAYS = 30;
 
@@ -433,6 +429,24 @@ class DashboardHealth {
         return Array.isArray(this.report?.duplicateGroups) ? this.report.duplicateGroups : [];
     }
 
+    /**
+     * Reload the list without moving the reader.
+     *
+     * The Monitored filter reloads itself on a timer and on returning to the
+     * tab. Nobody asked for either, so neither may take the reader's place
+     * away: rebuilding the list from nothing lands the page at the top, and a
+     * reader partway down a long list was moved while looking at it. Every row
+     * action already goes through keepPlaceAt(); these two refreshes are the
+     * ones that arrive on their own, which is exactly why they must be quiet.
+     *
+     * The offset only, without an anchor row: there is no row being acted on
+     * here, and pinning one would fight a reader who has scrolled since.
+     */
+    async refreshKeepingPlace() {
+        this._keepScrollY = window.scrollY || 0;
+        await this.loadAndRender({ refresh: true });
+    }
+
     startLiveRefresh() {
         this.stopLiveRefresh();
         if (!this.isActiveView()) {
@@ -443,7 +457,7 @@ class DashboardHealth {
                 return;
             }
             if (this.filter === 'monitored') {
-                void this.loadAndRender({ refresh: true });
+                void this.refreshKeepingPlace();
             }
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
@@ -455,7 +469,7 @@ class DashboardHealth {
                 if (document.visibilityState !== 'visible') {
                     return;
                 }
-                void this.loadAndRender({ refresh: true });
+                void this.refreshKeepingPlace();
             }, 60000);
         }
     }
@@ -473,13 +487,16 @@ class DashboardHealth {
 
     /* ── View lifecycle ────────────────────────────────────────────────── */
 
+    /**
+     * Make the address bar say #health. The moment the URL is final is the
+     * moment worth remembering: a push here is what lets Back leave the view,
+     * while the filters that follow through syncUrlState stay replaceState.
+     */
     restoreHealthHash() {
-        if (window.location.hash !== '#health') {
-            history.replaceState(
-                history.state,
-                '',
-                `${window.location.pathname}${window.location.search}#health`
-            );
+        if (window.location.hash === '#health') return;
+        const next = `${window.location.pathname}${window.location.search}#health`;
+        if (!window.DashboardHistory?.pushLocation?.(next)) {
+            history.replaceState(history.state, '', next);
         }
     }
 
@@ -520,37 +537,10 @@ class DashboardHealth {
         this.syncUrlState();
         this.startLiveRefresh();
         window.HealthTutorial?.maybeShow?.();
-        void this.maybeShowFilterScrollHint();
         return true;
     }
 
-    /**
-     * Say once that the filter row scrolls, if it does.
-     *
-     * The strip holds a dozen pills and fits about seven; the ones past the edge
-     * are the tidy-up filters, and nothing announces them but a fade that reads
-     * as decoration. The cheap guards are repeated before the fetch so a reader
-     * who has answered, or has tips off, never asks for the script at all.
-     */
-    async maybeShowFilterScrollHint() {
-        if (window.DiscoverabilityState?.hasSeenSettingPromo?.(DashboardHealth.FILTER_SCROLL_PROMO_ID)) return;
-        if (this.dash.settings?.enableSessionTips === false) return;
-        if (typeof window.HealthFilterScrollHint === 'undefined') {
-            try {
-                await window.LazyScript.loadScriptOnce('js/health-filter-scroll-hint.js', 'healthFilterScrollHint',
-                    () => typeof window.HealthFilterScrollHint !== 'undefined');
-            } catch {
-                // A hint that cannot be fetched is not worth an error toast.
-                return;
-            }
-        }
-        window.HealthFilterScrollHint?.maybeShow?.();
-    }
-
     closeHealthView() {
-        // Without an answer: leaving the view is not "I have read it", so the
-        // hint is still owed on the next visit.
-        window.HealthFilterScrollHint?.close?.({ answered: false });
         const d = this.dash;
         if (d.activeView !== DashboardHealth.VIEW) {
             return false;
@@ -3172,6 +3162,21 @@ class DashboardHealth {
         const d = this.dash;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        /*
+         * Painting is only ever right while this view is the one on screen.
+         *
+         * Health's slow work -- a re-check of an unreachable host, an archive
+         * lookup -- runs for seconds, and loadAndRender() renders when it
+         * lands. Since render() starts by emptying the container, a report
+         * arriving after the reader had gone back to their bookmarks wiped the
+         * grid and put the health list in its place, while the URL and the
+         * highlighted page tab still said bookmarks.
+         *
+         * Guarded here rather than at the twenty call sites: every one of them
+         * is a candidate for the same race, and the ones that matter most are
+         * the slowest, which are the easiest to overlook.
+         */
+        if (!this.isActiveView()) return;
 
         d._abortInlineEditForRender?.();
         d.updateTagFilterIndicator?.();
@@ -3370,7 +3375,15 @@ class DashboardHealth {
             'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
             certificates: this.t('dashboard.healthNoteCertificates', 'These sit on a host whose TLS certificate expires soon. The count above is hosts; this list is the bookmarks on them.'),
             healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
-            all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
+            /*
+             * No note for All.
+             *
+             * The others name a rule the pill has no room for -- what makes a
+             * bookmark stale, why one counts as unused. "Every bookmark,
+             * whatever its state" names what an unfiltered list is, to someone
+             * already looking at one, and cost a line above every row to do it.
+             * The sorting tip it carried lives on the sort control itself.
+             */
         };
         return notes[filter] || '';
     }
@@ -4247,7 +4260,6 @@ class DashboardHealth {
                         : ''}
                     ${this.renderReportAge()}
                 </div>
-                ${this.renderSettingsLink()}
             </div>
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
@@ -4256,10 +4268,6 @@ class DashboardHealth {
             e.preventDefault();
             e.stopPropagation();
             this.showTrendChart();
-        });
-        header.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.openStatusHealthSettings();
         });
         return header;
     }
@@ -4641,24 +4649,48 @@ class DashboardHealth {
             }
             wrap.appendChild(menu);
             menu.hidden = false;
-            const dismiss = () => {
+            /*
+             * One exit, taken exactly once.
+             *
+             * This menu is built by hand rather than through the view's menu
+             * machinery, so nothing else cleans it up -- and it lives inside
+             * the container that render() empties. Cleaning up only on the two
+             * happy paths meant a re-render (pressing R, the monitored
+             * refresh, a filter click) took the menu away and left the
+             * capturing listener bound for the life of the page, with the
+             * promise never settling: the merge flow awaiting it was wedged,
+             * and each repeat stacked another listener that fired on every
+             * click from then on.
+             */
+            let done = false;
+            const settle = (value) => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('click', onDocClick, true);
+                observer.disconnect();
                 menu.remove();
-                resolve(null);
+                resolve(value);
             };
             const onDocClick = (e) => {
                 if (menu.contains(e.target) || wrap.contains(e.target)) {
                     return;
                 }
-                document.removeEventListener('click', onDocClick, true);
-                dismiss();
+                settle(null);
             };
-            setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+            // The menu leaving the document is a cancel like any other, and it
+            // is the only one that arrives without a click to hang it on.
+            const observer = new MutationObserver(() => {
+                if (!menu.isConnected) settle(null);
+            });
+            observer.observe(document.getElementById('dashboard-layout') || document.body,
+                { childList: true, subtree: true });
+            setTimeout(() => {
+                if (!done) document.addEventListener('click', onDocClick, true);
+            }, 0);
             menu.querySelectorAll('[data-merge-group]').forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    document.removeEventListener('click', onDocClick, true);
                     const index = Number(btn.getAttribute('data-merge-group'));
-                    menu.remove();
-                    resolve(groups[index] || null);
+                    settle(groups[index] || null);
                 });
             });
             menu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
@@ -4922,9 +4954,18 @@ class DashboardHealth {
                         title="${this.escape(this.t('dashboard.healthGroupByHostHint', 'One host down takes every bookmark on it with it. Grouped by site, that reads as one problem.'))}">${this.escape(this.t('dashboard.healthGroupByHost', 'Group by site'))}</button>
             </div>
             <div class="health-view-toolbar-actions">
-                <button type="button" class="health-view-focus-btn" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
-                <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
+                <button type="button" class="health-view-focus-btn health-view-focus-btn--primary" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
                 <button type="button" class="health-view-rot-btn" title="${this.escape(this.t('dashboard.healthRotHint', 'What has gone, moved or been failing for a long time'))}">${this.escape(this.t('dashboard.healthRot', 'Rot report'))}</button>
+                <span class="health-view-menu-wrap">
+                <button type="button" class="health-view-toolbar-more" data-health-toolbar-more
+                        data-menu-toggle="toolbar" data-menu-kind="toolbar"
+                        aria-haspopup="menu" aria-expanded="false"
+                        title="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}"
+                        aria-label="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}">⋯</button>
+                <div class="health-view-menu health-view-menu--toolbar" role="menu" hidden
+                     data-menu-for="toolbar" data-menu-owner="toolbar"
+                     aria-label="${this.escape(this.t('dashboard.healthToolbarMore', 'More actions'))}">
+                <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
                 ${this.renderHistoryExportButton()}
                 ${this.renderOpenBrokenButton()}
                 ${this.renderMergeDuplicateButton()}
@@ -4934,6 +4975,9 @@ class DashboardHealth {
                     ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                     : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
                 ${this.renderBulkEnableButtons()}
+                ${this.renderSettingsLink()}
+                </div>
+                </span>
                 <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                         aria-haspopup="dialog"
                         title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
@@ -4951,6 +4995,28 @@ class DashboardHealth {
 
         toolbar.querySelector('.health-view-rot-btn')?.addEventListener('click', () => {
             this.showRotReport();
+        });
+
+        /*
+         * The hamburger, and everything that moved behind it.
+         *
+         * Eight buttons stood on two lines between the filters and the first
+         * bookmark, of which Jordi named two he uses: Work through -- which
+         * keeps the first slot and its own styling -- and Rot report. The rest,
+         * plus the settings link that used to sit on the header, are one click
+         * away through the same menu machinery a row's ⋯ uses, so Escape,
+         * arrow keys and the outside-click dismiss come with it rather than
+         * being written a second time.
+         */
+        toolbar.querySelector('[data-health-toolbar-more]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMenu('toolbar', 'toolbar');
+        });
+
+        toolbar.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.closeAllMenus();
+            this.openStatusHealthSettings();
         });
 
         toolbar.querySelector('[data-health-help]')?.addEventListener('click', () => {

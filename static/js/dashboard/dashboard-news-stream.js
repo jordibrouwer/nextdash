@@ -40,8 +40,14 @@
      * out of the overview within a day of it landing -- and a hotfix carries
      * few features by definition, so the window would empty exactly when there
      * was something to say. The rest are still in the drill-in.
+     *
+     * Four rather than two: at the rate releases actually ship, two held a
+     * feature for days rather than weeks, and the panel exists precisely so a
+     * larger addition is not missed by someone who skimmed the release notes
+     * once. Four is roughly a month, and a release still has to have brought a
+     * feature to spend one of the slots.
      */
-    const FEATURE_RELEASES_IN_STREAM = 2;
+    const FEATURE_RELEASES_IN_STREAM = 4;
     /**
      * How many releases join the stream.
      *

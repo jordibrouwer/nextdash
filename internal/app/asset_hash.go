@@ -162,7 +162,6 @@ var lazyLoadedAssets = []string{
 	"js/health-reason-utils.js",
 	"js/shared/last-opened-format.js",
 	"js/health-tutorial.js",
-	"js/health-filter-scroll-hint.js",
 	"js/dashboard/dashboard-health.js",
 	"js/dashboard/dashboard-health-multi-select.js",
 	"js/dashboard/dashboard-health-focus.js",

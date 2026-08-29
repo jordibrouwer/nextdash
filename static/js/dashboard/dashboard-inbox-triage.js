@@ -29,6 +29,8 @@ class DashboardInboxTriage {
     start(items) {
         this.queue = Array.isArray(items) ? items.slice() : [];
         this.index = 0;
+        // A fresh run, whatever the last one ended in.
+        this.finished = false;
         if (!this.queue.length) {
             this.dash.showNotification(
                 this.t('dashboard.inboxTriageEmpty', 'Nothing to triage'),
@@ -438,15 +440,54 @@ class DashboardInboxTriage {
         }
         if (this.index < this.queue.length - 1) {
             this.index += 1;
-        } else if (this.queue.length > 1) {
-            this.index = 0;
+            this.syncQueueItem(this.currentItem()?.id);
+            this.render();
+            return;
         }
-        this.syncQueueItem(this.currentItem()?.id);
+        /*
+         * The end of the run, said out loud.
+         *
+         * Keeping a link does not shorten the queue, so the last card used to
+         * set index back to 0 and start over -- the counter reset, nothing
+         * announced anything, and a run of thirty could not be finished, only
+         * abandoned. The one moment triage exists for is the click of a job
+         * done, and it was the one moment missing.
+         */
+        this.finished = true;
         this.render();
+    }
+
+    /*
+     * What is left when the run is over.
+     *
+     * How many were walked rather than how many remain: the queue still holds
+     * everything kept, so counting it would report the work as undone. Close is
+     * the only action -- anything else would invite a second lap through links
+     * just decided on.
+     */
+    renderDone(card) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const total = this.queue.length;
+        card.innerHTML = `
+            <div class="inbox-triage-done">
+                <p class="inbox-triage-done-title">${esc(this.t('dashboard.inboxTriageDoneTitle', 'That is the lot.'))}</p>
+                <p class="inbox-triage-done-body">${esc(
+                    this.t('dashboard.inboxTriageDoneBody', 'You went through {n} links.')
+                        .replace('{n}', String(total)))}</p>
+                <button type="button" class="inbox-triage-done-close" data-triage-done-close>${
+                    esc(this.t('dashboard.inboxTriageDoneClose', 'Close'))}</button>
+            </div>`;
+        const close = card.querySelector('[data-triage-done-close]');
+        close?.addEventListener('click', () => this.close());
+        close?.focus({ preventScroll: true });
     }
 
     render() {
         const card = this.overlay?.querySelector('.inbox-triage-card');
+        if (card && this.finished) {
+            this.renderDone(card);
+            return;
+        }
         const item = this.currentItem();
         if (!card || !item) {
             this.close();

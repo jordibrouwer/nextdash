@@ -413,6 +413,82 @@ class DashboardInbox {
      * a link could be filed with tags the user was never shown. Clicking one
      * filters to it, the way the domain button beside them already works.
      */
+    /*
+     * Where the link came from, when that is worth a word.
+     *
+     * Every item has carried a source since capture -- paste, the extension, an
+     * import, the share sheet -- and it reached the CSV and the JSON export and
+     * never the screen. Config aggregates it into a table two screens away.
+     *
+     * Paste is left unsaid: it is how most links arrive, so printing it on
+     * every row would be a label that never distinguishes anything.
+     */
+    /*
+     * Of everything decided, how much became a bookmark.
+     *
+     * Against triaged rather than added, since links still waiting have not
+     * been decided and would drag the rate down for no reason.
+     *
+     * `kept` belongs in that sum and used to be missing here, so this panel and
+     * Config -> Stats printed materially different numbers under the same
+     * label -- and kept is the largest of the three, recorded on every
+     * mark-read. Config had already corrected it, with a comment saying the
+     * arithmetic otherwise failed to reconcile with the tiles beside it; the
+     * same reasoning applies on this side, so this is the half that moves.
+     */
+    /*
+     * Which way the backlog is going, in one line.
+     *
+     * The server keeps a bucket per day for four hundred days -- added,
+     * promoted, deleted, kept -- and this panel never touched it, so the inbox
+     * could say how many but never whether it was gaining on the pile. The
+     * chart that answers it lives in Config and is better than anything that
+     * fits here, so this states the week and points at it.
+     */
+    weekTrendFromStats(stats) {
+        const buckets = stats?.dailyBuckets;
+        if (!buckets || typeof buckets !== 'object') {
+            return null;
+        }
+        const cutoff = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+        let added = 0;
+        let handled = 0;
+        for (const [day, counts] of Object.entries(buckets)) {
+            if (day < cutoff) continue;
+            added += Number(counts?.added) || 0;
+            handled += (Number(counts?.promoted) || 0)
+                + (Number(counts?.deleted) || 0)
+                + (Number(counts?.kept) || 0);
+        }
+        // A week with nothing in it has no direction worth reporting.
+        return added || handled ? { added, handled } : null;
+    }
+
+    /*
+     * Of the links that were decided on, how many became bookmarks.
+     *
+     * Promoted and deleted are the two ways a link leaves, and they are the
+     * whole denominator. Kept is deliberately not in it: the server writes a
+     * kept event on every mark-read, and a link marked read is still sitting
+     * in the inbox waiting to be decided on. Counting it here contradicted the
+     * label beside the figure, and double-counted every link that was read
+     * before it was promoted -- which is why the stub of 40 added links could
+     * report 43 decisions.
+     */
+    promoteRateFromStats(stats) {
+        const promoted = Number(stats?.totalPromoted) || 0;
+        const triaged = promoted + (Number(stats?.totalDeleted) || 0);
+        return triaged ? Math.round((promoted / triaged) * 100) : null;
+    }
+
+    renderItemSource(item) {
+        const source = String(item?.source || '').trim();
+        if (!source || source === 'paste') {
+            return '';
+        }
+        return `<span class="inbox-item-source" data-inbox-source>${this.escape(source)}</span>`;
+    }
+
     renderItemTags(item) {
         const tags = Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [];
         if (!tags.length) return '';
@@ -1388,13 +1464,17 @@ class DashboardInbox {
         d.pageNav?.updateInboxTabBadge?.();
     }
 
+    /**
+     * Make the address bar say #inbox. This is the moment the inbox's URL is
+     * final, so it is also the moment worth remembering: a push here is what
+     * lets Back leave the view. The filters that land later through
+     * syncUrlState stay replaceState -- they are not places you navigated to.
+     */
     restoreInboxHash() {
-        if (window.location.hash !== '#inbox') {
-            history.replaceState(
-                history.state,
-                '',
-                `${window.location.pathname}${window.location.search}#inbox`
-            );
+        if (window.location.hash === '#inbox') return;
+        const next = `${window.location.pathname}${window.location.search}#inbox`;
+        if (!window.DashboardHistory?.pushLocation?.(next)) {
+            history.replaceState(history.state, '', next);
         }
     }
 
@@ -1790,6 +1870,26 @@ class DashboardInbox {
             e.preventDefault();
             e.stopImmediatePropagation();
             void this.deleteItemWithUndo(selected.id);
+            return true;
+        }
+        /*
+         * Two actions that were reachable only by right-click.
+         *
+         * Both shipped as context-menu entries and nothing else -- no row
+         * button, no key -- so on a phone, where there is no right-click at
+         * all, neither could be done. `u` for unread and `l` for labels; `g` is
+         * taken by "go to first" and `t` by triage.
+         */
+        if (e.key === 'u' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.markUnreadFromRow(selected);
+            return true;
+        }
+        if (e.key === 'l' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.editTags(selected);
             return true;
         }
         if (e.key === 'g' || e.key === 'Home') {
@@ -2557,11 +2657,7 @@ class DashboardInbox {
         const avgRetention = retentionCount
             ? Number(s.sumRetentionMs) / retentionCount
             : 0;
-        // Of everything that left the inbox, how much became a bookmark. Against
-        // triaged rather than added, since items still waiting have not been
-        // decided yet and would drag the rate down for no reason.
-        const triaged = promoted + deleted;
-        const promoteRate = triaged ? Math.round((promoted / triaged) * 100) : null;
+        const promoteRate = this.promoteRateFromStats(s);
 
         // The hint is read, not hovered. As a title it was unreachable from the
         // keyboard and on touch, which is where "Promote rate 55%" beside
@@ -2572,6 +2668,17 @@ class DashboardInbox {
                 <span class="inbox-stat-value">${this.escape(String(value))}</span>
                 ${hint ? `<span class="inbox-stat-hint">${this.escape(hint)}</span>` : ''}
             </div>`;
+
+        const trend = this.weekTrendFromStats(s);
+        const trendLine = trend
+            ? `<p class="inbox-stats-trend" data-inbox-trend>${this.escape(
+                this.t('dashboard.inboxStatsWeek', '{added} arrived and {handled} were dealt with this week.')
+                    .replace('{added}', String(trend.added))
+                    .replace('{handled}', String(trend.handled))
+            )} <button type="button" class="inbox-stats-trend-link" data-inbox-trend-more>${this.escape(
+                this.t('dashboard.inboxStatsWeekMore', 'See the trend')
+            )}</button></p>`
+            : '';
 
         const since = Number(s.firstEventAt) || 0;
         const sinceLine = since
@@ -2602,7 +2709,14 @@ class DashboardInbox {
                         'How long a link sits here before you deal with it')
                 )}
             </div>
+            ${trendLine}
             ${sinceLine}`;
+        // The chart itself lives in Config -> Statistics -> Inbox, which draws
+        // the same buckets over a period you can pick. Building a second one in
+        // a panel this size would be a worse copy of it.
+        panel.querySelector('[data-inbox-trend-more]')?.addEventListener('click', () => {
+            window.DashboardWidgetUtils?.openConfigTab?.(this.dash, 'stats', 'inbox');
+        });
         return panel;
     }
 
@@ -3116,7 +3230,21 @@ class DashboardInbox {
                 return false;
             }
         }
-        const items = this.getFilteredItems();
+        /*
+         * What is left to read, not everything on screen.
+         *
+         * The queue was getFilteredItems(), so on the default All filter an
+         * inbox of five unread and thirty-five read handed back all forty --
+         * links already dealt with, presented again as work. The manual has
+         * promised "unread items one by one" in three places since the feature
+         * shipped; this is the code catching up with it.
+         *
+         * The active filter still applies. Triage started from a tag or from
+         * Snoozed walks the unread items of that selection rather than
+         * quietly widening to the whole inbox, because the list in front of
+         * you is what you asked to work through.
+         */
+        const items = this.getFilteredItems().filter((item) => !item?.readAt);
         return this.triage?.start(items) ?? false;
     }
 
@@ -3174,17 +3302,36 @@ class DashboardInbox {
             ],
         };
         const [title, hint] = messages[this.filter] || messages.all;
-        // A query or a site filter is a narrowing the user just applied, so the
-        // empty result is about that and not about the inbox being clear.
-        const narrowed = String(this.searchQuery || '').trim().length > 0
-            || String(this.domainFilter || '').trim().length > 0;
+        /*
+         * A narrowing the reader just applied, so the empty result is about
+         * that and not about the inbox being clear.
+         *
+         * This counted the search box and the site filter and forgot the tag
+         * filter, while isNarrowed() a few hundred lines up counts all three --
+         * so clicking a tag nothing carries answered "Inbox zero, nothing is
+         * waiting" while the links sat there, hidden by the filter.
+         */
+        const narrowed = this.isNarrowed();
 
         const empty = document.createElement('div');
         empty.className = 'inbox-empty-state';
         empty.innerHTML = `
             <p class="inbox-empty-title">${this.escape(narrowed ? this.t('dashboard.inboxNoMatches', 'No matching links') : title)}</p>
             <p class="inbox-empty-hint">${this.escape(narrowed ? this.t('dashboard.inboxNoMatchesHint', 'Try another filter or search term') : hint)}</p>
+            ${narrowed ? `<button type="button" class="inbox-empty-clear" data-inbox-clear-filters>${
+                this.escape(this.t('dashboard.inboxClearFilters', 'Clear filters'))}</button>` : ''}
         `;
+        // Offered only where there is something to clear, and it clears all
+        // three: telling someone which of the filters is the one hiding their
+        // links is work the view can do for them.
+        empty.querySelector('[data-inbox-clear-filters]')?.addEventListener('click', () => {
+            this.searchQuery = '';
+            this.domainFilter = '';
+            this.tagFilter = '';
+            const box = document.querySelector('[data-inbox-search]');
+            if (box) box.value = '';
+            this.render();
+        });
         return empty;
     }
 
@@ -3351,15 +3498,22 @@ class DashboardInbox {
 
         const header = document.createElement('div');
         header.className = 'inbox-header';
+        // Two rows, the same shape as the health view's header: the heading owns
+        // the first line, and the count drops to the second to sit level with
+        // the subtitle. Beside the heading it rode a line higher than health's
+        // score badge, which is the one place the two views are seen in
+        // succession and the difference reads as a misalignment.
         header.innerHTML = `
             <div class="inbox-header-text">
                 <h2 class="inbox-title">${this.escape(title)}</h2>
                 <p class="inbox-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
-                <p class="inbox-subtitle">${this.escape(subtitle)}</p>
             </div>
-            <div class="inbox-header-meta">
-                <span class="inbox-count-badge">${count}</span>
-                ${unread > 0 ? `<span class="inbox-unread-badge">${unread} ${this.escape(this.t('dashboard.inboxUnread', 'unread'))}</span>` : ''}
+            <div class="inbox-header-second-row">
+                <p class="inbox-subtitle">${this.escape(subtitle)}</p>
+                <div class="inbox-header-meta">
+                    <span class="inbox-count-badge">${count}</span>
+                    ${unread > 0 ? `<span class="inbox-unread-badge">${unread} ${this.escape(this.t('dashboard.inboxUnread', 'unread'))}</span>` : ''}
+                </div>
             </div>
         `;
         container.appendChild(header);
@@ -3466,17 +3620,28 @@ class DashboardInbox {
             ${showDomainSelect ? `<select class="inbox-domain-select" data-inbox-domain-filter aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" data-inbox-search value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
             ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" data-inbox-sort aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
-            ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
-            ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
-            <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
-            <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
-            <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
-            <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
-                    aria-haspopup="dialog"
-                    title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
-                    aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
+            <div class="inbox-toolbar-actions">
+                <button type="button" class="inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+                <span class="inbox-menu-wrap">
+                    <button type="button" class="inbox-toolbar-more" data-inbox-toolbar-more
+                            aria-haspopup="menu" aria-expanded="false"
+                            title="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}"
+                            aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">⋯</button>
+                    <div class="inbox-menu" role="menu" hidden data-inbox-menu
+                         aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">
+                ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
+                ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
+                <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
+                <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
+                    </div>
+                </span>
+                <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
+                        aria-haspopup="dialog"
+                        title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
+                        aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
+            </div>
         `;
         const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
         const applyFilter = (key, via) => {
@@ -3575,6 +3740,53 @@ class DashboardInbox {
         toolbar.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
             this.toggleStats();
         });
+
+        /*
+         * The hamburger, and the six buttons behind it.
+         *
+         * Nine controls stood between the filters and the first link, of which
+         * Triage is the one anyone comes here for -- so it keeps the first slot
+         * and its own styling, the way Work through does in the health view,
+         * and the ℹ stays because it explains the view rather than acting on
+         * it. Export, import and the counts wait behind the ⋯.
+         *
+         * The wrap around button and menu is what anchors it: positioned
+         * against the toolbar instead, a menu lands at the far edge of the
+         * window, which is exactly what went wrong in health.
+         */
+        const moreBtn = toolbar.querySelector('[data-inbox-toolbar-more]');
+        const moreMenu = toolbar.querySelector('[data-inbox-menu]');
+        if (moreBtn && moreMenu) {
+            const closeMore = () => {
+                moreMenu.hidden = true;
+                moreBtn.setAttribute('aria-expanded', 'false');
+            };
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = moreMenu.hidden;
+                moreMenu.hidden = !open;
+                moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (!open) return;
+                const onOutside = (event) => {
+                    if (moreMenu.contains(event.target) || event.target === moreBtn) return;
+                    closeMore();
+                    document.removeEventListener('click', onOutside, true);
+                };
+                setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+            });
+            // Escape closes it, and an action inside it closes it too: the menu
+            // is a way to reach a button, not a place to stay.
+            moreMenu.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    closeMore();
+                    moreBtn.focus({ preventScroll: true });
+                }
+            });
+            moreMenu.addEventListener('click', (e) => {
+                if (e.target.closest('button')) closeMore();
+            });
+        }
 
         toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
@@ -3868,6 +4080,7 @@ class DashboardInbox {
                     <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
                     ${addedLabel ? `<span class="inbox-item-date" title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}">${this.escape(addedLabel)}</span>` : ''}
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
+                    ${this.renderItemSource(item)}
                     ${wakeLabel}
                 </p>
                 ${item.previewDesc ? `<p class="inbox-item-desc">${this.escape(item.previewDesc)}</p>` : ''}

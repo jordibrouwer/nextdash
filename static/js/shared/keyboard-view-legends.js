@@ -36,6 +36,9 @@
         { keys: 'Shift+↑ / ↓', legendKey: 'inboxKeySelectRange', cheatKey: 'ivSelectRange', fallback: 'extend selection' },
         { keys: 'Ctrl/Cmd+A', legendKey: 'inboxKeySelectAll', cheatKey: 'ivSelectAll', fallback: 'select all' },
         { keys: 'd', legendKey: 'inboxKeyDelete', cheatKey: 'ivDelete', fallback: 'delete' },
+        // Both of these were right-click only, which a phone has not got.
+        { keys: 'u', legendKey: 'inboxKeyUnread', cheatKey: 'ivUnread', fallback: 'mark unread' },
+        { keys: 'l', legendKey: 'inboxKeyTags', cheatKey: 'ivTags', fallback: 'tags' },
         { keys: 'R', legendKey: 'inboxKeyRefresh', cheatKey: 'ivRefresh', fallback: 'refresh' },
         { keys: 'g / G / Home / End', legendKey: 'inboxKeyFirstLast', cheatKey: 'ivFirstLast', fallback: 'first / last' },
         { keys: 't', legendKey: 'inboxKeyTriage', cheatKey: 'ivTriage', fallback: 'triage' },
