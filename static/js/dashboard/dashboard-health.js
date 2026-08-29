@@ -429,6 +429,24 @@ class DashboardHealth {
         return Array.isArray(this.report?.duplicateGroups) ? this.report.duplicateGroups : [];
     }
 
+    /**
+     * Reload the list without moving the reader.
+     *
+     * The Monitored filter reloads itself on a timer and on returning to the
+     * tab. Nobody asked for either, so neither may take the reader's place
+     * away: rebuilding the list from nothing lands the page at the top, and a
+     * reader partway down a long list was moved while looking at it. Every row
+     * action already goes through keepPlaceAt(); these two refreshes are the
+     * ones that arrive on their own, which is exactly why they must be quiet.
+     *
+     * The offset only, without an anchor row: there is no row being acted on
+     * here, and pinning one would fight a reader who has scrolled since.
+     */
+    async refreshKeepingPlace() {
+        this._keepScrollY = window.scrollY || 0;
+        await this.loadAndRender({ refresh: true });
+    }
+
     startLiveRefresh() {
         this.stopLiveRefresh();
         if (!this.isActiveView()) {
@@ -439,7 +457,7 @@ class DashboardHealth {
                 return;
             }
             if (this.filter === 'monitored') {
-                void this.loadAndRender({ refresh: true });
+                void this.refreshKeepingPlace();
             }
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
@@ -451,7 +469,7 @@ class DashboardHealth {
                 if (document.visibilityState !== 'visible') {
                     return;
                 }
-                void this.loadAndRender({ refresh: true });
+                void this.refreshKeepingPlace();
             }, 60000);
         }
     }
@@ -3144,6 +3162,21 @@ class DashboardHealth {
         const d = this.dash;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        /*
+         * Painting is only ever right while this view is the one on screen.
+         *
+         * Health's slow work -- a re-check of an unreachable host, an archive
+         * lookup -- runs for seconds, and loadAndRender() renders when it
+         * lands. Since render() starts by emptying the container, a report
+         * arriving after the reader had gone back to their bookmarks wiped the
+         * grid and put the health list in its place, while the URL and the
+         * highlighted page tab still said bookmarks.
+         *
+         * Guarded here rather than at the twenty call sites: every one of them
+         * is a candidate for the same race, and the ones that matter most are
+         * the slowest, which are the easiest to overlook.
+         */
+        if (!this.isActiveView()) return;
 
         d._abortInlineEditForRender?.();
         d.updateTagFilterIndicator?.();
@@ -4616,24 +4649,48 @@ class DashboardHealth {
             }
             wrap.appendChild(menu);
             menu.hidden = false;
-            const dismiss = () => {
+            /*
+             * One exit, taken exactly once.
+             *
+             * This menu is built by hand rather than through the view's menu
+             * machinery, so nothing else cleans it up -- and it lives inside
+             * the container that render() empties. Cleaning up only on the two
+             * happy paths meant a re-render (pressing R, the monitored
+             * refresh, a filter click) took the menu away and left the
+             * capturing listener bound for the life of the page, with the
+             * promise never settling: the merge flow awaiting it was wedged,
+             * and each repeat stacked another listener that fired on every
+             * click from then on.
+             */
+            let done = false;
+            const settle = (value) => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('click', onDocClick, true);
+                observer.disconnect();
                 menu.remove();
-                resolve(null);
+                resolve(value);
             };
             const onDocClick = (e) => {
                 if (menu.contains(e.target) || wrap.contains(e.target)) {
                     return;
                 }
-                document.removeEventListener('click', onDocClick, true);
-                dismiss();
+                settle(null);
             };
-            setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+            // The menu leaving the document is a cancel like any other, and it
+            // is the only one that arrives without a click to hang it on.
+            const observer = new MutationObserver(() => {
+                if (!menu.isConnected) settle(null);
+            });
+            observer.observe(document.getElementById('dashboard-layout') || document.body,
+                { childList: true, subtree: true });
+            setTimeout(() => {
+                if (!done) document.addEventListener('click', onDocClick, true);
+            }, 0);
             menu.querySelectorAll('[data-merge-group]').forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    document.removeEventListener('click', onDocClick, true);
                     const index = Number(btn.getAttribute('data-merge-group'));
-                    menu.remove();
-                    resolve(groups[index] || null);
+                    settle(groups[index] || null);
                 });
             });
             menu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
