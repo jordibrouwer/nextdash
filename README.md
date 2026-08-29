@@ -243,7 +243,7 @@ each thing works and why it behaves the way it does.
 
 **Self-hosting**
 
-- One Go binary and a data directory of plain JSON. No database, no account, no telemetry. *[Manual §21](MANUAL.md#21-security-and-self-hosting)*
+- One Go binary and a data directory of plain JSON. No database, no account, privacy focussed telemetry only if you want. *[Manual §21](MANUAL.md#21-security-and-self-hosting)*
 - A write token, a CORS allowlist, rate limits, SSRF protection and an activity log, for when it faces a network. *[Security](#security)*
 - It talks to other things: a browser extension, a route for scripts, outgoing webhooks, an MCP endpoint. *[What nextDash talks to](#what-nextdash-talks-to)*
 
