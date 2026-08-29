@@ -1027,9 +1027,10 @@ the only widget that talks to anything outside.
   path that silently matched several things would make a wrong figure look
   right. A path that stops matching is marked rather than blank, because a blank
   reads as a zero and zero is a fact. Up to **eight** figures on one tile.
-- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Time ago*
+- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Milliseconds*, *Time ago*
   or *Text*. Sizes step through KB and MB, a ratio between 0 and 1 is read as a
-  percentage, and a date arrives as seconds, milliseconds or an ISO string.
+  percentage, *Milliseconds* takes a value in seconds and shows whole
+  milliseconds, and a date arrives as seconds, milliseconds or an ISO string.
 - **Or a list instead of figures** — point at an array and the tile draws its
   entries as rows, up to twenty: the downloads running now, the last few errors.
 - **Refresh every** — anywhere between 30 seconds and a day, five minutes by

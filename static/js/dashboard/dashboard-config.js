@@ -15247,7 +15247,7 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
 
     /*
      * The id this widget's own key is filed under.

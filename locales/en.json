@@ -2043,6 +2043,7 @@
     "widgetFormat.bytes": "Size",
     "widgetFormat.percent": "Percentage",
     "widgetFormat.duration": "Duration",
+    "widgetFormat.ms": "Milliseconds",
     "widgetFormat.relativeDate": "Time ago",
     "widgetFormat.text": "Text",
     "widgetAbout.custom": "Any figure out of any JSON endpoint — for the service that has no widget of its own.",

@@ -2043,6 +2043,7 @@
     "widgetFormat.bytes": "Taille",
     "widgetFormat.percent": "Pourcentage",
     "widgetFormat.duration": "Durée",
+    "widgetFormat.ms": "Millisecondes",
     "widgetFormat.relativeDate": "Il y a",
     "widgetFormat.text": "Texte",
     "widgetAbout.custom": "N’importe quel chiffre de n’importe quel point JSON — pour le service sans widget propre.",

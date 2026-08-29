@@ -2043,6 +2043,7 @@
     "widgetFormat.bytes": "Größe",
     "widgetFormat.percent": "Prozent",
     "widgetFormat.duration": "Dauer",
+    "widgetFormat.ms": "Millisekunden",
     "widgetFormat.relativeDate": "Vor",
     "widgetFormat.text": "Text",
     "widgetAbout.custom": "Jede Zahl aus jedem JSON-Endpunkt — für den Dienst ohne eigenes Widget.",

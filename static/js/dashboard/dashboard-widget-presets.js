@@ -244,7 +244,7 @@
             fields: [
                 { path: 'num_dns_queries', label: 'queries', format: 'count' },
                 { path: 'num_blocked_filtering', label: 'blocked', format: 'count' },
-                { path: 'avg_processing_time', label: 'avg ms', format: 'text' },
+                { path: 'avg_processing_time', label: 'avg ms', format: 'ms' },
             ],
         },
         {

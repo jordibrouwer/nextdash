@@ -2043,6 +2043,7 @@
     "widgetFormat.bytes": "Grootte",
     "widgetFormat.percent": "Percentage",
     "widgetFormat.duration": "Duur",
+    "widgetFormat.ms": "Milliseconden",
     "widgetFormat.relativeDate": "Tijd geleden",
     "widgetFormat.text": "Tekst",
     "widgetAbout.custom": "Elk cijfer uit elk JSON-adres — voor de dienst die geen eigen widget heeft.",

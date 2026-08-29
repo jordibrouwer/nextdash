@@ -65,7 +65,7 @@ const (
 // than free-form: a format is a choice from a list, and a list can be a dropdown.
 var customWidgetFormats = map[string]bool{
 	"count": true, "bytes": true, "percent": true,
-	"duration": true, "relativeDate": true, "text": true,
+	"duration": true, "ms": true, "relativeDate": true, "text": true,
 }
 
 // CustomWidgetValue is one figure as the tile should show it.
@@ -304,9 +304,9 @@ func customWidgetLookup(document any, path string) (any, bool) {
 /*
 formatCustomValue turns what was found into what is shown.
 
-Six formats, no more. Each answers a question a service's numbers actually
-raise: how many, how large, how full, how long, how long ago, and what does it
-say.
+Seven formats, no more. Each answers a question a service's numbers actually
+raise: how many, how large, how full, how long, how fast, how long ago, and
+what does it say.
 */
 func formatCustomValue(raw any, format string) string {
 	switch format {
@@ -337,6 +337,14 @@ func formatCustomValue(raw any, format string) string {
 	case "duration":
 		if number, ok := toFloat(raw); ok {
 			return formatDurationSeconds(int64(number))
+		}
+	case "ms":
+		if number, ok := toFloat(raw); ok {
+			// Seconds in, milliseconds out. A service that answers in seconds
+			// reports a response time as 0.0051589999999999995, and a tile the
+			// size of a stamp has no room for a float's full tail — nor any use
+			// for it, since nobody reads a response time past the millisecond.
+			return formatThousands(int64(math.Round(number * 1000)))
 		}
 	case "relativeDate":
 		if when, ok := toTime(raw); ok {

@@ -47,7 +47,7 @@ func TestCustomWidgetPathWalking(t *testing.T) {
 	}
 }
 
-// Six formats, each answering a question a service's numbers actually raise.
+// Seven formats, each answering a question a service's numbers actually raise.
 func TestCustomWidgetFormatting(t *testing.T) {
 	cases := []struct {
 		raw          any
@@ -59,6 +59,9 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		{float64(87), "percent", "87%"},
 		{float64(3600), "duration", "1h"},
 		{float64(90), "duration", "1m"},
+		// Seconds in, whole milliseconds out — AdGuard reports 0.0051589999999999995.
+		{float64(0.0051589999999999995), "ms", "5"},
+		{float64(1.25), "ms", "1 250"},
 		{"hello", "text", "hello"},
 		// A value the format cannot read falls back to showing it, rather than
 		// showing nothing: the reader can then see what arrived.
