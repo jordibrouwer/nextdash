@@ -1324,8 +1324,17 @@ Two other things come with it:
   hue reads as a mistake and two read as light.
 - **A backdrop pattern**: **dots**, **grid**, **lines**, **hatch** or **none**,
   set under **Config → Appearance → Display**. Left on **auto** the theme
-  decides — most ask for dots, and the handful whose texture is part of what
-  they are ask for something else.
+  decides, and since **v1.4.2.3** every one of the 107 families has an opinion
+  rather than fourteen of them: **hatch** for the paper, cloth and earth ones
+  (*Bone China*, *Wheat Field*, *Library Mahogany*), **grid** for the technical
+  ones (*Copper Circuit*, *Emerald Matrix*, *Foundry Iron*), **lines** for the
+  screens and the neon (*Terminal Amber*, *Midnight Neon*, *Chartreuse
+  Static*), and **dots** for the misty, watery and cool (*Nordic Frost*,
+  *Harbour Fog*, *Sea Glass*). Before that, two hundred of the 214 variants
+  drew dots, so changing theme changed the colours and left the page underneath
+  looking the same. A family's light and dark halves always agree — they are one
+  idea whichever way round it is printed. Choose anything but *auto* and it wins
+  on every theme.
 
 If you have set a **background image or gradient** of your own, it wins: the
 washes switch off entirely, because a background you chose was chosen *instead*
@@ -1503,7 +1512,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 
 Filter, sort, and search state persist in the session across refreshes and sync to the URL (`hv_filter`, `hv_sort`, `hv_q`, `hv_id`).
 
-**A guided tour on first use.** The first time you open the Health view, a short six-step walkthrough introduces the monitoring features around one worked example — a self-hosted status page behind a login, backed up nightly — rather than listing settings in the abstract: turning on **Monitor** and picking an interval, saying what *up* means for that page with status codes `200,401` and a keyword check, watching for **drift**, excluding the nightly backup with a maintenance window, and wiring up an alert with **Alert after 3** and a test send. It appears once and then never again; `Esc`, the backdrop and **Skip** all count as having seen it. **Show quick-start card again**, under **Config → Behavior → General**, brings it back along with the inbox tour and the keyboard tips — the one-time hints attached to individual settings in config are left alone.
+**A guided tour on first use.** The first time you open the Health view, a short six-step walkthrough introduces the monitoring features around one worked example — a self-hosted status page behind a login, backed up nightly — rather than listing settings in the abstract: turning on **Monitor** and picking an interval, saying what *up* means for that page with status codes `200,401` and a keyword check, watching for **drift**, excluding the nightly backup with a maintenance window, and wiring up an alert with **Alert after 3** and a test send. It appears once and then never again; `Esc`, the backdrop and **Skip** all count as having seen it. Since **v1.4.2.3** the same panel — **Config → Behavior → General**, under *Onboarding* — carries a button per tour, so this one can be asked for on its own. A message says where it will turn up, since the tours belong to the views they explain and none of them can play from config. **Show quick-start card again** beside them is still the wholesale answer: it brings back every tour and the welcome card along with the keyboard tips, which is what you want when handing an install to someone else. The one-time hints attached to individual settings in config are left alone by both.
 
 **URL deep links** — Open health view with query parameters:
 

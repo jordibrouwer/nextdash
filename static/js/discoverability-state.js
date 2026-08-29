@@ -171,6 +171,27 @@
         }
     }
 
+    /*
+     * Forget one tip or tour, leaving the rest alone.
+     *
+     * clearSeenTips below is the "hand this install to someone else" answer.
+     * This is the narrower one: someone wants the Health tour again and has no
+     * quarrel with the forty keyboard tips they have already met. tipsNotBefore
+     * is deliberately untouched -- that gap belongs to the rotating toasts, and
+     * a tour asked for by name should not reopen the tip firehose with it.
+     */
+    function forgetTip(id, options = {}) {
+        const key = String(id || '').trim();
+        if (!key || !Array.isArray(state.seenTips)) return;
+        const next = state.seenTips.filter((seen) => seen !== key);
+        if (next.length === state.seenTips.length) return;
+        state.seenTips = next;
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     /**
      * Forget every tip and tour, so they all show once more.
      *
@@ -346,6 +367,7 @@
         getSeenTips,
         hasSeenTip,
         markTipSeen,
+        forgetTip,
         clearSeenTips,
         getSeenSettingPromos,
         hasSeenSettingPromo,

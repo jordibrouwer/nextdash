@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.2.3 — 29 August 2026](#v1423--29-august-2026)
 - [v1.4.2.2 — 29 August 2026](#v1422--29-august-2026)
 - [v1.4.2.1 — 28 August 2026](#v1421--28-august-2026)
 - [v1.4.2 — 28 August 2026](#v142--28-august-2026)
@@ -182,6 +183,38 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.2.3 — 29 August 2026
+
+A tour can be asked for one at a time, and the two hundred themes that all
+looked alike underneath now carry a texture of their own.
+
+### Behavior
+
+- **new** — **each guided tour can be replayed on its own.** Six tours exist and five could be seen exactly once: Health, Inbox, Fresh, Widgets and the column-spread hint each record a tip id on first run and never offer themselves again. The only way back was *Show quick-start card again*, which calls `clearSeenTips()` and empties the list wholesale — right when handing an install to someone else, far more than "show me the Health one again" asks for.
+
+  `DashboardConfig.GUIDED_TOURS` is the six in one list; they had been scattered across six files, two as constants and four inside the tutorial that owned them, so anything wanting to enumerate them had to repeat the set and stay in step by hand. `renderTourReplayRow` draws a button per tour and `replayTour` clears one id through the new `DiscoverabilityState.forgetTip(id)`, which leaves `tipsNotBefore` alone: that gap belongs to the rotating toasts, and a tour asked for by name should not reopen the tip firehose with it. The welcome card is the exception — it has no tip id, so `quickStart.dismissed` is cleared instead, and `onboardingCompleted` is deliberately left alone since the reset button above is the one that starts the whole first run over.
+
+  Two states the panel draws rather than hides: a tour whose id is not in the seen list is `disabled`, because its button would claim to restore something never taken away; and when `enableSessionTips` is false the note turns warning-coloured and says no tour will appear at all, since otherwise six buttons do nothing visible.
+
+### Appearance
+
+- **new** — **all 107 theme families choose a backdrop.** `--theme-pattern-image` defaults to dots for every theme and the block below it named fourteen exceptions, so **200 of 214 variants painted dots** — the theme browser changed the palette and left the texture identical, which reads as three backdrops that do not work. Each family now names one in `theme-depth.css`, assigned by character: **hatch** for paper, cloth and earth, **grid** for circuitry, editors and steel, **lines** for screens, neon and signal, **dots** for mist, water and cool. Final spread across the 214: 56 hatch, 54 grid, 54 lines, 50 dots. `data-pattern="auto"` still means "whatever the theme asks for", and anything chosen in Appearance → Backdrop still overrides every theme.
+
+  Selectors name both variants of a family in one block, so light and dark cannot drift apart.
+
+- **fix** — **four screen themes lost their scanlines in their light half.** `retro-crt`, `neon-grid`, `cold-cathode` and `static-noise` named only their `-dark` selector, so switching one to light dropped the lines and left it looking like any other theme wearing the same name. Both halves are named now. Found by the new spec rather than by eye — at 214 variants, reading the file is not a check.
+
+- **new** — `tests/theme-backdrop-variety.spec.js` walks **every one of the 214 variants** and fails on two things that are otherwise invisible: a family nobody assigned (falls back to dots and looks deliberate) and a family whose halves disagree.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.2.3.json`, the `index.json` entry carrying `hideFromModal`, the constants spec, this changelog, `MANUAL.md`, and the Config → Help paragraphs in all four locales.
+- **`NEXTDASH_WHATS_NEW_DATA_VERSION` moves to `whats-new-v264` and `DASHBOARD_RELEASE` does not.** Fourth hidden release in a row: this counts toward the version number and leads Config → Overview, while the modal keeps leading with v1.4.2.
+- This round was first written as **v1.4.3** and corrected before anything was pushed. It is a patch on the v1.4.2 line — a replay button and a texture assignment are not a minor release — and the mistaken commit was removed from history rather than superseded, since nothing had left the machine.
+- `go generate ./...` for the changed CSS and JS.
 
 ---
 

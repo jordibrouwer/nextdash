@@ -12534,7 +12534,47 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick-start card again'))}</button>
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
+                ${this.renderTourReplayRow()}
             </div>`;
+    }
+
+    /*
+     * One tour at a time, rather than all of them and the card as well.
+     *
+     * The reset above empties the whole seen list, which is right when handing
+     * an install to someone else and far more than "show me the Health one
+     * again" asks for. Each tour gets its own button clearing its own id.
+     *
+     * A tour nobody has seen is drawn disabled: its button would claim to put
+     * back something that was never taken away, and it is going to appear on
+     * its own anyway. And when the tips switch above is off no tour appears at
+     * all, however often these are pressed, so the row says so rather than
+     * letting a click do nothing visible.
+     */
+    renderTourReplayRow() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const seen = (id) => (id === 'quickStart'
+            ? this.dash.settings?.quickStart?.dismissed === true
+            : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
+
+        const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
+            const replayable = seen(tour.id);
+            const label = esc(this.t(tour.labelKey, tour.label));
+            return `<button type="button" class="config-btn config-btn--small"
+                        data-replay-tour="${esc(tour.id)}" ${replayable ? '' : 'disabled'}
+                        title="${replayable ? '' : esc(this.t('config.tourNotSeenYet', 'You have not seen this one yet — it will appear on its own.'))}">${label}</button>`;
+        }).join('');
+
+        const tipsOff = this.dash.settings?.enableSessionTips === false;
+        const note = tipsOff
+            ? this.t('config.tourReplayBlocked',
+                'Occasional keyboard tips are switched off, so no tour will appear until you turn them back on above.')
+            : this.t('config.tourReplayHint',
+                'Show one guided tour again. It appears where it belongs — in Health, the inbox, or wherever it explains.');
+
+        return `
+                <p class="config-panel-note${tipsOff ? ' config-panel-note--warn' : ''}" data-tour-replay-note>${esc(note)}</p>
+                <div class="config-actions config-actions--wrap">${buttons}</div>`;
     }
 
     /**
@@ -12598,6 +12638,54 @@ class DashboardConfig {
                 if (action === 'whats-new') void this.openWhatsNew();
             });
         });
+        container.querySelectorAll('[data-replay-tour]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.replayTour(btn.getAttribute('data-replay-tour'));
+            });
+        });
+    }
+
+    /*
+     * Put one tour back, and say where it will turn up.
+     *
+     * None of these can start from this panel -- each belongs to a view, and
+     * the welcome card to the dashboard -- so the button clears the record of
+     * having seen it and the toast answers the question that leaves: where do I
+     * look. A click that quietly cleared a flag and showed nothing is the
+     * failure this exists to avoid.
+     */
+    async replayTour(id) {
+        const tour = DashboardConfig.GUIDED_TOURS.find((entry) => entry.id === id);
+        if (!tour) return;
+
+        if (tour.id === 'quickStart') {
+            // The card has a flag of its own rather than a tip id: it is the
+            // welcome tour, and quick-start checks `dismissed` before anything
+            // else. onboardingCompleted is deliberately left alone here -- the
+            // reset button above is the one that starts the whole first run
+            // over.
+            if (this.dash.settings?.quickStart && typeof this.dash.settings.quickStart === 'object') {
+                this.dash.settings.quickStart.dismissed = false;
+            }
+        } else {
+            window.DiscoverabilityState?.forgetTip?.(tour.id, { persist: false });
+        }
+
+        try {
+            await this.dash.saveSettings?.();
+        } catch {
+            this.notify(this.t('config.tourReplayError', 'Could not bring that tour back.'), 'error');
+            return;
+        }
+        this.notify(
+            this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
+                .replace('{tour}', this.t(tour.labelKey, tour.label))
+                .replace('{where}', this.t(tour.whereKey, tour.where)),
+            'success',
+        );
+        // The row draws from the seen list, so the button that was just used
+        // has to go quiet rather than inviting a second press.
+        this.render();
     }
 
     /** Apply a behaviour setting: mutate, run any special apply, save. */
@@ -14960,6 +15048,35 @@ class DashboardConfig {
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
+
+    /*
+     * The six guided tours, in one list.
+     *
+     * Each records a tip id the first time it runs and never offers itself
+     * again, and until this list existed those ids lived in six different files
+     * -- two as constants here, four only inside the tutorial that owns them.
+     * Anything wanting to know "which tours are there" had to enumerate them a
+     * second time and stay in step by hand.
+     *
+     * `where` is what a reader is told after clearing one, because none of
+     * these can start from this panel: they belong to a view, and the honest
+     * answer is where it will turn up rather than a click that appears to do
+     * nothing.
+     */
+    static GUIDED_TOURS = [
+        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'Welcome tour',
+          whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
+        { id: 'healthTutorialV1', labelKey: 'config.tourHealth', label: 'Health',
+          whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
+        { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox',
+          whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },
+        { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
+          whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
+        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
+          whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
+        { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category',
+          whereKey: 'config.tourWhereSpread', where: 'the next time you spread a category across columns' },
+    ];
 
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
