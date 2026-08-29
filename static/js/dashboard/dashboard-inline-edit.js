@@ -64,6 +64,10 @@ class DashboardInlineEdit {
         const bookmarkRef = ctx?.bookmarkRef;
         if (clearInboxPromote) {
             d._pendingInboxPromoteId = null;
+            // The resume goes with it. Closing the form without saving is
+            // someone stopping, and a flag left set would reopen triage on the
+            // next unrelated bookmark they happen to create.
+            d._pendingInboxTriageAdvance = false;
         }
         d._inlineEditGlobalCleanup?.();
         d._inlineEditAutoFetchClear?.();
@@ -1829,6 +1833,23 @@ class DashboardInlineEdit {
                 await d.inbox.completePromote(pendingInboxPromoteId);
                 if (bookmark.checkStatus === true || bookmark.monitor === true) {
                     d.inbox.triggerHealthCheckForUrl?.(bookmark.url);
+                }
+                /*
+                 * Back to where the run was.
+                 *
+                 * Promote is the action triage exists to produce and the only
+                 * one that has to tear the overlay down, because the bookmark
+                 * form needs the screen. _pendingInboxTriageAdvance was written
+                 * for the return trip and read nowhere, so clearing a backlog
+                 * meant pressing t again after every single link and losing the
+                 * queue each time.
+                 *
+                 * Only after a save. Cancelling the form is someone deciding to
+                 * stop, and reopening the overlay would overrule that.
+                 */
+                if (d._pendingInboxTriageAdvance) {
+                    d._pendingInboxTriageAdvance = false;
+                    await d.inbox.startTriage?.();
                 }
             }
 

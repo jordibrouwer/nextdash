@@ -3116,7 +3116,21 @@ class DashboardInbox {
                 return false;
             }
         }
-        const items = this.getFilteredItems();
+        /*
+         * What is left to read, not everything on screen.
+         *
+         * The queue was getFilteredItems(), so on the default All filter an
+         * inbox of five unread and thirty-five read handed back all forty --
+         * links already dealt with, presented again as work. The manual has
+         * promised "unread items one by one" in three places since the feature
+         * shipped; this is the code catching up with it.
+         *
+         * The active filter still applies. Triage started from a tag or from
+         * Snoozed walks the unread items of that selection rather than
+         * quietly widening to the whole inbox, because the list in front of
+         * you is what you asked to work through.
+         */
+        const items = this.getFilteredItems().filter((item) => !item?.readAt);
         return this.triage?.start(items) ?? false;
     }
 

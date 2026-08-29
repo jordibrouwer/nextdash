@@ -1390,3 +1390,54 @@ body[data-layout-version="modern"] .inbox-empty {
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/*
+ * The card that ends a triage run.
+ *
+ * Centred and near-empty on purpose: everything else in triage is a decision to
+ * make, and this is the one screen with nothing left to decide. Keeping a link
+ * does not shorten the queue, so without this the last card wrapped round to
+ * the first and the run could be abandoned but never finished.
+ */
+.inbox-triage-done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 220px;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.inbox-triage-done-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.28);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.inbox-triage-done-body {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.inbox-triage-done-close {
+    margin-top: 6px;
+    padding: 8px 20px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.inbox-triage-done-close:hover {
+    border-color: var(--accent-primary);
+}
+
+.inbox-triage-done-close:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
