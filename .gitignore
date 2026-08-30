@@ -45,3 +45,4 @@ nextDash.code-workspace
 docs/
 !docs/dashboard-refactor.md
 !docs/dashboard-smoke-checklist.md
+.vscode/settings.json
