@@ -36,9 +36,11 @@ const features = [
     { titleKey: 'a', titleFallback: 'Preview card', whatFallback: '…', since: 'v1.3.2', go: {} },
     { titleKey: 'b', titleFallback: 'Fresh', whatFallback: '…', since: 'v1.3.0', go: {} },
     { titleKey: 'c', titleFallback: 'Side rail', whatFallback: '…', go: {} },
-    // A third release that brought features: past the window, so it stays in
+    { titleKey: 'e', titleFallback: 'Third', whatFallback: '…', since: 'v1.2.1', go: {} },
+    { titleKey: 'd', titleFallback: 'Fourth', whatFallback: '…', since: 'v1.2.0', go: {} },
+    // A fifth release that brought features: past the window, so it stays in
     // the drill-in however recent it is.
-    { titleKey: 'd', titleFallback: 'Older still', whatFallback: '…', since: 'v1.2.0', go: {} },
+    { titleKey: 'f', titleFallback: 'Older still', whatFallback: '…', since: 'v1.1.0', go: {} },
 ];
 const site = {
     enabled: true,
@@ -64,15 +66,21 @@ assert.strictEqual(releaseRows.length, 5, `expected five releases, got ${release
 // order and for whether it is recent enough to be news at all.
 //
 // The window counts releases that actually brought a feature, not releases:
-// v1.3.1 brought none, so v1.3.0's feature is still one of the two most recent
-// rather than being pushed out by a release with nothing in it. Two hotfixes in
-// an afternoon would otherwise empty the overview of features the day after a
-// release landed.
+// v1.3.1 brought none, so v1.3.0's feature keeps its place rather than being
+// pushed out by a release with nothing in it. Two hotfixes in an afternoon
+// would otherwise empty the overview of features the day after a release
+// landed.
+//
+// Four of them, not two: at the rate releases actually ship, two held a
+// feature for days rather than weeks (see 7d75d88a). This assertion is written
+// out rather than derived from FEATURE_RELEASES_IN_STREAM on purpose — read
+// from the constant it would agree with whatever the constant said, which is
+// how it came to spend a month agreeing with the wrong number.
 const featureRows = stream.filter((i) => i.source === 'feature');
-assert.deepStrictEqual(featureRows.map((i) => i.titleKey), ['a', 'b'],
-    'the window should hold the two most recent releases that brought features');
-assert.ok(!stream.some((i) => i.titleKey === 'd'),
-    'a third feature-bearing release reached the stream');
+assert.deepStrictEqual(featureRows.map((i) => i.titleKey), ['a', 'b', 'e', 'd'],
+    'the window should hold the four most recent releases that brought features');
+assert.ok(!stream.some((i) => i.titleKey === 'f'),
+    'a fifth feature-bearing release reached the stream');
 assert.strictEqual(featureRows[0].at, Date.parse('2026-08-21T12:00:00Z'));
 
 // Undated features — the back catalogue imported in one go — stay out.

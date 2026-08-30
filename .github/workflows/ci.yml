@@ -18,6 +18,12 @@ jobs:
         run: bash scripts/validate-json.sh
       - name: Check extension bookmark-form sync
         run: bash scripts/check-extension-bookmark-form.sh
+      # The node unit tests ran nowhere. news-stream-model asserted a feature
+      # window of two for the month after the code moved to four, and nothing
+      # said so — it only surfaced because it also broke the e2e run it was
+      # being collected into. They cost seconds; the silence cost a release.
+      - name: Run node unit tests
+        run: npm run test:news-stream && npm run test:analytics-buckets && npm run test:search-groups
 
   go-test:
     runs-on: ubuntu-latest

@@ -18,6 +18,15 @@ const isCI = Boolean(process.env.CI);
 
 module.exports = defineConfig({
     testDir: 'tests',
+    // Playwright's default testMatch takes `*.test.cjs` as well, and `tests/`
+    // holds node unit tests by that name — plain scripts that assert at their
+    // top level. Collected here they *run* while specs are being gathered, so
+    // one failing assertion ends the whole e2e run before a spec starts, and a
+    // process.exit() in one ends it reporting success. news-stream-model went
+    // stale on 2026-08-29 and took every shard of CI down with it for a day,
+    // which is the sort of thing a red suite is supposed to tell you.
+    // Run them with `npm run test:news-stream` and friends.
+    testMatch: /.*\.spec\.js$/,
     timeout: 30_000,
     // Deliberately false, and it is not about parallelism -- `workers: 1` below
     // already rules that out. It decides how `--shard` divides the suite: with
