@@ -13,6 +13,7 @@
     "validate:doc-links": "node scripts/validate-doc-links.cjs",
     "validate:locale-duplicates": "node scripts/validate-locale-duplicates.cjs",
     "validate:locale-parity": "node scripts/validate-locale-parity.cjs",
+    "validate:locale-placeholders": "node scripts/validate-locale-placeholders.cjs",
     "validate:locale-unused": "node scripts/find-unused-locale-keys.cjs",
     "test:analytics-buckets": "node tests/analytics-count-buckets.test.cjs",
     "test:search-groups": "node tests/search-result-groups.test.cjs",
