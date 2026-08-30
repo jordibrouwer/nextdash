@@ -463,7 +463,7 @@
     "searchModeCommand": "CMD",
     "searchModeFinder": "FIND",
     "searchModeFuzzy": "FUZZY",
-    "searchModeHint": "No shortcut \"{query}\" — {count} by that name. Press ; to search names.",
+    "searchModeHint": "No shortcut \"{query}\" — {count} by that name. Press / to search names.",
     "searchModeHintOne": "1 bookmark",
     "searchModeHintMany": "{count} bookmarks",
     "searchModeGlobal": "ALL",

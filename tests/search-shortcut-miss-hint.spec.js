@@ -47,7 +47,7 @@ test('a name that matches no shortcut offers the way to find it', async ({ page 
     const hint = matches.find((m) => m.type === 'mode-hint');
     expect(hint, `typing "${name}" gave no hint, only ${JSON.stringify(matches)}`).toBeTruthy();
     // It has to name the key, or it is just a nicer way of saying nothing.
-    expect(hint.label).toContain(';');
+    expect(hint.label).toContain('/');
     expect(hint.label).toContain(name);
 });
 

@@ -3,18 +3,15 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
- * `;` switches search mode, and so does `/`.
+ * `/` switches search mode, and it is the only key that does.
  *
- * The overlay has always had one key for "search the other way": with
- * *Switch Search Mode* off, typing letters looks for a shortcut and `/` looks
- * for a name. That key is `/`, which is also the dashboard's tag-cloud key —
- * different contexts, so they do not actually collide, but one character
- * meaning two things is not something anyone remembers.
+ * With *Switch Search Mode* off, typing letters looks for a shortcut and `/`
+ * looks for a name; with it on, the reverse.
  *
- * `;` is the unambiguous one: free across the whole cheat-sheet registry,
- * unshifted on QWERTY and AZERTY, and sitting next to the `:` that already
- * opens commands. `/` keeps working, because taking a key out of people's
- * fingers costs more than supporting two.
+ * `;` was briefly a second spelling and was taken back out: it already opens
+ * the inline editor on the grid, so it meant one thing on the page and another
+ * in the overlay — the confusion a second key was supposed to spare people.
+ * The last test here guards that it stays out.
  */
 async function openSearch(page) {
     await markWhatsNewSeen(page);
@@ -41,7 +38,7 @@ const run = (page, query) => page.evaluate((q) => {
 }, query);
 
 test.describe('the mode-switch prefix', () => {
-    test('; finds a bookmark by name, the way / does', async ({ page }) => {
+    test('/ finds a bookmark by name', async ({ page }) => {
         await openSearch(page);
         // A name that is not also its own shortcut, so this can only be a
         // name match — the whole point of the other mode.
@@ -53,30 +50,38 @@ test.describe('the mode-switch prefix', () => {
         expect(name, 'no bookmark long enough to search by name').toBeTruthy();
         const stem = name.slice(0, 4).toLowerCase();
 
-        const viaSemicolon = await run(page, `;${stem}`);
         const viaSlash = await run(page, `/${stem}`);
-
-        expect(viaSemicolon.length, `";${stem}" found nothing`).toBeGreaterThan(0);
-        expect(viaSemicolon, 'the two prefixes disagree').toEqual(viaSlash);
+        expect(viaSlash.length, `"/${stem}" found nothing`).toBeGreaterThan(0);
     });
 
     test('the prefix is stripped before it reaches the query', async ({ page }) => {
         await openSearch(page);
         const stripped = await page.evaluate(() => {
             const s = window.dashboardInstance.searchComponent;
-            s.currentQuery = ';github';
+            s.currentQuery = '/github';
             s.updateSearch();
-            // Whatever the overlay searched for, it was not ";github".
-            return s.searchMatches.some((m) => (m.query || '').startsWith(';'));
+            // Whatever the overlay searched for, it was not "/github".
+            return s.searchMatches.some((m) => (m.query || '').startsWith('/'));
         });
-        expect(stripped, 'the semicolon leaked into the search term').toBe(false);
+        expect(stripped, 'the slash leaked into the search term').toBe(false);
     });
 
-    test('a semicolon inside a query is left alone', async ({ page }) => {
+    test('a slash inside a query is left alone', async ({ page }) => {
         await openSearch(page);
-        // Only a leading semicolon switches mode; one in the middle is a
+        // Only a leading slash switches mode; one in the middle is a
         // character someone typed.
-        const matches = await run(page, 'git;hub');
+        const matches = await run(page, 'git/hub');
         expect(Array.isArray(matches)).toBe(true);
+    });
+
+    test('; is not a mode switch — it belongs to the grid', async ({ page }) => {
+        await openSearch(page);
+        // `;` opens the inline editor on a bookmark row. If it ever switches
+        // mode again, one character means two things and this fails.
+        const treatedAsPrefix = await page.evaluate(() => {
+            const s = window.dashboardInstance.searchComponent;
+            return s._hasModeSwitchPrefix(';github');
+        });
+        expect(treatedAsPrefix, '; switched mode again').toBe(false);
     });
 });

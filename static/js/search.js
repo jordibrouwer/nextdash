@@ -997,7 +997,7 @@ class SearchComponent {
         const label = dash?.formatDashboardLabel?.(
             'searchModeHint',
             { query: searchQuery, count: noun },
-            `No shortcut "${searchQuery}" — ${noun} by that name. Press ; to search names.`,
+            `No shortcut "${searchQuery}" — ${noun} by that name. Press / to search names.`,
         );
         this.searchMatches.push({
             type: 'mode-hint',
@@ -1010,16 +1010,17 @@ class SearchComponent {
     /**
      * Does this query carry the mode-switch prefix?
      *
-     * `/` has always been it, and it still is — taking a key out of people's
-     * fingers costs more than answering to two. `;` is the one the interface
-     * now names: free across the whole cheat-sheet registry, unshifted on
-     * QWERTY and AZERTY, and sitting beside the `:` that opens commands, where
-     * `/` is also the dashboard's tag-cloud key and so means two things
-     * depending on where you are.
+     * `/` is it, and the only one. A second spelling was tried and taken back
+     * out: `;` already opens the inline editor on the grid, and a key that
+     * means one thing on the page and another in the overlay is the very
+     * confusion the second key was meant to spare people.
+     *
+     * The helper stays even though it now tests one character, because four
+     * call sites ask this question and a fifth had drifted into asking it
+     * differently.
      */
     _hasModeSwitchPrefix(query) {
-        const text = String(query || '');
-        return text.startsWith('/') || text.startsWith(';');
+        return String(query || '').startsWith('/');
     }
 
     /** The query with its mode-switch prefix removed, if it had one. */
@@ -2463,7 +2464,7 @@ class SearchComponent {
             } else if (selectedMatch.type === 'mode-hint') {
                 // Do the thing the hint describes rather than only naming it:
                 // Enter or a click runs the same query the other way.
-                this.currentQuery = `;${selectedMatch.query}`;
+                this.currentQuery = `/${selectedMatch.query}`;
                 this.updateSearch();
                 this.selectedMatchIndex = 0;
                 this.updateSelectionHighlight();
@@ -2633,8 +2634,7 @@ class SearchComponent {
      *
      * Which mode a bare query gets is a setting, and with the default —
      * *Switch Search Mode* off — a bare query looks for a shortcut. That is a
-     * fair bargain while someone is typing, because they can still press `;`
-     * or `/`. It is the wrong one for a query that arrives already written:
+     * fair bargain while someone is typing, because they can still press `/`. It is the wrong one for a query that arrives already written:
      * the address bar (see opensearch.go), a deep link, a URL someone was
      * sent. Nobody types a bookmark's full name into their address bar hoping
      * to match a two-letter shortcut, and the failure is silent — the overlay
@@ -2643,7 +2643,7 @@ class SearchComponent {
      * The shortcut matches keep the top of the list: an exact shortcut is the
      * strongest signal there is, and leading with it costs the name matches
      * nothing now that they are present at all. Only plain queries are widened
-     * — a prefix (`:`, `?`, `@`, `;`, `/`) or a filter means the query already
+     * — a prefix (`:`, `?`, `@`, `/`) or a filter means the query already
      * says what it wants.
      */
     _widenArrivedQueryToNames(text) {

@@ -463,7 +463,7 @@
     "searchModeCommand": "CMD",
     "searchModeFinder": "FIND",
     "searchModeFuzzy": "FUZZY",
-    "searchModeHint": "Geen sneltoets \"{query}\" — {count} met die naam. Druk ; om op naam te zoeken.",
+    "searchModeHint": "Geen sneltoets \"{query}\" — {count} met die naam. Druk / om op naam te zoeken.",
     "searchModeHintOne": "1 bookmark",
     "searchModeHintMany": "{count} bookmarks",
     "searchModeGlobal": "ALLES",

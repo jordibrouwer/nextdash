@@ -460,7 +460,7 @@
     "searchModeCommand": "CMD",
     "searchModeFinder": "FIND",
     "searchModeFuzzy": "FUZZY",
-    "searchModeHint": "Aucun raccourci « {query} » — {count} portant ce nom. Appuyez sur ; pour chercher par nom.",
+    "searchModeHint": "Aucun raccourci « {query} » — {count} portant ce nom. Appuyez sur / pour chercher par nom.",
     "searchModeHintOne": "1 favori",
     "searchModeHintMany": "{count} favoris",
     "searchModeGlobal": "TOUT",

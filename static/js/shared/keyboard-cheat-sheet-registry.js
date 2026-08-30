@@ -292,15 +292,8 @@
                 {
                     keys: '/',
                     cheatKey: 'smTagCloudSlash',
-                    fallback: 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close',
+                    fallback: 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; inside the search overlay it searches the other way instead',
                     when: (ctx) => ctx.tagCloudShortcutVisible,
-                },
-                {
-                    keys: ';',
-                    cheatKey: 'smSwitchSearchMode',
-                    fallback: 'Search the other way — by name when typing looks for shortcuts, and the reverse; / does the same',
-                    print: true,
-                    printFallback: 'Switch search mode',
                 },
                 { keys: '@', cheatKey: 'smGlobalSearch', fallback: 'Global search — fuzzy search across all pages at once; result shows page name as context' },
                 { keys: ':', cheatKey: 'smCommandPalette', fallback: 'Command palette — 5 collapsible groups at lone : ; recent commands at top; toggles stay open after Enter', print: true, printFallback: 'Commands' },

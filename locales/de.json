@@ -460,7 +460,7 @@
     "searchModeCommand": "CMD",
     "searchModeFinder": "FIND",
     "searchModeFuzzy": "FUZZY",
-    "searchModeHint": "Kein Kürzel \"{query}\" — {count} mit diesem Namen. ; drücken, um nach Namen zu suchen.",
+    "searchModeHint": "Kein Kürzel \"{query}\" — {count} mit diesem Namen. / drücken, um nach Namen zu suchen.",
     "searchModeHintOne": "1 Lesezeichen",
     "searchModeHintMany": "{count} Lesezeichen",
     "searchModeGlobal": "ALLE",
