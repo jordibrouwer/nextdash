@@ -630,11 +630,9 @@ class DashboardBookmarkRows {
         }
         row.appendChild(shortcutSpan);
 
-        const pinNotesRowIconsEnabled = typeof isDashboardPinNoteRowIconsEnabled === 'function'
-            && isDashboardPinNoteRowIconsEnabled();
         const pinBadge = document.createElement('span');
         pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
-        if (pinNotesRowIconsEnabled && d.settings.showPinIcon === true && bookmark.pinned) {
+        if (d.settings.showPinIcon === true && bookmark.pinned) {
             pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
             pinBadge.title = d.formatDashboardLabel('pinnedBookmarkTitle', {}, 'Pinned');
             pinBadge.setAttribute('aria-label', d.formatDashboardLabel('pinnedBookmarkAria', {}, 'Pinned bookmark'));
@@ -699,7 +697,7 @@ class DashboardBookmarkRows {
         const noteBadge = document.createElement('span');
         noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
-        if (pinNotesRowIconsEnabled && d.settings.showNoteIcon !== false && hasNote) {
+        if (d.settings.showNoteIcon !== false && hasNote) {
             const label = d.language?.t('bookmark.hasNote') || 'Has note';
             const noteText = String(bookmark.note || '').trim();
             const tooltipText = noteText.length > 200 ? noteText.slice(0, 200) + '…' : noteText;
