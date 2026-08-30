@@ -1129,3 +1129,37 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 .search-clear[hidden] {
     display: none;
 }
+
+/*
+ * The tail of a capped group.
+ *
+ * An open group stops at twelve rows so a common letter cannot fill the
+ * overlay again. This row carries what is left, and reads as a way through
+ * rather than as a result — quieter than a bookmark, louder than the header
+ * above it, since it is the one row here you are meant to press.
+ */
+.search-group-more {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    opacity: 0.6;
+    font-size: 0.78rem;
+    transition: opacity 0.15s ease;
+}
+
+.search-group-more:hover,
+.search-group-more.keyboard-selected {
+    opacity: 1;
+}
+
+.search-group-more.keyboard-selected {
+    color: var(--text-primary);
+    background: var(--bg-hover, color-mix(in srgb, var(--text-primary) 8%, transparent));
+}
+
+.search-group-more-arrow {
+    opacity: 0.7;
+}
