@@ -1857,7 +1857,8 @@
     "themeBrowserNoticeDone": "Got it",
     "searchModeNames": "Search mode: letters find names",
     "searchModeShortcuts": "Search mode: letters find shortcuts",
-    "searchModeToggleFailed": "Could not save the search mode"
+    "searchModeToggleFailed": "Could not save the search mode",
+    "searchModeKeyAnnounce": "Tip: Shift + Q switches the search mode — whether letters find names or shortcuts"
   },
   "health": {
     "kicker": "overview",
@@ -3613,7 +3614,7 @@
     "helpFindersTitle": "Finders",
     "helpStartTitle": "Getting started",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "<p>This is version 1.4.3, and it is mostly about themes. There are 214 of them and they arrived through a list; there is a <strong>browser</strong> now &mdash; a searchable grid of cards, one per family, with favourites, and the dashboard offers to open it for you once. Every theme has been given <strong>its own accent</strong> instead of borrowing the success colour, a <strong>depth</strong> setting that lets a card sit on a surface rather than beside a border, an improved <strong>backdrop</strong> you can set to dots, grid, lines or hatch, and <strong>thirty-three new families</strong> have joined them. Alongside that: a page can hold <strong>widgets</strong>, now with twenty-eight services the custom tile already knows; <strong>Statistics</strong> reports uptime, expiring certificates and how much of your collection has a saved copy; <strong>Sources</strong> keeps bookmarks arriving on their own; a page can be <strong>kept</strong> at the Web Archive or on your own disk; <strong>webhooks</strong> and an <strong>MCP endpoint</strong> tell the rest of your machine what happened here; and your browser's address bar is a nextDash search box.</p> <p><strong>1.4.3</strong> is the newest round: every figure on a <strong>custom widget</strong> can have its own size &mdash; Normal, Large, Small or a Bar &mdash; so the number you built the tile for can lead rather than sitting level with the ones giving it context, and a response time that arrives in seconds now reads as whole milliseconds instead of a float's full tail. The <strong>shortcut letters</strong> gained a third setting, <em>On the row I am on</em>, which is the new default: the letter appears over the end of the name while you are on that row, and the names get back the width the old column held. And a <strong>search that finds nothing</strong> now says where to look &mdash; typing a bookmark's name when a plain query looks for shortcuts adds one line telling you how many carry that name, and <em>Enter</em> searches again the other way.</p>",
+    "helpVersionBody": "<p>This is version 1.4.3, and it is mostly about themes. There are 214 of them and they arrived through a list; there is a <strong>browser</strong> now &mdash; a searchable grid of cards, one per family, with favourites, and the dashboard offers to open it for you once. Every theme has been given <strong>its own accent</strong> instead of borrowing the success colour, a <strong>depth</strong> setting that lets a card sit on a surface rather than beside a border, an improved <strong>backdrop</strong> you can set to dots, grid, lines or hatch, and <strong>thirty-three new families</strong> have joined them. Alongside that: a page can hold <strong>widgets</strong>, now with twenty-eight services the custom tile already knows; <strong>Statistics</strong> reports uptime, expiring certificates and how much of your collection has a saved copy; <strong>Sources</strong> keeps bookmarks arriving on their own; a page can be <strong>kept</strong> at the Web Archive or on your own disk; <strong>webhooks</strong> and an <strong>MCP endpoint</strong> tell the rest of your machine what happened here; and your browser's address bar is a nextDash search box.</p> <p><strong>1.4.3</strong> is the newest round: every figure on a <strong>custom widget</strong> can have its own size &mdash; Normal, Large, Small or a Bar &mdash; so the number you built the tile for can lead rather than sitting level with the ones giving it context, and a response time that arrives in seconds now reads as whole milliseconds instead of a float's full tail. The <strong>shortcut letters</strong> gained a third setting, <em>On the row I am on</em>, which is the new default: the letter appears over the end of the name while you are on that row, and the names get back the width the old column held. And a <strong>search that finds nothing</strong> now says where to look &mdash; typing a bookmark's name when a plain query looks for shortcuts adds one line telling you how many carry that name, and <em>Enter</em> searches again the other way. The <strong>search mode</strong> moved to <strong>Behavior &rarr; Search</strong> and answers to <strong>Shift + Q</strong>, and the <strong>shortcut letters</strong> are on for every dashboard again &mdash; three settings now, and whichever you pick stays picked.</p>",
     "helpVersionWhatsNew": "See what's new",
     "helpConfigTitle": "Finding your way around config",
     "showTagCollections": "Smart: Tag collections (one per tag)",
@@ -5552,8 +5553,8 @@
     "overviewNewFeatureWidgetFigureSizeHow": "Each figure is now Normal, Large, Small or a Bar, set per figure when you add or edit it. The bar is offered on a percentage, where a share of a whole is something it can draw, and it takes its colour from the theme you are using.",
     "overviewNewFeatureWidgetFigureSizeEnable": "Nothing to switch on — open a custom widget and edit one of its figures.",
     "overviewNewFeatureWidgetFigureSizeCta": "Open widgets →",
-    "overviewNewFeatureShortcutDisplayTitle": "The shortcut letters can appear only on the row you are on",
-    "overviewNewFeatureShortcutDisplayWhat": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are.",
+    "overviewNewFeatureShortcutDisplayTitle": "The shortcut letters are on, and have a third setting",
+    "overviewNewFeatureShortcutDisplayWhat": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are, and some dashboards had lost them years ago without meaning to.",
     "overviewNewFeatureShortcutDisplayHow": "There is a third answer now: the letter floats in over the end of the name while your pointer or keyboard selection is on that row. Nothing moves when it appears, and the names get about five characters of width back.",
     "overviewNewFeatureShortcutDisplayEnable": "Config → Appearance → Shortcut letters on rows.",
     "overviewNewFeatureShortcutDisplayCta": "Open appearance →",
@@ -5561,7 +5562,12 @@
     "overviewNewFeatureSearchNameHintWhat": "Typing a bookmark's name into the search overlay reported nothing found while the bookmark sat on the page behind it. A plain query looks for a shortcut, not a name, and the overlay never said so.",
     "overviewNewFeatureSearchNameHintHow": "When there is nothing by that shortcut but something by that name, the overlay adds one line saying how many bookmarks carry it, and Enter runs the search the other way. When nothing matches either, “nothing found” stays the answer.",
     "overviewNewFeatureSearchNameHintEnable": "Nothing to switch on — it is how search answers now.",
-    "overviewNewFeatureSearchNameHintCta": "Open search settings →"
+    "overviewNewFeatureSearchNameHintCta": "Open search settings →",
+    "overviewNewFeatureSearchModeKeyTitle": "The search mode has a key of its own",
+    "overviewNewFeatureSearchModeKeyWhat": "Whether typing letters finds a bookmark's name or its shortcut was a tickbox under Appearance → Layout labelled “Interleave categories across columns” — which is not what it does. Nothing about the layout has ever read it, so ticking it to rearrange your columns changed how typing was read and moved nothing on screen.",
+    "overviewNewFeatureSearchModeKeyHow": "It sits under Behavior → Search now, called Switch Search Mode, and Shift + Q flips it from the dashboard itself with a message saying which way it landed — for the times you want the other mode for a single search.",
+    "overviewNewFeatureSearchModeKeyEnable": "Nothing to switch on — Shift + Q works from any bookmark page.",
+    "overviewNewFeatureSearchModeKeyCta": "Open search settings →"
   },
   "colors": {
     "title": "theme customization",

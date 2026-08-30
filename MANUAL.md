@@ -620,6 +620,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 |------|--------|
 | `Shift + I` | Open **Inbox** view (recommended; `0` still works when search is closed) |
 | `Shift + H` | Open **Health** view |
+| `Shift + Q` | Switch search mode — whether typing letters finds a bookmark's **name** or its **shortcut**. The same setting as **Behavior → Search**, flipped where you are standing; a toast names the mode it landed in (**v1.4.3**) |
 | `0` | Open **Inbox** (when search is closed; legacy — prefer `Shift + I`) |
 | `1`–`9` | Jump to bookmark page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
@@ -787,6 +788,8 @@ When **Tag cloud (/)** is enabled (config → appearance → display, on by defa
 - Hidden on mobile / narrow layouts.
 
 With tag cloud off, or inside the search overlay, **`/`** follows your fuzzy/interleave search setting (see below).
+
+**Which way a bare query is read** is *Switch Search Mode*, under **Config → Behavior → Search**. Off — the default — typing letters looks for a bookmark **shortcut** and `/` looks for a **name**; on, the reverse. It moved there in **v1.4.3**: it had been a tickbox under *Appearance → Layout* labelled "Interleave categories across columns", which is not what it does, and no part of the layout has ever read it. **`Shift + Q`** flips it from the dashboard for the times you want the other mode for a single search.
 
 ### 10.3 Fuzzy search (`/`)
 

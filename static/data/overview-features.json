@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureSearchModeKeyTitle",
+      "titleFallback": "The search mode has a key of its own",
+      "whatKey": "config.overviewNewFeatureSearchModeKeyWhat",
+      "whatFallback": "Whether typing letters finds a bookmark's name or its shortcut was a tickbox under Appearance → Layout labelled “Interleave categories across columns” — which is not what it does. Nothing about the layout has ever read it, so ticking it to rearrange your columns changed how typing was read and moved nothing on screen.",
+      "howKey": "config.overviewNewFeatureSearchModeKeyHow",
+      "howFallback": "It sits under Behavior → Search now, called Switch Search Mode, and Shift + Q flips it from the dashboard itself with a message saying which way it landed — for the times you want the other mode for a single search.",
+      "enableKey": "config.overviewNewFeatureSearchModeKeyEnable",
+      "enableFallback": "Nothing to switch on — Shift + Q works from any bookmark page.",
+      "ctaKey": "config.overviewNewFeatureSearchModeKeyCta",
+      "ctaFallback": "Open search settings →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "search"
+      },
+      "since": "v1.4.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWidgetFigureSizeTitle",
       "titleFallback": "Every figure on a custom widget can have its own size",
       "whatKey": "config.overviewNewFeatureWidgetFigureSizeWhat",
@@ -20,9 +37,9 @@
     },
     {
       "titleKey": "config.overviewNewFeatureShortcutDisplayTitle",
-      "titleFallback": "The shortcut letters can appear only on the row you are on",
+      "titleFallback": "The shortcut letters are on, and have a third setting",
       "whatKey": "config.overviewNewFeatureShortcutDisplayWhat",
-      "whatFallback": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are.",
+      "whatFallback": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are, and some dashboards had lost them years ago without meaning to.",
       "howKey": "config.overviewNewFeatureShortcutDisplayHow",
       "howFallback": "There is a third answer now, and it is the new default: the letter floats in over the end of the name while your pointer or keyboard selection is on that row. Nothing moves when it appears, and the names get about five characters of width back.",
       "enableKey": "config.overviewNewFeatureShortcutDisplayEnable",

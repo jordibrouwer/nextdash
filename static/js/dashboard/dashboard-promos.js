@@ -110,6 +110,36 @@ class DashboardPromos {
         d._postOnboardingPromptsAttempts = 0;
 
         this.maybeShowWhatsNew();
+        this.maybeAnnounceSearchModeKey();
+    }
+
+
+    /**
+     * Say once that Shift+Q switches the search mode.
+     *
+     * The setting moved to Behavior → Search in v1.4.3 and gained a key, and
+     * neither is something you find by looking: the old tickbox was in another
+     * section under a name that described something else, so nobody was going
+     * to notice it had moved, and a key nobody names is a key nobody presses.
+     *
+     * Once per release, keyed the way the what's-new prompt is. Storage that
+     * throws — a private window, blocked site data — means the note is skipped
+     * rather than shown on every load.
+     */
+    maybeAnnounceSearchModeKey() {
+        const d = this.dash;
+        const release = window.NEXTDASH_WHATS_NEW_RELEASE || '';
+        const key = 'nextdash:search-mode-key-announced';
+        try {
+            if (localStorage.getItem(key) === release) return;
+            localStorage.setItem(key, release);
+        } catch {
+            return;
+        }
+        const text = d.t?.('dashboard.searchModeKeyAnnounce',
+            'Tip: Shift + Q switches the search mode — whether letters find names or shortcuts')
+            || 'Tip: Shift + Q switches the search mode';
+        d.showNotification?.(text, 'info', { duration: 8000 });
     }
 
 
