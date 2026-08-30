@@ -255,6 +255,8 @@
       "ivSelectRange": "Étendre la sélection à la ligne suivante ou précédente",
       "ivSelectAll": "Sélectionner tous les liens affichés",
       "ivDelete": "Supprimer l'élément sélectionné",
+      "ivUnread": "Marquer comme non lu",
+      "ivTags": "Modifier les étiquettes",
       "ivRefresh": "Recharger la liste depuis le serveur",
       "ivFirstLast": "Aller à la première / dernière ligne",
       "ivTriage": "Ouvrir le tri — parcourir la liste élément par élément",

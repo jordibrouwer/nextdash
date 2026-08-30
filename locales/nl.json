@@ -274,6 +274,8 @@
       "ivSelectRange": "Breid de selectie uit naar de volgende of vorige rij",
       "ivSelectAll": "Selecteer alle links die nu zichtbaar zijn",
       "ivDelete": "Het geselecteerde item verwijderen",
+      "ivUnread": "Markeer als ongelezen",
+      "ivTags": "Labels bewerken",
       "ivRefresh": "Laad de lijst opnieuw van de server",
       "ivFirstLast": "Naar de eerste / laatste rij springen",
       "ivTriage": "Triage openen — de lijst item voor item doorlopen",

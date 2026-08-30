@@ -255,6 +255,8 @@
       "ivSelectRange": "Auswahl auf die nächste oder vorherige Zeile erweitern",
       "ivSelectAll": "Alle aktuell angezeigten Links auswählen",
       "ivDelete": "Den ausgewählten Eintrag löschen",
+      "ivUnread": "Als ungelesen markieren",
+      "ivTags": "Schlagwörter bearbeiten",
       "ivRefresh": "Liste neu vom Server laden",
       "ivFirstLast": "Zur ersten / letzten Zeile springen",
       "ivTriage": "Triage öffnen — die Liste Eintrag für Eintrag durchgehen",

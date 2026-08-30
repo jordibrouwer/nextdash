@@ -274,6 +274,8 @@
       "ivSelectRange": "Extend the selection to the next or previous row",
       "ivSelectAll": "Select every link currently shown",
       "ivDelete": "Delete the selected item",
+      "ivUnread": "Mark as unread",
+      "ivTags": "Edit tags",
       "ivRefresh": "Reload the list from the server",
       "ivFirstLast": "Jump to the first / last row",
       "ivTriage": "Open triage — walk the list one item at a time",
