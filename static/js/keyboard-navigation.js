@@ -1,5 +1,37 @@
 // Keyboard Navigation Component for Dashboard
 //
+// ---------------------------------------------------------------------------
+// How keys are shared out, across the whole dashboard
+//
+// There is no router and there does not need to be one. A census of `Escape`
+// and `Enter` found 67 places that test for them, but only twenty that can take
+// a key away from anyone else -- the ones on `document`, in the capture phase,
+// calling stopImmediatePropagation -- and every one of those twenty follows the
+// same rule:
+//
+//     An overlay owns the keys it is open for, for exactly as long as it is
+//     open. It registers on document in the capture phase when it opens,
+//     swallows only what is its own, and removes the listener when it closes.
+//
+// That is why Escape closes the context menu without also closing the thing
+// behind it, and why the same Escape travels the whole chain when nothing is
+// open. Precedence is not configured anywhere: it falls out of the fact that at
+// most a couple of overlays are open at once, and the innermost one registered
+// last.
+//
+// Two things follow for anyone adding a handler:
+//
+//   - Pair every addEventListener with a removeEventListener on the close path.
+//     A listener that outlives its overlay swallows Escape for the rest of the
+//     session, and the key silently stops working. tests/keyboard-listener-
+//     balance.spec.js opens and closes each overlay and fails if the count does
+//     not come back.
+//   - Swallow deliberately, and say why. This file takes the arrows and j/k
+//     (see the ArrowDown case below): without it the row is selected and the
+//     search line then types the letter, undoing the move in the same keystroke.
+//
+// ---------------------------------------------------------------------------
+//
 // Bare letters act at once. c and g used to wait out a 300 ms hold so a quick
 // tap could still fall through to the shortcut search, but they were the only
 // two that did: t, x and X had always fired on the first press. Two rules for
