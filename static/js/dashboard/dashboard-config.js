@@ -10645,7 +10645,7 @@ class DashboardConfig {
                 note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
-                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'),
+                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'),
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),

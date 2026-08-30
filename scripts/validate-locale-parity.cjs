@@ -20,7 +20,7 @@ const path = require('path');
 
 const LOCALES = path.join(__dirname, '..', 'locales');
 const BASE = 'en';
-const OTHERS = ['nl', 'de', 'fr'];
+const OTHERS = ['nl', 'de', 'fr', 'zh'];
 
 const read = (lang) => JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), 'utf8'));
 const base = read(BASE);
