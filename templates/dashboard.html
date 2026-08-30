@@ -359,6 +359,7 @@
     </button>
 
     <script src="{{asset "js/view-styles.js"}}" defer></script>
+    <script src="{{asset "js/search-loader.js"}}" defer></script>
     <!-- bundle:js -->
     <script src="{{asset "js/theme-icon-styling.js"}}" defer></script>
     <!-- Before modal.js and every other overlay: they all take scroll locks. -->
@@ -376,14 +377,6 @@
     <script src="{{asset "js/bookmark-form/bookmark-url-utils.js"}}" defer></script>
     <script src="{{asset "js/bookmark-form/bookmark-preview-service.js"}}" defer></script>
     <script src="{{asset "js/bookmark-form/bookmark-form-preview.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-new.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-remove.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-columns.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-fontsize.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-theme.js"}}" defer></script>
-    <script src="{{asset "js/search-commands/search-commands-note.js"}}" defer></script>
-    <script src="{{asset "js/search-commands.js"}}" defer></script>
-    <script src="{{asset "js/search-finders.js"}}" defer></script>
     <script src="{{asset "js/fuzzy-search.js"}}" defer></script>
     <script src="{{asset "js/dashboard-promo-placement.js"}}" defer></script>
     <!-- One answer to "which bookmarks", shared by the search bar, the
@@ -393,7 +386,6 @@
          colour rather than an emoji the system paints its own way. -->
     <script src="{{asset "js/shared/menu-icons.js"}}" defer></script>
     <script src="{{asset "js/shared/field-popover.js"}}" defer></script>
-    <script src="{{asset "js/search.js"}}" defer></script>
     <script src="{{asset "js/status.js"}}" defer></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->
     <script src="{{asset "js/check-mode.js"}}" defer></script>
@@ -506,5 +498,21 @@
     <script src="{{asset "js/shared/config-custom-themes.js"}}" defer></script>
     <script src="{{asset "js/color-value-utils.js"}}" defer></script>
     <!-- /bundle:js -->
+    <!-- The search stack — 394 KB, 17% of the JS — waits for the key that opens
+         it. No script tag here on purpose: the address rides in the data
+         attribute and search-loader.js fetches it on the first `>`, `:`, `?` or
+         `*`, and on idle so the first press is usually warm. The grid renders
+         without it; every caller of searchComponent already guards the call. -->
+    <!-- bundle:js-search -->
+    <script src="{{asset "js/search-commands/search-commands-new.js"}}" defer></script>
+    <script src="{{asset "js/search-commands/search-commands-remove.js"}}" defer></script>
+    <script src="{{asset "js/search-commands/search-commands-columns.js"}}" defer></script>
+    <script src="{{asset "js/search-commands/search-commands-fontsize.js"}}" defer></script>
+    <script src="{{asset "js/search-commands/search-commands-theme.js"}}" defer></script>
+    <script src="{{asset "js/search-commands/search-commands-note.js"}}" defer></script>
+    <script src="{{asset "js/search-commands.js"}}" defer></script>
+    <script src="{{asset "js/search-finders.js"}}" defer></script>
+    <script src="{{asset "js/search.js"}}" defer></script>
+    <!-- /bundle:js-search -->
 </body>
 </html>

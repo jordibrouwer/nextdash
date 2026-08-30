@@ -126,9 +126,11 @@ class DashboardSetup {
 
         if (window.SearchComponent) {
             d.searchComponent = new window.SearchComponent(bookmarksForSearch, d.bookmarks, d.allBookmarks, d.settings, d.language, d.finders, d.pages);
-        } else {
-            console.warn('SearchComponent not found. Make sure search.js is loaded.');
         }
+        // No else: search lives in its own bundle now and is fetched by the key
+        // that opens it (see search-loader.js), so arriving here without it is
+        // the ordinary case on first paint rather than a missing file. The
+        // loader calls this again once the code lands.
     }
 
     // Method to update search component when data changes

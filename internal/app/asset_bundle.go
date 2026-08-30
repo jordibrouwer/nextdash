@@ -42,6 +42,16 @@ const (
 	bundleViewCSSPath        = "/static/bundle/views.css"
 	bundleViewCSSMarkerStart = "<!-- bundle:css-views -->"
 	bundleViewCSSMarkerEnd   = "<!-- /bundle:css-views -->"
+
+	// Search is 394 KB of the 2 192 KB of JavaScript — 17% of the bundle — and
+	// none of it runs until `>`, `:`, `?` or `*` opens the overlay. Same
+	// treatment as the view stylesheets: its own bundle, no tag in the page,
+	// and an address in a data attribute that search-loader.js reads on the
+	// first keypress. The grid renders without it — every consumer of
+	// `searchComponent` guards the call — so nothing on the first paint waits.
+	bundleSearchJSPath        = "/static/bundle/search.js"
+	bundleSearchJSMarkerStart = "<!-- bundle:js-search -->"
+	bundleSearchJSMarkerEnd   = "<!-- /bundle:js-search -->"
 )
 
 var (
@@ -49,10 +59,11 @@ var (
 
 	bundleOnce  sync.Once
 	bundleState struct {
-		js      assetBundle
-		css     assetBundle
-		viewCSS assetBundle
-		open    bool // false when bundling is switched off
+		js       assetBundle
+		css      assetBundle
+		viewCSS  assetBundle
+		searchJS assetBundle
+		open     bool // false when bundling is switched off
 	}
 )
 
@@ -85,6 +96,7 @@ func buildAssetBundles(files fs.FS) {
 		bundleState.js = buildBundle(files, bundleBlockAssets(source, bundleJSMarkerStart, bundleJSMarkerEnd))
 		bundleState.css = buildBundle(files, bundleBlockAssets(source, bundleCSSMarkerStart, bundleCSSMarkerEnd))
 		bundleState.viewCSS = buildBundle(files, bundleBlockAssets(source, bundleViewCSSMarkerStart, bundleViewCSSMarkerEnd))
+		bundleState.searchJS = buildBundle(files, bundleBlockAssets(source, bundleSearchJSMarkerStart, bundleSearchJSMarkerEnd))
 		if len(bundleState.js.files) == 0 && len(bundleState.css.files) == 0 {
 			// No markers in the template: nothing to bundle, and the individual
 			// tags are still there, so this is a no-op rather than an error.
@@ -174,7 +186,9 @@ func (h *Handlers) ServeAssetBundle(w http.ResponseWriter, r *http.Request) {
 	buildAssetBundles(h.files)
 	var b assetBundle
 	contentType := "application/javascript; charset=utf-8"
-	if strings.HasSuffix(r.URL.Path, "views.css") {
+	if strings.HasSuffix(r.URL.Path, "search.js") {
+		b = bundleState.searchJS
+	} else if strings.HasSuffix(r.URL.Path, "views.css") {
 		b = bundleState.viewCSS
 		contentType = "text/css; charset=utf-8"
 	} else if strings.HasSuffix(r.URL.Path, ".css") {
@@ -228,6 +242,13 @@ func applyAssetBundles(files fs.FS, source string) string {
 	source = replaceBundleBlock(source, bundleJSMarkerStart, bundleJSMarkerEnd,
 		fmt.Sprintf(`<script src="%s" defer></script>`, bundleURL(bundleJSPath, bundleState.js)),
 		len(bundleState.js.files))
+	// No script tag at all, for the same reason the view stylesheets have no
+	// link: a tag would fetch it, and the point is that nothing does until a
+	// key is pressed.
+	source = replaceBundleBlock(source, bundleSearchJSMarkerStart, bundleSearchJSMarkerEnd,
+		fmt.Sprintf(`<link data-nextdash-search-js="%s">`,
+			bundleURL(bundleSearchJSPath, bundleState.searchJS)),
+		len(bundleState.searchJS.files))
 	return source
 }
 
