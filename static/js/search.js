@@ -16,6 +16,9 @@ class SearchComponent {
     /** Rows an open group shows before it defers to a "N more" row. */
     static FUZZY_GROUP_CAP = 12;
 
+    /** How many query-to-pick memories are kept before the weakest are dropped. */
+    static MAX_SEARCH_PICKS = 200;
+
     /**
      * Match a timestamp against an age word used by `opened:` and `added:`.
      *
@@ -86,6 +89,7 @@ class SearchComponent {
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.emptyStateExpandedGroups = new Set(); // Tracks expanded groups in empty search state
         this.searchGroupsShowAll = new Set();      // Fuzzy groups the user opened past their cap
+        this.searchPicks = this.loadSearchPicks(); // Which result these keystrokes meant before
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
         this.recentCommands = this.loadRecentCommands();
@@ -105,6 +109,7 @@ class SearchComponent {
         this.findersComponent = new window.SearchFindersComponent(this.language, [], this.settings);
 
         this.fuzzySearchComponent = new window.FuzzySearchComponent(this.bookmarks, (bookmark) => this.openBookmark(bookmark));
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
 
         this.interleaveMode = settings.interleaveMode || false;
 
@@ -149,6 +154,8 @@ class SearchComponent {
         this.interleaveMode = settings.interleaveMode || false;
         this.currentPageId = settings.currentPage || this.currentPageId || 1;
         this.savedSearches = this.loadSavedSearches();
+        this.searchPicks = this.loadSearchPicks();
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
         this.buildShortcutsMap();
     }
 
@@ -1215,6 +1222,101 @@ class SearchComponent {
             }
             return false;
         });
+    }
+
+    /**
+     * Writes down that this query led to this bookmark.
+     *
+     * The history kept what you typed and threw away what you then chose,
+     * which is the half that would have made the ranking yours. Keyed on the
+     * query rather than the bookmark: "mail" meaning Gmail says nothing about
+     * what "ma" means, and guessing otherwise makes the list unpredictable in
+     * exactly the way a launcher cannot afford.
+     *
+     * @param {{url: string}} bookmark
+     */
+    recordSearchPick(bookmark) {
+        const url = bookmark && bookmark.url;
+        const q = this.normalizePickQuery(this.currentQuery);
+        if (!url || !q) return;
+
+        const existing = this.searchPicks.find((p) => p.q === q && p.url === url);
+        if (existing) {
+            existing.n = (Number(existing.n) || 0) + 1;
+            existing.at = Date.now();
+        } else {
+            this.searchPicks.unshift({ q, url, n: 1, at: Date.now() });
+        }
+
+        this.prunePicks();
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
+        this.saveSearchPicks();
+    }
+
+    /**
+     * The query as the memory should hold it.
+     *
+     * "/mail tag:work" is the same intent as "mail": the prefix picks a mode
+     * and the token is a filter. Stored whole, the entry would never match
+     * anything typed a second time.
+     *
+     * @param {string} raw
+     * @returns {string} lower-cased, or '' when there is nothing to remember
+     */
+    normalizePickQuery(raw) {
+        const stripped = this._stripModeSwitchPrefix(String(raw || ''));
+        const withoutFilters = stripped
+            .split(/\s+/)
+            .filter((token) => token && !token.includes(':'))
+            .join(' ');
+        return withoutFilters.trim().toLowerCase();
+    }
+
+    /**
+     * Holds the memory to 200 entries, dropping the weakest.
+     *
+     * Weakest is the same judgement the scorer makes — how often, decayed by
+     * how long ago — so what survives a flood of one-off searches is the
+     * handful of queries you actually lean on.
+     */
+    prunePicks() {
+        if (this.searchPicks.length <= SearchComponent.MAX_SEARCH_PICKS) return;
+        this.searchPicks.sort((a, b) =>
+            this.fuzzySearchComponent.pickScore(b) - this.fuzzySearchComponent.pickScore(a));
+        this.searchPicks = this.searchPicks.slice(0, SearchComponent.MAX_SEARCH_PICKS);
+    }
+
+    /**
+     * Persist the memory the way saved searches are persisted: settings, so the
+     * backup carries it and a second browser inherits it, with localStorage
+     * kept in step for an older tab.
+     *
+     * The settings write is debounced. Saved searches are an explicit act and
+     * can afford a POST each; this fires on every bookmark opened from search.
+     */
+    saveSearchPicks() {
+        try {
+            localStorage.setItem('dashboardSearchPicks', JSON.stringify(this.searchPicks));
+        } catch { /* private mode — the settings copy is the one that matters */ }
+
+        const d = window.dashboardInstance;
+        if (!d?.settings) return;
+        d.settings.searchPicks = this.searchPicks;
+        clearTimeout(this._searchPicksTimer);
+        this._searchPicksTimer = setTimeout(() => { void d.saveSettings?.(); }, 2000);
+    }
+
+    /** Settings first — it is the copy that travels. */
+    loadSearchPicks() {
+        const fromSettings = window.dashboardInstance?.settings?.searchPicks;
+        if (Array.isArray(fromSettings)) return fromSettings;
+        try {
+            const stored = localStorage.getItem('dashboardSearchPicks');
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
     }
 
     /**
@@ -2642,6 +2744,9 @@ class SearchComponent {
 
     openBookmark(bookmark, { newTab = false } = {}) {
         this.recordSearchHistory(this.currentQuery);
+        // The other half of the same fact: the history keeps what was typed,
+        // this keeps what it turned out to mean.
+        this.recordSearchPick(bookmark);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
         window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');

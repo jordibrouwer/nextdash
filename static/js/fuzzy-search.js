@@ -10,6 +10,48 @@ class FuzzySearchComponent {
     }
 
     /**
+     * Teaches the scorer what these keystrokes have meant before.
+     *
+     * @param {Array<{q: string, url: string, n: number, at: number}>} picks
+     */
+    updatePicks(picks) {
+        this.picks = new Map();
+        (Array.isArray(picks) ? picks : []).forEach((entry) => {
+            if (!entry || !entry.q || !entry.url) return;
+            this.picks.set(`${String(entry.q).toLowerCase()}\n${entry.url}`, entry);
+        });
+    }
+
+    /**
+     * What a remembered choice is worth, as a score in its own right.
+     *
+     * This is a floor rather than a bonus, and the difference matters. A bonus
+     * big enough to lift `Gmail` over `Mailcow` for "mail" would also lift a
+     * prefix match over an exact name, and typing a thing's full name has to
+     * give you that thing. A floor says instead: however the letters fall, a
+     * result you have chosen for these exact keystrokes is worth at least this
+     * much — and the ceiling, 1090, sits just under the 1099 an exact name
+     * scores.
+     *
+     * @param {{n: number, at: number}} record
+     * @returns {number} 0 when the record is unusable
+     */
+    pickScore(record) {
+        if (!record) return 0;
+        // Flattens at ten: the difference between never and once is the whole
+        // story, the difference between forty and fifty is noise.
+        const picks = Math.min(Number(record.n) || 0, 10);
+        if (picks <= 0) return 0;
+        const base = 800 + picks * 29;
+
+        const at = Number(record.at) || 0;
+        if (!at) return base;
+        const days = (Date.now() - at) / 86400000;
+        const decay = days <= 30 ? 1 : (days <= 180 ? 0.85 : 0.6);
+        return base * decay;
+    }
+
+    /**
      * Scores a bookmark against a query.
      *
      * Tiers (higher = better):
@@ -45,6 +87,41 @@ class FuzzySearchComponent {
         if (name.includes(query)) return 300 + ratio;
 
         return 0;
+    }
+
+    /**
+     * How much a bookmark has earned by being opened, 0-90.
+     *
+     * `openCount` and `lastOpened` are stored on every bookmark and were read
+     * by the smart collections, the stats page and the `opened:` filter — by
+     * everything except the search that ranks them. So the list looked the same
+     * on day one and day one thousand, and two names of equal shape were
+     * separated by which happened to be shorter.
+     *
+     * The ceiling is the point. Tiers sit 200 apart and the ratio bonus already
+     * spends up to 99, so 90 is what is left: enough to settle a tie, never
+     * enough to lift a name you did not type over one you did. A favourite that
+     * could overturn the tiers would make the search unpredictable, which costs
+     * more than it wins.
+     *
+     * @param {object} bookmark
+     * @returns {number} 0-90
+     */
+    usageBonus(bookmark) {
+        const opens = Number(bookmark.openCount) || 0;
+        // Flattens fast: the tenth open says much less than the first.
+        const frequency = Math.min(opens, 20) / 20 * 60;
+
+        const lastOpened = Number(bookmark.lastOpened) || 0;
+        let recency = 0;
+        if (lastOpened > 0) {
+            const days = (Date.now() - lastOpened) / 86400000;
+            if (days <= 7) recency = 30;
+            else if (days <= 30) recency = 15;
+            else if (days <= 90) recency = 5;
+        }
+
+        return frequency + recency;
     }
 
     /**
@@ -152,7 +229,22 @@ class FuzzySearchComponent {
                 }
             }
 
-            if (score > 0) scored.push({ bookmark, score, meta, group });
+            if (score === 0) continue;
+            score += this.usageBonus(bookmark);
+
+            // A choice you made for these exact keystrokes outranks where the
+            // letters happen to fall — and when it does, it is announced as a
+            // best match. Left in a folded group, the highest-scoring result
+            // would render below the group it had just beaten, which is the
+            // one place it must never be.
+            const remembered = this.pickScore(
+                this.picks?.get(`${q}\n${bookmark.url}`));
+            if (remembered > score) {
+                score = remembered;
+                group = 'strong';
+            }
+
+            scored.push({ bookmark, score, meta, group });
         }
 
         scored.sort((a, b) => b.score - a.score);

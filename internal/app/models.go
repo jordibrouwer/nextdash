@@ -690,6 +690,7 @@ type Settings struct {
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
+	SearchPicks          []SearchPick          `json:"searchPicks,omitempty"`          // Which result a query led to, so ranking learns
 
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
@@ -715,6 +716,16 @@ type Settings struct {
 type SavedSearch struct {
 	Name  string `json:"name"`
 	Query string `json:"query"`
+}
+
+// SearchPick records that a query led to a bookmark, so the search can rank by
+// what the user actually chose rather than by the shape of the words alone.
+// Keyed on the query: "mail" meaning Gmail says nothing about what "ma" means.
+type SearchPick struct {
+	Query string `json:"q"`
+	URL   string `json:"url"`
+	Count int    `json:"n"`
+	At    int64  `json:"at"` // Unix milliseconds of the most recent pick
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).

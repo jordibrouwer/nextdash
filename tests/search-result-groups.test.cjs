@@ -96,6 +96,153 @@ test('strong matches still sort above contains matches', () => {
     assert.deepStrictEqual(results.map(r => r.name), ['Gmail', 'widGetonderzoek']);
 });
 
+/*
+ * Ranking by what you actually open.
+ *
+ * The scorer read the shape of the string and nothing else, so it ranked the
+ * same way on day one and day one thousand. `openCount` and `lastOpened` have
+ * been stored on every bookmark all along — they drive the smart collections,
+ * the stats page and the `opened:` filter — and search looked at neither.
+ *
+ * The bonus stays small on purpose. Tiers sit 200 apart and the ratio bonus
+ * already spends up to 99 of that, so usage gets at most 90: enough to settle
+ * which of two equals goes first, never enough to lift a name you typed past
+ * one you did not.
+ */
+const DAY = 86400000;
+const now = Date.now();
+
+test('between two equals, the one you open more goes first', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Gmaps', url: 'https://maps.example', openCount: 1, lastOpened: now - DAY },
+        { name: 'Gmail', url: 'https://mail.example', openCount: 40, lastOpened: now - DAY },
+    ]);
+    // Both are name-prefix matches of the same length, so the string score is
+    // identical and only the opens can separate them.
+    assert.deepStrictEqual(fuzzy.handleFuzzy('gm').map(r => r.name), ['Gmail', 'Gmaps']);
+});
+
+test('opens cannot lift a weak match over a strong one', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'widGetonderzoek', url: 'https://w.example', openCount: 9999, lastOpened: now },
+        { name: 'Github', url: 'https://gh.example', openCount: 0 },
+    ]);
+    // The whole point of the tiers is that typing the start of a name beats
+    // typing a letter buried in one. A favourite must not overturn that.
+    assert.deepStrictEqual(fuzzy.handleFuzzy('g').map(r => r.name), ['Github', 'widGetonderzoek']);
+});
+
+test('between two equals, the one you opened recently goes first', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Gmaps', url: 'https://maps.example', openCount: 10, lastOpened: now - 400 * DAY },
+        { name: 'Gmail', url: 'https://mail.example', openCount: 10, lastOpened: now - DAY },
+    ]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('gm').map(r => r.name), ['Gmail', 'Gmaps']);
+});
+
+test('a bookmark that was never opened still ranks', () => {
+    const fuzzy = loadFuzzy([{ name: 'Gmail', url: 'https://mail.example' }]);
+    const results = fuzzy.handleFuzzy('gm');
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].name, 'Gmail');
+});
+
+test('usage does not change which group a result lands in', () => {
+    // The group is decided on the string alone. If the bonus were added before
+    // that, a much-opened mid-word match could climb past 500 and be announced
+    // as a best match, which is the confusion this all started with.
+    const fuzzy = loadFuzzy([
+        { name: 'widGetonderzoek', url: 'https://w.example', openCount: 9999, lastOpened: now },
+    ]);
+    assert.strictEqual(groupOf(fuzzy.handleFuzzy('g'), 'widGetonderzoek'), 'contains');
+});
+
+/*
+ * Ranking by what you picked, for the keystrokes you picked it with.
+ *
+ * Layer A settles ties between equals. This settles the case the string can
+ * never get right: "mail" reaches `Mailcow` by its first letters and `Gmail`
+ * by a substring, so the shape of the words says Mailcow and ten years of you
+ * pressing Enter on Gmail says otherwise. The keystrokes are an alias you
+ * already taught it; it just was not listening.
+ *
+ * A picked result joins the best matches, because a choice you made for these
+ * exact keystrokes is better evidence than where the letters happen to fall.
+ * It still loses to an exact name: typing a thing's full name has to give you
+ * that thing.
+ */
+const pick = (q, url, n = 1, at = now) => ({ q, url, n, at });
+
+test('what you picked for these keystrokes leads the list', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Mailcow', url: 'https://mailcow.example' },
+        { name: 'Gmail', url: 'https://mail.example' },
+    ]);
+    // Without the memory the shape wins: Mailcow is a name prefix, Gmail only
+    // carries "mail" mid-word.
+    assert.deepStrictEqual(fuzzy.handleFuzzy('mail').map(r => r.name), ['Mailcow', 'Gmail']);
+
+    fuzzy.updatePicks([pick('mail', 'https://mail.example', 6)]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('mail').map(r => r.name), ['Gmail', 'Mailcow']);
+});
+
+test('a picked result is announced as a best match, not left in a folded group', () => {
+    // Otherwise the group it was promoted past renders above it, and the thing
+    // that scored highest is the thing you cannot see.
+    const fuzzy = loadFuzzy([{ name: 'Gmail', url: 'https://mail.example' }]);
+    fuzzy.updatePicks([pick('mail', 'https://mail.example', 6)]);
+    assert.strictEqual(groupOf(fuzzy.handleFuzzy('mail'), 'Gmail'), 'strong');
+});
+
+test('the memory is keyed to the keystrokes, not the bookmark', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Mailcow', url: 'https://mailcow.example' },
+        { name: 'Gmail', url: 'https://mail.example' },
+    ]);
+    // Picked for "mail" — that says nothing about what "ma" means.
+    fuzzy.updatePicks([pick('mail', 'https://mail.example', 6)]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('ma').map(r => r.name), ['Mailcow', 'Gmail']);
+});
+
+test('an exact name still beats what you usually pick', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Github', url: 'https://github.example' },
+        { name: 'Github Issues', url: 'https://issues.example' },
+    ]);
+    fuzzy.updatePicks([pick('github', 'https://issues.example', 10)]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('github').map(r => r.name), ['Github', 'Github Issues']);
+});
+
+test('picked more often leads picked once', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Alpha', url: 'https://a.example' },
+        { name: 'Alpine', url: 'https://b.example' },
+    ]);
+    fuzzy.updatePicks([
+        pick('al', 'https://a.example', 1),
+        pick('al', 'https://b.example', 9),
+    ]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('al').map(r => r.name), ['Alpine', 'Alpha']);
+});
+
+test('a pick cannot conjure a result the query does not match', () => {
+    const fuzzy = loadFuzzy([{ name: 'Gmail', url: 'https://mail.example' }]);
+    fuzzy.updatePicks([pick('zzz', 'https://mail.example', 9)]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('zzz').map(r => r.name), []);
+});
+
+test('a pick from long ago counts for less than a fresh one', () => {
+    const fuzzy = loadFuzzy([
+        { name: 'Alpha', url: 'https://a.example' },
+        { name: 'Alpine', url: 'https://b.example' },
+    ]);
+    fuzzy.updatePicks([
+        pick('al', 'https://a.example', 4, now - 400 * DAY),
+        pick('al', 'https://b.example', 4, now),
+    ]);
+    assert.deepStrictEqual(fuzzy.handleFuzzy('al').map(r => r.name), ['Alpine', 'Alpha']);
+});
+
 let failed = 0;
 for (const [name, fn] of tests) {
     try {
