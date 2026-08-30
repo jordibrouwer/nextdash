@@ -4868,7 +4868,7 @@
     "overviewNewFeatureKeyboardHow": "Gebruik j/k of pijltjestoetsen op het sectiemenu, [ en ] voor sub-tabs, en lijsttoetsen op Pagina's & tags en Bladwijzers. Ctrl/Cmd+Shift+K opent Instellingen vinden.",
     "overviewNewFeatureFindSettingsHow": "Druk Ctrl/Cmd+Shift+K overal in config, of klik Instellingen vinden onder Help in het linkermenu. Typ om te filteren en druk Enter om te gaan.",
     "overviewNewFeatureBookmarkPagesHow": "Kies een pagina in het filter om categorieën te beperken en deep-link met #config/bookmarks/<pageId>. Bij Alle pagina's tonen categorieën als Pagina · Categorie.",
-    "viewBreadcrumbRoot": "Configuratie",
+    "viewBreadcrumbRoot": "Config",
     "tipAddAnywhere": "<code>Shift+B</code> opent het bladwijzerformulier vanaf elke plek op het dashboard, ook als iets anders focus heeft.",
     "tipAddCapture": "Installeer nextDash als app en hij verschijnt in het deelmenu van je telefoon; in een desktopbrowser bewaart de bookmarklet onder Help → Inbox de pagina waar je naar kijkt.",
     "tipAddDuplicate": "Een link opslaan die je al op een andere pagina hebt, zegt waar hij staat en biedt aan hem te openen — <em>Toch opslaan</em> houdt de tweede kopie als je die bedoelde.",
