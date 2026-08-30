@@ -3,23 +3,27 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
- * Deleting a rollout flag that always said yes changes no row.
+ * A row draws the marks it has, and builds nothing for the ones it has not.
  *
- * `isDashboardPinNoteRowIconsEnabled()` was frozen at `true` — a whole file, a
- * deprecated alias, and a call read on every row render, guarding a rollout that
- * finished. The safe way to remove it is not to reason about what it gated but
- * to pin the output: whatever the grid renders now, it renders after.
+ * Written first to hold a removed rollout flag in place — whatever the grid
+ * renders, it renders after — and kept for what came next: the pin, note and
+ * fresh spans used to be built on every row and then emptied, 345 of them
+ * carrying `is-empty` and `display: none` on a page of 115 rows. They are only
+ * built when there is something to put in them now.
  *
- * This captures the marks on every row as a fingerprint. It passes before the
- * removal and must still pass after; a diff means the flag was doing something
- * nobody remembered.
+ * The invariant therefore inverted on purpose. It used to be "every row carries
+ * all three spans"; it is now "a row carries a span only when it draws one".
+ * The tally underneath is unchanged and still does the original job: the set of
+ * mark shapes the grid produces, and how many rows wear each.
  */
 const fingerprint = (page) => page.evaluate(() => {
     const rows = [...document.querySelectorAll('.bookmark-link')];
     return rows.map((row) => {
         const read = (sel) => {
             const el = row.querySelector(sel);
-            if (!el) return null;
+            // Absent is now a real, expected answer, and a distinct one from a
+            // span that exists and draws nothing.
+            if (!el) return 'absent';
             return [
                 el.className,
                 el.getAttribute('aria-hidden') || '',
@@ -69,12 +73,13 @@ test('the pin, note and fresh marks are what they were', async ({ page }) => {
     expect(marks.some(m => m.pin && !m.pin.includes('is-empty')),
         'no row ended up with a drawn pin, so the drawn branch is untested').toBe(true);
 
-    // Every row carries all three spans — the badge is always built, empty or
-    // not (see D2 in IDEAS.md). That invariant is what the removal must keep.
+    // No row builds a span it has nothing to draw in. An `is-empty` anywhere
+    // means the old always-build path is back.
     for (const row of marks) {
-        expect(row.pin, `pin span missing on ${row.url}`).not.toBeNull();
-        expect(row.note, `note span missing on ${row.url}`).not.toBeNull();
-        expect(row.fresh, `fresh span missing on ${row.url}`).not.toBeNull();
+        for (const kind of ['pin', 'note', 'fresh']) {
+            expect(row[kind], `${kind} span on ${row.url} is built but empty`)
+                .not.toContain('is-empty');
+        }
     }
 
     // The shapes the grid draws, counted rather than listed in order: pinning
