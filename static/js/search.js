@@ -964,6 +964,50 @@ class SearchComponent {
     }
 
     /**
+     * Say so when the shortcut search missed but a name search would not.
+     *
+     * With *Switch Search Mode* off — the default — a bare query looks for a
+     * bookmark shortcut. Type a bookmark's name and there is usually no
+     * shortcut by that name, so the overlay reports nothing while the bookmark
+     * is sitting on the page behind it. The search knew: it looked in one of
+     * its two places. This adds the other answer as one row, and names the key
+     * that gets there, so the reader learns the prefix at the moment it would
+     * have helped rather than in a settings panel months earlier.
+     *
+     * Only when there is something to point at. With no name match either,
+     * "nothing found" is the honest answer and another row is noise.
+     */
+    _appendModeHintIfShortcutSearchMissed(searchQuery, filters) {
+        if (!searchQuery || this.searchMatches.length > 0) {
+            return;
+        }
+        const fuzzy = (this.fuzzySearchComponent?.handleFuzzy?.(searchQuery, this.bookmarks) || [])
+            .filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+        if (fuzzy.length === 0) {
+            return;
+        }
+        const count = fuzzy.length;
+        const dash = window.dashboardInstance;
+        // Singular and plural are separate strings rather than one with a
+        // count: "1 bookmarks" is the sort of thing four locales would each
+        // have to work around.
+        const noun = count === 1
+            ? dash?.formatDashboardLabel?.('searchModeHintOne', {}, '1 bookmark')
+            : dash?.formatDashboardLabel?.('searchModeHintMany', { count }, `${count} bookmarks`);
+        const label = dash?.formatDashboardLabel?.(
+            'searchModeHint',
+            { query: searchQuery, count: noun },
+            `No shortcut "${searchQuery}" — ${noun} by that name. Press ; to search names.`,
+        );
+        this.searchMatches.push({
+            type: 'mode-hint',
+            label,
+            count,
+            query: searchQuery,
+        });
+    }
+
+    /**
      * Does this query carry the mode-switch prefix?
      *
      * `/` has always been it, and it still is — taking a key out of people's
@@ -1660,6 +1704,8 @@ class SearchComponent {
                     this.searchMatches.push(...filteredFuzzy);
                 }
 
+                this._appendModeHintIfShortcutSearchMissed(searchQuery, filters);
+
                 // Add finder matches for exact shortcut matches
                 if (this.settings.includeFindersInSearch) {
                     const finder = this.findersComponent.shortcuts.get(searchQuery.toLowerCase());
@@ -2243,13 +2289,17 @@ class SearchComponent {
                 displayName = this._escHtml(match.name);
             } else if (match.type === 'bookmark' || match.type === 'config' || match.type === 'colors') {
                 displayName = this._highlightQuery(match.bookmark.name, match.query);
+            } else if (match.type === 'mode-hint') {
+                displayName = this._escHtml(match.label || '');
             } else {
                 displayName = this._escHtml(match.name || '');
             }
 
-            // For fuzzy/global search, don't show shortcut span to avoid empty space
+            // For fuzzy/global search, don't show shortcut span to avoid empty space.
+            // The mode hint has no shortcut either: it is a sentence about the
+            // search, not a thing that can be opened.
             let shortcutHtml = '';
-            if (match.type !== 'fuzzy' && match.type !== 'global-search') {
+            if (match.type !== 'fuzzy' && match.type !== 'global-search' && match.type !== 'mode-hint') {
                 const rawShortcut = match.type === 'whats-new' ? match.shortcut : match.shortcut.toUpperCase();
                 const highlightedShortcut = match.query
                     ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
@@ -2410,6 +2460,13 @@ class SearchComponent {
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
                 this.closeSearch();
+            } else if (selectedMatch.type === 'mode-hint') {
+                // Do the thing the hint describes rather than only naming it:
+                // Enter or a click runs the same query the other way.
+                this.currentQuery = `;${selectedMatch.query}`;
+                this.updateSearch();
+                this.selectedMatchIndex = 0;
+                this.updateSelectionHighlight();
             } else if (selectedMatch.type === 'history') {
                 this.currentQuery = selectedMatch.completion;
                 this.updateSearch();
