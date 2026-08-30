@@ -277,7 +277,7 @@ test.describe('config help — translations', () => {
             },
         };
 
-        for (const lang of ['nl', 'de', 'fr']) {
+        for (const lang of ['nl', 'de', 'fr', 'zh']) {
             await page.evaluate(async (code) => {
                 const d = window.dashboardInstance;
                 await d.language.loadTranslations(code);
