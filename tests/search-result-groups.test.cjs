@@ -243,16 +243,25 @@ test('a pick from long ago counts for less than a fresh one', () => {
     assert.deepStrictEqual(fuzzy.handleFuzzy('al').map(r => r.name), ['Alpine', 'Alpha']);
 });
 
-let failed = 0;
-for (const [name, fn] of tests) {
-    try {
-        fn();
-        console.log(`  ok   ${name}`);
-    } catch (err) {
-        failed++;
-        console.log(`  FAIL ${name}`);
-        console.log(`       ${err.message}`);
+// Only when run directly. Playwright's testDir is `tests` and its default
+// testMatch takes `*.test.cjs` as well, so it loads this file while collecting
+// specs — and anything this file does at import time it does to the whole e2e
+// run. A bare process.exit() here ends that run before a single spec starts,
+// reporting success for work it never did.
+if (require.main === module) {
+    let failed = 0;
+    for (const [name, fn] of tests) {
+        try {
+            fn();
+            console.log(`  ok   ${name}`);
+        } catch (err) {
+            failed++;
+            console.log(`  FAIL ${name}`);
+            console.log(`       ${err.message}`);
+        }
+    }
+    console.log(`\n${tests.length - failed}/${tests.length} passed`);
+    if (failed > 0) {
+        throw new Error(`${failed} of ${tests.length} scoring tests failed`);
     }
 }
-console.log(`\n${tests.length - failed}/${tests.length} passed`);
-process.exit(failed === 0 ? 1 - 1 : 1);
