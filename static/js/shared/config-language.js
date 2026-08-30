@@ -13,6 +13,7 @@ class ConfigLanguage {
             'nl': 'Dutch',
             'de': 'German',
             'fr': 'French',
+            'zh': 'Chinese',
         };
     }
 
@@ -262,6 +263,7 @@ class ConfigLanguage {
             nl: 'config.languageNameNl',
             de: 'config.languageNameDe',
             fr: 'config.languageNameFr',
+            zh: 'config.languageNameZh',
         };
         Object.keys(this.availableLanguages).forEach(lang => {
             const option = document.createElement('option');

@@ -26,7 +26,7 @@ const fs = require('fs');
 const path = require('path');
 
 const LOCALES = path.join(__dirname, '..', 'locales');
-const LANGS = ['nl', 'de', 'fr'];
+const LANGS = ['nl', 'de', 'fr', 'zh'];
 const BASE = 'en';
 /** Below this, an identical string is usually a key name, a shortcut or a product name. */
 const SAME_TEXT_MIN = 60;

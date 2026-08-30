@@ -315,6 +315,7 @@ class SearchCommandsComponent {
         { id: 'nl', labelKey: 'commands.langNl', fallback: 'Nederlands' },
         { id: 'de', labelKey: 'commands.langDe', fallback: 'Deutsch' },
         { id: 'fr', labelKey: 'commands.langFr', fallback: 'Français' },
+        { id: 'zh', labelKey: 'commands.langZh', fallback: '中文' },
     ];
 
     _OPACITY_PRESETS = [0.65, 0.75, 0.85, 0.95, 1];

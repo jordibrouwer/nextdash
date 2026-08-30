@@ -154,6 +154,7 @@
                             <option value="nl">Nederlands</option>
                             <option value="de">Deutsch</option>
                             <option value="fr">Français</option>
+                            <option value="zh">中文</option>
                         </select>
                     </label>
                     <fieldset class="quickstart-fieldset" data-qs-field="autoDarkMode">
