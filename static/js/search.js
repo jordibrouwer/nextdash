@@ -836,9 +836,9 @@ class SearchComponent {
      * that opened first.
      */
     exactShortcutMatch() {
-        const query = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
-        const isShortcutMode = (this.currentQuery.startsWith('/') && this.interleaveMode)
-            || (!this.currentQuery.startsWith('/') && !this.interleaveMode);
+        const query = this._stripModeSwitchPrefix(this.currentQuery);
+        const switched = this._hasModeSwitchPrefix(this.currentQuery);
+        const isShortcutMode = (switched && this.interleaveMode) || (!switched && !this.interleaveMode);
         if (!isShortcutMode || !query) return null;
 
         const key = query.toLowerCase();
@@ -961,6 +961,71 @@ class SearchComponent {
      */
     _queryTakesSpace() {
         return this.searchActive && this.currentQuery.length > 0;
+    }
+
+    /**
+     * Say so when the shortcut search missed but a name search would not.
+     *
+     * With *Switch Search Mode* off — the default — a bare query looks for a
+     * bookmark shortcut. Type a bookmark's name and there is usually no
+     * shortcut by that name, so the overlay reports nothing while the bookmark
+     * is sitting on the page behind it. The search knew: it looked in one of
+     * its two places. This adds the other answer as one row, and names the key
+     * that gets there, so the reader learns the prefix at the moment it would
+     * have helped rather than in a settings panel months earlier.
+     *
+     * Only when there is something to point at. With no name match either,
+     * "nothing found" is the honest answer and another row is noise.
+     */
+    _appendModeHintIfShortcutSearchMissed(searchQuery, filters) {
+        if (!searchQuery || this.searchMatches.length > 0) {
+            return;
+        }
+        const fuzzy = (this.fuzzySearchComponent?.handleFuzzy?.(searchQuery, this.bookmarks) || [])
+            .filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+        if (fuzzy.length === 0) {
+            return;
+        }
+        const count = fuzzy.length;
+        const dash = window.dashboardInstance;
+        // Singular and plural are separate strings rather than one with a
+        // count: "1 bookmarks" is the sort of thing four locales would each
+        // have to work around.
+        const noun = count === 1
+            ? dash?.formatDashboardLabel?.('searchModeHintOne', {}, '1 bookmark')
+            : dash?.formatDashboardLabel?.('searchModeHintMany', { count }, `${count} bookmarks`);
+        const label = dash?.formatDashboardLabel?.(
+            'searchModeHint',
+            { query: searchQuery, count: noun },
+            `No shortcut "${searchQuery}" — ${noun} by that name. Press ; to search names.`,
+        );
+        this.searchMatches.push({
+            type: 'mode-hint',
+            label,
+            count,
+            query: searchQuery,
+        });
+    }
+
+    /**
+     * Does this query carry the mode-switch prefix?
+     *
+     * `/` has always been it, and it still is — taking a key out of people's
+     * fingers costs more than answering to two. `;` is the one the interface
+     * now names: free across the whole cheat-sheet registry, unshifted on
+     * QWERTY and AZERTY, and sitting beside the `:` that opens commands, where
+     * `/` is also the dashboard's tag-cloud key and so means two things
+     * depending on where you are.
+     */
+    _hasModeSwitchPrefix(query) {
+        const text = String(query || '');
+        return text.startsWith('/') || text.startsWith(';');
+    }
+
+    /** The query with its mode-switch prefix removed, if it had one. */
+    _stripModeSwitchPrefix(query) {
+        const text = String(query || '');
+        return this._hasModeSwitchPrefix(text) ? text.slice(1) : text;
     }
 
     _isNormalSearchMode() {
@@ -1567,8 +1632,9 @@ class SearchComponent {
             // Handle finders
             this.searchMatches = this.findersComponent.handleQuery(this.currentQuery);
         } else {
-            const query = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
-            const isShortcutMode = (this.currentQuery.startsWith('/') && this.interleaveMode) || (!this.currentQuery.startsWith('/') && !this.interleaveMode);
+            const query = this._stripModeSwitchPrefix(this.currentQuery);
+            const switched = this._hasModeSwitchPrefix(this.currentQuery);
+            const isShortcutMode = (switched && this.interleaveMode) || (!switched && !this.interleaveMode);
             const parsed = this.parseSearchFilters(query);
             const searchQuery = parsed.query;
             const filters = this._getActiveFilters(parsed.filters);
@@ -1638,6 +1704,8 @@ class SearchComponent {
                     this.searchMatches.push(...filteredFuzzy);
                 }
 
+                this._appendModeHintIfShortcutSearchMissed(searchQuery, filters);
+
                 // Add finder matches for exact shortcut matches
                 if (this.settings.includeFindersInSearch) {
                     const finder = this.findersComponent.shortcuts.get(searchQuery.toLowerCase());
@@ -1692,7 +1760,7 @@ class SearchComponent {
         }
 
         if (!this.currentQuery.startsWith(':') && !this.currentQuery.startsWith('?') && this.currentQuery.length > 0) {
-            const raw = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
+            const raw = this._stripModeSwitchPrefix(this.currentQuery);
             const filterAutocompleteMatches = this._isCompleteFilterQuery(raw)
                 ? []
                 : this.getFilterAutocompleteMatches(raw);
@@ -1987,7 +2055,7 @@ class SearchComponent {
         } else if (q.startsWith('@')) {
             mode = 'global';
             label = this.language ? this.language.t('dashboard.searchModeGlobal', 'ALL') : 'ALL';
-        } else if (q.startsWith('/') && this.interleaveMode) {
+        } else if (this._hasModeSwitchPrefix(q) && this.interleaveMode) {
             mode = 'fuzzy';
             label = this.language ? this.language.t('dashboard.searchModeFuzzy', 'FUZZY') : 'FUZZY';
         } else {
@@ -2221,13 +2289,17 @@ class SearchComponent {
                 displayName = this._escHtml(match.name);
             } else if (match.type === 'bookmark' || match.type === 'config' || match.type === 'colors') {
                 displayName = this._highlightQuery(match.bookmark.name, match.query);
+            } else if (match.type === 'mode-hint') {
+                displayName = this._escHtml(match.label || '');
             } else {
                 displayName = this._escHtml(match.name || '');
             }
 
-            // For fuzzy/global search, don't show shortcut span to avoid empty space
+            // For fuzzy/global search, don't show shortcut span to avoid empty space.
+            // The mode hint has no shortcut either: it is a sentence about the
+            // search, not a thing that can be opened.
             let shortcutHtml = '';
-            if (match.type !== 'fuzzy' && match.type !== 'global-search') {
+            if (match.type !== 'fuzzy' && match.type !== 'global-search' && match.type !== 'mode-hint') {
                 const rawShortcut = match.type === 'whats-new' ? match.shortcut : match.shortcut.toUpperCase();
                 const highlightedShortcut = match.query
                     ? this._highlightQuery(rawShortcut, match.query.toUpperCase())
@@ -2388,6 +2460,13 @@ class SearchComponent {
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
                 this.closeSearch();
+            } else if (selectedMatch.type === 'mode-hint') {
+                // Do the thing the hint describes rather than only naming it:
+                // Enter or a click runs the same query the other way.
+                this.currentQuery = `;${selectedMatch.query}`;
+                this.updateSearch();
+                this.selectedMatchIndex = 0;
+                this.updateSelectionHighlight();
             } else if (selectedMatch.type === 'history') {
                 this.currentQuery = selectedMatch.completion;
                 this.updateSearch();
@@ -2543,8 +2622,57 @@ class SearchComponent {
         this.currentQuery = text;
         this.selectedMatchIndex = 0;
         this.updateSearch();
+        this._widenArrivedQueryToNames(text);
         if (!this.searchActive) {
             this.showSearch();
+        }
+    }
+
+    /**
+     * Add the name matches an arrived query would otherwise never see.
+     *
+     * Which mode a bare query gets is a setting, and with the default —
+     * *Switch Search Mode* off — a bare query looks for a shortcut. That is a
+     * fair bargain while someone is typing, because they can still press `;`
+     * or `/`. It is the wrong one for a query that arrives already written:
+     * the address bar (see opensearch.go), a deep link, a URL someone was
+     * sent. Nobody types a bookmark's full name into their address bar hoping
+     * to match a two-letter shortcut, and the failure is silent — the overlay
+     * opens on a query the reader cannot revise and reports nothing found.
+     *
+     * The shortcut matches keep the top of the list: an exact shortcut is the
+     * strongest signal there is, and leading with it costs the name matches
+     * nothing now that they are present at all. Only plain queries are widened
+     * — a prefix (`:`, `?`, `@`, `;`, `/`) or a filter means the query already
+     * says what it wants.
+     */
+    _widenArrivedQueryToNames(text) {
+        if (!this._isNormalSearchMode || !this._isNormalSearchMode()) {
+            return;
+        }
+        if (/^[/;:?@>]/.test(text)) {
+            return;
+        }
+        const parsed = this.parseSearchFilters(text);
+        if (!parsed.query || this._hasActiveFilters(parsed.filters)) {
+            return;
+        }
+        const fuzzy = this.fuzzySearchComponent?.handleFuzzy?.(parsed.query, this.bookmarks) || [];
+        if (fuzzy.length === 0) {
+            return;
+        }
+        const seen = new Set(
+            (this.searchMatches || [])
+                .map((match) => match.bookmark?.url)
+                .filter(Boolean),
+        );
+        for (const match of fuzzy) {
+            const url = match.bookmark?.url;
+            if (!url || seen.has(url)) {
+                continue;
+            }
+            seen.add(url);
+            this.searchMatches.push({ ...match, type: 'bookmark', query: parsed.query });
         }
     }
 
