@@ -29,7 +29,7 @@ test.describe('the retry button on a failed load', () => {
         await expect(action).toBeVisible({ timeout: 15_000 });
         await expect(action).toHaveText('Retry');
 
-        for (const [language, label] of [['nl', 'Opnieuw'], ['de', 'Erneut versuchen'], ['fr', 'Réessayer']]) {
+        for (const [language, label] of [['nl', 'Opnieuw'], ['de', 'Erneut versuchen'], ['fr', 'Réessayer'], ['zh', '重试']]) {
             const text = await page.evaluate(async ([lang]) => {
                 await window.dashboardInstance.language.loadTranslations(lang);
                 return window.dashboardInstance.notifications.tDashboard('retry', 'Retry');
