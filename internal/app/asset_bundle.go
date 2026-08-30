@@ -71,6 +71,11 @@ type assetBundle struct {
 	files   []string // static-relative paths, in template order
 	content []byte
 	hash    string
+	// lineStarts[i] is the 0-based line in content where files[i]'s own code
+	// begins, just past the banner comment. The source map is built from these,
+	// which is why they are recorded here rather than recomputed: the banner is
+	// written in one place and counted in the same place.
+	lineStarts []int
 }
 
 // bundlingEnabled reports whether the single-file bundles are served. Off puts
@@ -147,18 +152,29 @@ func buildBundle(files fs.FS, list []string) assetBundle {
 	}
 	var b strings.Builder
 	kept := make([]string, 0, len(list))
+	starts := make([]int, 0, len(list))
+	line := 0
 	for _, p := range list {
 		data, err := readStaticAsset(files, p)
 		if err != nil {
 			continue
 		}
-		fmt.Fprintf(&b, "\n/* ==== %s ==== */\n", p)
+		banner := fmt.Sprintf("\n/* ==== %s ==== */\n", p)
+		b.WriteString(banner)
+		line += strings.Count(banner, "\n")
+		starts = append(starts, line)
 		b.Write(data)
+		line += strings.Count(string(data), "\n")
 		kept = append(kept, p)
 	}
 	content := []byte(b.String())
 	sum := sha256.Sum256(content)
-	return assetBundle{files: kept, content: content, hash: hex.EncodeToString(sum[:])[:12]}
+	return assetBundle{
+		files:      kept,
+		content:    content,
+		hash:       hex.EncodeToString(sum[:])[:12],
+		lineStarts: starts,
+	}
 }
 
 func readStaticAsset(files fs.FS, rel string) ([]byte, error) {
@@ -186,12 +202,13 @@ func (h *Handlers) ServeAssetBundle(w http.ResponseWriter, r *http.Request) {
 	buildAssetBundles(h.files)
 	var b assetBundle
 	contentType := "application/javascript; charset=utf-8"
-	if strings.HasSuffix(r.URL.Path, "search.js") {
+	base := strings.TrimSuffix(r.URL.Path, ".map")
+	if strings.HasSuffix(base, "search.js") {
 		b = bundleState.searchJS
-	} else if strings.HasSuffix(r.URL.Path, "views.css") {
+	} else if strings.HasSuffix(base, "views.css") {
 		b = bundleState.viewCSS
 		contentType = "text/css; charset=utf-8"
-	} else if strings.HasSuffix(r.URL.Path, ".css") {
+	} else if strings.HasSuffix(base, ".css") {
 		b = bundleState.css
 		contentType = "text/css; charset=utf-8"
 	} else {
@@ -201,10 +218,28 @@ func (h *Handlers) ServeAssetBundle(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// A .map request for a bundle is answered from the same state that built
+	// it, so the two can never be out of step.
+	if strings.HasSuffix(r.URL.Path, ".map") {
+		raw := buildBundleSourceMap(b, strings.TrimSuffix(r.URL.Path, ".map"))
+		if raw == "" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		_, _ = w.Write([]byte(raw))
+		return
+	}
+
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	w.Header().Set("X-Bundle-Files", fmt.Sprintf("%d", len(b.files)))
 	_, _ = w.Write(b.content)
+	// Only for the script bundles: a stylesheet has no stack traces to name.
+	if contentType != "text/css; charset=utf-8" {
+		fmt.Fprintf(w, "\n//# sourceMappingURL=%s.map?v=%s\n", r.URL.Path, b.hash)
+	}
 }
 
 // readTemplateSource reads a template from disk if there is one, or from the

@@ -139,6 +139,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/views.css", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/search.js", handlers.ServeAssetBundle).Methods("GET")
+	// Source maps for the script bundles, so a stack trace names the file the
+	// code was written in rather than the concatenation it ended up in.
+	r.HandleFunc("/static/bundle/dashboard.js.map", handlers.ServeAssetBundle).Methods("GET")
+	r.HandleFunc("/static/bundle/search.js.map", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/api/app-version", handlers.AppVersion).Methods("GET")
 	r.HandleFunc("/api/update-status", handlers.GetUpdateStatus).Methods("GET")
 	r.HandleFunc("/api/pages/{id:[0-9]+}", handlers.DeletePage).Methods("DELETE")
