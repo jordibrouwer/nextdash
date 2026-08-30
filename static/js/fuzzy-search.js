@@ -85,6 +85,17 @@ class FuzzySearchComponent {
             const name = (bookmark.name || '').toLowerCase();
             let score = this.scoreMatch(q, name);
             let meta = null;
+            // Why this matched, not just how well. The score cannot be read
+            // backwards into a reason: an exact domain match is 1000 * 0.3 =
+            // 300, the same number a mid-name substring earns. Only the branch
+            // that sets the score knows which field it looked at.
+            //
+            // Tiers 1-3 are all "you typed the start of something" — the name,
+            // or a word inside it. Tier 4 is the query buried mid-word, which
+            // is what made one letter fill the screen with names nobody would
+            // call a match. Within this branch the score is unscaled, so 500 is
+            // a clean line: tier 4 tops out at 300 + 99.
+            let group = score >= 500 ? 'strong' : (score > 0 ? 'contains' : null);
 
             if (score === 0) {
                 // Secondary: URL domain (scores scaled to 60-300 to stay below name matches)
@@ -94,6 +105,7 @@ class FuzzySearchComponent {
                     if (urlScore > 0) {
                         score = Math.max(1, Math.floor(urlScore * 0.3));
                         meta = bookmark.url;
+                        group = 'elsewhere';
                     }
                 }
             }
@@ -106,6 +118,7 @@ class FuzzySearchComponent {
                     if (tagScore > 0) {
                         score = Math.max(1, Math.floor(tagScore * 0.25));
                         meta = `#${tag}`;
+                        group = 'elsewhere';
                         break;
                     }
                 }
@@ -116,6 +129,7 @@ class FuzzySearchComponent {
                 const note = (bookmark.note || '').toLowerCase();
                 if (note && note.includes(q)) {
                     score = 40;
+                    group = 'elsewhere';
                     meta = bookmark.note.length > 60
                         ? bookmark.note.substring(0, 60) + '…'
                         : bookmark.note;
@@ -131,25 +145,27 @@ class FuzzySearchComponent {
                 const desc = (bookmark.previewDesc || '').toLowerCase();
                 if (desc && desc.includes(q)) {
                     score = 25;
+                    group = 'elsewhere';
                     meta = bookmark.previewDesc.length > 60
                         ? bookmark.previewDesc.substring(0, 60) + '…'
                         : bookmark.previewDesc;
                 }
             }
 
-            if (score > 0) scored.push({ bookmark, score, meta });
+            if (score > 0) scored.push({ bookmark, score, meta, group });
         }
 
         scored.sort((a, b) => b.score - a.score);
 
-        return scored.map(({ bookmark, meta }) => ({
+        return scored.map(({ bookmark, meta, group }) => ({
             name: bookmark.name,
             shortcut: '',
             action: () => this.openBookmarkCallback(bookmark),
             type: 'fuzzy',
             bookmark,
             query,
-            meta
+            meta,
+            group
         }));
     }
 

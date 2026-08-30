@@ -1,6 +1,22 @@
 // Search Component JavaScript
 class SearchComponent {
     /**
+     * The three reasons a fuzzy result can be on screen, strongest first.
+     * `key` matches the label fuzzy-search.js puts on every result.
+     */
+    static FUZZY_GROUPS = [
+        { id: 'search_strong', key: 'strong', labelKey: 'searchGroupStrong',
+          fallback: 'Best matches', defaultExpanded: true },
+        { id: 'search_contains', key: 'contains', labelKey: 'searchGroupContains',
+          fallback: 'Contains “{query}”', defaultExpanded: false },
+        { id: 'search_elsewhere', key: 'elsewhere', labelKey: 'searchGroupElsewhere',
+          fallback: 'In tags, note or url', defaultExpanded: false },
+    ];
+
+    /** Rows an open group shows before it defers to a "N more" row. */
+    static FUZZY_GROUP_CAP = 12;
+
+    /**
      * Match a timestamp against an age word used by `opened:` and `added:`.
      *
      * `never` is only meaningful for opened — a bookmark always has a created
@@ -69,6 +85,7 @@ class SearchComponent {
         this.matchElements = []; // Store references to DOM elements for selection highlighting
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.emptyStateExpandedGroups = new Set(); // Tracks expanded groups in empty search state
+        this.searchGroupsShowAll = new Set();      // Fuzzy groups the user opened past their cap
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
         this.recentCommands = this.loadRecentCommands();
@@ -1200,6 +1217,95 @@ class SearchComponent {
         });
     }
 
+    /**
+     * Groups fuzzy results by *why* they matched.
+     *
+     * A flat, score-ordered list told you nothing: `Gmail` and
+     * `widGetonderzoek` were the same kind of row, and one letter filled the
+     * screen with names whose only crime was holding a `g` somewhere in the
+     * middle. The score already knew the difference — see the `group` label in
+     * fuzzy-search.js — so the list says it out loud and collapses what you
+     * almost certainly did not mean.
+     *
+     * The headers are the ones the empty state and the inline filters already
+     * use, so expanding, counting and keyboard-activating come for free.
+     *
+     * @param {Array} matches - results from handleFuzzy, best-first
+     * @param {string} query  - the query, for the "Contains …" label
+     * @returns {Array} matches with group headers woven in, or the flat list
+     */
+    _groupFuzzyMatches(matches, query) {
+        this._fuzzyGroupsApplied = false;
+        if (!Array.isArray(matches) || matches.length === 0) return matches;
+
+        const buckets = SearchComponent.FUZZY_GROUPS.map((group) => ({
+            ...group,
+            items: matches.filter((m) => (m.group || 'contains') === group.key)
+        })).filter((bucket) => bucket.items.length > 0);
+
+        if (buckets.length === 0) return matches;
+
+        // One kind of match needs no explanation. Typing a full name should not
+        // sprout a header over a single row — that trades one sort of clutter
+        // for another.
+        if (buckets.length === 1) {
+            return this._capGroup(buckets[0].items, buckets[0].id);
+        }
+
+        const expandedOf = (bucket) => (bucket.defaultExpanded
+            ? !this.emptyStateExpandedGroups.has(bucket.id)
+            : this.emptyStateExpandedGroups.has(bucket.id));
+
+        const open = new Set(buckets.filter(expandedOf).map((b) => b.id));
+        // Every group shut means a screen of headers and counts over nothing,
+        // which reads as "not found" while holding the answer one keystroke
+        // away. The strongest group left standing opens itself.
+        if (open.size === 0) open.add(buckets[0].id);
+
+        const rows = [];
+        buckets.forEach((bucket) => {
+            const expanded = open.has(bucket.id);
+            rows.push({
+                type: 'command-group-header',
+                groupId: bucket.id,
+                label: this.dashboardLabel(bucket.labelKey, bucket.fallback, { query }),
+                count: bucket.items.length,
+                expanded,
+                _emptyStateGroup: bucket.id
+            });
+            if (expanded) rows.push(...this._capGroup(bucket.items, bucket.id));
+        });
+
+        this._fuzzyGroupsApplied = true;
+        return rows;
+    }
+
+    /**
+     * Holds an open group to a screenful, with a row that says what is left.
+     * Without it a prefix match on a common letter fills the overlay again,
+     * which is the thing the grouping was for.
+     */
+    _capGroup(items, groupId) {
+        const cap = SearchComponent.FUZZY_GROUP_CAP;
+        if (items.length <= cap || this.searchGroupsShowAll.has(groupId)) return items;
+        return [
+            ...items.slice(0, cap),
+            {
+                type: 'group-more',
+                groupId,
+                count: items.length - cap,
+                label: this.dashboardLabel('searchGroupMore', '{count} more', {
+                    count: items.length - cap
+                })
+            }
+        ];
+    }
+
+    /** Reveals the rest of a capped group; the cap returns when search closes. */
+    showAllInGroup(groupId) {
+        this.searchGroupsShowAll.add(groupId);
+    }
+
     dashboardLabel(key, fallback, vars = {}) {
         const fullKey = key.startsWith('dashboard.') ? key : `dashboard.${key}`;
         let text = (this.language?.t?.(fullKey) && this.language.t(fullKey) !== fullKey)
@@ -1618,13 +1724,16 @@ class SearchComponent {
                 }];
             } else {
                 const results = this.fuzzySearchComponent.handleFuzzy(query, this.allBookmarks);
-                this.searchMatches = results.map(m => {
+                const labelled = results.map(m => {
                     const pageName = this._getPageName(m.bookmark && m.bookmark.pageId);
                     const isCurrentPage = m.bookmark && m.bookmark.pageId === this.currentPageId;
                     const pageMeta = (pageName && !isCurrentPage) ? pageName : null;
                     const combinedMeta = [pageMeta, m.meta].filter(Boolean).join(' · ') || null;
                     return { ...m, meta: combinedMeta, type: 'global-search' };
                 });
+                // Searching every page makes the flat list longer still, so it
+                // gets the same grouping as the single-page search.
+                this.searchMatches = this._groupFuzzyMatches(labelled, query);
             }
         } else if (this.currentQuery.startsWith(':')) {
             // Handle commands
@@ -1754,7 +1863,8 @@ class SearchComponent {
                 }
             } else {
                 // Handle fuzzy search - only if query is not empty
-                this.searchMatches = this.fuzzySearchComponent.handleFuzzy(searchQuery).filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+                const fuzzy = this.fuzzySearchComponent.handleFuzzy(searchQuery).filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+                this.searchMatches = this._groupFuzzyMatches(fuzzy, searchQuery);
             }
 
             this.lastNonCommandQuery = query;
@@ -1801,7 +1911,14 @@ class SearchComponent {
         if (this.selectedMatchIndex === -1) {
             // Keep -1 to avoid auto-selection
         } else {
-            this.selectedMatchIndex = 0;
+            // Group headers are selectable, and index 0 is now one of them.
+            // Left alone, the core flow — type, press Enter — would collapse a
+            // group instead of opening the bookmark it was aiming at. Only the
+            // fuzzy groups move the selection: the empty state and the inline
+            // filters put a header first on purpose.
+            this.selectedMatchIndex = this._fuzzyGroupsApplied
+                ? Math.max(0, this.searchMatches.findIndex((m) => m.type !== 'command-group-header'))
+                : 0;
         }
         this.renderSearchMatches();
         this._dispatchLauncherFilter();
@@ -1925,6 +2042,7 @@ class SearchComponent {
         // Reset so reopening the same mode counts as a new open.
         this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();
+        this.searchGroupsShowAll.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
         // resetQuery clears the state; the prompt is a separate element and used
@@ -2216,6 +2334,28 @@ class SearchComponent {
                 return;
             }
 
+            // The tail of a capped group: what is left, and the way to it.
+            if (match.type === 'group-more') {
+                const mySelectableIndex = this.matchElements.length;
+                const moreEl = document.createElement('div');
+                const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
+                moreEl.className = `search-group-more command-group-child${selectedClass}`;
+                moreEl.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+                moreEl.innerHTML = `
+                    <span class="search-group-more-arrow">▾</span>
+                    <span class="search-group-more-label">${this._escHtml(match.label)}</span>
+                `;
+                moreEl.addEventListener('click', () => {
+                    this.showAllInGroup(match.groupId);
+                    this.updateSearch();
+                });
+                this._bindMatchKeyboardActivate(moreEl, mySelectableIndex);
+                fragment.appendChild(moreEl);
+                this.matchElements.push(moreEl);
+                this.selectableMatches.push(match);
+                return;
+            }
+
             // Chip strip for history / recent command items
             if (match.type === 'history-chips' || match.type === 'command-chips') {
                 const mySelectableIndex = this.matchElements.length;
@@ -2430,6 +2570,11 @@ class SearchComponent {
                 } else {
                     this.commandsComponent.toggleGroup(selectedMatch.groupId);
                 }
+                this.updateSearch();
+                return;
+            }
+            if (selectedMatch.type === 'group-more') {
+                this.showAllInGroup(selectedMatch.groupId);
                 this.updateSearch();
                 return;
             }

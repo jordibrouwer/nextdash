@@ -15,6 +15,7 @@
     "validate:locale-parity": "node scripts/validate-locale-parity.cjs",
     "validate:locale-unused": "node scripts/find-unused-locale-keys.cjs",
     "test:analytics-buckets": "node tests/analytics-count-buckets.test.cjs",
+    "test:search-groups": "node tests/search-result-groups.test.cjs",
     "validate:overview-features": "node scripts/validate-overview-features.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs"
   },
