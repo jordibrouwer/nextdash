@@ -437,7 +437,8 @@ type Settings struct {
 	// no notes never needs the note row.
 	LinkPreviewParts          []string                     `json:"linkPreviewParts,omitempty"`
 	LinkPreviewHoverDelayMs   int                          `json:"linkPreviewHoverDelayMs"`     // Hover delay before preview card appears
-	ShowShortcuts             bool                         `json:"showShortcuts"`               // Show bookmark shortcuts
+	ShowShortcuts             bool                         `json:"showShortcuts"`               // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
+	ShortcutDisplay           string                       `json:"shortcutDisplay,omitempty"`   // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
 	ShowPinIcon               bool                         `json:"showPinIcon"`                 // Show pin icon next to pinned bookmarks
 	ShowNoteIcon              bool                         `json:"showNoteIcon"`                // Show note icon next to bookmarks with a note
 	IncludeFindersInSearch    bool                         `json:"includeFindersInSearch"`      // Include finders in normal search
@@ -818,6 +819,30 @@ func normalizeFontPreset(s string) string {
 	return "source-code-pro"
 }
 
+// Shortcut label visibility. "hover" means the label is on screen only while
+// the row is under the pointer or carries the keyboard selection, which lets
+// the bookmark name have the width the label would otherwise hold.
+const (
+	shortcutDisplayAlways = "always"
+	shortcutDisplayHover  = "hover"
+	shortcutDisplayNever  = "never"
+)
+
+// Empty reads as "always" on purpose, and so does anything unrecognised: an
+// unreadable value must not be the reason a dashboard's labels disappear. The
+// fresh-install default is "hover" and is written by the constructors, not
+// inferred here -- see deriveShortcutDisplay for how an upgrade is read.
+func normalizeShortcutDisplay(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case shortcutDisplayHover:
+		return shortcutDisplayHover
+	case shortcutDisplayNever:
+		return shortcutDisplayNever
+	default:
+		return shortcutDisplayAlways
+	}
+}
+
 func normalizeFontSize(s string) string {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "xs", "s", "sm", "m", "lg", "l", "xl":
@@ -1159,6 +1184,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSiteNews:                 true,
 			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
+			ShortcutDisplay:              shortcutDisplayHover,
 			ShowPinIcon:                  false,
 			ShowNoteIcon:                 true,
 			IncludeFindersInSearch:       false,
@@ -3012,6 +3038,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSiteNews:                   true,
 			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
+			ShortcutDisplay:                shortcutDisplayHover,
 			ShowPinIcon:                    false,
 			ShowNoteIcon:                   true,
 			IncludeFindersInSearch:         false,
@@ -3120,6 +3147,21 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showShortcuts"]; !ok {
 			settings.ShowShortcuts = true
+		}
+		// shortcutDisplay took over from the boolean above, and an upgrade must
+		// not change what anyone sees: read the old answer once, and only while
+		// the new key is absent. The moment the setting is saved the key is
+		// there and this stops running, so a later choice can never be undone
+		// by a restart -- which is why this needs no migration marker.
+		//
+		// A fresh install never reaches here: it gets shortcutDisplay from the
+		// constructors above, where the default is "hover".
+		if _, ok := rawSettings["shortcutDisplay"]; !ok {
+			if settings.ShowShortcuts {
+				settings.ShortcutDisplay = shortcutDisplayAlways
+			} else {
+				settings.ShortcutDisplay = shortcutDisplayNever
+			}
 		}
 		// A settings file that predates the card carries neither key, and the
 		// card is on by default now. One that carries the old boolean has an
@@ -3444,6 +3486,7 @@ func (fs *FileStore) GetSettings() Settings {
 	}
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
+	settings.ShortcutDisplay = normalizeShortcutDisplay(settings.ShortcutDisplay)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
 	// 0 stays 0 — it means "the built-in default" — and anything else is held
 	// inside the range a bounded sweep can afford.
@@ -3507,6 +3550,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
+	settings.ShortcutDisplay = normalizeShortcutDisplay(settings.ShortcutDisplay)
 	settings.PasteDestination = normalizePasteDestination(settings.PasteDestination)
 	settings.RandomThemeMode = normalizeRandomThemeMode(settings.RandomThemeMode, settings.RandomThemeOnRefresh)
 	settings.RandomThemeOnRefresh = settings.RandomThemeMode == "refresh" || settings.RandomThemeMode == "view"

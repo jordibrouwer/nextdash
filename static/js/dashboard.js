@@ -142,7 +142,7 @@ class Dashboard {
             weatherLocation: '',
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
-            showShortcuts: true,
+            shortcutDisplay: 'hover',
             showPinIcon: false,
             showNoteIcon: true
         };

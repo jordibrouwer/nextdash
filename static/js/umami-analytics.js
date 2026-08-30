@@ -189,7 +189,7 @@
         // What a bookmark row shows
         ['showStatus', flag('showStatus')],
         ['showPing', flag('showPing')],
-        ['showShortcuts', flag('showShortcuts')],
+        ['shortcutDisplay', pick('shortcutDisplay', 'always')],
         ['showIcons', flag('showIcons')],
         ['showRowTags', flag('showRowTags')],
         ['linkPreviewCards', flag('showLinkPreviewCards')],

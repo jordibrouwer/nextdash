@@ -843,7 +843,7 @@ body[data-layout-version="modern"][data-density-mode="dense"] .dashboard-grid:no
 
 /* ─── Badge visibility polish ────────────────────────────────────────────── */
 
-body[data-layout-version="modern"][data-show-shortcuts="true"] .bookmark-shortcut:not(.is-empty) {
+body[data-layout-version="modern"][data-shortcut-display="always"] .bookmark-shortcut:not(.is-empty) {
     opacity: 1;
 }
 

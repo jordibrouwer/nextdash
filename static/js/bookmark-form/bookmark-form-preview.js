@@ -124,7 +124,10 @@
         buildDashboardPreviewHtml(bookmark, expanded = false) {
             const settings = this.getSettings() || {};
             const showIcons = settings.showIcons !== false;
-            const showShortcuts = settings.showShortcuts !== false;
+            // "hover" counts as showing it: this is a still preview of a row,
+            // and a row under the pointer is exactly what it depicts. Only
+            // "never" takes the label out of the picture.
+            const showShortcuts = (settings.shortcutDisplay || 'always') !== 'never';
             const showPinIcon = settings.showPinIcon === true;
             const showNoteIcon = settings.showNoteIcon !== false;
             const showStatus = settings.showStatus === true;

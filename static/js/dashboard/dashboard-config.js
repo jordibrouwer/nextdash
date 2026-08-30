@@ -10272,7 +10272,7 @@ class DashboardConfig {
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
-        showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: true },
+        shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'hover' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -10796,7 +10796,34 @@ class DashboardConfig {
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
                 note: t('config.generalBookmarksDisplayIntro', 'Favicons, shortcuts, badges, link preview, sorting, and navigation.'),
                 controls: [
-                    bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
+                    {
+                        field: 'shortcutDisplay',
+                        type: 'cards',
+                        // 'chrome' because the whole setting is a body
+                        // attribute the CSS reads: setupDOM writes it and the
+                        // grid repaints. Without it the choice only arrived
+                        // after a reload, which is what the old boolean did --
+                        // see tests/config-behavior-realtime-coverage.spec.js.
+                        special: 'chrome',
+                        label: t('config.shortcutDisplayLabel', 'Shortcut letters on rows'),
+                        options: [
+                            {
+                                value: 'hover',
+                                label: t('config.shortcutDisplayHover', 'Only on the row you are on'),
+                                body: t('config.shortcutDisplayHoverBody', 'The letters stay out of the way and the bookmark names get the width back. The shortcut appears when the pointer or the keyboard selection is on the row.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.shortcutDisplayAlways', 'Always'),
+                                body: t('config.shortcutDisplayAlwaysBody', 'Every shortcut is on screen, in a column of its own down the right of each category. The names have that much less room.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.shortcutDisplayNever', 'Never'),
+                                body: t('config.shortcutDisplayNeverBody', 'No letters anywhere. The shortcuts themselves keep working.'),
+                            },
+                        ],
+                    },
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
                     bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),

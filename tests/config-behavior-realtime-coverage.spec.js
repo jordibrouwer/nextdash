@@ -37,16 +37,18 @@ const UNTESTABLE = new Set([
  *                 case calls renderDateWeatherLine(); only updateDateVisibility()
  *                 adds or removes #date-element. Turning the date off leaves it
  *                 on screen.
- *   showShortcuts Appearance → Display. Plain bool, no special, but
- *                 body[data-show-shortcuts="false"] is what hides the letters.
  *   densityMode   Appearance → Layout. special: 'render' re-renders the grid,
  *                 but the spacing comes from body[data-density-mode].
  *
  * Each needs 'chrome' (or 'chromeRender'), which is a behaviour change to ship
  * deliberately rather than fold into a test commit. Remove from this list with
  * the fix and the test starts guarding it.
+ *
+ * showShortcuts was the third. It became shortcutDisplay -- three answers
+ * instead of two -- and the rewrite carried the 'chrome' handler it had always
+ * needed, so it is guarded below rather than excused here.
  */
-const KNOWN_BROKEN = new Set(['showDate', 'showShortcuts', 'densityMode']);
+const KNOWN_BROKEN = new Set(['showDate', 'densityMode']);
 
 async function load(page) {
     await markWhatsNewSeen(page);
@@ -78,7 +80,7 @@ const BODY_MIRRORED = {
     showCommandsButton: 'data-show-commands-button',
     showRecentButton: 'data-show-recent-button',
     showTagCloudButton: 'data-show-tag-cloud-button',
-    showShortcuts: 'data-show-shortcuts',
+    shortcutDisplay: 'data-shortcut-display',
     layoutPreset: 'data-layout-preset',
     densityMode: 'data-density-mode',
 };
@@ -109,7 +111,10 @@ test('every body-mirrored Behavior setting is applied live by setBehavior', asyn
             let next;
             if (c.type === 'checkbox') {
                 next = !(before === 'true');
-            } else if (c.type === 'select') {
+            } else if (c.type === 'select' || c.type === 'cards') {
+                // 'cards' is a select drawn as a row of choices -- same
+                // options, same one-of-them value, and just as capable of not
+                // reaching the body attribute it is supposed to move.
                 const other = (c.options || []).map((o) => o.value)
                     .find((v) => String(v) !== String(before));
                 if (other === undefined) continue;

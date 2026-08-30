@@ -4553,10 +4553,9 @@ body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn
     display: flex !important;
 }
 
-/* Hide bookmark shortcuts when showShortcuts is false */
-body[data-show-shortcuts="false"] .bookmark-shortcut {
-    display: none;
-}
+/* The three shortcut-label modes live together in dashboard-bookmark-row.css,
+   which loads after this file and owns the row's hover and selection chrome --
+   and "hover" is a hover state. Nothing here. */
 
 /* Hide pin icon when showPinIcon is false */
 body[data-show-pin-icon="false"] .bookmark-pin-badge {

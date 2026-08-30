@@ -39,7 +39,17 @@ class DashboardSetup {
         d.syncTagCloudButtonPlacement();
         d.syncSideRailDiscoverability?.();
 
-        document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
+        // One attribute, three answers. The row always builds the label when the
+        // bookmark has one; whether it is on screen, and whether it stands in
+        // the row's flow, is decided from here in CSS -- so changing the setting
+        // is a repaint rather than a re-render, the same bargain data-check-mode
+        // makes in dashboard-bookmark-rows.js.
+        //
+        // No normalising here: the store does it on read and on save, so the
+        // only value that can arrive unrecognised is an absent one, and that
+        // reads as "always" for the same reason it does server-side -- see
+        // normalizeShortcutDisplay in models.go.
+        document.body.setAttribute('data-shortcut-display', d.settings.shortcutDisplay || 'always');
         const showPinIcon = d.settings.showPinIcon === true;
         const showNoteIcon = d.settings.showNoteIcon !== false;
         document.body.setAttribute('data-pin-notes-disabled', (!showPinIcon && !showNoteIcon) ? 'true' : 'false');

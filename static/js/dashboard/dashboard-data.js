@@ -260,6 +260,12 @@ class DashboardData {
             if (typeof d.settings.showShortcuts === 'undefined') {
                 d.settings.showShortcuts = true;
             }
+            // The boolean above became a three-way choice. The store derives it
+            // the same way on read, so this only catches a settings object that
+            // reached the page without passing through it.
+            if (!d.settings.shortcutDisplay) {
+                d.settings.shortcutDisplay = d.settings.showShortcuts === false ? 'never' : 'always';
+            }
             if (typeof d.settings.showPinIcon === 'undefined') {
                 d.settings.showPinIcon = false;
             }

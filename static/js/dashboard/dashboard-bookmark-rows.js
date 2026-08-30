@@ -591,18 +591,36 @@ class DashboardBookmarkRows {
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
         shortcutSpan.setAttribute('role', 'presentation');
-        const showShortcuts = d.settings.showShortcuts !== false;
-        const shortcutText = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
+        // Built whenever the bookmark has one, whatever the setting says. Which
+        // of the three display modes is in force is a body attribute the CSS
+        // reads, so switching modes repaints instead of re-rendering the grid --
+        // the same reasoning as data-check-mode a few lines up.
+        const shortcutText = bookmark.shortcut && String(bookmark.shortcut).trim()
             ? String(bookmark.shortcut).toUpperCase()
             : '';
         shortcutSpan.textContent = shortcutText;
         if (!shortcutText) {
             shortcutSpan.classList.add('is-empty');
             shortcutSpan.setAttribute('aria-hidden', 'true');
+            delete openLink.dataset.shortcut;
         } else {
             shortcutSpan.dataset.shortcut = shortcutText;
+            // Also on the name, which is what the "hover" mode draws it from.
+            // That mode floats the label over the right end of the name and
+            // must stop exactly where the name's column stops -- short of the
+            // response time, which has a column of its own. Being a pseudo of
+            // the name element makes that true by construction, where an
+            // offset measured from the row's edge has to keep adding up the
+            // padding, the gap and a column width, and would come apart the
+            // first time one of the three changed.
+            openLink.dataset.shortcut = shortcutText;
         }
         {
+            // Announced whenever the bookmark has a shortcut, including under
+            // "never". Hiding the label was always a decision about what the
+            // grid looks like -- the shortcut itself keeps working in every
+            // mode, so a screen reader that never sees the label is exactly the
+            // one that needs to be told the shortcut is there.
             let linkLabel = this.bookmarkRowTooltip(bookmark);
             if (shortcutText) {
                 const shortcutPrefix = d.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
