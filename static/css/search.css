@@ -592,7 +592,10 @@ body.no-animations .search-button[data-tooltip]::after {
     /* Button styling */
     padding: 0.62rem 0.92rem;
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    /* --search-button-under is what the wash sits on: transparent by default,
+       and the page background wherever the button floats over content with no
+       plate beneath it. See the dock rule below. */
+    background: color-mix(in srgb, var(--background-secondary) 74%, var(--search-button-under, transparent));
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -615,6 +618,31 @@ body.no-animations .search-button[data-tooltip]::after {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+/* The classic dock has no plate of its own -- .button-container is deliberately
+   border-less, fill-less and blur-less -- so these buttons are the only thing
+   between the page and the eye. At 74% over nothing, a scrolled grid reads
+   straight through them: bookmark names run across the icons.
+ *
+ * The fix composites the same 74% over --background-primary instead of over
+ * transparent. The face keeps exactly the colour it has today wherever the dock
+ * sits over empty page, so nothing about the design changes -- it just stops
+ * being a window.
+ *
+ * It moves a variable rather than the background itself on purpose. An override
+ * specific enough to name the dock would also outrank `.search-button:hover`,
+ * which sets `background` flat out, and the rest state would win over the hover
+ * state. Feeding the base declaration instead leaves every interaction rule
+ * exactly as specific as it was.
+ *
+ * Not for the modern layout: it puts a blurred plate under the row (centre) or
+ * under each group (corners) and keeps the faces translucent against it, which
+ * is a whole answer to the same question. Not for the rail either -- there the
+ * buttons sit on the rail's own surface. */
+body:not([data-layout-version="modern"]):not([data-rail]) .button-container .search-button,
+body:not([data-layout-version="modern"]):not([data-rail]) .tag-cloud-toggle-btn.search-button {
+    --search-button-under: var(--background-primary);
 }
 
 .search-button:hover {

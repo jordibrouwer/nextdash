@@ -48,9 +48,9 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'totalCount', label: 'in queue', format: 'count' },
-                { path: 'count', label: 'downloading', format: 'count' },
-                { path: 'unknownCount', label: 'unknown', format: 'count' },
+                { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
+                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'unknownCount', label: 'unknown', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -60,9 +60,9 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'totalCount', label: 'in queue', format: 'count' },
-                { path: 'count', label: 'downloading', format: 'count' },
-                { path: 'unknownCount', label: 'unknown', format: 'count' },
+                { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
+                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
+                { path: 'unknownCount', label: 'unknown', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -72,8 +72,8 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'totalCount', label: 'in queue', format: 'count' },
-                { path: 'count', label: 'downloading', format: 'count' },
+                { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
+                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -83,8 +83,8 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'totalCount', label: 'in queue', format: 'count' },
-                { path: 'count', label: 'downloading', format: 'count' },
+                { path: 'totalCount', label: 'in queue', format: 'count', shape: 'large' },
+                { path: 'count', label: 'downloading', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -94,8 +94,8 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'version', label: 'version', format: 'text' },
-                { path: 'startTime', label: 'up since', format: 'relativeDate' },
+                { path: 'version', label: 'version', format: 'text', shape: 'small' },
+                { path: 'startTime', label: 'up since', format: 'relativeDate', shape: 'small' },
             ],
         },
         {
@@ -105,7 +105,7 @@
             auth: 'header', authName: 'X-API-KEY',
             note: 'Settings → General → API Key, as an X-API-KEY header.',
             fields: [
-                { path: 'total', label: 'subtitles wanted', format: 'count' },
+                { path: 'total', label: 'subtitles wanted', format: 'count', shape: 'large' },
             ],
         },
         {
@@ -115,9 +115,9 @@
             auth: 'header', authName: 'X-Api-Key',
             note: 'Settings → General → API Key, as an X-Api-Key header.',
             fields: [
-                { path: 'pending', label: 'pending', format: 'count' },
-                { path: 'processing', label: 'processing', format: 'count' },
-                { path: 'available', label: 'available', format: 'count' },
+                { path: 'pending', label: 'pending', format: 'count', shape: 'large' },
+                { path: 'processing', label: 'processing', format: 'count', shape: 'small' },
+                { path: 'available', label: 'available', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -130,9 +130,9 @@
             auth: 'query',
             note: 'The API key goes in the address here — Tautulli has no header form.',
             fields: [
-                { path: 'response.data.stream_count', label: 'streams', format: 'count' },
-                { path: 'response.data.stream_count_transcode', label: 'transcoding', format: 'count' },
-                { path: 'response.data.total_bandwidth', label: 'kbps', format: 'count' },
+                { path: 'response.data.stream_count', label: 'streams', format: 'count', shape: 'large' },
+                { path: 'response.data.stream_count_transcode', label: 'transcoding', format: 'count', shape: 'small' },
+                { path: 'response.data.total_bandwidth', label: 'kbps', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -144,7 +144,7 @@
             fields: [
                 { path: 'MovieCount', label: 'films', format: 'count' },
                 { path: 'SeriesCount', label: 'series', format: 'count' },
-                { path: 'EpisodeCount', label: 'episodes', format: 'count' },
+                { path: 'EpisodeCount', label: 'episodes', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -154,7 +154,7 @@
             auth: 'header', authName: 'Accept',
             note: 'Plex answers XML unless asked otherwise: add an Accept header of application/json.',
             fields: [
-                { path: 'MediaContainer.size', label: 'streams now', format: 'count' },
+                { path: 'MediaContainer.size', label: 'streams now', format: 'count', shape: 'large' },
             ],
         },
         {
@@ -164,9 +164,9 @@
             auth: 'header', authName: 'x-api-key',
             note: 'Account Settings → API Keys, as an x-api-key header.',
             fields: [
-                { path: 'photos', label: 'photos', format: 'count' },
+                { path: 'photos', label: 'photos', format: 'count', shape: 'large' },
                 { path: 'videos', label: 'videos', format: 'count' },
-                { path: 'usage', label: 'stored', format: 'bytes' },
+                { path: 'usage', label: 'stored', format: 'bytes', shape: 'small' },
             ],
         },
         {
@@ -177,9 +177,9 @@
             note: 'qBittorrent signs in for a session: send the SID as a Cookie header.',
             ttl: 60,
             fields: [
-                { path: 'dl_info_speed', label: 'down/s', format: 'bytes' },
+                { path: 'dl_info_speed', label: 'down/s', format: 'bytes', shape: 'large' },
                 { path: 'up_info_speed', label: 'up/s', format: 'bytes' },
-                { path: 'dl_info_data', label: 'downloaded', format: 'bytes' },
+                { path: 'dl_info_data', label: 'downloaded', format: 'bytes', shape: 'small' },
             ],
         },
         {
@@ -190,9 +190,9 @@
             note: 'The API key goes in the address; SABnzbd takes no header form.',
             ttl: 60,
             fields: [
-                { path: 'queue.noofslots_total', label: 'in queue', format: 'count' },
+                { path: 'queue.noofslots_total', label: 'in queue', format: 'count', shape: 'large' },
                 { path: 'queue.speed', label: 'speed', format: 'text' },
-                { path: 'queue.mbleft', label: 'MB left', format: 'text' },
+                { path: 'queue.mbleft', label: 'MB left', format: 'text', shape: 'small' },
             ],
         },
         {
@@ -203,8 +203,8 @@
             note: 'The control username and password, as basic auth.',
             ttl: 60,
             fields: [
-                { path: 'result.DownloadRate', label: 'down/s', format: 'bytes' },
-                { path: 'result.RemainingSizeMB', label: 'MB left', format: 'count' },
+                { path: 'result.DownloadRate', label: 'down/s', format: 'bytes', shape: 'large' },
+                { path: 'result.RemainingSizeMB', label: 'MB left', format: 'count', shape: 'small' },
             ],
         },
 
@@ -215,11 +215,12 @@
             path: '/api/stats/summary',
             auth: 'header', authName: 'X-FTL-SID',
             note: 'v6 signs in for a session id: send it as an X-FTL-SID header.',
+            columns: 2,
             fields: [
-                { path: 'queries.total', label: 'queries', format: 'count' },
+                { path: 'queries.total', label: 'queries', format: 'count', shape: 'large' },
                 { path: 'queries.blocked', label: 'blocked', format: 'count' },
-                { path: 'queries.percent_blocked', label: 'blocked', format: 'percent' },
-                { path: 'gravity.domains_being_blocked', label: 'on the list', format: 'count' },
+                { path: 'queries.percent_blocked', label: 'blocked', format: 'percent', shape: 'meter', tone: 'good' },
+                { path: 'gravity.domains_being_blocked', label: 'on the list', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -228,11 +229,12 @@
             path: '/admin/api.php?summaryRaw&auth=YOUR_TOKEN',
             auth: 'query',
             note: 'v5 takes the API token in the address — Settings → API.',
+            columns: 2,
             fields: [
-                { path: 'dns_queries_today', label: 'queries today', format: 'count' },
+                { path: 'dns_queries_today', label: 'queries today', format: 'count', shape: 'large' },
                 { path: 'ads_blocked_today', label: 'blocked today', format: 'count' },
-                { path: 'ads_percentage_today', label: 'blocked', format: 'percent' },
-                { path: 'domains_being_blocked', label: 'on the list', format: 'count' },
+                { path: 'ads_percentage_today', label: 'blocked', format: 'percent', shape: 'meter', tone: 'good' },
+                { path: 'domains_being_blocked', label: 'on the list', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -242,9 +244,9 @@
             auth: 'basic',
             note: 'The web interface username and password, as basic auth.',
             fields: [
-                { path: 'num_dns_queries', label: 'queries', format: 'count' },
+                { path: 'num_dns_queries', label: 'queries', format: 'count', shape: 'large' },
                 { path: 'num_blocked_filtering', label: 'blocked', format: 'count' },
-                { path: 'avg_processing_time', label: 'avg ms', format: 'text' },
+                { path: 'avg_processing_time', label: 'avg ms', format: 'ms', shape: 'small' },
             ],
         },
         {
@@ -256,7 +258,7 @@
             fields: [
                 { path: 'http.routers.total', label: 'routers', format: 'count' },
                 { path: 'http.services.total', label: 'services', format: 'count' },
-                { path: 'http.routers.errors', label: 'router errors', format: 'count' },
+                { path: 'http.routers.errors', label: 'router errors', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -267,9 +269,9 @@
             note: 'A Sanctum token, as an Authorization header of "Bearer <token>".',
             ttl: 3600,
             fields: [
-                { path: 'data.download', label: 'down', format: 'bytes' },
+                { path: 'data.download', label: 'down', format: 'bytes', shape: 'large' },
                 { path: 'data.upload', label: 'up', format: 'bytes' },
-                { path: 'data.ping', label: 'ping ms', format: 'text' },
+                { path: 'data.ping', label: 'ping ms', format: 'text', shape: 'small' },
             ],
         },
 
@@ -281,8 +283,8 @@
             auth: 'header', authName: 'Authorization',
             note: 'An API token, as an Authorization header of "PVEAPIToken=user@pam!id=secret".',
             fields: [
-                { path: 'data.uptime', label: 'uptime', format: 'duration' },
-                { path: 'data.cpu', label: 'cpu', format: 'percent' },
+                { path: 'data.uptime', label: 'uptime', format: 'duration', shape: 'small' },
+                { path: 'data.cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
                 { path: 'data.memory.used', label: 'ram used', format: 'bytes' },
             ],
         },
@@ -293,9 +295,9 @@
             auth: 'header', authName: 'Authorization',
             note: 'An API key, as an Authorization header of "Bearer <key>".',
             fields: [
-                { path: 'uptime_seconds', label: 'uptime', format: 'duration' },
+                { path: 'uptime_seconds', label: 'uptime', format: 'duration', shape: 'small' },
                 { path: 'physmem', label: 'ram', format: 'bytes' },
-                { path: 'version', label: 'version', format: 'text' },
+                { path: 'version', label: 'version', format: 'text', shape: 'small' },
             ],
         },
         {
@@ -305,10 +307,11 @@
             auth: 'none',
             note: 'No credential unless the web server was started with one.',
             ttl: 60,
+            columns: 2,
             fields: [
-                { path: 'cpu', label: 'cpu', format: 'percent' },
-                { path: 'mem', label: 'memory', format: 'percent' },
-                { path: 'swap', label: 'swap', format: 'percent' },
+                { path: 'cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
+                { path: 'mem', label: 'memory', format: 'percent', shape: 'meter', tone: 'bad' },
+                { path: 'swap', label: 'swap', format: 'percent', shape: 'meter', tone: 'bad' },
             ],
         },
         {
@@ -318,9 +321,9 @@
             auth: 'header', authName: 'X-API-Key',
             note: 'Actions → Settings → API Key, as an X-API-Key header.',
             fields: [
-                { path: 'completion', label: 'in sync', format: 'percent' },
+                { path: 'completion', label: 'in sync', format: 'percent', shape: 'meter', tone: 'good' },
                 { path: 'needItems', label: 'to sync', format: 'count' },
-                { path: 'needBytes', label: 'to transfer', format: 'bytes' },
+                { path: 'needBytes', label: 'to transfer', format: 'bytes', shape: 'small' },
             ],
         },
 
@@ -331,11 +334,12 @@
             path: '/ocs/v2.php/apps/serverinfo/api/v1/info?format=json',
             auth: 'basic',
             note: 'An app password as basic auth, plus an OCS-APIRequest header of "true".',
+            columns: 2,
             fields: [
-                { path: 'ocs.data.nextcloud.storage.num_files', label: 'files', format: 'count' },
+                { path: 'ocs.data.nextcloud.storage.num_files', label: 'files', format: 'count', shape: 'large' },
                 { path: 'ocs.data.nextcloud.storage.num_users', label: 'users', format: 'count' },
-                { path: 'ocs.data.activeUsers.last24hours', label: 'active today', format: 'count' },
-                { path: 'ocs.data.nextcloud.system.freespace', label: 'free', format: 'bytes' },
+                { path: 'ocs.data.activeUsers.last24hours', label: 'active today', format: 'count', shape: 'small' },
+                { path: 'ocs.data.nextcloud.system.freespace', label: 'free', format: 'bytes', shape: 'small' },
             ],
         },
         {
@@ -345,9 +349,9 @@
             auth: 'header', authName: 'Authorization',
             note: 'An API token, as an Authorization header of "Token <token>".',
             fields: [
-                { path: 'documents_total', label: 'documents', format: 'count' },
+                { path: 'documents_total', label: 'documents', format: 'count', shape: 'large' },
                 { path: 'documents_inbox', label: 'in the inbox', format: 'count' },
-                { path: 'character_count', label: 'characters', format: 'count' },
+                { path: 'character_count', label: 'characters', format: 'count', shape: 'small' },
             ],
         },
         {
@@ -357,9 +361,9 @@
             auth: 'header', authName: 'Authorization',
             note: 'A long-lived access token, as an Authorization header of "Bearer <token>".',
             fields: [
-                { path: 'state', label: 'now', format: 'text' },
+                { path: 'state', label: 'now', format: 'text', shape: 'large' },
                 { path: 'attributes.friendly_name', label: 'sensor', format: 'text' },
-                { path: 'last_updated', label: 'updated', format: 'relativeDate' },
+                { path: 'last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
             ],
         },
         {
@@ -370,7 +374,7 @@
             note: 'The health route answers without a credential.',
             fields: [
                 { path: 'database', label: 'database', format: 'text' },
-                { path: 'version', label: 'version', format: 'text' },
+                { path: 'version', label: 'version', format: 'text', shape: 'small' },
             ],
         },
         {
@@ -380,7 +384,7 @@
             auth: 'none',
             note: 'The health route answers without a credential.',
             fields: [
-                { path: 'healthy', label: 'healthy', format: 'text' },
+                { path: 'healthy', label: 'healthy', format: 'text', shape: 'large' },
             ],
         },
     ];
@@ -452,13 +456,39 @@
             url: addressFor(preset, current),
             method: 'GET',
             ttl: Number(preset.ttl) || 300,
+            /*
+             * Two columns only where the figures earn it -- three meters side
+             * by side, or four figures that would otherwise stack. It is a
+             * request and not an instruction: the grid gives a widget the
+             * second column only when the dashboard is showing one, so a
+             * reader on a single-column dashboard sees no difference.
+             */
+            columns: Number(preset.columns) === 2 ? 2 : 1,
             fields: preset.fields.map((field) => ({ ...field })),
         };
+    }
+
+    /*
+     * The shape a preset asks for on a field it recognises.
+     *
+     * Widgets saved before shapes existed hold fields with no shape of their
+     * own, and rewriting them on load would mean changing stored data nobody
+     * asked to have changed. So the shape is worked out at drawing time
+     * instead: the widget still knows which preset it came from, and the
+     * preset still knows what its own figures are for. Anything the reader
+     * chose themselves is already on the field and wins outright.
+     */
+    function shapeFor(presetId, path) {
+        const preset = byId(presetId);
+        if (!preset) return null;
+        const field = preset.fields.find((entry) => entry.path === String(path));
+        if (!field?.shape) return null;
+        return { shape: field.shape, tone: field.tone || '' };
     }
 
     function byId(id) {
         return PRESETS.find((preset) => preset.id === String(id)) || null;
     }
 
-    window.DashboardWidgetPresets = { GROUPS, PRESETS, byId, configFor, addressFor, hasPath };
+    window.DashboardWidgetPresets = { GROUPS, PRESETS, byId, configFor, addressFor, hasPath, shapeFor };
 })();

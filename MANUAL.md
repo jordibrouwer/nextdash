@@ -620,6 +620,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 |------|--------|
 | `Shift + I` | Open **Inbox** view (recommended; `0` still works when search is closed) |
 | `Shift + H` | Open **Health** view |
+| `Shift + Q` | Switch search mode — whether typing letters finds a bookmark's **name** or its **shortcut**. The same setting as **Behavior → Search**, flipped where you are standing; a toast names the mode it landed in (**v1.4.3**) |
 | `0` | Open **Inbox** (when search is closed; legacy — prefer `Shift + I`) |
 | `1`–`9` | Jump to bookmark page tab by position (tabs use `tablist` / `aria-selected` for screen readers) |
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
@@ -788,9 +789,13 @@ When **Tag cloud (/)** is enabled (config → appearance → display, on by defa
 
 With tag cloud off, or inside the search overlay, **`/`** follows your fuzzy/interleave search setting (see below).
 
+**Which way a bare query is read** is *Switch Search Mode*, under **Config → Behavior → Search**. Off — the default — typing letters looks for a bookmark **shortcut** and `/` looks for a **name**; on, the reverse. It moved there in **v1.4.3**: it had been a tickbox under *Appearance → Layout* labelled "Interleave categories across columns", which is not what it does, and no part of the layout has ever read it. **`Shift + Q`** flips it from the dashboard for the times you want the other mode for a single search.
+
 ### 10.3 Fuzzy search (`/`)
 
 When tag cloud does not take precedence: ranked matching on name, URL domain, tags, and note. Best for “I know part of the name”.
+
+**A missed shortcut points at the names it did not search** (**v1.4.3**). With *Switch Search Mode* off — the default — a bare query looks for a bookmark **shortcut**, so typing a bookmark's *name* found nothing while the bookmark sat on the page behind the overlay: the search had looked in one of its two places and reported the other as empty. When the shortcut search comes back empty and a name search would not, the overlay now adds one row saying how many bookmarks carry that name and naming the key that gets there; **`Enter`** or a click on that row runs the same query the other way. The row appears only when there is something to point at — with no name match either, "nothing found" is the honest answer and stays. `/` is the key that switches mode, and the only one.
 
 ### 10.4 Global search (`@`)
 
@@ -1027,9 +1032,20 @@ the only widget that talks to anything outside.
   path that silently matched several things would make a wrong figure look
   right. A path that stops matching is marked rather than blank, because a blank
   reads as a zero and zero is a fact. Up to **eight** figures on one tile.
-- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Time ago*
+- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Milliseconds*, *Time ago*
   or *Text*. Sizes step through KB and MB, a ratio between 0 and 1 is read as a
-  percentage, and a date arrives as seconds, milliseconds or an ISO string.
+  percentage, *Milliseconds* takes a value in seconds and shows whole
+  milliseconds, and a date arrives as seconds, milliseconds or an ISO string.
+- **Size per figure** — *Normal*, *Large*, *Small* or *Bar*, so a tile of
+  figures is not a list you have to weigh yourself: the one you came for is
+  bigger than the ones giving it context. *Bar* is offered on a percentage only,
+  because a bar draws a share of a whole and a count carries no whole to be a
+  share of. Its colour comes from your theme, and says whether high is good news
+  — a full disk and a full cache do not mean the same thing.
+- **Started from a service?** Then the sizes are filled in for you, and a widget
+  you saved before this existed takes them too. Anything you pick yourself
+  wins. A few services ask for two columns where the figures earn it — granted
+  only when your dashboard is showing two.
 - **Or a list instead of figures** — point at an array and the tile draws its
   entries as rows, up to twenty: the downloads running now, the last few errors.
 - **Refresh every** — anywhere between 30 seconds and a day, five minutes by
@@ -1791,6 +1807,8 @@ Its **settings** — what a quick-added bookmark starts with, the sort the list 
 **Layout** holds layout version (Classic / Modern), launcher icon size, column count, layout preset, and density.
 
 **Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times — and the **Link preview cards** panel.
+
+**Shortcut letters on rows** (**v1.4.3**) has three settings rather than two. Until now the letters were on or off. On, they sat in a track of their own down the right of every category: a second column of five-character fragments, as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are. *On the row I am on* takes the label out of the row's flow, so the shortcut track collapses and the name takes that width back, about five characters a row; the letter floats in over the right end of the name while the pointer or the keyboard selection is on it, and nothing moves when it appears. The three settings are **Always** — where a new install starts — **On the row I am on** and **Never**. An upgrade keeps what it had: the old switch on becomes *Always*, off becomes *Never*. The shortcut keeps working in all three, and a screen reader is told the letter even on *Never*, since hiding it was only ever a decision about what the grid looks like.
 
 The card's facts strip is free: status and ping come from the check cache, the Fresh count from the feed poller, and uptime, certificate expiry and "failing since" from the health report the health icon already fetches on every load — hovering a bookmark never asks the server for anything. If you hide the health icon, a card you pin with `Shift + V` fetches that report once instead.
 

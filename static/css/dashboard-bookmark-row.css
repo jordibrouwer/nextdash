@@ -19,6 +19,26 @@
         color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
         color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
     );
+
+    /* The 100% stop of each gradient above, on its own.
+     *
+     * In "hover" mode the shortcut label floats in over the right end of the
+     * row, which is where a long name has been truncated to -- so the label and
+     * the fade under it have to be painted in the colour the row actually is at
+     * that edge. A flat --background-primary would be close but visibly flat
+     * against a tinted row, and these three keep the two in step by definition:
+     * change a gradient's last stop and you change this with it.
+     *
+     * Not derived from the gradients themselves because CSS cannot sample one.
+     * layout-modern-tokens.css overrides all three with the modern percentages,
+     * the same way it already aliases the gradients. */
+    --bookmark-row-edge-hover: color-mix(in srgb, var(--accent-primary) 6%, var(--background-primary));
+    --bookmark-row-edge-selected: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+    --bookmark-row-edge-dimmed: color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary));
+
+    /* Whichever of the three the row is wearing right now. Plain page
+       background until a state rule says otherwise. */
+    --bookmark-row-edge: var(--background-primary);
 }
 
 .bookmark-link:not(.bookmark-inline-editing) {
@@ -42,11 +62,13 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--bookmark-row-hover-bg);
+    --bookmark-row-edge: var(--bookmark-row-edge-hover);
     border-radius: var(--layout-radius-sm, 8px);
 }
 
 .bookmark-link:is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: var(--bookmark-row-selected-bg);
+    --bookmark-row-edge: var(--bookmark-row-edge-selected);
 }
 
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) .bookmark-superscript-badge,
@@ -76,6 +98,7 @@ body:not(.status-color-lock) .bookmarks-list[data-bookmarks-list="true"]:not([da
 /* While the mouse explores bookmarks, soften the stale keyboard selection until the next keyboard move. */
 body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) {
     background: var(--bookmark-row-dimmed-bg);
+    --bookmark-row-edge: var(--bookmark-row-edge-dimmed);
 }
 
 body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):not(.bookmark-inline-editing) .bookmark-superscript-badge,
@@ -90,9 +113,88 @@ body.bookmark-kbd-selection-dimmed .bookmark-link.keyboard-selected:not(:hover):
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--bookmark-row-hover-bg);
+    --bookmark-row-edge: var(--bookmark-row-edge-hover);
     box-shadow: none;
 }
 
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):is(.keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     background: var(--bookmark-row-selected-bg);
+    --bookmark-row-edge: var(--bookmark-row-edge-selected);
+}
+
+/* ─── Shortcut label: the three display modes ─────────────────────────────── */
+/*
+ * The row always builds the label when the bookmark has a shortcut; which of
+ * the three modes is in force is body[data-shortcut-display], so switching is
+ * a repaint. "always" is the base styling elsewhere and needs nothing here.
+ */
+
+body[data-shortcut-display="never"] .bookmark-shortcut {
+    display: none;
+}
+
+/*
+ * "hover" draws the label as a pseudo-element of the bookmark name, and takes
+ * the real one out of the row entirely. Two things follow from that, and both
+ * are the point of the mode:
+ *
+ * The row's shortcut track has no item left in it, so it collapses and the name
+ * gets that width -- roughly five characters a row, which is where the
+ * truncated names came from.
+ *
+ * And the label lands exactly where the name's column ends. With response times
+ * switched on that is short of the number, which owns the next column; with
+ * them off it is the row's right edge. Nothing here has to know which, because
+ * the label is a child of the name and `right: 0` means the name's own edge.
+ *
+ * The alternative -- one absolutely positioned label offset from the row's
+ * right by the padding, the gap and the width of the status column -- was tried
+ * and is a trap twice over. The column token is 3.35em and em on the label is
+ * its own 0.68rem, so the offset came out a third short and the label sat on
+ * top of the milliseconds; and even once corrected, the sum quietly stops being
+ * true the first time any of those three change.
+ */
+body[data-shortcut-display="hover"] .bookmarks-list .bookmark-link > .bookmark-shortcut {
+    display: none;
+}
+
+body[data-shortcut-display="hover"] .bookmarks-list .bookmark-link > .bookmark-open {
+    position: relative;
+}
+
+/*
+ * The padding-left is the fade runway, not spacing: the name is truncated to
+ * this column's edge, so the label sits on its last characters and the gradient
+ * dissolves one into the other rather than butting them together. It is painted
+ * in the row's own edge colour -- see --bookmark-row-edge above -- so a hovered
+ * or selected row fades into what it actually is there.
+ */
+body[data-shortcut-display="hover"] .bookmarks-list .bookmark-link > .bookmark-open[data-shortcut]::after {
+    content: attr(data-shortcut);
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.1em 0.4em 0.1em 1.75rem;
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-normal);
+    line-height: 1.6;
+    letter-spacing: 0.03em;
+    color: var(--text-tertiary);
+    background: linear-gradient(90deg, transparent 0, var(--bookmark-row-edge) 1.75rem);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+body[data-shortcut-display="hover"] .bookmarks-list .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) > .bookmark-open[data-shortcut]::after {
+    opacity: 1;
+    color: var(--text-secondary);
+}
+
+body.no-animations[data-shortcut-display="hover"] .bookmarks-list .bookmark-link > .bookmark-open[data-shortcut]::after {
+    transition: none;
 }

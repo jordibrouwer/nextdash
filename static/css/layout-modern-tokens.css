@@ -48,4 +48,12 @@ body[data-layout-version="modern"] {
     --bookmark-row-hover-bg: var(--modern-bookmark-row-hover-bg);
     --bookmark-row-selected-bg: var(--modern-bookmark-row-selected-bg);
     --bookmark-row-dimmed-bg: var(--modern-bookmark-row-dimmed-bg);
+
+    /* The 100% stop of each gradient above, for the shortcut label that floats
+       over the row's right edge in "hover" mode. Same three names as
+       dashboard-bookmark-row.css defines for classic; only the percentages
+       differ, because these gradients are stronger. */
+    --bookmark-row-edge-hover: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+    --bookmark-row-edge-selected: color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary));
+    --bookmark-row-edge-dimmed: color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary));
 }

@@ -290,9 +290,16 @@
                 },
                 { keys: '>', cheatKey: 'smRegularSearch', fallback: 'Regular search — filter bookmarks on current page by name', print: true, printFallback: 'Search' },
                 {
+                    keys: 'Shift + Q',
+                    cheatKey: 'smToggleSearchMode',
+                    fallback: 'Switch search mode — whether letters find names or shortcuts; the same setting as Behavior → Search, changed where you are standing',
+                    print: true,
+                    printFallback: 'Switch search mode',
+                },
+                {
                     keys: '/',
                     cheatKey: 'smTagCloudSlash',
-                    fallback: 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search',
+                    fallback: 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; inside the search overlay it searches the other way instead',
                     when: (ctx) => ctx.tagCloudShortcutVisible,
                 },
                 { keys: '@', cheatKey: 'smGlobalSearch', fallback: 'Global search — fuzzy search across all pages at once; result shows page name as context' },

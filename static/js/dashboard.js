@@ -142,7 +142,7 @@ class Dashboard {
             weatherLocation: '',
             weatherUnit: 'celsius',
             weatherRefreshMinutes: 30,
-            showShortcuts: true,
+            shortcutDisplay: 'always',
             showPinIcon: false,
             showNoteIcon: true
         };
@@ -1099,6 +1099,49 @@ class Dashboard {
 
     async saveSettings() {
         return this.data.saveSettings(...arguments);
+    }
+
+    /**
+     * Flip which way a bare query in the search overlay is read.
+     *
+     * Off — the default — letters look for a bookmark shortcut and `/` looks
+     * for a name. On, the reverse. Which one you want depends on what you are
+     * doing rather than on how you like your dashboard set up, so it is worth
+     * a key as well as a setting: Shift+Q here, the checkbox in
+     * Behavior → Search, and both write the same stored value.
+     *
+     * The search component reads `settings.interleaveMode` when it opens, so
+     * the running overlay is told directly rather than waiting for a reload.
+     */
+    async toggleSearchMode() {
+        this.settings = this.settings || {};
+        const next = !this.settings.interleaveMode;
+        this.settings.interleaveMode = next;
+        if (this.searchComponent) {
+            this.searchComponent.interleaveMode = next;
+        }
+        try {
+            await this.saveSettings();
+        } catch (err) {
+            // Put it back rather than leaving the screen saying one thing and
+            // the stored settings another.
+            this.settings.interleaveMode = !next;
+            if (this.searchComponent) {
+                this.searchComponent.interleaveMode = !next;
+            }
+            this.showNotification(
+                this.t?.('dashboard.searchModeToggleFailed', 'Could not save the search mode')
+                    || 'Could not save the search mode',
+                'error',
+            );
+            return;
+        }
+        const label = next
+            ? (this.t?.('dashboard.searchModeNames', 'Search mode: letters find names')
+                || 'Search mode: letters find names')
+            : (this.t?.('dashboard.searchModeShortcuts', 'Search mode: letters find shortcuts')
+                || 'Search mode: letters find shortcuts');
+        this.showNotification(label, 'success', { duration: 2000 });
     }
     setupConfigStructureReloadListener() {
         return this.configSync.setupConfigStructureReloadListener(...arguments);

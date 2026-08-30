@@ -39,7 +39,17 @@ class DashboardSetup {
         d.syncTagCloudButtonPlacement();
         d.syncSideRailDiscoverability?.();
 
-        document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
+        // One attribute, three answers. The row always builds the label when the
+        // bookmark has one; whether it is on screen, and whether it stands in
+        // the row's flow, is decided from here in CSS -- so changing the setting
+        // is a repaint rather than a re-render, the same bargain data-check-mode
+        // makes in dashboard-bookmark-rows.js.
+        //
+        // No normalising here: the store does it on read and on save, so the
+        // only value that can arrive unrecognised is an absent one, and that
+        // reads as "always" for the same reason it does server-side -- see
+        // normalizeShortcutDisplay in models.go.
+        document.body.setAttribute('data-shortcut-display', d.settings.shortcutDisplay || 'always');
         const showPinIcon = d.settings.showPinIcon === true;
         const showNoteIcon = d.settings.showNoteIcon !== false;
         document.body.setAttribute('data-pin-notes-disabled', (!showPinIcon && !showNoteIcon) ? 'true' : 'false');
@@ -116,9 +126,11 @@ class DashboardSetup {
 
         if (window.SearchComponent) {
             d.searchComponent = new window.SearchComponent(bookmarksForSearch, d.bookmarks, d.allBookmarks, d.settings, d.language, d.finders, d.pages);
-        } else {
-            console.warn('SearchComponent not found. Make sure search.js is loaded.');
         }
+        // No else: search lives in its own bundle now and is fetched by the key
+        // that opens it (see search-loader.js), so arriving here without it is
+        // the ordinary case on first paint rather than a missing file. The
+        // loader calls this again once the code lands.
     }
 
     // Method to update search component when data changes
@@ -344,6 +356,18 @@ class DashboardSetup {
                     e.stopPropagation();
                     void d.health.openHealthView();
                 }
+                return;
+            }
+
+            // Shift+Q flips the search mode where you are, rather than in
+            // config. Which way a bare query is read — letters find names, or
+            // letters find shortcuts — is the kind of thing you want to change
+            // for one search and change back, and walking to Behavior → Search
+            // for that is longer than the search itself.
+            if (e.shiftKey && e.code === 'KeyQ') {
+                e.preventDefault();
+                e.stopPropagation();
+                void d.toggleSearchMode?.();
                 return;
             }
 

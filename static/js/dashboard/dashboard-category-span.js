@@ -322,7 +322,15 @@
         scope.querySelectorAll('.category--wide .bookmarks-list').forEach((list) => {
             const widest = (selector) => Array.from(list.querySelectorAll(selector))
                 .reduce((max, el) => Math.max(max, el.getBoundingClientRect().width), 0);
-            const shortcut = widest('.bookmark-link > .bookmark-shortcut:not(.is-empty)');
+            // Only "always" leaves the label standing in the row's flow. Under
+            // "hover" it is positioned out of it and under "never" it is not
+            // drawn -- but it still measures, so asking for its width here
+            // would pin a track for a column that is not there and hand the
+            // reclaimed width straight back.
+            const labelInFlow = document.body.getAttribute('data-shortcut-display') === 'always';
+            const shortcut = labelInFlow
+                ? widest('.bookmark-link > .bookmark-shortcut:not(.is-empty)')
+                : 0;
             const lead = widest('.bookmark-link > .bookmark-reorder-handle, .bookmark-link > .bookmark-icon-slot');
             if (shortcut > 0) {
                 list.style.setProperty('--bookmark-shortcut-col', `${Math.ceil(shortcut)}px`);

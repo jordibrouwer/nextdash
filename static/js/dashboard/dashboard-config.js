@@ -6673,11 +6673,22 @@ class DashboardConfig {
 
     async runBackupNow() {
         try {
+            /*
+             * Indeterminate: the archive is built whole in one request, and how
+             * long that takes depends on what goes in it -- with local copies of
+             * pages included it is seconds. Nothing moved on screen for that
+             * whole time, so the button read as dead and got pressed twice.
+             */
+            this.showProgressOverlay(
+                this.t('config.backupRunTitle', 'Making a backup…'),
+                this.t('config.backupRunStatus', 'Packing up your data'));
             const res = await this.writeFetch('/api/auto-backups/run', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.finishProgressOverlay(this.t('config.backupRunSuccess', 'Backup created.'));
             this.notify(this.t('config.backupRunSuccess', 'Backup created.'), 'success');
             await this.loadBackupData();
         } catch {
+            this.hideProgressOverlay();
             this.notify(this.t('config.backupRunError', 'Could not create a backup.'), 'error');
         }
     }
@@ -10261,7 +10272,7 @@ class DashboardConfig {
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
-        showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: true },
+        shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -10726,7 +10737,6 @@ class DashboardConfig {
                     // in the list and disabled rather than removed, so the
                     // choice can be seen not to have vanished.
                     bool('packedColumns', 'config.packedColumnsLabel', 'Pack columns tightly'),
-                    bool('interleaveMode', 'config.interleaveModeLabel', 'Interleave categories across columns'),
                     bool('hideEmptyCategories', 'config.hideEmptyCategoriesLabel', 'Hide empty categories'),
                     // Only bites in the Launcher preset, which is chosen two
                     // controls up — so it belongs beside that preset rather than
@@ -10785,7 +10795,34 @@ class DashboardConfig {
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
                 note: t('config.generalBookmarksDisplayIntro', 'Favicons, shortcuts, badges, link preview, sorting, and navigation.'),
                 controls: [
-                    bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
+                    {
+                        field: 'shortcutDisplay',
+                        type: 'cards',
+                        // 'chrome' because the whole setting is a body
+                        // attribute the CSS reads: setupDOM writes it and the
+                        // grid repaints. Without it the choice only arrived
+                        // after a reload, which is what the old boolean did --
+                        // see tests/config-behavior-realtime-coverage.spec.js.
+                        special: 'chrome',
+                        label: t('config.shortcutDisplayLabel', 'Shortcut letters on rows'),
+                        options: [
+                            {
+                                value: 'hover',
+                                label: t('config.shortcutDisplayHover', 'Only on the row you are on'),
+                                body: t('config.shortcutDisplayHoverBody', 'The letters stay out of the way and the bookmark names get the width back. The shortcut appears when the pointer or the keyboard selection is on the row.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.shortcutDisplayAlways', 'Always'),
+                                body: t('config.shortcutDisplayAlwaysBody', 'Every shortcut is on screen, in a column of its own down the right of each category. The names have that much less room.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.shortcutDisplayNever', 'Never'),
+                                body: t('config.shortcutDisplayNeverBody', 'No letters anywhere. The shortcuts themselves keep working.'),
+                            },
+                        ],
+                    },
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
                     bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),
@@ -10934,6 +10971,7 @@ class DashboardConfig {
                             },
                         ],
                     },
+                    bool('interleaveMode', 'config.interleaveMode', 'Switch Search Mode'),
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
@@ -15247,7 +15285,24 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+
+    /*
+     * How a figure is drawn, as opposed to what it says.
+     *
+     * Four, because the useful distinctions are the one that matters, the rest,
+     * context for the rest, and a proportion. A meter is only offered on a
+     * percentage: it draws a share of a whole, and a count carries no whole for
+     * it to be a share of -- working one out is the arithmetic this widget
+     * deliberately cannot do.
+     */
+    static CUSTOM_SHAPES = ['normal', 'large', 'small', 'meter'];
+
+    /** Which shapes a format can wear. */
+    static shapesFor(format) {
+        return DashboardConfig.CUSTOM_SHAPES.filter(
+            (shape) => shape !== 'meter' || format === 'percent');
+    }
 
     /*
      * The id this widget's own key is filed under.
@@ -15345,12 +15400,43 @@ class DashboardConfig {
         return (this._widgetBlocks || []).some((_, index) => this.widgetDraftDirty(index));
     }
 
+    /*
+     * A config as one comparable string, keys in a fixed order at every depth.
+     *
+     * The obvious shorthand -- JSON.stringify(config, Object.keys(config).sort())
+     * -- was wrong in a way that read as right: the second argument is a
+     * replacer, it applies at every level, and it was built from the top-level
+     * keys only. So every object inside `fields` kept none of its own keys and
+     * came out as {}, which made a changed path, label or format compare equal
+     * to the one before it and left Save greyed out over an edit that had
+     * plainly happened. Adding or removing a field still registered, because
+     * the array's length survives -- which is what made this look like one
+     * stubborn widget rather than a comparison that could not see.
+     *
+     * undefined is skipped rather than written as null, because a draft spells
+     * out `fields: undefined` for a widget that has none while the stored block
+     * simply has no such key, and those two are the same thing.
+     */
+    canonicalJSON(value) {
+        if (Array.isArray(value)) {
+            // Order is kept: the sequence of fields is the order of the figures
+            // on the tile, so moving one is a change like any other.
+            return `[${value.map((item) => this.canonicalJSON(item)).join(',')}]`;
+        }
+        if (value && typeof value === 'object') {
+            return `{${Object.keys(value).sort()
+                .filter((key) => value[key] !== undefined)
+                .map((key) => `${JSON.stringify(key)}:${this.canonicalJSON(value[key])}`)
+                .join(',')}}`;
+        }
+        return value === undefined ? 'null' : JSON.stringify(value);
+    }
+
     widgetDraftDirty(index) {
         const block = (this._widgetBlocks || [])[index];
         const draft = this.widgetDraft(index, { create: false });
         if (!block || !draft) return false;
-        const clean = (config) => JSON.stringify(config || {}, Object.keys(config || {}).sort());
-        if (clean(draft.config) !== clean(block.config)) return true;
+        if (this.canonicalJSON(draft.config || {}) !== this.canonicalJSON(block.config || {})) return true;
         const before = this.storedCredentialState(block);
         const now = draft.auth || {};
         // A secret that was typed is a change even when nothing else moved.
@@ -15544,6 +15630,16 @@ class DashboardConfig {
         const formatOptions = (selected) => DashboardConfig.CUSTOM_FORMATS.map((format) =>
             `<option value="${esc(format)}" ${format === selected ? 'selected' : ''}>${esc(
                 this.t(`config.widgetFormat.${format}`, format))}</option>`).join('');
+        /*
+         * The shapes this format can wear, which is all of them but the meter.
+         *
+         * Left out rather than greyed out: an option that cannot be chosen on
+         * six formats out of seven is a question the reader has to answer every
+         * time they look at the row, and the answer is always the same.
+         */
+        const shapeOptions = (format, selected) => DashboardConfig.shapesFor(format).map((shape) =>
+            `<option value="${esc(shape)}" ${shape === selected ? 'selected' : ''}>${esc(
+                this.t(`config.widgetShape.${shape}`, shape))}</option>`).join('');
 
         /*
          * A header row, because three unlabelled boxes side by side is a puzzle.
@@ -15557,6 +15653,7 @@ class DashboardConfig {
                     <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
                     <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
                     <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
                     <span></span>
                 </div>` : '';
 
@@ -15574,6 +15671,10 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
                     formatOptions(field?.format || 'text')}</select>
+                <select class="config-select" data-custom-field="shape" data-custom-index="${index}"
+                    data-custom-row="${row}"
+                    aria-label="${esc(this.t('config.widgetCustomShape', 'Size'))}">${
+                    shapeOptions(field?.format || 'text', field?.shape || 'normal')}</select>
                 <button type="button" class="config-btn config-btn--small config-btn--danger"
                     data-custom-remove="${row}" data-custom-index="${index}"
                     aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
@@ -16105,12 +16206,21 @@ class DashboardConfig {
 
             const field = target.closest('[data-custom-field]');
             if (field) {
-                this.updateWidgetDraftField(
-                    indexOn(field, 'data-custom-index'),
-                    indexOn(field, 'data-custom-row'),
-                    field.getAttribute('data-custom-field'),
-                    field.value);
-                this.refreshWidgetSaveBar(indexOn(field, 'data-custom-index'));
+                const which = field.getAttribute('data-custom-field');
+                const at = indexOn(field, 'data-custom-index');
+                this.updateWidgetDraftField(at, indexOn(field, 'data-custom-row'), which, field.value);
+                /*
+                 * Changing the format changes which shapes are on offer, and a
+                 * meter left selected on a format that cannot carry one would
+                 * be a choice the server then drops without saying so. Redrawn
+                 * rather than patched in place: this is a dropdown being
+                 * changed, so there is no caret to lose.
+                 */
+                if (which === 'format') {
+                    this.dropMeterOnNonPercent(at, indexOn(field, 'data-custom-row'));
+                    this.repaintWidgetsBody();
+                }
+                this.refreshWidgetSaveBar(at);
                 return;
             }
 
@@ -16182,6 +16292,21 @@ class DashboardConfig {
         if (revert) revert.disabled = !dirty;
         const state = bar.querySelector('[data-widget-save-state]');
         if (state) state.textContent = dirty ? this.t('config.widgetUnsaved', 'Not saved yet') : '';
+    }
+
+    /*
+     * A meter cannot survive its format changing away from a percentage.
+     *
+     * Dropped here rather than left for the server to ignore: a row still
+     * reading "meter" over a count says the tile will draw one, and it will
+     * not. Better to show the reader what they are actually going to get.
+     */
+    dropMeterOnNonPercent(index, row) {
+        const field = this.widgetDraft(index)?.config?.fields?.[row];
+        if (field?.shape === 'meter' && field.format !== 'percent') {
+            delete field.shape;
+            delete field.tone;
+        }
     }
 
     /** Everything the server needs to store, from what is on screen. */

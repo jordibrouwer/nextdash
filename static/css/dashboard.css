@@ -2289,7 +2289,12 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     z-index: 1001;
     padding: 0.62rem 0.72rem;
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    /* Opaque, and in both layout versions: this FAB floats over the grid with
+       nothing behind it either way -- modern styles the dock and the / FAB but
+       never this one -- so the page used to read straight through it. The wash
+       is the same 74%, now composited over the page background instead of over
+       transparent, which is the colour it already showed over empty page. */
+    background: color-mix(in srgb, var(--background-secondary) 74%, var(--background-primary));
     color: var(--accent-primary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -2344,7 +2349,9 @@ body.no-animations .whats-new-btn-update-dot {
     transform: scale(1);
 }
 .whats-new-btn:hover {
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    /* 94% of the page background over the page background is the page
+       background: same colour as before, minus the window. */
+    background: var(--background-primary);
     border-color: var(--accent-primary);
     transform: translateY(-1px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
@@ -4546,10 +4553,9 @@ body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn
     display: flex !important;
 }
 
-/* Hide bookmark shortcuts when showShortcuts is false */
-body[data-show-shortcuts="false"] .bookmark-shortcut {
-    display: none;
-}
+/* The three shortcut-label modes live together in dashboard-bookmark-row.css,
+   which loads after this file and owns the row's hover and selection chrome --
+   and "hover" is a hover state. Nothing here. */
 
 /* Hide pin icon when showPinIcon is false */
 body[data-show-pin-icon="false"] .bookmark-pin-badge {
@@ -5653,7 +5659,16 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-row {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    /*
+     * The name takes the slack, so the figure beside it does not.
+     *
+     * space-between put the gap wherever the name stopped, which left the
+     * numbers down the column starting at four different places -- barely
+     * visible on a narrow tile and plainly crooked on a wide one, since a
+     * wider tile gives the names more room to differ. Measured at 640px the
+     * spread was 63px, and the rule below this one already promised these were
+     * "lined up down the column".
+     */
     gap: 10px;
     width: 100%;
     /* Taller than it was: these rows sit under a block of figures now, and a
@@ -5688,14 +5703,22 @@ button.dashboard-widget-row.keyboard-selected {
 }
 
 .dashboard-widget-row-name {
+    /* min-width:0 or the ellipsis never happens: a flex item will not shrink
+       below the width of its own text without it. */
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-/* The number or the verdict, kept on one line and lined up down the column. */
+/* The number or the verdict, kept on one line and lined up down the column.
+   The width is a floor rather than a fixed size, so "100.0%" and "down" end at
+   the same edge without either being clipped. */
 .dashboard-widget-row-detail {
     flex: none;
+    min-width: 3.4rem;
+    text-align: right;
     font-variant-numeric: tabular-nums;
     color: var(--text-tertiary);
 }
@@ -5863,6 +5886,55 @@ button.dashboard-widget-row--more {
    zero, and zero is a fact. */
 .dashboard-widget-figure.is-missing .dashboard-widget-figure-value {
     color: var(--text-tertiary);
+}
+
+/*
+ * Four shapes, so a tile of figures is not a list the reader has to weigh.
+ *
+ * Size carries the ranking and nothing else does: no borders, no boxes, no
+ * second colour. A figure that matters is bigger than one that gives it
+ * context, which is the whole of what the reader needs to be told and is
+ * legible on every theme, because it asks the palette for nothing.
+ */
+.dashboard-widget-figure--large .dashboard-widget-figure-value {
+    font-size: 2.1em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.dashboard-widget-figure--small .dashboard-widget-figure-value {
+    font-size: 1em;
+    color: var(--text-secondary);
+}
+
+/* A meter needs its own column: the bar belongs under the number it measures,
+   at the width of the figure rather than of the tile. */
+.dashboard-widget-figure--meter {
+    flex: 1 1 8rem;
+    min-width: 6rem;
+}
+
+.dashboard-widget-figure--meter .dashboard-widget-meter {
+    margin-top: 6px;
+}
+
+/*
+ * Wide enough to put the headline figure on its own line.
+ *
+ * The same breakpoint the panel's other layouts use, and for the same reason:
+ * it answers to the width the tile was given, not to the columns the dashboard
+ * was asked for. A widget set to two columns that the grid narrowed back to one
+ * never reaches this, which is the point -- the figures stay stacked rather
+ * than being spread across a width that is not there.
+ */
+@container (min-width: 22rem) {
+    .dashboard-widget-panel .dashboard-widget-figures {
+        gap: 14px 26px;
+    }
+
+    .dashboard-widget-panel .dashboard-widget-figure--large {
+        flex-basis: 100%;
+    }
 }
 
 .dashboard-widget-asof {

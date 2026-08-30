@@ -51,6 +51,16 @@ class StatusMonitor {
         this.settings = settings;
         this.statusCache = new Map(); // Cache for status results
         this._inFlightPings = new Set();
+        // Results collected during a round, written as one request when it
+        // ends. Before batching every result went out on its own, so a page
+        // closed mid-round lost nothing; now it would, and pagehide is the
+        // event that still fires when a tab is closed or backgrounded on
+        // mobile. sendBeacon rather than fetch: an ordinary request started
+        // during unload is not guaranteed to be sent.
+        this._pendingStatuses = new Map();
+        if (typeof window !== 'undefined') {
+            window.addEventListener('pagehide', () => this.beaconPendingStatuses());
+        }
         this.checkInterval = null;
         this.isChecking = false;
         this.loadingIndicator = document.getElementById('status-loading-indicator');
@@ -325,39 +335,122 @@ class StatusMonitor {
         }
     }
 
+    /**
+     * Record one check result.
+     *
+     * Inside a round this only collects: `flushPendingStatuses()` sends the
+     * whole set as a single write when the round ends. Loading the dashboard
+     * used to fire one POST per row that pinged -- ten of them over seven
+     * seconds on a page of 115 rows -- and each took the store's global lock
+     * and rewrote the whole page file.
+     *
+     * Outside a round -- a single row rechecked by hand -- there is nothing to
+     * batch, so it flushes immediately and the reader sees the write land.
+     */
     async persistBookmarkStatus(bookmark, status, errorDetail = '') {
+        const url = String(bookmark?.url || '').trim();
+        if (!url) {
+            return;
+        }
+        const pageId = Number(window.dashboardInstance?.currentPageId);
+        if (!Number.isFinite(pageId) || pageId <= 0) {
+            return;
+        }
+
+        const resolved = status === 'online' ? 'online' : 'offline';
+        const detail = resolved === 'online' ? '' : (errorDetail || 'Unreachable');
+
+        if (!this._pendingStatuses) {
+            this._pendingStatuses = new Map();
+        }
+        // Keyed on the URL, so a bookmark checked twice in one round is written
+        // once with its latest answer.
+        this._pendingStatuses.set(statusCacheKey(url) || url, { url, status: resolved, error: detail, pageId });
+
+        this.applyLocalStatus(bookmark, resolved, detail);
+
+        if (!this.isChecking) {
+            await this.flushPendingStatuses();
+        }
+    }
+
+    /** Keep the in-memory copy in step, so the grid does not need a reload. */
+    applyLocalStatus(bookmark, status, detail) {
         const dashboard = window.dashboardInstance;
-        if (!dashboard || typeof dashboard.resolveBookmarkIndex !== 'function') {
+        const list = dashboard?.bookmarks;
+        if (!Array.isArray(list)) {
             return;
         }
-        const index = dashboard.resolveBookmarkIndex(bookmark);
-        const pageId = Number(dashboard.currentPageId);
-        if (index < 0 || !Number.isFinite(pageId) || pageId <= 0) {
-            return;
-        }
-
-        const payload = {
-            pageId,
-            index,
-            status: status === 'online' ? 'online' : 'offline',
-            error: status === 'online' ? '' : (errorDetail || 'Unreachable')
-        };
-
-        try {
-            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/health/update-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        } catch (error) {
-            console.warn('Failed to persist bookmark status', error);
-        }
-
-        const local = dashboard.bookmarks?.[index];
+        const local = list.find((b) => b === bookmark)
+            || list.find((b) => statusCacheKey(b?.url) === statusCacheKey(bookmark?.url));
         if (local) {
             local.lastChecked = Date.now();
-            local.lastError = status === 'online' ? '' : payload.error;
+            local.lastError = status === 'online' ? '' : detail;
         }
+    }
+
+    /**
+     * Send everything collected since the last flush as one write.
+     *
+     * Grouped by page because the endpoint writes one page file at a time, and
+     * a round can cross pages when global shortcuts are on.
+     */
+    async flushPendingStatuses() {
+        const pending = this._pendingStatuses;
+        if (!pending || pending.size === 0) {
+            return;
+        }
+        this._pendingStatuses = new Map();
+
+        const byPage = new Map();
+        pending.forEach((entry) => {
+            const list = byPage.get(entry.pageId) || [];
+            list.push({ url: entry.url, status: entry.status, error: entry.error });
+            byPage.set(entry.pageId, list);
+        });
+
+        const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        for (const [pageId, results] of byPage) {
+            try {
+                await send('/api/health/statuses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageId, results })
+                });
+            } catch (error) {
+                console.warn('Failed to persist bookmark statuses', error);
+            }
+        }
+    }
+
+    /**
+     * Last chance to keep a round's results when the page is going away.
+     *
+     * Same payload as the ordinary flush, sent with sendBeacon so the browser
+     * delivers it after the document is gone. Nothing to await and nothing to
+     * report: if it fails, the rows are simply checked again next time.
+     */
+    beaconPendingStatuses() {
+        const pending = this._pendingStatuses;
+        if (!pending || pending.size === 0 || typeof navigator?.sendBeacon !== 'function') {
+            return;
+        }
+        this._pendingStatuses = new Map();
+
+        const byPage = new Map();
+        pending.forEach((entry) => {
+            const list = byPage.get(entry.pageId) || [];
+            list.push({ url: entry.url, status: entry.status, error: entry.error });
+            byPage.set(entry.pageId, list);
+        });
+        byPage.forEach((results, pageId) => {
+            try {
+                navigator.sendBeacon('/api/health/statuses',
+                    new Blob([JSON.stringify({ pageId, results })], { type: 'application/json' }));
+            } catch {
+                // Nothing useful to do while the page is unloading.
+            }
+        });
     }
 
     cacheStatusResult(bookmarkUrl, entry) {
@@ -526,6 +619,9 @@ class StatusMonitor {
 
         this.applyCachedStatuses(bookmarks);
         this.isChecking = false;
+        // After isChecking drops, so a later single recheck goes straight out
+        // rather than sitting in a batch nobody will flush.
+        await this.flushPendingStatuses();
         this.hideLoadingIndicator();
     }
 

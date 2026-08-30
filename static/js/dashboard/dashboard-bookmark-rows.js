@@ -591,18 +591,36 @@ class DashboardBookmarkRows {
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
         shortcutSpan.setAttribute('role', 'presentation');
-        const showShortcuts = d.settings.showShortcuts !== false;
-        const shortcutText = showShortcuts && bookmark.shortcut && String(bookmark.shortcut).trim()
+        // Built whenever the bookmark has one, whatever the setting says. Which
+        // of the three display modes is in force is a body attribute the CSS
+        // reads, so switching modes repaints instead of re-rendering the grid --
+        // the same reasoning as data-check-mode a few lines up.
+        const shortcutText = bookmark.shortcut && String(bookmark.shortcut).trim()
             ? String(bookmark.shortcut).toUpperCase()
             : '';
         shortcutSpan.textContent = shortcutText;
         if (!shortcutText) {
             shortcutSpan.classList.add('is-empty');
             shortcutSpan.setAttribute('aria-hidden', 'true');
+            delete openLink.dataset.shortcut;
         } else {
             shortcutSpan.dataset.shortcut = shortcutText;
+            // Also on the name, which is what the "hover" mode draws it from.
+            // That mode floats the label over the right end of the name and
+            // must stop exactly where the name's column stops -- short of the
+            // response time, which has a column of its own. Being a pseudo of
+            // the name element makes that true by construction, where an
+            // offset measured from the row's edge has to keep adding up the
+            // padding, the gap and a column width, and would come apart the
+            // first time one of the three changed.
+            openLink.dataset.shortcut = shortcutText;
         }
         {
+            // Announced whenever the bookmark has a shortcut, including under
+            // "never". Hiding the label was always a decision about what the
+            // grid looks like -- the shortcut itself keeps working in every
+            // mode, so a screen reader that never sees the label is exactly the
+            // one that needs to be told the shortcut is there.
             let linkLabel = this.bookmarkRowTooltip(bookmark);
             if (shortcutText) {
                 const shortcutPrefix = d.language?.t('dashboard.shortcutAriaPrefix') || 'shortcut';
@@ -612,76 +630,68 @@ class DashboardBookmarkRows {
         }
         row.appendChild(shortcutSpan);
 
-        const pinNotesRowIconsEnabled = typeof isDashboardPinNoteRowIconsEnabled === 'function'
-            && isDashboardPinNoteRowIconsEnabled();
-        const pinBadge = document.createElement('span');
-        pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
-        if (pinNotesRowIconsEnabled && d.settings.showPinIcon === true && bookmark.pinned) {
+        // Built only when it draws something. The empty span used to be created
+        // anyway and hidden with `display: none`, which reserves nothing —
+        // measured, removing 368 of them moved no row by a pixel.
+        if (d.settings.showPinIcon === true && bookmark.pinned) {
+            const pinBadge = document.createElement('span');
+            pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
             pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
             pinBadge.title = d.formatDashboardLabel('pinnedBookmarkTitle', {}, 'Pinned');
             pinBadge.setAttribute('aria-label', d.formatDashboardLabel('pinnedBookmarkAria', {}, 'Pinned bookmark'));
             pinBadge.setAttribute('role', 'img');
-        } else {
-            pinBadge.textContent = '';
-            pinBadge.classList.add('is-empty');
-            pinBadge.setAttribute('aria-hidden', 'true');
+            openLink.appendChild(pinBadge);
         }
-        openLink.appendChild(pinBadge);
 
-        const openCountBadge = document.createElement('span');
-        openCountBadge.className = 'bookmark-open-count';
         const openCount = Number(bookmark.openCount || 0);
         if (openCount > 0) {
+            const openCountBadge = document.createElement('span');
+            openCountBadge.className = 'bookmark-open-count';
             openCountBadge.textContent = openCount >= 1000 ? `${Math.floor(openCount / 1000)}k` : String(openCount);
             const openCountLabel = openCount === 1
                 ? d.formatDashboardLabel('openCountOnce', {}, 'Opened once')
                 : d.formatDashboardLabel('openCountMany', { count: openCount }, `Opened ${openCount} times`);
             openCountBadge.title = openCountLabel;
             openCountBadge.setAttribute('aria-label', openCountLabel);
-        } else {
-            openCountBadge.classList.add('is-empty');
-            openCountBadge.setAttribute('aria-hidden', 'true');
+            row.appendChild(openCountBadge);
         }
-        row.appendChild(openCountBadge);
 
         // What the page has published since this row was last opened. Quiet by
         // design: a count, no colour of its own, and absent entirely when there
         // is nothing new or when feed polling is off.
-        const freshBadge = document.createElement('span');
-        freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
         const fresh = d.feeds?.freshFor(bookmark) || null;
         // A row whose page publishes but has nothing new, when the reader has
         // asked to see those: a dot rather than a number, because there is
         // nothing to count. Off by default — see feedsMarkQuiet.
         const quiet = !fresh && d.settings?.feedsMarkQuiet === true
             && d.feeds?.hasFeed?.(bookmark) === true;
-        if (fresh) {
-            const count = Number(fresh.newCount) || 0;
-            freshBadge.textContent = count > 99 ? '99+' : String(count);
-            const label = count === 1
-                ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
-                : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
-            freshBadge.title = label;
-            freshBadge.setAttribute('aria-label', label);
+        if (fresh || quiet) {
+            const freshBadge = document.createElement('span');
+            freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
+            if (fresh) {
+                const count = Number(fresh.newCount) || 0;
+                freshBadge.textContent = count > 99 ? '99+' : String(count);
+                const label = count === 1
+                    ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
+                    : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
+                freshBadge.title = label;
+                freshBadge.setAttribute('aria-label', label);
+            } else {
+                freshBadge.classList.add('is-quiet');
+                freshBadge.textContent = '·';
+                const label = d.formatDashboardLabel('feedQuietMark', {},
+                    'Publishes a feed — nothing new since you last opened this');
+                freshBadge.title = label;
+                freshBadge.setAttribute('aria-label', label);
+            }
             freshBadge.setAttribute('role', 'img');
-        } else if (quiet) {
-            freshBadge.classList.add('is-quiet');
-            freshBadge.textContent = '·';
-            const label = d.formatDashboardLabel('feedQuietMark', {},
-                'Publishes a feed — nothing new since you last opened this');
-            freshBadge.title = label;
-            freshBadge.setAttribute('aria-label', label);
-            freshBadge.setAttribute('role', 'img');
-        } else {
-            freshBadge.classList.add('is-empty');
-            freshBadge.setAttribute('aria-hidden', 'true');
+            openLink.appendChild(freshBadge);
         }
-        openLink.appendChild(freshBadge);
 
-        const noteBadge = document.createElement('span');
-        noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
-        if (pinNotesRowIconsEnabled && d.settings.showNoteIcon !== false && hasNote) {
+        if (d.settings.showNoteIcon !== false && hasNote) {
+            const noteBadge = document.createElement('span');
+            noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
             const label = d.language?.t('bookmark.hasNote') || 'Has note';
             const noteText = String(bookmark.note || '').trim();
             const tooltipText = noteText.length > 200 ? noteText.slice(0, 200) + '…' : noteText;
@@ -689,11 +699,8 @@ class DashboardBookmarkRows {
             noteBadge.setAttribute('role', 'img');
             noteBadge.setAttribute('aria-label', label);
             noteBadge.appendChild(d.createNoteBadgeSvg());
-        } else {
-            noteBadge.classList.add('is-empty');
-            noteBadge.setAttribute('aria-hidden', 'true');
+            openLink.appendChild(noteBadge);
         }
-        openLink.appendChild(noteBadge);
 
         // Tag chips, inside the link rather than as a grid column of their own:
         // the row is a subgrid whose columns line up across every category, so a
