@@ -154,9 +154,9 @@ class DashboardPageNav {
         if (titleElement) {
             let displayName;
             if (d.activeView === 'inbox') {
-                displayName = 'inbox';
+                displayName = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
             } else if (d.activeView === 'health') {
-                displayName = 'health';
+                displayName = this.t('dashboard.health', 'health');
             } else if (d.activeView === 'config') {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
             } else {

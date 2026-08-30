@@ -4868,7 +4868,7 @@
     "overviewNewFeatureKeyboardHow": "Utilisez j/k ou les flèches sur le rail des sections, [ et ] pour les sous-onglets, et les touches de liste sur Pages et étiquettes et Favoris. Ctrl/Cmd+Shift+K ouvre Trouver un réglage.",
     "overviewNewFeatureFindSettingsHow": "Appuyez sur Ctrl/Cmd+Shift+K partout dans la configuration, ou cliquez Trouver un réglage sous Aide dans la navigation de gauche. Saisissez pour filtrer, puis Entrée pour y aller.",
     "overviewNewFeatureBookmarkPagesHow": "Choisissez une page dans le filtre pour limiter les catégories et lier avec #config/bookmarks/<pageId>. Avec Toutes les pages, les catégories s’affichent comme Page · Catégorie.",
-    "viewBreadcrumbRoot": "Configuration",
+    "viewBreadcrumbRoot": "Config",
     "tipAddAnywhere": "<code>Shift+B</code> ouvre le formulaire de favori depuis n'importe où sur le dashboard, même si autre chose a le focus.",
     "tipAddCapture": "Installez nextDash comme application et il apparaît dans la feuille de partage de votre téléphone ; sur un navigateur de bureau, le bookmarklet sous Aide → Boîte de réception enregistre la page affichée.",
     "tipAddDuplicate": "Enregistrer un lien que vous avez déjà sur une autre page vous dit où il est et propose de l'ouvrir — <em>Enregistrer quand même</em> garde la seconde copie si c'était voulu.",
