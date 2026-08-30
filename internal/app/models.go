@@ -397,31 +397,32 @@ type Settings struct {
 	ShowPing                        bool   `json:"showPing"`
 	ShowStatusLoading               bool   `json:"showStatusLoading"`
 	SkipFastPing                    bool   `json:"skipFastPing"`
-	StatusOfflineRetries            int    `json:"statusOfflineRetries"`         // Failed pings per check before marking offline (1-10)
-	StatusOfflineRetryDelayMs       int    `json:"statusOfflineRetryDelayMs"`    // Delay between retry pings in ms (100-3000)
-	StatusRecheckIntervalMinutes    int    `json:"statusRecheckIntervalMinutes"` // Background re-check interval in minutes (1-60)
-	GlobalShortcuts                 bool   `json:"globalShortcuts"`              // Use shortcuts from all pages
-	HyprMode                        bool   `json:"hyprMode"`                     // Launcher mode for PWA usage
-	AnimationsEnabled               bool   `json:"animationsEnabled"`            // Enable or disable animations globally
-	EnableCustomTitle               bool   `json:"enableCustomTitle"`            // Enable custom page title
-	CustomTitle                     string `json:"customTitle"`                  // Custom page title
-	ShowPageInTitle                 bool   `json:"showPageInTitle"`              // Show current page name in title
-	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`          // Show page names in tabs instead of numbers
-	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`          // Enable custom favicon
-	CustomFaviconPath               string `json:"customFaviconPath"`            // Path to custom favicon file
-	EnableCustomFont                bool   `json:"enableCustomFont"`             // Enable custom font
-	CustomFontPath                  string `json:"customFontPath"`               // Path to custom font file
-	Language                        string `json:"language"`                     // Language code, e.g., "en" or "es"
-	InterleaveMode                  bool   `json:"interleaveMode"`               // Interleave mode for search (/ for shortcuts, direct input for fuzzy)
-	ShowPageTabs                    bool   `json:"showPageTabs"`                 // Show page navigation tabs
-	AlwaysCollapseCategories        bool   `json:"alwaysCollapseCategories"`     // Always collapse categories on load
-	HideEmptyCategories             bool   `json:"hideEmptyCategories"`          // Hide categories with no bookmarks
-	HideEmptyCategoriesMigrated     bool   `json:"hideEmptyCategoriesMigrated"`  // Migration marker for hide-empty default-on
-	EnableFuzzySuggestions          bool   `json:"enableFuzzySuggestions"`       // Enable fuzzy suggestions in shortcut search
-	FuzzySuggestionsStartWith       bool   `json:"fuzzySuggestionsStartWith"`    // Fuzzy suggestions start with query instead of contains
-	KeepSearchOpenWhenEmpty         bool   `json:"keepSearchOpenWhenEmpty"`      // Keep search interface open when query is empty
-	ShowIcons                       bool   `json:"showIcons"`                    // Show bookmark icons
-	ShowLinkPreviewCards            bool   `json:"showLinkPreviewCards"`         // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
+	StatusOfflineRetries            int    `json:"statusOfflineRetries"`                    // Failed pings per check before marking offline (1-10)
+	StatusOfflineRetryDelayMs       int    `json:"statusOfflineRetryDelayMs"`               // Delay between retry pings in ms (100-3000)
+	StatusRecheckIntervalMinutes    int    `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
+	GlobalShortcuts                 bool   `json:"globalShortcuts"`                         // Use shortcuts from all pages
+	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
+	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
+	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
+	CustomTitle                     string `json:"customTitle"`                             // Custom page title
+	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
+	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
+	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
+	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
+	CustomFontPath                  string `json:"customFontPath"`                          // Path to custom font file
+	Language                        string `json:"language"`                                // Language code, e.g., "en" or "es"
+	InterleaveMode                  bool   `json:"interleaveMode"`                          // Search mode: on, letters find names and / finds shortcuts; off (the default), the reverse
+	ShowPageTabs                    bool   `json:"showPageTabs"`                            // Show page navigation tabs
+	AlwaysCollapseCategories        bool   `json:"alwaysCollapseCategories"`                // Always collapse categories on load
+	HideEmptyCategories             bool   `json:"hideEmptyCategories"`                     // Hide categories with no bookmarks
+	HideEmptyCategoriesMigrated     bool   `json:"hideEmptyCategoriesMigrated"`             // Migration marker for hide-empty default-on
+	ShortcutDisplayAlwaysMigrated   bool   `json:"shortcutDisplayAlwaysMigrated,omitempty"` // one-time: show the shortcut letters on every row
+	EnableFuzzySuggestions          bool   `json:"enableFuzzySuggestions"`                  // Enable fuzzy suggestions in shortcut search
+	FuzzySuggestionsStartWith       bool   `json:"fuzzySuggestionsStartWith"`               // Fuzzy suggestions start with query instead of contains
+	KeepSearchOpenWhenEmpty         bool   `json:"keepSearchOpenWhenEmpty"`                 // Keep search interface open when query is empty
+	ShowIcons                       bool   `json:"showIcons"`                               // Show bookmark icons
+	ShowLinkPreviewCards            bool   `json:"showLinkPreviewCards"`                    // Show link preview cards on hover. Kept in step with LinkPreviewMode, which is the field that decides
 	// LinkPreviewMode is how the card is reached: "off", "hover" or
 	// "keyboard". Some people want what the card says and not a panel
 	// appearing under the pointer, and their only answer used to be off —
@@ -1184,7 +1185,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSiteNews:                 true,
 			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
-			ShortcutDisplay:              shortcutDisplayHover,
+			ShortcutDisplay:              shortcutDisplayAlways,
 			ShowPinIcon:                  false,
 			ShowNoteIcon:                 true,
 			IncludeFindersInSearch:       false,
@@ -3038,7 +3039,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSiteNews:                   true,
 			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
-			ShortcutDisplay:                shortcutDisplayHover,
+			ShortcutDisplay:                shortcutDisplayAlways,
 			ShowPinIcon:                    false,
 			ShowNoteIcon:                   true,
 			IncludeFindersInSearch:         false,
@@ -3148,20 +3149,29 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showShortcuts"]; !ok {
 			settings.ShowShortcuts = true
 		}
-		// shortcutDisplay took over from the boolean above, and an upgrade must
-		// not change what anyone sees: read the old answer once, and only while
-		// the new key is absent. The moment the setting is saved the key is
-		// there and this stops running, so a later choice can never be undone
-		// by a restart -- which is why this needs no migration marker.
+		// shortcutDisplay took over from the boolean above. An upgrade reads the
+		// old answer once, and only while the new key is absent, so a value
+		// already saved is never overwritten by a restart.
 		//
 		// A fresh install never reaches here: it gets shortcutDisplay from the
-		// constructors above, where the default is "hover".
+		// constructors above, where the default is "always".
 		if _, ok := rawSettings["shortcutDisplay"]; !ok {
 			if settings.ShowShortcuts {
 				settings.ShortcutDisplay = shortcutDisplayAlways
 			} else {
 				settings.ShortcutDisplay = shortcutDisplayNever
 			}
+		}
+		// The letters are turned on once for installs that never chose for
+		// themselves -- including the ones whose old boolean said no, and the
+		// "never" the line above derives from it. A shortcutDisplay already in
+		// the file is somebody's answer to this exact question and is left
+		// alone; only the absence of that key is a gap the default may fill.
+		// The marker keeps it to one time, so turning the letters off after
+		// this has run keeps them off.
+		if _, chosen := rawSettings["shortcutDisplay"]; !chosen && !settings.ShortcutDisplayAlwaysMigrated {
+			settings.ShortcutDisplay = shortcutDisplayAlways
+			settings.ShortcutDisplayAlwaysMigrated = true
 		}
 		// A settings file that predates the card carries neither key, and the
 		// card is on by default now. One that carries the old boolean has an
@@ -3544,6 +3554,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ShortcutTooltipsOffMigrated = stored.ShortcutTooltipsOffMigrated
 			settings.ShortcutOpenModeInstantMigrated = stored.ShortcutOpenModeInstantMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
+			settings.ShortcutDisplayAlwaysMigrated = stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
 		}
 	}

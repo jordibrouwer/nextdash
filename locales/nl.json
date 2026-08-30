@@ -456,7 +456,8 @@
       "ctTrash": "Open de prullenbak — verwijderde bookmarks, pagina’s en categorieën wachten 30 dagen",
       "bmMoveCategory": "Verplaats de gefocuste categorie één plek naar links of rechts",
       "bmMoveToCategory": "Verplaats de gerichte bladwijzer naar de categorie ernaast, in de volgorde waarin de pagina ze toont (slimme verzamelingen worden overgeslagen)",
-      "smNegatedFilters": "Een minteken ervoor sluit uit in plaats van te selecteren, op elk filter"
+      "smNegatedFilters": "Een minteken ervoor sluit uit in plaats van te selecteren, op elk filter",
+      "smToggleSearchMode": "Wissel de zoekmodus — of letters namen of sneltoetsen vinden; dezelfde instelling als Gedrag → Zoeken, gewisseld waar u staat"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1853,7 +1854,10 @@
     "themeBrowserNoticeOpenedBody": "De browser staat onder Config → Weergave → Bekijken, en elk thema komt als een lichte en een donkere helft. Er wordt niets opgeslagen tot je er een kiest.",
     "themeBrowserNoticeCommandHint": "Of wissel van thema zonder de pagina te verlaten met",
     "themeBrowserNoticeOpenAppearance": "Weergave-instellingen openen",
-    "themeBrowserNoticeDone": "Duidelijk"
+    "themeBrowserNoticeDone": "Duidelijk",
+    "searchModeNames": "Zoekmodus: letters vinden namen",
+    "searchModeShortcuts": "Zoekmodus: letters vinden sneltoetsen",
+    "searchModeToggleFailed": "Kon de zoekmodus niet opslaan"
   },
   "health": {
     "kicker": "overzicht",
@@ -2661,7 +2665,7 @@
     "showRecentButton": "Recent-knop weergeven",
     "interleaveMode": "Zoekmodus wijzigen",
     "interleaveModeInfoTitle": "Informatie over zoekmodus wijzigen",
-    "interleaveModeInfoMessage": "Aan:\n• Typ een letter om fuzzy te zoeken (bookmarks op naam vinden)\n• Typ ';' gevolgd door letters voor sneltoetsen (bijv. ;yt voor YouTube)\n\nUit:\n• Typ een letter om op sneltoets te zoeken\n• Typ ';' gevolgd door letters om fuzzy te zoeken\n\n'/' doet in beide richtingen hetzelfde als ';'.",
+    "interleaveModeInfoMessage": "Aan:\n• Typ een letter om fuzzy te zoeken (bookmarks op naam vinden)\n• Typ '/' gevolgd door letters voor sneltoetsen (bijv. /yt voor YouTube)\n\nUit:\n• Typ een letter om op sneltoets te zoeken\n• Typ '/' gevolgd door letters om fuzzy te zoeken",
     "packedColumnsInfoTitle": "Informatie over strakke kolommen",
     "packedColumnsInfoMessage": "Wanneer ingeschakeld, worden bladwijzer-/categorieblokken op brede schermen in round-robin over kolommen verdeeld.\n\n• Minder lege verticale ruimte\n• Leesvolgorde voelt minder strikt van boven naar beneden\n• Wordt direct opgeslagen bij omschakelen",
     "enableAnimations": "Animaties inschakelen",
@@ -5550,7 +5554,7 @@
     "overviewNewFeatureWidgetFigureSizeCta": "Widgets openen →",
     "overviewNewFeatureShortcutDisplayTitle": "De sneltoetsletters kunnen alleen op de rij staan waar u bent",
     "overviewNewFeatureShortcutDisplayWhat": "De sneltoetsletters stonden aan of uit. Aan stonden ze in een eigen kolom rechts van elke categorie — even luid als de namen ernaast, en ze hielden de breedte vast waardoor die namen afkapten. Uit verloor u de herinnering aan uw eigen sneltoetsen.",
-    "overviewNewFeatureShortcutDisplayHow": "Er is nu een derde antwoord, en dat is de nieuwe standaard: de letter zweeft over het einde van de naam zolang uw muis of toetsenbordselectie op die rij staat. Er beweegt niets als hij verschijnt, en de namen krijgen zo'n vijf tekens breedte terug.",
+    "overviewNewFeatureShortcutDisplayHow": "Er is nu een derde antwoord: de letter zweeft over het einde van de naam zolang uw muis of toetsenbordselectie op die rij staat. Er beweegt niets als hij verschijnt, en de namen krijgen zo'n vijf tekens breedte terug.",
     "overviewNewFeatureShortcutDisplayEnable": "Config → Weergave → Sneltoetsletters op rijen.",
     "overviewNewFeatureShortcutDisplayCta": "Weergave openen →",
     "overviewNewFeatureSearchNameHintTitle": "Een zoekopdracht die niets vindt zegt waar u moet kijken",

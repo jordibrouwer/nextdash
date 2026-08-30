@@ -437,7 +437,8 @@
       "ctTrash": "Papierkorb öffnen — Gelöschtes wartet dort 30 Tage",
       "bmMoveCategory": "Fokussierte Kategorie eine Position nach links oder rechts verschieben",
       "bmMoveToCategory": "Das fokussierte Lesezeichen in die Kategorie daneben verschieben, in der Reihenfolge, in der die Seite sie zeigt (intelligente Sammlungen werden übersprungen)",
-      "smNegatedFilters": "Ein vorangestelltes Minus schließt aus statt auszuwählen, bei jedem Filter"
+      "smNegatedFilters": "Ein vorangestelltes Minus schließt aus statt auszuwählen, bei jedem Filter",
+      "smToggleSearchMode": "Suchmodus wechseln — ob Buchstaben Namen oder Kürzel finden; dieselbe Einstellung wie Verhalten → Suche, dort gewechselt, wo Sie stehen"
     },
     "emptyStateAddTouch": "Tippen Sie unten auf + Lesezeichen in der Leiste",
     "emptyStateAddDesktop": "Drücken Sie + oder Shift+B für das volle Formular (& für Schnellzeile)",
@@ -1853,7 +1854,10 @@
     "themeBrowserNoticeOpenedBody": "Der Browser liegt unter Config → Darstellung → Ansehen, und jedes Thema kommt als helle und dunkle Hälfte. Nichts wird gespeichert, bevor du eines wählst.",
     "themeBrowserNoticeCommandHint": "Oder wechsle das Thema, ohne die Seite zu verlassen, mit",
     "themeBrowserNoticeOpenAppearance": "Darstellungseinstellungen öffnen",
-    "themeBrowserNoticeDone": "Verstanden"
+    "themeBrowserNoticeDone": "Verstanden",
+    "searchModeNames": "Suchmodus: Buchstaben finden Namen",
+    "searchModeShortcuts": "Suchmodus: Buchstaben finden Kürzel",
+    "searchModeToggleFailed": "Suchmodus konnte nicht gespeichert werden"
   },
   "health": {
     "kicker": "Übersicht",
@@ -2656,7 +2660,7 @@
     "showRecentButton": "Zuletzt-Schaltfläche anzeigen",
     "interleaveMode": "Suchmodus wechseln",
     "interleaveModeInfoTitle": "Informationen zum Suchmodus",
-    "interleaveModeInfoMessage": "Aktiviert:\n• Beliebigen Buchstaben tippen für Fuzzy-Suche (Lesezeichen nach Name finden)\n• ';' gefolgt von Buchstaben für Kürzel (z. B. ;yt für YouTube)\n\nDeaktiviert:\n• Beliebigen Buchstaben tippen für Kürzelsuche\n• ';' gefolgt von Buchstaben für Fuzzy-Suche\n\n'/' tut in beiden Richtungen dasselbe wie ';'.",
+    "interleaveModeInfoMessage": "Aktiviert:\n• Beliebigen Buchstaben tippen für Fuzzy-Suche (Lesezeichen nach Name finden)\n• '/' gefolgt von Buchstaben für Kürzel (z. B. /yt für YouTube)\n\nDeaktiviert:\n• Beliebigen Buchstaben tippen für Kürzelsuche\n• '/' gefolgt von Buchstaben für Fuzzy-Suche",
     "packedColumnsInfoTitle": "Informationen zu engen Spalten",
     "packedColumnsInfoMessage": "Wenn aktiviert, werden Blöcke auf breiten Bildschirmen im Round-Robin auf Spalten verteilt.\n\n• Reduziert vertikale Lücken\n• Leserichtung kann weniger strikt sein\n• Wird sofort gespeichert",
     "enableAnimations": "Animationen aktivieren",
@@ -5550,7 +5554,7 @@
     "overviewNewFeatureWidgetFigureSizeCta": "Widgets öffnen →",
     "overviewNewFeatureShortcutDisplayTitle": "Die Kürzelbuchstaben können nur in der Zeile erscheinen, in der Sie sind",
     "overviewNewFeatureShortcutDisplayWhat": "Die Kürzelbuchstaben waren an oder aus. An standen sie in einer eigenen Spalte rechts jeder Kategorie — so laut wie die Namen daneben, und sie hielten die Breite, die diese Namen abschnitt. Aus verloren Sie die Erinnerung an Ihre eigenen Kürzel.",
-    "overviewNewFeatureShortcutDisplayHow": "Es gibt jetzt eine dritte Antwort, und sie ist die neue Voreinstellung: der Buchstabe schwebt über dem Ende des Namens, solange Zeiger oder Tastaturauswahl auf dieser Zeile stehen. Nichts bewegt sich, und die Namen bekommen etwa fünf Zeichen Breite zurück.",
+    "overviewNewFeatureShortcutDisplayHow": "Es gibt jetzt eine dritte Antwort: der Buchstabe schwebt über dem Ende des Namens, solange Zeiger oder Tastaturauswahl auf dieser Zeile stehen. Nichts bewegt sich, und die Namen bekommen etwa fünf Zeichen Breite zurück.",
     "overviewNewFeatureShortcutDisplayEnable": "Konfiguration → Darstellung → Kürzelbuchstaben in Zeilen.",
     "overviewNewFeatureShortcutDisplayCta": "Darstellung öffnen →",
     "overviewNewFeatureSearchNameHintTitle": "Eine Suche, die nichts findet, sagt, wo zu suchen ist",

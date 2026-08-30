@@ -30,7 +30,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>The shortcut letters can appear only on the row you are on.</strong> With them on, the letters sat in a column of their own down the right of every category &mdash; as loud as the bookmark names beside them, and holding the width that made those names truncate. With them off, you lost the reminder of what your own shortcuts are. There is now a third answer: <em>On the row I am on</em>, which is the new default. The letter floats in over the end of the name while your pointer or keyboard selection is on that row, nothing moves when it appears, and the names get about five characters of width back. Under <strong>Config &rarr; Appearance</strong>."
+          "text": "<strong>The shortcut letters can appear only on the row you are on.</strong> With them on, the letters sat in a column of their own down the right of every category &mdash; as loud as the bookmark names beside them, and holding the width that made those names truncate. With them off, you lost the reminder of what your own shortcuts are. There is now a third answer: <em>On the row I am on</em>. The letter floats in over the end of the name while your pointer or keyboard selection is on that row, nothing moves when it appears, and the names get about five characters of width back. A new install still shows the letters always; this is the setting to reach for when the column is in the way. Under <strong>Config &rarr; Appearance</strong>."
         },
         {
           "badge": "fix",

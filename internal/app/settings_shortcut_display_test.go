@@ -41,14 +41,17 @@ func seedSettingsFile(t *testing.T, body map[string]any) {
 	}
 }
 
-func TestFreshInstallDefaultsShortcutDisplayToHover(t *testing.T) {
+func TestFreshInstallDefaultsShortcutDisplayToAlways(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 
 	settings := NewStore().GetSettings()
 
-	if settings.ShortcutDisplay != "hover" {
-		t.Fatalf("fresh install: shortcutDisplay = %q, want %q", settings.ShortcutDisplay, "hover")
+	// A new dashboard shows the letters. They are the reminder of what your own
+	// shortcuts are, and a dashboard nobody has configured yet is exactly where
+	// that reminder is worth its width.
+	if settings.ShortcutDisplay != "always" {
+		t.Fatalf("fresh install: shortcutDisplay = %q, want %q", settings.ShortcutDisplay, "always")
 	}
 }
 
@@ -70,9 +73,12 @@ func TestExistingInstallKeepsShortcutsOnScreen(t *testing.T) {
 	}
 }
 
-func TestExistingInstallKeepsShortcutsHidden(t *testing.T) {
+func TestExistingInstallWithShortcutsOffIsMigratedToAlways(t *testing.T) {
 	t.Chdir(t.TempDir())
 
+	// The old boolean said no, but it was never an answer to this question --
+	// it predates the three-way setting. The one-time migration turns the
+	// letters on, and records that it ran.
 	seedSettingsFile(t, map[string]any{
 		"currentPage":   1,
 		"showShortcuts": false,
@@ -80,8 +86,30 @@ func TestExistingInstallKeepsShortcutsHidden(t *testing.T) {
 
 	settings := NewStore().GetSettings()
 
-	if settings.ShortcutDisplay != "never" {
+	if settings.ShortcutDisplay != "always" {
 		t.Fatalf("upgrade with shortcuts off: shortcutDisplay = %q, want %q",
+			settings.ShortcutDisplay, "always")
+	}
+	if !settings.ShortcutDisplayAlwaysMigrated {
+		t.Fatal("the migration did not record that it ran, so it would run again")
+	}
+}
+
+func TestChoiceMadeAfterTheMigrationSurvives(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	// Someone turned the letters off after the migration ran. The marker is in
+	// the file beside their choice, and neither may be undone by a restart.
+	seedSettingsFile(t, map[string]any{
+		"currentPage":                   1,
+		"shortcutDisplay":               "never",
+		"shortcutDisplayAlwaysMigrated": true,
+	})
+
+	settings := NewStore().GetSettings()
+
+	if settings.ShortcutDisplay != "never" {
+		t.Fatalf("choice after migration: shortcutDisplay = %q, want %q",
 			settings.ShortcutDisplay, "never")
 	}
 }

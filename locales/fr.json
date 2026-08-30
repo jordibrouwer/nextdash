@@ -437,7 +437,8 @@
       "ctTrash": "Ouvrir la corbeille — les suppressions y attendent 30 jours",
       "bmMoveCategory": "Déplacer la catégorie sélectionnée d’une place à gauche ou à droite",
       "bmMoveToCategory": "Déplacer le favori ciblé vers la catégorie voisine, dans l'ordre où la page les affiche (les collections intelligentes sont ignorées)",
-      "smNegatedFilters": "Un moins devant exclut au lieu de sélectionner, sur chaque filtre"
+      "smNegatedFilters": "Un moins devant exclut au lieu de sélectionner, sur chaque filtre",
+      "smToggleSearchMode": "Changer le mode de recherche — si les lettres trouvent les noms ou les raccourcis ; le même réglage que Comportement → Recherche"
     },
     "emptyStateAddTouch": "Touchez + favori dans la barre ci-dessous",
     "emptyStateAddDesktop": "Appuyez sur + ou Shift+B pour le formulaire complet (& pour la ligne rapide)",
@@ -1853,7 +1854,10 @@
     "themeBrowserNoticeOpenedBody": "Le navigateur se trouve sous Config → Apparence → Parcourir, et chaque thème existe en moitié claire et moitié sombre. Rien n’est enregistré tant que vous n’en choisissez pas un.",
     "themeBrowserNoticeCommandHint": "Ou changez de thème sans quitter la page avec",
     "themeBrowserNoticeOpenAppearance": "Ouvrir les réglages d’apparence",
-    "themeBrowserNoticeDone": "Compris"
+    "themeBrowserNoticeDone": "Compris",
+    "searchModeNames": "Mode de recherche : les lettres trouvent les noms",
+    "searchModeShortcuts": "Mode de recherche : les lettres trouvent les raccourcis",
+    "searchModeToggleFailed": "Impossible d'enregistrer le mode de recherche"
   },
   "health": {
     "kicker": "vue d'ensemble",
@@ -2656,7 +2660,7 @@
     "showRecentButton": "Afficher le bouton récents",
     "interleaveMode": "Changer le mode de recherche",
     "interleaveModeInfoTitle": "Informations sur le mode de recherche",
-    "interleaveModeInfoMessage": "Activé :\n• Tapez une lettre pour la recherche floue (trouver les favoris par nom)\n• Tapez ';' suivi de lettres pour les raccourcis (par ex. ;yt pour YouTube)\n\nDésactivé :\n• Tapez une lettre pour la recherche par raccourci\n• Tapez ';' suivi de lettres pour la recherche floue\n\n'/' fait la même chose que ';' dans les deux sens.",
+    "interleaveModeInfoMessage": "Activé :\n• Tapez une lettre pour la recherche floue (trouver les favoris par nom)\n• Tapez '/' suivi de lettres pour les raccourcis (par ex. /yt pour YouTube)\n\nDésactivé :\n• Tapez une lettre pour la recherche par raccourci\n• Tapez '/' suivi de lettres pour la recherche floue",
     "packedColumnsInfoTitle": "Informations sur les colonnes compactes",
     "packedColumnsInfoMessage": "Quand activé, les blocs sont répartis en round-robin sur les colonnes larges.\n\n• Réduit les vides verticaux\n• Ordre de lecture moins strict\n• Sauvegarde immédiate",
     "enableAnimations": "Activer les animations",
@@ -5550,7 +5554,7 @@
     "overviewNewFeatureWidgetFigureSizeCta": "Ouvrir les widgets →",
     "overviewNewFeatureShortcutDisplayTitle": "Les lettres de raccourci peuvent n'apparaître que sur la ligne où vous êtes",
     "overviewNewFeatureShortcutDisplayWhat": "Les lettres de raccourci étaient activées ou non. Activées, elles occupaient une colonne à droite de chaque catégorie — aussi visibles que les noms à côté, et retenaient la largeur qui tronquait ces noms. Désactivées, vous perdiez le rappel de vos propres raccourcis.",
-    "overviewNewFeatureShortcutDisplayHow": "Il existe désormais une troisième réponse, et c'est la nouvelle valeur par défaut : la lettre flotte sur la fin du nom tant que le pointeur ou la sélection clavier est sur cette ligne. Rien ne bouge, et les noms récupèrent environ cinq caractères de largeur.",
+    "overviewNewFeatureShortcutDisplayHow": "Il existe désormais une troisième réponse : la lettre flotte sur la fin du nom tant que le pointeur ou la sélection clavier est sur cette ligne. Rien ne bouge, et les noms récupèrent environ cinq caractères de largeur.",
     "overviewNewFeatureShortcutDisplayEnable": "Config → Apparence → Lettres de raccourci sur les lignes.",
     "overviewNewFeatureShortcutDisplayCta": "Ouvrir l'apparence →",
     "overviewNewFeatureSearchNameHintTitle": "Une recherche qui ne trouve rien indique où chercher",

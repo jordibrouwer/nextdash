@@ -456,7 +456,8 @@
       "ctTrash": "Open the trash — deleted bookmarks, pages and categories wait 30 days",
       "bmMoveCategory": "Move the focused category one place left or right",
       "bmMoveToCategory": "Move the focused bookmark into the category beside it, in the order the page shows them (smart collections are skipped)",
-      "smNegatedFilters": "A leading minus excludes instead of selects, on every filter key"
+      "smNegatedFilters": "A leading minus excludes instead of selects, on every filter key",
+      "smToggleSearchMode": "Switch search mode — whether letters find names or shortcuts; the same setting as Behavior → Search, changed where you are standing"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1853,7 +1854,10 @@
     "themeBrowserNoticeOpenedBody": "The browser lives under Config → Appearance → Browse, and every theme comes as a light and a dark half. Nothing is saved until you pick one.",
     "themeBrowserNoticeCommandHint": "Or switch theme without leaving the page with",
     "themeBrowserNoticeOpenAppearance": "Open appearance settings",
-    "themeBrowserNoticeDone": "Got it"
+    "themeBrowserNoticeDone": "Got it",
+    "searchModeNames": "Search mode: letters find names",
+    "searchModeShortcuts": "Search mode: letters find shortcuts",
+    "searchModeToggleFailed": "Could not save the search mode"
   },
   "health": {
     "kicker": "overview",
@@ -2665,7 +2669,7 @@
     "showRecentButton": "Show recent button",
     "interleaveMode": "Switch Search Mode",
     "interleaveModeInfoTitle": "Switch Search Mode Information",
-    "interleaveModeInfoMessage": "Enabled:\n• Press any letter to start fuzzy search (find bookmarks by name)\n• Press ';' followed by letters to use shortcuts (e.g., ;yt for YouTube)\n\nDisabled:\n• Press any letter to start shortcut search\n• Press ';' followed by letters to use fuzzy search\n\n'/' does the same as ';' in both directions.",
+    "interleaveModeInfoMessage": "Enabled:\n• Press any letter to start fuzzy search (find bookmarks by name)\n• Press '/' followed by letters to use shortcuts (e.g., /yt for YouTube)\n\nDisabled:\n• Press any letter to start shortcut search\n• Press '/' followed by letters to use fuzzy search",
     "packedColumnsInfoTitle": "Tight Column Stack Information",
     "packedColumnsInfoMessage": "When enabled, bookmark/category blocks are distributed round-robin across columns on wider screens.\n\n• Reduces empty vertical gaps\n• Can make reading order feel less top-to-bottom\n• Saved instantly when toggled",
     "enableAnimations": "Enable animations",
@@ -5550,7 +5554,7 @@
     "overviewNewFeatureWidgetFigureSizeCta": "Open widgets →",
     "overviewNewFeatureShortcutDisplayTitle": "The shortcut letters can appear only on the row you are on",
     "overviewNewFeatureShortcutDisplayWhat": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are.",
-    "overviewNewFeatureShortcutDisplayHow": "There is a third answer now, and it is the new default: the letter floats in over the end of the name while your pointer or keyboard selection is on that row. Nothing moves when it appears, and the names get about five characters of width back.",
+    "overviewNewFeatureShortcutDisplayHow": "There is a third answer now: the letter floats in over the end of the name while your pointer or keyboard selection is on that row. Nothing moves when it appears, and the names get about five characters of width back.",
     "overviewNewFeatureShortcutDisplayEnable": "Config → Appearance → Shortcut letters on rows.",
     "overviewNewFeatureShortcutDisplayCta": "Open appearance →",
     "overviewNewFeatureSearchNameHintTitle": "A search that finds nothing says where to look",

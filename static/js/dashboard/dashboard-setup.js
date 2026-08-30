@@ -359,6 +359,18 @@ class DashboardSetup {
                 return;
             }
 
+            // Shift+Q flips the search mode where you are, rather than in
+            // config. Which way a bare query is read — letters find names, or
+            // letters find shortcuts — is the kind of thing you want to change
+            // for one search and change back, and walking to Behavior → Search
+            // for that is longer than the search itself.
+            if (e.shiftKey && e.code === 'KeyQ') {
+                e.preventDefault();
+                e.stopPropagation();
+                void d.toggleSearchMode?.();
+                return;
+            }
+
             if (e.shiftKey && e.code === 'KeyI') {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
