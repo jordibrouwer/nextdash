@@ -155,7 +155,7 @@ test.describe('a release flagged hideFromModal', () => {
          * they were released into the modal with v1.4.2.4.
          */
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
-        expect(index[0].tag).toBe('v1.4.2.4');
+        expect(index[0].tag).toBe('v1.4.3');
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -170,7 +170,7 @@ test.describe('a release flagged hideFromModal', () => {
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
         // The modal leads with the newest release rather than stepping over it.
-        expect(await shownTags()).toContain('v1.4.2.4');
+        expect(await shownTags()).toContain('v1.4.3');
 
         // And the ones that were held back are reachable rather than skipped.
         await expect.poll(async () => {
@@ -182,14 +182,14 @@ test.describe('a release flagged hideFromModal', () => {
         }, { timeout: 20_000 }).toContain('v1.2.1');
     });
 
-    test('the release constants name v1.4.2.4, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.4.3, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         // The release token moves now that nothing is held back: an install
         // whose stored value is older sees the notes once on its next visit.
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.2.4'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.3'");
         // The data token moves too, or a browser holding the old index never
-        // learns v1.4.2.4 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v265'");
+        // learns v1.4.3 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v266'");
     });
 });

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.3 — 30 August 2026](#v143--30-august-2026)
 - [v1.4.2.4 — 29 August 2026](#v1424--29-august-2026)
 - [v1.4.2.3 — 29 August 2026](#v1423--29-august-2026)
 - [v1.4.2.2 — 29 August 2026](#v1422--29-august-2026)
@@ -186,6 +187,42 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.4.3 — 30 August 2026
+
+### Widgets
+
+- **Every figure on a custom widget can have its own size** — `Normal`, `Large`, `Small` or `Bar`, stored per figure. The custom widget was the only tile drawing its own flat rows rather than using the panel and parts every other tile uses, which is why it looked flat beside them. The bar is offered on a percentage and nowhere else: it draws a share of a whole, and a count carries no whole to be a share of. Its colour comes from the theme's own tokens. `dashboard-widget-custom.js`, `dashboard-widget-presets.js`, `dashboard-config.js`, `dashboard.css`.
+- **A `Milliseconds` format takes a value in seconds and shows whole milliseconds** — the AdGuard tile printed `avg_processing_time` as `0.0051589999999999995` under a label reading "avg ms": the field was formatted as text, which prints a float's full tail, and the value is in seconds, so the label was off by a factor of a thousand. The AdGuard preset uses the new format; any other service answering in seconds can. A widget already on a page keeps the format it was saved with. `internal/app/widgets_custom.go`.
+- **A figure on a custom widget can be edited again** — opening one for editing left the form empty, so correcting a figure meant deleting it and adding it back.
+- **The figures down a widget's rows line up** — each row measured its own numbers, so a column of them sat at a different distance from the edge on every line.
+
+### Dashboard
+
+- **`shortcutDisplay` replaces the `showShortcuts` boolean** — `always | hover | never`, defaulting to `hover`. The boolean answered one question (is the letter on screen) and the useful answer was a third one. In `hover` the label is out of the row's flow, so the grid's shortcut track collapses and the name takes that width back — about five characters a row — and it floats in over the right end of the name while the pointer or keyboard selection is on it. The `aria-label` names the shortcut in all three modes, `never` included. The control carries the `chrome` handler it always needed, so it comes off the `KNOWN_BROKEN` list in `config-behavior-realtime-coverage.spec.js` and takes effect without a reload.
+- **The floating button bar stops letting the page read through it** — bookmark rows scrolling underneath showed through the bar.
+- **A row builds only the marks it draws**, and **search waits for the key that opens it** — two rendering costs paid on every load that nothing asked for.
+- The rollout flag that only ever said yes is deleted.
+
+### Search
+
+- **A missed shortcut points at the names it did not search** — with *Switch Search Mode* off a bare query looks for a shortcut only, so typing a bookmark's name reported nothing while the bookmark sat on the page behind the overlay. When the shortcut search comes back empty and a name search would not, the overlay appends one row naming the count and the key; `Enter` or a click runs the query the other way. With no name match either, "nothing found" stays the answer.
+- **A query that arrives from outside is searched by name** — a query from the address bar (`opensearch.go`), a deep link or a shared URL was matched against shortcuts only. Arrived queries are widened to names; shortcut matches keep the top of the list.
+- **`;` was introduced as a second mode-switch prefix and taken back out in the same release** — it already opens the inline editor on a bookmark row and has since v1.1.1. The check that cleared it read the cheat-sheet registry, where that binding is deliberately undocumented, so the wrong list gave the wrong answer. `/` is the only mode switch, as before. The `_hasModeSwitchPrefix` / `_stripModeSwitchPrefix` helpers introduced alongside it are kept: they fold four scattered `startsWith('/')` tests into one question. `tests/search-mode-switch-prefix.spec.js` pins that `;` is not a prefix.
+
+### Health
+
+- **A round of checks is one write, and it follows the bookmark** — each result was written on its own, so a round interrupted halfway left the report describing a mix of two runs.
+
+### Assets
+
+- **A stack trace out of the bundle names the file it came from** — source maps survive the bundling step.
+- **The stylesheets and scripts changed this week are served** — the hash table had drifted from the files on disk.
+
+### Docs
+
+- Release notes `static/data/whats-new/v1.4.3.json` and its `index.json` entry; both tokens in `whats-new-stub.js` (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION`); the constants spec; three `overview-features.json` entries carrying `since: "v1.4.3"` with their 60 locale keys; this changelog; `MANUAL.md`; and the Config → Help paragraphs in all four locales.
+- The cheat sheet gains `ivUnread` and `ivTags`, which had been added to the inbox section without a locale string and printed as raw fallbacks in lowercase. `nextDash-cheatsheet.html` and both PDFs regenerated.
 
 ## v1.4.2.4 — 29 August 2026
 

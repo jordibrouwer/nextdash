@@ -27,7 +27,7 @@
      * file, and always has to move: without it a browser that already read the
      * index keeps its copy and never learns v1.4.2.4 exists at all.
      */
-    const DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.2.4';
+    const DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.3';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -36,7 +36,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v265';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v266';
 
     let loadPromise = null;
 

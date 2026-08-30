@@ -2,6 +2,57 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureWidgetFigureSizeTitle",
+      "titleFallback": "Every figure on a custom widget can have its own size",
+      "whatKey": "config.overviewNewFeatureWidgetFigureSizeWhat",
+      "whatFallback": "A tile whose numbers were all drawn the same size left you to work out which one mattered. The custom widget drew flat rows where every other tile gave its main figure room, so the number you built the tile for looked exactly like the ones giving it context.",
+      "howKey": "config.overviewNewFeatureWidgetFigureSizeHow",
+      "howFallback": "Each figure is now Normal, Large, Small or a Bar, set per figure when you add or edit it. The bar is offered on a percentage, where a share of a whole is something it can draw, and it takes its colour from the theme you are using.",
+      "enableKey": "config.overviewNewFeatureWidgetFigureSizeEnable",
+      "enableFallback": "Nothing to switch on — open a custom widget and edit one of its figures.",
+      "ctaKey": "config.overviewNewFeatureWidgetFigureSizeCta",
+      "ctaFallback": "Open widgets →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "widgets"
+      },
+      "since": "v1.4.3"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureShortcutDisplayTitle",
+      "titleFallback": "The shortcut letters can appear only on the row you are on",
+      "whatKey": "config.overviewNewFeatureShortcutDisplayWhat",
+      "whatFallback": "The shortcut letters were on or off. On, they sat in a column of their own down the right of every category — as loud as the bookmark names beside them, and holding the width that made those names truncate. Off, you lost the reminder of what your own shortcuts are.",
+      "howKey": "config.overviewNewFeatureShortcutDisplayHow",
+      "howFallback": "There is a third answer now, and it is the new default: the letter floats in over the end of the name while your pointer or keyboard selection is on that row. Nothing moves when it appears, and the names get about five characters of width back.",
+      "enableKey": "config.overviewNewFeatureShortcutDisplayEnable",
+      "enableFallback": "Config → Appearance → Shortcut letters on rows.",
+      "ctaKey": "config.overviewNewFeatureShortcutDisplayCta",
+      "ctaFallback": "Open appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      },
+      "since": "v1.4.3"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSearchNameHintTitle",
+      "titleFallback": "A search that finds nothing says where to look",
+      "whatKey": "config.overviewNewFeatureSearchNameHintWhat",
+      "whatFallback": "Typing a bookmark's name into the search overlay reported nothing found while the bookmark sat on the page behind it. A plain query looks for a shortcut, not a name, and the overlay never said so.",
+      "howKey": "config.overviewNewFeatureSearchNameHintHow",
+      "howFallback": "When there is nothing by that shortcut but something by that name, the overlay adds one line saying how many bookmarks carry it, and Enter runs the search the other way. When nothing matches either, “nothing found” stays the answer.",
+      "enableKey": "config.overviewNewFeatureSearchNameHintEnable",
+      "enableFallback": "Nothing to switch on — it is how search answers now.",
+      "ctaKey": "config.overviewNewFeatureSearchNameHintCta",
+      "ctaFallback": "Open search settings →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "search"
+      },
+      "since": "v1.4.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBrowserHistoryTitle",
       "titleFallback": "The browser's Back button moves through nextDash",
       "whatKey": "config.overviewNewFeatureBrowserHistoryWhat",

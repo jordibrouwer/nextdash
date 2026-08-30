@@ -1,0 +1,64 @@
+{
+  "tag": "v1.4.3",
+  "date": "30 August 2026",
+  "releasedAt": "2026-08-30",
+  "modalLead": "The figures on a custom widget can be sized and drawn as bars, the shortcut letters can stay out of the way until you need them, and a search that finds nothing now points at the bookmarks it did not look through.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every figure on a custom widget can have its own size.</strong> A tile whose numbers were all drawn the same size left you to work out which one mattered. Each figure is now <em>Normal</em>, <em>Large</em>, <em>Small</em> or a <em>Bar</em> &mdash; so the number you built the tile for can lead, and the ones giving it context can sit quietly underneath. The bar is offered on a percentage, where a share of a whole is something it can actually draw, and it takes its colour from the theme you are using."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A response time reads as whole milliseconds.</strong> The AdGuard tile showed its average processing time as <code>0.0051589999999999995</code> under a label reading &ldquo;avg ms&rdquo;. It now reads <code>5</code>. Any service that answers in seconds can use the new <em>Milliseconds</em> format and say so; a widget already on a page keeps the format it was saved with, and the dropdown is where that changes."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A figure on a custom widget can be edited again.</strong> Opening one for editing left the form empty, so the only way to correct a figure was to delete it and add it back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The figures down a widget's rows line up.</strong> Each row measured its own numbers, so a column of them sat at a different distance from the edge on every line."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The shortcut letters can appear only on the row you are on.</strong> With them on, the letters sat in a column of their own down the right of every category &mdash; as loud as the bookmark names beside them, and holding the width that made those names truncate. With them off, you lost the reminder of what your own shortcuts are. There is now a third answer: <em>On the row I am on</em>, which is the new default. The letter floats in over the end of the name while your pointer or keyboard selection is on that row, nothing moves when it appears, and the names get about five characters of width back. Under <strong>Config &rarr; Appearance</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The floating button bar no longer lets the page read through it.</strong> Bookmark rows scrolling underneath showed through the bar, so the icons sat on moving text."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A search that finds nothing says where to look.</strong> Typing a bookmark's name into the overlay reported nothing found while the bookmark sat on the page behind it &mdash; because a plain query looks for a shortcut, not a name. When there is nothing by that shortcut but something by that name, the overlay now says so in one line, with how many there are, and <strong>Enter</strong> runs the search the other way. When nothing matches either, &ldquo;nothing found&rdquo; stays the answer."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A search you arrive with is searched by name.</strong> A query from the address bar, a deep link, or a link someone sent you was matched against shortcuts only, so a full bookmark name found nothing and the overlay opened on a query you could not revise."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A round of checks keeps its place.</strong> Checking a page of bookmarks wrote each result on its own, and a round interrupted halfway left the report describing a mix of two runs."
+        }
+      ]
+    }
+  ]
+}
