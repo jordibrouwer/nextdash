@@ -2289,7 +2289,12 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     z-index: 1001;
     padding: 0.62rem 0.72rem;
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    /* Opaque, and in both layout versions: this FAB floats over the grid with
+       nothing behind it either way -- modern styles the dock and the / FAB but
+       never this one -- so the page used to read straight through it. The wash
+       is the same 74%, now composited over the page background instead of over
+       transparent, which is the colour it already showed over empty page. */
+    background: color-mix(in srgb, var(--background-secondary) 74%, var(--background-primary));
     color: var(--accent-primary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -2344,7 +2349,9 @@ body.no-animations .whats-new-btn-update-dot {
     transform: scale(1);
 }
 .whats-new-btn:hover {
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    /* 94% of the page background over the page background is the page
+       background: same colour as before, minus the window. */
+    background: var(--background-primary);
     border-color: var(--accent-primary);
     transform: translateY(-1px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
