@@ -445,7 +445,15 @@ test.describe('health dashboard view', () => {
         await page.keyboard.press('j');
         await page.keyboard.press('m');
 
-        const items = await page.locator('.health-view-menu:not([hidden]) .health-view-menu-item').allTextContents();
+        // The shortcut lives in a <kbd> inside the button, so textContent alone
+        // reads "Ignore “Broken”n". Strip it: this test is about which actions
+        // the menu offers, not how they are reached.
+        const items = await page.locator('.health-view-menu:not([hidden]) .health-view-menu-item')
+            .evaluateAll((els) => els.map((el) => {
+                const clone = el.cloneNode(true);
+                clone.querySelectorAll('kbd').forEach((k) => k.remove());
+                return clone.textContent.trim();
+            }));
         // Open / Re-check / Edit are buttons on the row; repeating them here would
         // be two paths to the same thing.
         expect(items).not.toContain('Open');
@@ -461,10 +469,11 @@ test.describe('health dashboard view', () => {
             // for browsing, this is the way out of a link that is gone.
             'Use the last archived copy…',
             // And the copy kept here rather than out there: v1.4.0 can capture
-            // a whole page to this disk, so the menu offers both making one and
-            // seeing what is already stored for this bookmark.
+            // a whole page to this disk. Making one is always offered; seeing
+            // what is stored is not, because a row without a copy would open an
+            // empty dialog — so "Copies on this disk" belongs to the rows that
+            // have one, and this fixture's does not.
             'Save a copy on this disk…',
-            'Copies on this disk',
             // Same two the dashboard's right-click menu carries: a row here is a
             // bookmark like any other, and copying or sending one should not mean
             // going back to the dashboard first. The second names the copy rather
@@ -475,6 +484,12 @@ test.describe('health dashboard view', () => {
             // The discoverable route to the check-mode popover; the badge is the
             // fast one, but nothing announces that a badge is clickable.
             'Change checking (Not checked)',
+            // 75d4ffef: a row with a problem you have decided to live with can
+            // be told to stop reporting that one condition, for good or for a
+            // month. The key does the common case; the menu is the only place a
+            // row with several problems can be told which one to hide.
+            'Ignore \u201cBroken\u201d',
+            'Ignore \u201cBroken\u201d for 30 days',
             'Delete bookmark',
         ]);
     });
@@ -495,8 +510,11 @@ test.describe('health dashboard view', () => {
         // Copy and share are not repairs — they apply to any row, broken or not.
         expect(items).toContain('Copy URL');
         expect(items).toContain('Copy name + URL');
-        await expect(page.locator('.health-view-menu:not([hidden]) .health-view-menu-label'))
-            .toHaveCount(1);
+        // The group headings, named rather than counted: 75d4ffef added
+        // "Reporting" over the ignore actions, and a bare count only says the
+        // number changed, not which heading arrived.
+        expect(await page.locator('.health-view-menu:not([hidden]) .health-view-menu-label')
+            .allTextContents()).toEqual(['Reporting', 'Remove']);
     });
 
     test('a click outside dismisses the menu', async ({ page }) => {
