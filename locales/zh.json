@@ -3498,7 +3498,7 @@
     "helpFindersTitle": "查找器",
     "helpStartTitle": "入门",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "<p>这是 1.4.3 版，主要是关于主题的。主题有 214 个，而它们以前是通过一个列表出现的；现在有了一个<strong>浏览器</strong>——一个可搜索的卡片网格，每个系列一张卡，带收藏，而且仪表板会主动提议为你打开它一次。每个主题都有了<strong>自己的强调色</strong>，而不是借用成功色；有了一项<strong>深度</strong>设置，让卡片坐在一个表面上而不是贴着一条边框；有了一个可以设成圆点、网格、线条或斜纹的改进<strong>底纹</strong>；还加进了<strong>三十三个新系列</strong>。除此之外：一个页面可以装<strong>小组件</strong>，而自定义磁贴现在已经认识二十八个服务；<strong>统计</strong>会报告在线率、快到期的证书，以及这批收藏里有多少存了副本；<strong>导入源</strong>让书签源源不断地自己进来；一个页面可以<strong>留存</strong>在网页存档或你自己的磁盘上；<strong>webhook</strong> 和一个 <strong>MCP 接口</strong>把这里发生的事告诉你机器上的其他部分；而你浏览器的地址栏就是一个 nextDash 搜索框。</p> <p><strong>1.4.3</strong> 是最新的一轮：<strong>自定义小组件</strong>上每个数值都能有自己的尺寸——常规、大、小或者一条「条形」——于是你为之建起这块磁贴的那个数字可以领头，而不是和给它作陪衬的那些齐平；以秒为单位送达的响应时间现在读成整毫秒，而不是一个浮点数的完整尾巴。<strong>快捷字母</strong>多了第三种设置，<em>只在我所在的那一行</em>，而且它是新的默认：当你在某一行上时，字母出现在名称末尾上方，而名称拿回了旧的那一列占着的宽度。还有，<strong>一次什么都没找到的搜索</strong>现在会告诉你该往哪儿看——在一个普通查询找的是快捷方式时输入书签的名字，会多出一行告诉你有多少个叫这个名字，按 <em>Enter</em> 就换个方向再搜一遍。<strong>搜索模式</strong>挪到了 <strong>行为 → 搜索</strong>，并且听 <strong>Shift + Q</strong>；而<strong>快捷字母</strong>在每块仪表板上重新打开了——现在是三种设置，你挑哪个就一直是哪个。</p>",
+    "helpVersionBody": "<p>这是 1.4.4 版，主要是关于主题的。主题有 214 个，而它们以前是通过一个列表出现的；现在有了一个<strong>浏览器</strong>——一个可搜索的卡片网格，每个系列一张卡，带收藏，而且仪表板会主动提议为你打开它一次。每个主题都有了<strong>自己的强调色</strong>，而不是借用成功色；有了一项<strong>深度</strong>设置，让卡片坐在一个表面上而不是贴着一条边框；有了一个可以设成圆点、网格、线条或斜纹的改进<strong>底纹</strong>；还加进了<strong>三十三个新系列</strong>。除此之外：一个页面可以装<strong>小组件</strong>，而自定义磁贴现在已经认识二十八个服务；<strong>统计</strong>会报告在线率、快到期的证书，以及这批收藏里有多少存了副本；<strong>导入源</strong>让书签源源不断地自己进来；一个页面可以<strong>留存</strong>在网页存档或你自己的磁盘上；<strong>webhook</strong> 和一个 <strong>MCP 接口</strong>把这里发生的事告诉你机器上的其他部分；而你浏览器的地址栏就是一个 nextDash 搜索框。</p> <p><strong>1.4.4</strong> 是最新的一轮，讲的是谁能读懂它：<strong>中文</strong>作为第五种完整语言加入——简体中文覆盖仪表板、配置、统计、健康以及本标签页的全部 209 个标题，整个过程中不会有任何地方退回英文。<strong>主题浏览器</strong>此前在所有语言里都还是英文，这次一并翻译了。除此之外，<strong>搜索结果会按「为什么匹配」分组</strong>——最贴切的保持展开，其余的收进一个带计数的标题里——而且<strong>排序会学习</strong>：它读取你打开某个书签的频率，也记住你在敲下某串按键后选了哪个结果。同行的还有六项修复，其中最显眼的是切换到<em>定期</em>时明明已保存却什么都不说。</p>",
     "helpVersionWhatsNew": "看看有什么新东西",
     "helpConfigTitle": "在配置里找路",
     "showTagCollections": "智能：标签合集（每个标签一个）",
@@ -5470,7 +5470,17 @@
     "themeTraitVivid": "鲜艳",
     "themeTraitMuted": "柔和",
     "themeTraitHighContrast": "高对比度",
-    "themeTraitSoftContrast": "低对比度"
+    "themeTraitSoftContrast": "低对比度",
+    "overviewNewFeatureChineseTitle": "nextDash 会说中文了",
+    "overviewNewFeatureChineseWhat": "简体中文加入英语、荷兰语、德语和法语，成为第五种完整语言——而且是全部，不是做了一半。仪表板和它的速查表、命令面板、设置向导、每一个配置标签页、统计、健康视图连同它的判断依据，以及帮助标签页的全部 209 个标题。",
+    "overviewNewFeatureChineseHow": "在「外观 → 语言」里选择。整个过程中不会有任何地方退回英文，主题浏览器——一个在所有语言里都还是英文的界面——也一并翻译了。",
+    "overviewNewFeatureChineseEnable": "无需开启——选好语言，整个界面就跟着变。",
+    "overviewNewFeatureChineseCta": "打开语言设置 →",
+    "overviewNewFeatureSearchGroupsTitle": "搜索会给结果分组，也会记住你要的是哪一个",
+    "overviewNewFeatureSearchGroupsWhat": "一个字母就能塞满整屏。输入 g，Gmail 和 widGetonderzoek 会挤在同一列里，样式相同，顺序却没有任何解释——而且你搜第一千次时的排序，和第一次时一模一样。",
+    "overviewNewFeatureSearchGroupsHow": "现在结果会按「为什么匹配」分组：最贴切的保持展开，其余的收进一个带计数的标题里，什么都不会被丢掉。排序会读取你打开某个书签的频率，也会记住你在敲下某串按键后选了哪个结果——于是 mail 可以成为你自己的 Gmail 别名，而不必为它建一个快捷方式。",
+    "overviewNewFeatureSearchGroupsEnable": "无需开启——打开搜索并输入即可。",
+    "overviewNewFeatureSearchGroupsCta": "打开搜索设置 →"
   },
   "colors": {
     "title": "主题自定义",

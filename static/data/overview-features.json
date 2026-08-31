@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureChineseTitle",
+      "titleFallback": "nextDash speaks Chinese",
+      "whatKey": "config.overviewNewFeatureChineseWhat",
+      "whatFallback": "简体中文 joins English, Dutch, German and French as a fifth full language — and it is the whole of it, not a partial pass. The dashboard and its cheat sheet, the command palette, the setup wizards, every config tab, the statistics, the health view and its reasons, and all 209 headings of the Help tab.",
+      "howKey": "config.overviewNewFeatureChineseHow",
+      "howFallback": "Pick it under Appearance → Language. Nothing falls back to English on the way through, and the theme browser — a screen that had stayed English in every language — was translated with it.",
+      "enableKey": "config.overviewNewFeatureChineseEnable",
+      "enableFallback": "Nothing to switch on — choose the language and the whole interface follows.",
+      "ctaKey": "config.overviewNewFeatureChineseCta",
+      "ctaFallback": "Open language settings →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.4.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSearchGroupsTitle",
+      "titleFallback": "Search groups its results, and learns which one you meant",
+      "whatKey": "config.overviewNewFeatureSearchGroupsWhat",
+      "whatFallback": "One letter used to fill the screen. Typing g put Gmail and widGetonderzoek in the same column, in the same style, in an order nothing on screen explained — and the ranking looked the same on your thousandth search as on your first.",
+      "howKey": "config.overviewNewFeatureSearchGroupsHow",
+      "howFallback": "Results now group by why they matched: the strong ones stay open, the rest fold behind a heading and a count, and nothing is thrown away. The ranking reads how often you open a bookmark and remembers which result you picked for the keystrokes you picked it with, so mail can become your own alias for Gmail without a shortcut for it.",
+      "enableKey": "config.overviewNewFeatureSearchGroupsEnable",
+      "enableFallback": "Nothing to switch on — open the search and type.",
+      "ctaKey": "config.overviewNewFeatureSearchGroupsCta",
+      "ctaFallback": "Open search settings →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "search"
+      },
+      "since": "v1.4.4"
+    },
+    {
       "titleKey": "config.overviewNewFeatureSearchModeKeyTitle",
       "titleFallback": "The search mode has a key of its own",
       "whatKey": "config.overviewNewFeatureSearchModeKeyWhat",
