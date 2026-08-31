@@ -19,13 +19,30 @@ async function seedFirstRow(page, stats) {
             if (!bm || bm.url !== found) return;
             Object.assign(bm, s, { shortcut: bm.shortcut || 'ZZ' });
         };
-        d.allBookmarks.forEach(patch);
-        (d.bookmarks || []).forEach(patch);
-        (d.pages || []).forEach((p) => (p.bookmarks || []).forEach(patch));
+        let patched = 0;
+        const patchCounting = (bm) => {
+            if (!bm || bm.url !== found) return;
+            patch(bm);
+            patched += 1;
+        };
+        d.allBookmarks.forEach(patchCounting);
+        (d.bookmarks || []).forEach(patchCounting);
+        (d.pages || []).forEach((p) => (p.bookmarks || []).forEach(patchCounting));
+        // The row is read from the DOM and the stats are written by URL, so a
+        // repaint between the two would leave nothing patched and the
+        // assertions would read a tooltip that was never seeded. Checked rather
+        // than assumed, so that failure names itself instead of arriving as
+        // "expected 35, received GitHub" three frames later.
+        //
+        // Not the cause of this spec's flake, for the record: it still fails
+        // about one run in three with the count seeded and this check passing,
+        // and it does so at one worker as readily as at four — so it is a race
+        // inside the render, not contention between workers.
+        if (!patched) throw new Error(`seedFirstRow patched nothing for ${found}`);
         // incremental:false — the incremental path reuses cached rows and would
         // not pick the seeded counts up.
         await d.renderDashboard({ incremental: false });
-        return { url: found, openCount: s.openCount };
+        return { url: found, openCount: s.openCount, patched };
     }, stats);
     await page.waitForSelector(`.bookmark-link[data-bookmark-url="${seeded.url}"]`);
     return seeded;
