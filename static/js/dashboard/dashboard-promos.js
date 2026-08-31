@@ -139,7 +139,13 @@ class DashboardPromos {
         const text = d.t?.('dashboard.searchModeKeyAnnounce',
             'Tip: Shift + Q switches the search mode — whether letters find names or shortcuts')
             || 'Tip: Shift + Q switches the search mode';
-        d.showNotification?.(text, 'info', { duration: 8000 });
+        // 'promo', not 'info', the way dashboard-keyboard-tip sends its own:
+        // this is an unprompted tip on a long timer, and AppNotification gives
+        // way for a real notification only when the promo is the one on screen.
+        // Sent as 'info' it took the slot like an answer to something the user
+        // did, and the confirmation for their next action queued behind it —
+        // switching a bookmark to Periodic showed nothing at all.
+        d.showNotification?.(text, 'promo', { duration: 8000 });
     }
 
 
