@@ -34,6 +34,11 @@ async function seed(page, titles) {
     }, { titles, stamp });
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
+    // loadAndRender only fetches when asked to or when it has never loaded, so
+    // a view left loaded by an earlier test in this file never sees what was
+    // just seeded — it POSTs to the server and then waits on a list the view
+    // has no reason to re-read. refresh:true is the parameter for exactly this.
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
     // The POSTs are accepted before the view has loaded them, so reading
     // inbox.items straight after seeding could find it empty, or half-filled —
     // which is worse, because a partial list reads as a real result.
