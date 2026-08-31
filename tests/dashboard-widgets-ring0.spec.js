@@ -197,13 +197,21 @@ test.describe('ring 0 widgets', () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    widgets: [{ type: 'inbox', title: 'Inbox', config: { rows: 9999, showSource: true } }],
+                    widgets: [{ type: 'inbox', title: 'Inbox', config: { rows: 9999, columns: 'lots', showSource: true } }],
                 }),
             });
             const blocks = await (await send('/api/pages/1/blocks')).json();
             return blocks.widgets?.[0]?.config || {};
         });
-        expect(stored).not.toHaveProperty('rows');
+        // Out of range and nonsense are not the same mistake, and the server
+        // stopped treating them alike (see TestOutOfRangeNumbersAreClamped-
+        // AndNonsenseIsDropped). 9999 rows is a reader who did not know the
+        // ceiling, so it is clamped to it — dropping the key would send them
+        // back to the default with nothing on screen to say why.
+        expect(stored.rows).toBe(20);
+        // A string where a number belongs is the wrong shape, not a bad choice.
+        // That becomes absent, which the renderer reads as "use the default".
+        expect(stored).not.toHaveProperty('columns');
         // The rest of the config is untouched: one bad value is not a bad save.
         expect(stored.showSource).toBe(true);
     });
