@@ -41,6 +41,16 @@ async function bodyText(page) {
 
 test.describe('every screen speaks in sentences', () => {
     test('every config section and sub-tab', async ({ page }) => {
+        // Ten sections and forty-nine sub-tabs, each given a fixed 500ms and
+        // 450ms to settle: twenty-seven seconds of waiting before a single
+        // assertion, in a suite whose per-test limit is thirty. It fitted while
+        // that limit was sixty and stopped fitting when it went back down.
+        //
+        // The waits are the thing to fix — waiting on the render rather than on
+        // a stopwatch would make this both quicker and steadier — but that is
+        // its own change. Until then the test says out loud that it needs
+        // longer, rather than raising the limit for the other 2144.
+        test.setTimeout(90_000);
         await open(page);
 
         // The config module loads on demand, so its class only exists once
