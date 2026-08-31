@@ -41,6 +41,10 @@ test.describe('dashboard inbox phase 1', () => {
 
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // loadAndRender fetches only when asked to or when it has never loaded,
+        // so a view an earlier test left loaded never sees what was just seeded
+        // — it waits on a list the view has no reason to re-read.
+        await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
         // Triage works on the filtered list, and an empty one answers "Nothing
         // to triage" and draws no overlay. Waited on the list triage itself
         // reads rather than on a rendered row: the view is up before the items
