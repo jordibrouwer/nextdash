@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * In-view explanation: a sentence about the active filter, and the ℹ that opens
@@ -49,10 +49,18 @@ async function open(page, filter = 'broken') {
     await page.route('**/api/bookmark-health**', async (route) => {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(report()) });
     });
+    await markWhatsNewSeen(page);
     await page.goto(`/?hv_filter=${filter}#health`);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await prepareDashboardInteraction(page);
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    // Not prepareDashboardInteraction: it calls ensureBookmarksDashboardView,
+    // which is exactly what this deep link is not. It put the grid back over
+    // the view this spec had just opened, and every assertion below then read
+    // a health view that could no longer redraw.
     await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+    await page.waitForFunction(
+        () => window.dashboardInstance?.activeView === 'health', null, { timeout: 15_000 });
 }
 
 test.describe('health view explanations', () => {
@@ -69,9 +77,17 @@ test.describe('health view explanations', () => {
         const note = page.locator('.health-view-filter-note');
         const broken = await note.textContent();
 
-        await page.locator('[data-health-filter="all"]').click();
+        // Unused, not All: All has no note by design. filterExplanation returns
+        // '' for it, with the reason written out — "Every bookmark, whatever its
+        // state" names what an unfiltered list is to someone already looking at
+        // one, and cost a line above every row to say it.
+        await page.locator('[data-health-filter="unused"]').click();
         await expect(note).not.toHaveText(String(broken));
-        await expect(note).toContainText(/Every bookmark/i);
+        await expect(note).toContainText(/never been opened|nooit geopend/i);
+
+        // And All drops the row rather than rendering it empty.
+        await page.locator('[data-health-filter="all"]').click();
+        await expect(note).toHaveCount(0);
     });
 
     test('the two filters that sound alike are told apart', async ({ page }) => {
