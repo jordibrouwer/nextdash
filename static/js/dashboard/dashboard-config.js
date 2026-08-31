@@ -6310,19 +6310,27 @@ class DashboardConfig {
                 this.handleBackupItem(btn.getAttribute('data-backup-item'), btn.getAttribute('data-backup-name'));
             });
         });
-        const bindFileInput = (id, handler) => {
+        const bindFileInput = (id, handler, allowedExtensions) => {
             const input = container.querySelector(id);
             if (!input) return;
             input.addEventListener('change', () => {
                 const file = input.files && input.files[0];
-                if (file) void handler.call(this, file);
+                if (!file) return;
+                if (allowedExtensions) {
+                    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+                    if (!allowedExtensions.includes(ext)) {
+                        input.value = '';
+                        return;
+                    }
+                }
+                void handler.call(this, file);
                 input.value = '';
             });
         };
-        bindFileInput('#config-import-input', this.importBackup);
-        bindFileInput('#config-browser-import-input', this.importBrowserBookmarks);
-        bindFileInput('#config-csv-import-input', this.importBookmarksCSV);
-        bindFileInput('#config-settings-import-input', this.importSettings);
+        bindFileInput('#config-import-input', this.importBackup, ['.zip', '.json']);
+        bindFileInput('#config-browser-import-input', this.importBrowserBookmarks, ['.html', '.htm']);
+        bindFileInput('#config-csv-import-input', this.importBookmarksCSV, ['.csv']);
+        bindFileInput('#config-settings-import-input', this.importSettings, ['.json']);
 
         // Whether a token is saved, and what the last round did. Read here
         // rather than rendered into the panels, because they are built from
