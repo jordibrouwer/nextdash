@@ -33,7 +33,11 @@ async function clearChoice(page) {
 
 const choiceState = (page) => page.evaluate(() => ({
     made: window.dashboardInstance.settings.quickStart?.analyticsChoiceMade,
-    askAfter: window.dashboardInstance.settings.quickStart?.analyticsAskAfter,
+    // AnalyticsAskAfter is `omitempty` on the Go side, so a zero does not
+    // survive the round trip and comes back undefined. Absent and zero mean the
+    // same thing here — no snooze left to honour — which is how every reader of
+    // this field already treats it: `Number(qs.analyticsAskAfter) || 0`.
+    askAfter: Number(window.dashboardInstance.settings.quickStart?.analyticsAskAfter) || 0,
     optIn: window.dashboardInstance.settings.analyticsOptIn,
 }));
 
