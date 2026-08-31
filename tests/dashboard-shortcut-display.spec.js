@@ -121,8 +121,12 @@ test.describe('shortcut label display modes', () => {
         await seedBookmark(page);
     });
 
-    test('a fresh install arrives on hover', async ({ page }) => {
-        expect(await page.getAttribute('body', 'data-shortcut-display')).toBe('hover');
+    test('a fresh install arrives with the letters on', async ({ page }) => {
+        // 79c29ec9 turned the shortcut letters on for everyone: a fresh install
+        // gets "always", and a one-time migration switched existing installs
+        // over, including the ones whose old boolean said no. That commit
+        // repinned two specs to the new default and missed this one.
+        expect(await page.getAttribute('body', 'data-shortcut-display')).toBe('always');
     });
 
     test('always keeps the label on screen without the pointer', async ({ page }) => {
