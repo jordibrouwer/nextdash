@@ -2080,13 +2080,18 @@ class DashboardHealth {
         }
         document.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
-            // Drop any cursor placement, so the next open from the ⋯ button lands
-            // under the button again rather than where a right-click last put it.
-            if (menu.classList.contains('health-view-menu--at-cursor')) {
-                menu.classList.remove('health-view-menu--at-cursor');
-                menu.style.left = '';
-                menu.style.top = '';
-            }
+            // Drop any placement written onto the menu, so the next open lands
+            // where its own path puts it rather than where the last one left
+            // it. Two paths write inline coordinates: a right-click, which sets
+            // left and top and marks itself --at-cursor, and the button path's
+            // clamp for a menu that fits neither above nor below, which sets top
+            // and bottom and carries no class. Clearing was conditional on the
+            // class, so the clamped one survived into the next open.
+            menu.classList.remove('health-view-menu--at-cursor');
+            menu.classList.remove('health-view-menu--up');
+            menu.style.left = '';
+            menu.style.top = '';
+            menu.style.bottom = '';
         });
         document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
