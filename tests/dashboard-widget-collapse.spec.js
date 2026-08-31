@@ -115,7 +115,14 @@ test.describe('a widget folds away', () => {
         await page.mouse.up();
         await expect(widget).toHaveAttribute('data-collapsed', 'false');
 
-        await handle.click({ force: true });
+        // dispatchEvent, not click(): the handle carries a 0.15s opacity
+        // transition and the drag above just left the pointer on the row, so
+        // the click lands while it is still fading from 0.55 to 0.85 — and
+        // Playwright holds an element that is still moving, force or not. The
+        // assertion is about what the handler does with a click, not about
+        // whether a real pointer could reach it; the drag two lines up already
+        // proves that.
+        await handle.dispatchEvent('click');
         await expect(widget).toHaveAttribute('data-collapsed', 'false');
     });
 

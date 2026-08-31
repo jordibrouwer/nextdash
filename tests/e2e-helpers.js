@@ -214,6 +214,18 @@ async function waitForFaviconPrefetch(page) {
             .some((el) => !el.hasAttribute('hidden') && getComputedStyle(el).display !== 'none');
         return !blocking;
     }, null, { timeout: 20_000 }).catch(() => {});
+
+    // And the reload that follows it. fetchAllFaviconsAfterSetup runs unawaited
+    // 400ms after setup and ends in loadData() + renderDashboard(), so the rows
+    // are rebuilt from the server after the overlay has gone and the dashboard
+    // looks settled. A spec that writes onto a bookmark in that window — a seeded
+    // open count, a check mode — loses the write to the fresh copy and then reads
+    // a row it never seeded. The flag is false only while that is in flight, so
+    // an install that never ran setup falls straight through.
+    await page.waitForFunction(
+        () => window.nextdashSetupFaviconsDone !== false,
+        null, { timeout: 20_000 },
+    ).catch(() => {});
 }
 
 /** @param {import('@playwright/test').Page} page */
