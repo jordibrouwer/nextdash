@@ -26,6 +26,24 @@ async function load(page) {
  * nodes, which never fired — innerHTML = '' on a two-column layout removes two.
  */
 async function measureRepaint(page, body) {
+    // Let the grid go quiet first. The starter-icon prefetch patches a row as
+    // each favicon lands, and those repaints are incremental too — installed
+    // over them, the counter reads three where the mutation made one. Waited on
+    // the patch rate rather than on a count: the rows do not change in number
+    // while their icons arrive.
+    await page.waitForFunction(() => {
+        const d = window.dashboardInstance;
+        if (!d?.renderIncremental) return false;
+        if (!d.__patchProbe) {
+            d.__patchProbe = { n: 0, quiet: 0 };
+            const real = d.renderIncremental.tryRender.bind(d.renderIncremental);
+            d.renderIncremental.tryRender = (...a) => { d.__patchProbe.n += 1; return real(...a); };
+        }
+        const p = d.__patchProbe;
+        if (p.n === p.last) { p.quiet += 1; } else { p.quiet = 0; p.last = p.n; }
+        return p.quiet >= 5;
+    }, null, { timeout: 15_000 }).catch(() => {});
+
     return page.evaluate(async (source) => {
         const d = window.dashboardInstance;
         const stats = { patched: 0 };
