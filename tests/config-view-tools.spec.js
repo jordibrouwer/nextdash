@@ -112,6 +112,11 @@ test.describe('editing a bookmark where you read it', () => {
         // The row edited is not the one holding the key, so this is a genuine
         // clash rather than a bookmark keeping its own shortcut.
         const pill = page.locator('.config-bm-row [data-bm-inline="shortcut"]').last();
+        // Scrolled into view before the click. The last row sits below the fold
+        // in this list, and a click that has to scroll first landed while the
+        // row was still moving — the pill took it, the handler never ran, and
+        // the input this waits for was never created.
+        await pill.scrollIntoViewIfNeeded();
         await pill.click();
         const input = page.locator('.config-bm-inline-input--shortcut').first();
         await expect(input).toBeVisible({ timeout: 5_000 });
@@ -156,6 +161,7 @@ test.describe('editing a bookmark where you read it', () => {
         await expect(pill).toBeVisible({ timeout: 10_000 });
         const before = (await pill.textContent()).trim();
 
+        await pill.scrollIntoViewIfNeeded();
         await pill.click();
         const input = row.locator('.config-bm-inline-input--shortcut');
         await expect(input).toBeVisible({ timeout: 5_000 });
