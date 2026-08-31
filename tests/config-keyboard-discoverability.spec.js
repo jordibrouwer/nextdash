@@ -29,16 +29,27 @@ test.describe('config keyboard discoverability', () => {
     });
 
     test('first config open shows the keyboard intro toast once', async ({ page }) => {
+        // The seen tips live in settings on the server, and the two specs above
+        // this one open config and mark this tip seen there. init() only sets
+        // the in-memory copy, so the empty state has to be written back and the
+        // page reloaded onto it — otherwise this "first open" is a second one.
+        await page.goto('/');
+        await page.waitForFunction(() => window.DiscoverabilityState != null, null, { timeout: 15_000 });
+        await page.evaluate(async () => {
+            window.DiscoverabilityState?.init?.({ seenTips: [] });
+            await window.DiscoverabilityState?.persistNow?.();
+        });
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => {
-            window.DiscoverabilityState?.init?.({ seenTips: [] });
-        });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await expect(page.locator('#app-notification.show')).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('#app-notification.show')).toContainText(/j.*k|0.*9|Ctrl.*Shift.*K|cheat sheet|spiekbriefje/i);
+        // The tip is queued behind whatever the view says on opening, so the
+        // first toast to appear is not always this one. Wait for the text
+        // rather than for the element, or the assertion reads a toast that was
+        // on its way out.
+        await expect(page.locator('#app-notification.show'))
+            .toContainText(/j.*k|0.*9|Ctrl.*Shift.*K|cheat sheet|spiekbriefje/i, { timeout: 10_000 });
 
         await page.evaluate(() => window.AppNotification?.hide?.());
         await expect(page.locator('#app-notification.show')).toHaveCount(0);
