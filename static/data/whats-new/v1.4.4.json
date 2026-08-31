@@ -52,6 +52,10 @@
         {
           "badge": "fix",
           "text": "<strong>A link to the health view or the inbox lands there.</strong> Opening nextDash on one raced the dashboard's own first paint, and sometimes the grid won."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Monitored tile stops printing a sentence across the row.</strong> “1 of 6 not responding” sat under the count so the down state needed no hover &mdash; and took 227px where the other tiles hold 89, pushing the whole row of seven sideways to make space. The tile shows its count now; it still turns red the moment a monitor is down, the hover and the screen reader still name how many, and the fleet panel below prints it in full."
         }
       ]
     },

@@ -4337,13 +4337,16 @@ class DashboardHealth {
                         ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
                         : this.t('dashboard.healthTileMonitoredUp', 'All {count} responding', { count: monitored }))
                     : '',
-                // Only when something is actually down: this is the one tile whose
-                // hover-only title hides a fact worth acting on, not just detail —
-                // the same sentence the fleet panel's headline already prints in
-                // plain text, so a mouse is not required to see it here too.
+                // Read out and hovered, not printed. It used to render under the
+                // count so the fact needed no mouse, but the sentence is four
+                // times the width of every other tile's label and pushed the
+                // whole row sideways to hold it. The count turning red already
+                // says something is down here, the title and the aria-label say
+                // how many, and the fleet panel below prints it in full.
                 sub: monitorsDown > 0
                     ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
                     : '',
+                subVisible: false,
             },
             // Each tile says what its number means. The labels are one word by
             // necessity — seven of them share a row — and "Stale" next to "Unused"
@@ -4458,7 +4461,8 @@ class DashboardHealth {
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
             const body = `<span class="health-view-tile-label">${this.escape(tile.label)}</span>`
                 + `<span class="health-view-tile-value">${this.escape(tile.value)}</span>`
-                + (tile.sub ? `<span class="health-view-tile-sub">${this.escape(tile.sub)}</span>` : '');
+                + (tile.sub && tile.subVisible !== false
+                    ? `<span class="health-view-tile-sub">${this.escape(tile.sub)}</span>` : '');
             // aria-label replaces title for assistive tech rather than supplementing
             // it, so the sub line's fact has to be folded in here too or a
             // screen-reader user would miss exactly what a sighted user now sees.

@@ -1293,15 +1293,19 @@ test.describe('health view — monitored tile', () => {
         await expect(tile).toHaveAttribute('title', /not responding/i);
     });
 
-    test('prints "not responding" as visible text, not just a hover title', async ({ page }) => {
-        // The down count used to be hover-only, which never reaches a touch user.
-        // It has to be readable on the tile face itself.
+    test('says "not responding" without printing it across the row', async ({ page }) => {
+        // The sentence was on the tile face for a while, so the down count did
+        // not need a hover. It cost too much for where it sat: four times the
+        // width of every other tile's label, on a row of seven, pushing the
+        // whole set sideways to hold it — 227px against the 89px it takes now.
+        // The count turning red carries "something is down here" on its own,
+        // and the fact itself is on the title and the aria-label. aria-label
+        // replaces title rather than supplementing it, so it has to be there.
         await withMonitorState(page, { down: true });
 
         const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile.locator('.health-view-tile-sub')).toHaveText(/not responding/i);
-        // Screen readers must get the same fact, since aria-label replaces title
-        // rather than supplementing it.
+        await expect(tile.locator('.health-view-tile-sub')).toHaveCount(0);
+        await expect(tile).toHaveAttribute('title', /not responding/i);
         await expect(tile).toHaveAttribute('aria-label', /not responding/i);
     });
 
