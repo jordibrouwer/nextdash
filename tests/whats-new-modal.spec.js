@@ -140,18 +140,24 @@ test.describe("what's new modal", () => {
         await loadDashboard(page);
         await openWhatsNew(page);
 
+        // The word itself, on the face of the entry. A filled or hollow dot
+        // stood here and carried the word only in a visually-hidden span, so
+        // the distinction reached a screen reader and nobody else. Now that it
+        // is printed, "readable without colour" is what the markup says rather
+        // than something the stylesheet has to be trusted for.
         const entry = page.locator('.whats-new-modal .wn-entry').first();
-        await expect(entry.locator('.wn-dot')).toHaveCount(1);
-        const spoken = await entry.locator('.wn-sr-only').textContent();
-        expect((spoken || '').trim()).toMatch(/new|fix/i);
+        const badge = entry.locator('.wn-badge');
+        await expect(badge).toHaveCount(1);
+        await expect(badge).toBeVisible();
+        expect((await badge.textContent() || '').trim()).toMatch(/^(new|fix)$/i);
 
-        // Visually hidden, not display:none — a screen reader still reaches it.
-        const hidden = await entry.locator('.wn-sr-only').evaluate((el) => {
+        // Told apart by fill, not by a colour pair: new is a solid block, fix
+        // is an outline. Either reads on a monochrome screen.
+        const shape = await badge.evaluate((el) => {
             const cs = getComputedStyle(el);
-            return { display: cs.display, w: Math.round(el.getBoundingClientRect().width) };
+            return { filled: cs.backgroundColor !== 'rgba(0, 0, 0, 0)', klass: el.className };
         });
-        expect(hidden.display).not.toBe('none');
-        expect(hidden.w).toBeLessThan(3);
+        expect(shape.filled).toBe(shape.klass.includes('wn-badge--new'));
     });
 
     /*
