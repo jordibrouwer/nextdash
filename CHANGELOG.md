@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.5 — 31 August 2026](#v145--31-august-2026)
 - [v1.4.4 — 31 August 2026](#v144--31-august-2026)
 - [v1.4.3 — 30 August 2026](#v143--30-august-2026)
 - [v1.4.2.4 — 29 August 2026](#v1424--29-august-2026)
@@ -186,6 +187,17 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.5 — 31 August 2026
+
+### Widgets
+
+- **new — a custom widget can be tried before it is saved.** The tile is the only place a custom widget's answer was ever visible, and all it can say about a path that matched nothing is `—`; four of them look identical whether the address is wrong, the key is wrong, or the JSON simply nests one level deeper than the boxes say. *Config → Widgets → Settings* now carries a **Try it** block under the figures: **Ask now** makes the request the panel describes — the address as typed, `GET` or `POST`, the credential it would name once saved — and shows the document that came back, indented and in the service's own key order, beside the figures the tile would draw from it. The facts of the request sit above both: method, host, status, how long it took, how much arrived, and whether a sign-in went with it, which is the difference between *the key is wrong* and *no key was sent*. A service that explains a 401 or a 404 in its body is shown that body, which the tile reads and throws away. `POST /api/widgets/custom/test`, `widgets_custom.go`, `dashboard-config.js`.
+- **new — *Keep watching* repeats the request while you look at it.** Every 5, 10, 30 or 60 seconds, with the figures that moved on the last beat marked for a moment — for a queue draining or a service coming back up. Chained rather than an interval, so a slow service is asked again after it answers instead of accumulating a queue of requests behind it; nothing is asked while the tab is in the background, exactly as the tile asks nothing there; and it stops itself after five minutes, saying so rather than going quiet. One panel at a time. Every beat is a request to a machine that never agreed to be polled, which is also why the interval is a list starting at five seconds rather than a number box.
+- **new — `GET` or `POST` is a setting again.** The server has accepted both since the widget shipped and the manual said so; the panel offered neither, so the only way to give a widget `POST` was to edit `bookmarks-N.json` by hand. It is a dropdown beside the address now. Nothing is sent with either method — `POST` is for the services that answer a statistics endpoint on that method and no other, not so a tile can change something.
+- **note — the test route takes a config rather than a widget id.** The tile's own route deliberately does not: the address is stored, so it cannot be talked into fetching something by asking. This one is behind the write token, and whoever holds that can store the same config on a widget and press refresh at it — so it reaches nothing that was not already reachable, and saves saving a widget that is still being written. The same sanitiser, the same address checks, the same outbound client, and no cache is written: a draft that was never saved must not become what the tile draws.
 
 ---
 

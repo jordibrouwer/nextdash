@@ -1024,6 +1024,11 @@ the only widget that talks to anything outside.
   own network reachable at all and what keeps a key out of a page any script
   could read. The address is stored rather than sent: the request names a
   widget, and the server visits only what that widget was configured to visit.
+- **How to ask** (**v1.4.5**) — `GET` or `POST`. The server has always accepted
+  both and the panel offered neither, so a widget could only be given `POST` by
+  editing the file it is stored in. Nothing is sent with either: `POST` is here
+  for the services that answer a statistics endpoint on that method and no
+  other, not so a tile can change something.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
@@ -1067,6 +1072,38 @@ the only widget that talks to anything outside.
   dashboard on a second monitor does not spend the day questioning your own
   machines — and on your return the tile shows what it had until its next beat,
   rather than every tile saying *Loading…* at once.
+
+**Trying it out** (**v1.4.5**)
+
+A tile that shows four dashes tells you something is wrong and nothing about
+what. So the settings panel has a *Try it* block under the figures: **Ask now**
+makes the request this widget describes — the address as typed, `GET` or
+`POST`, the sign-in it would use — and shows both halves of the answer at once.
+
+- **What came back**, in full and indented, in the order the service wrote it.
+  This is the thing a path is written against, and reading it beside the boxes
+  is the difference between writing `server.disk[0].used` and guessing at it. A
+  long answer is cut and says so.
+- **What the tile would show**, the same figures the dashboard would draw, so a
+  path that found nothing is marked here rather than after a save.
+- **The facts of the request** — the method, the host, the status, how long it
+  took, how much came back, and whether a sign-in went with it. That last one
+  separates *the key is wrong* from *no key was sent*, which a 401 alone cannot.
+  A service that explains itself in the body of a 401 or a 404 is shown that
+  body too, which the tile has nowhere to put.
+
+Nothing is saved by asking, and nothing is written to the tile's cache: this is
+the widget you are in the middle of writing, not the one that is stored. The
+sign-in is the one exception, and cannot be otherwise — secrets live in their
+own file and never come back to the page, so only one already saved can be
+sent. Save the widget first if you have just pasted a key.
+
+**Keep watching** ticks the same request over again, every 5, 10, 30 or 60
+seconds, and marks the figures that moved on the last beat — for watching a
+queue drain or a service come back up while you are looking at it. It stops
+itself after five minutes and says so, it asks nothing while the tab is in the
+background, and it stops when you close the panel: every beat is a request to a
+machine that did not ask to be polled.
 
 **Refresh now** — right-click the widget's title (**v1.4.2.2**). It skips the
 cache, including the half minute a failure is held for, and needs the write

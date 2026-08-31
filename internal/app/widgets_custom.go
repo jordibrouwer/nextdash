@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 /*
@@ -567,7 +569,32 @@ func describeNonJSONAnswer(resp *http.Response, raw []byte) string {
 }
 
 /*
-fetchCustomWidget asks one service and turns its answer into figures.
+customWidgetAnswer is what one service said, before anything is made of it.
+
+Split out of fetchCustomWidget because two callers now want the same request
+made in exactly the same way and disagree only about what to keep afterwards:
+the tile wants the figures, and the test panel wants the document itself --
+since a path can only be written by somebody who can see what they are writing
+it into.
+*/
+type customWidgetAnswer struct {
+	Status      int
+	ContentType string
+	// Body is what arrived, capped like every read here.
+	Body []byte
+	// Document is Body decoded. Nil whenever Error says why it is not.
+	Document any
+	Took     time.Duration
+	// Error is the sentence the tile would show, or empty.
+	Error string
+	// SignedIn says whether a stored credential went out with the request.
+	// Never which one and never its value: the point is only to tell "401
+	// because nothing was sent" from "401 because what was sent was wrong".
+	SignedIn bool
+}
+
+/*
+askCustomWidget makes the one request a widget describes.
 
 Through outboundHTTPClient, which checks the address at dial time, validates
 redirects and rate-limits globally -- the same client every other outbound
@@ -575,15 +602,19 @@ request uses. A widget pointed at a LAN service therefore works exactly when
 "Allow local bookmarks" is on, and not otherwise: one setting governs where this
 install may reach, rather than this feature inventing a second answer.
 */
-func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec) CustomWidgetResult {
-	now := time.Now()
-	result := CustomWidgetResult{FetchedAt: now.UnixMilli()}
+func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) customWidgetAnswer {
+	started := time.Now()
+	answer := customWidgetAnswer{}
+	since := func() customWidgetAnswer {
+		answer.Took = time.Since(started)
+		return answer
+	}
 
 	if err := validateHTTPURL(spec.URL, h.allowLocalBookmarks()); err != nil {
 		// Named plainly: this is the one failure a reader can act on, and
 		// "address is not allowed" sends them to the setting that allows it.
-		result.Error = "that address is not allowed"
-		return result
+		answer.Error = "that address is not allowed"
+		return since()
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, customWidgetTimeout)
@@ -595,8 +626,8 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	}
 	req, err := http.NewRequestWithContext(ctx, spec.Method, spec.URL, body)
 	if err != nil {
-		result.Error = "that address cannot be requested"
-		return result
+		answer.Error = "that address cannot be requested"
+		return since()
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "nextDash Widget/1.0")
@@ -608,6 +639,7 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 		if found, ok := lookupHealthCredential(spec.CredentialID); ok {
 			credential = found
 			applyHealthCredential(req, credential)
+			answer.SignedIn = true
 		}
 	}
 
@@ -617,27 +649,53 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
 	resp, err := client.Do(req)
 	if err != nil {
-		result.Error = "no answer from that address"
+		answer.Error = "no answer from that address"
 		logWarn(logComponentWidgets, "%s could not be reached; the tile will show what it has: %v", hostOf(spec.URL), err)
-		return result
+		return since()
 	}
 	defer drainAndCloseResponse(resp)
 
+	answer.Status = resp.StatusCode
+	answer.ContentType = strings.TrimSpace(resp.Header.Get("Content-Type"))
 	logDebug(logComponentWidgets, "%s answered %d", hostOf(spec.URL), resp.StatusCode)
-	if resp.StatusCode >= 400 {
-		result.Error = fmt.Sprintf("the service answered %d", resp.StatusCode)
-		logWarn(logComponentWidgets, "%s answered %d; the tile will show what it has", hostOf(spec.URL), resp.StatusCode)
-		return result
-	}
 
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, customWidgetMaxBody))
-	if err != nil {
-		result.Error = "the answer could not be read"
-		return result
+	// Read before the status is judged, unlike before. A service explaining a
+	// 401 or a 404 in its body is explaining exactly what the reader pressing
+	// Test needs to read, and the tile throws it away only because a tile has
+	// nowhere to put it.
+	raw, readErr := io.ReadAll(io.LimitReader(resp.Body, customWidgetMaxBody))
+	answer.Body = raw
+
+	if resp.StatusCode >= 400 {
+		answer.Error = fmt.Sprintf("the service answered %d", resp.StatusCode)
+		logWarn(logComponentWidgets, "%s answered %d; the tile will show what it has", hostOf(spec.URL), resp.StatusCode)
+		return since()
+	}
+	if readErr != nil {
+		answer.Error = "the answer could not be read"
+		return since()
 	}
 	var document any
 	if err := json.Unmarshal(raw, &document); err != nil {
-		result.Error = describeNonJSONAnswer(resp, raw)
+		answer.Error = describeNonJSONAnswer(resp, raw)
+		return since()
+	}
+	answer.Document = document
+	return since()
+}
+
+/*
+customWidgetFigures reads the figures a widget asked for out of one answer.
+
+Separate from the asking so that the test panel can show both halves of a
+disappointing tile at once: what the service actually said, and what these paths
+made of it. A path that found nothing is far easier to fix beside the document
+it missed.
+*/
+func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetchedAt time.Time) CustomWidgetResult {
+	result := CustomWidgetResult{FetchedAt: fetchedAt.UnixMilli()}
+	if answer.Error != "" {
+		result.Error = answer.Error
 		return result
 	}
 
@@ -646,7 +704,7 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 		if value.Label == "" {
 			value.Label = field.Path
 		}
-		found, ok := customWidgetLookup(document, field.Path)
+		found, ok := customWidgetLookup(answer.Document, field.Path)
 		if !ok {
 			// Said rather than hidden: a path that stopped matching after an
 			// upstream change is the thing worth knowing, and a blank row looks
@@ -671,7 +729,7 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 	}
 
 	if spec.ItemsPath != "" {
-		if found, ok := customWidgetLookup(document, spec.ItemsPath); ok {
+		if found, ok := customWidgetLookup(answer.Document, spec.ItemsPath); ok {
 			if list, isList := found.([]any); isList {
 				for _, item := range list {
 					if len(result.Items) >= customWidgetMaxItems {
@@ -683,6 +741,12 @@ func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec)
 		}
 	}
 	return result
+}
+
+// fetchCustomWidget asks one service and turns its answer into figures.
+func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec) CustomWidgetResult {
+	now := time.Now()
+	return customWidgetFigures(h.askCustomWidget(ctx, spec), spec, now)
 }
 
 /*
@@ -769,4 +833,148 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	customWidgetStore(cacheKey, result, ttl, now)
 	_ = json.NewEncoder(w).Encode(result)
+}
+
+// customWidgetShownBody caps what a test hands back to the panel. A tile reads
+// a figure or two out of a document; a reader writing the paths needs to see
+// the document, and sixteen kilobytes is a great deal of JSON to read while
+// being far short of what a megabyte would do to the page drawing it.
+const customWidgetShownBody = 16 << 10
+
+/*
+CustomWidgetTest is one trial run, as the config panel shows it.
+
+Both halves at once, deliberately: what the service actually said, and what the
+widget's paths made of it. Either alone is the failure this is for -- figures
+that all read "—" say nothing about why, and a document with no figures beside
+it leaves the reader checking their paths by eye.
+*/
+type CustomWidgetTest struct {
+	Method string `json:"method"`
+	// Host rather than the address. The panel already holds the address the
+	// reader typed; echoing it back adds nothing, and a URL with a key in its
+	// query string is not a thing to copy into more places than it is in.
+	Host        string `json:"host,omitempty"`
+	Status      int    `json:"status,omitempty"`
+	ContentType string `json:"contentType,omitempty"`
+	TookMS      int64  `json:"tookMs"`
+	// Bytes is what arrived, which is not always what Body shows.
+	Bytes int `json:"bytes"`
+	// Body is the document, indented when it is JSON so a reader can follow it
+	// -- most services answer on one line, and one line is not readable.
+	Body      string `json:"body,omitempty"`
+	Truncated bool   `json:"truncated,omitempty"`
+	JSON      bool   `json:"json"`
+	// SignedIn says a stored credential went out with the request, so a 401
+	// can be read as "the key is wrong" rather than "was a key sent at all".
+	SignedIn  bool               `json:"signedIn,omitempty"`
+	Result    CustomWidgetResult `json:"result"`
+	FetchedAt int64              `json:"fetchedAt"`
+	Error     string             `json:"error,omitempty"`
+}
+
+/*
+customWidgetTestBody is what the panel shows of an answer.
+
+Indented when it parsed, because a service answering on a single 4 kB line is
+answering in something no one can read a path out of. Cut rather than refused
+when it is long: the beginning of a document is enough to find the names in,
+and the panel says it was cut.
+*/
+func customWidgetTestBody(answer customWidgetAnswer) (string, bool) {
+	raw := answer.Body
+	/*
+	 * Indented from the text rather than re-encoded from the document, and
+	 * tried whatever the status was.
+	 *
+	 * Re-encoding would sort the keys, and a reader is looking for a name in
+	 * the order the service wrote it. And a 401 explaining itself in JSON is
+	 * the answer most worth reading here, even though nothing parsed it: the
+	 * document is only decoded on a status the tile would have used.
+	 */
+	var pretty bytes.Buffer
+	if err := json.Indent(&pretty, raw, "", "  "); err == nil {
+		raw = pretty.Bytes()
+	}
+	if len(raw) > customWidgetShownBody {
+		cut := raw[:customWidgetShownBody]
+		// Not through the middle of a character: a cut that lands inside a
+		// multi-byte rune ends the panel's document with a replacement mark,
+		// which reads as something the service sent.
+		for len(cut) > 0 {
+			last, size := utf8.DecodeLastRune(cut)
+			if last != utf8.RuneError || size > 1 {
+				break
+			}
+			cut = cut[:len(cut)-1]
+		}
+		return string(cut), true
+	}
+	return string(raw), false
+}
+
+/*
+CustomWidgetTestHandler answers POST /api/widgets/custom/test.
+
+Takes a config rather than a widget id, which is the one place this differs
+from the tile's own route -- and it can, because it is behind the write token.
+Whoever holds that can store this exact config on a widget and press refresh on
+it, so accepting it here reaches nothing that was not already reachable; it
+only saves them saving a widget they are still in the middle of writing, which
+is precisely when a test is worth having.
+
+Everything else is unchanged: the same sanitiser that runs at save time, the
+same spec, the same client with the same address checks, and nothing written to
+the cache -- a draft that was never saved must not become what the tile draws.
+*/
+func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
+
+	var config map[string]any
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&config); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now()
+	spec, err := customWidgetSpecFrom(sanitizeWidgetConfig(WidgetTypeCustom, config))
+	if err != nil {
+		// A half-written widget is not an error to shout about: it is the
+		// state every widget passes through, and the panel says what is
+		// missing rather than the request failing.
+		_ = json.NewEncoder(w).Encode(CustomWidgetTest{
+			FetchedAt: now.UnixMilli(),
+			Error:     err.Error(),
+		})
+		return
+	}
+
+	answer := h.askCustomWidget(r.Context(), spec)
+	body, truncated := customWidgetTestBody(answer)
+	_ = json.NewEncoder(w).Encode(CustomWidgetTest{
+		Method:      spec.Method,
+		Host:        hostOf(spec.URL),
+		Status:      answer.Status,
+		ContentType: answer.ContentType,
+		TookMS:      answer.Took.Milliseconds(),
+		Bytes:       len(answer.Body),
+		Body:        body,
+		Truncated:   truncated,
+		JSON:        answer.Document != nil,
+		SignedIn:    answer.SignedIn,
+		Result:      customWidgetFigures(answer, spec, now),
+		FetchedAt:   now.UnixMilli(),
+		Error:       answer.Error,
+	})
 }

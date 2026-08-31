@@ -15277,6 +15277,25 @@ class DashboardConfig {
             { key: 'url', kind: 'text', maxlength: 2000,
               label: ['config.widgetCustomUrl', 'Address to read'],
               placeholder: ['config.widgetCustomUrlPlaceholder', 'https://service.example/api/stats'] },
+            /*
+             * GET or POST, which the server has always accepted and the panel
+             * has never offered: a widget could only be given POST by editing
+             * the file it is stored in. The manual said both were available,
+             * and for anyone using the screen only one was.
+             *
+             * Nothing is sent with a POST. It is here for the services that
+             * answer a statistics endpoint on that method and nothing else,
+             * not so a tile can change something -- which is why these two are
+             * the whole list.
+             */
+            { key: 'method', kind: 'choice',
+              label: ['config.widgetCustomMethod', 'How to ask'],
+              options: [
+                  ['GET', ['config.widgetCustomMethodGet', 'GET']],
+                  ['POST', ['config.widgetCustomMethodPost', 'POST']],
+              ],
+              hint: ['config.widgetCustomMethodHint',
+                     'Most services answer a GET. POST is for the few that only answer one; nothing is sent with it either way.'] },
             { key: 'ttl', kind: 'int', min: 30, max: 86400,
               // Renamed: it was called "Ask again after", which described the
               // cache. Since the tile refreshes itself on this interval it is
@@ -15704,6 +15723,337 @@ class DashboardConfig {
             </div>`;
     }
 
+    /* ── Trying the address out ────────────────────────────────────────────── */
+
+    /*
+     * The intervals watching offers, in seconds.
+     *
+     * A list rather than a box, and five at the floor: every beat is a request
+     * to somebody else's machine, and a field that accepted 0.2 would be a load
+     * generator with a checkbox on it. Sixty is at the other end because a queue
+     * or a backup moves on that scale and watching it faster tells you nothing.
+     */
+    static CUSTOM_PROBE_INTERVALS = [5, 10, 30, 60];
+    static CUSTOM_PROBE_DEFAULT = 10;
+
+    /*
+     * How long watching runs before it stops itself.
+     *
+     * A ticked box is a request every few seconds for as long as this screen
+     * stays open, aimed at a service that never agreed to it -- and the screen
+     * is easy to walk away from. Five minutes covers "watch this while I
+     * restart it", and when it ends the panel says so rather than going quiet.
+     */
+    static CUSTOM_PROBE_MAX_MS = 5 * 60 * 1000;
+
+    /*
+     * What one widget's trial runs have turned up so far.
+     *
+     * Keyed on the widget id, like the drafts and for the same reason: the
+     * panel is redrawn by several paths and the index shifts when a block above
+     * is removed. Held here rather than in the DOM so a repaint mid-watch
+     * redraws the last answer instead of blanking it.
+     */
+    customProbeState(widgetId, { create = false } = {}) {
+        if (!widgetId) return null;
+        this._widgetProbes = this._widgetProbes || {};
+        if (!this._widgetProbes[widgetId] && create) {
+            this._widgetProbes[widgetId] = { every: DashboardConfig.CUSTOM_PROBE_DEFAULT };
+        }
+        return this._widgetProbes[widgetId] || null;
+    }
+
+    /**
+     * The panel that asks the address and shows what came back.
+     *
+     * Below the figures rather than beside the address, because it is about
+     * both: the answer is what a path is written against, and the two lists
+     * only mean anything read together — figures all showing "—" say nothing
+     * about why, and a document with no figures beside it leaves the reader
+     * checking their own paths by eye.
+     */
+    renderCustomWidgetProbe(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = this.customProbeState(widget?.id);
+        const every = Number(state?.every) || DashboardConfig.CUSTOM_PROBE_DEFAULT;
+        const intervals = DashboardConfig.CUSTOM_PROBE_INTERVALS.map((seconds) =>
+            `<option value="${seconds}" ${seconds === every ? 'selected' : ''}>${esc(
+                this.t('config.widgetCustomTestEverySeconds', '{n} s').replace('{n}', seconds))}</option>`).join('');
+        return `
+            <div class="config-custom-group">
+                <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomTestTitle',
+                    'Try it'))}</h4>
+                <p class="config-widget-note">${esc(this.t('config.widgetCustomTestNote',
+                    'Asks the address now, with whatever is in this panel, and shows what came back — so the paths above are written against the answer rather than guessed at. Nothing is saved by asking.'))}</p>
+                <div class="config-custom-probe-bar">
+                    <button type="button" class="config-btn config-btn--small" data-custom-test="${index}"
+                        ${state?.busy ? 'disabled' : ''}>${esc(state?.busy
+                            ? this.t('config.widgetCustomTestAsking', 'Asking…')
+                            : this.t('config.widgetCustomTestRun', 'Ask now'))}</button>
+                    <label class="config-toggle config-toggle--inline">
+                        <input type="checkbox" data-custom-live="${index}" ${state?.live ? 'checked' : ''}>
+                        <span>${esc(this.t('config.widgetCustomTestLive', 'Keep watching'))}</span>
+                    </label>
+                    <label class="config-custom-probe-every">
+                        <span>${esc(this.t('config.widgetCustomTestEvery', 'Every'))}</span>
+                        <select class="config-select" data-custom-live-every="${index}"
+                            aria-label="${esc(this.t('config.widgetCustomTestEvery', 'Every'))}">${intervals}</select>
+                    </label>
+                </div>
+                <div class="config-custom-probe" data-custom-probe="${esc(widget?.id || '')}">${
+                    this.renderCustomProbeBody(widget, index)}</div>
+            </div>`;
+    }
+
+    /** Everything below the buttons: the facts, the figures, the document. */
+    renderCustomProbeBody(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const state = this.customProbeState(widget?.id);
+        const note = state?.note
+            ? `<p class="config-probe-note">${esc(state.note)}</p>` : '';
+
+        if (state?.failed) {
+            return `${note}<p class="config-probe-error">${esc(state.failed)}</p>`;
+        }
+        const data = state?.data;
+        if (!data) {
+            return `${note}<p class="config-widget-settings-empty">${esc(state?.busy
+                ? this.t('config.widgetCustomTestAsking', 'Asking…')
+                : this.t('config.widgetCustomTestIdle', 'Nothing asked yet.'))}</p>`;
+        }
+
+        /*
+         * The facts, as chips, because they are read at a glance and each one
+         * answers a different question: was it asked at all, did the service
+         * answer, how long did it take, and did a sign-in go with it. That last
+         * is the difference between "the key is wrong" and "no key was sent",
+         * which a 401 alone cannot tell anyone.
+         */
+        const chips = [];
+        if (data.method) chips.push(data.method);
+        if (data.host) chips.push(data.host);
+        if (data.status) chips.push(String(data.status));
+        if (data.tookMs != null) chips.push(`${Math.max(0, Math.round(data.tookMs))} ms`);
+        if (data.bytes) chips.push(this.formatBytes(data.bytes));
+        if (data.signedIn) chips.push(this.t('config.widgetCustomTestSignedIn', 'signed in'));
+        if (state.at) chips.push(new Date(state.at).toLocaleTimeString());
+        const facts = `<div class="config-probe-facts">${chips
+            .map((chip) => `<span class="config-probe-chip">${esc(chip)}</span>`).join('')}</div>`;
+
+        const error = data.error
+            ? `<p class="config-probe-error">${esc(data.error)}</p>` : '';
+
+        const values = Array.isArray(data.result?.values) ? data.result.values : [];
+        const changed = state.changed || {};
+        const figures = values.length ? `
+            <div class="config-probe-block">
+                <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestFigures',
+                    'What the tile would show'))}</h5>
+                <ul class="config-probe-values">${values.map((value, row) => `
+                    <li class="config-probe-value${value.missing ? ' is-missing' : ''}${
+                        changed[row] ? ' is-changed' : ''}">
+                        <span class="config-probe-value-label">${esc(value.label || '')}</span>
+                        <span class="config-probe-value-figure">${esc(value.value || '')}</span>
+                        ${value.missing ? `<span class="config-probe-value-note">${esc(
+                            this.t('config.widgetCustomTestMissing', 'that path found nothing'))}</span>` : ''}
+                    </li>`).join('')}</ul>
+            </div>` : '';
+
+        const items = Array.isArray(data.result?.items) ? data.result.items : [];
+        const list = items.length ? `
+            <div class="config-probe-block">
+                <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestItems',
+                    'The list'))}</h5>
+                <ul class="config-probe-items">${items
+                    .map((item) => `<li>${esc(item)}</li>`).join('')}</ul>
+            </div>` : '';
+
+        // The document itself, last and in full: it is the thing a path is
+        // written against, and it is also the only part worth scrolling.
+        const body = data.body
+            ? `
+            <div class="config-probe-block">
+                <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestAnswer',
+                    'What came back'))}</h5>
+                <pre class="config-probe-body" tabindex="0">${esc(data.body)}</pre>
+                ${data.truncated ? `<p class="config-probe-note">${esc(this.t(
+                    'config.widgetCustomTestTruncated',
+                    'Long answer — the first part is shown.'))}</p>` : ''}
+            </div>` : '';
+
+        return `${note}${facts}${error}${figures}${list}${body}`;
+    }
+
+    /*
+     * What the test should be asked with.
+     *
+     * The panel's own draft, so an address typed a moment ago is the one that
+     * is tried -- testing what is stored would be testing the thing the reader
+     * is in the middle of changing.
+     *
+     * The sign-in is the exception, and cannot be otherwise: secrets live in
+     * their own file and never come back to the page, so only one already filed
+     * can go out. The test names the entry this widget would name once saved,
+     * and the answer says whether anything actually went with the request.
+     */
+    customTestPayload(index) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index, { create: false });
+        const config = { ...(draft?.config || block?.config || {}) };
+        const auth = draft?.auth || this.storedCredentialState(block);
+        if (auth?.kind === 'shared') config.credentialId = auth.shared || '';
+        else if (auth?.kind === 'header' || auth?.kind === 'basic') {
+            config.credentialId = this.widgetCredentialId(block);
+        } else config.credentialId = '';
+        if (!config.credentialId) delete config.credentialId;
+        // enabled is about the dashboard, not about the request.
+        delete config.enabled;
+        return config;
+    }
+
+    /*
+     * Which figures moved since the last answer.
+     *
+     * The point of watching something is seeing it change, and four numbers
+     * refreshing in place look identical whether or not any of them did.
+     * Compared by position rather than by label, because two figures may share
+     * a label and the row is what is on screen.
+     */
+    customProbeChanges(before, after) {
+        const previous = Array.isArray(before?.result?.values) ? before.result.values : null;
+        const next = Array.isArray(after?.result?.values) ? after.result.values : [];
+        if (!previous) return {};
+        const changed = {};
+        next.forEach((value, row) => {
+            const was = previous[row];
+            if (was && was.value !== value.value) changed[row] = true;
+        });
+        return changed;
+    }
+
+    /** Redraw one probe panel in place, leaving the rest of the tab alone. */
+    paintCustomProbe(widgetId, index) {
+        const host = document.querySelector(`[data-custom-probe="${CSS.escape(String(widgetId))}"]`);
+        if (!host) return false;
+        const block = (this._widgetBlocks || [])[index];
+        host.innerHTML = this.renderCustomProbeBody(block || { id: widgetId }, index);
+        const state = this.customProbeState(widgetId);
+        const button = document.querySelector(`[data-custom-test="${index}"]`);
+        if (button) {
+            button.disabled = Boolean(state?.busy);
+            button.textContent = state?.busy
+                ? this.t('config.widgetCustomTestAsking', 'Asking…')
+                : this.t('config.widgetCustomTestRun', 'Ask now');
+        }
+        return true;
+    }
+
+    /** Ask once, with what is on screen, and show what came back. */
+    async runCustomWidgetTest(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return;
+        const state = this.customProbeState(block.id, { create: true });
+        if (state.busy) return;
+        state.busy = true;
+        state.failed = '';
+        state.note = '';
+        this.paintCustomProbe(block.id, index);
+        try {
+            const res = await this.writeFetch('/api/widgets/custom/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.customTestPayload(index)),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            state.changed = this.customProbeChanges(state.data, data);
+            state.data = data;
+            state.at = Date.now();
+        } catch (_error) {
+            /*
+             * This one is nextDash refusing, not the service: the route is
+             * behind the write token, and a panel saying "no answer from that
+             * address" over a token problem would send the reader to check a
+             * machine that is perfectly fine.
+             */
+            state.failed = this.t('config.widgetCustomTestFailed',
+                'nextDash itself could not be asked. If this install uses a write token, check it is set.');
+            state.data = null;
+            this.stopCustomProbeLive();
+            this.syncCustomProbeControls(index);
+        } finally {
+            state.busy = false;
+            this.paintCustomProbe(block.id, index);
+        }
+    }
+
+    /** Start or stop watching one widget's address. */
+    toggleCustomProbeLive(index, on) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return;
+        const state = this.customProbeState(block.id, { create: true });
+        // One at a time: two panels watching at once is two services being
+        // asked on behalf of a reader who is looking at one of them.
+        this.stopCustomProbeLive();
+        if (!on) {
+            this.paintCustomProbe(block.id, index);
+            return;
+        }
+        state.live = true;
+        state.note = '';
+        state.liveUntil = Date.now() + DashboardConfig.CUSTOM_PROBE_MAX_MS;
+        void this.customProbeTick(block.id);
+    }
+
+    /*
+     * One beat of watching, and the next one booked after it lands.
+     *
+     * Chained rather than an interval, so a slow service is asked again a
+     * moment after it answers instead of having a queue of requests stack up
+     * behind it -- which is how a tile pointed at something struggling turns
+     * into the reason it is struggling.
+     */
+    async customProbeTick(widgetId) {
+        const state = this.customProbeState(widgetId);
+        if (!state?.live) return;
+        const index = (this._widgetBlocks || []).findIndex((block) => block?.id === widgetId);
+        // The panel is gone: the section was closed, the page changed, the
+        // widget was deleted. Whatever it was, nobody is looking.
+        if (index < 0 || !document.querySelector(`[data-custom-probe="${CSS.escape(String(widgetId))}"]`)) {
+            this.stopCustomProbeLive();
+            return;
+        }
+        if (Date.now() > Number(state.liveUntil || 0)) {
+            this.stopCustomProbeLive();
+            state.note = this.t('config.widgetCustomTestLiveStopped',
+                'Watching stopped after five minutes. Tick it again to carry on.');
+            this.paintCustomProbe(widgetId, index);
+            this.syncCustomProbeControls(index);
+            return;
+        }
+        // A tab in the background asks nothing, exactly as the tile does not:
+        // a config screen on a second monitor is not a reason to question
+        // somebody's machine every five seconds.
+        if (!document.hidden) await this.runCustomWidgetTest(index);
+        if (!this.customProbeState(widgetId)?.live) return;
+        const every = Math.max(DashboardConfig.CUSTOM_PROBE_INTERVALS[0],
+            Number(state.every) || DashboardConfig.CUSTOM_PROBE_DEFAULT) * 1000;
+        this._probeTimer = window.setTimeout(() => { void this.customProbeTick(widgetId); }, every);
+    }
+
+    /** Stop watching, whichever widget was being watched. */
+    stopCustomProbeLive() {
+        if (this._probeTimer) window.clearTimeout(this._probeTimer);
+        this._probeTimer = null;
+        Object.values(this._widgetProbes || {}).forEach((state) => { state.live = false; });
+    }
+
+    /** Put the box back up when watching stopped on its own. */
+    syncCustomProbeControls(index) {
+        const box = document.querySelector(`[data-custom-live="${index}"]`);
+        if (box) box.checked = false;
+    }
+
     /** Fetch the credential names once, so a picker can offer them. */
     async loadCredentialNames() {
         if (this.dash.healthCredentials) return this.dash.healthCredentials;
@@ -15823,6 +16173,25 @@ class DashboardConfig {
                         ${hint ? `<p class="config-widget-field-hint" data-widget-field-hint="${esc(field.key)}">${esc(hint)}</p>` : ''}
                     </div>`;
             }
+            if (field.kind === 'choice') {
+                /*
+                 * A named choice from a short list, written into the draft as
+                 * text -- which is what it is, and means updateWidgetDraft
+                 * needs nothing new to read it.
+                 */
+                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+                const current = String(config[field.key] || field.options[0][0]);
+                const choices = field.options.map(([value, text]) =>
+                    `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
+                        esc(this.t(text[0], text[1]))}</option>`).join('');
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="text">${choices}</select>
+                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                    </div>`;
+            }
             if (field.kind === 'text') {
                 const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
                 return `
@@ -15880,6 +16249,7 @@ class DashboardConfig {
                     ${this.renderWidgetCredential(widget, index)}
                 </div>
                 ${this.renderCustomWidgetFields(widget, index)}
+                ${this.renderCustomWidgetProbe(widget, index)}
                 <div class="config-custom-group">
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
                         'On the dashboard'))}</h4>
@@ -16105,6 +16475,9 @@ class DashboardConfig {
             const toggle = target.closest('[data-widget-settings]');
             if (toggle) {
                 const index = indexOn(toggle, 'data-widget-settings');
+                // Whatever was being watched, its panel is about to close or
+                // another is about to open over it.
+                this.stopCustomProbeLive();
                 this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
                 this._widgetJustSaved = null;
                 this.repaintWidgetsBody();
@@ -16119,6 +16492,9 @@ class DashboardConfig {
 
             const addField = target.closest('[data-custom-add]');
             if (addField) { this.addWidgetDraftField(indexOn(addField, 'data-custom-add')); return; }
+
+            const test = target.closest('[data-custom-test]');
+            if (test) { void this.runCustomWidgetTest(indexOn(test, 'data-custom-test')); return; }
 
             const dropField = target.closest('[data-custom-remove]');
             if (dropField) {
@@ -16145,6 +16521,7 @@ class DashboardConfig {
                  */
                 const previousPageId = this._widgetPageId;
                 const goToPage = () => {
+                    this.stopCustomProbeLive();
                     this._widgetPageId = Number(page.value);
                     this._widgetBlocks = null;
                     this._widgetLoadedFor = null;
@@ -16208,6 +16585,25 @@ class DashboardConfig {
                 const index = indexOn(auth, 'data-widget-index');
                 if (field === 'kind' || field === 'shared') this.setWidgetAuthKind(index, field, auth.value);
                 else this.updateWidgetAuthField(index, field, auth.value);
+                return;
+            }
+
+            const live = target.closest('[data-custom-live]');
+            if (live) {
+                this.toggleCustomProbeLive(indexOn(live, 'data-custom-live'), live.checked);
+                return;
+            }
+
+            const every = target.closest('[data-custom-live-every]');
+            if (every) {
+                const at = indexOn(every, 'data-custom-live-every');
+                const block = (this._widgetBlocks || [])[at];
+                const state = this.customProbeState(block?.id, { create: true });
+                if (state) state.every = Number(every.value) || DashboardConfig.CUSTOM_PROBE_DEFAULT;
+                // Restarted rather than left to finish its wait: a reader who
+                // just chose five seconds is not waiting out the minute they
+                // chose before it.
+                if (state?.live) this.toggleCustomProbeLive(at, true);
                 return;
             }
 
