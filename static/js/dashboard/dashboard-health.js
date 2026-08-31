@@ -2140,10 +2140,38 @@ class DashboardHealth {
             this.positionMenuAtPoint(menu, at);
             return;
         }
-        // Flip above the row when there is no room below.
+        // Flip above the row when there is no room below, and when neither side
+        // has room, clamp to the viewport instead of picking the lesser overflow.
+        //
+        // `--up` anchors with `bottom: 100%`, so nothing stops a menu taller
+        // than the space above it from running off the top edge — ten items on
+        // a row near the middle of a short window fits neither way, and the
+        // first entry was cut off. The right-click path never had this:
+        // positionMenuAtPoint clamps to the margin whichever way it goes.
         requestAnimationFrame(() => {
+            const margin = 8;
             const rect = menu.getBoundingClientRect();
-            menu.classList.toggle('health-view-menu--up', rect.bottom > window.innerHeight - 8);
+            const anchor = (menu.closest('.health-view-menu-wrap') || btn).getBoundingClientRect();
+            const roomBelow = window.innerHeight - anchor.bottom - margin;
+            const roomAbove = anchor.top - margin;
+
+            if (rect.height <= roomBelow) {
+                menu.classList.remove('health-view-menu--up');
+                menu.style.top = '';
+                menu.style.bottom = '';
+                return;
+            }
+            if (rect.height <= roomAbove) {
+                menu.classList.add('health-view-menu--up');
+                menu.style.top = '';
+                menu.style.bottom = '';
+                return;
+            }
+            // Neither side fits: sit against the top margin, in the menu's own
+            // coordinate space, so the whole list stays on screen.
+            menu.classList.remove('health-view-menu--up');
+            menu.style.bottom = 'auto';
+            menu.style.top = `${margin - anchor.top}px`;
         });
     }
 
