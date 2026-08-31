@@ -118,17 +118,26 @@
      * Reasons paired with the score each one costs. The penalty comes from the server
      * (one source with the arithmetic); rows from an older payload simply carry no
      * penalty and render as a plain reason.
+     *
+     * The code rides along so a caller can tell *which* reason it is looking at
+     * without matching on the rendered sentence — the focus card strikes through
+     * "never opened" the moment you open the link, and a label comparison would
+     * work in English and quietly stop working in every other language. Legacy
+     * free-text payloads carry no code, and callers treat that as "unknown"
+     * rather than as a reason worth acting on.
      */
     function getIssueReasonEntries(language, issue) {
         if (Array.isArray(issue?.reasonDetails) && issue.reasonDetails.length) {
             return issue.reasonDetails.map((item) => ({
                 label: translateReasonDetail(language, item),
                 penalty: Number(item?.penalty) || 0,
+                code: String(item?.code || ''),
             }));
         }
         return (issue?.reasons || []).map((reason) => ({
             label: translateReason(language, reason),
             penalty: 0,
+            code: '',
         }));
     }
 
