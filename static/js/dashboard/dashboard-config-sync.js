@@ -171,10 +171,27 @@ class DashboardConfigSync {
             return;
         }
 
+        // A marker this tab wrote itself is not news to it.
+        //
+        // publishConfigSync stores the payload twice: in localStorage, whose
+        // event fires only in *other* tabs, and in sessionStorage, so a tab
+        // hidden during the write still picks the change up on return. The
+        // storage handler drops its own tab's payload by sourceTabId; this one
+        // did not, and a tab is never hidden during its own write — so after
+        // any save it read its own marker back and ran the whole refresh
+        // (loadData, loadPageBookmarks, renderDashboard, the health report) on
+        // every visibilitychange, for a change it had already applied.
+        const ownTab = (entry) => Boolean(entry?.sourceTabId) && entry.sourceTabId === d.tabId;
         const structurePending = this.readPendingConfigSync(d.pendingStructureSyncKey);
         const settingsPending = this.readPendingConfigSync(d.pendingSettingsSyncKey);
-        const structureTs = structurePending?.timestamp || 0;
-        const settingsTs = settingsPending?.timestamp || 0;
+        if (ownTab(structurePending)) {
+            try { sessionStorage.removeItem(d.pendingStructureSyncKey); } catch { /* ignore */ }
+        }
+        if (ownTab(settingsPending)) {
+            try { sessionStorage.removeItem(d.pendingSettingsSyncKey); } catch { /* ignore */ }
+        }
+        const structureTs = ownTab(structurePending) ? 0 : (structurePending?.timestamp || 0);
+        const settingsTs = ownTab(settingsPending) ? 0 : (settingsPending?.timestamp || 0);
 
         if (structureTs <= d.lastAppliedStructureSyncAt && settingsTs <= d.lastAppliedSettingsSyncAt) {
             return;

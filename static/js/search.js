@@ -1,6 +1,25 @@
 // Search Component JavaScript
 class SearchComponent {
     /**
+     * The three reasons a fuzzy result can be on screen, strongest first.
+     * `key` matches the label fuzzy-search.js puts on every result.
+     */
+    static FUZZY_GROUPS = [
+        { id: 'search_strong', key: 'strong', labelKey: 'searchGroupStrong',
+          fallback: 'Best matches', defaultExpanded: true },
+        { id: 'search_contains', key: 'contains', labelKey: 'searchGroupContains',
+          fallback: 'Contains “{query}”', defaultExpanded: false },
+        { id: 'search_elsewhere', key: 'elsewhere', labelKey: 'searchGroupElsewhere',
+          fallback: 'In tags, note or url', defaultExpanded: false },
+    ];
+
+    /** Rows an open group shows before it defers to a "N more" row. */
+    static FUZZY_GROUP_CAP = 12;
+
+    /** How many query-to-pick memories are kept before the weakest are dropped. */
+    static MAX_SEARCH_PICKS = 200;
+
+    /**
      * Match a timestamp against an age word used by `opened:` and `added:`.
      *
      * `never` is only meaningful for opened — a bookmark always has a created
@@ -69,6 +88,8 @@ class SearchComponent {
         this.matchElements = []; // Store references to DOM elements for selection highlighting
         this.selectableMatches = []; // Parallel array of match data for keyboard-selectable items
         this.emptyStateExpandedGroups = new Set(); // Tracks expanded groups in empty search state
+        this.searchGroupsShowAll = new Set();      // Fuzzy groups the user opened past their cap
+        this.searchPicks = this.loadSearchPicks(); // Which result these keystrokes meant before
         this.resetLegacySearchPresetsOnce();
         this.searchHistory = this.loadSearchHistory();
         this.recentCommands = this.loadRecentCommands();
@@ -88,6 +109,7 @@ class SearchComponent {
         this.findersComponent = new window.SearchFindersComponent(this.language, [], this.settings);
 
         this.fuzzySearchComponent = new window.FuzzySearchComponent(this.bookmarks, (bookmark) => this.openBookmark(bookmark));
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
 
         this.interleaveMode = settings.interleaveMode || false;
 
@@ -132,6 +154,8 @@ class SearchComponent {
         this.interleaveMode = settings.interleaveMode || false;
         this.currentPageId = settings.currentPage || this.currentPageId || 1;
         this.savedSearches = this.loadSavedSearches();
+        this.searchPicks = this.loadSearchPicks();
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
         this.buildShortcutsMap();
     }
 
@@ -871,8 +895,13 @@ class SearchComponent {
      *
      * Delay is the middle: the same open, held back until you stop typing, so a
      * word that carries on past the shortcut keeps going. It cannot rescue a
-     * word typed slowly enough to fall through the pause — which is why Enter,
-     * where nothing decides for you, stays the default.
+     * word typed slowly enough to fall through the pause.
+     *
+     * Enter was the default this paragraph was written for, and it is not any
+     * more: ccba3576 put instant back, and migrateShortcutOpenModeDefaultInstant
+     * moves installs sitting on "enter" or on nothing over to it once. Speed
+     * won, and the swallowed word is the price — `delay` is the middle for
+     * anyone who would rather not pay it.
      */
     _maybeAutoOpenShortcut() {
         this.cancelPendingShortcutOpen();
@@ -1198,6 +1227,190 @@ class SearchComponent {
             }
             return false;
         });
+    }
+
+    /**
+     * Writes down that this query led to this bookmark.
+     *
+     * The history kept what you typed and threw away what you then chose,
+     * which is the half that would have made the ranking yours. Keyed on the
+     * query rather than the bookmark: "mail" meaning Gmail says nothing about
+     * what "ma" means, and guessing otherwise makes the list unpredictable in
+     * exactly the way a launcher cannot afford.
+     *
+     * @param {{url: string}} bookmark
+     */
+    recordSearchPick(bookmark) {
+        const url = bookmark && bookmark.url;
+        const q = this.normalizePickQuery(this.currentQuery);
+        if (!url || !q) return;
+
+        const existing = this.searchPicks.find((p) => p.q === q && p.url === url);
+        if (existing) {
+            existing.n = (Number(existing.n) || 0) + 1;
+            existing.at = Date.now();
+        } else {
+            this.searchPicks.unshift({ q, url, n: 1, at: Date.now() });
+        }
+
+        this.prunePicks();
+        this.fuzzySearchComponent.updatePicks(this.searchPicks);
+        this.saveSearchPicks();
+    }
+
+    /**
+     * The query as the memory should hold it.
+     *
+     * "/mail tag:work" is the same intent as "mail": the prefix picks a mode
+     * and the token is a filter. Stored whole, the entry would never match
+     * anything typed a second time.
+     *
+     * @param {string} raw
+     * @returns {string} lower-cased, or '' when there is nothing to remember
+     */
+    normalizePickQuery(raw) {
+        const stripped = this._stripModeSwitchPrefix(String(raw || ''));
+        const withoutFilters = stripped
+            .split(/\s+/)
+            .filter((token) => token && !token.includes(':'))
+            .join(' ');
+        return withoutFilters.trim().toLowerCase();
+    }
+
+    /**
+     * Holds the memory to 200 entries, dropping the weakest.
+     *
+     * Weakest is the same judgement the scorer makes — how often, decayed by
+     * how long ago — so what survives a flood of one-off searches is the
+     * handful of queries you actually lean on.
+     */
+    prunePicks() {
+        if (this.searchPicks.length <= SearchComponent.MAX_SEARCH_PICKS) return;
+        this.searchPicks.sort((a, b) =>
+            this.fuzzySearchComponent.pickScore(b) - this.fuzzySearchComponent.pickScore(a));
+        this.searchPicks = this.searchPicks.slice(0, SearchComponent.MAX_SEARCH_PICKS);
+    }
+
+    /**
+     * Persist the memory the way saved searches are persisted: settings, so the
+     * backup carries it and a second browser inherits it, with localStorage
+     * kept in step for an older tab.
+     *
+     * The settings write is debounced. Saved searches are an explicit act and
+     * can afford a POST each; this fires on every bookmark opened from search.
+     */
+    saveSearchPicks() {
+        try {
+            localStorage.setItem('dashboardSearchPicks', JSON.stringify(this.searchPicks));
+        } catch { /* private mode — the settings copy is the one that matters */ }
+
+        const d = window.dashboardInstance;
+        if (!d?.settings) return;
+        d.settings.searchPicks = this.searchPicks;
+        clearTimeout(this._searchPicksTimer);
+        this._searchPicksTimer = setTimeout(() => { void d.saveSettings?.(); }, 2000);
+    }
+
+    /** Settings first — it is the copy that travels. */
+    loadSearchPicks() {
+        const fromSettings = window.dashboardInstance?.settings?.searchPicks;
+        if (Array.isArray(fromSettings)) return fromSettings;
+        try {
+            const stored = localStorage.getItem('dashboardSearchPicks');
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Groups fuzzy results by *why* they matched.
+     *
+     * A flat, score-ordered list told you nothing: `Gmail` and
+     * `widGetonderzoek` were the same kind of row, and one letter filled the
+     * screen with names whose only crime was holding a `g` somewhere in the
+     * middle. The score already knew the difference — see the `group` label in
+     * fuzzy-search.js — so the list says it out loud and collapses what you
+     * almost certainly did not mean.
+     *
+     * The headers are the ones the empty state and the inline filters already
+     * use, so expanding, counting and keyboard-activating come for free.
+     *
+     * @param {Array} matches - results from handleFuzzy, best-first
+     * @param {string} query  - the query, for the "Contains …" label
+     * @returns {Array} matches with group headers woven in, or the flat list
+     */
+    _groupFuzzyMatches(matches, query) {
+        this._fuzzyGroupsApplied = false;
+        if (!Array.isArray(matches) || matches.length === 0) return matches;
+
+        const buckets = SearchComponent.FUZZY_GROUPS.map((group) => ({
+            ...group,
+            items: matches.filter((m) => (m.group || 'contains') === group.key)
+        })).filter((bucket) => bucket.items.length > 0);
+
+        if (buckets.length === 0) return matches;
+
+        // One kind of match needs no explanation. Typing a full name should not
+        // sprout a header over a single row — that trades one sort of clutter
+        // for another.
+        if (buckets.length === 1) {
+            return this._capGroup(buckets[0].items, buckets[0].id);
+        }
+
+        const expandedOf = (bucket) => (bucket.defaultExpanded
+            ? !this.emptyStateExpandedGroups.has(bucket.id)
+            : this.emptyStateExpandedGroups.has(bucket.id));
+
+        const open = new Set(buckets.filter(expandedOf).map((b) => b.id));
+        // Every group shut means a screen of headers and counts over nothing,
+        // which reads as "not found" while holding the answer one keystroke
+        // away. The strongest group left standing opens itself.
+        if (open.size === 0) open.add(buckets[0].id);
+
+        const rows = [];
+        buckets.forEach((bucket) => {
+            const expanded = open.has(bucket.id);
+            rows.push({
+                type: 'command-group-header',
+                groupId: bucket.id,
+                label: this.dashboardLabel(bucket.labelKey, bucket.fallback, { query }),
+                count: bucket.items.length,
+                expanded,
+                _emptyStateGroup: bucket.id
+            });
+            if (expanded) rows.push(...this._capGroup(bucket.items, bucket.id));
+        });
+
+        this._fuzzyGroupsApplied = true;
+        return rows;
+    }
+
+    /**
+     * Holds an open group to a screenful, with a row that says what is left.
+     * Without it a prefix match on a common letter fills the overlay again,
+     * which is the thing the grouping was for.
+     */
+    _capGroup(items, groupId) {
+        const cap = SearchComponent.FUZZY_GROUP_CAP;
+        if (items.length <= cap || this.searchGroupsShowAll.has(groupId)) return items;
+        return [
+            ...items.slice(0, cap),
+            {
+                type: 'group-more',
+                groupId,
+                count: items.length - cap,
+                label: this.dashboardLabel('searchGroupMore', '{count} more', {
+                    count: items.length - cap
+                })
+            }
+        ];
+    }
+
+    /** Reveals the rest of a capped group; the cap returns when search closes. */
+    showAllInGroup(groupId) {
+        this.searchGroupsShowAll.add(groupId);
     }
 
     dashboardLabel(key, fallback, vars = {}) {
@@ -1618,13 +1831,16 @@ class SearchComponent {
                 }];
             } else {
                 const results = this.fuzzySearchComponent.handleFuzzy(query, this.allBookmarks);
-                this.searchMatches = results.map(m => {
+                const labelled = results.map(m => {
                     const pageName = this._getPageName(m.bookmark && m.bookmark.pageId);
                     const isCurrentPage = m.bookmark && m.bookmark.pageId === this.currentPageId;
                     const pageMeta = (pageName && !isCurrentPage) ? pageName : null;
                     const combinedMeta = [pageMeta, m.meta].filter(Boolean).join(' · ') || null;
                     return { ...m, meta: combinedMeta, type: 'global-search' };
                 });
+                // Searching every page makes the flat list longer still, so it
+                // gets the same grouping as the single-page search.
+                this.searchMatches = this._groupFuzzyMatches(labelled, query);
             }
         } else if (this.currentQuery.startsWith(':')) {
             // Handle commands
@@ -1754,7 +1970,8 @@ class SearchComponent {
                 }
             } else {
                 // Handle fuzzy search - only if query is not empty
-                this.searchMatches = this.fuzzySearchComponent.handleFuzzy(searchQuery).filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+                const fuzzy = this.fuzzySearchComponent.handleFuzzy(searchQuery).filter((match) => this.matchesAdvancedFilters(match.bookmark, filters));
+                this.searchMatches = this._groupFuzzyMatches(fuzzy, searchQuery);
             }
 
             this.lastNonCommandQuery = query;
@@ -1801,7 +2018,14 @@ class SearchComponent {
         if (this.selectedMatchIndex === -1) {
             // Keep -1 to avoid auto-selection
         } else {
-            this.selectedMatchIndex = 0;
+            // Group headers are selectable, and index 0 is now one of them.
+            // Left alone, the core flow — type, press Enter — would collapse a
+            // group instead of opening the bookmark it was aiming at. Only the
+            // fuzzy groups move the selection: the empty state and the inline
+            // filters put a header first on purpose.
+            this.selectedMatchIndex = this._fuzzyGroupsApplied
+                ? Math.max(0, this.searchMatches.findIndex((m) => m.type !== 'command-group-header'))
+                : 0;
         }
         this.renderSearchMatches();
         this._dispatchLauncherFilter();
@@ -1925,6 +2149,7 @@ class SearchComponent {
         // Reset so reopening the same mode counts as a new open.
         this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();
+        this.searchGroupsShowAll.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
         // resetQuery clears the state; the prompt is a separate element and used
@@ -2216,6 +2441,28 @@ class SearchComponent {
                 return;
             }
 
+            // The tail of a capped group: what is left, and the way to it.
+            if (match.type === 'group-more') {
+                const mySelectableIndex = this.matchElements.length;
+                const moreEl = document.createElement('div');
+                const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
+                moreEl.className = `search-group-more command-group-child${selectedClass}`;
+                moreEl.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+                moreEl.innerHTML = `
+                    <span class="search-group-more-arrow">▾</span>
+                    <span class="search-group-more-label">${this._escHtml(match.label)}</span>
+                `;
+                moreEl.addEventListener('click', () => {
+                    this.showAllInGroup(match.groupId);
+                    this.updateSearch();
+                });
+                this._bindMatchKeyboardActivate(moreEl, mySelectableIndex);
+                fragment.appendChild(moreEl);
+                this.matchElements.push(moreEl);
+                this.selectableMatches.push(match);
+                return;
+            }
+
             // Chip strip for history / recent command items
             if (match.type === 'history-chips' || match.type === 'command-chips') {
                 const mySelectableIndex = this.matchElements.length;
@@ -2433,6 +2680,11 @@ class SearchComponent {
                 this.updateSearch();
                 return;
             }
+            if (selectedMatch.type === 'group-more') {
+                this.showAllInGroup(selectedMatch.groupId);
+                this.updateSearch();
+                return;
+            }
             if (this.isChipMatch(selectedMatch)) {
                 this.applySelectedChipQuery(selectedMatch);
                 return;
@@ -2497,6 +2749,9 @@ class SearchComponent {
 
     openBookmark(bookmark, { newTab = false } = {}) {
         this.recordSearchHistory(this.currentQuery);
+        // The other half of the same fact: the history keeps what was typed,
+        // this keeps what it turned out to mean.
+        this.recordSearchPick(bookmark);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
         window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');

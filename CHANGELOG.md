@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.4 — 31 August 2026](#v144--31-august-2026)
 - [v1.4.3 — 30 August 2026](#v143--30-august-2026)
 - [v1.4.2.4 — 29 August 2026](#v1424--29-august-2026)
 - [v1.4.2.3 — 29 August 2026](#v1423--29-august-2026)
@@ -188,6 +189,36 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.4.4 — 31 August 2026
+
+### Languages
+
+- **new — Chinese is nextDash's fifth language.** 简体中文 joins English, Dutch, German and French, and it is the whole of the interface rather than a partial pass: the dashboard and its cheat sheet, the command palette, the setup wizards, every config tab from widgets to backups, the statistics, the health view and its reasons, and all 209 headings and 19 prose bodies of the Help tab. Nothing falls back to English on the way through. `locales/zh.json`, `extension/locales/zh.json`.
+- **fix — `locales/zh.json` is valid JSON again.** A merge was committed with its conflict still in the file, leaving seven hundred lines between markers — so the file stopped parsing and every consumer stopped with it, the locale validators included. Both sides held the same 349 keys and no key existed on only one of them; what differed was the values, one side carrying the translations and the other the English placeholders they were written over.
+- **fix — the theme browser speaks every language.** Its title, search box, the All / Light / Dark / Favourites segments, the `{shown} of {total} themes` count and the trait words each card is described by — warm, cool, vivid, muted, high contrast — were English in all five locales. A screen added after the last translation pass, invisible because every call carried an English fallback that read perfectly well. Thirty-one strings in all, the merge-duplicates and open-broken dialogs among them. `locales/*.json`.
+- **fix — `zh.health` drops 124 keys nothing reads.** The section was cut back to the nineteen the code actually looks up; zh had never been through that pass and kept an older, larger lot.
+
+### Search
+
+- **new — results group by why they matched.** One letter filled the screen: typing `g` put `Gmail` and `widGetonderzoek` in the same column, in the same style, in an order nothing explained. The scorer already knew the difference — a name that starts with the query scores 700, one that carries it mid-word scores 300 — but kept only the number, so the list was honest and useless at once. Every result now carries the reason, which cannot be read back out of the score (an exact domain match is `1000 × 0.3 = 300`, exactly what a mid-name substring earns). The strong matches stay open, the weaker fold behind a heading and a count. One kind of match renders flat with no heading at all; if every group is shut the strongest opens itself; an open group stops at twelve rows and offers the rest. `fuzzy-search.js`, `search.js`, `search.css`.
+- **new — the ranking learns what you open, and what these keystrokes meant.** `openCount` and `lastOpened` are on every bookmark and drove the smart collections, the stats page and the `opened:` filter — everything except the search that ranks them, where the tiebreak between two equally-shaped names was whichever happened to be shorter. Usage settles it now, worth at most 90 against tiers 200 apart, so a favourite can order its equals and never overturn them. Separately, a pick is written against the exact query that produced it, so `mail` becomes your own alias for Gmail without a shortcut for it. That memory is a floor rather than a bonus, capped at 1090 against the 1099 an exact name scores: typing a thing's full name still gives you that thing. Stored in settings, so a backup carries it and a second browser inherits it. `internal/app/models.go`.
+
+### Dashboard
+
+- **fix — switching a bookmark to Periodic says so.** Choosing *Monitor* confirmed the change and choosing *Periodic* showed nothing, so the click read as ignored while the write had in fact landed. Two faults stacked: the one-time search-mode tip was sent as `info` rather than `promo`, and `AppNotification` only steps aside for a promo that is on screen, not one waiting in the queue. A real notification now drops any promo still queued. `app-notification.js`, `dashboard-promos.js`.
+- **fix — a tab stops reloading itself over its own config change.** `publishConfigSync` stores its payload in localStorage, whose event fires only in *other* tabs, and in sessionStorage so a tab hidden during the write picks it up on return. The storage handler drops a payload carrying its own tabId; `maybeRefreshAfterConfigReturn` did not — and a tab is never hidden during its own write. So after any save it found its own marker and ran the whole refresh on every tab switch: invalidate the page cache, `loadData`, `loadPageBookmarks`, `loadAllBookmarks`, `renderDashboard`, and the health report with them. `dashboard-config-sync.js`.
+- **fix — a number that was never stored is not a changed setting.** Config → Overview counted settings the reader had never touched. `isFieldDefault` compares a numeric field with `Number(value) === def`, and almost every numeric setting is `omitempty` on the Go side, so one sitting at its default of 0 is absent from the JSON the browser receives — and `Number(undefined)` is `NaN`, which equals nothing. `certWarnDays`, `healthCheckTimeoutSeconds` and `bulkFaviconConfirmFrom` all read as changed on a fresh install. `dashboard-config.js`.
+- **fix — a health row's menu is clamped to the window rather than cut off.** The button path asked only whether the menu overflowed below and set `--up` if so, which anchors with `bottom: 100%` and has nothing to stop a menu taller than the space above it. Ten items, 452px, a wrap 450px down a 720px window: too tall either way, flipped up regardless, the first entry gone. Both directions are measured now, and when neither fits the menu sits against the top margin. Closing it clears that placement again: `closeAllMenus` only cleared the inline coordinates a right-click had written, because it tested for the `--at-cursor` class the clamp does not set — so a clamped menu kept its `top` into the next open and the ⋯ button put it where the clamp had left it. `dashboard-health.js`.
+- **fix — a deep link to the health view or the inbox lands there.** `loadData()` opened them from the hash, before `init()` rendered the grid, so an arrival on `/#health` raced its own dashboard. Routed at the end of `init` now, where config already was. `dashboard.js`.
+- **fix — the Monitored tile stops printing a sentence across the row.** `1 of 6 not responding` rendered under the count so the down state needed no hover, and took 227px where the other tiles hold 89 — on a row of seven that pushed the whole set sideways, and read as the row's headline rather than one tile's detail. The tile carries its count now; the count still turns red the moment a monitor is down, the `title` and the `aria-label` both name how many (aria-label replaces title rather than supplementing it, so it has to), and the fleet panel below prints the sentence in full. `dashboard-health.js`.
+
+### What's new
+
+- **new — the release list says *new* or *fix* in words.** A filled or hollow dot stood in front of every entry, which says two of them differ without saying how. The dot had replaced a chip for two good reasons — width, and a "new" tint drawn from `--accent-success` that on a green accent matched the version tag beside it — and both are answered rather than reverted: 0.62rem in a fixed 2.4rem track, and neither badge takes an accent at all. New is `--background-primary` on `--text-primary`, fix is `--text-tertiary` in a hairline border, so filled against outlined reads at a glance on any theme. Every release already carried the distinction in its data, so it is back on all of them. `whats-new-modal.js`, `modal.css`.
+- **fix — v1.4.3's entry for `shortcutDisplay` said it defaults to `hover`.** It defaults to `always`, as the line below it already said.
+
+---
+
 ## v1.4.3 — 30 August 2026
 
 ### Widgets
@@ -199,7 +230,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Dashboard
 
-- **`shortcutDisplay` replaces the `showShortcuts` boolean** — `always | hover | never`, defaulting to `hover`. The boolean answered one question (is the letter on screen) and the useful answer was a third one. In `hover` the label is out of the row's flow, so the grid's shortcut track collapses and the name takes that width back — about five characters a row — and it floats in over the right end of the name while the pointer or keyboard selection is on it. The `aria-label` names the shortcut in all three modes, `never` included. The control carries the `chrome` handler it always needed, so it comes off the `KNOWN_BROKEN` list in `config-behavior-realtime-coverage.spec.js` and takes effect without a reload.
+- **`shortcutDisplay` replaces the `showShortcuts` boolean** — `always | hover | never`, defaulting to `always`. The boolean answered one question (is the letter on screen) and the useful answer was a third one. In `hover` the label is out of the row's flow, so the grid's shortcut track collapses and the name takes that width back — about five characters a row — and it floats in over the right end of the name while the pointer or keyboard selection is on it. The `aria-label` names the shortcut in all three modes, `never` included. The control carries the `chrome` handler it always needed, so it comes off the `KNOWN_BROKEN` list in `config-behavior-realtime-coverage.spec.js` and takes effect without a reload.
 - **The shortcut letters are on for every install** — a fresh one starts at `always`, and `ShortcutDisplayAlwaysMigrated` turns them on once for existing installs, including those whose legacy `showShortcuts` boolean said no and the `never` that would otherwise have been derived from it. A `shortcutDisplay` already in the settings file is an answer to this question and is left alone, so someone who picked `hover` keeps it; the marker keeps the migration to one run, so switching the letters off afterwards sticks.
 - **The floating button bar stops letting the page read through it** — bookmark rows scrolling underneath showed through the bar.
 - **A row builds only the marks it draws**, and **search waits for the key that opens it** — two rendering costs paid on every load that nothing asked for.

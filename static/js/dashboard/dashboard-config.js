@@ -10412,7 +10412,14 @@ class DashboardConfig {
         if (d === null) return value === null || value === undefined;
         if (Array.isArray(d)) return JSON.stringify(value ?? null) === JSON.stringify(d);
         if (typeof d === 'boolean') return Boolean(value) === d;
-        if (typeof d === 'number') return Number(value) === d;
+        // An absent number is the zero it was stored as. Almost every numeric
+        // setting is `omitempty` on the Go side, so a field sitting at its
+        // default of 0 never reaches the browser at all — and Number(undefined)
+        // is NaN, which equals nothing. certWarnDays, healthCheckTimeoutSeconds
+        // and bulkFaviconConfirmFrom therefore counted as changed on a fresh
+        // install, so Config → Overview reported settings the reader had never
+        // touched and sent them to a tab to look at them.
+        if (typeof d === 'number') return Number(value ?? 0) === d;
         return String(value ?? '') === String(d);
     }
 
@@ -10645,7 +10652,7 @@ class DashboardConfig {
                 note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
-                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'),
+                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'),
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),

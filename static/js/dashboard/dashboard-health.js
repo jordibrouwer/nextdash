@@ -2080,13 +2080,18 @@ class DashboardHealth {
         }
         document.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
-            // Drop any cursor placement, so the next open from the ⋯ button lands
-            // under the button again rather than where a right-click last put it.
-            if (menu.classList.contains('health-view-menu--at-cursor')) {
-                menu.classList.remove('health-view-menu--at-cursor');
-                menu.style.left = '';
-                menu.style.top = '';
-            }
+            // Drop any placement written onto the menu, so the next open lands
+            // where its own path puts it rather than where the last one left
+            // it. Two paths write inline coordinates: a right-click, which sets
+            // left and top and marks itself --at-cursor, and the button path's
+            // clamp for a menu that fits neither above nor below, which sets top
+            // and bottom and carries no class. Clearing was conditional on the
+            // class, so the clamped one survived into the next open.
+            menu.classList.remove('health-view-menu--at-cursor');
+            menu.classList.remove('health-view-menu--up');
+            menu.style.left = '';
+            menu.style.top = '';
+            menu.style.bottom = '';
         });
         document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
@@ -2140,10 +2145,38 @@ class DashboardHealth {
             this.positionMenuAtPoint(menu, at);
             return;
         }
-        // Flip above the row when there is no room below.
+        // Flip above the row when there is no room below, and when neither side
+        // has room, clamp to the viewport instead of picking the lesser overflow.
+        //
+        // `--up` anchors with `bottom: 100%`, so nothing stops a menu taller
+        // than the space above it from running off the top edge — ten items on
+        // a row near the middle of a short window fits neither way, and the
+        // first entry was cut off. The right-click path never had this:
+        // positionMenuAtPoint clamps to the margin whichever way it goes.
         requestAnimationFrame(() => {
+            const margin = 8;
             const rect = menu.getBoundingClientRect();
-            menu.classList.toggle('health-view-menu--up', rect.bottom > window.innerHeight - 8);
+            const anchor = (menu.closest('.health-view-menu-wrap') || btn).getBoundingClientRect();
+            const roomBelow = window.innerHeight - anchor.bottom - margin;
+            const roomAbove = anchor.top - margin;
+
+            if (rect.height <= roomBelow) {
+                menu.classList.remove('health-view-menu--up');
+                menu.style.top = '';
+                menu.style.bottom = '';
+                return;
+            }
+            if (rect.height <= roomAbove) {
+                menu.classList.add('health-view-menu--up');
+                menu.style.top = '';
+                menu.style.bottom = '';
+                return;
+            }
+            // Neither side fits: sit against the top margin, in the menu's own
+            // coordinate space, so the whole list stays on screen.
+            menu.classList.remove('health-view-menu--up');
+            menu.style.bottom = 'auto';
+            menu.style.top = `${margin - anchor.top}px`;
         });
     }
 
@@ -4309,13 +4342,16 @@ class DashboardHealth {
                         ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
                         : this.t('dashboard.healthTileMonitoredUp', 'All {count} responding', { count: monitored }))
                     : '',
-                // Only when something is actually down: this is the one tile whose
-                // hover-only title hides a fact worth acting on, not just detail —
-                // the same sentence the fleet panel's headline already prints in
-                // plain text, so a mouse is not required to see it here too.
+                // Read out and hovered, not printed. It used to render under the
+                // count so the fact needed no mouse, but the sentence is four
+                // times the width of every other tile's label and pushed the
+                // whole row sideways to hold it. The count turning red already
+                // says something is down here, the title and the aria-label say
+                // how many, and the fleet panel below prints it in full.
                 sub: monitorsDown > 0
                     ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
                     : '',
+                subVisible: false,
             },
             // Each tile says what its number means. The labels are one word by
             // necessity — seven of them share a row — and "Stale" next to "Unused"
@@ -4430,7 +4466,8 @@ class DashboardHealth {
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
             const body = `<span class="health-view-tile-label">${this.escape(tile.label)}</span>`
                 + `<span class="health-view-tile-value">${this.escape(tile.value)}</span>`
-                + (tile.sub ? `<span class="health-view-tile-sub">${this.escape(tile.sub)}</span>` : '');
+                + (tile.sub && tile.subVisible !== false
+                    ? `<span class="health-view-tile-sub">${this.escape(tile.sub)}</span>` : '');
             // aria-label replaces title for assistive tech rather than supplementing
             // it, so the sub line's fact has to be folded in here too or a
             // screen-reader user would miss exactly what a sighted user now sees.

@@ -1,0 +1,72 @@
+{
+  "tag": "v1.4.4",
+  "date": "31 August 2026",
+  "releasedAt": "2026-08-31",
+  "modalLead": "nextDash speaks Chinese. 简体中文 joins English, Dutch, German and French as a fifth full language — not a partial pass, but the whole of it: the dashboard, config, the health view, the statistics, and all 209 headings of the Help tab. Alongside it, search results now group by why they matched and the ranking learns what you actually open.",
+  "sections": [
+    {
+      "title": "Languages",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Chinese is nextDash's fifth language.</strong> 简体中文 covers everything the other four do &mdash; the dashboard and its cheat sheet, the command palette and the setup wizards, every config tab from widgets to backups, the statistics, the health view and its reasons, and the Help tab down to its last of 209 headings. Nothing falls back to English on the way through. Pick it in <em>Config &rarr; Appearance &rarr; Language</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The theme browser speaks your language.</strong> Its title, search box, the All / Light / Dark / Favourites segments, the \"{shown} of {total} themes\" count and the words each theme is described by &mdash; warm, cool, vivid, muted, high contrast &mdash; were English in every language. A screen added after the last translation pass, and never caught because each of them had an English fallback that read perfectly well. Thirty-one strings in all five languages, the merge-duplicates and open-broken dialogs among them."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Results group by why they matched.</strong> One letter used to fill the screen: typing <em>g</em> put <em>Gmail</em> and <em>widGetonderzoek</em> in the same column, in the same style, in an order nothing explained. The scorer always knew the difference &mdash; a name that starts with what you typed against one that merely carries it mid-word &mdash; and now the list says so. The strong matches stay open, the rest fold behind a heading and a count. Nothing is thrown away; the count is the promise. Type a full name and there are no headings at all."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The ranking learns what you open.</strong> Two things nextDash already knew but never used. Every bookmark carries how often you have opened it and when you last did &mdash; that settles which of two equally-shaped names goes first, where the tiebreak used to be whichever happened to be shorter. And a search now remembers which result you chose for the keystrokes you chose it with, so <em>mail</em> becomes your own alias for Gmail without you creating a shortcut for it. It still loses to an exact name: typing a thing's full name gives you that thing."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Switching a bookmark to Periodic said so.</strong> Choosing <em>Monitor</em> confirmed the change; choosing <em>Periodic</em> showed nothing at all, so the click read as ignored while the setting had in fact been saved. The confirmation was queued behind a one-time tip and expired before its turn came. An answer to something you just did now takes the slot from any tip still waiting."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Coming back to the tab stopped reloading the whole dashboard.</strong> After any settings change, the tab that made it found its own change marker on every return and ran a full refresh against it &mdash; the page data, the bookmarks of every page, the grid and the health report &mdash; for something it had already applied. It reads the marker's origin now, the way the cross-tab path always did."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings you never touched stopped counting as changed.</strong> Config &rarr; Overview reported changed settings and offered to show them; three of them were fields sitting at their default of zero. A zero is left out of the stored file, and \"absent\" was not being read as \"zero\"."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A health row's menu keeps all of itself on screen.</strong> A menu with ten entries on a row near the middle of a short window fits neither above nor below, and it flipped upward regardless &mdash; leaving the first entry cut off by the top edge. It is held to the window now &mdash; and closing it clears the position again, so the next one opens under its own button rather than where the clamped one had been put."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A link to the health view or the inbox lands there.</strong> Opening nextDash on one raced the dashboard's own first paint, and sometimes the grid won."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Monitored tile stops printing a sentence across the row.</strong> “1 of 6 not responding” sat under the count so the down state needed no hover &mdash; and took 227px where the other tiles hold 89, pushing the whole row of seven sideways to make space. The tile shows its count now; it still turns red the moment a monitor is down, the hover and the screen reader still name how many, and the fleet panel below prints it in full."
+        }
+      ]
+    },
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>This list says <em>new</em> or <em>fix</em> in words.</strong> A filled or hollow dot stood here instead, which tells you two entries differ without telling you how. Every release already carried the distinction in its data &mdash; so it is back on all of them, not only this one."
+        }
+      ]
+    }
+  ]
+}

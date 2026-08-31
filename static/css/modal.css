@@ -515,7 +515,7 @@ body.no-animations .wn-kofi-star {
 
 .wn-entry {
     display: grid;
-    grid-template-columns: 0.65rem 1fr;
+    grid-template-columns: 2.4rem 1fr;
     gap: 0 0.6rem;
     padding: 0.5rem 0;
     align-items: start;
@@ -524,24 +524,47 @@ body.no-animations .wn-kofi-star {
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
 }
 
-/* Filled for new, hollow for a fix.
+/* The word, not a dot.
 
-   This replaces a bordered uppercase chip that cost about seven characters of
-   a column deliberately kept to ~63, and whose "new" tint was drawn from
-   --accent-success — the same value as --accent-primary on a green accent, so
-   the badge and the version tag beside it were literally the same colour. The
-   word itself is still in the markup for a screen reader. */
-.wn-dot {
-    width: 0.42rem;
-    height: 0.42rem;
-    border-radius: 50%;
-    margin-top: 0.48rem;
-    background: var(--accent-primary);
+   A filled or hollow dot stood here and was read by nobody: it says "these two
+   entries differ" without saying how, and the reader has to be told once what
+   the difference is before it means anything. It replaced a chip for two
+   reasons, and both are answered rather than reverted.
+
+   Width: the chip was uppercase at body size and cost about seven characters
+   of a column deliberately kept to ~63. This one is 0.62rem, tabular-width, in
+   a fixed 2.4rem track — a hair over three characters at the column's own size,
+   and the text beside it starts at the same place on every row.
+
+   Colour: "new" drew on --accent-success, which on a green accent is the same
+   value as --accent-primary — so the badge and the version tag beside it were
+   literally the same colour. --accent-info is no escape: on the terminal theme
+   it resolves to the same value again. So neither badge takes an accent at
+   all. New is the page's own foreground on a solid fill, fix is muted text in
+   a hairline outline. Filled against outlined reads at a glance on any theme,
+   and neither can collide with a hue it does not use. */
+.wn-badge {
+    justify-self: start;
+    margin-top: 0.34rem;
+    padding: 0.08rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
-.wn-dot--fix {
+.wn-badge--new {
+    color: var(--background-primary);
+    background: var(--text-primary);
+    border: 1px solid var(--text-primary);
+}
+.wn-badge--fix {
+    color: var(--text-tertiary);
     background: transparent;
-    border: 1px solid var(--text-tertiary);
-    opacity: 0.7;
+    border: 1px solid var(--border-primary);
 }
 
 .wn-sr-only {

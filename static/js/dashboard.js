@@ -427,6 +427,30 @@ class Dashboard {
                 delete window.__nextdashBootSearch;
                 this.searchComponent?.openSearchWithQuery?.(query);
             }
+            /*
+             * The other two views the comment above names.
+             *
+             * loadData() opens them from the hash, but that runs before init()
+             * renders the grid — so an arrival on #health raced its own
+             * dashboard: sometimes the view stood, sometimes the grid painted
+             * over it, and sometimes the layout stayed while activeView fell
+             * back to bookmarks. That third state is the worst of the three,
+             * because render() begins with `if (!this.isActiveView()) return`
+             * — the view was on screen and could no longer redraw, so changing
+             * the filter left the explanation above the list describing the
+             * filter before it.
+             *
+             * Opening here instead puts them where config already was: after
+             * the grid, where there is nothing left to paint over them. The
+             * guard is the same one the hashchange route uses, so a view
+             * loadData did manage to open is not opened twice.
+             */
+            if (bootHash === 'inbox' && this.activeView !== 'inbox' && this.inbox?.isEnabled?.()) {
+                await this.inbox.openInboxView();
+            } else if (bootHash === 'health' && this.activeView !== 'health' && this.health?.isEnabled?.()) {
+                await this.health.openHealthView();
+            }
+
             if (this.config?.isEnabled?.()
                 && (bootHash === 'config' || bootHash.startsWith('config/'))) {
                 if (this.activeView !== 'config') {

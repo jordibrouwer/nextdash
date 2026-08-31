@@ -124,6 +124,14 @@ const AppNotification = {
                 this._showNow(message, type, options);
                 return;
             }
+            // A tip already waiting is dropped rather than kept ahead of an
+            // answer to something the user just did. The check above catches a
+            // promo holding the screen; this catches one holding the queue —
+            // switching a bookmark to Periodic raised its confirmation behind
+            // the search-mode tip and the reader saw nothing happen at all.
+            if (type !== 'promo') {
+                this._queue = this._queue.filter((entry) => entry.type !== 'promo');
+            }
             if (this._queue.length >= this._QUEUE_MAX) {
                 // Replace the last queued item instead of growing unboundedly
                 this._queue[this._queue.length - 1] = { message, type, options };
