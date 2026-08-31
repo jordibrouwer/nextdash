@@ -1024,7 +1024,7 @@ the only widget that talks to anything outside.
   own network reachable at all and what keeps a key out of a page any script
   could read. The address is stored rather than sent: the request names a
   widget, and the server visits only what that widget was configured to visit.
-- **How to ask** (**v1.4.5**) — `GET` or `POST`. The server has always accepted
+- **How to ask** (**v1.4.4.1**) — `GET` or `POST`. The server has always accepted
   both and the panel offered neither, so a widget could only be given `POST` by
   editing the file it is stored in. Nothing is sent with either: `POST` is here
   for the services that answer a statistics endpoint on that method and no
@@ -1032,15 +1032,33 @@ the only widget that talks to anything outside.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
+- **Seeing the key you stored** (**v1.4.4.1**) — a saved key is never filled back
+  into the box; it says *Set — type to replace* instead, so nothing on screen
+  tells you what is actually in there. That matters for an `Authorization`
+  header, which wants a scheme in front of the token: a bare token gets a 401,
+  and so does a wrong one. Press the **eye** beside the box to see what is
+  stored, and press it again to put it away. Only a widget's own key can be
+  looked at — a sign-in you made yourself on the health screen stays write-only,
+  and every reveal is written to the log.
 - **Fields** — a path per figure, with a label and a shape. A path walks objects
   and arrays — `server.disk[0].used` — and either names something or does not; a
   path that silently matched several things would make a wrong figure look
   right. A path that stops matching is marked rather than blank, because a blank
   reads as a zero and zero is a fact. Up to **eight** figures on one tile.
-- **Shape per figure** — *Count*, *Size*, *Percentage*, *Duration*, *Milliseconds*, *Time ago*
-  or *Text*. Sizes step through KB and MB, a ratio between 0 and 1 is read as a
-  percentage, *Milliseconds* takes a value in seconds and shows whole
-  milliseconds, and a date arrives as seconds, milliseconds or an ISO string.
+- **Shape per figure** — *Count*, *Size*, *Speed*, *Percentage*, *Duration*,
+  *Milliseconds*, *Time ago* or *Text*. Sizes step through KB and MB, a ratio
+  between 0 and 1 is read as a percentage, *Milliseconds* takes a value in
+  seconds and shows whole milliseconds, and a date arrives as seconds,
+  milliseconds or an ISO string.
+- **Speed** (**v1.4.4.1**) — for a figure that is a rate rather than a quantity.
+  It reads **bits** and steps in **thousands**, which is how a connection is
+  sold, so a value of `1046085072` reads `1.046 Gbps` — where *Size* would call
+  the same measurement `124.703 MB` and leave you unable to hold it against the
+  `1 Gbps` on your contract. It scales on its own, so a slower line reads
+  `94.000 Mbps` rather than `0.094 Gbps`, and it carries three decimals because
+  a connection is mostly compared against itself and one decimal rounds this
+  week and last week to the same figure. Point it at the field your service
+  reports in bits: Speedtest Tracker calls it `download_bits`.
 - **Size per figure** — *Normal*, *Large*, *Small* or *Bar*, so a tile of
   figures is not a list you have to weigh yourself: the one you came for is
   bigger than the ones giving it context. *Bar* is offered on a percentage only,
@@ -1073,7 +1091,7 @@ the only widget that talks to anything outside.
   machines — and on your return the tile shows what it had until its next beat,
   rather than every tile saying *Loading…* at once.
 
-**Trying it out** (**v1.4.5**)
+**Trying it out** (**v1.4.4.1**)
 
 A tile that shows four dashes tells you something is wrong and nothing about
 what. So the settings panel has a *Try it* block under the figures: **Ask now**
@@ -1137,6 +1155,13 @@ their labels and shapes, and how it wants to be signed in to — an `X-Api-Key`
 header, a bearer token, a username and password, or nothing at all. Each also
 names where to find its key: Sonarr's is under *Settings → General*, and the
 panel says so at the moment you need it.
+
+Where a header takes a scheme in front of the token, the preset puts it in the
+box for you (**v1.4.4.1**) — Speedtest Tracker's `Bearer `, Paperless-ngx's
+`Token `, Proxmox's `PVEAPIToken=` — so all that is left is to paste the token
+behind it. It is not hidden, because it is not the secret; it is the half you
+could not have known to type. Saving a box holding only the scheme is refused,
+since that would store the word *Bearer* as your key.
 
 A service that is not on the list needs no code — that is the point of the custom
 widget. The presets exist because copying an address, four paths and a header

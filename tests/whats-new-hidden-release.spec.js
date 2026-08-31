@@ -146,16 +146,18 @@ test.describe('a release flagged hideFromModal', () => {
             (await fetch('/static/data/whats-new/index.json')).json());
 
         /*
-         * hideFromModal is still the mechanism -- the tests above stub an index
-         * to prove it works -- but no release uses it now. Four had
-         * accumulated: v1.4.2.1, v1.4.2.2 and v1.4.2.3, each a round of
-         * additions that did not warrant reopening the notes, plus v1.2.1 from
-         * further back. Between them they held the guided-tour replay and every
-         * theme's backdrop, which is more than the flag was meant to cover, so
-         * they were released into the modal with v1.4.2.4.
+         * One release uses the flag: v1.4.4.1, a small round of work on the
+         * custom widget. It is the newest entry, so the release tag and Config
+         * → Overview → Latest update both name it -- which is the whole reason
+         * the flag exists rather than the entry simply being left out -- and
+         * the modal steps over it to v1.4.4.
+         *
+         * If this list grows past one or two, that is the signal to release
+         * them into the modal together, the way v1.4.2.4 did with the four that
+         * had accumulated behind it.
          */
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
-        expect(index[0].tag).toBe('v1.4.4');
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.4.4.1']);
+        expect(index[0].tag).toBe('v1.4.4.1');
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -185,11 +187,16 @@ test.describe('a release flagged hideFromModal', () => {
     test('the release constants name v1.4.4, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        // The release token moves now that nothing is held back: an install
-        // whose stored value is older sees the notes once on its next visit.
+        /*
+         * The release token names what the modal leads with, not what shipped
+         * last. v1.4.4.1 is flagged, so moving it to v1.4.4.1 would promise an
+         * install something new and then show it v1.4.4 again -- the token's
+         * one job is to be right about that.
+         */
         expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.4'");
-        // The data token moves too, or a browser holding the old index never
-        // learns v1.4.4 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v267'");
+        // The data token moves regardless: the index changed, and a browser
+        // holding its old copy would go on reporting a release that no longer
+        // exists under that name.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v269'");
     });
 });
