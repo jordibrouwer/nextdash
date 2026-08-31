@@ -187,6 +187,33 @@ async function dismissBlockingOverlays(page) {
         await expect(page.locator('.dashboard-grid-kbd-promo')).toHaveCount(0, { timeout: 3000 });
     }
     await dismissAppNotificationIfPresent(page);
+    await waitForFaviconPrefetch(page);
+}
+
+/**
+ * Wait out the favicon prefetch, which covers the screen while it runs.
+ *
+ * A fresh install fetches icons for its starter bookmarks, and that progress
+ * panel is `position: fixed; inset: 0; z-index: 12000` — deliberately
+ * blocking, because clicking through a batch write is not something to invite.
+ * It is not a promo to be dismissed: it goes when the work is done.
+ *
+ * Anything driving the real mouse hits it rather than the control underneath.
+ * dashboard-shortcut-tooltips hovered #search-button and read no popover, and
+ * the failure named #finders-button — the last selector its loop had reached —
+ * so the report pointed at the wrong control on the wrong screen.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function waitForFaviconPrefetch(page) {
+    // Polled rather than waited on as a locator: the overlay is created once
+    // and toggled with [hidden], so a `:not([hidden])` locator matches nothing
+    // in the gaps and a waitFor returns at once — right before it comes back.
+    await page.waitForFunction(() => {
+        const blocking = [...document.querySelectorAll('#favicon-prefetch-overlay, .progress-overlay')]
+            .some((el) => !el.hasAttribute('hidden') && getComputedStyle(el).display !== 'none');
+        return !blocking;
+    }, null, { timeout: 20_000 }).catch(() => {});
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -578,4 +605,5 @@ module.exports = {
     selectKeyboardBookmark,
     openInboxToolbarMenu,
     openHealthToolbarMenu,
+    waitForFaviconPrefetch,
 };

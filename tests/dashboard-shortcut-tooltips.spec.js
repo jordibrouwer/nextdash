@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefetch, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
  * The keyboard-shortcut popovers on the header links (pages, inbox, health,
@@ -22,6 +22,11 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
 test.use({ viewport: { width: 1400, height: 900 } });
 
 async function loadDashboard(page) {
+    // Before the navigation: this drives a real mouse, and the one-time tips
+    // are fixed-position toasts that land on top of the very buttons being
+    // hovered. The search-mode tip sat over #finders-button and swallowed the
+    // pointer, so the popover never opened.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
@@ -39,6 +44,11 @@ async function setTooltips(page, enabled) {
 
 /** Hovers a target with a real mouse move and reports the popover text. */
 async function hoverAndRead(page, selector) {
+    // The starter-icon prefetch covers the screen while it runs — fixed, inset
+    // 0, z-index 12000 — so a real mouse move lands on it rather than on the
+    // control. It comes and goes during the run, so it is waited out here
+    // rather than once at load.
+    await waitForFaviconPrefetch(page);
     const el = page.locator(selector).first();
     if (await el.count() === 0) return { skipped: true };
     const box = await el.boundingBox();
@@ -47,14 +57,18 @@ async function hoverAndRead(page, selector) {
     await page.mouse.move(5, 5);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(120);
-    return page.evaluate(() => {
+    return page.evaluate((q) => {
         const tip = document.getElementById('toolbar-kbd-tooltip');
+        const el = document.querySelector(q);
+        const b = el?.getBoundingClientRect();
+        const at = b ? document.elementFromPoint(b.x + b.width/2, b.y + b.height/2) : null;
         return {
             skipped: false,
             visible: Boolean(tip?.classList.contains('is-visible')),
             text: tip?.textContent?.trim() || null,
+            _top: at ? (at.id || at.className || at.tagName).toString().slice(0,30) : null,
         };
-    });
+    }, selector);
 }
 
 // The two families the user sees as one feature: header links, and the button
@@ -81,7 +95,7 @@ test.describe('dashboard shortcut popovers: one switch', () => {
         for (const sel of HEADER) {
             const on = await hoverAndRead(page, sel);
             if (on.skipped) continue;
-            expect(on.visible, `${sel} should show a popover while on`).toBe(true);
+            expect(on.visible, `${sel} should show a popover while on; top=${on._top}`).toBe(true);
         }
 
         await setTooltips(page, false);
@@ -98,7 +112,7 @@ test.describe('dashboard shortcut popovers: one switch', () => {
         for (const sel of TOOLBAR) {
             const on = await hoverAndRead(page, sel);
             if (on.skipped) continue;
-            expect(on.visible, `${sel} should show a popover while on`).toBe(true);
+            expect(on.visible, `${sel} should show a popover while on; top=${on._top}`).toBe(true);
         }
 
         await setTooltips(page, false);
