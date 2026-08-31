@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Changing a bookmark's check mode from inside the health view.
@@ -250,6 +250,10 @@ test.describe('health view check mode', () => {
         });
 
         await page.click('[data-health-filter="unchecked"]');
+        // The bulk buttons render alongside Retest all and Check off, which
+        // d4e22e33 filed behind `⋯`. Reading them needs no menu — count and
+        // text work on a hidden node — but clicking one does.
+        await openHealthToolbarMenu(page);
         await page.click('.health-view-bulk-monitor-btn');
 
         // Confirmation is mandatory: the count is the only view of the impact.
@@ -279,6 +283,10 @@ test.describe('health view check mode', () => {
         });
 
         await page.click('[data-health-filter="unchecked"]');
+        // The bulk buttons render alongside Retest all and Check off, which
+        // d4e22e33 filed behind `⋯`. Reading them needs no menu — count and
+        // text work on a hidden node — but clicking one does.
+        await openHealthToolbarMenu(page);
         await page.click('.health-view-bulk-monitor-btn');
         const dialog = page.locator('#app-modal');
         await expect(dialog).toBeVisible();
@@ -296,7 +304,11 @@ test.describe('health view check mode', () => {
         await row.locator('.health-check-mode').click();
         await row.locator('[data-check-mode="monitor"]').click();
 
-        await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 5000 });
+        // Wait for this toast, not for the notification element. The one-time
+        // "Shift + Q switches the search mode" tip from 79c29ec9 lands on the
+        // first load after the upgrade and holds the slot, so asserting on
+        // whatever is on screen reads that instead.
+        await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 10_000 });
     });
 
     /**
