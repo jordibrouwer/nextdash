@@ -364,13 +364,32 @@ test.describe('filter counts', () => {
         await expect(stale).toBeVisible();
         await expect(stale).toHaveText(/^\d+$/);
 
-        // The whole row is reachable without a menu: it scrolls rather than
-        // hiding what does not fit.
-        const scrolls = await page.evaluate(() => {
-            const row = document.querySelector('.health-view-filter-group');
-            if (!row) return null;
-            return getComputedStyle(row).overflowX;
+        // The whole row is reachable without a menu — but by wrapping, not by
+        // scrolling. 8e1fbb1b dropped the sideways scroll for the same reason
+        // the "More" menu went before it: at 1280px the strip cut off Missing
+        // category, Missing preview, Certificates and Healthy with nothing to
+        // say they existed. A filter you cannot see is a filter you do not
+        // have. So what this pins is that nothing is clipped and every pill has
+        // a box on screen.
+        const row = await page.evaluate(() => {
+            const el = document.querySelector('.health-view-filter-group');
+            if (!el) return null;
+            const box = el.getBoundingClientRect();
+            const pills = [...el.querySelectorAll('[data-health-filter]')];
+            return {
+                wraps: getComputedStyle(el).flexWrap === 'wrap',
+                clipped: el.scrollWidth > el.clientWidth + 1,
+                pills: pills.length,
+                allWithin: pills.every((p) => {
+                    const b = p.getBoundingClientRect();
+                    return b.width > 0 && b.right <= box.right + 1;
+                }),
+            };
         });
-        expect(['auto', 'scroll']).toContain(scrolls);
+        expect(row, 'no filter row to measure').not.toBeNull();
+        expect(row.wraps).toBe(true);
+        expect(row.clipped, 'a filter is cut off sideways').toBe(false);
+        expect(row.pills).toBeGreaterThan(4);
+        expect(row.allWithin, 'a pill sits outside the row').toBe(true);
     });
 });
