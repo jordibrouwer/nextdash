@@ -38,6 +38,15 @@ test.describe('config keyboard discoverability', () => {
         await page.evaluate(async () => {
             window.DiscoverabilityState?.init?.({ seenTips: [] });
             await window.DiscoverabilityState?.persistNow?.();
+            // The search-mode note is not a tip in that state: it is keyed on
+            // its own localStorage entry, and persistNow rewrites the legacy
+            // keys around it — leaving this one cleared, so it fired again on
+            // the second open and stood where this test counts zero toasts.
+            // Stamped with the release the way markWhatsNewSeen does.
+            try {
+                localStorage.setItem('nextdash:search-mode-key-announced',
+                    window.NEXTDASH_WHATS_NEW_RELEASE || '');
+            } catch { /* private mode */ }
         });
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
@@ -54,8 +63,22 @@ test.describe('config keyboard discoverability', () => {
         await page.evaluate(() => window.AppNotification?.hide?.());
         await expect(page.locator('#app-notification.show')).toHaveCount(0);
 
+        console.log('VOOR SLUITEN ->', JSON.stringify(await page.evaluate(() => ({
+            text: (document.querySelector('#app-notification')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,50),
+            shown: !!document.querySelector('#app-notification.show'),
+            queue: window.AppNotification?._queue?.length,
+        }))));
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.waitForTimeout(900);
+        console.log('SLEUTEL ->', JSON.stringify(await page.evaluate(() => ({
+            announced: localStorage.getItem('nextdash:search-mode-key-announced'),
+            release: window.NEXTDASH_WHATS_NEW_RELEASE,
+        }))));
+        console.log('TWEEDE OPENING ->', JSON.stringify(await page.evaluate(() => ({
+            text: (document.querySelector('#app-notification')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,70),
+            shown: !!document.querySelector('#app-notification.show'),
+        }))));
         await expect(page.locator('#app-notification.show')).toHaveCount(0);
     });
 });
