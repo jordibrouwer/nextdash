@@ -484,3 +484,103 @@ func TestCredentialSummariesCarryNoSecrets(t *testing.T) {
 		}
 	}
 }
+
+/*
+The reveal route is the one place a stored secret comes back, so what it refuses
+matters more than what it returns. These cover the three things that keep the
+exception from becoming a way to read the whole credential store.
+*/
+
+// The panel that stores a widget key is the panel where "what did I actually
+// paste in there" is asked, and a bare token looks identical to a correct one.
+func TestRevealingAWidgetSecretHandsBackTheStoredValue(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "Bearer NhTg7x2ab9"
+	if err := saveHealthCredential("widget:speedtest", HealthCredential{
+		Label:   "Speedtest",
+		Headers: map[string]string{"Authorization": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/health/credentials/reveal?id=widget:speedtest&field=Authorization", nil)
+	rec := httptest.NewRecorder()
+	h.HealthCredentialRevealHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var body struct {
+		Value string `json:"value"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Value != secret {
+		t.Errorf("value = %q, want %q", body.Value, secret)
+	}
+}
+
+// A shared sign-in was named on purpose and several checks point at it. It stays
+// write-only, so this route cannot be walked to read the store.
+func TestRevealingRefusesACredentialThatIsNotAWidgetsOwn(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "do-not-leak-me"
+	if err := saveHealthCredential("sonarr:attic", HealthCredential{
+		Label:   "Sonarr",
+		Headers: map[string]string{"X-Api-Key": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/health/credentials/reveal?id=sonarr:attic&field=X-Api-Key", nil)
+	rec := httptest.NewRecorder()
+	h.HealthCredentialRevealHandler(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), secret) {
+		t.Error("the refusal carried the secret it refused")
+	}
+}
+
+// Reading a secret is not a lesser act than replacing one, so it sits behind the
+// same gate PUT and DELETE do.
+func TestRevealingRequiresTheWriteTokenWhenConfigured(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "secret-token")
+
+	const secret = "Bearer NhTg7x2ab9"
+	if err := saveHealthCredential("widget:speedtest", HealthCredential{
+		Headers: map[string]string{"Authorization": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	url := "/api/health/credentials/reveal?id=widget:speedtest&field=Authorization"
+
+	rec := httptest.NewRecorder()
+	h.HealthCredentialRevealHandler(rec, httptest.NewRequest(http.MethodGet, url, nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), secret) {
+		t.Error("an unauthorized refusal carried the secret")
+	}
+
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("X-NextDash-Token", "secret-token")
+	rec = httptest.NewRecorder()
+	h.HealthCredentialRevealHandler(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}

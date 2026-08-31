@@ -200,6 +200,7 @@ func Run(files assetFS) {
 	// written against the document rather than guessed at.
 	r.HandleFunc("/api/widgets/custom/test", handlers.CustomWidgetTestHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/webhooks/test", handlers.TestWebhookHandler).Methods("POST", "OPTIONS")
 	// Not under /api: an MCP endpoint is a published address that goes into a

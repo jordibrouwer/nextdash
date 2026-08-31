@@ -5880,6 +5880,58 @@ button.config-bm-shortcut-pill {
     grid-column: 1 / -1;
 }
 
+/*
+   A secret box with its eye, as one row.
+
+   The button sits beside the input rather than inside it: an overlay would have
+   to be positioned against a box whose width is set by the grid, and the two
+   reflow independently on a narrow panel. Beside it, the flex row does that
+   arithmetic on its own.
+*/
+.config-secret-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.config-secret-field > .config-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-secret-eye {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-muted, #888);
+    background: transparent;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 4px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.config-secret-eye:hover,
+.config-secret-eye:focus-visible {
+    color: var(--text-color, #ddd);
+    border-color: var(--accent-color, #6c9);
+}
+
+/* Pressed means a key is on screen, which is worth looking like something. */
+.config-secret-eye[aria-pressed="true"] {
+    color: var(--accent-color, #6c9);
+    border-color: var(--accent-color, #6c9);
+}
+
+/* The scheme hint sits under the key it is about, not with the storage note. */
+.config-widget-note-hint {
+    margin-top: 4px;
+}
+
 .config-widget-auth-actions {
     display: flex;
     align-items: center;
