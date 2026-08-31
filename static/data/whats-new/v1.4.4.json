@@ -47,7 +47,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>A health row's menu keeps all of itself on screen.</strong> A menu with ten entries on a row near the middle of a short window fits neither above nor below, and it flipped upward regardless &mdash; leaving the first entry cut off by the top edge. It is held to the window now."
+          "text": "<strong>A health row's menu keeps all of itself on screen.</strong> A menu with ten entries on a row near the middle of a short window fits neither above nor below, and it flipped upward regardless &mdash; leaving the first entry cut off by the top edge. It is held to the window now &mdash; and closing it clears the position again, so the next one opens under its own button rather than where the clamped one had been put."
         },
         {
           "badge": "fix",
