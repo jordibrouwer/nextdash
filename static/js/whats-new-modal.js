@@ -156,8 +156,7 @@
             : '';
         return `
             <li class="wn-entry">
-                <span class="wn-dot${isFix ? ' wn-dot--fix' : ''}" aria-hidden="true"></span>
-                <span class="wn-sr-only">${badgeLabel}</span>
+                <span class="wn-badge${isFix ? ' wn-badge--fix' : ' wn-badge--new'}">${badgeLabel}</span>
                 <div class="wn-entry-main">
                     <div class="wn-entry-title">${title}</div>
                     ${bodyHtml}
