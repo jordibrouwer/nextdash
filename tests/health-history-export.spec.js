@@ -133,6 +133,7 @@ test.describe('uptime history export', () => {
 
     test('the toolbar button downloads the CSV', async ({ page }) => {
         await openHealthFiltered(page, 'monitored');
+        await openHealthToolbarMenu(page);
         await page.locator('.health-view-history-export-btn').waitFor({ state: 'visible' });
 
         const [download] = await Promise.all([
