@@ -48,7 +48,7 @@ func TestCustomWidgetPathWalking(t *testing.T) {
 	}
 }
 
-// Seven formats, each answering a question a service's numbers actually raise.
+// Eight formats, each answering a question a service's numbers actually raise.
 func TestCustomWidgetFormatting(t *testing.T) {
 	cases := []struct {
 		raw          any
@@ -64,6 +64,22 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		{float64(0.0051589999999999995), "ms", "5"},
 		{float64(1.25), "ms", "1 250"},
 		{"hello", "text", "hello"},
+		// A line speed, in the units a line is sold in. These are Speedtest
+		// Tracker's own numbers for a gigabit connection: the reader is holding
+		// them against the "1 Gbps" on their contract, so bits and steps of
+		// 1000 are what make the two comparable at a glance.
+		{float64(1046085072), "rate", "1.046 Gbps"},
+		{float64(1035033264), "rate", "1.035 Gbps"},
+		// Three decimals, because this week against last week is the whole
+		// point and one decimal rounds both readings to 1.0.
+		{float64(1038000000), "rate", "1.038 Gbps"},
+		// Trailing zeroes stay, so the figure does not change width as it moves.
+		{float64(1000000000), "rate", "1.000 Gbps"},
+		// A slower line scales down on its own rather than reading 0.094 Gbps.
+		{float64(94000000), "rate", "94.000 Mbps"},
+		// Under a kilobit there is nothing to scale, and decimals would be
+		// noise on a number that is already whole.
+		{float64(512), "rate", "512 bps"},
 		// A value the format cannot read falls back to showing it, rather than
 		// showing nothing: the reader can then see what arrived.
 		{"not a number", "count", "not a number"},

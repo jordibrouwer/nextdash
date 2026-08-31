@@ -1965,6 +1965,7 @@
     "widgetShape.meter": "条形",
     "widgetCustomShape": "尺寸",
     "widgetFormat.bytes": "大小",
+    "widgetFormat.rate": "速度",
     "widgetFormat.percent": "百分比",
     "widgetFormat.duration": "时长",
     "widgetFormat.ms": "毫秒",

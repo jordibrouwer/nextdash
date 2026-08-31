@@ -1965,6 +1965,7 @@
     "widgetShape.meter": "Balk",
     "widgetCustomShape": "Formaat",
     "widgetFormat.bytes": "Grootte",
+    "widgetFormat.rate": "Snelheid",
     "widgetFormat.percent": "Percentage",
     "widgetFormat.duration": "Duur",
     "widgetFormat.ms": "Milliseconden",

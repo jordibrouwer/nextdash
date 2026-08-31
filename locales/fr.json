@@ -1965,6 +1965,7 @@
     "widgetShape.meter": "Barre",
     "widgetCustomShape": "Taille",
     "widgetFormat.bytes": "Taille",
+    "widgetFormat.rate": "Débit",
     "widgetFormat.percent": "Pourcentage",
     "widgetFormat.duration": "Durée",
     "widgetFormat.ms": "Millisecondes",

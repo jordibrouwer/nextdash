@@ -265,12 +265,14 @@
             id: 'speedtest', name: 'Speedtest Tracker', group: 'network',
             sample: 'http://speedtest.local:8080',
             path: '/api/v1/results/latest',
-            auth: 'header', authName: 'Authorization',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
             note: 'A Sanctum token, as an Authorization header of "Bearer <token>".',
             ttl: 3600,
             fields: [
-                { path: 'data.download', label: 'down', format: 'bytes', shape: 'large' },
-                { path: 'data.upload', label: 'up', format: 'bytes' },
+                // bits, not bytes: a line is sold in bits, so this is the
+                // figure that can be held against what the contract promised.
+                { path: 'data.download_bits', label: 'down', format: 'rate', shape: 'large' },
+                { path: 'data.upload_bits', label: 'up', format: 'rate' },
                 { path: 'data.ping', label: 'ping ms', format: 'text', shape: 'small' },
             ],
         },
@@ -280,7 +282,7 @@
             id: 'proxmox', name: 'Proxmox VE', group: 'system',
             sample: 'https://proxmox.local:8006',
             path: '/api2/json/nodes/YOUR_NODE/status',
-            auth: 'header', authName: 'Authorization',
+            auth: 'header', authName: 'Authorization', scheme: 'PVEAPIToken=',
             note: 'An API token, as an Authorization header of "PVEAPIToken=user@pam!id=secret".',
             fields: [
                 { path: 'data.uptime', label: 'uptime', format: 'duration', shape: 'small' },
@@ -292,7 +294,7 @@
             id: 'truenas', name: 'TrueNAS', group: 'system',
             sample: 'http://truenas.local',
             path: '/api/v2.0/system/info',
-            auth: 'header', authName: 'Authorization',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
             note: 'An API key, as an Authorization header of "Bearer <key>".',
             fields: [
                 { path: 'uptime_seconds', label: 'uptime', format: 'duration', shape: 'small' },
@@ -346,7 +348,7 @@
             id: 'paperless', name: 'Paperless-ngx', group: 'apps',
             sample: 'http://paperless.local:8000',
             path: '/api/statistics/',
-            auth: 'header', authName: 'Authorization',
+            auth: 'header', authName: 'Authorization', scheme: 'Token ',
             note: 'An API token, as an Authorization header of "Token <token>".',
             fields: [
                 { path: 'documents_total', label: 'documents', format: 'count', shape: 'large' },
@@ -358,7 +360,7 @@
             id: 'homeassistant', name: 'Home Assistant', group: 'apps',
             sample: 'http://homeassistant.local:8123',
             path: '/api/states/sensor.YOUR_SENSOR',
-            auth: 'header', authName: 'Authorization',
+            auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
             note: 'A long-lived access token, as an Authorization header of "Bearer <token>".',
             fields: [
                 { path: 'state', label: 'now', format: 'text', shape: 'large' },

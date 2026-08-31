@@ -68,6 +68,7 @@ const (
 var customWidgetFormats = map[string]bool{
 	"count": true, "bytes": true, "percent": true,
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
+	"rate": true,
 }
 
 /*
@@ -386,6 +387,10 @@ func formatCustomValue(raw any, format string) string {
 		if number, ok := toFloat(raw); ok {
 			return formatByteSize(number)
 		}
+	case "rate":
+		if number, ok := toFloat(raw); ok {
+			return formatBitRate(number)
+		}
 	case "percent":
 		if number, ok := toFloat(raw); ok {
 			// A ratio and a percentage both turn up in the wild, and 0..1 is
@@ -509,6 +514,36 @@ func formatByteSize(value float64) string {
 		return strconv.FormatInt(int64(value), 10) + " B"
 	}
 	return strconv.FormatFloat(math.Round(value*10)/10, 'f', -1, 64) + " " + units[index]
+}
+
+/*
+formatBitRate shows a line speed the way a line speed is sold.
+
+Bits, not bytes, and steps of 1000 rather than 1024 -- both because this format
+exists to be held against a number somebody else quoted. A gigabit connection
+reports 1046085072, and the reader wants to see the "1.05 Gbps" their contract
+promises; dividing by 1024 and calling it MB gives 124.703, which is the same
+measurement expressed so differently that the two cannot be compared at a
+glance. That is a correct number answering a question nobody asked.
+
+Three decimals, because a connection is compared against itself: this week's
+1.046 and last week's 1.038 are a real difference, and one decimal rounds both
+to 1.0. Trailing zeroes are kept so the figure does not change width as the
+digits land.
+*/
+func formatBitRate(value float64) string {
+	units := []string{"bps", "Kbps", "Mbps", "Gbps", "Tbps"}
+	index := 0
+	for value >= 1000 && index < len(units)-1 {
+		value /= 1000
+		index++
+	}
+	if index == 0 {
+		// Under a kilobit there is nothing to scale, and three decimals would
+		// be noise on a number that is already whole.
+		return strconv.FormatInt(int64(value), 10) + " bps"
+	}
+	return strconv.FormatFloat(value, 'f', 3, 64) + " " + units[index]
 }
 
 func formatDurationSeconds(seconds int64) string {

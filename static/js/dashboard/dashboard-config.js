@@ -15311,7 +15311,7 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'rate', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
 
     /*
      * How a figure is drawn, as opposed to what it says.
@@ -15483,6 +15483,132 @@ class DashboardConfig {
      * storage decision and not a reason to send anyone to another screen --
      * whoever is filling in a Sonarr widget is holding the Sonarr key.
      */
+    /*
+     * A secret box with an eye beside it.
+     *
+     * The box itself is unchanged -- same data-widget-auth="secret" the draft
+     * already listens for -- so revealing is bolted beside the form rather than
+     * into it: nothing about saving, drafting or dirty-checking learns that this
+     * button exists.
+     *
+     * The stored value is not rendered here. It is fetched when the eye is
+     * pressed and cleared when it is pressed again, so a key sits in the DOM for
+     * exactly as long as somebody is looking at it, and a panel left open on a
+     * second screen is not a key left on a second screen.
+     */
+    renderSecretInput({ id, index, field, saved, placeholder, value }) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.widgetAuthReveal', 'Show what is stored');
+        // A seeded scheme is not a secret and is the one thing here worth
+        // showing plainly: it is what the reader has to type in front of what
+        // they hold, so masking it would hide the hint at the moment it lands.
+        const seeded = String(value || '');
+        return `
+            <div class="config-secret-field">
+                <input type="${seeded ? 'text' : 'password'}" id="${esc(id)}" class="config-text"
+                    data-widget-auth="secret" value="${esc(seeded)}"
+                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
+                    placeholder="${esc(placeholder)}">
+                <button type="button" class="config-secret-eye" data-secret-reveal="${esc(id)}"
+                    data-widget-index="${index}" data-secret-field="${esc(field || '')}"
+                    data-secret-saved="${saved ? '1' : ''}"
+                    aria-pressed="false" aria-controls="${esc(id)}" title="${esc(label)}"
+                    aria-label="${esc(label)}">${this.secretEyeIcon(false)}</button>
+            </div>`;
+    }
+
+    /*
+     * Show what is stored, or stop showing it.
+     *
+     * Two cases behind one button, and the difference is invisible to whoever
+     * presses it: a box holding something typed just now is already in the DOM
+     * and only needs unmasking, while a box over a saved key is empty and the
+     * value has to be asked for. The reader's question is the same either way --
+     * what is in there -- so the button is the same either way.
+     *
+     * Hiding again clears a fetched value rather than re-masking it, because a
+     * masked box still holds its value: leaving it there would keep the key in
+     * the DOM behind a dot pattern, which is the appearance of having put it
+     * away rather than putting it away. What was typed by hand stays, since
+     * clearing that would throw away an edit nobody asked to lose.
+     */
+    async toggleSecretReveal(button) {
+        const input = document.getElementById(button.getAttribute('data-secret-reveal'));
+        if (!input) return;
+        const revealed = button.getAttribute('aria-pressed') === 'true';
+
+        const setEye = (on) => {
+            button.setAttribute('aria-pressed', on ? 'true' : 'false');
+            button.innerHTML = this.secretEyeIcon(on);
+            const label = on
+                ? this.t('config.widgetAuthHide', 'Hide it again')
+                : this.t('config.widgetAuthReveal', 'Show what is stored');
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
+        };
+
+        if (revealed) {
+            input.type = 'password';
+            // Only what this button put there is taken back.
+            if (button.dataset.secretFetched === '1') {
+                input.value = '';
+                delete button.dataset.secretFetched;
+            }
+            setEye(false);
+            return;
+        }
+
+        // Something typed is its own answer; nothing needs asking.
+        if (!input.value && button.getAttribute('data-secret-saved') === '1') {
+            const index = Number(button.getAttribute('data-widget-index'));
+            const widget = (this._widgetBlocks || [])[index];
+            const id = this.widgetCredentialId(widget);
+            const field = button.getAttribute('data-secret-field') || '';
+            if (!id || !field) return;
+            try {
+                const res = await this.writeFetch(
+                    `/api/health/credentials/reveal?id=${encodeURIComponent(id)}&field=${encodeURIComponent(field)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                input.value = String(data?.value || '');
+                button.dataset.secretFetched = '1';
+            } catch {
+                // The box stays as it was. A key that could not be read is not
+                // a key that changed, so there is nothing to undo and nothing
+                // worth a dialog over a button that can simply be pressed again.
+                this.notify(this.t('config.widgetAuthRevealFailed',
+                    'That key could not be read.'), 'error');
+                return;
+            }
+        }
+        input.type = 'text';
+        setEye(true);
+    }
+
+    /*
+     * Is this only the scheme a preset seeded, with no token after it?
+     *
+     * Compared against what the presets actually seed rather than a rule about
+     * spaces: "PVEAPIToken=" ends in no space at all, and a rule guessing at
+     * the shape of a scheme would let it through while catching things that are
+     * somebody's real key.
+     */
+    isSchemeOnly(value) {
+        const seeds = window.DashboardWidgetPresets?.PRESETS
+            ?.map((preset) => preset.scheme)
+            .filter(Boolean) || [];
+        const typed = String(value || '').trim();
+        return seeds.some((seed) => typed === seed.trim());
+    }
+
+    /** Open and struck-through eyes, as one inline SVG each. */
+    secretEyeIcon(revealed) {
+        const open = `<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2.2"/>`;
+        const shut = `${open}<line x1="2" y1="14" x2="14" y2="2"/>`;
+        return `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="1.4" stroke-linecap="round" aria-hidden="true">${revealed ? shut : open}</svg>`;
+    }
+
     renderWidgetCredential(widget, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const state = this.widgetCredentialState(widget, index);
@@ -15506,6 +15632,22 @@ class DashboardConfig {
             ? this.t('config.widgetAuthKept', 'Set — type to replace')
             : this.t('config.widgetAuthPaste', 'Paste it here');
 
+        /*
+         * Authorization is the one header whose value is not just a secret.
+         *
+         * It carries a scheme -- "Bearer", "token", "PVEAPIToken=" -- and a
+         * service handed the bare secret answers 401 exactly as it would to a
+         * wrong key, which is the most expensive way this form can be filled in
+         * wrongly: everything looks right and the tile just says the service
+         * refused. Said here rather than fixed for them, because a few services
+         * genuinely want the token bare and prefixing it would break those.
+         */
+        const wantsScheme = state.kind === 'header'
+            && String(state.headerName || '').toLowerCase() === 'authorization';
+        const schemeHint = !wantsScheme ? '' : `
+            <p class="config-widget-note config-widget-note-hint">${esc(this.t('config.widgetAuthScheme',
+                'Most services want a scheme in front of the token here — "Bearer <token>" — not the token on its own.'))}</p>`;
+
         const header = state.kind !== 'header' ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-name">${esc(this.t('config.widgetAuthHeaderName', 'Header'))}</label>
@@ -15515,9 +15657,11 @@ class DashboardConfig {
             </div>
             <div class="config-widget-field">
                 <label for="${id}-key">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
-                <input type="password" id="${id}-key" class="config-text" data-widget-auth="secret"
-                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
-                    placeholder="${esc(secretPlaceholder)}">
+                ${this.renderSecretInput({
+                    id: `${id}-key`, index, field: state.headerName || '', saved: state.saved,
+                    placeholder: secretPlaceholder, value: state.seed || '',
+                })}
+                ${schemeHint}
             </div>`;
 
         const basic = state.kind !== 'basic' ? '' : `
@@ -15529,9 +15673,10 @@ class DashboardConfig {
             </div>
             <div class="config-widget-field">
                 <label for="${id}-pass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
-                <input type="password" id="${id}-pass" class="config-text" data-widget-auth="secret"
-                    data-widget-index="${index}" maxlength="1024" spellcheck="false" autocomplete="off"
-                    placeholder="${esc(secretPlaceholder)}">
+                ${this.renderSecretInput({
+                    id: `${id}-pass`, index, field: 'basicPassword', saved: state.saved,
+                    placeholder: secretPlaceholder,
+                })}
             </div>`;
 
         const sharedPick = state.kind !== 'shared' ? '' : `
@@ -16496,6 +16641,9 @@ class DashboardConfig {
             const test = target.closest('[data-custom-test]');
             if (test) { void this.runCustomWidgetTest(indexOn(test, 'data-custom-test')); return; }
 
+            const eye = target.closest('[data-secret-reveal]');
+            if (eye) { void this.toggleSecretReveal(eye); return; }
+
             const dropField = target.closest('[data-custom-remove]');
             if (dropField) {
                 this.removeWidgetDraftField(
@@ -16928,6 +17076,36 @@ class DashboardConfig {
         const draft = this.widgetDraft(index);
         if (!draft) return;
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
+        if (field === 'headerName') this.syncSchemeHint(index, value);
+    }
+
+    /*
+     * Whether the scheme hint is showing, without redrawing the panel.
+     *
+     * The header name is a text box being typed into, and repainting on every
+     * keystroke would take the caret with it -- which is why nothing else in
+     * this form redraws either. So the hint is toggled where it stands: it
+     * belongs to the box above it and appears the moment that box says
+     * Authorization.
+     */
+    syncSchemeHint(index, headerName) {
+        const form = document.querySelector(`[data-widget-auth-form="${index}"]`);
+        if (!form) return;
+        const wanted = String(headerName || '').trim().toLowerCase() === 'authorization';
+        const existing = form.querySelector('.config-widget-note-hint');
+        if (wanted === !!existing) return;
+        if (!wanted) {
+            existing.remove();
+            return;
+        }
+        const key = form.querySelector('[data-widget-auth="secret"]');
+        const field = key?.closest('.config-widget-field');
+        if (!field) return;
+        const note = document.createElement('p');
+        note.className = 'config-widget-note config-widget-note-hint';
+        note.textContent = this.t('config.widgetAuthScheme',
+            'Most services want a scheme in front of the token here — "Bearer <token>" — not the token on its own.');
+        field.appendChild(note);
     }
 
     /*
@@ -16953,7 +17131,25 @@ class DashboardConfig {
         // what the panel was started from survives being saved and reopened.
         Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
         if (preset.auth === 'header') {
-            draft.auth = { kind: 'header', headerName: preset.authName || '', basicUser: '' };
+            /*
+             * The scheme is filled in, the token is not.
+             *
+             * An Authorization header is two things joined by a space, and only
+             * the second half is the secret -- but the box asks for "API key",
+             * so the first half gets left off and the service answers 401
+             * exactly as it would to a wrong key. Nothing on screen can tell
+             * those two apart, which is what made this worth an hour rather
+             * than a glance. Seeding the scheme puts the halves the reader
+             * cannot know beside the one they hold.
+             *
+             * Per preset rather than a constant: Paperless wants "Token ",
+             * Proxmox wants "PVEAPIToken=", and a shared "Bearer " would be
+             * wrong for both in the same silent way.
+             */
+            draft.auth = {
+                kind: 'header', headerName: preset.authName || '', basicUser: '',
+                seed: preset.scheme || '',
+            };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
         } else {
@@ -17050,6 +17246,20 @@ class DashboardConfig {
                 const name = String(auth.headerName || '').trim();
                 if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
                 if (!secret && !(stored.kind === 'header' && stored.headerName === name)) {
+                    say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
+                    return;
+                }
+                /*
+                 * A seeded scheme on its own is not a key.
+                 *
+                 * The box is pre-filled with "Bearer " so the token can be
+                 * pasted after it, which means Save can be pressed over a box
+                 * holding only the scheme -- and that would file the word
+                 * "Bearer" as the secret, sending a header that looks filled in
+                 * and authenticates as nothing. Refused here rather than
+                 * stored, because the tile's 401 would say nothing about why.
+                 */
+                if (secret && this.isSchemeOnly(secret)) {
                     say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
                     return;
                 }

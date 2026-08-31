@@ -1965,6 +1965,7 @@
     "widgetShape.meter": "Bar",
     "widgetCustomShape": "Size",
     "widgetFormat.bytes": "Size",
+    "widgetFormat.rate": "Speed",
     "widgetFormat.percent": "Percentage",
     "widgetFormat.duration": "Duration",
     "widgetFormat.ms": "Milliseconds",

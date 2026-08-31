@@ -1965,6 +1965,7 @@
     "widgetShape.meter": "Balken",
     "widgetCustomShape": "Größe",
     "widgetFormat.bytes": "Größe",
+    "widgetFormat.rate": "Geschwindigkeit",
     "widgetFormat.percent": "Prozent",
     "widgetFormat.duration": "Dauer",
     "widgetFormat.ms": "Millisekunden",
