@@ -72,6 +72,13 @@ test.describe('a failed page load', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
+        // Clear anything already on screen first. The loud test above leaves its
+        // own 503 toast up and the page carries across tests within a file, so
+        // without this "says nothing" would be reading that one — and would
+        // pass or fail on which test ran before it rather than on this load.
+        await page.evaluate(() => window.AppNotification?.hide?.());
+        await expect(page.locator('.app-notification.show')).toHaveCount(0);
+
         // The same failure the loud test uses, so the only difference is who
         // asked for the load.
         await page.route('**/api/bookmarks?page=*', (route) => route.fulfill({ status: 503, body: '' }));

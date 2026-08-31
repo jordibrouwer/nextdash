@@ -63,6 +63,14 @@ async function markWhatsNewSeen(page, options = {}) {
             localStorage.setItem('nextdash:last-whats-new-dashboard-release', rel);
             localStorage.setItem('nextdash:whats-new-search-promo-release', rel);
             localStorage.setItem('nextdash:whats-new-search-promo-start', '0');
+            // The one-time "Shift + Q switches the search mode" note is keyed
+            // to the release the same way, and every test starts on empty
+            // storage — so it is the first load for all of them. It landed in
+            // the notification slot mid-test and was read by anything waiting
+            // on a toast: health-copy-share, dashboard-check-mode-menu,
+            // health-check-mode and dashboard-retry-label each found it instead
+            // of their own message.
+            localStorage.setItem('nextdash:search-mode-key-announced', rel);
             if (confirmCheatsheet) {
                 localStorage.setItem('nextdash:dashboard-cheatsheet-promo-confirmed-v1', '1');
             }
