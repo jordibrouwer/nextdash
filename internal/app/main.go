@@ -195,7 +195,12 @@ func Run(files assetFS) {
 	// The secrets a check sends, in their own file outside the backup.
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
+	// The same fetch, made once on demand and answered in full: what the
+	// service said as well as what the paths made of it, so a tile can be
+	// written against the document rather than guessed at.
+	r.HandleFunc("/api/widgets/custom/test", handlers.CustomWidgetTestHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/webhooks/test", handlers.TestWebhookHandler).Methods("POST", "OPTIONS")
 	// Not under /api: an MCP endpoint is a published address that goes into a

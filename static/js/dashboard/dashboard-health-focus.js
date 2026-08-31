@@ -43,6 +43,41 @@ class DashboardHealthFocus {
          * "done for today" — rather than a toast saying the list ran out.
          */
         this.session = null;
+        /**
+         * Preview payloads by issue key, for the cards in this session.
+         *
+         * The report already carries whatever preview the bookmark has stored,
+         * so this holds only what had to be asked for. Keyed rather than kept on
+         * the card because the queue moves back and forth: stepping k then j
+         * onto a card that was already filled in must not ask the server twice.
+         * A key that resolved to nothing is stored as null, which is the
+         * difference between "no preview exists" and "not asked yet" — without
+         * it every render of a preview-less bookmark starts the same doomed
+         * request again.
+         */
+        this._previews = new Map();
+        /** Keys with a request in flight, so a re-render cannot start a second. */
+        this._previewPending = new Set();
+        /** Keys whose fetch failed, so the card stops retrying on every render. */
+        this._previewFailed = new Set();
+        /**
+         * Keys opened from inside this session.
+         *
+         * Tracked rather than read off `lastOpened` alone: a bookmark opened
+         * last week also has a timestamp, and striking "never opened" on a card
+         * for something you did not just do would be the card claiming credit
+         * for history. The strike-through means "you settled this one, here,
+         * now" — so it has to be scoped to this session.
+         */
+        this._openedKeys = new Set();
+        /**
+         * Whether the preview panel is folded away, for the whole session.
+         *
+         * One setting rather than one per card: the choice being made is "do I
+         * want to see previews while I work through this", and answering it
+         * again on every card would be its own chore.
+         */
+        this.previewCollapsed = DashboardHealthFocus.readPreviewCollapsed();
     }
 
     get dash() {
@@ -140,6 +175,136 @@ class DashboardHealthFocus {
                 return DashboardHealthFocus.REVIEW_FLAGS.some((flag) => flags.includes(flag));
             })
             .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0));
+    }
+
+    // ─── Preview ────────────────────────────────────────────────────────────
+
+    /** Remembered across sessions: the fold is a preference, not a mode. */
+    static readPreviewCollapsed() {
+        try {
+            return window.localStorage?.getItem(DashboardHealthFocus.PREVIEW_FOLD_KEY) === '1';
+        } catch {
+            // Storage refused (private browsing): showing the preview is the
+            // better default to fall back to, since it is what the card is for.
+            return false;
+        }
+    }
+
+    static writePreviewCollapsed(collapsed) {
+        try {
+            window.localStorage?.setItem(DashboardHealthFocus.PREVIEW_FOLD_KEY, collapsed ? '1' : '0');
+        } catch {
+            /* nothing to fall back to, and nothing worth breaking over */
+        }
+    }
+
+    /**
+     * The preview for one issue: what the report already knew, else what was
+     * fetched for it.
+     *
+     * The report's own fields come first so a bookmark with stored preview data
+     * draws immediately, with no request and no skeleton.
+     */
+    previewFor(issue) {
+        const stored = {
+            title: String(issue?.previewTitle || '').trim(),
+            description: String(issue?.previewDesc || '').trim(),
+            image: String(issue?.previewImage || '').trim(),
+        };
+        if (stored.title || stored.description || stored.image) return stored;
+        const key = this.health.issueKey(issue);
+        return this._previews.get(key) || null;
+    }
+
+    /**
+     * Has this key been settled — with a preview, with "there is none", or with
+     * a failure this card has already absorbed?
+     *
+     * All three stop the card asking again. Only the first two survive leaving
+     * and re-entering the session.
+     */
+    previewResolved(issue) {
+        const key = this.health.issueKey(issue);
+        return Boolean(this.previewFor(issue))
+            || this._previews.has(key)
+            || this._previewFailed.has(key);
+    }
+
+    /**
+     * Ask the server for one bookmark's preview.
+     *
+     * The per-URL route, not the collection-wide refresh the toolbar offers:
+     * this is about the card in front of you, and walking every bookmark to
+     * fill in one card would be the wrong trade by three orders of magnitude.
+     * Deliberately read-only — it does not write the preview back onto the
+     * bookmark, because a review session should not silently edit the records
+     * it is asking you about.
+     */
+    async fetchPreview(issue, { render = true } = {}) {
+        const key = this.health.issueKey(issue);
+        const url = String(issue?.url || '').trim();
+        if (!key || !url) return;
+        if (this._previewPending.has(key) || this.previewResolved(issue)) return;
+
+        this._previewPending.add(key);
+        if (render) this.syncPreviewLoading(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher(`/api/bookmark-preview?url=${encodeURIComponent(url)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const preview = {
+                title: String(data?.title || '').trim(),
+                description: String(data?.description || '').trim(),
+                image: String(data?.image || '').trim(),
+            };
+            // Stored even when empty: "asked, and there is nothing" is an answer,
+            // and re-asking on every render would hammer a page that has no
+            // metadata to give.
+            this._previews.set(key, preview.title || preview.description || preview.image ? preview : null);
+        } catch {
+            // Remembered as failed rather than as an answer: the card stops
+            // promising a preview is coming, and stops asking again on every
+            // render — but the key is left out of _previews, so re-entering the
+            // session tries once more instead of treating a network blip as the
+            // permanent truth about the page.
+            this._previewFailed.add(key);
+        } finally {
+            this._previewPending.delete(key);
+            if (render) this.syncPreviewLoading(key, false);
+        }
+
+        // Only repaint if this is still the card on screen: a fetch that lands
+        // after two more j presses must not redraw someone else's decision.
+        if (render && this.active && this.health.issueKey(this.currentIssue() || {}) === key) {
+            this.render();
+        }
+    }
+
+    /**
+     * Warm the next card's preview while this one is being decided.
+     *
+     * The queue is ordered and moved through one way far more often than the
+     * other, so the next card is a good guess and the request has a whole
+     * decision's worth of time to land. Only one ahead: prefetching further
+     * would spend requests on cards that a delete or a run of skips means you
+     * never see.
+     */
+    prefetchNext() {
+        const nextKey = this.queue[this.position + 1];
+        if (!nextKey) return;
+        const issue = (this.health.report?.issues || [])
+            .find((row) => this.health.issueKey(row) === nextKey);
+        if (!issue) return;
+        if (this.previewResolved(issue) || this._previewPending.has(nextKey)) return;
+        void this.fetchPreview(issue, { render: false });
+    }
+
+    /** The skeleton state, toggled without rebuilding the card underneath it. */
+    syncPreviewLoading(key, loading) {
+        if (this.health.issueKey(this.currentIssue() || {}) !== key) return;
+        this.host?.querySelector('.health-focus-preview')
+            ?.classList.toggle('is-loading', Boolean(loading));
     }
 
     /**
@@ -275,9 +440,26 @@ class DashboardHealthFocus {
         });
     }
 
+    /**
+     * Open the bookmark, and let the card say that it happened.
+     *
+     * openIssue already records the open — it writes lastOpened and openCount
+     * and tells analytics — but the only thing it repaints is the list row's
+     * "last opened" label, behind this overlay. From here that repaint lands on
+     * an element the card does not have, so the card went on saying "never
+     * opened" about a link you had just opened, and the one action whose whole
+     * point is that it changes the answer was the one action that looked like it
+     * did nothing. The data was never the problem; showing it was.
+     */
     open_() {
         const issue = this.currentIssue();
-        if (issue) this.health.openIssue(issue);
+        if (!issue) return;
+        this._openedKeys.add(this.health.issueKey(issue));
+        this.health.openIssue(issue);
+        // Re-read rather than trusting the object: openIssue mutates the issue
+        // in the report, and re-rendering from the queue key is what every other
+        // action here does.
+        this.render();
     }
 
     /**
@@ -440,6 +622,108 @@ class DashboardHealthFocus {
         });
     }
 
+    /**
+     * The bookmark's own favicon, so the card is recognisable before it is read.
+     *
+     * Same resolution and same 🔗 fallback as the list row — the icon is a bare
+     * filename served from /data/icons/, and a card that resolved it differently
+     * would show a broken image next to a row that showed the icon fine.
+     */
+    renderIcon(issue) {
+        const src = this.health.resolveIssueIconSrc?.(issue?.icon) || '';
+        const img = src
+            ? `<img class="health-focus-icon-img" src="${this.esc(src)}" alt="" loading="lazy">`
+            : '🔗';
+        return `<div class="health-focus-icon" aria-hidden="true">${img}</div>`;
+    }
+
+    /**
+     * When this bookmark was last opened, on the card rather than only in the row.
+     *
+     * This is the line the Open button changes, and the reason it exists here:
+     * "never opened" is one of the four things a review session is made of, so
+     * the card has to be able to show that it stopped being true.
+     */
+    renderOpened(issue) {
+        const format = window.formatLastOpened;
+        if (typeof format !== 'function') return '';
+        const { label, title, never } = format(issue?.lastOpened, {
+            t: (key, fallback, params) => this.t(key, fallback, params),
+        });
+        const cls = never ? 'health-focus-opened is-never' : 'health-focus-opened';
+        return `<p class="${cls}" data-focus-opened title="${this.esc(title)}">${this.esc(label)}</p>`;
+    }
+
+    /**
+     * Which of this row's reasons the card has already disproved.
+     *
+     * Only the two the card can settle by itself. Opening a link answers "never
+     * opened" and "not opened in 30 days" outright — the timestamp is written
+     * and there is nothing left to check. Every other reason (a dead link, a
+     * changed page) is the server's to re-decide on the next re-check, and
+     * guessing at those from here is how a card starts lying.
+     */
+    resolvedReasonCodes(issue) {
+        const codes = new Set();
+        if (Number(issue?.lastOpened) && this._openedKeys?.has(this.health.issueKey(issue))) {
+            codes.add('never_opened');
+            codes.add('not_opened_30_days');
+        }
+        return codes;
+    }
+
+    /**
+     * What the page says about itself: image, title line and description.
+     *
+     * Folded away by choice, and the fold is remembered — someone clearing
+     * eighty dead links wants the decision and nothing else, and someone
+     * deciding whether a link is still worth keeping wants exactly this. The
+     * panel keeps its place in the layout either way so the buttons do not walk
+     * up and down the screen between cards.
+     */
+    renderPreview(issue) {
+        const collapsed = this.previewCollapsed;
+        const preview = this.previewFor(issue);
+        const pending = this._previewPending.has(this.health.issueKey(issue));
+        const asked = this.previewResolved(issue);
+
+        const toggle = `<button type="button" class="health-focus-preview-toggle" data-focus="preview-toggle"
+            aria-expanded="${collapsed ? 'false' : 'true'}">
+            <span class="health-focus-preview-caret" aria-hidden="true">${collapsed ? '▸' : '▾'}</span>
+            ${this.esc(this.t('dashboard.healthFocusPreview', 'Preview'))}
+        </button>`;
+
+        if (collapsed) {
+            return `<div class="health-focus-preview is-collapsed">${toggle}</div>`;
+        }
+
+        let body;
+        if (preview) {
+            const image = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(preview.image) || '';
+            // The description is the useful half and the image is the fast half,
+            // so a preview with only one of them still draws rather than being
+            // treated as no preview at all.
+            body = `
+                ${image ? `<div class="health-focus-preview-image"><img src="${this.esc(image)}" alt="" loading="lazy"></div>` : ''}
+                ${preview.title ? `<p class="health-focus-preview-title">${this.esc(preview.title)}</p>` : ''}
+                ${preview.description ? `<p class="health-focus-preview-desc">${this.esc(preview.description)}</p>` : ''}`;
+        } else if (pending || !asked) {
+            // Not-yet-asked renders as the skeleton too: the fetch is started by
+            // this very render, so anything else would flash "nothing here"
+            // for one frame before the request even leaves.
+            body = `<p class="health-focus-preview-empty">${this.esc(
+                this.t('dashboard.healthFocusPreviewLoading', 'Fetching the preview…'))}</p>`;
+        } else {
+            body = `<p class="health-focus-preview-empty">${this.esc(
+                this.t('dashboard.healthFocusPreviewNone', 'This page offers no preview.'))}</p>`;
+        }
+
+        return `<div class="health-focus-preview${pending ? ' is-loading' : ''}">
+            ${toggle}
+            <div class="health-focus-preview-body">${body}</div>
+        </div>`;
+    }
+
     render() {
         if (!this.active) return;
         const issue = this.currentIssue();
@@ -451,9 +735,23 @@ class DashboardHealthFocus {
         const host = this.ensureHost();
         const title = issue.name || issue.previewTitle || this.health.formatUrlDisplay(issue.url);
         const reasons = this.health.reasonEntries(issue) || [];
+        const resolved = this.resolvedReasonCodes(issue);
+        /*
+         * A reason the card has just disproved is struck through rather than
+         * removed. Removing it would make the card disagree with the score and
+         * the list behind it, which both still count it until the next report;
+         * striking it says "this one is dealt with" without pretending the
+         * report has caught up. The score is deliberately left alone for the
+         * same reason opening does not re-sort the list.
+         */
         const reasonList = reasons.length
             ? `<ul class="health-focus-reasons">${reasons
-                .map((r) => `<li>${this.esc(r.label)}</li>`).join('')}</ul>`
+                .map((r) => {
+                    const done = r.code && resolved.has(r.code);
+                    return `<li${done ? ' class="is-resolved"' : ''}>${this.esc(r.label)}${
+                        done ? ` <span class="health-focus-reason-done">${this.esc(
+                            this.t('dashboard.healthFocusReasonResolved', 'just now'))}</span>` : ''}</li>`;
+                }).join('')}</ul>`
             : '';
 
         host.innerHTML = `
@@ -468,14 +766,23 @@ class DashboardHealthFocus {
                         aria-label="${this.esc(this.t('dashboard.healthFocusClose', 'Close'))}">×</button>
                 </div>
 
-                <h2 class="health-focus-title">${this.esc(title)}</h2>
-                <p class="health-focus-url">${this.esc(this.health.formatUrlDisplay(issue.url))}</p>
+                <div class="health-focus-identity">
+                    ${this.renderIcon(issue)}
+                    <div class="health-focus-identity-text">
+                        <h2 class="health-focus-title">${this.esc(title)}</h2>
+                        <p class="health-focus-url">${this.esc(this.health.formatUrlDisplay(issue.url))}</p>
+                    </div>
+                </div>
+
+                ${this.renderOpened(issue)}
 
                 <div class="health-focus-badges">
                     ${this.health.renderCertBadge(issue)}
                     ${this.health.renderDriftBadge(issue)}
                     ${this.health.renderMutedBadge(issue)}
                 </div>
+
+                ${this.renderPreview(issue)}
 
                 ${reasonList}
 
@@ -502,6 +809,7 @@ class DashboardHealthFocus {
             open: () => this.open_(),
             delete: () => void this.remove(),
             next: () => this.move(1),
+            'preview-toggle': () => this.togglePreview(),
         };
         host.querySelectorAll('[data-focus]').forEach((btn) => {
             btn.addEventListener('click', (e) => {
@@ -510,12 +818,43 @@ class DashboardHealthFocus {
                 actions[btn.getAttribute('data-focus')]?.();
             });
         });
+        // A preview that fails to load leaves the frame empty rather than
+        // showing the browser's broken-image glyph in the middle of the card.
+        const previewImg = host.querySelector('.health-focus-preview-image img');
+        previewImg?.addEventListener('error', () => {
+            previewImg.closest('.health-focus-preview-image')?.remove();
+        }, { once: true });
         // Clicking the backdrop leaves, matching every other overlay in the app.
         host.addEventListener('mousedown', (e) => {
             if (e.target === host) this.close();
         });
+
+        // Asked for after painting, so the card is on screen while the request
+        // is in flight rather than the overlay waiting on the network to appear.
+        // Both are no-ops for anything already known or already asked.
+        if (!this.previewCollapsed) {
+            void this.fetchPreview(issue);
+        }
+        this.prefetchNext();
+    }
+
+    /**
+     * Fold the preview away, or back. Remembered for next time.
+     *
+     * Unfolding fetches what the fold had been skipping — the panel was not
+     * merely hidden, it was not asked for, which is the point of a fold on a
+     * card that costs a request.
+     */
+    togglePreview() {
+        this.previewCollapsed = !this.previewCollapsed;
+        DashboardHealthFocus.writePreviewCollapsed(this.previewCollapsed);
+        window.nextdashTrack?.('health:focus-preview', { shown: !this.previewCollapsed });
+        this.render();
     }
 }
+
+/** Where the fold is remembered. */
+DashboardHealthFocus.PREVIEW_FOLD_KEY = 'nextdashHealthFocusPreviewCollapsed';
 
 /**
  * What a review session is allowed to contain. Flags rather than status, for the

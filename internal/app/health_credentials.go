@@ -459,3 +459,87 @@ func (h *Handlers) HealthCredentialsHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
+
+/*
+widgetCredentialPrefix marks an entry as belonging to one custom widget.
+
+The config panel derives this id from the widget rather than asking anyone to
+name a secret, so the prefix is the one durable difference between "a key that
+exists because somebody filled in a widget" and "a sign-in somebody made on
+purpose and pointed several checks at".
+*/
+const widgetCredentialPrefix = "widget:"
+
+/*
+HealthCredentialRevealHandler hands back one stored secret, for one widget.
+
+This is the deliberate exception to the rule the rest of this file keeps: a
+value written here does not come back. It exists because the panel that stores a
+key is also the panel where "what did I actually paste in there" is the question
+that cannot otherwise be answered -- an Authorization header missing its "Bearer"
+prefix looks identical to a correct one from the outside, and the only way to
+see the difference was to read the file over somebody's shoulder.
+
+Three things keep the exception narrow, and all three are the point:
+
+  - Only widget: ids. A shared sign-in is pointed at by several checks and was
+    named on purpose; it stays write-only, so this route cannot be used to walk
+    the credential store.
+  - One field per request, named. There is no shape here that returns
+    everything, so a caller has to already know what it is asking for.
+  - Behind the write token, and logged. Revealing is a write-shaped act even
+    though it changes nothing, and it leaves a trace.
+*/
+func (h *Handlers) HealthCredentialRevealHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// The same gate PUT and DELETE sit behind. Reading a secret is not a
+	// lesser act than replacing one.
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	id := normalizeCredentialID(r.URL.Query().Get("id"))
+	if id == "" || !strings.HasPrefix(id, widgetCredentialPrefix) {
+		// Deliberately the same answer as an id that does not exist: a caller
+		// probing this route learns nothing about which shared sign-ins are
+		// stored.
+		http.Error(w, "Unknown credential", http.StatusNotFound)
+		return
+	}
+	credential, ok := lookupHealthCredential(id)
+	if !ok {
+		http.Error(w, "Unknown credential", http.StatusNotFound)
+		return
+	}
+
+	field := strings.TrimSpace(r.URL.Query().Get("field"))
+	var value string
+	switch {
+	case field == "basicPassword":
+		value = credential.BasicPassword
+	case field != "":
+		// A header, by name. Canonicalised so the caller may ask with whatever
+		// casing the form showed it in.
+		if credential.Headers != nil {
+			value = credential.Headers[http.CanonicalHeaderKey(field)]
+		}
+	}
+	if value == "" {
+		http.Error(w, "Unknown field", http.StatusNotFound)
+		return
+	}
+
+	// Named, not valued: the log says a secret was read and which one, so the
+	// trace is useful without the trace itself becoming a second copy.
+	logWarn(logComponentHealth, "the stored secret for %s (%s) was revealed to the config panel", id, field)
+	_ = json.NewEncoder(w).Encode(map[string]any{"value": value})
+}

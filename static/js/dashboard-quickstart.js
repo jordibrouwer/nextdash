@@ -527,8 +527,16 @@
         async fetchAllFaviconsAfterSetup() {
             const d = this.dash;
             if (typeof window.ConfigFaviconPrefetch !== 'function') {
+                window.nextdashSetupFaviconsDone = true;
                 return;
             }
+            // Flagged because this runs unawaited, 400ms after setup, and ends
+            // in loadData() + renderDashboard() — so every row is rebuilt from
+            // the server well after the dashboard looked settled. Anything that
+            // writes onto a bookmark before this lands loses the write, which
+            // is a race a test cannot see coming and a reader meets as an icon
+            // arriving late.
+            window.nextdashSetupFaviconsDone = false;
             try {
                 const t = (key) => this.language?.t?.(key) ?? key;
                 const prefetch = new window.ConfigFaviconPrefetch(t);
@@ -539,6 +547,8 @@
                 }
             } catch (error) {
                 console.warn('Favicon fetch after setup failed; keeping existing icons.', error);
+            } finally {
+                window.nextdashSetupFaviconsDone = true;
             }
         }
 

@@ -10,22 +10,22 @@
     'use strict';
 
     /*
-     * The two tokens do different jobs, and both move for v1.4.2.4.
+     * The two tokens do different jobs, and only one of them moves for
+     * v1.4.4.1.
      *
      * DASHBOARD_RELEASE is the one that reopens this window: an install whose
-     * stored value differs sees the notes once on its next visit.
-     *
-     * v1.4.2.1, v1.4.2.2, v1.4.2.3 and v1.2.1 were each recorded with
-     * `hideFromModal` while they shipped — a round of additions to one tile
-     * should not reopen the notes in front of readers who had just been shown a
-     * large release. Four of them accumulated, which is more than "one small
-     * round": between them they hold the guided-tour replay, every theme's
-     * backdrop, and the work in v1.4.2.4 itself. The flag is gone from all of
-     * them, so the modal now shows what the changelog has said all along.
+     * stored value differs sees the notes once on its next visit. It names
+     * v1.4.4 rather than v1.4.4.1, because v1.4.4.1 is flagged `hideFromModal`
+     * — a small round of work on one tile, recorded in the changelog and the
+     * manual, not worth reopening the notes for. Moving the token would promise
+     * something new and then show the reader v1.4.4 again, which is worse than
+     * saying nothing.
      *
      * NEXTDASH_WHATS_NEW_DATA_VERSION below is the `?v=` on every what's-new
-     * file, and always has to move: without it a browser that already read the
-     * index keeps its copy and never learns v1.4.2.4 exists at all.
+     * file, and always has to move: the index changed, and without a new token
+     * a browser that already read it keeps its copy — so Config → Overview
+     * would go on reporting v1.4.5, a release that no longer exists under that
+     * name.
      */
     const DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.4.4';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
@@ -36,7 +36,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v267';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v269';
 
     let loadPromise = null;
 

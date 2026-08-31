@@ -62,6 +62,7 @@ class DashboardHealth {
         this.selectedKey = null;
         /** Deep-link target from `?hv_id=` — applied after the feed renders. */
         this.focusIssueKey = null;
+        this.focusIssueWiden = false;
         /**
          * Whether hovering may take the selection.
          *
@@ -386,7 +387,14 @@ class DashboardHealth {
             this.loading = false;
         }
         if (this.focusIssueKey) {
-            this.prepareIssueFocus(this.focusIssueKey);
+            // Widen only for a deep link, which is the one case that asked for
+            // a named row rather than for the list as it stands. After an
+            // ordinary action the key is there to land the reader back where
+            // they were, and clearing their search to do it is the bug this
+            // flag exists to stop.
+            const widen = this.focusIssueWiden === true;
+            this.focusIssueWiden = false;
+            this.prepareIssueFocus(this.focusIssueKey, { widen });
         }
         this.render();
     }
@@ -3047,7 +3055,7 @@ class DashboardHealth {
      * Adjust filter/search/limit so `key` will appear in the next render.
      * Returns false when the issue does not exist.
      */
-    prepareIssueFocus(key) {
+    prepareIssueFocus(key, { widen = true } = {}) {
         const id = String(key || '').trim();
         if (!id || !/^\d+:\d+$/.test(id)) {
             return false;
@@ -3057,10 +3065,20 @@ class DashboardHealth {
             return false;
         }
 
-        this.searchQuery = '';
+        // Widening is for `?hv_id=`: a link names one bookmark, so a search or
+        // a filter hiding it makes the link do nothing, and clearing both is
+        // the only way to honour it.
+        //
+        // keepPlaceAt sets focusIssueKey for every ordinary action too, so that
+        // a reload lands the reader back where they were — and loadAndRender
+        // applies whatever key is set. Widening there threw away the search the
+        // reader was in the middle of: changing a row's check mode emptied the
+        // box and put all three rows back. So the row is looked for as the list
+        // stands, and only a deep link is allowed to clear the way to it.
         let filtered = this.getFilteredIssues();
         let index = filtered.findIndex((issue) => this.issueKey(issue) === id);
-        if (index < 0) {
+        if (index < 0 && widen) {
+            this.searchQuery = '';
             this.filter = 'all';
             filtered = this.getFilteredIssues();
             index = filtered.findIndex((issue) => this.issueKey(issue) === id);
@@ -5681,6 +5699,10 @@ class DashboardHealth {
             const issueKey = (params.get('hv_id') || '').trim();
             if (/^\d+:\d+$/.test(issueKey)) {
                 this.focusIssueKey = issueKey;
+                // A link names one bookmark, so the view has to clear a path to
+                // it. Every other setter of focusIssueKey is keeping the
+                // reader's place and must not.
+                this.focusIssueWiden = true;
                 stateFromUrl = true;
             }
             const refreshRaw = (params.get('hv_refresh') || '').toLowerCase();

@@ -70,6 +70,38 @@
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
 }
 
+/* The favicon rides beside the name, the same pairing the list row uses, so a
+   card is recognisable before it is read. */
+.health-focus-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.health-focus-identity-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.health-focus-icon {
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.health-focus-icon-img {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
+    border-radius: 0.25rem;
+}
+
 .health-focus-title {
     margin: 0 0 0.25rem;
     font-size: 1.15rem;
@@ -80,10 +112,23 @@
 }
 
 .health-focus-url {
-    margin: 0 0 0.75rem;
+    margin: 0;
     font-size: 0.82rem;
     color: var(--text-secondary);
     overflow-wrap: anywhere;
+}
+
+/* The line the Open button changes. Never-opened is called out in the warning
+   colour because it is one of the findings, not a neutral timestamp. */
+.health-focus-opened {
+    margin: 0 0 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.health-focus-opened.is-never {
+    color: var(--accent-warning, var(--text-secondary));
 }
 
 .health-focus-badges {
@@ -100,6 +145,101 @@
     margin-bottom: 0;
 }
 
+/* What the page says about itself. Bounded on purpose: the preview informs the
+   decision, it is not the decision, so it never grows tall enough to push the
+   buttons off the card. */
+.health-focus-preview {
+    margin: 0 0 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: var(--background-primary);
+    overflow: hidden;
+}
+
+.health-focus-preview-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.health-focus-preview-toggle:hover {
+    color: var(--text-primary);
+}
+
+.health-focus-preview-caret {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+/* Collapsed is the toggle and nothing else, so folding the preview away does
+   not change where the buttons sit by more than the one row it removes. */
+.health-focus-preview.is-collapsed {
+    background: transparent;
+    border-color: transparent;
+}
+
+.health-focus-preview.is-collapsed .health-focus-preview-toggle {
+    padding-left: 0;
+}
+
+.health-focus-preview-body {
+    padding: 0 0.6rem 0.6rem;
+}
+
+.health-focus-preview-image {
+    margin-bottom: 0.5rem;
+    border-radius: 0.35rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.health-focus-preview-image img {
+    display: block;
+    width: 100%;
+    max-height: 9rem;
+    object-fit: cover;
+}
+
+.health-focus-preview-title {
+    margin: 0 0 0.2rem;
+    font-size: 0.86rem;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.health-focus-preview-desc {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    /* Three lines is enough to tell what a page is about; more turns the card
+       into a reading surface and buries the decision. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.health-focus-preview-empty {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.health-focus-preview.is-loading .health-focus-preview-body {
+    opacity: 0.55;
+}
+
 .health-focus-reasons {
     margin: 0 0 1.1rem;
     padding-left: 1.1rem;
@@ -110,6 +250,20 @@
 
 .health-focus-reasons li + li {
     margin-top: 0.2rem;
+}
+
+/* A reason answered on this card. Struck rather than removed: the score and the
+   list behind still count it until the next report, and deleting the line would
+   make the card disagree with both. */
+.health-focus-reasons li.is-resolved {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.health-focus-reason-done {
+    text-decoration: none;
+    font-size: 0.74rem;
+    color: var(--accent-success, var(--text-secondary));
 }
 
 .health-focus-actions {

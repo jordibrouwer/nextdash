@@ -5880,6 +5880,58 @@ button.config-bm-shortcut-pill {
     grid-column: 1 / -1;
 }
 
+/*
+   A secret box with its eye, as one row.
+
+   The button sits beside the input rather than inside it: an overlay would have
+   to be positioned against a box whose width is set by the grid, and the two
+   reflow independently on a narrow panel. Beside it, the flex row does that
+   arithmetic on its own.
+*/
+.config-secret-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.config-secret-field > .config-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-secret-eye {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-muted, #888);
+    background: transparent;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 4px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.config-secret-eye:hover,
+.config-secret-eye:focus-visible {
+    color: var(--text-color, #ddd);
+    border-color: var(--accent-color, #6c9);
+}
+
+/* Pressed means a key is on screen, which is worth looking like something. */
+.config-secret-eye[aria-pressed="true"] {
+    color: var(--accent-color, #6c9);
+    border-color: var(--accent-color, #6c9);
+}
+
+/* The scheme hint sits under the key it is about, not with the storage note. */
+.config-widget-note-hint {
+    margin-top: 4px;
+}
+
 .config-widget-auth-actions {
     display: flex;
     align-items: center;
@@ -5930,6 +5982,166 @@ button.config-bm-shortcut-pill {
         padding-bottom: 10px;
         border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     }
+}
+
+/*
+   Trying a custom widget's address, in the panel that configures it.
+
+   The point of the block is that both halves are on screen together: what the
+   service said, and what these paths made of it. So the document gets room to
+   be read -- monospace, scrolling in its own box rather than pushing the Save
+   button off the bottom of the screen -- and the figures sit above it in the
+   order the tile would draw them.
+*/
+.config-custom-probe-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.config-custom-probe-every {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+.config-custom-probe-every .config-select {
+    width: auto;
+}
+
+.config-custom-probe {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* The facts about the request, each answering a different question, so they
+   read as a strip rather than a sentence. */
+.config-probe-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.config-probe-chip {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.config-probe-error {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--accent-error, #d9534f);
+}
+
+.config-probe-note {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.84);
+    color: var(--text-muted, #888);
+}
+
+.config-probe-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-probe-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.78);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-probe-values,
+.config-probe-items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.config-probe-value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: calc(var(--font-size-text) * 0.9);
+}
+
+.config-probe-value-label {
+    color: var(--text-secondary);
+    min-width: 8rem;
+}
+
+.config-probe-value-figure {
+    font-family: var(--font-family-mono, monospace);
+    color: var(--text-primary, inherit);
+}
+
+.config-probe-value-note,
+.config-probe-items > li {
+    font-size: calc(var(--font-size-text) * 0.84);
+    color: var(--text-muted, #888);
+}
+
+.config-probe-value.is-missing .config-probe-value-figure {
+    color: var(--accent-warning, #c98a00);
+}
+
+/*
+   A figure that moved on the last beat, marked for one beat.
+
+   Watching something is only worth the requests if a change is visible, and
+   four numbers refreshing in place look identical whether or not any of them
+   did. It fades rather than staying lit: the mark says "this just changed",
+   not "this is important".
+*/
+.config-probe-value.is-changed {
+    animation: config-probe-change 1.6s ease-out;
+}
+
+@keyframes config-probe-change {
+    from { background: color-mix(in srgb, var(--accent-primary, #4a9eff) 22%, transparent); }
+    to { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-probe-value.is-changed {
+        animation: none;
+        background: color-mix(in srgb, var(--accent-primary, #4a9eff) 12%, transparent);
+    }
+}
+
+.config-probe-body {
+    margin: 0;
+    max-height: 22rem;
+    overflow: auto;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    background: var(--background-secondary, rgba(128, 128, 128, 0.08));
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.72rem;
+    line-height: 1.5;
+    white-space: pre;
+    tab-size: 2;
+    color: var(--text-secondary);
 }
 
 /*
