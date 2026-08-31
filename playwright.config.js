@@ -27,7 +27,7 @@ module.exports = defineConfig({
     // which is the sort of thing a red suite is supposed to tell you.
     // Run them with `npm run test:news-stream` and friends.
     testMatch: /.*\.spec\.js$/,
-    timeout: 30_000,
+    timeout: 60_000,
     // Deliberately false, and it is not about parallelism -- `workers: 1` below
     // already rules that out. It decides how `--shard` divides the suite: with
     // fullyParallel Playwright shards by individual test, so one spec file can

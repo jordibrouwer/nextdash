@@ -523,6 +523,26 @@ async function openInboxToolbarMenu(page) {
     return menu;
 }
 
+/**
+ * Open the health view's toolbar overflow menu, returning the menu locator.
+ *
+ * d4e22e33 kept the toolbar's everyday buttons and filed the rest behind `⋯`:
+ * Export rows, the history export, Open broken, Merge duplicates, Fetch
+ * previews, Retest all and Check off all moved into a menu that renders
+ * `hidden`. A test that clicks one of them has to open the menu first, the way
+ * a user does — the same move openInboxToolbarMenu makes for the inbox.
+ * Safe to call twice: an already-open menu is left open.
+ */
+async function openHealthToolbarMenu(page) {
+    const menu = page.locator('.health-view-menu--toolbar[data-menu-for="toolbar"]');
+    if (await menu.isVisible().catch(() => false)) {
+        return menu;
+    }
+    await page.locator('[data-health-toolbar-more]').click();
+    await menu.waitFor({ state: 'visible' });
+    return menu;
+}
+
 module.exports = {
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,
@@ -549,4 +569,5 @@ module.exports = {
     tapShortcutLetter,
     selectKeyboardBookmark,
     openInboxToolbarMenu,
+    openHealthToolbarMenu,
 };

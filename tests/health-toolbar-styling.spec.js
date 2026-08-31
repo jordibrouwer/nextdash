@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Every button in the health toolbar has to look like a button in the health
@@ -11,6 +11,12 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * beside them: different height, different radius, system colours. The rule
  * lists its buttons by class, which is exactly the kind of list a new button
  * gets left out of, so this compares the whole row rather than one class.
+ *
+ * d4e22e33 emptied that row: everything but Work through and Rot report moved
+ * behind `⋯`, where .health-view-menu restyles them as menu items — flat, no
+ * border, menu type. Comparing Export to Rot report now compares two things
+ * deliberately drawn differently, so the row this guards is the row that is
+ * left: Rot report against the overflow button standing beside it.
  */
 
 async function openHealth(page) {
@@ -37,14 +43,19 @@ const boxOf = (locator) => locator.evaluate((el) => {
 test('the secondary toolbar buttons are shaped alike', async ({ page }) => {
     await openHealth(page);
 
-    const exportBtn = page.locator('.health-view-toolbar-actions .health-view-export-btn');
     const rotBtn = page.locator('.health-view-toolbar-actions .health-view-rot-btn');
-    await expect(exportBtn).toBeVisible();
+    const moreBtn = page.locator('.health-view-toolbar-actions [data-health-toolbar-more]');
     await expect(rotBtn).toBeVisible();
+    await expect(moreBtn).toBeVisible();
 
-    // Export is the one this rule was written for; Rot report is the one that
-    // was left out of it.
-    expect(await boxOf(rotBtn)).toEqual(await boxOf(exportBtn));
+    // The overflow button carries its own rule, written to match the buttons it
+    // stands among rather than itself. Rot report is the one that was left out
+    // of the shared rule once already.
+    const rot = await boxOf(rotBtn);
+    const more = await boxOf(moreBtn);
+    expect(rot.borderRadius).toBe(more.borderRadius);
+    expect(rot.borderWidth).toBe(more.borderWidth);
+    expect(rot.padding.split(' ')[0]).toBe(more.padding.split(' ')[0]);
 
     // And it is styled at all — a bare button keeps the user-agent's own border.
     const border = await rotBtn.evaluate((el) => getComputedStyle(el).borderTopColor);

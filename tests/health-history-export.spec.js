@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Exporting recorded uptime samples.
@@ -30,7 +30,9 @@ async function openHealthFiltered(page, filter) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.health, null, { timeout: 20_000 });
-    await page.waitForSelector('.health-view-export-btn', { timeout: 15_000 });
+    // The export buttons moved behind `⋯` in d4e22e33, so they are in the DOM
+    // but hidden. The overflow button is what says the toolbar has rendered.
+    await page.waitForSelector('[data-health-toolbar-more]', { timeout: 15_000 });
 }
 
 /** Parse a CSV body the way a spreadsheet would, BOM stripped. */

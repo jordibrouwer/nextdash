@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Two tiles that promised something the view could not deliver.
@@ -86,11 +86,15 @@ test.describe('the filter-specific buttons', () => {
                 c.borderTopLeftRadius, c.fontSize].join('|');
         }, selector);
 
-        // Rot report is a plain member of the secondary set; it is the yardstick.
-        const reference = await shapeOf('.health-view-rot-btn');
+        // d4e22e33 moved the filter-specific buttons into the toolbar's overflow
+        // menu, where .health-view-menu draws them as menu items. So the row
+        // they have to match is the menu's own, and Export — a plain member of
+        // that set — is the yardstick, where Rot report used to be.
+        await page.click('[data-health-filter="missing-preview"]');
+        await openHealthToolbarMenu(page);
+        const reference = await shapeOf('.health-view-export-btn');
         expect(reference).not.toBeNull();
 
-        await page.click('[data-health-filter="missing-preview"]');
         await expect(page.locator('.health-view-fetch-previews-btn')).toBeVisible();
         expect(await shapeOf('.health-view-fetch-previews-btn')).toBe(reference);
     });
@@ -110,6 +114,7 @@ test.describe('the missing-preview filter', () => {
         await expect(page.locator('.health-view-fetch-previews-btn')).toHaveCount(0);
 
         await page.click('[data-health-filter="missing-preview"]');
+        await openHealthToolbarMenu(page);
         const button = page.locator('.health-view-fetch-previews-btn');
         await expect(button).toBeVisible();
 

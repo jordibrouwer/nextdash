@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e-helpers');
+const { prepareDashboardInteraction, dismissWhatsNewIfPresent, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Health as a dashboard view (the inbox-shaped one).
@@ -358,13 +358,13 @@ test.describe('health dashboard view', () => {
         // cannot simply reopen a second later.
         await dismissWhatsNewIfPresent(page);
 
+        // d4e22e33 took the settings link off the header and filed it with the
+        // other secondary actions behind `⋯`, so where it sits is now the
+        // menu's business. What still matters is that it is reachable and goes
+        // where it says.
+        await openHealthToolbarMenu(page);
         const link = page.locator('.health-view-settings-link');
         await expect(link).toBeVisible();
-
-        // Right-hand end of the header, which is where it was asked for.
-        const linkBox = await link.boundingBox();
-        const headerBox = await page.locator('.health-view-header').boundingBox();
-        expect(linkBox.x + linkBox.width).toBeGreaterThan(headerBox.x + headerBox.width * 0.75);
 
         await link.click();
 
@@ -392,6 +392,7 @@ test.describe('health dashboard view', () => {
         });
 
         await expect(page.locator('.health-view-trend')).toHaveCount(0);
+        await openHealthToolbarMenu(page);
         await expect(page.locator('.health-view-settings-link')).toBeVisible();
     });
 
@@ -1117,6 +1118,8 @@ test.describe('health view — export, persistence and monitor discoverability',
         await openHealthView(page);
         await page.click('[data-health-filter="all"]');
 
+        // Export waits behind `⋯` since d4e22e33.
+        await openHealthToolbarMenu(page);
         const [download] = await Promise.all([
             page.waitForEvent('download', { timeout: 10_000 }),
             page.click('.health-view-export-btn'),
@@ -1172,6 +1175,7 @@ test.describe('health view — export, persistence and monitor discoverability',
         });
         await openHealthView(page);
         const popupPromise = context.waitForEvent('page');
+        await openHealthToolbarMenu(page);
         await page.locator('.health-view-open-broken-btn').click();
         await page.locator('#app-modal.show').getByRole('button', { name: /Open links/i }).click();
         const popup = await popupPromise;
@@ -1211,6 +1215,7 @@ test.describe('health view — export, persistence and monitor discoverability',
         await page.click('.health-link a.health-link-anchor');
         await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
         await page.locator('[data-health-filter="duplicate"]').click();
+        await openHealthToolbarMenu(page);
         await page.locator('.health-view-merge-duplicates-btn').click();
         await page.locator('#app-modal.show').getByRole('button', { name: /Merge duplicates/i }).click();
         await expect.poll(() => mergeCalled).toBe(true);
