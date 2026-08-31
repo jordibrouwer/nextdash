@@ -895,8 +895,13 @@ class SearchComponent {
      *
      * Delay is the middle: the same open, held back until you stop typing, so a
      * word that carries on past the shortcut keeps going. It cannot rescue a
-     * word typed slowly enough to fall through the pause — which is why Enter,
-     * where nothing decides for you, stays the default.
+     * word typed slowly enough to fall through the pause.
+     *
+     * Enter was the default this paragraph was written for, and it is not any
+     * more: ccba3576 put instant back, and migrateShortcutOpenModeDefaultInstant
+     * moves installs sitting on "enter" or on nothing over to it once. Speed
+     * won, and the swallowed word is the price — `delay` is the middle for
+     * anyone who would rather not pay it.
      */
     _maybeAutoOpenShortcut() {
         this.cancelPendingShortcutOpen();
