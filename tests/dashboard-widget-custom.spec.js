@@ -34,14 +34,14 @@ test.describe('the custom widget', () => {
         expect(state.offered).toContain('custom');
         expect(state.renderer).toBe('function');
         /*
-         * The address, how long an answer keeps, and the list path. The
-         * fields[] editor is drawn separately, because a list of objects is
-         * not a row in that table -- and so is the credential, which used to
-         * be `credentialId` here: a text box asking for the name of an entry
-         * made on another screen. It is a sign-in block of its own now, so the
-         * key is typed where the widget is, and this table never sees it.
+         * The address, how to ask for it, how long an answer keeps, and the
+         * list path. The fields[] editor is drawn separately, because a list of
+         * objects is not a row in that table -- and so is the credential, which
+         * used to be `credentialId` here: a text box asking for the name of an
+         * entry made on another screen. It is a sign-in block of its own now,
+         * so the key is typed where the widget is, and this table never sees it.
          */
-        expect(state.settings).toEqual(['url', 'ttl', 'itemsPath']);
+        expect(state.settings).toEqual(['url', 'method', 'ttl', 'itemsPath']);
     });
 
     test('it draws the figures the server extracted', async ({ page }) => {
@@ -237,11 +237,13 @@ test.describe('the custom widget', () => {
         expect(geometry.overflowing).toBe(0);
         expect(geometry.overlapping).toBe(0);
         /*
-         * Four questions, said out loud rather than left as six adjacent
-         * boxes. The fourth is "Start from a service", above the rest: it is
-         * the one that fills the other three in, so it comes before them.
+         * Five questions, said out loud rather than left as a wall of adjacent
+         * boxes. "Start from a service" is first: it is the one that fills the
+         * others in, so it comes before them. "Try it" sits between the figures
+         * and the grid, where it is read -- after the paths it checks, before
+         * the tile they end up on.
          */
-        expect(geometry.groups).toHaveLength(4);
+        expect(geometry.groups).toHaveLength(5);
         expect(geometry.groups[0]).toBe('Start from a service');
         // Placeholders vanish once a row has a value; the header does not.
         expect(geometry.hasHeader).toBe(true);
