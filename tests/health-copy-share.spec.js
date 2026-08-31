@@ -181,8 +181,11 @@ test.describe('health view row menu — copy and share', () => {
         await openRowMenu(page);
         await runMenuAction(page, 'share');
 
-        await expect(page.locator('.app-notification')).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('.app-notification')).not.toContainText(/HTTPS/i);
+        // The copy toast by its own text, so the assertion below is about this
+        // message rather than about whichever tip happens to be on screen.
+        const copied = page.locator('.app-notification', { hasText: /copied|gekopieerd|kopiert|copié/i });
+        await expect(copied).toBeVisible({ timeout: 10_000 });
+        await expect(copied).not.toContainText(/HTTPS/i);
     });
 
     /**
@@ -223,7 +226,11 @@ test.describe('health view row menu — copy and share', () => {
         // The link still reaches the clipboard, and the message names the real
         // reason rather than sending the user after HTTPS they already have.
         await expect.poll(() => page.evaluate(() => window.__writes.length)).toBe(1);
-        await expect(page.locator('.app-notification')).toContainText(/will not open a share sheet/i);
+        // Named, not "whatever toast is up": the one-time "Shift + Q switches
+        // the search mode" tip from 79c29ec9 lands on the first load after the
+        // upgrade and holds the slot until it times out.
+        await expect(page.locator('.app-notification', { hasText: /will not open a share sheet/i }))
+            .toBeVisible({ timeout: 10_000 });
 
         // And the entry stops promising a sheet it has already failed to open.
         await openRowMenu(page);

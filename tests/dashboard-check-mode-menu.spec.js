@@ -106,7 +106,11 @@ test.describe('dashboard check-mode menu', () => {
         // across that would be waiting on a node no longer in the document.
         await openCheckModeSubmenu(page, await firstRow(page));
         await page.locator('[data-check-mode="monitor"]').click();
-        await expect(page.locator('.app-notification')).toContainText(/monitor/i, { timeout: 10_000 });
+        // Named, not "whatever toast is up": the one-time "Shift + Q switches
+        // the search mode" tip from 79c29ec9 lands on the first load after the
+        // upgrade and holds the slot until it times out.
+        await expect(page.locator('.app-notification', { hasText: /monitor/i }))
+            .toBeVisible({ timeout: 10_000 });
 
         // No reload in between — that is the whole point.
         await openCheckModeSubmenu(page, await firstRow(page));
@@ -115,7 +119,8 @@ test.describe('dashboard check-mode menu', () => {
         await page.keyboard.press('Escape');
         await openCheckModeSubmenu(page, await firstRow(page));
         await page.locator('[data-check-mode="periodic"]').click();
-        await expect(page.locator('.app-notification')).toContainText(/periodic/i, { timeout: 10_000 });
+        await expect(page.locator('.app-notification', { hasText: /periodic/i }))
+            .toBeVisible({ timeout: 10_000 });
 
         await openCheckModeSubmenu(page, await firstRow(page));
         expect(await activeMode(page)).toBe('periodic');
@@ -128,7 +133,8 @@ test.describe('dashboard check-mode menu', () => {
 
         await openCheckModeSubmenu(page, row);
         await page.locator('[data-check-mode="monitor"]').click();
-        await expect(page.locator('.app-notification')).toContainText(/monitor/i, { timeout: 10_000 });
+        await expect(page.locator('.app-notification', { hasText: /monitor/i }))
+            .toBeVisible({ timeout: 10_000 });
 
         const stored = await page.evaluate(async (target) => {
             const res = await fetch(`/api/bookmarks?page=${window.dashboardInstance.currentPageId}`);
@@ -161,7 +167,8 @@ test.describe('dashboard check-mode menu', () => {
         await expect(page.locator('[data-check-mode="monitor"] .check-mode-option-key')).toHaveText('m');
 
         await page.keyboard.press('m');
-        await expect(page.locator('.app-notification')).toContainText(/monitor/i, { timeout: 10_000 });
+        await expect(page.locator('.app-notification', { hasText: /monitor/i }))
+            .toBeVisible({ timeout: 10_000 });
         await expect(page.locator('#bookmark-check-mode-menu')).toHaveCount(0);
 
         // A bare letter would otherwise open the shortcut search behind the menu.
@@ -170,7 +177,8 @@ test.describe('dashboard check-mode menu', () => {
         await openCheckModeSubmenu(page, row);
         expect(await activeMode(page)).toBe('monitor');
         await page.keyboard.press('o');
-        await expect(page.locator('.app-notification')).toContainText(/off|uit/i, { timeout: 10_000 });
+        await expect(page.locator('.app-notification', { hasText: /off|uit/i }))
+            .toBeVisible({ timeout: 10_000 });
     });
 
     test('the menu anchors to its row for both mouse and keyboard', async ({ page }) => {
