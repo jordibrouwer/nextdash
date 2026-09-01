@@ -1124,6 +1124,10 @@ makes the request this widget describes — the address as typed, `GET` or
   This is the thing a path is written against, and reading it beside the boxes
   is the difference between writing `server.disk[0].used` and guessing at it. A
   long answer is cut and says so.
+- **A key you have only just typed is used.** Asking sends the sign-in as it
+  stands in the panel, so a widget can be tested before it is saved — without
+  it, a service behind a key answers 401 and that is indistinguishable from the
+  key being wrong. It is used for that one request and stored nowhere.
 - **What the tile would show**, the same figures the dashboard would draw, so a
   path that found nothing is marked here rather than after a save.
 - **The facts of the request** — the method, the host, the status, how long it

@@ -271,6 +271,42 @@ func dataUnitFrom(raw any) string {
 	return "b"
 }
 
+/*
+draftCredentialFrom reads a sign-in that was typed but not saved.
+
+Sanitised through exactly the same rule a stored one goes through, so a header
+this route accepts is one saveHealthCredential would have accepted -- there is
+no second, laxer way in. Nil when nothing usable was sent, which is every
+request from a panel whose key is already filed.
+*/
+func draftCredentialFrom(raw any) *HealthCredential {
+	entry, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	credential := HealthCredential{
+		BasicUser:     stringOr(entry["basicUser"]),
+		BasicPassword: stringOr(entry["basicPassword"]),
+	}
+	if headers, ok := entry["headers"].(map[string]any); ok && len(headers) > 0 {
+		credential.Headers = map[string]string{}
+		for name, value := range headers {
+			credential.Headers[name] = stringOr(value)
+		}
+	}
+	if query, ok := entry["query"].(map[string]any); ok && len(query) > 0 {
+		credential.Query = map[string]string{}
+		for name, value := range query {
+			credential.Query[name] = stringOr(value)
+		}
+	}
+	clean := sanitizeHealthCredential(credential)
+	if len(clean.Headers) == 0 && len(clean.Query) == 0 && clean.BasicPassword == "" {
+		return nil
+	}
+	return &clean
+}
+
 // customWidgetSpec is the stored config, read into something typed.
 type customWidgetSpec struct {
 	URL          string
@@ -792,7 +828,7 @@ request uses. A widget pointed at a LAN service therefore works exactly when
 "Allow local bookmarks" is on, and not otherwise: one setting governs where this
 install may reach, rather than this feature inventing a second answer.
 */
-func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) customWidgetAnswer {
+func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, draft *HealthCredential) customWidgetAnswer {
 	started := time.Now()
 	answer := customWidgetAnswer{}
 	since := func() customWidgetAnswer {
@@ -822,7 +858,14 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) c
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "nextDash Widget/1.0")
 	var credential HealthCredential
-	if spec.CredentialID != "" {
+	if draft != nil {
+		// What is on screen beats what is filed. Someone testing a key they
+		// have just typed is asking about that key, not about the one this
+		// widget was saved with.
+		credential = *draft
+		applyHealthCredential(req, credential)
+		answer.SignedIn = true
+	} else if spec.CredentialID != "" {
 		// The same store the health checks use: kept in its own file, 0600, and
 		// never handed back to a browser. The widget names one; it never holds
 		// one.
@@ -936,7 +979,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 // fetchCustomWidget asks one service and turns its answer into figures.
 func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec) CustomWidgetResult {
 	now := time.Now()
-	return customWidgetFigures(h.askCustomWidget(ctx, spec), spec, now)
+	return customWidgetFigures(h.askCustomWidget(ctx, spec, nil), spec, now)
 }
 
 /*
@@ -1137,6 +1180,25 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	/*
+	 * A sign-in that has been typed but not yet saved.
+	 *
+	 * Try it promises to ask the address "with whatever is in this panel", and
+	 * the key was the one thing it did not send: the payload carried only a
+	 * credentialId, which is a reference to what is *stored*, so a widget being
+	 * set up for the first time tested itself anonymously and the service
+	 * answered 401. That looks exactly like a wrong key, which is the one
+	 * conclusion the panel exists to rule out.
+	 *
+	 * Taken from the body, used for this one request, and never written
+	 * anywhere: this route already accepts a whole config rather than a widget
+	 * id, and it is behind the write token, so whoever can send this could
+	 * store the same credential and press refresh at it. Nothing new is
+	 * reachable.
+	 */
+	draftCredential := draftCredentialFrom(config["draftCredential"])
+	delete(config, "draftCredential")
+
 	now := time.Now()
 	spec, err := customWidgetSpecFrom(sanitizeWidgetConfig(WidgetTypeCustom, config))
 	if err != nil {
@@ -1150,7 +1212,7 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	answer := h.askCustomWidget(r.Context(), spec)
+	answer := h.askCustomWidget(r.Context(), spec, draftCredential)
 	body, truncated := customWidgetTestBody(answer)
 	_ = json.NewEncoder(w).Encode(CustomWidgetTest{
 		Method:      spec.Method,

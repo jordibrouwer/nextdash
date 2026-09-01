@@ -16135,6 +16135,35 @@ class DashboardConfig {
         if (!config.credentialId) delete config.credentialId;
         // enabled is about the dashboard, not about the request.
         delete config.enabled;
+
+        /*
+         * The key as typed, when it has not been saved yet.
+         *
+         * credentialId above is a reference to what is *stored*, so a widget
+         * being set up for the first time tested itself anonymously: the
+         * service answered 401, which looks exactly like a wrong key -- the one
+         * conclusion this panel exists to rule out. Sent alongside rather than
+         * instead, so a panel whose key is already filed goes on naming it.
+         *
+         * Not saved by sending: the route uses it for that one request. Which
+         * is what the panel already promises -- "nothing is saved by asking".
+         */
+        const secret = String(draft?.auth?.secret || '').trim();
+        if (secret && !this.isSchemeOnly(secret)) {
+            const kind = draft.auth.kind;
+            if (kind === 'header' && draft.auth.headerName) {
+                config.draftCredential = { headers: { [draft.auth.headerName]: secret } };
+            } else if (kind === 'query' && draft.auth.queryName) {
+                config.draftCredential = {
+                    query: { [draft.auth.queryName]: secret },
+                    ...(draft.auth.fixedHeaders ? { headers: { ...draft.auth.fixedHeaders } } : {}),
+                };
+            } else if (kind === 'basic' && draft.auth.basicUser) {
+                config.draftCredential = {
+                    basicUser: draft.auth.basicUser, basicPassword: secret,
+                };
+            }
+        }
         return config;
     }
 

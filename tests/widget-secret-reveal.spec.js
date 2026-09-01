@@ -579,3 +579,90 @@ test.describe('the figures table lines up', () => {
         await expect(page.locator(`${row} [data-custom-field="dataUnit"]`).nth(0)).toHaveValue('b');
     });
 });
+
+/*
+ * Try it, with a key that has not been saved yet.
+ *
+ * The panel says it asks the address "with whatever is in this panel", and the
+ * key was the one thing it withheld: the payload named a stored credential, so
+ * a widget being set up for the first time tested itself anonymously and got a
+ * 401 back -- which reads as a wrong key, the one conclusion this panel exists
+ * to rule out.
+ */
+test.describe('trying an address uses the key on screen', () => {
+    test('a typed key reaches the request before it is saved', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        const sent = [];
+        await page.route('**/api/widgets/custom/test', async (route) => {
+            sent.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 200, signedIn: true, json: true, result: { values: [] } }),
+            });
+        });
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('prowlarr');
+        const key = page.locator(`${row} [data-widget-auth="secret"]`);
+        await key.fill('7bd851a0de71452886a163490bab889e');
+        await key.blur();
+
+        // Nothing saved: Ask now is pressed straight after typing, which is
+        // what anyone setting up a widget does.
+        await page.locator(`${row} [data-custom-test]`).click();
+        await expect.poll(() => sent.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+        expect(sent[0].draftCredential?.headers?.['X-Api-Key'])
+            .toBe('7bd851a0de71452886a163490bab889e');
+    });
+
+    test('a service whose key goes in the address sends it as a parameter', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        const sent = [];
+        await page.route('**/api/widgets/custom/test', async (route) => {
+            sent.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 200, signedIn: true, json: true, result: { values: [] } }),
+            });
+        });
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        const key = page.locator(`${row} [data-widget-auth="secret"]`);
+        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.blur();
+        await page.locator(`${row} [data-custom-test]`).click();
+        await expect.poll(() => sent.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+        expect(sent[0].draftCredential?.query?.apikey).toBe('746071e5e78f4f36b71b3536e46f1ec9');
+    });
+
+    test('a seeded scheme on its own is not sent as a key', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        const sent = [];
+        await page.route('**/api/widgets/custom/test', async (route) => {
+            sent.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 200, json: true, result: { values: [] } }),
+            });
+        });
+
+        // Speedtest seeds "Bearer " and nothing has been pasted behind it, so
+        // there is no key here -- only the half the panel filled in itself.
+        await page.locator(`${row} [data-widget-preset]`).selectOption('speedtest');
+        await expect(page.locator(`${row} [data-widget-auth="secret"]`)).toHaveValue('Bearer ');
+        await page.locator(`${row} [data-custom-test]`).click();
+        await expect.poll(() => sent.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+        expect(sent[0].draftCredential).toBeUndefined();
+    });
+});

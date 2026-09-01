@@ -1,11 +1,13 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -561,5 +563,117 @@ func TestDataUnitSurvivesTheStoredConfig(t *testing.T) {
 	field, _ := fields[0].(map[string]any)
 	if _, ok := field["dataUnit"]; ok {
 		t.Error("a dataUnit was kept on a format that does not use one")
+	}
+}
+
+/*
+Try it says it asks the address "with whatever is in this panel", and the key
+was the one thing it did not send: the payload carried a credentialId, which
+names what is *stored*, so a widget being set up for the first time tested
+itself anonymously. The service answered 401 -- indistinguishable from a wrong
+key, which is the single conclusion this panel exists to rule out.
+*/
+func TestTryItSendsAKeyThatHasNotBeenSavedYet(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	var seen string
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.Header.Get("X-Api-Key")
+		if seen == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"version":"2.5.2"}`))
+	}))
+	defer service.Close()
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	body, _ := json.Marshal(map[string]any{
+		"url":    service.URL,
+		"fields": []any{map[string]any{"path": "version", "label": "version", "format": "text"}},
+		// Nothing is stored for this widget: the key exists only on screen.
+		"draftCredential": map[string]any{
+			"headers": map[string]any{"X-Api-Key": "7bd851a0de71"},
+		},
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/widgets/custom/test", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.CustomWidgetTestHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if seen != "7bd851a0de71" {
+		t.Errorf("the service saw %q, want the typed key", seen)
+	}
+
+	var answer CustomWidgetTest
+	if err := json.NewDecoder(rec.Body).Decode(&answer); err != nil {
+		t.Fatal(err)
+	}
+	if answer.Status != http.StatusOK {
+		t.Errorf("the panel reported %d, want 200", answer.Status)
+	}
+	// The chip that says a sign-in went with it -- the difference between "the
+	// key is wrong" and "no key was sent".
+	if !answer.SignedIn {
+		t.Error("the panel said nothing was signed in")
+	}
+}
+
+// Asking is not saving, which is what the panel promises in so many words.
+func TestTryItDoesNotStoreTheKeyItWasHandedToTry(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"version":"2.5.2"}`))
+	}))
+	defer service.Close()
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	body, _ := json.Marshal(map[string]any{
+		"url":          service.URL,
+		"credentialId": "widget:w_1",
+		"fields":       []any{map[string]any{"path": "version", "label": "v", "format": "text"}},
+		"draftCredential": map[string]any{
+			"headers": map[string]any{"X-Api-Key": "not-to-be-written"},
+		},
+	})
+	rec := httptest.NewRecorder()
+	h.CustomWidgetTestHandler(rec, httptest.NewRequest(http.MethodPost, "/api/widgets/custom/test", bytes.NewReader(body)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	if _, ok := lookupHealthCredential("widget:w_1"); ok {
+		t.Error("trying a key filed it")
+	}
+	if data, err := os.ReadFile(healthCredentialFilePath()); err == nil {
+		if strings.Contains(string(data), "not-to-be-written") {
+			t.Error("the tried key reached the credential file")
+		}
+	}
+}
+
+// The draft goes through the same sanitiser a stored credential does, so this
+// route is not a second, laxer way to put a header on a request.
+func TestADraftCredentialIsSanitisedLikeAStoredOne(t *testing.T) {
+	if got := draftCredentialFrom(map[string]any{
+		"headers": map[string]any{"X-Api-Key\r\nInjected": "value"},
+	}); got != nil {
+		t.Errorf("a header that could split a request was accepted: %v", got.Headers)
+	}
+	if got := draftCredentialFrom(map[string]any{"headers": map[string]any{}}); got != nil {
+		t.Error("an empty credential should read as nothing sent")
+	}
+	if got := draftCredentialFrom("not an object"); got != nil {
+		t.Error("a non-object should read as nothing sent")
+	}
+	got := draftCredentialFrom(map[string]any{
+		"query": map[string]any{"apikey": "abc"},
+	})
+	if got == nil || got.Query["apikey"] != "abc" {
+		t.Errorf("a query credential did not survive: %v", got)
 	}
 }
