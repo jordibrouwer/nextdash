@@ -479,7 +479,14 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
             return {
                 overflowing: rows.filter((r) => r.scrollWidth > r.clientWidth + 1).length,
                 overlapping: rows.filter((r) => {
-                    const cells = [...r.children].map((c) => {
+                    /*
+                     * Hidden cells are skipped, not measured. Data and Decimals
+                     * share a column and one of the two is always hidden, and a
+                     * hidden select reports a zero-width box at x=0 -- which
+                     * reads as overlapping everything, on a row that is drawn
+                     * perfectly.
+                     */
+                    const cells = [...r.children].filter((c) => !c.hidden).map((c) => {
                         const box = c.getBoundingClientRect();
                         return { left: Math.round(box.x), right: Math.round(box.right) };
                     });
@@ -492,5 +499,83 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
         expect(geometry.overflowing).toBe(0);
         expect(geometry.overlapping).toBe(0);
         expect(geometry.headings).toBe(6);
+    });
+});
+
+/*
+ * The figures table, as a table.
+ *
+ * The header and the rows are two separate grids given the same track list, and
+ * for a while they disagreed: `auto` on the last track measured an empty span in
+ * the header and a Delete button in the rows, so the two `fr` columns divided a
+ * different leftover and every heading sat above the wrong control. Measured
+ * rather than eyeballed, because it looks like a small misalignment and is
+ * actually the whole row being a different shape.
+ */
+test.describe('the figures table lines up', () => {
+    test('every heading sits above the control it names', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        await page.waitForSelector(`${row} .config-custom-field`);
+
+        const columns = await page.evaluate((sel) => {
+            const visible = (el) => [...el.children].filter((c) => !c.hidden)
+                .map((c) => Math.round(c.getBoundingClientRect().x));
+            return {
+                head: visible(document.querySelector(`${sel} .config-custom-head`)),
+                rows: [...document.querySelectorAll(`${sel} .config-custom-field`)].map(visible),
+            };
+        }, row);
+
+        expect(columns.head).toHaveLength(6);
+        for (const cells of columns.rows) {
+            expect(cells).toEqual(columns.head);
+        }
+    });
+
+    test('a Data row lines up with the rest', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+
+        /*
+         * Data asks which unit it counts in where the others ask for decimals,
+         * and the two share a column -- so a row that switched to Data must not
+         * end up half a column out from the ones that did not.
+         */
+        await page.locator(`${row} [data-custom-field="format"]`).nth(2).selectOption('data');
+        await expect(page.locator(`${row} [data-custom-field="dataUnit"]`).nth(2)).toBeVisible();
+
+        const columns = await page.evaluate((sel) => {
+            const visible = (el) => [...el.children].filter((c) => !c.hidden)
+                .map((c) => Math.round(c.getBoundingClientRect().x));
+            return [...document.querySelectorAll(`${sel} .config-custom-field`)].map(visible);
+        }, row);
+        for (const cells of columns) {
+            expect(cells).toEqual(columns[0]);
+        }
+    });
+
+    test('Data says which unit the service counts in', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+
+        // Only Data has a unit to choose; every other format asks for decimals
+        // in that same column.
+        await expect(page.locator(`${row} [data-custom-field="dataUnit"]`).nth(0)).toBeHidden();
+        await expect(page.locator(`${row} [data-custom-field="decimals"]`).nth(0)).toBeVisible();
+
+        await page.locator(`${row} [data-custom-field="format"]`).nth(0).selectOption('data');
+        await expect(page.locator(`${row} [data-custom-field="dataUnit"]`).nth(0)).toBeVisible();
+        await expect(page.locator(`${row} [data-custom-field="decimals"]`).nth(0)).toBeHidden();
+        // Bytes by default, which is what Size always assumed.
+        await expect(page.locator(`${row} [data-custom-field="dataUnit"]`).nth(0)).toHaveValue('b');
     });
 });

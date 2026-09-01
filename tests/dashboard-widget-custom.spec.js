@@ -214,7 +214,13 @@ test.describe('the custom widget', () => {
 
         const geometry = await page.evaluate(() => {
             const rows = [...document.querySelectorAll('.config-custom-field')];
-            const boxes = (row) => [...row.children].map((cell) => {
+            /*
+             * Hidden cells are skipped rather than measured. Decimals and the
+             * Data unit share a column and one of the two is always hidden, and
+             * a hidden select reports a zero-width box at x=0 -- which reads as
+             * overlapping everything on a row that is drawn correctly.
+             */
+            const boxes = (row) => [...row.children].filter((cell) => !cell.hidden).map((cell) => {
                 const rect = cell.getBoundingClientRect();
                 return { left: Math.round(rect.x), right: Math.round(rect.right) };
             });

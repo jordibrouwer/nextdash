@@ -85,7 +85,7 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		{"not a number", "count", "not a number"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, c.format, nil); got != c.want {
+		if got := formatCustomValue(c.raw, c.format, nil, ""); got != c.want {
 			t.Errorf("%v as %s = %q, want %q", c.raw, c.format, got, c.want)
 		}
 	}
@@ -448,7 +448,7 @@ func TestFormattingToAChosenNumberOfDecimals(t *testing.T) {
 		{"paused", "text", places(2), "paused", "text that is not a number is left as it is"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, c.format, c.decimals); got != c.want {
+		if got := formatCustomValue(c.raw, c.format, c.decimals, ""); got != c.want {
 			t.Errorf("%v as %s = %q, want %q (%s)", c.raw, c.format, got, c.want, c.reason)
 		}
 	}
@@ -490,5 +490,76 @@ func TestDecimalsSurviveReadingTheStoredConfig(t *testing.T) {
 	// Nothing chosen stays nothing chosen: zero would be a real choice.
 	if spec.Fields[1].Decimals != nil {
 		t.Errorf("field 1 decimals = %v, want nil", spec.Fields[1].Decimals)
+	}
+}
+
+/*
+Data is Size for a service that already did the arithmetic.
+
+Size reads its input as bytes, which is right for most services and silently
+wrong for the ones that count in their own units: SABnzbd reports mbleft as
+"0.00" meaning megabytes and diskspace1 as "3342.67" meaning gigabytes, and read
+as bytes those come out as "0 B" and "3.3 KB" -- wrong by three and six orders
+of magnitude, and reasonable-looking at both.
+*/
+func TestDataFormatScalesFromTheUnitTheServiceCountsIn(t *testing.T) {
+	places := func(n int) *int { return &n }
+	cases := []struct {
+		raw          any
+		unit         string
+		decimals     *int
+		want, reason string
+	}{
+		// SABnzbd's own numbers, which is what this was built for.
+		{"3342.67", "gb", nil, "3.3 TB", "gigabytes of free space read as terabytes"},
+		{"0.00", "mb", nil, "0 B", "an empty queue is still zero"},
+		{"1536", "mb", nil, "1.5 GB", "megabytes climb to gigabytes"},
+		{"3342.67", "gb", places(2), "3.26 TB", "decimals apply on top of the unit"},
+		// Bytes is the default, so a Data figure with no unit set behaves
+		// exactly as Size always did.
+		{float64(130760634), "", nil, "124.7 MB", "no unit means bytes"},
+		{float64(130760634), "b", nil, "124.7 MB", "and so does b"},
+		// A unit nobody recognises falls back to bytes rather than failing the
+		// figure: a hand-edited config should not take the tile down.
+		{float64(1024), "furlongs", nil, "1 KB", "an unknown unit reads as bytes"},
+	}
+	for _, c := range cases {
+		if got := formatCustomValue(c.raw, "data", c.decimals, c.unit); got != c.want {
+			t.Errorf("%v as data in %q = %q, want %q (%s)", c.raw, c.unit, got, c.want, c.reason)
+		}
+	}
+}
+
+// The unit has to survive the round trip, or a Data figure silently reverts to
+// reading bytes and is wrong by orders of magnitude.
+func TestDataUnitSurvivesTheStoredConfig(t *testing.T) {
+	spec, err := customWidgetSpecFrom(sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url": "https://example.test/api",
+		"fields": []any{
+			map[string]any{"path": "a", "format": "data", "dataUnit": "gb"},
+			map[string]any{"path": "b", "format": "data"},
+			map[string]any{"path": "c", "format": "text", "dataUnit": "gb"},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := spec.Fields[0].DataUnit; got != "gb" {
+		t.Errorf("field 0 unit = %q, want gb", got)
+	}
+	// Nothing chosen means bytes, which is what Size always assumed.
+	if got := spec.Fields[1].DataUnit; got != "b" {
+		t.Errorf("field 1 unit = %q, want b", got)
+	}
+	// A unit on a format that has no use for one says nothing about the figure,
+	// so the sanitiser does not keep it.
+	out := sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url":    "https://example.test/api",
+		"fields": []any{map[string]any{"path": "c", "format": "text", "dataUnit": "gb"}},
+	})
+	fields, _ := out["fields"].([]any)
+	field, _ := fields[0].(map[string]any)
+	if _, ok := field["dataUnit"]; ok {
+		t.Error("a dataUnit was kept on a format that does not use one")
 	}
 }

@@ -5939,17 +5939,39 @@ button.config-bm-shortcut-pill {
     flex-wrap: wrap;
 }
 
-/* Path, label, format, decimals, size, remove — the same track sizes for the
-   header and every row, so the columns line up down the list. Decimals is the
-   narrowest track in the row: its widest option is "Auto". */
+/*
+   Path, label, format, decimals, size, remove.
+
+   Every track is stated outright, and the last one is a fixed width rather than
+   `auto`. Auto asks each grid to measure its own content, and the header's last
+   cell is an empty span while the row's is a Delete button -- so the header
+   measured 0px there and the row 67px, the two `fr` tracks divided a different
+   leftover, and every heading sat above the wrong control. It looked like a
+   column had been added wrongly; it was two grids quietly disagreeing about
+   what they had room for.
+
+   Sized to fit "Delete" in the languages this ships in -- the German
+   "Löschen" is the longest -- and the button is allowed to fill it.
+*/
 .config-custom-head,
 .config-custom-field {
     display: grid;
     grid-template-columns:
-        minmax(0, 2fr) minmax(0, 1.2fr) minmax(6.5rem, auto)
-        minmax(4.5rem, auto) minmax(5.5rem, auto) auto;
+        minmax(0, 2fr) minmax(0, 1.2fr) 8.5rem 5.5rem 6.5rem 5.5rem;
     gap: 8px;
     align-items: center;
+}
+
+/* The header's cells are labels for the controls below them, so they line up
+   with the box rather than with the text inside it. */
+.config-custom-head > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-custom-field > .config-btn {
+    width: 100%;
 }
 
 /*

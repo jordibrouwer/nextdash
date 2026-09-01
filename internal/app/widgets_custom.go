@@ -68,7 +68,26 @@ const (
 var customWidgetFormats = map[string]bool{
 	"count": true, "bytes": true, "percent": true,
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
-	"rate": true,
+	"rate": true, "data": true,
+}
+
+/*
+customWidgetDataUnits are the units a service may already have counted in.
+
+The Size format assumes bytes, which is right for most services and silently
+wrong for the ones that do the arithmetic themselves: SABnzbd reports mbleft as
+"0.00" meaning megabytes and diskspace1 as "3342.67" meaning gigabytes, and read
+as bytes those become "0 B" and "3.3 KB" -- figures that are wrong by three and
+six orders of magnitude while looking perfectly reasonable.
+
+So Data asks which unit the number is already in, and scales from there.
+*/
+var customWidgetDataUnits = map[string]float64{
+	"b":  1,
+	"kb": 1024,
+	"mb": 1024 * 1024,
+	"gb": 1024 * 1024 * 1024,
+	"tb": 1024 * 1024 * 1024 * 1024,
 }
 
 /*
@@ -211,6 +230,9 @@ type customFieldSpec struct {
 	 * always did.
 	 */
 	Decimals *int
+	// DataUnit is which unit a Data figure is already counted in. Empty means
+	// bytes, which is what every other size in this file assumes.
+	DataUnit string
 }
 
 /*
@@ -232,6 +254,21 @@ func decimalsFrom(raw any) *int {
 		return nil
 	}
 	return &places
+}
+
+/*
+dataUnitFrom reads which unit a Data figure counts in, defaulting to bytes.
+
+Anything unrecognised reads as bytes rather than failing the widget: a
+hand-edited config with nonsense in it should draw the figure the way it was
+drawn before Data existed, not take the tile down.
+*/
+func dataUnitFrom(raw any) string {
+	unit := strings.ToLower(strings.TrimSpace(stringOr(raw)))
+	if _, ok := customWidgetDataUnits[unit]; ok {
+		return unit
+	}
+	return "b"
 }
 
 // customWidgetSpec is the stored config, read into something typed.
@@ -321,6 +358,7 @@ func customWidgetSpecFrom(config map[string]any) (customWidgetSpec, error) {
 			Shape:    shape,
 			Tone:     tone,
 			Decimals: decimalsFrom(entry["decimals"]),
+			DataUnit: dataUnitFrom(entry["dataUnit"]),
 		})
 	}
 
@@ -407,15 +445,22 @@ Seven formats, no more. Each answers a question a service's numbers actually
 raise: how many, how large, how full, how long, how fast, how long ago, and
 what does it say.
 */
-func formatCustomValue(raw any, format string, decimals *int) string {
+func formatCustomValue(raw any, format string, decimals *int, dataUnit string) string {
+	unit := customWidgetDataUnits[dataUnit]
+	if unit == 0 {
+		unit = 1
+	}
 	// A chosen number of places answers the whole question and answers it the
 	// same way for every format: the reader asked for two decimals, not for two
 	// decimals of whatever this format would otherwise have done. Units stay,
 	// because "3342.65" and "3342.65 MB" are not the same figure.
 	if decimals != nil {
 		if number, ok := toFloat(raw); ok {
-			scaled, unit := scaleForFormat(number, format)
-			return roundToDecimals(scaled, *decimals) + unit
+			if format == "data" {
+				number *= unit
+			}
+			scaled, suffix := scaleForFormat(number, format)
+			return roundToDecimals(scaled, *decimals) + suffix
 		}
 	}
 	switch format {
@@ -433,6 +478,10 @@ func formatCustomValue(raw any, format string, decimals *int) string {
 	case "rate":
 		if number, ok := toFloat(raw); ok {
 			return formatBitRate(number)
+		}
+	case "data":
+		if number, ok := toFloat(raw); ok {
+			return formatByteSize(number * unit)
 		}
 	case "percent":
 		if number, ok := toFloat(raw); ok {
@@ -578,7 +627,7 @@ sold.
 */
 func scaleForFormat(value float64, format string) (float64, string) {
 	switch format {
-	case "bytes":
+	case "bytes", "data":
 		units := []string{" B", " KB", " MB", " GB", " TB", " PB"}
 		index := 0
 		for math.Abs(value) >= 1024 && index < len(units)-1 {
@@ -854,7 +903,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 			value.Value = "—"
 		} else {
 			value.Raw = found
-			value.Value = formatCustomValue(found, field.Format, field.Decimals)
+			value.Value = formatCustomValue(found, field.Format, field.Decimals, field.DataUnit)
 		}
 		value.Shape = field.Shape
 		value.Tone = field.Tone

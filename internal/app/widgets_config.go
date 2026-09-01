@@ -465,6 +465,12 @@ func sanitizeCustomWidgetFields(raw any) []any {
 		if places := decimalsFrom(entry["decimals"]); places != nil {
 			clean["decimals"] = *places
 		}
+		// Which unit a Data figure already counts in. Only meaningful for that
+		// format, and left out where it is not, so a config says nothing it
+		// does not mean.
+		if format == "data" {
+			clean["dataUnit"] = dataUnitFrom(entry["dataUnit"])
+		}
 		out = append(out, clean)
 	}
 	if len(out) == 0 {

@@ -15311,7 +15311,16 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'rate', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+
+    /*
+     * The units a Data figure may already be counted in.
+     *
+     * Size assumes bytes, which is right for most services and silently wrong
+     * for the ones that do the arithmetic themselves -- SABnzbd reports MB left
+     * as a number of megabytes, and read as bytes that is "0 B". Data asks.
+     */
+    static CUSTOM_DATA_UNITS = ['b', 'kb', 'mb', 'gb', 'tb'];
 
     /*
      * How a figure is drawn, as opposed to what it says.
@@ -15860,6 +15869,21 @@ class DashboardConfig {
         };
 
         /*
+         * Which unit a Data figure already counts in.
+         *
+         * In the same column as Decimals and shown instead of it, because they
+         * are the same question asked of different formats -- "how should this
+         * number be read" -- and a seventh column for a control that applies to
+         * one format would cost every row the width.
+         */
+        const unitOptions = (selected) => {
+            const chosen = DashboardConfig.CUSTOM_DATA_UNITS.includes(selected) ? selected : 'b';
+            return DashboardConfig.CUSTOM_DATA_UNITS.map((unit) =>
+                `<option value="${unit}" ${unit === chosen ? 'selected' : ''}>${esc(
+                    this.t(`config.widgetDataUnit.${unit}`, unit.toUpperCase()))}</option>`).join('');
+        };
+
+        /*
          * A header row, because three unlabelled boxes side by side is a puzzle.
          *
          * Placeholders alone were not enough: they vanish the moment a row has
@@ -15871,7 +15895,9 @@ class DashboardConfig {
                     <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
                     <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
                     <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
-                    <span>${esc(this.t('config.widgetCustomDecimals', 'Decimals'))}</span>
+                    <span>${esc(fields.every((f) => f?.format === 'data')
+                        ? this.t('config.widgetCustomDataUnit', 'Counted in')
+                        : this.t('config.widgetCustomDecimals', 'Decimals'))}</span>
                     <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
                     <span></span>
                 </div>` : '';
@@ -15890,8 +15916,12 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
                     formatOptions(field?.format || 'text')}</select>
+                <select class="config-select" data-custom-field="dataUnit" data-custom-index="${index}"
+                    data-custom-row="${row}" ${field?.format === 'data' ? '' : 'hidden'}
+                    aria-label="${esc(this.t('config.widgetCustomDataUnit', 'Counted in'))}">${
+                    unitOptions(field?.dataUnit)}</select>
                 <select class="config-select" data-custom-field="decimals" data-custom-index="${index}"
-                    data-custom-row="${row}"
+                    data-custom-row="${row}" ${field?.format === 'data' ? 'hidden' : ''}
                     aria-label="${esc(this.t('config.widgetCustomDecimals', 'Decimals'))}">${
                     decimalOptions(field?.decimals)}</select>
                 <select class="config-select" data-custom-field="shape" data-custom-index="${index}"
@@ -16821,6 +16851,9 @@ class DashboardConfig {
                  */
                 if (which === 'format') {
                     this.dropMeterOnNonPercent(at, indexOn(field, 'data-custom-row'));
+                    // Data asks which unit it counts in where every other
+                    // format asks for decimals, so the row is redrawn rather
+                    // than left showing the question its format does not have.
                     this.repaintWidgetsBody();
                 }
                 this.refreshWidgetSaveBar(at);
