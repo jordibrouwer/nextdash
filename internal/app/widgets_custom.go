@@ -1267,11 +1267,24 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-// customWidgetShownBody caps what a test hands back to the panel. A tile reads
-// a figure or two out of a document; a reader writing the paths needs to see
-// the document, and sixteen kilobytes is a great deal of JSON to read while
-// being far short of what a megabyte would do to the page drawing it.
-const customWidgetShownBody = 16 << 10
+/*
+customWidgetShownBody caps what a test hands back to the panel.
+
+Sixteen kilobytes was chosen for reading, and it is the right size for that: a
+tile reads a figure or two, and a reader writing paths against a statistics
+endpoint sees the whole of it.
+
+It is the wrong size for finding. Home Assistant answers /api/states with every
+entity it has -- 489 of them, 211 KB -- and the first sixteen kilobytes is the
+first seven per cent, alphabetically nowhere near what anyone is looking for.
+The panel said "the first part is shown", which was true and left the reader to
+conclude their sensors were missing.
+
+So the cap is larger, and the panel has a search box over it. Still a cap: a
+megabyte of JSON in a <pre> is a page that stops responding, and the point is to
+find a key rather than to read everything.
+*/
+const customWidgetShownBody = 256 << 10
 
 /*
 CustomWidgetTest is one trial run, as the config panel shows it.

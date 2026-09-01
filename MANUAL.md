@@ -1141,7 +1141,12 @@ what. So the settings panel has a *Try it* block under the figures: **Ask now**
 makes the request this widget describes — the address as typed, `GET` or
 `POST`, the sign-in it would use — and shows both halves of the answer at once.
 
-- **What came back**, in full and indented, in the order the service wrote it.
+- **What came back**, in full and indented, in the order the service wrote it,
+  with a **search box** above it. A service answering with hundreds of entries —
+  Home Assistant returns every entity it has — is not something to scroll, and
+  typing part of a key shows the lines that mention it with a little context
+  around each. Clear the box for the whole answer again; the search never asks
+  the service anything, it reads what already came back.
   This is the thing a path is written against, and reading it beside the boxes
   is the difference between writing `server.disk[0].used` and guessing at it. A
   long answer is cut and says so.

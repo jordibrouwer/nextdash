@@ -16169,18 +16169,90 @@ class DashboardConfig {
 
         // The document itself, last and in full: it is the thing a path is
         // written against, and it is also the only part worth scrolling.
+        /*
+         * A search box over the document, once it is long enough to need one.
+         *
+         * A tile reads a figure or two, but the reader is looking for the one
+         * key among however many the service sent -- and Home Assistant answers
+         * /api/states with 489 entities in 211 KB, of which the panel shows the
+         * first 16. Scrolling that is not finding anything; the entities the
+         * reader came for are the ones past the cut, and the panel saying "the
+         * first part is shown" is true and no help.
+         *
+         * Filtering happens over the whole body rather than the shown part, so
+         * a key that was cut off is still findable -- which is the entire point.
+         */
+        const widgetId = widget?.id;
+        const query = String(this.customProbeState(widgetId)?.find || '');
+        // Always the same shape, so the template does not have to know whether
+        // a search is running: reading .text off a bare string gave undefined,
+        // and the document rendered empty until something was typed.
+        const shown = this.filterProbeBody(data.body, query);
         const body = data.body
             ? `
             <div class="config-probe-block">
-                <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestAnswer',
-                    'What came back'))}</h5>
-                <pre class="config-probe-body" tabindex="0">${esc(data.body)}</pre>
-                ${data.truncated ? `<p class="config-probe-note">${esc(this.t(
-                    'config.widgetCustomTestTruncated',
-                    'Long answer — the first part is shown.'))}</p>` : ''}
+                <div class="config-probe-head">
+                    <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestAnswer',
+                        'What came back'))}</h5>
+                    <input type="search" class="config-text config-probe-find"
+                        data-custom-find="${esc(String(widgetId))}" value="${esc(query)}"
+                        placeholder="${esc(this.t('config.widgetCustomTestFind', 'Find a key…'))}"
+                        aria-label="${esc(this.t('config.widgetCustomTestFind', 'Find a key…'))}">
+                </div>
+                <pre class="config-probe-body" tabindex="0">${esc(shown.text)}</pre>
+                ${shown.note ? `<p class="config-probe-note">${esc(shown.note)}</p>`
+                    : (data.truncated ? `<p class="config-probe-note">${esc(this.t(
+                        'config.widgetCustomTestTruncated',
+                        'Long answer — the first part is shown.'))}</p>` : '')}
             </div>` : '';
 
         return `${note}${facts}${error}${figures}${list}${body}`;
+    }
+
+    /*
+     * The lines of a document that mention what was typed, with their context.
+     *
+     * Lines rather than a highlight, because JSON is written one key to a line
+     * and the answer to "where is my sensor" is that line and the few around
+     * it. A match on its own would be a key with no value beside it.
+     */
+    filterProbeBody(text, query) {
+        const needle = query.trim().toLowerCase();
+        if (!needle) return { text, note: '' };
+        const lines = String(text || '').split('\n');
+        const keep = new Set();
+        let hits = 0;
+        lines.forEach((line, at) => {
+            if (!line.toLowerCase().includes(needle)) return;
+            hits += 1;
+            // Two lines either side: enough to see which object a key sits in
+            // without the result becoming the document again.
+            for (let n = at - 2; n <= at + 2; n += 1) {
+                if (n >= 0 && n < lines.length) keep.add(n);
+            }
+        });
+        if (!hits) {
+            return {
+                text: '',
+                note: this.t('config.widgetCustomTestNoMatch',
+                    'Nothing in the answer matches “{q}”.').replace('{q}', query),
+            };
+        }
+        const out = [];
+        let previous = -1;
+        [...keep].sort((a, b) => a - b).forEach((at) => {
+            // A gap in the line numbers is a gap in the document, and saying so
+            // beats running two unrelated objects together.
+            if (previous >= 0 && at > previous + 1) out.push('  …');
+            out.push(lines[at]);
+            previous = at;
+        });
+        return {
+            text: out.join('\n'),
+            note: this.t('config.widgetCustomTestMatches',
+                '{n} matching lines. Clear the box to see the whole answer.')
+                .replace('{n}', String(hits)),
+        };
     }
 
     /*
@@ -16875,6 +16947,29 @@ class DashboardConfig {
                 this.removeWidgetDraftField(
                     indexOn(dropField, 'data-custom-index'),
                     indexOn(dropField, 'data-custom-remove'));
+            }
+        });
+
+        /*
+         * Filtering the answer is a redraw of what is already held, not another
+         * request: the service was asked once and the reader is reading it.
+         */
+        body.addEventListener('input', (event) => {
+            const find = event.target.closest?.('[data-custom-find]');
+            if (!find) return;
+            const widgetId = find.getAttribute('data-custom-find');
+            const state = this.customProbeState(widgetId, { create: true });
+            if (!state) return;
+            state.find = find.value;
+            const index = (this._widgetBlocks || []).findIndex((b) => String(b?.id) === widgetId);
+            if (index < 0) return;
+            const caret = find.selectionStart;
+            this.paintCustomProbe(widgetId, index);
+            // The box is redrawn with the block, so the caret is put back.
+            const again = document.querySelector(`[data-custom-find="${CSS.escape(widgetId)}"]`);
+            if (again) {
+                again.focus();
+                again.setSelectionRange(caret, caret);
             }
         });
 

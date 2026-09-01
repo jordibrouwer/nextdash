@@ -896,3 +896,91 @@ test.describe('a preset that needs something filled into its address says so', (
             .filter({ hasText: 'YOUR_NODE' })).toHaveCount(1, { timeout: 10_000 });
     });
 });
+
+/*
+ * Finding a key in an answer too long to read.
+ *
+ * Home Assistant answers /api/states with every entity it has -- hundreds of
+ * them -- and scrolling that is not finding anything. The panel used to show
+ * the first 16 KB and say "the first part is shown", which is true and leaves
+ * the reader to conclude their sensors are missing.
+ */
+test.describe('a long answer can be searched', () => {
+    const bigAnswer = () => {
+        const lines = [];
+        for (let n = 0; n < 200; n += 1) {
+            lines.push(`  { "entity_id": "sensor.filler_${n}", "state": "${n}" },`);
+        }
+        lines.splice(150, 0, '  { "entity_id": "sensor.temperatuur_tuin", "state": "19.0" },');
+        return `[\n${lines.join('\n')}\n]`;
+    };
+
+    const answerWith = (page, body) => page.route('**/api/widgets/custom/test', (route) =>
+        route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                status: 200, signedIn: true, json: true, body,
+                result: { values: [] },
+            }),
+        }));
+
+    test('typing a key shows the lines that mention it', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await answerWith(page, bigAnswer());
+        await page.locator(`${row} [data-custom-test]`).click();
+        const body = page.locator(`${row} .config-probe-body`);
+        await expect(body).toContainText('sensor.filler_0', { timeout: 10_000 });
+
+        const find = page.locator(`${row} [data-custom-find]`);
+        await find.fill('temperatuur_tuin');
+
+        // The line that was found, and not the two hundred that were not.
+        await expect(body).toContainText('sensor.temperatuur_tuin', { timeout: 10_000 });
+        await expect(body).not.toContainText('sensor.filler_0"');
+        await expect(page.locator(`${row} .config-probe-note`).first())
+            .toContainText('matching lines');
+    });
+
+    test('clearing the box brings the whole answer back', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await answerWith(page, bigAnswer());
+        await page.locator(`${row} [data-custom-test]`).click();
+        const body = page.locator(`${row} .config-probe-body`);
+        await expect(body).toContainText('sensor.filler_0', { timeout: 10_000 });
+
+        const find = page.locator(`${row} [data-custom-find]`);
+        await find.fill('temperatuur_tuin');
+        await expect(body).not.toContainText('sensor.filler_0"', { timeout: 10_000 });
+
+        // Filtering is a redraw of what is held, so the answer is still there.
+        await find.fill('');
+        await expect(body).toContainText('sensor.filler_0', { timeout: 10_000 });
+    });
+
+    test('a search that finds nothing says so', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await answerWith(page, bigAnswer());
+        await page.locator(`${row} [data-custom-test]`).click();
+        await expect(page.locator(`${row} .config-probe-body`))
+            .toContainText('sensor.filler_0', { timeout: 10_000 });
+
+        await page.locator(`${row} [data-custom-find]`).fill('nothing_like_this');
+        await expect(page.locator(`${row} .config-probe-note`).first())
+            .toContainText('Nothing in the answer matches', { timeout: 10_000 });
+    });
+});

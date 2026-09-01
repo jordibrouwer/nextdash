@@ -6153,6 +6153,21 @@ button.config-bm-shortcut-pill {
     }
 }
 
+/* The answer's heading and its search box share a line: the box belongs to the
+   document below it, not to the block above. */
+.config-probe-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.config-probe-find {
+    flex: 0 1 16rem;
+    min-width: 0;
+}
+
 .config-probe-body {
     margin: 0;
     max-height: 22rem;
