@@ -15843,6 +15843,23 @@ class DashboardConfig {
                 this.t(`config.widgetShape.${shape}`, shape))}</option>`).join('');
 
         /*
+         * How many decimal places, or "however this format writes it".
+         *
+         * Auto is first and is what every widget saved before this says, so
+         * nothing changes underneath anyone. The rest are 0 to 3: past three the
+         * digits are longer than the tile and further from what any service
+         * reports honestly, and a tile is one figure rather than a column of
+         * them to line up.
+         */
+        const decimalOptions = (selected) => {
+            const chosen = Number.isInteger(selected) ? String(selected) : '';
+            return ['', '0', '1', '2', '3'].map((value) =>
+                `<option value="${value}" ${value === chosen ? 'selected' : ''}>${esc(value === ''
+                    ? this.t('config.widgetDecimalsAuto', 'Auto')
+                    : value)}</option>`).join('');
+        };
+
+        /*
          * A header row, because three unlabelled boxes side by side is a puzzle.
          *
          * Placeholders alone were not enough: they vanish the moment a row has
@@ -15854,6 +15871,7 @@ class DashboardConfig {
                     <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
                     <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
                     <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span>${esc(this.t('config.widgetCustomDecimals', 'Decimals'))}</span>
                     <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
                     <span></span>
                 </div>` : '';
@@ -15872,6 +15890,10 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
                     formatOptions(field?.format || 'text')}</select>
+                <select class="config-select" data-custom-field="decimals" data-custom-index="${index}"
+                    data-custom-row="${row}"
+                    aria-label="${esc(this.t('config.widgetCustomDecimals', 'Decimals'))}">${
+                    decimalOptions(field?.decimals)}</select>
                 <select class="config-select" data-custom-field="shape" data-custom-index="${index}"
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomShape', 'Size'))}">${
@@ -17042,7 +17064,23 @@ class DashboardConfig {
         if (!draft) return;
         const fields = Array.isArray(draft.config.fields) ? draft.config.fields : [];
         if (!fields[row]) return;
-        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        if (key === 'decimals') {
+            /*
+             * A number, or the key is not there at all.
+             *
+             * Auto is the absence of a choice rather than a value meaning it,
+             * so it deletes the key: a stored 0 is a real answer -- round to
+             * whole -- and the two must not collapse into each other. Stored as
+             * a number because the server reads one, and "2" would be read as
+             * nothing chosen.
+             */
+            const next = { ...fields[row] };
+            if (value === '') delete next.decimals;
+            else next.decimals = Number(value);
+            fields[row] = next;
+        } else {
+            fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        }
         draft.config.fields = fields;
     }
 

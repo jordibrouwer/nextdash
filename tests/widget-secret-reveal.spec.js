@@ -378,3 +378,119 @@ test.describe('every preset that needs a credential asks for one', () => {
         expect(leaking).toEqual([]);
     });
 });
+
+/*
+ * Rounding, per figure.
+ *
+ * SABnzbd reports mbleft as the string "0.00" and diskspace1 as "3342.65", and
+ * a string is shown exactly as sent however many digits that is -- so the choice
+ * has to reach Text as well as the numeric formats.
+ */
+test.describe('a figure can be rounded to a chosen number of decimals', () => {
+    test('every figure has its own decimals control', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        const decimals = page.locator(`${row} [data-custom-field="decimals"]`);
+        const rows = await page.locator(`${row} .config-custom-field`).count();
+        expect(await decimals.count()).toBe(rows);
+
+        // Auto is the default, so a widget that predates this is unchanged.
+        await expect(decimals.first()).toHaveValue('');
+    });
+
+    test('the choice survives being saved and reopened', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await url.fill('http://sab.local:8081/api?mode=queue&output=json');
+        await url.blur();
+
+        // SABnzbd needs a key, and Save refuses a widget that has none -- so
+        // without this the widget is never stored and the reload below finds
+        // nothing, which looks exactly like the choice not surviving.
+        const key = page.locator(`${row} [data-widget-auth="secret"]`);
+        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.blur();
+
+        const decimals = page.locator(`${row} [data-custom-field="decimals"]`);
+        await decimals.nth(1).selectOption('2');
+        // Zero is a real choice -- round to whole -- and has to survive as one
+        // rather than reading back as "nothing chosen".
+        await decimals.nth(2).selectOption('0');
+        await page.locator(`${row} [data-widget-save]`).click();
+        await page.waitForTimeout(1500);
+
+        /*
+         * Reloaded rather than merely reopened: the draft would answer from
+         * memory, and what is being asked here is whether the choice reached
+         * the server and survived being read back. The settings panel closes
+         * with the reload, so it is opened again by hand the way a reader would.
+         */
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        const reopened = page.locator('[data-widget-settings]').last();
+        await expect(reopened).toBeVisible({ timeout: 15_000 });
+        const at = await reopened.getAttribute('data-widget-settings');
+        await reopened.click();
+
+        const after = page.locator(`[data-widget-row="${at}"] [data-custom-field="decimals"]`);
+        await expect(after.nth(1)).toHaveValue('2', { timeout: 10_000 });
+        // Zero is a real choice and must not read back as "nothing chosen".
+        await expect(after.nth(2)).toHaveValue('0');
+        await expect(after.nth(0)).toHaveValue('');
+
+        /*
+         * And stored as numbers rather than as the strings a <select> yields.
+         *
+         * The sanitiser normalises either into a number, so this does not fail
+         * if the panel sends "2" -- it is here to pin the shape of what lands in
+         * bookmarks-N.json, which anything reading that file later depends on.
+         * The absent first entry is the part with teeth: nothing chosen has to
+         * stay absent rather than becoming a 0 that means "round to whole".
+         */
+        const stored = await page.evaluate(async () => {
+            const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const data = await (await send('/api/pages/1/blocks')).json();
+            return (data.widgets.at(-1)?.config?.fields || []).map((f) => f.decimals);
+        });
+        expect(stored).toEqual([undefined, 2, 0]);
+    });
+
+    test('the row still lays out without overlapping', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        await page.waitForSelector(`${row} .config-custom-field`);
+
+        // A sixth control in a row that already overlapped once at 520px is
+        // worth measuring rather than assuming.
+        const geometry = await page.evaluate((sel) => {
+            const rows = [...document.querySelectorAll(`${sel} .config-custom-field`)];
+            return {
+                overflowing: rows.filter((r) => r.scrollWidth > r.clientWidth + 1).length,
+                overlapping: rows.filter((r) => {
+                    const cells = [...r.children].map((c) => {
+                        const box = c.getBoundingClientRect();
+                        return { left: Math.round(box.x), right: Math.round(box.right) };
+                    });
+                    return cells.some((c, i) => i > 0 && c.left < cells[i - 1].right - 1);
+                }).length,
+                headings: document.querySelectorAll(`${sel} .config-custom-head > span`).length,
+            };
+        }, row);
+
+        expect(geometry.overflowing).toBe(0);
+        expect(geometry.overlapping).toBe(0);
+        expect(geometry.headings).toBe(6);
+    });
+});

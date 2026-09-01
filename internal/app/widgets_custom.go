@@ -200,6 +200,38 @@ type customFieldSpec struct {
 	// the way every figure was drawn before there were shapes.
 	Shape string
 	Tone  string
+	/*
+	 * Decimals is how many places to round a figure to, and it is a pointer so
+	 * that "not set" survives being read back.
+	 *
+	 * Zero decimals is a real choice -- a queue of 3.7 items is better read as
+	 * 4 than as 3.7 -- and it is also what an int field holds when nobody chose
+	 * anything, so the two would be indistinguishable. Every widget saved
+	 * before this exists says nothing here and keeps the rounding its format
+	 * always did.
+	 */
+	Decimals *int
+}
+
+/*
+decimalsFrom reads a chosen number of decimal places, or nothing.
+
+Bounded at six, which is past anything a tile has room for and well past what a
+service reports honestly -- the point is that a stored config cannot ask the
+formatter for four hundred digits. Anything that is not a number in range is
+read as "not set", so a hand-edited file with nonsense in it falls back to what
+the format always did rather than failing the whole widget.
+*/
+func decimalsFrom(raw any) *int {
+	number, ok := toFloat(raw)
+	if !ok {
+		return nil
+	}
+	places := int(math.Round(number))
+	if places < 0 || places > 6 {
+		return nil
+	}
+	return &places
 }
 
 // customWidgetSpec is the stored config, read into something typed.
@@ -283,11 +315,12 @@ func customWidgetSpecFrom(config map[string]any) (customWidgetSpec, error) {
 			tone = ""
 		}
 		spec.Fields = append(spec.Fields, customFieldSpec{
-			Path:   path,
-			Label:  trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60),
-			Format: format,
-			Shape:  shape,
-			Tone:   tone,
+			Path:     path,
+			Label:    trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60),
+			Format:   format,
+			Shape:    shape,
+			Tone:     tone,
+			Decimals: decimalsFrom(entry["decimals"]),
 		})
 	}
 
@@ -374,7 +407,17 @@ Seven formats, no more. Each answers a question a service's numbers actually
 raise: how many, how large, how full, how long, how fast, how long ago, and
 what does it say.
 */
-func formatCustomValue(raw any, format string) string {
+func formatCustomValue(raw any, format string, decimals *int) string {
+	// A chosen number of places answers the whole question and answers it the
+	// same way for every format: the reader asked for two decimals, not for two
+	// decimals of whatever this format would otherwise have done. Units stay,
+	// because "3342.65" and "3342.65 MB" are not the same figure.
+	if decimals != nil {
+		if number, ok := toFloat(raw); ok {
+			scaled, unit := scaleForFormat(number, format)
+			return roundToDecimals(scaled, *decimals) + unit
+		}
+	}
 	switch format {
 	case "count":
 		if number, ok := toFloat(raw); ok {
@@ -501,6 +544,69 @@ func formatThousands(value int64) string {
 		return "-" + out
 	}
 	return out
+}
+
+/*
+roundToDecimals writes a number to exactly the places that were asked for.
+
+Trailing zeroes are kept -- two decimals means "0.00", not "0" -- because a
+figure that changes width as its digits land reads as the value jumping about.
+That is also the answer to the request that started this: SABnzbd reports
+mbleft as the string "0.00", and a reader who picks two decimals is asking to
+go on seeing exactly that.
+*/
+func roundToDecimals(value float64, places int) string {
+	if places < 0 {
+		places = 0
+	}
+	return strconv.FormatFloat(value, 'f', places, 64)
+}
+
+/*
+scaleForFormat brings a number into the units its format shows it in, and says
+which those are.
+
+Rounding is a question about digits, not about what the figure is -- so a Size
+asked for two decimals is still a size, and the number has to be brought down to
+the scale its unit names before the decimals mean anything. Appending "MB" to an
+unscaled byte count was the first attempt and produced "130760634.00 MB", which
+is wrong by a factor of a million and reads as authoritative.
+
+The steps match each format's own formatter exactly: 1024 for a size, 1000 for a
+rate, because that is the difference between how storage and connections are
+sold.
+*/
+func scaleForFormat(value float64, format string) (float64, string) {
+	switch format {
+	case "bytes":
+		units := []string{" B", " KB", " MB", " GB", " TB", " PB"}
+		index := 0
+		for math.Abs(value) >= 1024 && index < len(units)-1 {
+			value /= 1024
+			index++
+		}
+		return value, units[index]
+	case "rate":
+		units := []string{" bps", " Kbps", " Mbps", " Gbps", " Tbps"}
+		index := 0
+		for math.Abs(value) >= 1000 && index < len(units)-1 {
+			value /= 1000
+			index++
+		}
+		return value, units[index]
+	case "percent":
+		// The same reading the percent format makes: a ratio and a percentage
+		// both turn up, and 0..1 is unambiguous enough.
+		if value > 0 && value <= 1 {
+			value *= 100
+		}
+		return value, "%"
+	case "ms":
+		// Seconds in, milliseconds out, as the ms format does.
+		return value * 1000, ""
+	}
+	// count, duration, relativeDate and text carry no unit of their own.
+	return value, ""
 }
 
 func formatByteSize(value float64) string {
@@ -748,7 +854,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 			value.Value = "—"
 		} else {
 			value.Raw = found
-			value.Value = formatCustomValue(found, field.Format)
+			value.Value = formatCustomValue(found, field.Format, field.Decimals)
 		}
 		value.Shape = field.Shape
 		value.Tone = field.Tone

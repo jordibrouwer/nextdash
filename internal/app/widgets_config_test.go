@@ -255,3 +255,54 @@ func TestSanitizeCustomWidgetFieldsKeepsShape(t *testing.T) {
 		t.Errorf("normal was written out rather than left off: %q", got)
 	}
 }
+
+/*
+The sanitiser builds a fresh map per field rather than copying the one it was
+given, so a new setting has to be added here as well as to the reader -- and the
+one that is forgotten fails in the quietest possible way: the panel offers the
+choice, the widget stores it, and the figure comes back formatted as though
+nobody had chosen anything.
+
+That is exactly what happened to decimals, which is why this test names the
+whole shape rather than only the field that was missed.
+*/
+func TestSanitisingKeepsEveryFieldSettingThePanelOffers(t *testing.T) {
+	out := sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url": "https://example.test/api",
+		"fields": []any{map[string]any{
+			"path":     "queue.percent",
+			"label":    "done",
+			"format":   "percent",
+			"shape":    "meter",
+			"tone":     "good",
+			"decimals": float64(2),
+		}},
+	})
+	fields, _ := out["fields"].([]any)
+	if len(fields) != 1 {
+		t.Fatalf("kept %d fields, want 1", len(fields))
+	}
+	field, _ := fields[0].(map[string]any)
+	for _, key := range []string{"path", "format", "shape", "tone", "decimals"} {
+		if _, ok := field[key]; !ok {
+			t.Errorf("%q was dropped by the sanitiser", key)
+		}
+	}
+	if places, ok := field["decimals"].(int); !ok || places != 2 {
+		t.Errorf("decimals = %v, want 2 as a number", field["decimals"])
+	}
+}
+
+// Nothing chosen must stay nothing chosen through the sanitiser too, or every
+// field would come back rounded to whole numbers.
+func TestSanitisingLeavesOutDecimalsNobodyChose(t *testing.T) {
+	out := sanitizeWidgetConfig(WidgetTypeCustom, map[string]any{
+		"url":    "https://example.test/api",
+		"fields": []any{map[string]any{"path": "a", "format": "text"}},
+	})
+	fields, _ := out["fields"].([]any)
+	field, _ := fields[0].(map[string]any)
+	if _, ok := field["decimals"]; ok {
+		t.Errorf("decimals = %v, want the key left out", field["decimals"])
+	}
+}

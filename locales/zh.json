@@ -1964,6 +1964,8 @@
     "widgetShape.small": "小",
     "widgetShape.meter": "条形",
     "widgetCustomShape": "尺寸",
+    "widgetCustomDecimals": "小数位",
+    "widgetDecimalsAuto": "自动",
     "widgetFormat.bytes": "大小",
     "widgetFormat.rate": "速度",
     "widgetFormat.percent": "百分比",

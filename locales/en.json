@@ -1964,6 +1964,8 @@
     "widgetShape.small": "Small",
     "widgetShape.meter": "Bar",
     "widgetCustomShape": "Size",
+    "widgetCustomDecimals": "Decimals",
+    "widgetDecimalsAuto": "Auto",
     "widgetFormat.bytes": "Size",
     "widgetFormat.rate": "Speed",
     "widgetFormat.percent": "Percentage",

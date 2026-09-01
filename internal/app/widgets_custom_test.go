@@ -85,7 +85,7 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		{"not a number", "count", "not a number"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, c.format); got != c.want {
+		if got := formatCustomValue(c.raw, c.format, nil); got != c.want {
 			t.Errorf("%v as %s = %q, want %q", c.raw, c.format, got, c.want)
 		}
 	}
@@ -408,5 +408,87 @@ func allowLocalForTest(t *testing.T, h *Handlers, allow bool) {
 	settings.AllowLocalBookmarks = allow
 	if err := h.store.SaveSettings(settings); err != nil {
 		t.Fatal(err)
+	}
+}
+
+/*
+A chosen number of decimals, on any format that carries a number.
+
+SABnzbd is the case that asked for it: it reports mbleft as the string "0.00"
+and diskspace1 as "3342.65", which arrive as text and so were shown exactly as
+sent, however many digits that was.
+*/
+func TestFormattingToAChosenNumberOfDecimals(t *testing.T) {
+	places := func(n int) *int { return &n }
+	cases := []struct {
+		raw          any
+		format       string
+		decimals     *int
+		want, reason string
+	}{
+		// The figure is brought to the scale its unit names before the decimals
+		// are counted -- appending "MB" to an unscaled byte count would be
+		// wrong by a factor of a million.
+		{float64(130760634), "bytes", places(2), "124.70 MB", "a size keeps its unit"},
+		{float64(130760634), "bytes", places(0), "125 MB", "and rounds to whole"},
+		{float64(1046085072), "rate", places(2), "1.05 Gbps", "a rate keeps its unit"},
+		{0.4372, "percent", places(1), "43.7%", "a ratio is read as a percentage first"},
+		// A service that reports numbers as strings is the whole reason this
+		// exists: text carries no unit, so it is the number and nothing else.
+		{"3342.65", "text", places(1), "3342.7", "a numeric string rounds"},
+		{"0.00", "text", places(2), "0.00", "and keeps the places asked for"},
+		{float64(3.7), "count", places(0), "4", "a count rounds like anything else"},
+		// Trailing zeroes stay: a figure that changes width as its digits land
+		// reads as the value jumping about.
+		{float64(1048576), "bytes", places(3), "1.000 MB", "trailing zeroes stay"},
+		// Nothing chosen is the behaviour every widget had before this existed.
+		{float64(1536), "bytes", nil, "1.5 KB", "no choice leaves the format alone"},
+		// A value that is not a number cannot be rounded, and saying so beats
+		// showing a zero that looks like a reading.
+		{"paused", "text", places(2), "paused", "text that is not a number is left as it is"},
+	}
+	for _, c := range cases {
+		if got := formatCustomValue(c.raw, c.format, c.decimals); got != c.want {
+			t.Errorf("%v as %s = %q, want %q (%s)", c.raw, c.format, got, c.want, c.reason)
+		}
+	}
+}
+
+// A stored config is not a trusted source: it can be hand-edited, and asking the
+// formatter for four hundred digits should not be possible.
+func TestDecimalsOutsideTheUsefulRangeAreIgnored(t *testing.T) {
+	for _, raw := range []any{float64(-1), float64(7), float64(400), "two", nil, true} {
+		if got := decimalsFrom(raw); got != nil {
+			t.Errorf("decimalsFrom(%v) = %d, want nil", raw, *got)
+		}
+	}
+	for _, raw := range []any{float64(0), float64(3), float64(6)} {
+		if got := decimalsFrom(raw); got == nil {
+			t.Errorf("decimalsFrom(%v) = nil, want the number", raw)
+		}
+	}
+}
+
+// The choice has to survive the round trip, or it is a setting that forgets.
+func TestDecimalsSurviveReadingTheStoredConfig(t *testing.T) {
+	spec, err := customWidgetSpecFrom(map[string]any{
+		"url": "https://example.test/api",
+		"fields": []any{
+			map[string]any{"path": "a", "label": "with", "format": "text", "decimals": float64(2)},
+			map[string]any{"path": "b", "label": "without", "format": "text"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(spec.Fields) != 2 {
+		t.Fatalf("read %d fields, want 2", len(spec.Fields))
+	}
+	if spec.Fields[0].Decimals == nil || *spec.Fields[0].Decimals != 2 {
+		t.Errorf("field 0 decimals = %v, want 2", spec.Fields[0].Decimals)
+	}
+	// Nothing chosen stays nothing chosen: zero would be a real choice.
+	if spec.Fields[1].Decimals != nil {
+		t.Errorf("field 1 decimals = %v, want nil", spec.Fields[1].Decimals)
 	}
 }

@@ -5939,12 +5939,15 @@ button.config-bm-shortcut-pill {
     flex-wrap: wrap;
 }
 
-/* Path, label, format, size, remove — the same track sizes for the header and
-   every row, so the columns line up down the list. */
+/* Path, label, format, decimals, size, remove — the same track sizes for the
+   header and every row, so the columns line up down the list. Decimals is the
+   narrowest track in the row: its widest option is "Auto". */
 .config-custom-head,
 .config-custom-field {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(6.5rem, auto) minmax(5.5rem, auto) auto;
+    grid-template-columns:
+        minmax(0, 2fr) minmax(0, 1.2fr) minmax(6.5rem, auto)
+        minmax(4.5rem, auto) minmax(5.5rem, auto) auto;
     gap: 8px;
     align-items: center;
 }

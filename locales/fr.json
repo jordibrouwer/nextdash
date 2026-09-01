@@ -1964,6 +1964,8 @@
     "widgetShape.small": "Petit",
     "widgetShape.meter": "Barre",
     "widgetCustomShape": "Taille",
+    "widgetCustomDecimals": "Décimales",
+    "widgetDecimalsAuto": "Auto",
     "widgetFormat.bytes": "Taille",
     "widgetFormat.rate": "Débit",
     "widgetFormat.percent": "Pourcentage",

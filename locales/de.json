@@ -1964,6 +1964,8 @@
     "widgetShape.small": "Klein",
     "widgetShape.meter": "Balken",
     "widgetCustomShape": "Größe",
+    "widgetCustomDecimals": "Dezimalstellen",
+    "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Größe",
     "widgetFormat.rate": "Geschwindigkeit",
     "widgetFormat.percent": "Prozent",

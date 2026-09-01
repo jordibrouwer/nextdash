@@ -1066,6 +1066,12 @@ the only widget that talks to anything outside.
   a connection is mostly compared against itself and one decimal rounds this
   week and last week to the same figure. Point it at the field your service
   reports in bits: Speedtest Tracker calls it `download_bits`.
+- **Decimals per figure** — how many places to round to: *Auto*, or 0 to 3.
+  *Auto* is what every figure did before this existed, so nothing changes unless
+  you ask it to. It applies to any figure that is a number, including one the
+  service sends as text — SABnzbd reports `mbleft` as the string `"0.00"` and
+  `diskspace1` as `"3342.65"`, and those are shown exactly as sent until you
+  choose. Units are kept: a *Size* rounded to one place is still `124.7 MB`.
 - **Size per figure** — *Normal*, *Large*, *Small* or *Bar*, so a tile of
   figures is not a list you have to weigh yourself: the one you came for is
   bigger than the ones giving it context. *Bar* is offered on a percentage only,
