@@ -53,7 +53,16 @@ class DashboardConfig {
      * place in the rail a reader has no reason to look, because it was not
      * there the last time they opened config.
      */
-    static NEW_THIS_RELEASE = { section: 'widgets' };
+    /*
+     * Which section this release's new setting lives in, if any.
+     *
+     * Empty between releases, which is the ordinary state: the twinkle is a
+     * trail to something a reader has not heard of yet, and a trail that is
+     * always on stops pointing at anything. The machinery stays -- naming a
+     * section here lights the rail again -- so the next release is one line
+     * rather than a rebuild.
+     */
+    static NEW_THIS_RELEASE = {};
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
