@@ -817,3 +817,55 @@ test.describe('a refused request says what was refused', () => {
         await expect(probe).not.toContainText('write token');
     });
 });
+
+/*
+ * The part of an address the reader still has to fill in.
+ *
+ * Two presets ship an address that cannot work as given: Home Assistant names
+ * one entity out of a few hundred and Proxmox names one node. Left as
+ * YOUR_SENSOR the service answers 404 "Entity not found" -- correct, and no
+ * help at all to someone who has just pasted a token and is looking for what
+ * they did wrong.
+ */
+test.describe('a preset that needs something filled into its address says so', () => {
+    const hasNote = (page, row) => page.evaluate((sel) =>
+        !!document.querySelector(sel)?.innerHTML.includes('config-widget-note-hint')
+        && /Replace YOUR_/.test(document.querySelector(sel).innerHTML), row);
+
+    test('the note is there while the placeholder is, and goes when it does', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
+        await expect.poll(() => hasNote(page, row), { timeout: 10_000 }).toBe(true);
+
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await url.fill('http://ha.local:8123/api/states/sensor.pixel_8a_battery_level');
+        await url.blur();
+
+        // The address is a text box, so the panel is not redrawn as it is typed
+        // -- the note has to be toggled where it stands.
+        await expect.poll(() => hasNote(page, row), { timeout: 10_000 }).toBe(false);
+    });
+
+    test('a preset with nothing to fill in says nothing', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        // Sonarr's address is complete as it arrives; only the host is replaced.
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sonarr');
+        expect(await hasNote(page, row)).toBe(false);
+    });
+
+    test('Proxmox says it too, with its own placeholder', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('proxmox');
+        await expect(page.locator(`${row}`).locator('.config-widget-note-hint')
+            .filter({ hasText: 'YOUR_NODE' })).toHaveCount(1, { timeout: 10_000 });
+    });
+});

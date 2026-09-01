@@ -300,8 +300,9 @@
             id: 'proxmox', name: 'Proxmox VE', group: 'system',
             sample: 'https://proxmox.local:8006',
             path: '/api2/json/nodes/YOUR_NODE/status',
+            fillIn: 'YOUR_NODE',
             auth: 'header', authName: 'Authorization', scheme: 'PVEAPIToken=',
-            note: 'An API token, as an Authorization header of "PVEAPIToken=user@pam!id=secret".',
+            note: 'An API token, as an Authorization header. Replace YOUR_NODE in the address with your node\'s name — it is in the left-hand tree of the Proxmox web interface.',
             fields: [
                 { path: 'data.uptime', label: 'uptime', format: 'duration', shape: 'small' },
                 { path: 'data.cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
@@ -379,7 +380,10 @@
             sample: 'http://homeassistant.local:8123',
             path: '/api/states/sensor.YOUR_SENSOR',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
-            note: 'A long-lived access token, as an Authorization header of "Bearer <token>".',
+            // The address names one entity, and which one is the reader's to
+            // choose -- there is no sensible default among a few hundred.
+            fillIn: 'YOUR_SENSOR',
+            note: 'A long-lived access token from your profile page. Replace YOUR_SENSOR in the address with the entity you want — Developer tools → States lists them.',
             fields: [
                 { path: 'state', label: 'now', format: 'text', shape: 'large' },
                 { path: 'attributes.friendly_name', label: 'sensor', format: 'text' },

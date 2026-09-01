@@ -15492,6 +15492,33 @@ class DashboardConfig {
     }
 
     /*
+     * The part of the address the reader still has to fill in.
+     *
+     * Two presets ship an address that cannot work as given: Home Assistant
+     * names one entity out of a few hundred and Proxmox names one node, and
+     * neither has a sensible default. Left as YOUR_SENSOR the service answers
+     * 404 "Entity not found" -- correct, and no help at all if you have just
+     * pasted a token and are looking for what you did wrong.
+     *
+     * Said beside the address rather than left to the trial, so it is read
+     * before Ask now rather than after it.
+     */
+    renderAddressPlaceholderNote(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const catalogue = window.DashboardWidgetPresets;
+        const draft = this.widgetDraft(index, { create: false });
+        const config = draft?.config || widget?.config || {};
+        const preset = catalogue?.byId?.(String(config.presetId || ''));
+        const marker = preset?.fillIn;
+        if (!marker || !String(config.url || '').includes(marker)) return '';
+        return `
+            <p class="config-widget-note config-widget-note-hint">${esc(
+                this.t('config.widgetCustomFillIn',
+                    'Replace {what} in the address with your own — the service cannot answer until you do.')
+                    .replace('{what}', marker))}</p>`;
+    }
+
+    /*
      * Where the API key is typed: here, in the widget, and nowhere else.
      *
      * The value does not go into the widget's config. bookmarks-N.json is in
@@ -16576,6 +16603,7 @@ class DashboardConfig {
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
                         'Where to read from'))}</h4>
                     <div class="config-custom-grid">${rows}</div>
+                    ${this.renderAddressPlaceholderNote(widget, index)}
                     ${this.renderWidgetCredential(widget, index)}
                 </div>
                 ${this.renderCustomWidgetFields(widget, index)}
@@ -16969,6 +16997,10 @@ class DashboardConfig {
                 this.updateWidgetDraft(index, setting);
                 if (setting.getAttribute('data-widget-setting') === 'url') {
                     this.restorePresetPath(index, setting);
+                    // The address is a text box, so it is not redrawn on every
+                    // keystroke -- the note is toggled where it stands, the way
+                    // the scheme hint is.
+                    this.syncPlaceholderNote(index);
                 }
                 this.refreshWidgetSaveBar(index);
                 return;
@@ -17290,6 +17322,24 @@ class DashboardConfig {
         if (!draft) return;
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
+    }
+
+    /** Shows or hides the fill-in note as the address is typed. */
+    syncPlaceholderNote(index) {
+        const body = document.querySelector(`[data-widget-row="${index}"]`);
+        if (!body) return;
+        const group = body.querySelector('.config-custom-grid')?.parentElement;
+        if (!group) return;
+        const existing = group.querySelector(':scope > .config-widget-note-hint');
+        const wanted = this.renderAddressPlaceholderNote(
+            (this._widgetBlocks || [])[index], index);
+        if (!wanted) {
+            existing?.remove();
+            return;
+        }
+        if (existing) return;
+        const grid = group.querySelector('.config-custom-grid');
+        grid?.insertAdjacentHTML('afterend', wanted);
     }
 
     /*

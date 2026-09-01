@@ -1974,6 +1974,7 @@
     "widgetFormat.rate": "Débit",
     "widgetFormat.data": "Taille de données",
     "widgetCustomDataUnit": "Compté en",
+    "widgetCustomFillIn": "Remplacez {what} dans l’adresse par la vôtre — le service ne peut pas répondre avant.",
     "widgetDataUnit.b": "Octets",
     "widgetDataUnit.kb": "Ko",
     "widgetDataUnit.mb": "Mo",

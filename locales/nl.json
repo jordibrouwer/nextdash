@@ -1974,6 +1974,7 @@
     "widgetFormat.rate": "Snelheid",
     "widgetFormat.data": "Datagrootte",
     "widgetCustomDataUnit": "Geteld in",
+    "widgetCustomFillIn": "Vervang {what} in het adres door je eigen waarde — de dienst kan pas antwoorden als je dat doet.",
     "widgetDataUnit.b": "Bytes",
     "widgetDataUnit.kb": "KB",
     "widgetDataUnit.mb": "MB",
