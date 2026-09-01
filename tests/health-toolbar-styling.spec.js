@@ -68,3 +68,71 @@ test('the secondary toolbar buttons are shaped alike', async ({ page }) => {
     });
     expect(border).not.toBe(bare);
 });
+
+
+/*
+ * Opening the view shows the top of the view.
+ *
+ * The filter row can scroll sideways, and the active pill was brought back with
+ * scrollIntoView on every render -- which moves every scrollable ancestor, the
+ * page included. So opening health scrolled the header off the top to bring a
+ * pill a few pixels nearer the middle of a row that was often not overflowing
+ * at all. The inbox does not do this, which is the comparison that surfaced it.
+ */
+/*
+ * Opening the view shows the top of the view.
+ *
+ * The filter row can scroll sideways, and the active pill was brought back with
+ * scrollIntoView on every render -- which moves every scrollable ancestor, the
+ * page included. So opening health scrolled the header off the top to bring a
+ * pill nearer the middle of a row that was often not overflowing at all.
+ *
+ * This asserts the outcome and not the mechanism. Headless Chromium does not
+ * scroll for this at the sizes the runner uses, so it passed with the bug
+ * present -- it is a guard against a future regression that does reproduce
+ * here, not evidence the reported one is fixed. That was checked by hand
+ * against the code path instead.
+ */
+test('opening the health view leaves the page at the top', async ({ page }) => {
+    await openHealth(page);
+
+    await expect(page.locator('.health-view-title')).toBeVisible();
+
+    const placement = await page.evaluate(() => ({
+        pageY: Math.round(window.scrollY),
+        titleTop: Math.round(document.querySelector('.health-view-title').getBoundingClientRect().top),
+    }));
+
+    expect(placement.pageY).toBe(0);
+    // On screen rather than above it: the heading is what the reader came to.
+    expect(placement.titleTop).toBeGreaterThan(0);
+});
+
+test('picking a filter does not move the page either', async ({ page }) => {
+    await openHealth(page);
+
+    // A filter towards the right-hand end, which is the one the old code
+    // scrolled the whole page to reach.
+    const pill = page.locator('.health-view-filter-btn').last();
+    await pill.click();
+    await expect(pill).toHaveClass(/is-active/);
+
+    const after = await page.evaluate(() => ({
+        pageY: Math.round(window.scrollY),
+        titleTop: Math.round(document.querySelector('.health-view-title').getBoundingClientRect().top),
+        // And the pill it selected is still readable, which is what the
+        // scrolling was for in the first place.
+        pillInView: (() => {
+            const active = document.querySelector('.health-view-filter-btn.is-active');
+            const group = active?.closest('.health-view-filter-group');
+            if (!active || !group) return null;
+            const a = active.getBoundingClientRect();
+            const g = group.getBoundingClientRect();
+            return a.left >= g.left - 2 && a.right <= g.right + 2;
+        })(),
+    }));
+
+    expect(after.pageY).toBe(0);
+    expect(after.titleTop).toBeGreaterThan(0);
+    expect(after.pillInView).toBe(true);
+});
