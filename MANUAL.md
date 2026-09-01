@@ -1032,13 +1032,13 @@ the only widget that talks to anything outside.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
-- **A sign-in nextDash keeps** — qBittorrent has no API key at all: it hands out
+- **A sign-in nextDash keeps** (**v1.4.5**) — qBittorrent has no API key at all: it hands out
   a session cookie that expires. So the panel asks for the username and password
   you use for the Web UI, and the server signs in for you, keeps the session, and
   signs in again when it lapses — nothing to replace by hand. The password is
   stored like every other secret here, and the cookie is only ever held in
   memory.
-- **A key that goes in the address** — SABnzbd, Tautulli, Pi-hole
+- **A key that goes in the address** (**v1.4.5**) — SABnzbd, Tautulli, Pi-hole
   v5 and Plex offer no header form at all: their key belongs in the query string.
   You still type it into the **API key** box. It is kept in the credential file
   like any other, the stored address keeps a `YOUR_KEY` placeholder, and the
@@ -1080,16 +1080,16 @@ the only widget that talks to anything outside.
   a connection is mostly compared against itself and one decimal rounds this
   week and last week to the same figure. Point it at the field your service
   reports in bits: Speedtest Tracker calls it `download_bits`.
-- **Power** — for a figure in watts. It scales in thousands, the way a meter is
+- **Power** (**v1.4.5**) — for a figure in watts. It scales in thousands, the way a meter is
   read, so a house drawing 450 W stays in watts and a solar peak reads `4.5 kW`.
   A negative reading keeps its sign and still scales: a P1 meter exporting to the
   grid shows `-1.03 kW`.
-- **Temperature** — shows the figure with `°C` or `°F` after it, following the
+- **Temperature** (**v1.4.5**) — shows the figure with `°C` or `°F` after it, following the
   unit you chose under *Appearance → Weather*, so the dashboard and the tile
   cannot disagree. It does **not** convert: a sensor reports in the unit its own
   system was set to — Home Assistant converts before it answers — so converting
   again would be a second pass over a number that was already right.
-- **Data size** — for a figure that is an amount of storage. It scales on its
+- **Data size** (**v1.4.5**) — for a figure that is an amount of storage. It scales on its
   own, so a value reads `3.3 TB` or `124.7 MB` rather than a bare number, and it
   asks **which unit the service already counted in**. That question is the
   difference between right and wrong by orders of magnitude: *Size* reads its
@@ -1098,11 +1098,11 @@ the only widget that talks to anything outside.
   and `diskspace1` in gigabytes, and read as bytes those come out as `0 B` and
   `3.3 KB`. Choose the unit and the figure reads `3.3 TB` as it should. Bytes is
   the default, which is what *Size* always assumed.
-- **Found** — once you have pressed *Ask now*, each row shows what its own path
+- **Found** (**v1.4.5**) — once you have pressed *Ask now*, each row shows what its own path
   read out of the answer, right beside the path itself. A path that matched
   nothing shows a dash. This is the column to watch while writing paths: it says
   whether the one you just typed works without scrolling anywhere.
-- **Decimals per figure** — how many places to round to: *Auto*, or 0 to 3.
+- **Decimals per figure** (**v1.4.5**) — how many places to round to: *Auto*, or 0 to 3.
   *Auto* is what every figure did before this existed, so nothing changes unless
   you ask it to. It applies to any figure that is a number, including one the
   service sends as text — SABnzbd reports `mbleft` as the string `"0.00"` and
