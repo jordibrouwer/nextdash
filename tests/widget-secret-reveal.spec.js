@@ -205,3 +205,87 @@ test.describe('a preset seeds the scheme its header needs', () => {
             .toContainText('key', { ignoreCase: true });
     });
 });
+
+/*
+ * SABnzbd, Tautulli, Pi-hole v5 and Plex take their key in the address and offer
+ * no header form. That used to mean the sign-in block vanished entirely and the
+ * reader was left replacing YOUR_KEY in the address by hand -- an API key box
+ * that asked for nothing, above an address that asked for everything.
+ */
+test.describe('a service whose key goes in the address', () => {
+    test('still asks for the key in the sign-in block', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+
+        await expect(page.locator(`${row} [data-widget-auth="kind"]`)).toHaveValue('query');
+        await expect(page.locator(`${row} [data-widget-auth="secret"]`)).toBeVisible();
+        // Named, so the note can say where the key is going.
+        await expect(page.locator(`${row} .config-widget-note-hint`)).toContainText('apikey');
+    });
+
+    test('the key is stored rather than written into the address', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await url.fill('http://sab.local:8081/api?mode=queue&output=json&apikey=YOUR_KEY');
+        await url.blur();
+
+        const key = page.locator(`${row} [data-widget-auth="secret"]`);
+        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.blur();
+        await page.locator(`${row} [data-widget-save]`).click();
+        await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
+
+        /*
+         * The placeholder stays. A url is stored in bookmarks-N.json, which is
+         * in the backup allowlist and in every export, so a key written in here
+         * would travel in a ZIP -- which is the whole reason the credential file
+         * exists.
+         */
+        await expect(url).toHaveValue(/apikey=YOUR_KEY/);
+        await expect(url).not.toHaveValue(/746071e5/);
+    });
+
+    test('the stored address key can be looked at too', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await url.fill('http://sab.local:8081/api?mode=queue&output=json&apikey=YOUR_KEY');
+        await url.blur();
+
+        const key = page.locator(`${row} [data-widget-auth="secret"]`);
+        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.blur();
+        await page.locator(`${row} [data-widget-save]`).click();
+        await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
+
+        await page.locator(`${row} [data-secret-reveal]`).click();
+        await expect(key).toHaveValue('746071e5e78f4f36b71b3536e46f1ec9', { timeout: 10_000 });
+    });
+
+    test('Plex asks for the token, not for the Accept header', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        /*
+         * Plex was the worst of the four: its API key box asked for an Accept
+         * header -- which is not a secret and is the same for everyone -- while
+         * the token that actually signs the request had to go in the address by
+         * hand.
+         */
+        await page.locator(`${row} [data-widget-preset]`).selectOption('plex');
+
+        await expect(page.locator(`${row} [data-widget-auth="kind"]`)).toHaveValue('query');
+        await expect(page.locator(`${row} .config-widget-note-hint`)).toContainText('X-Plex-Token');
+    });
+});

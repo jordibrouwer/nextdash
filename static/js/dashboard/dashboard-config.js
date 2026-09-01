@@ -15361,6 +15361,11 @@ class DashboardConfig {
         if (chosen && chosen !== own) return { kind: 'shared', shared: chosen };
         const stored = details[own];
         if (!stored) return { kind: 'none' };
+        if (stored.query?.length) {
+            // Before headers: a Plex widget has both -- its Accept header is
+            // sent for it -- and the key the reader typed is the query one.
+            return { kind: 'query', queryName: stored.query[0], saved: true };
+        }
         if (stored.headers?.length) {
             return { kind: 'header', headerName: stored.headers[0], saved: true };
         }
@@ -15469,6 +15474,7 @@ class DashboardConfig {
         if (String(now.secret || '')) return true;
         return before.kind !== now.kind
             || String(before.headerName || '') !== String(now.headerName || '')
+            || String(before.queryName || '') !== String(now.queryName || '')
             || String(before.basicUser || '') !== String(now.basicUser || '')
             || String(before.shared || '') !== String(now.shared || '');
     }
@@ -15664,6 +15670,27 @@ class DashboardConfig {
                 ${schemeHint}
             </div>`;
 
+        /*
+         * The address form: one box, for a service that has no header form.
+         *
+         * The parameter name is not editable, unlike the header name beside it.
+         * A header name is something a reader might reasonably know better than
+         * the preset does; a query parameter is part of the path the preset
+         * already filled in, and a name typed here that does not match the
+         * address would fill in a parameter the service never reads.
+         */
+        const query = state.kind !== 'query' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-query">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
+                ${this.renderSecretInput({
+                    id: `${id}-query`, index, field: `query:${state.queryName || ''}`,
+                    saved: state.saved, placeholder: secretPlaceholder,
+                })}
+                <p class="config-widget-note config-widget-note-hint">${esc(this.t('config.widgetAuthQueryNote',
+                    'This service takes its key in the address. It is kept in the credential file all the same, and put into the request as {name}.')
+                    .replace('{name}', state.queryName || 'apikey'))}</p>
+            </div>`;
+
         const basic = state.kind !== 'basic' ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-user">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
@@ -15689,7 +15716,7 @@ class DashboardConfig {
                 </select>
             </div>`;
 
-        const explains = state.kind === 'header' || state.kind === 'basic';
+        const explains = state.kind === 'header' || state.kind === 'basic' || state.kind === 'query';
         return `
             <div class="config-widget-auth" data-widget-auth-form="${index}">
                 <div class="config-widget-field">
@@ -15697,11 +15724,14 @@ class DashboardConfig {
                     <select id="${id}" class="config-select" data-widget-auth="kind" data-widget-index="${index}">
                         ${pick('none', 'config.widgetAuthNone', 'Nothing — ask anonymously')}
                         ${pick('header', 'config.widgetAuthHeader', 'An API key')}
+                        ${state.kind === 'query'
+                            ? pick('query', 'config.widgetAuthQuery', 'A key in the address')
+                            : ''}
                         ${pick('basic', 'config.widgetAuthBasic', 'A username and password')}
                         ${shared.length ? pick('shared', 'config.widgetAuthShared', 'A sign-in saved elsewhere') : ''}
                     </select>
                 </div>
-                ${header}${basic}${sharedPick}
+                ${header}${query}${basic}${sharedPick}
                 ${explains ? `
                     <p class="config-widget-note">${esc(this.t('config.widgetAuthNote',
                         'Kept in a separate file that stays out of your backups and exports, so a key never travels in a ZIP. The widget itself stores only a reference.'))}</p>` : ''}
@@ -16047,7 +16077,7 @@ class DashboardConfig {
         const config = { ...(draft?.config || block?.config || {}) };
         const auth = draft?.auth || this.storedCredentialState(block);
         if (auth?.kind === 'shared') config.credentialId = auth.shared || '';
-        else if (auth?.kind === 'header' || auth?.kind === 'basic') {
+        else if (auth?.kind === 'header' || auth?.kind === 'basic' || auth?.kind === 'query') {
             config.credentialId = this.widgetCredentialId(block);
         } else config.credentialId = '';
         if (!config.credentialId) delete config.credentialId;
@@ -17064,6 +17094,12 @@ class DashboardConfig {
             draft.auth = {
                 kind: value,
                 headerName: before.headerName || '',
+                // queryName and fixedHeaders come from the preset rather than
+                // from anything on screen, so switching kinds must not lose
+                // them: there is no box that would put them back.
+                queryName: before.queryName || '',
+                fixedHeaders: before.fixedHeaders || null,
+                seed: before.seed || '',
                 basicUser: before.basicUser || '',
                 saved: before.saved === true && before.kind === value,
             };
@@ -17152,8 +17188,28 @@ class DashboardConfig {
             };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
+        } else if (preset.auth === 'query') {
+            /*
+             * A key that goes in the address is still a key.
+             *
+             * SABnzbd, Tautulli, Pi-hole v5 and Plex offer no header form, so
+             * this used to fall through to "no credential needed" -- which left
+             * the sign-in block hidden, the API key box gone, and YOUR_KEY
+             * sitting in the address for the reader to replace by hand. The box
+             * asked for nothing and the address asked for everything, which is
+             * the opposite of what the panel says it does.
+             *
+             * It is an ordinary sign-in now. The value goes to the credential
+             * file like any other, the stored address keeps its placeholder,
+             * and the server fills the parameter in on each request -- so the
+             * key stays out of bookmarks-N.json and out of every export.
+             */
+            draft.auth = {
+                kind: 'query', queryName: preset.queryName || '',
+                headerName: '', basicUser: '',
+                fixedHeaders: preset.fixedHeaders || null,
+            };
         } else {
-            // none, or a service that carries its key in the address itself.
             draft.auth = { kind: 'none' };
         }
         this.repaintWidgetsBody();
@@ -17240,9 +17296,21 @@ class DashboardConfig {
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
 
-        if (auth.kind === 'header' || auth.kind === 'basic') {
+        if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query') {
             const payload = { id: own, label: block.title || block.type || own };
-            if (auth.kind === 'header') {
+            if (auth.kind === 'query') {
+                const name = String(auth.queryName || '').trim();
+                if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
+                if (!secret && !(stored.kind === 'query' && stored.queryName === name)) {
+                    say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
+                    return;
+                }
+                if (secret) payload.query = { [name]: secret };
+                // Plex answers XML unless asked otherwise, and that Accept
+                // header is not a secret anyone should be asked to type: it
+                // rides along with the key rather than being a second question.
+                if (auth.fixedHeaders) payload.headers = { ...auth.fixedHeaders };
+            } else if (auth.kind === 'header') {
                 const name = String(auth.headerName || '').trim();
                 if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
                 if (!secret && !(stored.kind === 'header' && stored.headerName === name)) {
@@ -17276,7 +17344,7 @@ class DashboardConfig {
             // Nothing to write when only the label changed and the secret is
             // already filed: the value never comes back from the server, so
             // re-filing it is not something this panel can do.
-            if (payload.headers || payload.basicPassword) {
+            if (payload.headers || payload.basicPassword || payload.query) {
                 say(this.t('config.widgetAuthSaving', 'Saving…'));
                 try {
                     const res = await this.writeFetch('/api/health/credentials', {

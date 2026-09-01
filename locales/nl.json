@@ -5305,6 +5305,8 @@
     "widgetPresetPathKept": "{name} antwoordt op {path}, dus dat is weer aan het adres toegevoegd.",
     "widgetAuthNone": "Niets — anoniem opvragen",
     "widgetAuthHeader": "Een API-sleutel",
+    "widgetAuthQuery": "Een sleutel in het adres",
+    "widgetAuthQueryNote": "Deze dienst wil zijn sleutel in het adres. Hij wordt toch in het credential-bestand bewaard en bij elke aanvraag als {name} meegestuurd.",
     "widgetAuthBasic": "Een gebruikersnaam en wachtwoord",
     "widgetAuthShared": "Een elders opgeslagen aanmelding",
     "widgetAuthSharedPick": "Welke",

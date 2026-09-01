@@ -127,8 +127,8 @@
             // form. That is why widget addresses are withheld from the blocks
             // route: this URL is a credential.
             path: '/api/v2?apikey=YOUR_KEY&cmd=get_activity',
-            auth: 'query',
-            note: 'The API key goes in the address here — Tautulli has no header form.',
+            auth: 'query', queryName: 'apikey',
+            note: 'Settings → Web Interface → API key. It goes in the address, which nextDash fills in for you.',
             fields: [
                 { path: 'response.data.stream_count', label: 'streams', format: 'count', shape: 'large' },
                 { path: 'response.data.stream_count_transcode', label: 'transcoding', format: 'count', shape: 'small' },
@@ -151,8 +151,11 @@
             id: 'plex', name: 'Plex', group: 'media',
             sample: 'http://plex.local:32400',
             path: '/status/sessions?X-Plex-Token=YOUR_TOKEN',
-            auth: 'header', authName: 'Accept',
-            note: 'Plex answers XML unless asked otherwise: add an Accept header of application/json.',
+            // The token is the query parameter; the Accept header is not a
+            // secret and is sent for every Plex widget rather than asked for.
+            auth: 'query', queryName: 'X-Plex-Token',
+            fixedHeaders: { Accept: 'application/json' },
+            note: 'The X-Plex-Token from any Plex URL. Plex answers XML unless asked otherwise, so nextDash sends the Accept header for you.',
             fields: [
                 { path: 'MediaContainer.size', label: 'streams now', format: 'count', shape: 'large' },
             ],
@@ -186,8 +189,8 @@
             id: 'sabnzbd', name: 'SABnzbd', group: 'media',
             sample: 'http://sabnzbd.local:8080',
             path: '/api?mode=queue&output=json&apikey=YOUR_KEY',
-            auth: 'query',
-            note: 'The API key goes in the address; SABnzbd takes no header form.',
+            auth: 'query', queryName: 'apikey',
+            note: 'Config → General → API Key. It goes in the address, which nextDash fills in for you.',
             ttl: 60,
             fields: [
                 { path: 'queue.noofslots_total', label: 'in queue', format: 'count', shape: 'large' },
@@ -227,8 +230,8 @@
             id: 'pihole5', name: 'Pi-hole (v5)', group: 'network',
             sample: 'http://pi.hole',
             path: '/admin/api.php?summaryRaw&auth=YOUR_TOKEN',
-            auth: 'query',
-            note: 'v5 takes the API token in the address — Settings → API.',
+            auth: 'query', queryName: 'auth',
+            note: 'Settings → API. It goes in the address, which nextDash fills in for you.',
             columns: 2,
             fields: [
                 { path: 'dns_queries_today', label: 'queries today', format: 'count', shape: 'large' },

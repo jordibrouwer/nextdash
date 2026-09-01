@@ -584,3 +584,180 @@ func TestRevealingRequiresTheWriteTokenWhenConfigured(t *testing.T) {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
 }
+
+/*
+Three services take their key in the address and offer no header form at all:
+SABnzbd, Tautulli and Pi-hole v5. The key still belongs in the credential file,
+because a widget's url is stored in bookmarks-N.json and travels in every
+export.
+*/
+
+// The placeholder a preset writes is what marks the slot as free.
+func TestAQueryCredentialFillsInTheAddress(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "746071e5e78f4f36b71b3536e46f1ec9"
+	if err := saveHealthCredential("widget:sab", HealthCredential{
+		Label: "SABnzbd",
+		Query: map[string]string{"apikey": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	credential, ok := lookupHealthCredential("widget:sab")
+	if !ok {
+		t.Fatal("the credential was not stored")
+	}
+
+	req := httptest.NewRequest(http.MethodGet,
+		"http://sab.local:8081/api?mode=queue&output=json&apikey=YOUR_KEY", nil)
+	applyHealthCredential(req, credential)
+
+	if got := req.URL.Query().Get("apikey"); got != secret {
+		t.Errorf("apikey = %q, want the stored key", got)
+	}
+	// The rest of the address is untouched: a preset's path carries the mode
+	// and the output format, and losing either asks for something else.
+	if got := req.URL.Query().Get("mode"); got != "queue" {
+		t.Errorf("mode = %q, want queue", got)
+	}
+	if got := req.URL.Query().Get("output"); got != "json" {
+		t.Errorf("output = %q, want json", got)
+	}
+}
+
+// A key typed into the address by hand is somebody's working widget, and
+// overwriting it would break it.
+func TestAQueryCredentialLeavesARealValueAlone(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	if err := saveHealthCredential("widget:sab", HealthCredential{
+		Query: map[string]string{"apikey": "from-the-credential-file"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	credential, _ := lookupHealthCredential("widget:sab")
+
+	req := httptest.NewRequest(http.MethodGet,
+		"http://sab.local:8081/api?apikey=typed-by-hand", nil)
+	applyHealthCredential(req, credential)
+
+	if got := req.URL.Query().Get("apikey"); got != "typed-by-hand" {
+		t.Errorf("apikey = %q, want the value that was already there", got)
+	}
+}
+
+// An empty slot is a slot nobody filled, so it takes the key like a placeholder.
+func TestAQueryCredentialFillsAnEmptyParameter(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	if err := saveHealthCredential("widget:sab", HealthCredential{
+		Query: map[string]string{"apikey": "the-key"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	credential, _ := lookupHealthCredential("widget:sab")
+
+	req := httptest.NewRequest(http.MethodGet, "http://sab.local:8081/api?apikey=", nil)
+	applyHealthCredential(req, credential)
+
+	if got := req.URL.Query().Get("apikey"); got != "the-key" {
+		t.Errorf("apikey = %q, want the stored key", got)
+	}
+}
+
+// A key that happens to be uppercase is not a placeholder, or a real key would
+// be silently replaced by another one.
+func TestAnUppercaseKeyIsNotMistakenForAPlaceholder(t *testing.T) {
+	for _, c := range []struct {
+		value string
+		want  bool
+	}{
+		{"YOUR_KEY", true},
+		{"YOUR_TOKEN", true},
+		{"YOUR_API_KEY_2", true},
+		{"ABCDEF123456", false},
+		{"YOUR-KEY", false},
+		{"your_key", false},
+		{"YOUR_KEY.", false},
+		{"", false},
+	} {
+		if got := isCredentialPlaceholder(c.value); got != c.want {
+			t.Errorf("isCredentialPlaceholder(%q) = %v, want %v", c.value, got, c.want)
+		}
+	}
+}
+
+// A name or value carrying & or = would end this parameter and start another --
+// the query-string form of the request splitting the header rule refuses.
+func TestQuerySanitisingRefusesParametersThatCouldSplitAnAddress(t *testing.T) {
+	out := sanitizeCredentialQuery(map[string]string{
+		"apikey":     "fine",
+		"bad&name":   "value",
+		"badvalue":   "a&injected=1",
+		"has=equals": "value",
+		"":           "no name",
+		"empty":      "",
+	})
+	if _, ok := out["apikey"]; !ok {
+		t.Error("a valid parameter was dropped")
+	}
+	if len(out) != 1 {
+		t.Errorf("kept %d parameters, want only the valid one: %v", len(out), out)
+	}
+}
+
+// The panel has to be able to say a key is set without the value coming back.
+func TestCredentialSummaryNamesQueryParametersWithoutTheirValues(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "do-not-leak-me"
+	if err := saveHealthCredential("widget:sab", HealthCredential{
+		Query: map[string]string{"apikey": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	summaries := listHealthCredentialDetails()
+	summary, ok := summaries["widget:sab"]
+	if !ok {
+		t.Fatal("the credential is missing from the summary")
+	}
+	if len(summary.Query) != 1 || summary.Query[0] != "apikey" {
+		t.Errorf("query names = %v, want [apikey]", summary.Query)
+	}
+	blob, _ := json.Marshal(summaries)
+	if strings.Contains(string(blob), secret) {
+		t.Error("the summary carried the secret it names")
+	}
+}
+
+// The eye reads a query key the same way it reads a header.
+func TestRevealingHandsBackAQueryKey(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "746071e5e78f4f36b71b3536e46f1ec9"
+	if err := saveHealthCredential("widget:sab", HealthCredential{
+		Query: map[string]string{"apikey": secret},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/health/credentials/reveal?id=widget:sab&field=query:apikey", nil)
+	rec := httptest.NewRecorder()
+	h.HealthCredentialRevealHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var body struct {
+		Value string `json:"value"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Value != secret {
+		t.Errorf("value = %q, want the stored key", body.Value)
+	}
+}

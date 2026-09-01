@@ -5305,6 +5305,8 @@
     "widgetPresetPathKept": "{name} répond sur {path}, cela a donc été remis dans l'adresse.",
     "widgetAuthNone": "Rien — demander anonymement",
     "widgetAuthHeader": "Une clé d'API",
+    "widgetAuthQuery": "Une clé dans l’adresse",
+    "widgetAuthQueryNote": "Ce service attend sa clé dans l’adresse. Elle reste néanmoins dans le fichier d’identifiants et est ajoutée à chaque requête sous {name}.",
     "widgetAuthBasic": "Un nom d'utilisateur et un mot de passe",
     "widgetAuthShared": "Une connexion enregistrée ailleurs",
     "widgetAuthSharedPick": "Laquelle",

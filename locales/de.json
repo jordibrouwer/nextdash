@@ -5305,6 +5305,8 @@
     "widgetPresetPathKept": "{name} antwortet auf {path}, daher wurde das wieder an die Adresse angehängt.",
     "widgetAuthNone": "Nichts — anonym abfragen",
     "widgetAuthHeader": "Ein API-Schlüssel",
+    "widgetAuthQuery": "Ein Schlüssel in der Adresse",
+    "widgetAuthQueryNote": "Dieser Dienst erwartet seinen Schlüssel in der Adresse. Er wird trotzdem in der Zugangsdatei gespeichert und bei jeder Anfrage als {name} mitgeschickt.",
     "widgetAuthBasic": "Ein Benutzername und Passwort",
     "widgetAuthShared": "Eine anderswo gespeicherte Anmeldung",
     "widgetAuthSharedPick": "Welche",

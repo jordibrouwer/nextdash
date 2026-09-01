@@ -5305,6 +5305,8 @@
     "widgetPresetPathKept": "{name} answers on {path}, so that was put back on the address.",
     "widgetAuthNone": "Nothing — ask anonymously",
     "widgetAuthHeader": "An API key",
+    "widgetAuthQuery": "A key in the address",
+    "widgetAuthQueryNote": "This service takes its key in the address. It is kept in the credential file all the same, and put into the request as {name}.",
     "widgetAuthBasic": "A username and password",
     "widgetAuthShared": "A sign-in saved elsewhere",
     "widgetAuthSharedPick": "Which one",

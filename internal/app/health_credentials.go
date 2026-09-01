@@ -59,6 +59,13 @@ type HealthCredential struct {
 	// building the header here means never asking anyone to base64 by hand.
 	BasicUser     string `json:"basicUser,omitempty"`
 	BasicPassword string `json:"basicPassword,omitempty"`
+	// Query carries the services that take their key in the address and offer
+	// no header form at all -- SABnzbd, Tautulli, Pi-hole v5. The alternative
+	// was the key living in the widget's own url, and a url is stored in
+	// bookmarks-N.json, which is in the backup allowlist and in every export.
+	// Kept here, the address holds a placeholder and the secret travels no
+	// further than this file.
+	Query map[string]string `json:"query,omitempty"`
 }
 
 // HealthCredentialFile is the whole set on disk.
@@ -136,6 +143,7 @@ func sanitizeHealthCredential(in HealthCredential) HealthCredential {
 		BasicUser:     trimToLength(strings.TrimSpace(in.BasicUser), healthCredentialMaxValueLen),
 		BasicPassword: trimToLength(in.BasicPassword, healthCredentialMaxValueLen),
 	}
+	out.Query = sanitizeCredentialQuery(in.Query)
 	if len(in.Headers) == 0 {
 		return out
 	}
@@ -163,6 +171,41 @@ func sanitizeHealthCredential(in HealthCredential) HealthCredential {
 	}
 	if len(out.Headers) == 0 {
 		out.Headers = nil
+	}
+	return out
+}
+
+/*
+sanitizeCredentialQuery bounds the query parameters a credential may carry.
+
+Same limits as the headers beside it, for the same reason: a name is chosen from
+a preset rather than typed freely, so anything unusual here is a mistake or an
+attempt rather than a preference. Names are kept as written -- a query string is
+case-sensitive where a header is not, and "apikey" is not "APIKey" to SABnzbd.
+*/
+func sanitizeCredentialQuery(in map[string]string) map[string]string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := map[string]string{}
+	for name, value := range in {
+		if len(out) >= healthCredentialMaxHeaders {
+			break
+		}
+		name = strings.TrimSpace(name)
+		value = strings.TrimSpace(value)
+		if name == "" || value == "" {
+			continue
+		}
+		// A name with a & or an = in it would end this parameter and start
+		// another, which is the query-string form of a split request.
+		if strings.ContainsAny(name, "&=?#") || strings.ContainsAny(value, "&=?#") {
+			continue
+		}
+		out[trimToLength(name, healthCredentialMaxNameLen)] = trimToLength(value, healthCredentialMaxValueLen)
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }
@@ -280,6 +323,10 @@ type CredentialSummary struct {
 	// BasicUser is shown so a row can say which account it signs in as. The
 	// password has no counterpart here and never will.
 	BasicUser string `json:"basicUser,omitempty"`
+	// Query names the address parameters this credential fills in, the way
+	// Headers above names its headers -- so the widget panel can draw a box
+	// that says something is set without the value coming back with it.
+	Query []string `json:"query,omitempty"`
 }
 
 /*
@@ -308,6 +355,10 @@ func listHealthCredentialDetails() map[string]CredentialSummary {
 			summary.Headers = append(summary.Headers, name)
 		}
 		sort.Strings(summary.Headers)
+		for name := range credential.Query {
+			summary.Query = append(summary.Query, name)
+		}
+		sort.Strings(summary.Query)
 		out[id] = summary
 	}
 	return out
@@ -391,9 +442,66 @@ func applyHealthCredential(req *http.Request, credential HealthCredential) {
 	for name, value := range credential.Headers {
 		req.Header.Set(name, value)
 	}
+	applyCredentialQuery(req, credential)
 	if credential.BasicUser != "" && req.Header.Get("Authorization") == "" {
 		req.SetBasicAuth(credential.BasicUser, credential.BasicPassword)
 	}
+}
+
+/*
+applyCredentialQuery fills a key into the address, for the services that take it
+there and nowhere else.
+
+SABnzbd, Tautulli and Pi-hole v5 offer no header form at all, so the choice was
+never "header or query" -- it was "in the credential file, or in the widget's own
+url". A url is stored in bookmarks-N.json, which is in the backup allowlist and
+in every export, so the second answer puts a working key in a ZIP that travels.
+The stored address keeps a placeholder and the value is put on here, one request
+at a time.
+
+A parameter already carrying a real value is left alone: someone who typed their
+key into the address by hand meant it, and overwriting it would break a widget
+that was working. The placeholder shape is what marks a slot as free -- and an
+empty value counts as free too, since "?apikey=" is a slot nobody filled.
+*/
+func applyCredentialQuery(req *http.Request, credential HealthCredential) {
+	if len(credential.Query) == 0 || req.URL == nil {
+		return
+	}
+	query := req.URL.Query()
+	for name, value := range credential.Query {
+		name = strings.TrimSpace(name)
+		if name == "" || value == "" {
+			continue
+		}
+		if existing := query.Get(name); existing != "" && !isCredentialPlaceholder(existing) {
+			continue
+		}
+		query.Set(name, value)
+	}
+	req.URL.RawQuery = query.Encode()
+}
+
+/*
+isCredentialPlaceholder reports the YOUR_KEY shape the presets fill an address
+with.
+
+Deliberately narrow: uppercase, underscores and digits behind a YOUR_ prefix, so
+a key that happens to be uppercase is not mistaken for a slot to overwrite. The
+presets are the only thing that writes these, and they all write this shape.
+*/
+func isCredentialPlaceholder(value string) bool {
+	if !strings.HasPrefix(value, "YOUR_") {
+		return false
+	}
+	for _, r := range value {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '_':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 /*
@@ -526,6 +634,12 @@ func (h *Handlers) HealthCredentialRevealHandler(w http.ResponseWriter, r *http.
 	switch {
 	case field == "basicPassword":
 		value = credential.BasicPassword
+	case strings.HasPrefix(field, "query:"):
+		// The address form, named the way the panel names it. Same rule as a
+		// header: one field, asked for by name.
+		if credential.Query != nil {
+			value = credential.Query[strings.TrimPrefix(field, "query:")]
+		}
 	case field != "":
 		// A header, by name. Canonicalised so the caller may ask with whatever
 		// casing the form showed it in.
