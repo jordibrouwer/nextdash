@@ -15311,7 +15311,7 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
 
     /*
      * The units a Data figure may already be counted in.

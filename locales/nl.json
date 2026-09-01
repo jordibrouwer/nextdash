@@ -1972,6 +1972,8 @@
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Grootte",
     "widgetFormat.rate": "Snelheid",
+    "widgetFormat.power": "Vermogen",
+    "widgetFormat.temperature": "Temperatuur",
     "widgetFormat.data": "Datagrootte",
     "widgetCustomDataUnit": "Geteld in",
     "widgetCustomFillIn": "Vervang {what} in het adres door je eigen waarde — de dienst kan pas antwoorden als je dat doet.",

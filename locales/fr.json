@@ -1972,6 +1972,8 @@
     "widgetDecimalsAuto": "Auto",
     "widgetFormat.bytes": "Taille",
     "widgetFormat.rate": "Débit",
+    "widgetFormat.power": "Puissance",
+    "widgetFormat.temperature": "Température",
     "widgetFormat.data": "Taille de données",
     "widgetCustomDataUnit": "Compté en",
     "widgetCustomFillIn": "Remplacez {what} dans l’adresse par la vôtre — le service ne peut pas répondre avant.",

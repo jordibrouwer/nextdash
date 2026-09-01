@@ -68,7 +68,7 @@ const (
 var customWidgetFormats = map[string]bool{
 	"count": true, "bytes": true, "percent": true,
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
-	"rate": true, "data": true,
+	"rate": true, "data": true, "temperature": true, "power": true,
 }
 
 /*
@@ -318,6 +318,23 @@ func draftCredentialFrom(raw any) *HealthCredential {
 	return &clean
 }
 
+/*
+temperatureSuffix is the unit the reader already chose, once, for the weather.
+
+Asking a second time would be asking the same question twice and inviting two
+answers -- a dashboard reading 18 °C beside a tile reading 64 °F is worse than
+either. It is a suffix rather than a conversion because a sensor reports in the
+unit its own system was set to: Home Assistant converts before it answers, so
+converting again here would be a second pass over a number that was already
+right.
+*/
+func (h *Handlers) temperatureSuffix() string {
+	if strings.EqualFold(h.store.GetSettings().WeatherUnit, "fahrenheit") {
+		return " °F"
+	}
+	return " °C"
+}
+
 // customWidgetSpec is the stored config, read into something typed.
 type customWidgetSpec struct {
 	URL          string
@@ -492,7 +509,7 @@ Seven formats, no more. Each answers a question a service's numbers actually
 raise: how many, how large, how full, how long, how fast, how long ago, and
 what does it say.
 */
-func formatCustomValue(raw any, format string, decimals *int, dataUnit string) string {
+func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuffix string) string {
 	unit := customWidgetDataUnits[dataUnit]
 	if unit == 0 {
 		unit = 1
@@ -529,6 +546,14 @@ func formatCustomValue(raw any, format string, decimals *int, dataUnit string) s
 	case "data":
 		if number, ok := toFloat(raw); ok {
 			return formatByteSize(number * unit)
+		}
+	case "temperature":
+		if number, ok := toFloat(raw); ok {
+			return trimTrailingZeroDecimal(strconv.FormatFloat(number, 'f', 1, 64)) + tempSuffix
+		}
+	case "power":
+		if number, ok := toFloat(raw); ok {
+			return formatWatts(number)
 		}
 	case "percent":
 		if number, ok := toFloat(raw); ok {
@@ -700,6 +725,14 @@ func scaleForFormat(value float64, format string) (float64, string) {
 	case "ms":
 		// Seconds in, milliseconds out, as the ms format does.
 		return value * 1000, ""
+	case "power":
+		units := []string{" W", " kW", " MW", " GW"}
+		index := 0
+		for math.Abs(value) >= 1000 && index < len(units)-1 {
+			value /= 1000
+			index++
+		}
+		return value, units[index]
 	}
 	// count, duration, relativeDate and text carry no unit of their own.
 	return value, ""
@@ -746,6 +779,36 @@ func formatBitRate(value float64) string {
 		return strconv.FormatInt(int64(value), 10) + " bps"
 	}
 	return strconv.FormatFloat(value, 'f', 3, 64) + " " + units[index]
+}
+
+/*
+formatWatts scales a reading the way a meter is read.
+
+Thousands rather than 1024, because a watt is an SI unit and a kilowatt is a
+thousand of them -- the same reason a line speed steps in thousands and a disk
+does not. A solar peak reads 4.5 kW instead of 4500 W, and a house drawing 450 W
+still reads in watts.
+
+Negative values keep their sign and scale on their magnitude: a P1 meter reports
+-1079 W while exporting to the grid, and "-1.1 kW" is the reading. Comparing the
+magnitude is what makes that work, where a bare >= would have left it in watts.
+*/
+func formatWatts(value float64) string {
+	units := []string{"W", "kW", "MW", "GW"}
+	index := 0
+	for math.Abs(value) >= 1000 && index < len(units)-1 {
+		value /= 1000
+		index++
+	}
+	if index == 0 {
+		// Whole watts: a sensor reporting 0.0 means nothing is drawing, and
+		// "0.0 W" is a decimal that says nothing the "0" does not.
+		return trimTrailingZeroDecimal(strconv.FormatFloat(value, 'f', 1, 64)) + " " + units[index]
+	}
+	// FormatFloat with -1 writes the shortest representation that round-trips,
+	// so 4.5 stays 4.5 and 1 stays 1 -- where a fixed two places gives "4.50"
+	// and "1.00", and trimming one zero off those leaves "4.5" and "1.0".
+	return strconv.FormatFloat(math.Round(value*100)/100, 'f', -1, 64) + " " + units[index]
 }
 
 func formatDurationSeconds(seconds int64) string {
@@ -982,7 +1045,7 @@ disappointing tile at once: what the service actually said, and what these paths
 made of it. A path that found nothing is far easier to fix beside the document
 it missed.
 */
-func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetchedAt time.Time) CustomWidgetResult {
+func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetchedAt time.Time, tempSuffix string) CustomWidgetResult {
 	result := CustomWidgetResult{FetchedAt: fetchedAt.UnixMilli()}
 	if answer.Error != "" {
 		result.Error = answer.Error
@@ -1003,7 +1066,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 			value.Value = "—"
 		} else {
 			value.Raw = found
-			value.Value = formatCustomValue(found, field.Format, field.Decimals, field.DataUnit)
+			value.Value = formatCustomValue(found, field.Format, field.Decimals, field.DataUnit, tempSuffix)
 		}
 		value.Shape = field.Shape
 		value.Tone = field.Tone
@@ -1036,7 +1099,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 // fetchCustomWidget asks one service and turns its answer into figures.
 func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec) CustomWidgetResult {
 	now := time.Now()
-	return customWidgetFigures(h.askCustomWidget(ctx, spec, nil), spec, now)
+	return customWidgetFigures(h.askCustomWidget(ctx, spec, nil), spec, now, h.temperatureSuffix())
 }
 
 /*
@@ -1282,7 +1345,7 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		Truncated:   truncated,
 		JSON:        answer.Document != nil,
 		SignedIn:    answer.SignedIn,
-		Result:      customWidgetFigures(answer, spec, now),
+		Result:      customWidgetFigures(answer, spec, now, h.temperatureSuffix()),
 		FetchedAt:   now.UnixMilli(),
 		Error:       answer.Error,
 	})

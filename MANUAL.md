@@ -1072,6 +1072,15 @@ the only widget that talks to anything outside.
   a connection is mostly compared against itself and one decimal rounds this
   week and last week to the same figure. Point it at the field your service
   reports in bits: Speedtest Tracker calls it `download_bits`.
+- **Power** — for a figure in watts. It scales in thousands, the way a meter is
+  read, so a house drawing 450 W stays in watts and a solar peak reads `4.5 kW`.
+  A negative reading keeps its sign and still scales: a P1 meter exporting to the
+  grid shows `-1.03 kW`.
+- **Temperature** — shows the figure with `°C` or `°F` after it, following the
+  unit you chose under *Appearance → Weather*, so the dashboard and the tile
+  cannot disagree. It does **not** convert: a sensor reports in the unit its own
+  system was set to — Home Assistant converts before it answers — so converting
+  again would be a second pass over a number that was already right.
 - **Data size** — for a figure that is an amount of storage. It scales on its
   own, so a value reads `3.3 TB` or `124.7 MB` rather than a bare number, and it
   asks **which unit the service already counted in**. That question is the

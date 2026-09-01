@@ -87,7 +87,7 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		{"not a number", "count", "not a number"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, c.format, nil, ""); got != c.want {
+		if got := formatCustomValue(c.raw, c.format, nil, "", " °C"); got != c.want {
 			t.Errorf("%v as %s = %q, want %q", c.raw, c.format, got, c.want)
 		}
 	}
@@ -455,7 +455,7 @@ func TestFormattingToAChosenNumberOfDecimals(t *testing.T) {
 		{"paused", "text", places(2), "paused", "text that is not a number is left as it is"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, c.format, c.decimals, ""); got != c.want {
+		if got := formatCustomValue(c.raw, c.format, c.decimals, "", " °C"); got != c.want {
 			t.Errorf("%v as %s = %q, want %q (%s)", c.raw, c.format, got, c.want, c.reason)
 		}
 	}
@@ -531,7 +531,7 @@ func TestDataFormatScalesFromTheUnitTheServiceCountsIn(t *testing.T) {
 		{float64(1024), "furlongs", nil, "1 KB", "an unknown unit reads as bytes"},
 	}
 	for _, c := range cases {
-		if got := formatCustomValue(c.raw, "data", c.decimals, c.unit); got != c.want {
+		if got := formatCustomValue(c.raw, "data", c.decimals, c.unit, " °C"); got != c.want {
 			t.Errorf("%v as data in %q = %q, want %q (%s)", c.raw, c.unit, got, c.want, c.reason)
 		}
 	}
@@ -686,5 +686,100 @@ func TestADraftCredentialIsSanitisedLikeAStoredOne(t *testing.T) {
 	})
 	if got == nil || got.Query["apikey"] != "abc" {
 		t.Errorf("a query credential did not survive: %v", got)
+	}
+}
+
+/*
+Power and temperature, the two readings a home automation tile is mostly made
+of. Both were Text before, which shows whatever the sensor sent and leaves the
+reader to know what it meant.
+*/
+func TestPowerScalesTheWayAMeterIsRead(t *testing.T) {
+	cases := []struct {
+		raw          any
+		want, reason string
+	}{
+		{float64(450), "450 W", "a house drawing 450 watts reads in watts"},
+		{float64(4500), "4.5 kW", "a solar peak climbs to kilowatts"},
+		{float64(1250000), "1.25 MW", "and further, for anyone who needs it"},
+		// A P1 meter reports a negative figure while exporting to the grid, and
+		// the sign is the whole point of the reading. Scaling on the magnitude
+		// is what keeps -1029 from staying in watts.
+		{float64(-1029), "-1.03 kW", "exporting keeps its sign and still scales"},
+		{float64(-450), "-450 W", "and a small export stays in watts"},
+		// Thousands rather than 1024: a watt is an SI unit and a kilowatt is a
+		// thousand of them.
+		{float64(1000), "1 kW", "a thousand watts is one kilowatt exactly"},
+		{float64(999), "999 W", "and 999 is not"},
+		// A sensor reporting 0.0 means nothing is drawing, and a decimal says
+		// nothing the whole number does not.
+		{float64(0), "0 W", "nothing drawing reads as nothing"},
+		{"162.0", "162 W", "a numeric string reads like a number"},
+	}
+	for _, c := range cases {
+		if got := formatCustomValue(c.raw, "power", nil, "", " °C"); got != c.want {
+			t.Errorf("%v as power = %q, want %q (%s)", c.raw, got, c.want, c.reason)
+		}
+	}
+}
+
+/*
+Temperature carries the unit the reader already chose for the weather, and does
+not convert.
+
+A sensor reports in the unit its own system was set to -- Home Assistant
+converts before it answers -- so converting again would be a second pass over a
+number that was already right.
+*/
+func TestTemperatureCarriesTheUnitWithoutConverting(t *testing.T) {
+	for _, c := range []struct {
+		raw          any
+		suffix, want string
+	}{
+		{float64(21.5), " °C", "21.5 °C"},
+		{float64(21.5), " °F", "21.5 °F"},
+		// A whole degree loses its trailing zero: 19.0 is 19.
+		{"19.0", " °C", "19 °C"},
+		{float64(-4), " °C", "-4 °C"},
+		{float64(0), " °C", "0 °C"},
+		// One decimal, because a sensor reporting 21.4999999 is a float, not a
+		// reading of that precision.
+		{21.44999999, " °C", "21.4 °C"},
+	} {
+		if got := formatCustomValue(c.raw, "temperature", nil, "", c.suffix); got != c.want {
+			t.Errorf("%v as temperature%s = %q, want %q", c.raw, c.suffix, got, c.want)
+		}
+	}
+}
+
+// The unit comes from the weather setting, so the dashboard and the tile cannot
+// disagree about which one the reader chose.
+func TestTheTemperatureUnitFollowsTheWeatherSetting(t *testing.T) {
+	h := newTestHandlers(t)
+
+	settings := h.store.GetSettings()
+	settings.WeatherUnit = "celsius"
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.temperatureSuffix(); got != " °C" {
+		t.Errorf("suffix = %q, want celsius", got)
+	}
+
+	settings.WeatherUnit = "fahrenheit"
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.temperatureSuffix(); got != " °F" {
+		t.Errorf("suffix = %q, want fahrenheit", got)
+	}
+
+	// Anything else is celsius, which is what the setting itself defaults to.
+	settings.WeatherUnit = ""
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.temperatureSuffix(); got != " °C" {
+		t.Errorf("suffix = %q, want celsius for an unset value", got)
 	}
 }

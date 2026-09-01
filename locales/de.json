@@ -1972,6 +1972,8 @@
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Größe",
     "widgetFormat.rate": "Geschwindigkeit",
+    "widgetFormat.power": "Leistung",
+    "widgetFormat.temperature": "Temperatur",
     "widgetFormat.data": "Datenmenge",
     "widgetCustomDataUnit": "Gezählt in",
     "widgetCustomFillIn": "Ersetzen Sie {what} in der Adresse durch Ihren eigenen Wert — vorher kann der Dienst nicht antworten.",

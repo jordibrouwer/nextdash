@@ -1972,6 +1972,8 @@
     "widgetDecimalsAuto": "自动",
     "widgetFormat.bytes": "大小",
     "widgetFormat.rate": "速度",
+    "widgetFormat.power": "功率",
+    "widgetFormat.temperature": "温度",
     "widgetFormat.data": "数据大小",
     "widgetCustomDataUnit": "单位",
     "widgetCustomFillIn": "请将地址中的 {what} 替换为你自己的值 — 在此之前服务无法响应。",
