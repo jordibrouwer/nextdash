@@ -1977,6 +1977,7 @@
     "widgetFormat.data": "数据大小",
     "widgetCustomDataUnit": "单位",
     "widgetCustomFillIn": "请将地址中的 {what} 替换为你自己的值 — 在此之前服务无法响应。",
+    "widgetCustomFillInFields": "请将下方各项中的 {what} 替换为你自己的实体 — 每项一个读数。",
     "widgetDataUnit.b": "字节",
     "widgetDataUnit.kb": "KB",
     "widgetDataUnit.mb": "MB",

@@ -378,16 +378,23 @@
         {
             id: 'homeassistant', name: 'Home Assistant', group: 'apps',
             sample: 'http://homeassistant.local:8123',
-            path: '/api/states/sensor.YOUR_SENSOR',
+            /*
+             * The whole state list, not one entity.
+             *
+             * /api/states/<entity> answers with exactly one thing, so the three
+             * figures a tile draws were three properties of the same sensor --
+             * its value, its name and when it changed -- where what anyone
+             * wants is three different sensors. The list endpoint answers with
+             * all of them, and each figure names the one it reads.
+             */
+            path: '/api/states',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
-            // The address names one entity, and which one is the reader's to
-            // choose -- there is no sensible default among a few hundred.
             fillIn: 'YOUR_SENSOR',
-            note: 'A long-lived access token from your profile page. Replace YOUR_SENSOR in the address with the entity you want — Developer tools → States lists them.',
+            note: 'A long-lived access token from your profile page. Then replace YOUR_SENSOR in each figure with an entity of your own — Developer tools → States lists them.',
             fields: [
-                { path: 'state', label: 'now', format: 'text', shape: 'large' },
-                { path: 'attributes.friendly_name', label: 'sensor', format: 'text' },
-                { path: 'last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
+                { path: '[entity_id=sensor.YOUR_SENSOR].state', label: 'now', format: 'text', shape: 'large' },
+                { path: '[entity_id=sensor.YOUR_SENSOR].attributes.friendly_name', label: 'sensor', format: 'text' },
+                { path: '[entity_id=sensor.YOUR_SENSOR].last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
             ],
         },
         {

@@ -1054,7 +1054,13 @@ the only widget that talks to anything outside.
   looked at — a sign-in you made yourself on the health screen stays write-only,
   and every reveal is written to the log.
 - **Fields** — a path per figure, with a label and a shape. A path walks objects
-  and arrays — `server.disk[0].used` — and either names something or does not; a
+  and arrays — `server.disk[0].used` — and can also name a list entry by one of
+  its own fields: `[entity_id=sensor.p1_meter].state` finds that entry wherever
+  it sits. That is what makes a service answering with one big list usable —
+  Home Assistant returns every entity from `/api/states`, and naming one by
+  position would mean `[150]`, an index that moves the moment a device is added.
+  Each figure can name a different entry, so one widget shows several readings.
+  A path either names something or does not; a
   path that silently matched several things would make a wrong figure look
   right. A path that stops matching is marked rather than blank, because a blank
   reads as a zero and zero is a fact. Up to **eight** figures on one tile.

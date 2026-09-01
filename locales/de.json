@@ -1977,6 +1977,7 @@
     "widgetFormat.data": "Datenmenge",
     "widgetCustomDataUnit": "Gezählt in",
     "widgetCustomFillIn": "Ersetzen Sie {what} in der Adresse durch Ihren eigenen Wert — vorher kann der Dienst nicht antworten.",
+    "widgetCustomFillInFields": "Ersetzen Sie {what} in den Werten unten durch eigene Entitäten — ein Wert pro Messung.",
     "widgetDataUnit.b": "Bytes",
     "widgetDataUnit.kb": "KB",
     "widgetDataUnit.mb": "MB",

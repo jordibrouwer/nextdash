@@ -783,3 +783,96 @@ func TestTheTemperatureUnitFollowsTheWeatherSetting(t *testing.T) {
 		t.Errorf("suffix = %q, want celsius for an unset value", got)
 	}
 }
+
+/*
+A list that is keyed rather than ordered.
+
+Home Assistant answers /api/states with every entity in one array, so naming one
+by position means [150] -- an index that moves the moment a device is added,
+leaving a tile quietly reading a different sensor. Matching on entity_id names
+the thing itself.
+*/
+func TestAPathCanNameAListEntryByOneOfItsFields(t *testing.T) {
+	var document any
+	if err := json.Unmarshal([]byte(`[
+		{"entity_id":"sensor.p1_meter_vermogen","state":"-1029",
+		 "attributes":{"friendly_name":"P1 Meter Vermogen","unit_of_measurement":"W"}},
+		{"entity_id":"sensor.power_production_now","state":"0",
+		 "attributes":{"friendly_name":"Production"}},
+		{"entity_id":"number.slaapkamer_temp","state":"19"}
+	]`), &document); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, c := range []struct {
+		path string
+		want any
+		ok   bool
+	}{
+		// An entity_id is itself dotted, which is what makes this worth having:
+		// splitting the path on every dot tore the value in half and the match
+		// silently found nothing.
+		{"[entity_id=sensor.p1_meter_vermogen].state", "-1029", true},
+		{"[entity_id=sensor.power_production_now].state", "0", true},
+		{"[entity_id=number.slaapkamer_temp].state", "19", true},
+		// The walk continues past the match, into whatever it named.
+		{"[entity_id=sensor.p1_meter_vermogen].attributes.friendly_name", "P1 Meter Vermogen", true},
+		{"[entity_id=sensor.p1_meter_vermogen].attributes.unit_of_measurement", "W", true},
+		// A name that matches nothing is an answer the tile can show, the same
+		// as any other path that found nothing.
+		{"[entity_id=sensor.does_not_exist].state", nil, false},
+		{"[entity_id=].state", nil, false},
+		{"[=sensor.a].state", nil, false},
+		// Positions still work, for the lists that are ordered.
+		{"[0].entity_id", "sensor.p1_meter_vermogen", true},
+		{"[2].state", "19", true},
+		{"[9].state", nil, false},
+	} {
+		got, ok := customWidgetLookup(document, c.path)
+		if ok != c.ok {
+			t.Errorf("%s found = %v, want %v", c.path, ok, c.ok)
+			continue
+		}
+		if ok && got != c.want {
+			t.Errorf("%s = %v, want %v", c.path, got, c.want)
+		}
+	}
+}
+
+// A key whose value is a number in the document and text in the path is the
+// same answer to the reader, so it is compared as text.
+func TestAListMatchComparesValuesAsText(t *testing.T) {
+	var document any
+	if err := json.Unmarshal([]byte(`{"disks":[{"id":0,"used":10},{"id":1,"used":20}]}`), &document); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := customWidgetLookup(document, "disks[id=1].used")
+	if !ok || got != float64(20) {
+		t.Errorf("disks[id=1].used = %v (ok=%v), want 20", got, ok)
+	}
+}
+
+// Brackets are the one place a dot is a character rather than a step.
+func TestPathSplittingKeepsBracketsWhole(t *testing.T) {
+	for _, c := range []struct {
+		path string
+		want []string
+	}{
+		{"a.b.c", []string{"a", "b", "c"}},
+		{"[entity_id=sensor.a.b].state", []string{"[entity_id=sensor.a.b]", "state"}},
+		{"rows[0].name", []string{"rows[0]", "name"}},
+		{"a[x=1][y=2].b", []string{"a[x=1][y=2]", "b"}},
+	} {
+		got := splitCustomPath(c.path)
+		if len(got) != len(c.want) {
+			t.Errorf("%s split into %v, want %v", c.path, got, c.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != c.want[i] {
+				t.Errorf("%s split into %v, want %v", c.path, got, c.want)
+				break
+			}
+		}
+	}
+}

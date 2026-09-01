@@ -450,21 +450,66 @@ func clampInt(value, low, high int) int {
 }
 
 /*
-customWidgetLookup walks a dotted path with [n] indexes.
+splitCustomPath splits on dots, except inside brackets.
+
+An entity_id is itself dotted -- "sensor.p1_meter_vermogen" -- so splitting the
+whole path on every dot tears a match in half and it silently finds nothing.
+Brackets are the one place a dot means a character rather than a step.
+*/
+func splitCustomPath(path string) []string {
+	var out []string
+	depth := 0
+	start := 0
+	for i, r := range path {
+		switch r {
+		case '[':
+			depth++
+		case ']':
+			if depth > 0 {
+				depth--
+			}
+		case '.':
+			if depth == 0 {
+				out = append(out, path[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(out, path[start:])
+}
+
+/*
+customWidgetLookup walks a dotted path with [n] indexes and [key=value] matches.
 
 Deliberately not a query language. "server.disk[0].used" either names something
 or it does not, and "does not" is an answer the tile can show -- a path that
 silently matched several things would make a wrong figure look right.
+
+[key=value] is the same promise for a list that is keyed rather than ordered.
+Home Assistant answers /api/states with every entity in one array, so the only
+way to name one by position is [150] -- an index that moves the moment a device
+is added, leaving a tile quietly reading a different sensor. Matching on
+entity_id names the thing itself.
+
+Still exactly one: the first match wins and a second identical key would be the
+service's own problem, but nothing here fans out. A path names one value.
 */
 func customWidgetLookup(document any, path string) (any, bool) {
 	current := document
-	for _, segment := range strings.Split(path, ".") {
+	for _, segment := range splitCustomPath(path) {
 		segment = strings.TrimSpace(segment)
 		if segment == "" {
 			continue
 		}
 		name := segment
-		var indexes []int
+		// Each bracket is either a position or a match; they are kept in order
+		// because "rows[2][id=x]" is a different question from the reverse.
+		type selector struct {
+			index int
+			key   string
+			value string
+		}
+		var selectors []selector
 		if open := strings.Index(segment, "["); open >= 0 {
 			name = segment[:open]
 			rest := segment[open:]
@@ -473,11 +518,21 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				if closeAt <= 1 || rest[0] != '[' {
 					return nil, false
 				}
-				index, err := strconv.Atoi(rest[1:closeAt])
-				if err != nil || index < 0 {
-					return nil, false
+				inner := rest[1:closeAt]
+				if equals := strings.Index(inner, "="); equals > 0 {
+					key := strings.TrimSpace(inner[:equals])
+					value := strings.TrimSpace(inner[equals+1:])
+					if key == "" || value == "" {
+						return nil, false
+					}
+					selectors = append(selectors, selector{index: -1, key: key, value: value})
+				} else {
+					index, err := strconv.Atoi(inner)
+					if err != nil || index < 0 {
+						return nil, false
+					}
+					selectors = append(selectors, selector{index: index})
 				}
-				indexes = append(indexes, index)
 				rest = rest[closeAt+1:]
 			}
 		}
@@ -491,12 +546,36 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				return nil, false
 			}
 		}
-		for _, index := range indexes {
+		for _, sel := range selectors {
 			list, ok := current.([]any)
-			if !ok || index >= len(list) {
+			if !ok {
 				return nil, false
 			}
-			current = list[index]
+			if sel.index >= 0 {
+				if sel.index >= len(list) {
+					return nil, false
+				}
+				current = list[sel.index]
+				continue
+			}
+			found := false
+			for _, entry := range list {
+				object, ok := entry.(map[string]any)
+				if !ok {
+					continue
+				}
+				// Compared as text, because the value came out of an address
+				// bar and everything there is text: a number in the document
+				// and "42" in the path are the same answer to the reader.
+				if fmt.Sprint(object[sel.key]) == sel.value {
+					current = entry
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, false
+			}
 		}
 	}
 	return current, true

@@ -15510,11 +15510,24 @@ class DashboardConfig {
         const config = draft?.config || widget?.config || {};
         const preset = catalogue?.byId?.(String(config.presetId || ''));
         const marker = preset?.fillIn;
-        if (!marker || !String(config.url || '').includes(marker)) return '';
+        if (!marker) return '';
+        /*
+         * The placeholder may be in the address or in the figures, depending on
+         * the service: Proxmox names its node in the path, Home Assistant names
+         * its entity in each figure because one address answers with all of
+         * them. Both are "something still to fill in", so both are looked at.
+         */
+        const inAddress = String(config.url || '').includes(marker);
+        const inFields = (Array.isArray(config.fields) ? config.fields : [])
+            .some((field) => String(field?.path || '').includes(marker));
+        if (!inAddress && !inFields) return '';
         return `
             <p class="config-widget-note config-widget-note-hint">${esc(
-                this.t('config.widgetCustomFillIn',
-                    'Replace {what} in the address with your own — the service cannot answer until you do.')
+                (inFields
+                    ? this.t('config.widgetCustomFillInFields',
+                        'Replace {what} in the figures below with entities of your own — one figure per reading.')
+                    : this.t('config.widgetCustomFillIn',
+                        'Replace {what} in the address with your own — the service cannot answer until you do.'))
                     .replace('{what}', marker))}</p>`;
     }
 
@@ -16980,6 +16993,7 @@ class DashboardConfig {
                  * rather than patched in place: this is a dropdown being
                  * changed, so there is no caret to lose.
                  */
+                if (which === 'path') this.syncPlaceholderNote(at);
                 if (which === 'format') {
                     this.dropMeterOnNonPercent(at, indexOn(field, 'data-custom-row'));
                     // Data asks which unit it counts in where every other

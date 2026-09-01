@@ -1977,6 +1977,7 @@
     "widgetFormat.data": "Data size",
     "widgetCustomDataUnit": "Counted in",
     "widgetCustomFillIn": "Replace {what} in the address with your own — the service cannot answer until you do.",
+    "widgetCustomFillInFields": "Replace {what} in the figures below with entities of your own — one figure per reading.",
     "widgetDataUnit.b": "Bytes",
     "widgetDataUnit.kb": "KB",
     "widgetDataUnit.mb": "MB",

@@ -1977,6 +1977,7 @@
     "widgetFormat.data": "Datagrootte",
     "widgetCustomDataUnit": "Geteld in",
     "widgetCustomFillIn": "Vervang {what} in het adres door je eigen waarde — de dienst kan pas antwoorden als je dat doet.",
+    "widgetCustomFillInFields": "Vervang {what} in de figuren hieronder door je eigen entiteiten — één figuur per waarde.",
     "widgetDataUnit.b": "Bytes",
     "widgetDataUnit.kb": "KB",
     "widgetDataUnit.mb": "MB",

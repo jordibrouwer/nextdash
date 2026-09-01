@@ -840,13 +840,40 @@ test.describe('a preset that needs something filled into its address says so', (
         await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
         await expect.poll(() => hasNote(page, row), { timeout: 10_000 }).toBe(true);
 
-        const url = page.locator(`${row} [data-widget-setting="url"]`);
-        await url.fill('http://ha.local:8123/api/states/sensor.pixel_8a_battery_level');
-        await url.blur();
+        /*
+         * Home Assistant answers one address with every entity, so the figures
+         * name the sensors rather than the address naming one -- and the
+         * placeholder is therefore in the figures, which are text boxes and so
+         * are not redrawn as they are typed.
+         */
+        const paths = page.locator(`${row} [data-custom-field="path"]`);
+        const count = await paths.count();
+        for (let row_ = 0; row_ < count; row_ += 1) {
+            await paths.nth(row_).fill(`[entity_id=sensor.p1_meter_vermogen].state`);
+            await paths.nth(row_).blur();
+        }
 
-        // The address is a text box, so the panel is not redrawn as it is typed
-        // -- the note has to be toggled where it stands.
         await expect.poll(() => hasNote(page, row), { timeout: 10_000 }).toBe(false);
+    });
+
+    test('the Home Assistant preset reads the whole state list', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
+
+        /*
+         * /api/states/<entity> answers with exactly one thing, so a tile's
+         * three figures were three properties of the same sensor -- its value,
+         * its name and when it changed -- where what anyone wants is three
+         * different sensors.
+         */
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await expect(url).toHaveValue(/\/api\/states$/);
+
+        const first = page.locator(`${row} [data-custom-field="path"]`).first();
+        await expect(first).toHaveValue(/^\[entity_id=/);
     });
 
     test('a preset with nothing to fill in says nothing', async ({ page }) => {
