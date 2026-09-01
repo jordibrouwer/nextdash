@@ -176,10 +176,23 @@
             id: 'qbittorrent', name: 'qBittorrent', group: 'media',
             sample: 'http://qbittorrent.local:8080',
             path: '/api/v2/transfer/info',
-            // A cookie is a header, so it is one: the box asks for the SID and
-            // the scheme in front of it is filled in, the way Bearer is.
-            auth: 'header', authName: 'Cookie', scheme: 'SID=',
-            note: 'The SID cookie from a signed-in session — its value goes here.',
+            /*
+             * qBittorrent hands out a session rather than taking a key: there
+             * is no API key at all, only a login that answers with a SID cookie
+             * -- and that cookie expires. Asking for the cookie was the first
+             * attempt and it is a widget that works for an afternoon and then
+             * reads 403, so nextDash signs in itself and asks for what does not
+             * expire.
+             */
+            auth: 'session',
+            session: {
+                loginPath: '/api/v2/auth/login',
+                userField: 'username', passField: 'password',
+                // qBittorrent refuses a login with no Referer, and the refusal
+                // looks exactly like a wrong password.
+                referer: true,
+            },
+            note: 'The username and password you sign in to the Web UI with.',
             ttl: 60,
             fields: [
                 { path: 'dl_info_speed', label: 'down/s', format: 'bytes', shape: 'large' },

@@ -666,3 +666,93 @@ test.describe('trying an address uses the key on screen', () => {
         expect(sent[0].draftCredential).toBeUndefined();
     });
 });
+
+/*
+ * A service that signs you in rather than taking a key.
+ *
+ * qBittorrent has no API key at all: only a login that answers with a cookie,
+ * and that cookie expires. Asking for the cookie was the first attempt and it is
+ * a widget that works for an afternoon and then reads 403 with nothing on screen
+ * saying why -- so the panel asks for what does not expire.
+ */
+test.describe('a service that hands out a session', () => {
+    test('asks for the username and password, not for a cookie', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('qbittorrent');
+
+        await expect(page.locator(`${row} [data-widget-auth="kind"]`)).toHaveValue('session');
+        await expect(page.locator(`${row} [data-widget-auth="basicUser"]`)).toBeVisible();
+        await expect(page.locator(`${row} [data-widget-auth="secret"]`)).toBeVisible();
+        // No SID box, and no scheme seeded into one: the cookie is the server's
+        // business now.
+        await expect(page.locator(`${row} [data-widget-auth="secret"]`)).toHaveValue('');
+        await expect(page.locator(`${row} .config-widget-note-hint`)).toContainText('session');
+    });
+
+    test('trying it sends the login, not a cookie', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        const sent = [];
+        await page.route('**/api/widgets/custom/test', async (route) => {
+            sent.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 200, signedIn: true, json: true, result: { values: [] } }),
+            });
+        });
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('qbittorrent');
+        await page.locator(`${row} [data-widget-auth="basicUser"]`).fill('jordi');
+        await page.locator(`${row} [data-widget-auth="basicUser"]`).blur();
+        await page.locator(`${row} [data-widget-auth="secret"]`).fill('a-password');
+        await page.locator(`${row} [data-widget-auth="secret"]`).blur();
+        await page.locator(`${row} [data-custom-test]`).click();
+        await expect.poll(() => sent.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+        const session = sent[0].draftCredential?.session;
+        expect(session?.user).toBe('jordi');
+        expect(session?.password).toBe('a-password');
+        // Where to sign in comes from the preset rather than from a box: it is
+        // knowledge, not a preference, and there is nothing for a reader to
+        // answer there.
+        expect(session?.loginPath).toBe('/api/v2/auth/login');
+    });
+
+    test('the login survives being saved and reopened', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('qbittorrent');
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+        await url.fill('http://qb.local:8080/api/v2/transfer/info');
+        await url.blur();
+        await page.locator(`${row} [data-widget-auth="basicUser"]`).fill('jordi');
+        await page.locator(`${row} [data-widget-auth="basicUser"]`).blur();
+        await page.locator(`${row} [data-widget-auth="secret"]`).fill('a-password');
+        await page.locator(`${row} [data-widget-auth="secret"]`).blur();
+        await page.locator(`${row} [data-widget-save]`).click();
+        await page.waitForTimeout(1500);
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        const reopened = page.locator('[data-widget-settings]').last();
+        await expect(reopened).toBeVisible({ timeout: 15_000 });
+        const at = await reopened.getAttribute('data-widget-settings');
+        await reopened.click();
+
+        // The account comes back; the password does not, like every other
+        // password in this panel.
+        await expect(page.locator(`[data-widget-row="${at}"] [data-widget-auth="kind"]`))
+            .toHaveValue('session', { timeout: 10_000 });
+        await expect(page.locator(`[data-widget-row="${at}"] [data-widget-auth="basicUser"]`))
+            .toHaveValue('jordi');
+    });
+});

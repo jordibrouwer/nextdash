@@ -5316,6 +5316,8 @@
     "widgetAuthHeader": "一个 API 密钥",
     "widgetAuthQuery": "地址中的密钥",
     "widgetAuthQueryNote": "此服务需要在地址中携带密钥。密钥仍保存在凭据文件中，并在每次请求时以 {name} 附加。",
+    "widgetAuthSession": "由 nextDash 维护的登录",
+    "widgetAuthSessionNote": "nextDash 使用它登录并自行维护会话，过期时无需更换任何内容。",
     "widgetAuthBasic": "一组用户名和密码",
     "widgetAuthShared": "一份存在别处的登录信息",
     "widgetAuthSharedPick": "用哪一份",

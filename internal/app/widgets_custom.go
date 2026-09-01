@@ -300,8 +300,19 @@ func draftCredentialFrom(raw any) *HealthCredential {
 			credential.Query[name] = stringOr(value)
 		}
 	}
+	if session, ok := entry["session"].(map[string]any); ok {
+		credential.Session = &CredentialSession{
+			LoginPath: stringOr(session["loginPath"]),
+			UserField: stringOr(session["userField"]),
+			PassField: stringOr(session["passField"]),
+			User:      stringOr(session["user"]),
+			Password:  stringOr(session["password"]),
+			Referer:   session["referer"] == true,
+		}
+	}
 	clean := sanitizeHealthCredential(credential)
-	if len(clean.Headers) == 0 && len(clean.Query) == 0 && clean.BasicPassword == "" {
+	if len(clean.Headers) == 0 && len(clean.Query) == 0 && clean.BasicPassword == "" &&
+		clean.Session == nil {
 		return nil
 	}
 	return &clean
@@ -858,6 +869,11 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "nextDash Widget/1.0")
 	var credential HealthCredential
+	// A session is fetched rather than stored, and a refusal is what says it
+	// has expired -- so the request is made, and made once more with a fresh
+	// cookie if the service turns it down. Cheaper than a timer, and correct
+	// where a timer would only be a guess.
+	sessionKey := ""
 	if draft != nil {
 		// What is on screen beats what is filed. Someone testing a key they
 		// have just typed is asking about that key, not about the one this
@@ -875,6 +891,23 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 			answer.SignedIn = true
 		}
 	}
+	if credential.Session != nil {
+		key := credentialSessionKey(req.URL.Host, credential.Session)
+		sessionKey = key
+		cookie, ok := cachedCredentialSession(key)
+		if !ok {
+			fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+			if err != nil {
+				answer.Error = "could not sign in to that service"
+				logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
+				return since()
+			}
+			storeCredentialSession(key, fresh)
+			cookie = fresh
+		}
+		req.Header.Set("Cookie", cookie)
+		answer.SignedIn = true
+	}
 
 	client := h.outboundHTTPClient(customWidgetTimeout, 3)
 	// And the same rule a health check follows: a secret stored for one host
@@ -887,6 +920,30 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, d
 		return since()
 	}
 	defer drainAndCloseResponse(resp)
+
+	// An expired session reads as a refusal, and the reader has done nothing
+	// wrong -- so it is signed in again and tried once, rather than the tile
+	// reporting a 403 the reader cannot act on.
+	if sessionKey != "" && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized) {
+		drainAndCloseResponse(resp)
+		storeCredentialSession(sessionKey, "")
+		fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+		if err != nil {
+			answer.Error = "could not sign in to that service"
+			logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
+			return since()
+		}
+		storeCredentialSession(sessionKey, fresh)
+		retry := req.Clone(ctx)
+		retry.Header.Set("Cookie", fresh)
+		if retried, err := client.Do(retry); err == nil {
+			resp = retried
+		} else {
+			answer.Error = "no answer from that address"
+			return since()
+		}
+		defer drainAndCloseResponse(resp)
+	}
 
 	answer.Status = resp.StatusCode
 	answer.ContentType = strings.TrimSpace(resp.Header.Get("Content-Type"))

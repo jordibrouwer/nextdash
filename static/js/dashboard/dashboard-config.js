@@ -15370,6 +15370,9 @@ class DashboardConfig {
         if (chosen && chosen !== own) return { kind: 'shared', shared: chosen };
         const stored = details[own];
         if (!stored) return { kind: 'none' };
+        if (stored.session) {
+            return { kind: 'session', basicUser: stored.sessionUser || '', saved: true };
+        }
         if (stored.query?.length) {
             // Before headers: a Plex widget has both -- its Accept header is
             // sent for it -- and the key the reader typed is the query one.
@@ -15700,6 +15703,31 @@ class DashboardConfig {
                     .replace('{name}', state.queryName || 'apikey'))}</p>
             </div>`;
 
+        /*
+         * Signing in for a session: the two things that do not expire.
+         *
+         * Drawn like basic auth because it is the same two questions, and the
+         * difference -- that these are posted to a login endpoint rather than
+         * sent on every request -- is the server's business rather than the
+         * reader's.
+         */
+        const session = state.kind !== 'session' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-suser">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
+                <input type="text" id="${id}-suser" class="config-text" data-widget-auth="basicUser"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.basicUser || '')}">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-spass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
+                ${this.renderSecretInput({
+                    id: `${id}-spass`, index, field: 'sessionPassword',
+                    saved: state.saved, placeholder: secretPlaceholder,
+                })}
+                <p class="config-widget-note config-widget-note-hint">${esc(this.t('config.widgetAuthSessionNote',
+                    'nextDash signs in with these and keeps the session itself, so nothing has to be replaced when it expires.'))}</p>
+            </div>`;
+
         const basic = state.kind !== 'basic' ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-user">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
@@ -15725,7 +15753,8 @@ class DashboardConfig {
                 </select>
             </div>`;
 
-        const explains = state.kind === 'header' || state.kind === 'basic' || state.kind === 'query';
+        const explains = state.kind === 'header' || state.kind === 'basic'
+            || state.kind === 'query' || state.kind === 'session';
         return `
             <div class="config-widget-auth" data-widget-auth-form="${index}">
                 <div class="config-widget-field">
@@ -15736,11 +15765,14 @@ class DashboardConfig {
                         ${state.kind === 'query'
                             ? pick('query', 'config.widgetAuthQuery', 'A key in the address')
                             : ''}
+                        ${state.kind === 'session'
+                            ? pick('session', 'config.widgetAuthSession', 'A sign-in that nextDash keeps')
+                            : ''}
                         ${pick('basic', 'config.widgetAuthBasic', 'A username and password')}
                         ${shared.length ? pick('shared', 'config.widgetAuthShared', 'A sign-in saved elsewhere') : ''}
                     </select>
                 </div>
-                ${header}${query}${basic}${sharedPick}
+                ${header}${query}${session}${basic}${sharedPick}
                 ${explains ? `
                     <p class="config-widget-note">${esc(this.t('config.widgetAuthNote',
                         'Kept in a separate file that stays out of your backups and exports, so a key never travels in a ZIP. The widget itself stores only a reference.'))}</p>` : ''}
@@ -16129,7 +16161,8 @@ class DashboardConfig {
         const config = { ...(draft?.config || block?.config || {}) };
         const auth = draft?.auth || this.storedCredentialState(block);
         if (auth?.kind === 'shared') config.credentialId = auth.shared || '';
-        else if (auth?.kind === 'header' || auth?.kind === 'basic' || auth?.kind === 'query') {
+        else if (auth?.kind === 'header' || auth?.kind === 'basic' || auth?.kind === 'query'
+            || auth?.kind === 'session') {
             config.credentialId = this.widgetCredentialId(block);
         } else config.credentialId = '';
         if (!config.credentialId) delete config.credentialId;
@@ -16157,6 +16190,13 @@ class DashboardConfig {
                 config.draftCredential = {
                     query: { [draft.auth.queryName]: secret },
                     ...(draft.auth.fixedHeaders ? { headers: { ...draft.auth.fixedHeaders } } : {}),
+                };
+            } else if (kind === 'session' && draft.auth.basicUser && draft.auth.session) {
+                config.draftCredential = {
+                    session: {
+                        ...draft.auth.session,
+                        user: draft.auth.basicUser, password: secret,
+                    },
                 };
             } else if (kind === 'basic' && draft.auth.basicUser) {
                 config.draftCredential = {
@@ -17199,6 +17239,9 @@ class DashboardConfig {
                 // them: there is no box that would put them back.
                 queryName: before.queryName || '',
                 fixedHeaders: before.fixedHeaders || null,
+                // Where to sign in comes from the preset and has no box, so
+                // switching kinds must not lose it.
+                session: before.session || null,
                 seed: before.seed || '',
                 basicUser: before.basicUser || '',
                 saved: before.saved === true && before.kind === value,
@@ -17288,6 +17331,20 @@ class DashboardConfig {
             };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
+        } else if (preset.auth === 'session') {
+            /*
+             * A service that signs you in rather than taking a key.
+             *
+             * What is asked for is what does not expire -- the username and
+             * password -- and the server does the signing in. Asking for the
+             * cookie instead was the first attempt, and it is a widget that
+             * works until the session lapses and then reads 403 with nothing on
+             * screen explaining why.
+             */
+            draft.auth = {
+                kind: 'session', headerName: '', basicUser: '',
+                session: preset.session || null,
+            };
         } else if (preset.auth === 'query') {
             /*
              * A key that goes in the address is still a key.
@@ -17396,9 +17453,24 @@ class DashboardConfig {
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
 
-        if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query') {
+        if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
+            || auth.kind === 'session') {
             const payload = { id: own, label: block.title || block.type || own };
-            if (auth.kind === 'query') {
+            if (auth.kind === 'session') {
+                const user = String(auth.basicUser || '').trim();
+                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                if (!secret && !(stored.kind === 'session' && stored.basicUser === user)) {
+                    say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
+                    return;
+                }
+                if (secret) {
+                    // The login is described by the preset, not typed: where to
+                    // post and what to call the fields is knowledge, not a
+                    // preference, and a box for it would be a box nobody can
+                    // answer.
+                    payload.session = { ...(auth.session || {}), user, password: secret };
+                }
+            } else if (auth.kind === 'query') {
                 const name = String(auth.queryName || '').trim();
                 if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
                 if (!secret && !(stored.kind === 'query' && stored.queryName === name)) {
@@ -17444,7 +17516,7 @@ class DashboardConfig {
             // Nothing to write when only the label changed and the secret is
             // already filed: the value never comes back from the server, so
             // re-filing it is not something this panel can do.
-            if (payload.headers || payload.basicPassword || payload.query) {
+            if (payload.headers || payload.basicPassword || payload.query || payload.session) {
                 say(this.t('config.widgetAuthSaving', 'Saving…'));
                 try {
                     const res = await this.writeFetch('/api/health/credentials', {

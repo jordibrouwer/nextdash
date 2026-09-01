@@ -1032,6 +1032,12 @@ the only widget that talks to anything outside.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
+- **A sign-in nextDash keeps** — qBittorrent has no API key at all: it hands out
+  a session cookie that expires. So the panel asks for the username and password
+  you use for the Web UI, and the server signs in for you, keeps the session, and
+  signs in again when it lapses — nothing to replace by hand. The password is
+  stored like every other secret here, and the cookie is only ever held in
+  memory.
 - **A key that goes in the address** — SABnzbd, Tautulli, Pi-hole
   v5 and Plex offer no header form at all: their key belongs in the query string.
   You still type it into the **API key** box. It is kept in the credential file

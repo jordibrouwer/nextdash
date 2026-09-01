@@ -5316,6 +5316,8 @@
     "widgetAuthHeader": "Ein API-Schlüssel",
     "widgetAuthQuery": "Ein Schlüssel in der Adresse",
     "widgetAuthQueryNote": "Dieser Dienst erwartet seinen Schlüssel in der Adresse. Er wird trotzdem in der Zugangsdatei gespeichert und bei jeder Anfrage als {name} mitgeschickt.",
+    "widgetAuthSession": "Eine Anmeldung, die nextDash verwaltet",
+    "widgetAuthSessionNote": "nextDash meldet sich damit an und verwaltet die Sitzung selbst — es muss nichts ersetzt werden, wenn sie abläuft.",
     "widgetAuthBasic": "Ein Benutzername und Passwort",
     "widgetAuthShared": "Eine anderswo gespeicherte Anmeldung",
     "widgetAuthSharedPick": "Welche",

@@ -5316,6 +5316,8 @@
     "widgetAuthHeader": "Een API-sleutel",
     "widgetAuthQuery": "Een sleutel in het adres",
     "widgetAuthQueryNote": "Deze dienst wil zijn sleutel in het adres. Hij wordt toch in het credential-bestand bewaard en bij elke aanvraag als {name} meegestuurd.",
+    "widgetAuthSession": "Een aanmelding die nextDash bijhoudt",
+    "widgetAuthSessionNote": "nextDash logt hiermee in en houdt de sessie zelf bij, dus je hoeft niets te vervangen als hij verloopt.",
     "widgetAuthBasic": "Een gebruikersnaam en wachtwoord",
     "widgetAuthShared": "Een elders opgeslagen aanmelding",
     "widgetAuthSharedPick": "Welke",

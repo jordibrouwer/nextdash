@@ -5316,6 +5316,8 @@
     "widgetAuthHeader": "An API key",
     "widgetAuthQuery": "A key in the address",
     "widgetAuthQueryNote": "This service takes its key in the address. It is kept in the credential file all the same, and put into the request as {name}.",
+    "widgetAuthSession": "A sign-in that nextDash keeps",
+    "widgetAuthSessionNote": "nextDash signs in with these and keeps the session itself, so nothing has to be replaced when it expires.",
     "widgetAuthBasic": "A username and password",
     "widgetAuthShared": "A sign-in saved elsewhere",
     "widgetAuthSharedPick": "Which one",

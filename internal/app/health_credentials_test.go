@@ -3,13 +3,31 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
+
+/*
+freshOutboundBudget gives this test its own share of the outbound limiter.
+
+The limiter is one global bucket for the whole binary, and a test that signs in
+before it reads spends two requests where most spend one -- enough, across a
+package this size, to starve a test that runs later and looks unrelated when it
+fails. Reset here rather than raised in production: the budget is right, and a
+test suite is not the thing it is protecting against.
+*/
+func freshOutboundBudget(t *testing.T) {
+	t.Helper()
+	previous := globalOutboundLimiter
+	globalOutboundLimiter = newSlidingWindowLimiter(outboundRequestsPerMinute(), time.Minute)
+	t.Cleanup(func() { globalOutboundLimiter = previous })
+}
 
 /*
 A self-hosted service behind an API key answers 401 to an anonymous check, so
@@ -759,5 +777,178 @@ func TestRevealingHandsBackAQueryKey(t *testing.T) {
 	}
 	if body.Value != secret {
 		t.Errorf("value = %q, want the stored key", body.Value)
+	}
+}
+
+/*
+qBittorrent hands out a session rather than taking a key: no API key exists,
+only a login that answers with a SID cookie -- and that cookie expires. Storing
+the cookie is a widget that works for an afternoon and then reads 403, so what
+is stored is the username and password and the session is fetched.
+*/
+
+// The whole round trip: sign in, keep the cookie, use it.
+func TestASessionCredentialSignsInAndUsesTheCookie(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+
+	var logins int
+	var sawReferer, sawCookie string
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v2/auth/login" {
+			logins++
+			sawReferer = r.Header.Get("Referer")
+			_ = r.ParseForm()
+			if r.PostForm.Get("username") != "jordi" || r.PostForm.Get("password") != "secret" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			http.SetCookie(w, &http.Cookie{Name: "SID", Value: "session-one"})
+			_, _ = w.Write([]byte("Ok."))
+			return
+		}
+		sawCookie = r.Header.Get("Cookie")
+		if sawCookie == "" {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("Forbidden"))
+			return
+		}
+		_, _ = w.Write([]byte(`{"dl_info_speed":42}`))
+	}))
+	defer service.Close()
+
+	credential := HealthCredential{Session: &CredentialSession{
+		LoginPath: "/api/v2/auth/login",
+		UserField: "username", PassField: "password",
+		User: "jordi", Password: "secret", Referer: true,
+	}}
+	if err := saveHealthCredential("widget:qb", credential); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	// The test service is on 127.0.0.1, which the outbound client reaches only
+	// when local addresses are allowed -- and that is a stored setting, so a
+	// fresh data dir starts with it off.
+	allowLocalForTest(t, h, true)
+	spec := customWidgetSpec{
+		URL: service.URL + "/api/v2/transfer/info", Method: http.MethodGet,
+		CredentialID: "widget:qb",
+	}
+	answer := h.askCustomWidget(context.Background(), spec, nil)
+
+	if answer.Status != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (error %q)", answer.Status, answer.Error)
+	}
+	if !answer.SignedIn {
+		t.Error("the answer did not report a sign-in")
+	}
+	if sawCookie != "SID=session-one" {
+		t.Errorf("the service saw cookie %q", sawCookie)
+	}
+	// qBittorrent refuses a login with no Referer, and the refusal reads as a
+	// wrong password.
+	if sawReferer == "" {
+		t.Error("no Referer went with the login")
+	}
+
+	// The second read reuses the session rather than signing in again: a login
+	// per refresh per tile is a lot of requests to somebody's own machine.
+	if answer := h.askCustomWidget(context.Background(), spec, nil); answer.Status != http.StatusOK {
+		t.Fatalf("second read status = %d", answer.Status)
+	}
+	if logins != 1 {
+		t.Errorf("signed in %d times, want 1", logins)
+	}
+}
+
+// An expired session is a refusal the reader did nothing to cause, so it signs
+// in again rather than reporting a 403 nobody can act on.
+func TestAnExpiredSessionIsRenewedRatherThanReported(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Cleanup(func() { credentialSessionCache = map[string]string{} })
+
+	var logins int
+	valid := ""
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/login" {
+			logins++
+			valid = fmt.Sprintf("session-%d", logins)
+			http.SetCookie(w, &http.Cookie{Name: "SID", Value: valid})
+			return
+		}
+		if r.Header.Get("Cookie") != "SID="+valid {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer service.Close()
+
+	if err := saveHealthCredential("widget:qb", HealthCredential{Session: &CredentialSession{
+		LoginPath: "/login", User: "u", Password: "p",
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandlers(NewStore(), embeddedFiles)
+	// The test service is on 127.0.0.1, which the outbound client reaches only
+	// when local addresses are allowed -- and that is a stored setting, so a
+	// fresh data dir starts with it off.
+	allowLocalForTest(t, h, true)
+	spec := customWidgetSpec{URL: service.URL + "/data", Method: http.MethodGet, CredentialID: "widget:qb"}
+	if answer := h.askCustomWidget(context.Background(), spec, nil); answer.Status != http.StatusOK {
+		t.Fatalf("first read = %d", answer.Status)
+	}
+
+	// The service forgets the session, exactly as it does when one lapses.
+	valid = "gone"
+	answer := h.askCustomWidget(context.Background(), spec, nil)
+	if answer.Status != http.StatusOK {
+		t.Fatalf("after expiry status = %d, want 200 (error %q)", answer.Status, answer.Error)
+	}
+	if logins != 2 {
+		t.Errorf("signed in %d times, want 2 -- one for the expiry", logins)
+	}
+}
+
+// A login path with a host in it would post the username and password to
+// whatever that named, which is credential theft rather than a typo.
+func TestASessionLoginPathMustBeAPath(t *testing.T) {
+	for _, path := range []string{
+		"https://attacker.test/login", "//attacker.test/login", "attacker.test/login", "",
+	} {
+		got := sanitizeCredentialSession(&CredentialSession{
+			LoginPath: path, User: "u", Password: "p",
+		})
+		if got != nil {
+			t.Errorf("login path %q was accepted", path)
+		}
+	}
+	if got := sanitizeCredentialSession(&CredentialSession{
+		LoginPath: "/api/v2/auth/login", User: "u", Password: "p",
+	}); got == nil {
+		t.Error("an ordinary login path was refused")
+	}
+}
+
+// The panel has to say a session is set, and as whom, without the password.
+func TestASessionSummaryCarriesNoPassword(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+
+	const secret = "do-not-leak-me"
+	if err := saveHealthCredential("widget:qb", HealthCredential{Session: &CredentialSession{
+		LoginPath: "/login", User: "jordi", Password: secret,
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	summaries := listHealthCredentialDetails()
+	summary := summaries["widget:qb"]
+	if !summary.Session || summary.SessionUser != "jordi" {
+		t.Errorf("summary = %+v, want a session for jordi", summary)
+	}
+	blob, _ := json.Marshal(summaries)
+	if strings.Contains(string(blob), secret) {
+		t.Error("the summary carried the password")
 	}
 }

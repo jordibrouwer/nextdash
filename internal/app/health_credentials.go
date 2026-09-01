@@ -1,9 +1,12 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -66,6 +69,40 @@ type HealthCredential struct {
 	// Kept here, the address holds a placeholder and the secret travels no
 	// further than this file.
 	Query map[string]string `json:"query,omitempty"`
+	/*
+	 * Session is for services that hand out a cookie rather than take a key.
+	 *
+	 * qBittorrent is the one this was written for: there is no API key at all,
+	 * only a username and password posted to a login endpoint, which answers
+	 * with a SID cookie that expires. Storing the cookie was the first attempt
+	 * and it is a widget that works for a while and then reads 403 -- so what
+	 * is stored is what does not expire, and the session is fetched.
+	 */
+	Session *CredentialSession `json:"session,omitempty"`
+}
+
+/*
+CredentialSession describes how to sign in for a cookie.
+
+Kept as data rather than as a per-service branch in the code, because every
+service that works this way works the same way: post two fields to one path and
+keep the cookie that comes back. A service that needs something else is a
+service this does not cover, which is a better answer than a form with six boxes
+on it.
+*/
+type CredentialSession struct {
+	// LoginPath is where the credentials are posted, relative to the widget's
+	// own host -- so a service that moves ports does not need re-describing.
+	LoginPath string `json:"loginPath"`
+	// UserField and PassField name the form fields, because they are not the
+	// same everywhere and guessing at them fails silently.
+	UserField string `json:"userField"`
+	PassField string `json:"passField"`
+	User      string `json:"user"`
+	Password  string `json:"password"`
+	// Referer is sent when the service insists on one. qBittorrent rejects a
+	// login without it, which reads as a wrong password.
+	Referer bool `json:"referer,omitempty"`
 }
 
 // HealthCredentialFile is the whole set on disk.
@@ -144,6 +181,7 @@ func sanitizeHealthCredential(in HealthCredential) HealthCredential {
 		BasicPassword: trimToLength(in.BasicPassword, healthCredentialMaxValueLen),
 	}
 	out.Query = sanitizeCredentialQuery(in.Query)
+	out.Session = sanitizeCredentialSession(in.Session)
 	if len(in.Headers) == 0 {
 		return out
 	}
@@ -173,6 +211,35 @@ func sanitizeHealthCredential(in HealthCredential) HealthCredential {
 		out.Headers = nil
 	}
 	return out
+}
+
+/*
+sanitizeCredentialSession bounds a stored sign-in.
+
+The login path is checked to be a path and nothing else: a value with a scheme
+or a host in it would send the username and password to whatever that named,
+which is a credential-stealing bug rather than a typo. Everything else is
+length-bounded like the fields beside it.
+*/
+func sanitizeCredentialSession(in *CredentialSession) *CredentialSession {
+	if in == nil {
+		return nil
+	}
+	path := strings.TrimSpace(in.LoginPath)
+	if path == "" || !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") {
+		return nil
+	}
+	if in.User == "" && in.Password == "" {
+		return nil
+	}
+	return &CredentialSession{
+		LoginPath: trimToLength(path, healthCredentialMaxValueLen),
+		UserField: trimToLength(strings.TrimSpace(in.UserField), healthCredentialMaxNameLen),
+		PassField: trimToLength(strings.TrimSpace(in.PassField), healthCredentialMaxNameLen),
+		User:      trimToLength(in.User, healthCredentialMaxValueLen),
+		Password:  trimToLength(in.Password, healthCredentialMaxValueLen),
+		Referer:   in.Referer,
+	}
 }
 
 /*
@@ -327,6 +394,10 @@ type CredentialSummary struct {
 	// Headers above names its headers -- so the widget panel can draw a box
 	// that says something is set without the value coming back with it.
 	Query []string `json:"query,omitempty"`
+	// Session says this credential signs in for a cookie, and as whom. The
+	// password has no counterpart here, like every other password in this file.
+	Session     bool   `json:"session,omitempty"`
+	SessionUser string `json:"sessionUser,omitempty"`
 }
 
 /*
@@ -359,6 +430,10 @@ func listHealthCredentialDetails() map[string]CredentialSummary {
 			summary.Query = append(summary.Query, name)
 		}
 		sort.Strings(summary.Query)
+		if credential.Session != nil {
+			summary.Session = true
+			summary.SessionUser = credential.Session.User
+		}
 		out[id] = summary
 	}
 	return out
@@ -662,4 +737,102 @@ func (h *Handlers) HealthCredentialRevealHandler(w http.ResponseWriter, r *http.
 	// trace is useful without the trace itself becoming a second copy.
 	logWarn(logComponentHealth, "the stored secret for %s (%s) was revealed to the config panel", id, field)
 	_ = json.NewEncoder(w).Encode(map[string]any{"value": value})
+}
+
+/*
+Signing in for a cookie, and keeping it only as long as it works.
+
+qBittorrent hands out a SID that expires, so the widget has to be able to sign
+in again -- but signing in before every refresh would mean a login request per
+tile per interval against somebody's own machine. The cookie is held in memory
+and reused; the retry on a refusal is what makes an expiry self-correcting,
+rather than a timer guessing at how long the service keeps a session.
+
+In memory rather than in the credential file: a session is not a secret worth
+persisting, it is one the service will hand out again on request. Losing it on a
+restart costs one login.
+*/
+var (
+	credentialSessionMu    sync.Mutex
+	credentialSessionCache = map[string]string{}
+)
+
+// credentialSessionKey identifies a session by who it belongs to and where it
+// signs in, so two widgets on the same host with different accounts do not share
+// a cookie.
+func credentialSessionKey(host string, session *CredentialSession) string {
+	return host + "|" + session.LoginPath + "|" + session.User
+}
+
+func cachedCredentialSession(key string) (string, bool) {
+	credentialSessionMu.Lock()
+	defer credentialSessionMu.Unlock()
+	cookie, ok := credentialSessionCache[key]
+	return cookie, ok
+}
+
+func storeCredentialSession(key, cookie string) {
+	credentialSessionMu.Lock()
+	defer credentialSessionMu.Unlock()
+	if cookie == "" {
+		delete(credentialSessionCache, key)
+		return
+	}
+	credentialSessionCache[key] = cookie
+}
+
+/*
+signInForCookie posts the stored username and password and keeps what comes back.
+
+The cookie is taken from Set-Cookie rather than from a body: a service that signs
+you in says so in the header, and qBittorrent's body is the word "Ok." A body
+that says Ok with no cookie beside it is a failed login that answered 200, which
+is worth telling apart from a working one.
+*/
+func (h *Handlers) signInForCookie(ctx context.Context, base *url.URL, session *CredentialSession) (string, error) {
+	if session == nil || session.LoginPath == "" {
+		return "", errors.New("this sign-in does not say where to log in")
+	}
+	target := *base
+	target.Path = session.LoginPath
+	target.RawQuery = ""
+
+	form := url.Values{}
+	userField := session.UserField
+	if userField == "" {
+		userField = "username"
+	}
+	passField := session.PassField
+	if passField == "" {
+		passField = "password"
+	}
+	form.Set(userField, session.User)
+	form.Set(passField, session.Password)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(),
+		strings.NewReader(form.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "nextDash Widget/1.0")
+	if session.Referer {
+		// qBittorrent refuses a login without one, and the refusal looks
+		// exactly like a wrong password.
+		req.Header.Set("Referer", base.Scheme+"://"+base.Host)
+	}
+
+	client := h.outboundHTTPClient(customWidgetTimeout, 0)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer drainAndCloseResponse(resp)
+
+	for _, cookie := range resp.Cookies() {
+		if cookie.Value != "" {
+			return cookie.Name + "=" + cookie.Value, nil
+		}
+	}
+	return "", fmt.Errorf("signing in answered %d without a session", resp.StatusCode)
 }

@@ -362,6 +362,11 @@ func normalizeWidgetForTest(t *testing.T, widget Widget) Widget {
 
 // The credential is named by the widget and never held by it.
 func TestCustomWidgetSendsAStoredCredential(t *testing.T) {
+	// The signing-in tests spend two outbound requests where this spends one,
+	// and the limiter is one bucket for the whole binary -- so this starved
+	// when they were added, in a way that named this test and blamed the
+	// credential.
+	freshOutboundBudget(t)
 	h := newTestHandlers(t)
 	allowLocalForTest(t, h, true)
 
@@ -587,7 +592,10 @@ func TestTryItSendsAKeyThatHasNotBeenSavedYet(t *testing.T) {
 	}))
 	defer service.Close()
 
+	freshOutboundBudget(t)
 	h := NewHandlers(NewStore(), embeddedFiles)
+	// The test service is on 127.0.0.1; reaching it is a stored setting.
+	allowLocalForTest(t, h, true)
 	body, _ := json.Marshal(map[string]any{
 		"url":    service.URL,
 		"fields": []any{map[string]any{"path": "version", "label": "version", "format": "text"}},
@@ -631,7 +639,10 @@ func TestTryItDoesNotStoreTheKeyItWasHandedToTry(t *testing.T) {
 	}))
 	defer service.Close()
 
+	freshOutboundBudget(t)
 	h := NewHandlers(NewStore(), embeddedFiles)
+	// The test service is on 127.0.0.1; reaching it is a stored setting.
+	allowLocalForTest(t, h, true)
 	body, _ := json.Marshal(map[string]any{
 		"url":          service.URL,
 		"credentialId": "widget:w_1",
