@@ -68,7 +68,26 @@ const (
 var customWidgetFormats = map[string]bool{
 	"count": true, "bytes": true, "percent": true,
 	"duration": true, "ms": true, "relativeDate": true, "text": true,
-	"rate": true,
+	"rate": true, "data": true, "temperature": true, "power": true,
+}
+
+/*
+customWidgetDataUnits are the units a service may already have counted in.
+
+The Size format assumes bytes, which is right for most services and silently
+wrong for the ones that do the arithmetic themselves: SABnzbd reports mbleft as
+"0.00" meaning megabytes and diskspace1 as "3342.67" meaning gigabytes, and read
+as bytes those become "0 B" and "3.3 KB" -- figures that are wrong by three and
+six orders of magnitude while looking perfectly reasonable.
+
+So Data asks which unit the number is already in, and scales from there.
+*/
+var customWidgetDataUnits = map[string]float64{
+	"b":  1,
+	"kb": 1024,
+	"mb": 1024 * 1024,
+	"gb": 1024 * 1024 * 1024,
+	"tb": 1024 * 1024 * 1024 * 1024,
 }
 
 /*
@@ -200,6 +219,120 @@ type customFieldSpec struct {
 	// the way every figure was drawn before there were shapes.
 	Shape string
 	Tone  string
+	/*
+	 * Decimals is how many places to round a figure to, and it is a pointer so
+	 * that "not set" survives being read back.
+	 *
+	 * Zero decimals is a real choice -- a queue of 3.7 items is better read as
+	 * 4 than as 3.7 -- and it is also what an int field holds when nobody chose
+	 * anything, so the two would be indistinguishable. Every widget saved
+	 * before this exists says nothing here and keeps the rounding its format
+	 * always did.
+	 */
+	Decimals *int
+	// DataUnit is which unit a Data figure is already counted in. Empty means
+	// bytes, which is what every other size in this file assumes.
+	DataUnit string
+}
+
+/*
+decimalsFrom reads a chosen number of decimal places, or nothing.
+
+Bounded at six, which is past anything a tile has room for and well past what a
+service reports honestly -- the point is that a stored config cannot ask the
+formatter for four hundred digits. Anything that is not a number in range is
+read as "not set", so a hand-edited file with nonsense in it falls back to what
+the format always did rather than failing the whole widget.
+*/
+func decimalsFrom(raw any) *int {
+	number, ok := toFloat(raw)
+	if !ok {
+		return nil
+	}
+	places := int(math.Round(number))
+	if places < 0 || places > 6 {
+		return nil
+	}
+	return &places
+}
+
+/*
+dataUnitFrom reads which unit a Data figure counts in, defaulting to bytes.
+
+Anything unrecognised reads as bytes rather than failing the widget: a
+hand-edited config with nonsense in it should draw the figure the way it was
+drawn before Data existed, not take the tile down.
+*/
+func dataUnitFrom(raw any) string {
+	unit := strings.ToLower(strings.TrimSpace(stringOr(raw)))
+	if _, ok := customWidgetDataUnits[unit]; ok {
+		return unit
+	}
+	return "b"
+}
+
+/*
+draftCredentialFrom reads a sign-in that was typed but not saved.
+
+Sanitised through exactly the same rule a stored one goes through, so a header
+this route accepts is one saveHealthCredential would have accepted -- there is
+no second, laxer way in. Nil when nothing usable was sent, which is every
+request from a panel whose key is already filed.
+*/
+func draftCredentialFrom(raw any) *HealthCredential {
+	entry, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	credential := HealthCredential{
+		BasicUser:     stringOr(entry["basicUser"]),
+		BasicPassword: stringOr(entry["basicPassword"]),
+	}
+	if headers, ok := entry["headers"].(map[string]any); ok && len(headers) > 0 {
+		credential.Headers = map[string]string{}
+		for name, value := range headers {
+			credential.Headers[name] = stringOr(value)
+		}
+	}
+	if query, ok := entry["query"].(map[string]any); ok && len(query) > 0 {
+		credential.Query = map[string]string{}
+		for name, value := range query {
+			credential.Query[name] = stringOr(value)
+		}
+	}
+	if session, ok := entry["session"].(map[string]any); ok {
+		credential.Session = &CredentialSession{
+			LoginPath: stringOr(session["loginPath"]),
+			UserField: stringOr(session["userField"]),
+			PassField: stringOr(session["passField"]),
+			User:      stringOr(session["user"]),
+			Password:  stringOr(session["password"]),
+			Referer:   session["referer"] == true,
+		}
+	}
+	clean := sanitizeHealthCredential(credential)
+	if len(clean.Headers) == 0 && len(clean.Query) == 0 && clean.BasicPassword == "" &&
+		clean.Session == nil {
+		return nil
+	}
+	return &clean
+}
+
+/*
+temperatureSuffix is the unit the reader already chose, once, for the weather.
+
+Asking a second time would be asking the same question twice and inviting two
+answers -- a dashboard reading 18 °C beside a tile reading 64 °F is worse than
+either. It is a suffix rather than a conversion because a sensor reports in the
+unit its own system was set to: Home Assistant converts before it answers, so
+converting again here would be a second pass over a number that was already
+right.
+*/
+func (h *Handlers) temperatureSuffix() string {
+	if strings.EqualFold(h.store.GetSettings().WeatherUnit, "fahrenheit") {
+		return " °F"
+	}
+	return " °C"
 }
 
 // customWidgetSpec is the stored config, read into something typed.
@@ -283,11 +416,13 @@ func customWidgetSpecFrom(config map[string]any) (customWidgetSpec, error) {
 			tone = ""
 		}
 		spec.Fields = append(spec.Fields, customFieldSpec{
-			Path:   path,
-			Label:  trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60),
-			Format: format,
-			Shape:  shape,
-			Tone:   tone,
+			Path:     path,
+			Label:    trimToLength(strings.TrimSpace(stringOr(entry["label"])), 60),
+			Format:   format,
+			Shape:    shape,
+			Tone:     tone,
+			Decimals: decimalsFrom(entry["decimals"]),
+			DataUnit: dataUnitFrom(entry["dataUnit"]),
 		})
 	}
 
@@ -315,21 +450,143 @@ func clampInt(value, low, high int) int {
 }
 
 /*
-customWidgetLookup walks a dotted path with [n] indexes.
+lookupNamedListEntry reads "sensor.temperatuur_beneden.state" against a list.
+
+An entity_id is dotted, and so is the path syntax, so the two cannot be told
+apart by splitting: "sensor.temperatuur_beneden_temperatuur.state" is either one
+name and one step, or three steps, and only the document knows which.
+
+So the longest prefix that names an entry wins, and whatever is left is walked
+into it. Longest first, because a service with both "a" and "a.b" should give
+the more specific one -- and because a prefix that matches nothing costs one
+comparison against a list this code was going to walk anyway.
+
+Only against a list, and only when a whole prefix matches an identifying field.
+A document that is an object is left entirely alone: the old walk is what runs,
+and nothing that used to resolve resolves differently.
+*/
+func lookupNamedListEntry(document any, path string) (any, bool) {
+	list, ok := document.([]any)
+	if !ok || len(list) == 0 {
+		return nil, false
+	}
+	segments := splitCustomPath(path)
+	// A single segment cannot be a dotted name, and a bracket in the first
+	// segment means the reader already said which entry they meant.
+	if len(segments) < 2 || strings.Contains(segments[0], "[") {
+		return nil, false
+	}
+	for take := len(segments); take >= 2; take-- {
+		name := strings.Join(segments[:take], ".")
+		entry, found := listEntryNamed(list, name)
+		if !found {
+			continue
+		}
+		rest := segments[take:]
+		if len(rest) == 0 {
+			// The name on its own: a reader who wrote only the entity means the
+			// reading it carries, which is what every one of these documents
+			// calls "state". Falling back to the entry itself would put a whole
+			// object on a tile.
+			if object, isObject := entry.(map[string]any); isObject {
+				if state, has := object["state"]; has {
+					return state, true
+				}
+			}
+			return entry, true
+		}
+		return customWidgetLookup(entry, strings.Join(rest, "."))
+	}
+	return nil, false
+}
+
+/*
+listEntryNamed finds the entry of a list that identifies itself by this name.
+
+The identifying field is not universal, so a short list of the ones services
+actually use is tried in order. entity_id is Home Assistant's; id and name cover
+most of the rest. Exactly one entry is returned and the first match wins, which
+is the promise every other path makes.
+*/
+func listEntryNamed(list []any, name string) (any, bool) {
+	for _, key := range []string{"entity_id", "id", "name", "key", "slug"} {
+		for _, entry := range list {
+			object, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			if value, has := object[key]; has && fmt.Sprint(value) == name {
+				return entry, true
+			}
+		}
+	}
+	return nil, false
+}
+
+/*
+splitCustomPath splits on dots, except inside brackets.
+
+An entity_id is itself dotted -- "sensor.p1_meter_vermogen" -- so splitting the
+whole path on every dot tears a match in half and it silently finds nothing.
+Brackets are the one place a dot means a character rather than a step.
+*/
+func splitCustomPath(path string) []string {
+	var out []string
+	depth := 0
+	start := 0
+	for i, r := range path {
+		switch r {
+		case '[':
+			depth++
+		case ']':
+			if depth > 0 {
+				depth--
+			}
+		case '.':
+			if depth == 0 {
+				out = append(out, path[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(out, path[start:])
+}
+
+/*
+customWidgetLookup walks a dotted path with [n] indexes and [key=value] matches.
 
 Deliberately not a query language. "server.disk[0].used" either names something
 or it does not, and "does not" is an answer the tile can show -- a path that
 silently matched several things would make a wrong figure look right.
+
+[key=value] is the same promise for a list that is keyed rather than ordered.
+Home Assistant answers /api/states with every entity in one array, so the only
+way to name one by position is [150] -- an index that moves the moment a device
+is added, leaving a tile quietly reading a different sensor. Matching on
+entity_id names the thing itself.
+
+Still exactly one: the first match wins and a second identical key would be the
+service's own problem, but nothing here fans out. A path names one value.
 */
 func customWidgetLookup(document any, path string) (any, bool) {
+	if value, ok := lookupNamedListEntry(document, path); ok {
+		return value, true
+	}
 	current := document
-	for _, segment := range strings.Split(path, ".") {
+	for _, segment := range splitCustomPath(path) {
 		segment = strings.TrimSpace(segment)
 		if segment == "" {
 			continue
 		}
 		name := segment
-		var indexes []int
+		// Each bracket is either a position or a match; they are kept in order
+		// because "rows[2][id=x]" is a different question from the reverse.
+		type selector struct {
+			index int
+			key   string
+			value string
+		}
+		var selectors []selector
 		if open := strings.Index(segment, "["); open >= 0 {
 			name = segment[:open]
 			rest := segment[open:]
@@ -338,30 +595,86 @@ func customWidgetLookup(document any, path string) (any, bool) {
 				if closeAt <= 1 || rest[0] != '[' {
 					return nil, false
 				}
-				index, err := strconv.Atoi(rest[1:closeAt])
-				if err != nil || index < 0 {
-					return nil, false
+				inner := rest[1:closeAt]
+				if equals := strings.Index(inner, "="); equals > 0 {
+					key := strings.TrimSpace(inner[:equals])
+					value := strings.TrimSpace(inner[equals+1:])
+					if key == "" || value == "" {
+						return nil, false
+					}
+					selectors = append(selectors, selector{index: -1, key: key, value: value})
+				} else {
+					index, err := strconv.Atoi(inner)
+					if err != nil || index < 0 {
+						return nil, false
+					}
+					selectors = append(selectors, selector{index: index})
 				}
-				indexes = append(indexes, index)
 				rest = rest[closeAt+1:]
 			}
 		}
 		if name != "" {
 			object, ok := current.(map[string]any)
 			if !ok {
-				return nil, false
+				/*
+				 * A name against a list, which is how a reader writes it.
+				 *
+				 * Home Assistant calls a thing "sensor.temperatuur_beneden" and
+				 * answers /api/states with every entity in one array, so that is
+				 * the name anyone types -- and it found nothing, because an
+				 * array has no keys. The bracket form says the same thing and
+				 * says it in a syntax nobody was told about.
+				 *
+				 * So a name against a list is read as "the entry that calls
+				 * itself this". Safe by construction: an array has no keys of
+				 * its own, so there is nothing this can shadow.
+				 */
+				if list, isList := current.([]any); isList {
+					entry, found := listEntryNamed(list, name)
+					if !found {
+						return nil, false
+					}
+					current = entry
+				} else {
+					return nil, false
+				}
+			} else {
+				current, ok = object[name]
+				if !ok {
+					return nil, false
+				}
 			}
-			current, ok = object[name]
+		}
+		for _, sel := range selectors {
+			list, ok := current.([]any)
 			if !ok {
 				return nil, false
 			}
-		}
-		for _, index := range indexes {
-			list, ok := current.([]any)
-			if !ok || index >= len(list) {
+			if sel.index >= 0 {
+				if sel.index >= len(list) {
+					return nil, false
+				}
+				current = list[sel.index]
+				continue
+			}
+			found := false
+			for _, entry := range list {
+				object, ok := entry.(map[string]any)
+				if !ok {
+					continue
+				}
+				// Compared as text, because the value came out of an address
+				// bar and everything there is text: a number in the document
+				// and "42" in the path are the same answer to the reader.
+				if fmt.Sprint(object[sel.key]) == sel.value {
+					current = entry
+					found = true
+					break
+				}
+			}
+			if !found {
 				return nil, false
 			}
-			current = list[index]
 		}
 	}
 	return current, true
@@ -374,7 +687,24 @@ Seven formats, no more. Each answers a question a service's numbers actually
 raise: how many, how large, how full, how long, how fast, how long ago, and
 what does it say.
 */
-func formatCustomValue(raw any, format string) string {
+func formatCustomValue(raw any, format string, decimals *int, dataUnit, tempSuffix string) string {
+	unit := customWidgetDataUnits[dataUnit]
+	if unit == 0 {
+		unit = 1
+	}
+	// A chosen number of places answers the whole question and answers it the
+	// same way for every format: the reader asked for two decimals, not for two
+	// decimals of whatever this format would otherwise have done. Units stay,
+	// because "3342.65" and "3342.65 MB" are not the same figure.
+	if decimals != nil {
+		if number, ok := toFloat(raw); ok {
+			if format == "data" {
+				number *= unit
+			}
+			scaled, suffix := scaleForFormat(number, format)
+			return roundToDecimals(scaled, *decimals) + suffix
+		}
+	}
 	switch format {
 	case "count":
 		if number, ok := toFloat(raw); ok {
@@ -390,6 +720,18 @@ func formatCustomValue(raw any, format string) string {
 	case "rate":
 		if number, ok := toFloat(raw); ok {
 			return formatBitRate(number)
+		}
+	case "data":
+		if number, ok := toFloat(raw); ok {
+			return formatByteSize(number * unit)
+		}
+	case "temperature":
+		if number, ok := toFloat(raw); ok {
+			return trimTrailingZeroDecimal(strconv.FormatFloat(number, 'f', 1, 64)) + tempSuffix
+		}
+	case "power":
+		if number, ok := toFloat(raw); ok {
+			return formatWatts(number)
 		}
 	case "percent":
 		if number, ok := toFloat(raw); ok {
@@ -503,6 +845,77 @@ func formatThousands(value int64) string {
 	return out
 }
 
+/*
+roundToDecimals writes a number to exactly the places that were asked for.
+
+Trailing zeroes are kept -- two decimals means "0.00", not "0" -- because a
+figure that changes width as its digits land reads as the value jumping about.
+That is also the answer to the request that started this: SABnzbd reports
+mbleft as the string "0.00", and a reader who picks two decimals is asking to
+go on seeing exactly that.
+*/
+func roundToDecimals(value float64, places int) string {
+	if places < 0 {
+		places = 0
+	}
+	return strconv.FormatFloat(value, 'f', places, 64)
+}
+
+/*
+scaleForFormat brings a number into the units its format shows it in, and says
+which those are.
+
+Rounding is a question about digits, not about what the figure is -- so a Size
+asked for two decimals is still a size, and the number has to be brought down to
+the scale its unit names before the decimals mean anything. Appending "MB" to an
+unscaled byte count was the first attempt and produced "130760634.00 MB", which
+is wrong by a factor of a million and reads as authoritative.
+
+The steps match each format's own formatter exactly: 1024 for a size, 1000 for a
+rate, because that is the difference between how storage and connections are
+sold.
+*/
+func scaleForFormat(value float64, format string) (float64, string) {
+	switch format {
+	case "bytes", "data":
+		units := []string{" B", " KB", " MB", " GB", " TB", " PB"}
+		index := 0
+		for math.Abs(value) >= 1024 && index < len(units)-1 {
+			value /= 1024
+			index++
+		}
+		return value, units[index]
+	case "rate":
+		units := []string{" bps", " Kbps", " Mbps", " Gbps", " Tbps"}
+		index := 0
+		for math.Abs(value) >= 1000 && index < len(units)-1 {
+			value /= 1000
+			index++
+		}
+		return value, units[index]
+	case "percent":
+		// The same reading the percent format makes: a ratio and a percentage
+		// both turn up, and 0..1 is unambiguous enough.
+		if value > 0 && value <= 1 {
+			value *= 100
+		}
+		return value, "%"
+	case "ms":
+		// Seconds in, milliseconds out, as the ms format does.
+		return value * 1000, ""
+	case "power":
+		units := []string{" W", " kW", " MW", " GW"}
+		index := 0
+		for math.Abs(value) >= 1000 && index < len(units)-1 {
+			value /= 1000
+			index++
+		}
+		return value, units[index]
+	}
+	// count, duration, relativeDate and text carry no unit of their own.
+	return value, ""
+}
+
 func formatByteSize(value float64) string {
 	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
 	index := 0
@@ -544,6 +957,36 @@ func formatBitRate(value float64) string {
 		return strconv.FormatInt(int64(value), 10) + " bps"
 	}
 	return strconv.FormatFloat(value, 'f', 3, 64) + " " + units[index]
+}
+
+/*
+formatWatts scales a reading the way a meter is read.
+
+Thousands rather than 1024, because a watt is an SI unit and a kilowatt is a
+thousand of them -- the same reason a line speed steps in thousands and a disk
+does not. A solar peak reads 4.5 kW instead of 4500 W, and a house drawing 450 W
+still reads in watts.
+
+Negative values keep their sign and scale on their magnitude: a P1 meter reports
+-1079 W while exporting to the grid, and "-1.1 kW" is the reading. Comparing the
+magnitude is what makes that work, where a bare >= would have left it in watts.
+*/
+func formatWatts(value float64) string {
+	units := []string{"W", "kW", "MW", "GW"}
+	index := 0
+	for math.Abs(value) >= 1000 && index < len(units)-1 {
+		value /= 1000
+		index++
+	}
+	if index == 0 {
+		// Whole watts: a sensor reporting 0.0 means nothing is drawing, and
+		// "0.0 W" is a decimal that says nothing the "0" does not.
+		return trimTrailingZeroDecimal(strconv.FormatFloat(value, 'f', 1, 64)) + " " + units[index]
+	}
+	// FormatFloat with -1 writes the shortest representation that round-trips,
+	// so 4.5 stays 4.5 and 1 stays 1 -- where a fixed two places gives "4.50"
+	// and "1.00", and trimming one zero off those leaves "4.5" and "1.0".
+	return strconv.FormatFloat(math.Round(value*100)/100, 'f', -1, 64) + " " + units[index]
 }
 
 func formatDurationSeconds(seconds int64) string {
@@ -637,7 +1080,7 @@ request uses. A widget pointed at a LAN service therefore works exactly when
 "Allow local bookmarks" is on, and not otherwise: one setting governs where this
 install may reach, rather than this feature inventing a second answer.
 */
-func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) customWidgetAnswer {
+func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec, draft *HealthCredential) customWidgetAnswer {
 	started := time.Now()
 	answer := customWidgetAnswer{}
 	since := func() customWidgetAnswer {
@@ -667,7 +1110,19 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) c
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "nextDash Widget/1.0")
 	var credential HealthCredential
-	if spec.CredentialID != "" {
+	// A session is fetched rather than stored, and a refusal is what says it
+	// has expired -- so the request is made, and made once more with a fresh
+	// cookie if the service turns it down. Cheaper than a timer, and correct
+	// where a timer would only be a guess.
+	sessionKey := ""
+	if draft != nil {
+		// What is on screen beats what is filed. Someone testing a key they
+		// have just typed is asking about that key, not about the one this
+		// widget was saved with.
+		credential = *draft
+		applyHealthCredential(req, credential)
+		answer.SignedIn = true
+	} else if spec.CredentialID != "" {
 		// The same store the health checks use: kept in its own file, 0600, and
 		// never handed back to a browser. The widget names one; it never holds
 		// one.
@@ -676,6 +1131,23 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) c
 			applyHealthCredential(req, credential)
 			answer.SignedIn = true
 		}
+	}
+	if credential.Session != nil {
+		key := credentialSessionKey(req.URL.Host, credential.Session)
+		sessionKey = key
+		cookie, ok := cachedCredentialSession(key)
+		if !ok {
+			fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+			if err != nil {
+				answer.Error = "could not sign in to that service"
+				logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
+				return since()
+			}
+			storeCredentialSession(key, fresh)
+			cookie = fresh
+		}
+		req.Header.Set("Cookie", cookie)
+		answer.SignedIn = true
 	}
 
 	client := h.outboundHTTPClient(customWidgetTimeout, 3)
@@ -689,6 +1161,30 @@ func (h *Handlers) askCustomWidget(ctx context.Context, spec customWidgetSpec) c
 		return since()
 	}
 	defer drainAndCloseResponse(resp)
+
+	// An expired session reads as a refusal, and the reader has done nothing
+	// wrong -- so it is signed in again and tried once, rather than the tile
+	// reporting a 403 the reader cannot act on.
+	if sessionKey != "" && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized) {
+		drainAndCloseResponse(resp)
+		storeCredentialSession(sessionKey, "")
+		fresh, err := h.signInForCookie(ctx, req.URL, credential.Session)
+		if err != nil {
+			answer.Error = "could not sign in to that service"
+			logWarn(logComponentWidgets, "%s refused the sign-in: %v", hostOf(spec.URL), err)
+			return since()
+		}
+		storeCredentialSession(sessionKey, fresh)
+		retry := req.Clone(ctx)
+		retry.Header.Set("Cookie", fresh)
+		if retried, err := client.Do(retry); err == nil {
+			resp = retried
+		} else {
+			answer.Error = "no answer from that address"
+			return since()
+		}
+		defer drainAndCloseResponse(resp)
+	}
 
 	answer.Status = resp.StatusCode
 	answer.ContentType = strings.TrimSpace(resp.Header.Get("Content-Type"))
@@ -727,7 +1223,7 @@ disappointing tile at once: what the service actually said, and what these paths
 made of it. A path that found nothing is far easier to fix beside the document
 it missed.
 */
-func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetchedAt time.Time) CustomWidgetResult {
+func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetchedAt time.Time, tempSuffix string) CustomWidgetResult {
 	result := CustomWidgetResult{FetchedAt: fetchedAt.UnixMilli()}
 	if answer.Error != "" {
 		result.Error = answer.Error
@@ -748,7 +1244,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 			value.Value = "—"
 		} else {
 			value.Raw = found
-			value.Value = formatCustomValue(found, field.Format)
+			value.Value = formatCustomValue(found, field.Format, field.Decimals, field.DataUnit, tempSuffix)
 		}
 		value.Shape = field.Shape
 		value.Tone = field.Tone
@@ -781,7 +1277,7 @@ func customWidgetFigures(answer customWidgetAnswer, spec customWidgetSpec, fetch
 // fetchCustomWidget asks one service and turns its answer into figures.
 func (h *Handlers) fetchCustomWidget(ctx context.Context, spec customWidgetSpec) CustomWidgetResult {
 	now := time.Now()
-	return customWidgetFigures(h.askCustomWidget(ctx, spec), spec, now)
+	return customWidgetFigures(h.askCustomWidget(ctx, spec, nil), spec, now, h.temperatureSuffix())
 }
 
 /*
@@ -870,11 +1366,24 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-// customWidgetShownBody caps what a test hands back to the panel. A tile reads
-// a figure or two out of a document; a reader writing the paths needs to see
-// the document, and sixteen kilobytes is a great deal of JSON to read while
-// being far short of what a megabyte would do to the page drawing it.
-const customWidgetShownBody = 16 << 10
+/*
+customWidgetShownBody caps what a test hands back to the panel.
+
+Sixteen kilobytes was chosen for reading, and it is the right size for that: a
+tile reads a figure or two, and a reader writing paths against a statistics
+endpoint sees the whole of it.
+
+It is the wrong size for finding. Home Assistant answers /api/states with every
+entity it has -- 489 of them, 211 KB -- and the first sixteen kilobytes is the
+first seven per cent, alphabetically nowhere near what anyone is looking for.
+The panel said "the first part is shown", which was true and left the reader to
+conclude their sensors were missing.
+
+So the cap is larger, and the panel has a search box over it. Still a cap: a
+megabyte of JSON in a <pre> is a page that stops responding, and the point is to
+find a key rather than to read everything.
+*/
+const customWidgetShownBody = 256 << 10
 
 /*
 CustomWidgetTest is one trial run, as the config panel shows it.
@@ -982,6 +1491,25 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	/*
+	 * A sign-in that has been typed but not yet saved.
+	 *
+	 * Try it promises to ask the address "with whatever is in this panel", and
+	 * the key was the one thing it did not send: the payload carried only a
+	 * credentialId, which is a reference to what is *stored*, so a widget being
+	 * set up for the first time tested itself anonymously and the service
+	 * answered 401. That looks exactly like a wrong key, which is the one
+	 * conclusion the panel exists to rule out.
+	 *
+	 * Taken from the body, used for this one request, and never written
+	 * anywhere: this route already accepts a whole config rather than a widget
+	 * id, and it is behind the write token, so whoever can send this could
+	 * store the same credential and press refresh at it. Nothing new is
+	 * reachable.
+	 */
+	draftCredential := draftCredentialFrom(config["draftCredential"])
+	delete(config, "draftCredential")
+
 	now := time.Now()
 	spec, err := customWidgetSpecFrom(sanitizeWidgetConfig(WidgetTypeCustom, config))
 	if err != nil {
@@ -995,7 +1523,7 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	answer := h.askCustomWidget(r.Context(), spec)
+	answer := h.askCustomWidget(r.Context(), spec, draftCredential)
 	body, truncated := customWidgetTestBody(answer)
 	_ = json.NewEncoder(w).Encode(CustomWidgetTest{
 		Method:      spec.Method,
@@ -1008,7 +1536,7 @@ func (h *Handlers) CustomWidgetTestHandler(w http.ResponseWriter, r *http.Reques
 		Truncated:   truncated,
 		JSON:        answer.Document != nil,
 		SignedIn:    answer.SignedIn,
-		Result:      customWidgetFigures(answer, spec, now),
+		Result:      customWidgetFigures(answer, spec, now, h.temperatureSuffix()),
 		FetchedAt:   now.UnixMilli(),
 		Error:       answer.Error,
 	})

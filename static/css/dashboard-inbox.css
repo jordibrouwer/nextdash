@@ -630,6 +630,35 @@ body.no-animations .inbox-item-actions {
 
 }
 
+/* The pills own a full-width row, and search, site and sort own the one under
+   it -- the same two-row shape the health view's toolbar uses. Trailing the
+   pills on whatever space was left meant the search box landed in a different
+   place depending on how many pills there were, and the two views are read in
+   succession from the same header bar. */
+.inbox-filter-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-basis: 100%;
+    min-width: 0;
+}
+
+.inbox-toolbar-search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-basis: 100%;
+    min-width: 0;
+}
+
+/* The search box takes the room the two selects beside it do not, rather than
+   its own intrinsic width -- an <input> holds a track open at about 200px
+   whatever the row says. */
+.inbox-toolbar-search-row .inbox-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 /* ─── Inbox toolbar & date groups (phase 2) ───────────────────────────── */
 
 .inbox-toolbar {
@@ -640,11 +669,15 @@ body.no-animations .inbox-item-actions {
     padding: 0 0.35rem 0.35rem;
 }
 
+/* The same frame the health view's filter group wears: a rounded rectangle
+   rather than a full pill, and wrapping rather than one unbreakable line, so
+   the two rows read as the same control in two views. */
 .inbox-filter-group {
-    display: inline-flex;
-    gap: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
     padding: 0.15rem;
-    border-radius: 999px;
+    border-radius: var(--layout-radius-sm, 12px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
 }

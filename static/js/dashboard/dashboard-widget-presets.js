@@ -126,9 +126,9 @@
             // Tautulli takes its key in the query string and offers no header
             // form. That is why widget addresses are withheld from the blocks
             // route: this URL is a credential.
-            path: '/api/v2?apikey=YOUR_KEY&cmd=get_activity',
-            auth: 'query',
-            note: 'The API key goes in the address here — Tautulli has no header form.',
+            path: '/api/v2?cmd=get_activity',
+            auth: 'query', queryName: 'apikey',
+            note: 'Settings → Web Interface → API key. It goes in the address, which nextDash fills in for you.',
             fields: [
                 { path: 'response.data.stream_count', label: 'streams', format: 'count', shape: 'large' },
                 { path: 'response.data.stream_count_transcode', label: 'transcoding', format: 'count', shape: 'small' },
@@ -150,9 +150,12 @@
         {
             id: 'plex', name: 'Plex', group: 'media',
             sample: 'http://plex.local:32400',
-            path: '/status/sessions?X-Plex-Token=YOUR_TOKEN',
-            auth: 'header', authName: 'Accept',
-            note: 'Plex answers XML unless asked otherwise: add an Accept header of application/json.',
+            path: '/status/sessions',
+            // The token is the query parameter; the Accept header is not a
+            // secret and is sent for every Plex widget rather than asked for.
+            auth: 'query', queryName: 'X-Plex-Token',
+            fixedHeaders: { Accept: 'application/json' },
+            note: 'The X-Plex-Token from any Plex URL. Plex answers XML unless asked otherwise, so nextDash sends the Accept header for you.',
             fields: [
                 { path: 'MediaContainer.size', label: 'streams now', format: 'count', shape: 'large' },
             ],
@@ -173,8 +176,23 @@
             id: 'qbittorrent', name: 'qBittorrent', group: 'media',
             sample: 'http://qbittorrent.local:8080',
             path: '/api/v2/transfer/info',
-            auth: 'cookie',
-            note: 'qBittorrent signs in for a session: send the SID as a Cookie header.',
+            /*
+             * qBittorrent hands out a session rather than taking a key: there
+             * is no API key at all, only a login that answers with a SID cookie
+             * -- and that cookie expires. Asking for the cookie was the first
+             * attempt and it is a widget that works for an afternoon and then
+             * reads 403, so nextDash signs in itself and asks for what does not
+             * expire.
+             */
+            auth: 'session',
+            session: {
+                loginPath: '/api/v2/auth/login',
+                userField: 'username', passField: 'password',
+                // qBittorrent refuses a login with no Referer, and the refusal
+                // looks exactly like a wrong password.
+                referer: true,
+            },
+            note: 'The username and password you sign in to the Web UI with.',
             ttl: 60,
             fields: [
                 { path: 'dl_info_speed', label: 'down/s', format: 'bytes', shape: 'large' },
@@ -185,9 +203,9 @@
         {
             id: 'sabnzbd', name: 'SABnzbd', group: 'media',
             sample: 'http://sabnzbd.local:8080',
-            path: '/api?mode=queue&output=json&apikey=YOUR_KEY',
-            auth: 'query',
-            note: 'The API key goes in the address; SABnzbd takes no header form.',
+            path: '/api?mode=queue&output=json',
+            auth: 'query', queryName: 'apikey',
+            note: 'Config → General → API Key. It goes in the address, which nextDash fills in for you.',
             ttl: 60,
             fields: [
                 { path: 'queue.noofslots_total', label: 'in queue', format: 'count', shape: 'large' },
@@ -226,9 +244,9 @@
         {
             id: 'pihole5', name: 'Pi-hole (v5)', group: 'network',
             sample: 'http://pi.hole',
-            path: '/admin/api.php?summaryRaw&auth=YOUR_TOKEN',
-            auth: 'query',
-            note: 'v5 takes the API token in the address — Settings → API.',
+            path: '/admin/api.php?summaryRaw',
+            auth: 'query', queryName: 'auth',
+            note: 'Settings → API. It goes in the address, which nextDash fills in for you.',
             columns: 2,
             fields: [
                 { path: 'dns_queries_today', label: 'queries today', format: 'count', shape: 'large' },
@@ -282,8 +300,9 @@
             id: 'proxmox', name: 'Proxmox VE', group: 'system',
             sample: 'https://proxmox.local:8006',
             path: '/api2/json/nodes/YOUR_NODE/status',
+            fillIn: 'YOUR_NODE',
             auth: 'header', authName: 'Authorization', scheme: 'PVEAPIToken=',
-            note: 'An API token, as an Authorization header of "PVEAPIToken=user@pam!id=secret".',
+            note: 'An API token, as an Authorization header. Replace YOUR_NODE in the address with your node\'s name — it is in the left-hand tree of the Proxmox web interface.',
             fields: [
                 { path: 'data.uptime', label: 'uptime', format: 'duration', shape: 'small' },
                 { path: 'data.cpu', label: 'cpu', format: 'percent', shape: 'meter', tone: 'bad' },
@@ -359,13 +378,26 @@
         {
             id: 'homeassistant', name: 'Home Assistant', group: 'apps',
             sample: 'http://homeassistant.local:8123',
-            path: '/api/states/sensor.YOUR_SENSOR',
+            /*
+             * The whole state list, not one entity.
+             *
+             * /api/states/<entity> answers with exactly one thing, so the three
+             * figures a tile draws were three properties of the same sensor --
+             * its value, its name and when it changed -- where what anyone
+             * wants is three different sensors. The list endpoint answers with
+             * all of them, and each figure names the one it reads.
+             */
+            path: '/api/states',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
-            note: 'A long-lived access token, as an Authorization header of "Bearer <token>".',
+            fillIn: 'YOUR_SENSOR',
+            note: 'A long-lived access token from your profile page. Then replace YOUR_SENSOR in each figure with an entity of your own — Developer tools → States lists them.',
             fields: [
-                { path: 'state', label: 'now', format: 'text', shape: 'large' },
-                { path: 'attributes.friendly_name', label: 'sensor', format: 'text' },
-                { path: 'last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
+                // The entity's own name, as Home Assistant writes it. The
+                // [entity_id=…] form says the same thing and says it in a
+                // syntax nobody was told about.
+                { path: 'sensor.YOUR_SENSOR', label: 'now', format: 'text', shape: 'large' },
+                { path: 'sensor.YOUR_SENSOR.attributes.friendly_name', label: 'sensor', format: 'text' },
+                { path: 'sensor.YOUR_SENSOR.last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
             ],
         },
         {

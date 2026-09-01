@@ -1032,6 +1032,19 @@ the only widget that talks to anything outside.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
+- **A sign-in nextDash keeps** (**v1.4.5**) — qBittorrent has no API key at all: it hands out
+  a session cookie that expires. So the panel asks for the username and password
+  you use for the Web UI, and the server signs in for you, keeps the session, and
+  signs in again when it lapses — nothing to replace by hand. The password is
+  stored like every other secret here, and the cookie is only ever held in
+  memory.
+- **A key that goes in the address** (**v1.4.5**) — SABnzbd, Tautulli, Pi-hole
+  v5 and Plex offer no header form at all: their key belongs in the query string.
+  You still type it into the **API key** box. It is kept in the credential file
+  like any other, the stored address keeps a `YOUR_KEY` placeholder, and the
+  server fills the parameter in on each request — so the key stays out of
+  `bookmarks-N.json`, and therefore out of every backup and export. A key you
+  typed into the address yourself is left exactly as it is.
 - **Seeing the key you stored** (**v1.4.4.1**) — a saved key is never filled back
   into the box; it says *Set — type to replace* instead, so nothing on screen
   tells you what is actually in there. That matters for an `Authorization`
@@ -1041,7 +1054,15 @@ the only widget that talks to anything outside.
   looked at — a sign-in you made yourself on the health screen stays write-only,
   and every reveal is written to the log.
 - **Fields** — a path per figure, with a label and a shape. A path walks objects
-  and arrays — `server.disk[0].used` — and either names something or does not; a
+  and arrays — `server.disk[0].used` — and can also name a list entry by the name
+  that entry gives itself: `sensor.p1_meter` finds it wherever it sits, and
+  `sensor.p1_meter.attributes.unit_of_measurement` walks on into it. (The
+  explicit form, `[entity_id=sensor.p1_meter].state`, does the same and is there
+  for a list keyed by something unusual.) That is what makes a service answering with one big list usable —
+  Home Assistant returns every entity from `/api/states`, and naming one by
+  position would mean `[150]`, an index that moves the moment a device is added.
+  Each figure can name a different entry, so one widget shows several readings.
+  A path either names something or does not; a
   path that silently matched several things would make a wrong figure look
   right. A path that stops matching is marked rather than blank, because a blank
   reads as a zero and zero is a fact. Up to **eight** figures on one tile.
@@ -1059,6 +1080,34 @@ the only widget that talks to anything outside.
   a connection is mostly compared against itself and one decimal rounds this
   week and last week to the same figure. Point it at the field your service
   reports in bits: Speedtest Tracker calls it `download_bits`.
+- **Power** (**v1.4.5**) — for a figure in watts. It scales in thousands, the way a meter is
+  read, so a house drawing 450 W stays in watts and a solar peak reads `4.5 kW`.
+  A negative reading keeps its sign and still scales: a P1 meter exporting to the
+  grid shows `-1.03 kW`.
+- **Temperature** (**v1.4.5**) — shows the figure with `°C` or `°F` after it, following the
+  unit you chose under *Appearance → Weather*, so the dashboard and the tile
+  cannot disagree. It does **not** convert: a sensor reports in the unit its own
+  system was set to — Home Assistant converts before it answers — so converting
+  again would be a second pass over a number that was already right.
+- **Data size** (**v1.4.5**) — for a figure that is an amount of storage. It scales on its
+  own, so a value reads `3.3 TB` or `124.7 MB` rather than a bare number, and it
+  asks **which unit the service already counted in**. That question is the
+  difference between right and wrong by orders of magnitude: *Size* reads its
+  input as bytes, which is correct for most services and silently wrong for the
+  ones that do the arithmetic themselves — SABnzbd reports `mbleft` in megabytes
+  and `diskspace1` in gigabytes, and read as bytes those come out as `0 B` and
+  `3.3 KB`. Choose the unit and the figure reads `3.3 TB` as it should. Bytes is
+  the default, which is what *Size* always assumed.
+- **Found** (**v1.4.5**) — once you have pressed *Ask now*, each row shows what its own path
+  read out of the answer, right beside the path itself. A path that matched
+  nothing shows a dash. This is the column to watch while writing paths: it says
+  whether the one you just typed works without scrolling anywhere.
+- **Decimals per figure** (**v1.4.5**) — how many places to round to: *Auto*, or 0 to 3.
+  *Auto* is what every figure did before this existed, so nothing changes unless
+  you ask it to. It applies to any figure that is a number, including one the
+  service sends as text — SABnzbd reports `mbleft` as the string `"0.00"` and
+  `diskspace1` as `"3342.65"`, and those are shown exactly as sent until you
+  choose. Units are kept: a *Size* rounded to one place is still `124.7 MB`.
 - **Size per figure** — *Normal*, *Large*, *Small* or *Bar*, so a tile of
   figures is not a list you have to weigh yourself: the one you came for is
   bigger than the ones giving it context. *Bar* is offered on a percentage only,
@@ -1098,10 +1147,19 @@ what. So the settings panel has a *Try it* block under the figures: **Ask now**
 makes the request this widget describes — the address as typed, `GET` or
 `POST`, the sign-in it would use — and shows both halves of the answer at once.
 
-- **What came back**, in full and indented, in the order the service wrote it.
+- **What came back**, in full and indented, in the order the service wrote it,
+  with a **search box** above it. A service answering with hundreds of entries —
+  Home Assistant returns every entity it has — is not something to scroll, and
+  typing part of a key shows the lines that mention it with a little context
+  around each. Clear the box for the whole answer again; the search never asks
+  the service anything, it reads what already came back.
   This is the thing a path is written against, and reading it beside the boxes
   is the difference between writing `server.disk[0].used` and guessing at it. A
   long answer is cut and says so.
+- **A key you have only just typed is used.** Asking sends the sign-in as it
+  stands in the panel, so a widget can be tested before it is saved — without
+  it, a service behind a key answers 401 and that is indistinguishable from the
+  key being wrong. It is used for that one request and stored nowhere.
 - **What the tile would show**, the same figures the dashboard would draw, so a
   path that found nothing is marked here rather than after a save.
 - **The facts of the request** — the method, the host, the status, how long it

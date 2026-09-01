@@ -1,0 +1,66 @@
+{
+  "tag": "v1.4.5",
+  "date": "1 September 2026",
+  "releasedAt": "2026-09-01",
+  "modalLead": "The custom widget grew up. It signs in the way each service actually wants, reads a figure by the name the service gives it, shows what every path found while you write it, and can say whether a number is a size, a speed, a temperature or a load in watts.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every service signs in the way it actually wants.</strong> A key in the address for SABnzbd, Tautulli, Pi-hole v5 and Plex; a username and password for qBittorrent, which hands out a session cookie that expires &mdash; nextDash signs in and keeps that session itself, so nothing has to be replaced when it lapses. All of them ask for the key in the same box as everyone else, and it is kept in the credential file that stays out of your backups and exports."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>See the key a widget has stored.</strong> A saved key never came back to the screen, so an <em>Authorization</em> header missing its &ldquo;Bearer&rdquo; prefix looked exactly like a correct one &mdash; and the service answered 401 either way. There is an eye beside the box now. The presets fill in the scheme for you as well: <em>Bearer</em>, <em>Token</em> or <em>PVEAPIToken=</em>, whichever that service takes."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Name a figure the way the service names it.</strong> Home Assistant answers with every entity at once, so a path can now say <em>sensor.temperatuur_beneden</em> and find that entity wherever it sits in the list &mdash; and carry on into it, for its unit or the name it shows. One widget, as many readings as you like."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A <em>Found</em> column, beside the path that read it.</strong> Press <em>Ask now</em> and every figure says what it got. A path that matched nothing says so where you are typing, instead of in a block below the fold."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Search the answer that came back.</strong> A service answering with hundreds of entries is not something to scroll. Type part of a key and the lines that mention it are shown with a little context around each."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Four more ways to show a figure.</strong> <em>Speed</em> reads a line rate in the units a connection is sold in &mdash; 1.046 Gbps, not 124.703 MB. <em>Power</em> scales watts to kW and MW and keeps the minus sign when your meter is exporting. <em>Temperature</em> carries &deg;C or &deg;F, following the unit you already chose for the weather. <em>Data size</em> asks which unit the service counted in, so a figure reported in gigabytes is not read as bytes and shown as 3.3 KB."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Round a figure to the places you want.</strong> A <em>Decimals</em> column per figure, for the services that report a number as text and send back <em>0.00</em> or <em>3342.65</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Trying an address uses the key on screen.</strong> <em>Ask now</em> sent only a reference to a saved key, so a widget being set up for the first time tested itself anonymously and got a 401 &mdash; indistinguishable from a wrong key, which is the one thing that panel exists to rule out."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A refused trial says which refusal it was.</strong> Every failure used to read &ldquo;check your write token&rdquo;, including the rate limit you reach after a few minutes of filling in a widget. It names the actual reason now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The figures table lines up.</strong> Its headings sat above the wrong controls, and a preset that needs something filled into its address &mdash; a Proxmox node, a Home Assistant entity &mdash; now says so beside the box rather than leaving you to a 404."
+        }
+      ]
+    },
+    {
+      "title": "Health and inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Opening the health view shows the top of it.</strong> It scrolled straight past its own heading to bring a filter pill a little nearer the middle of a row that was usually not even overflowing."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The inbox toolbar matches the health one.</strong> Its filter pills have a row of their own and the search box the row beneath, so the search box no longer moves every time a pill appears or goes."
+        }
+      ]
+    }
+  ]
+}

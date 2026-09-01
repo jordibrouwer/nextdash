@@ -5163,12 +5163,31 @@ class DashboardHealth {
             });
         });
 
-        // The row scrolls sideways rather than wrapping, so the active filter has
-        // to be brought back into view after a render — otherwise picking one
-        // from the right-hand end leaves it half off screen.
+        /*
+         * The row can scroll sideways, so an active filter at the right-hand end
+         * has to be brought back after a render. Only sideways, and only when it
+         * is actually out of view.
+         *
+         * scrollIntoView moves every scrollable ancestor, the page included, and
+         * this ran on every render -- so opening the view scrolled the header
+         * off the top to bring a pill a few pixels nearer the middle of a row
+         * that was not even overflowing. The inbox does not do this, which is
+         * the comparison that surfaced it.
+         *
+         * The group is scrolled directly instead: it is the only element that
+         * needs to move, and nothing above it does.
+         */
         requestAnimationFrame(() => {
-            toolbar.querySelector('.health-view-filter-btn.is-active')
-                ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            const active = toolbar.querySelector('.health-view-filter-btn.is-active');
+            const group = active?.closest('.health-view-filter-group');
+            if (!active || !group) return;
+            if (group.scrollWidth <= group.clientWidth + 1) return;
+            const pill = active.getBoundingClientRect();
+            const box = group.getBoundingClientRect();
+            if (pill.left >= box.left && pill.right <= box.right) return;
+            group.scrollLeft += pill.left < box.left
+                ? pill.left - box.left
+                : pill.right - box.right;
         });
 
         const searchInput = toolbar.querySelector('.health-view-search-input');

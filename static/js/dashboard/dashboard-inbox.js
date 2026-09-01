@@ -3616,10 +3616,14 @@ class DashboardInbox {
             : this.t('dashboard.inboxMarkAllReadHint', 'Marks every unread link in the inbox');
 
         toolbar.innerHTML = `
-            <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">${pills}</div>
-            ${showDomainSelect ? `<select class="inbox-domain-select" data-inbox-domain-filter aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
-            <input type="search" class="inbox-search-input" data-inbox-search value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
-            ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" data-inbox-sort aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
+            <div class="inbox-filter-strip">
+                <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">${pills}</div>
+            </div>
+            <div class="inbox-toolbar-search-row">
+                ${showDomainSelect ? `<select class="inbox-domain-select" data-inbox-domain-filter aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
+                <input type="search" class="inbox-search-input" data-inbox-search value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
+                ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" data-inbox-sort aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
+            </div>
             <div class="inbox-toolbar-actions">
                 <button type="button" class="inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
                 <span class="inbox-menu-wrap">

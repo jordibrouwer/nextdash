@@ -53,7 +53,16 @@ class DashboardConfig {
      * place in the rail a reader has no reason to look, because it was not
      * there the last time they opened config.
      */
-    static NEW_THIS_RELEASE = { section: 'widgets' };
+    /*
+     * Which section this release's new setting lives in, if any.
+     *
+     * Empty between releases, which is the ordinary state: the twinkle is a
+     * trail to something a reader has not heard of yet, and a trail that is
+     * always on stops pointing at anything. The machinery stays -- naming a
+     * section here lights the rail again -- so the next release is one line
+     * rather than a rebuild.
+     */
+    static NEW_THIS_RELEASE = {};
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -15311,7 +15320,16 @@ class DashboardConfig {
     };
 
     /** The formats a value may be shown in — the server accepts these and no others. */
-    static CUSTOM_FORMATS = ['count', 'bytes', 'rate', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+    static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'duration', 'ms', 'relativeDate', 'text'];
+
+    /*
+     * The units a Data figure may already be counted in.
+     *
+     * Size assumes bytes, which is right for most services and silently wrong
+     * for the ones that do the arithmetic themselves -- SABnzbd reports MB left
+     * as a number of megabytes, and read as bytes that is "0 B". Data asks.
+     */
+    static CUSTOM_DATA_UNITS = ['b', 'kb', 'mb', 'gb', 'tb'];
 
     /*
      * How a figure is drawn, as opposed to what it says.
@@ -15361,6 +15379,14 @@ class DashboardConfig {
         if (chosen && chosen !== own) return { kind: 'shared', shared: chosen };
         const stored = details[own];
         if (!stored) return { kind: 'none' };
+        if (stored.session) {
+            return { kind: 'session', basicUser: stored.sessionUser || '', saved: true };
+        }
+        if (stored.query?.length) {
+            // Before headers: a Plex widget has both -- its Accept header is
+            // sent for it -- and the key the reader typed is the query one.
+            return { kind: 'query', queryName: stored.query[0], saved: true };
+        }
         if (stored.headers?.length) {
             return { kind: 'header', headerName: stored.headers[0], saved: true };
         }
@@ -15469,8 +15495,49 @@ class DashboardConfig {
         if (String(now.secret || '')) return true;
         return before.kind !== now.kind
             || String(before.headerName || '') !== String(now.headerName || '')
+            || String(before.queryName || '') !== String(now.queryName || '')
             || String(before.basicUser || '') !== String(now.basicUser || '')
             || String(before.shared || '') !== String(now.shared || '');
+    }
+
+    /*
+     * The part of the address the reader still has to fill in.
+     *
+     * Two presets ship an address that cannot work as given: Home Assistant
+     * names one entity out of a few hundred and Proxmox names one node, and
+     * neither has a sensible default. Left as YOUR_SENSOR the service answers
+     * 404 "Entity not found" -- correct, and no help at all if you have just
+     * pasted a token and are looking for what you did wrong.
+     *
+     * Said beside the address rather than left to the trial, so it is read
+     * before Ask now rather than after it.
+     */
+    renderAddressPlaceholderNote(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const catalogue = window.DashboardWidgetPresets;
+        const draft = this.widgetDraft(index, { create: false });
+        const config = draft?.config || widget?.config || {};
+        const preset = catalogue?.byId?.(String(config.presetId || ''));
+        const marker = preset?.fillIn;
+        if (!marker) return '';
+        /*
+         * The placeholder may be in the address or in the figures, depending on
+         * the service: Proxmox names its node in the path, Home Assistant names
+         * its entity in each figure because one address answers with all of
+         * them. Both are "something still to fill in", so both are looked at.
+         */
+        const inAddress = String(config.url || '').includes(marker);
+        const inFields = (Array.isArray(config.fields) ? config.fields : [])
+            .some((field) => String(field?.path || '').includes(marker));
+        if (!inAddress && !inFields) return '';
+        return `
+            <p class="config-widget-note config-widget-note-hint">${esc(
+                (inFields
+                    ? this.t('config.widgetCustomFillInFields',
+                        'Replace {what} in the figures below with entities of your own — one figure per reading.')
+                    : this.t('config.widgetCustomFillIn',
+                        'Replace {what} in the address with your own — the service cannot answer until you do.'))
+                    .replace('{what}', marker))}</p>`;
     }
 
     /*
@@ -15601,6 +15668,69 @@ class DashboardConfig {
         return seeds.some((seed) => typed === seed.trim());
     }
 
+    /*
+     * Redraws the figures table in place, keeping whatever is being typed.
+     *
+     * The whole panel is not repainted, because the address, the key and every
+     * path are text boxes: redrawing them takes the caret with it, and a trial
+     * finishing while somebody is mid-path would move it out from under them.
+     */
+    repaintCustomFields(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block) return;
+        const host = document.querySelector(`[data-widget-row="${index}"]`);
+        const group = host?.querySelector('.config-custom-field')?.closest('.config-custom-group');
+        if (!group) return;
+        const active = document.activeElement;
+        const rows = [...group.querySelectorAll('.config-custom-field')];
+        rows.forEach((rowEl, row) => {
+            const found = rowEl.querySelector('.config-custom-found');
+            if (!found) return;
+            // Only the one cell is replaced, so nothing the reader is typing in
+            // is touched at all.
+            found.outerHTML = this.renderFieldFound(block, row);
+        });
+        if (active && document.contains(active) && active.focus) active.focus();
+    }
+
+    /*
+     * What this path actually found, beside the path itself.
+     *
+     * The trial already knew: it reports a value per figure, in the same order
+     * as the rows. But it reported them in a block of its own, below the
+     * address and the sign-in and often below the fold -- so writing a path
+     * meant typing it here, pressing Ask now, scrolling down, reading "that
+     * path found nothing", scrolling back, and guessing again. Beside the box,
+     * the same answer is read while the path is being written.
+     *
+     * Blank until something has been asked. A row that has never been tried has
+     * no answer to give, and inventing one would be worse than the space.
+     */
+    renderFieldFound(widget, row) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const values = this.customProbeState(widget?.id)?.data?.result?.values;
+        /*
+         * An empty column under a heading reads as broken rather than as
+         * waiting, so it says which of the two it is. Nothing has been asked is
+         * the state every panel opens in and the one where the reader most
+         * needs telling what to press.
+         */
+        if (!Array.isArray(values) || !values[row]) {
+            return `<span class="config-custom-found is-waiting">${esc(
+                this.t('config.widgetCustomFoundWaiting', 'Ask now'))}</span>`;
+        }
+        const value = values[row];
+        if (value.missing) {
+            return `<span class="config-custom-found is-missing" title="${esc(
+                this.t('config.widgetCustomTestMissing', 'that path found nothing'))}">${esc(
+                this.t('config.widgetCustomFoundNothing', 'not found'))}</span>`;
+        }
+        const shown = String(value.value ?? '');
+        // Titled as well as shown: a figure can be longer than the column, and
+        // the whole of it is what the reader is checking against.
+        return `<span class="config-custom-found" title="${esc(shown)}">${esc(shown)}</span>`;
+    }
+
     /** Open and struck-through eyes, as one inline SVG each. */
     secretEyeIcon(revealed) {
         const open = `<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2.2"/>`;
@@ -15664,6 +15794,52 @@ class DashboardConfig {
                 ${schemeHint}
             </div>`;
 
+        /*
+         * The address form: one box, for a service that has no header form.
+         *
+         * The parameter name is not editable, unlike the header name beside it.
+         * A header name is something a reader might reasonably know better than
+         * the preset does; a query parameter is part of the path the preset
+         * already filled in, and a name typed here that does not match the
+         * address would fill in a parameter the service never reads.
+         */
+        const query = state.kind !== 'query' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-query">${esc(this.t('config.widgetAuthKey', 'API key'))}</label>
+                ${this.renderSecretInput({
+                    id: `${id}-query`, index, field: `query:${state.queryName || ''}`,
+                    saved: state.saved, placeholder: secretPlaceholder,
+                })}
+                <p class="config-widget-note config-widget-note-hint">${esc(this.t('config.widgetAuthQueryNote',
+                    'This service takes its key in the address. It is kept in the credential file all the same, and put into the request as {name}.')
+                    .replace('{name}', state.queryName || 'apikey'))}</p>
+            </div>`;
+
+        /*
+         * Signing in for a session: the two things that do not expire.
+         *
+         * Drawn like basic auth because it is the same two questions, and the
+         * difference -- that these are posted to a login endpoint rather than
+         * sent on every request -- is the server's business rather than the
+         * reader's.
+         */
+        const session = state.kind !== 'session' ? '' : `
+            <div class="config-widget-field">
+                <label for="${id}-suser">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
+                <input type="text" id="${id}-suser" class="config-text" data-widget-auth="basicUser"
+                    data-widget-index="${index}" maxlength="128" spellcheck="false" autocomplete="off"
+                    value="${esc(state.basicUser || '')}">
+            </div>
+            <div class="config-widget-field">
+                <label for="${id}-spass">${esc(this.t('config.widgetAuthPassword', 'Password'))}</label>
+                ${this.renderSecretInput({
+                    id: `${id}-spass`, index, field: 'sessionPassword',
+                    saved: state.saved, placeholder: secretPlaceholder,
+                })}
+                <p class="config-widget-note config-widget-note-hint">${esc(this.t('config.widgetAuthSessionNote',
+                    'nextDash signs in with these and keeps the session itself, so nothing has to be replaced when it expires.'))}</p>
+            </div>`;
+
         const basic = state.kind !== 'basic' ? '' : `
             <div class="config-widget-field">
                 <label for="${id}-user">${esc(this.t('config.widgetAuthUser', 'Username'))}</label>
@@ -15689,7 +15865,8 @@ class DashboardConfig {
                 </select>
             </div>`;
 
-        const explains = state.kind === 'header' || state.kind === 'basic';
+        const explains = state.kind === 'header' || state.kind === 'basic'
+            || state.kind === 'query' || state.kind === 'session';
         return `
             <div class="config-widget-auth" data-widget-auth-form="${index}">
                 <div class="config-widget-field">
@@ -15697,11 +15874,17 @@ class DashboardConfig {
                     <select id="${id}" class="config-select" data-widget-auth="kind" data-widget-index="${index}">
                         ${pick('none', 'config.widgetAuthNone', 'Nothing — ask anonymously')}
                         ${pick('header', 'config.widgetAuthHeader', 'An API key')}
+                        ${state.kind === 'query'
+                            ? pick('query', 'config.widgetAuthQuery', 'A key in the address')
+                            : ''}
+                        ${state.kind === 'session'
+                            ? pick('session', 'config.widgetAuthSession', 'A sign-in that nextDash keeps')
+                            : ''}
                         ${pick('basic', 'config.widgetAuthBasic', 'A username and password')}
                         ${shared.length ? pick('shared', 'config.widgetAuthShared', 'A sign-in saved elsewhere') : ''}
                     </select>
                 </div>
-                ${header}${basic}${sharedPick}
+                ${header}${query}${session}${basic}${sharedPick}
                 ${explains ? `
                     <p class="config-widget-note">${esc(this.t('config.widgetAuthNote',
                         'Kept in a separate file that stays out of your backups and exports, so a key never travels in a ZIP. The widget itself stores only a reference.'))}</p>` : ''}
@@ -15813,6 +15996,38 @@ class DashboardConfig {
                 this.t(`config.widgetShape.${shape}`, shape))}</option>`).join('');
 
         /*
+         * How many decimal places, or "however this format writes it".
+         *
+         * Auto is first and is what every widget saved before this says, so
+         * nothing changes underneath anyone. The rest are 0 to 3: past three the
+         * digits are longer than the tile and further from what any service
+         * reports honestly, and a tile is one figure rather than a column of
+         * them to line up.
+         */
+        const decimalOptions = (selected) => {
+            const chosen = Number.isInteger(selected) ? String(selected) : '';
+            return ['', '0', '1', '2', '3'].map((value) =>
+                `<option value="${value}" ${value === chosen ? 'selected' : ''}>${esc(value === ''
+                    ? this.t('config.widgetDecimalsAuto', 'Auto')
+                    : value)}</option>`).join('');
+        };
+
+        /*
+         * Which unit a Data figure already counts in.
+         *
+         * In the same column as Decimals and shown instead of it, because they
+         * are the same question asked of different formats -- "how should this
+         * number be read" -- and a seventh column for a control that applies to
+         * one format would cost every row the width.
+         */
+        const unitOptions = (selected) => {
+            const chosen = DashboardConfig.CUSTOM_DATA_UNITS.includes(selected) ? selected : 'b';
+            return DashboardConfig.CUSTOM_DATA_UNITS.map((unit) =>
+                `<option value="${unit}" ${unit === chosen ? 'selected' : ''}>${esc(
+                    this.t(`config.widgetDataUnit.${unit}`, unit.toUpperCase()))}</option>`).join('');
+        };
+
+        /*
          * A header row, because three unlabelled boxes side by side is a puzzle.
          *
          * Placeholders alone were not enough: they vanish the moment a row has
@@ -15824,7 +16039,11 @@ class DashboardConfig {
                     <span>${esc(this.t('config.widgetCustomPath', 'Path'))}</span>
                     <span>${esc(this.t('config.widgetCustomLabel', 'Label'))}</span>
                     <span>${esc(this.t('config.widgetCustomFormat', 'Show as'))}</span>
+                    <span>${esc(fields.every((f) => f?.format === 'data')
+                        ? this.t('config.widgetCustomDataUnit', 'Counted in')
+                        : this.t('config.widgetCustomDecimals', 'Decimals'))}</span>
                     <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
+                    <span>${esc(this.t('config.widgetCustomFound', 'Found'))}</span>
                     <span></span>
                 </div>` : '';
 
@@ -15842,10 +16061,19 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomFormat', 'Show as'))}">${
                     formatOptions(field?.format || 'text')}</select>
+                <select class="config-select" data-custom-field="dataUnit" data-custom-index="${index}"
+                    data-custom-row="${row}" ${field?.format === 'data' ? '' : 'hidden'}
+                    aria-label="${esc(this.t('config.widgetCustomDataUnit', 'Counted in'))}">${
+                    unitOptions(field?.dataUnit)}</select>
+                <select class="config-select" data-custom-field="decimals" data-custom-index="${index}"
+                    data-custom-row="${row}" ${field?.format === 'data' ? 'hidden' : ''}
+                    aria-label="${esc(this.t('config.widgetCustomDecimals', 'Decimals'))}">${
+                    decimalOptions(field?.decimals)}</select>
                 <select class="config-select" data-custom-field="shape" data-custom-index="${index}"
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomShape', 'Size'))}">${
                     shapeOptions(field?.format || 'text', field?.shape || 'normal')}</select>
+                ${this.renderFieldFound(widget, row)}
                 <button type="button" class="config-btn config-btn--small config-btn--danger"
                     data-custom-remove="${row}" data-custom-index="${index}"
                     aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
@@ -16015,18 +16243,90 @@ class DashboardConfig {
 
         // The document itself, last and in full: it is the thing a path is
         // written against, and it is also the only part worth scrolling.
+        /*
+         * A search box over the document, once it is long enough to need one.
+         *
+         * A tile reads a figure or two, but the reader is looking for the one
+         * key among however many the service sent -- and Home Assistant answers
+         * /api/states with 489 entities in 211 KB, of which the panel shows the
+         * first 16. Scrolling that is not finding anything; the entities the
+         * reader came for are the ones past the cut, and the panel saying "the
+         * first part is shown" is true and no help.
+         *
+         * Filtering happens over the whole body rather than the shown part, so
+         * a key that was cut off is still findable -- which is the entire point.
+         */
+        const widgetId = widget?.id;
+        const query = String(this.customProbeState(widgetId)?.find || '');
+        // Always the same shape, so the template does not have to know whether
+        // a search is running: reading .text off a bare string gave undefined,
+        // and the document rendered empty until something was typed.
+        const shown = this.filterProbeBody(data.body, query);
         const body = data.body
             ? `
             <div class="config-probe-block">
-                <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestAnswer',
-                    'What came back'))}</h5>
-                <pre class="config-probe-body" tabindex="0">${esc(data.body)}</pre>
-                ${data.truncated ? `<p class="config-probe-note">${esc(this.t(
-                    'config.widgetCustomTestTruncated',
-                    'Long answer — the first part is shown.'))}</p>` : ''}
+                <div class="config-probe-head">
+                    <h5 class="config-probe-title">${esc(this.t('config.widgetCustomTestAnswer',
+                        'What came back'))}</h5>
+                    <input type="search" class="config-text config-probe-find"
+                        data-custom-find="${esc(String(widgetId))}" value="${esc(query)}"
+                        placeholder="${esc(this.t('config.widgetCustomTestFind', 'Find a key…'))}"
+                        aria-label="${esc(this.t('config.widgetCustomTestFind', 'Find a key…'))}">
+                </div>
+                <pre class="config-probe-body" tabindex="0">${esc(shown.text)}</pre>
+                ${shown.note ? `<p class="config-probe-note">${esc(shown.note)}</p>`
+                    : (data.truncated ? `<p class="config-probe-note">${esc(this.t(
+                        'config.widgetCustomTestTruncated',
+                        'Long answer — the first part is shown.'))}</p>` : '')}
             </div>` : '';
 
         return `${note}${facts}${error}${figures}${list}${body}`;
+    }
+
+    /*
+     * The lines of a document that mention what was typed, with their context.
+     *
+     * Lines rather than a highlight, because JSON is written one key to a line
+     * and the answer to "where is my sensor" is that line and the few around
+     * it. A match on its own would be a key with no value beside it.
+     */
+    filterProbeBody(text, query) {
+        const needle = query.trim().toLowerCase();
+        if (!needle) return { text, note: '' };
+        const lines = String(text || '').split('\n');
+        const keep = new Set();
+        let hits = 0;
+        lines.forEach((line, at) => {
+            if (!line.toLowerCase().includes(needle)) return;
+            hits += 1;
+            // Two lines either side: enough to see which object a key sits in
+            // without the result becoming the document again.
+            for (let n = at - 2; n <= at + 2; n += 1) {
+                if (n >= 0 && n < lines.length) keep.add(n);
+            }
+        });
+        if (!hits) {
+            return {
+                text: '',
+                note: this.t('config.widgetCustomTestNoMatch',
+                    'Nothing in the answer matches “{q}”.').replace('{q}', query),
+            };
+        }
+        const out = [];
+        let previous = -1;
+        [...keep].sort((a, b) => a - b).forEach((at) => {
+            // A gap in the line numbers is a gap in the document, and saying so
+            // beats running two unrelated objects together.
+            if (previous >= 0 && at > previous + 1) out.push('  …');
+            out.push(lines[at]);
+            previous = at;
+        });
+        return {
+            text: out.join('\n'),
+            note: this.t('config.widgetCustomTestMatches',
+                '{n} matching lines. Clear the box to see the whole answer.')
+                .replace('{n}', String(hits)),
+        };
     }
 
     /*
@@ -16047,13 +16347,78 @@ class DashboardConfig {
         const config = { ...(draft?.config || block?.config || {}) };
         const auth = draft?.auth || this.storedCredentialState(block);
         if (auth?.kind === 'shared') config.credentialId = auth.shared || '';
-        else if (auth?.kind === 'header' || auth?.kind === 'basic') {
+        else if (auth?.kind === 'header' || auth?.kind === 'basic' || auth?.kind === 'query'
+            || auth?.kind === 'session') {
             config.credentialId = this.widgetCredentialId(block);
         } else config.credentialId = '';
         if (!config.credentialId) delete config.credentialId;
         // enabled is about the dashboard, not about the request.
         delete config.enabled;
+
+        /*
+         * The key as typed, when it has not been saved yet.
+         *
+         * credentialId above is a reference to what is *stored*, so a widget
+         * being set up for the first time tested itself anonymously: the
+         * service answered 401, which looks exactly like a wrong key -- the one
+         * conclusion this panel exists to rule out. Sent alongside rather than
+         * instead, so a panel whose key is already filed goes on naming it.
+         *
+         * Not saved by sending: the route uses it for that one request. Which
+         * is what the panel already promises -- "nothing is saved by asking".
+         */
+        const secret = String(draft?.auth?.secret || '').trim();
+        if (secret && !this.isSchemeOnly(secret)) {
+            const kind = draft.auth.kind;
+            if (kind === 'header' && draft.auth.headerName) {
+                config.draftCredential = { headers: { [draft.auth.headerName]: secret } };
+            } else if (kind === 'query' && draft.auth.queryName) {
+                config.draftCredential = {
+                    query: { [draft.auth.queryName]: secret },
+                    ...(draft.auth.fixedHeaders ? { headers: { ...draft.auth.fixedHeaders } } : {}),
+                };
+            } else if (kind === 'session' && draft.auth.basicUser && draft.auth.session) {
+                config.draftCredential = {
+                    session: {
+                        ...draft.auth.session,
+                        user: draft.auth.basicUser, password: secret,
+                    },
+                };
+            } else if (kind === 'basic' && draft.auth.basicUser) {
+                config.draftCredential = {
+                    basicUser: draft.auth.basicUser, basicPassword: secret,
+                };
+            }
+        }
         return config;
+    }
+
+    /*
+     * What to say when nextDash itself would not answer.
+     *
+     * Each of these is a different thing for the reader to do, and the panel
+     * saying "check your write token" over a rate limit or a refused address
+     * sends them to look at something that is working.
+     */
+    customProbeFailure(status) {
+        if (status === 401 || status === 403) {
+            return this.t('config.widgetCustomTestUnauthorized',
+                'nextDash refused the request. If this install uses a write token, check it is set.');
+        }
+        if (status === 429) {
+            return this.t('config.widgetCustomTestRateLimited',
+                'Too many requests in a row — wait a moment and ask again.');
+        }
+        if (status === 400) {
+            return this.t('config.widgetCustomTestRejected',
+                'This panel is not filled in enough to ask yet — check the address.');
+        }
+        if (status >= 500) {
+            return this.t('config.widgetCustomTestServerError',
+                'nextDash ran into an error trying to ask. The log will say more.');
+        }
+        return this.t('config.widgetCustomTestFailed',
+            'nextDash itself could not be asked. If this install uses a write token, check it is set.');
     }
 
     /*
@@ -16109,20 +16474,32 @@ class DashboardConfig {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.customTestPayload(index)),
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res.status });
             const data = await res.json();
             state.changed = this.customProbeChanges(state.data, data);
             state.data = data;
             state.at = Date.now();
-        } catch (_error) {
             /*
-             * This one is nextDash refusing, not the service: the route is
-             * behind the write token, and a panel saying "no answer from that
-             * address" over a token problem would send the reader to check a
-             * machine that is perfectly fine.
+             * The figures table shows what each path found, so it is stale the
+             * moment a new answer lands. Redrawn here rather than left to the
+             * next repaint: the reader pressed Ask now to see this.
              */
-            state.failed = this.t('config.widgetCustomTestFailed',
-                'nextDash itself could not be asked. If this install uses a write token, check it is set.');
+            this.repaintCustomFields(index);
+        } catch (error) {
+            /*
+             * This one is nextDash refusing, not the service -- but which
+             * refusal matters, and the message used to name a write token
+             * whatever had gone wrong. An install with no token set was sent to
+             * check a token it does not have, over a panel that had rejected
+             * the request for some entirely different reason.
+             *
+             * So the status says what to say. Anything unrecognised keeps the
+             * old wording, which is the honest answer when the answer is not
+             * known: something between the panel and the server, and the token
+             * is the one thing a reader can check.
+             */
+            const status = Number(error?.cause) || 0;
+            state.failed = this.customProbeFailure(status);
             state.data = null;
             this.stopCustomProbeLive();
             this.syncCustomProbeControls(index);
@@ -16391,6 +16768,7 @@ class DashboardConfig {
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
                         'Where to read from'))}</h4>
                     <div class="config-custom-grid">${rows}</div>
+                    ${this.renderAddressPlaceholderNote(widget, index)}
                     ${this.renderWidgetCredential(widget, index)}
                 </div>
                 ${this.renderCustomWidgetFields(widget, index)}
@@ -16652,6 +17030,29 @@ class DashboardConfig {
             }
         });
 
+        /*
+         * Filtering the answer is a redraw of what is already held, not another
+         * request: the service was asked once and the reader is reading it.
+         */
+        body.addEventListener('input', (event) => {
+            const find = event.target.closest?.('[data-custom-find]');
+            if (!find) return;
+            const widgetId = find.getAttribute('data-custom-find');
+            const state = this.customProbeState(widgetId, { create: true });
+            if (!state) return;
+            state.find = find.value;
+            const index = (this._widgetBlocks || []).findIndex((b) => String(b?.id) === widgetId);
+            if (index < 0) return;
+            const caret = find.selectionStart;
+            this.paintCustomProbe(widgetId, index);
+            // The box is redrawn with the block, so the caret is put back.
+            const again = document.querySelector(`[data-custom-find="${CSS.escape(widgetId)}"]`);
+            if (again) {
+                again.focus();
+                again.setSelectionRange(caret, caret);
+            }
+        });
+
         body.addEventListener('change', (event) => {
             const target = event.target;
             if (!target?.closest) return;
@@ -16767,8 +17168,12 @@ class DashboardConfig {
                  * rather than patched in place: this is a dropdown being
                  * changed, so there is no caret to lose.
                  */
+                if (which === 'path') this.syncPlaceholderNote(at);
                 if (which === 'format') {
                     this.dropMeterOnNonPercent(at, indexOn(field, 'data-custom-row'));
+                    // Data asks which unit it counts in where every other
+                    // format asks for decimals, so the row is redrawn rather
+                    // than left showing the question its format does not have.
                     this.repaintWidgetsBody();
                 }
                 this.refreshWidgetSaveBar(at);
@@ -16781,6 +17186,10 @@ class DashboardConfig {
                 this.updateWidgetDraft(index, setting);
                 if (setting.getAttribute('data-widget-setting') === 'url') {
                     this.restorePresetPath(index, setting);
+                    // The address is a text box, so it is not redrawn on every
+                    // keystroke -- the note is toggled where it stands, the way
+                    // the scheme hint is.
+                    this.syncPlaceholderNote(index);
                 }
                 this.refreshWidgetSaveBar(index);
                 return;
@@ -17012,7 +17421,23 @@ class DashboardConfig {
         if (!draft) return;
         const fields = Array.isArray(draft.config.fields) ? draft.config.fields : [];
         if (!fields[row]) return;
-        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        if (key === 'decimals') {
+            /*
+             * A number, or the key is not there at all.
+             *
+             * Auto is the absence of a choice rather than a value meaning it,
+             * so it deletes the key: a stored 0 is a real answer -- round to
+             * whole -- and the two must not collapse into each other. Stored as
+             * a number because the server reads one, and "2" would be read as
+             * nothing chosen.
+             */
+            const next = { ...fields[row] };
+            if (value === '') delete next.decimals;
+            else next.decimals = Number(value);
+            fields[row] = next;
+        } else {
+            fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        }
         draft.config.fields = fields;
     }
 
@@ -17064,6 +17489,15 @@ class DashboardConfig {
             draft.auth = {
                 kind: value,
                 headerName: before.headerName || '',
+                // queryName and fixedHeaders come from the preset rather than
+                // from anything on screen, so switching kinds must not lose
+                // them: there is no box that would put them back.
+                queryName: before.queryName || '',
+                fixedHeaders: before.fixedHeaders || null,
+                // Where to sign in comes from the preset and has no box, so
+                // switching kinds must not lose it.
+                session: before.session || null,
+                seed: before.seed || '',
                 basicUser: before.basicUser || '',
                 saved: before.saved === true && before.kind === value,
             };
@@ -17077,6 +17511,24 @@ class DashboardConfig {
         if (!draft) return;
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
+    }
+
+    /** Shows or hides the fill-in note as the address is typed. */
+    syncPlaceholderNote(index) {
+        const body = document.querySelector(`[data-widget-row="${index}"]`);
+        if (!body) return;
+        const group = body.querySelector('.config-custom-grid')?.parentElement;
+        if (!group) return;
+        const existing = group.querySelector(':scope > .config-widget-note-hint');
+        const wanted = this.renderAddressPlaceholderNote(
+            (this._widgetBlocks || [])[index], index);
+        if (!wanted) {
+            existing?.remove();
+            return;
+        }
+        if (existing) return;
+        const grid = group.querySelector('.config-custom-grid');
+        grid?.insertAdjacentHTML('afterend', wanted);
     }
 
     /*
@@ -17152,8 +17604,42 @@ class DashboardConfig {
             };
         } else if (preset.auth === 'basic') {
             draft.auth = { kind: 'basic', headerName: '', basicUser: '' };
+        } else if (preset.auth === 'session') {
+            /*
+             * A service that signs you in rather than taking a key.
+             *
+             * What is asked for is what does not expire -- the username and
+             * password -- and the server does the signing in. Asking for the
+             * cookie instead was the first attempt, and it is a widget that
+             * works until the session lapses and then reads 403 with nothing on
+             * screen explaining why.
+             */
+            draft.auth = {
+                kind: 'session', headerName: '', basicUser: '',
+                session: preset.session || null,
+            };
+        } else if (preset.auth === 'query') {
+            /*
+             * A key that goes in the address is still a key.
+             *
+             * SABnzbd, Tautulli, Pi-hole v5 and Plex offer no header form, so
+             * this used to fall through to "no credential needed" -- which left
+             * the sign-in block hidden, the API key box gone, and YOUR_KEY
+             * sitting in the address for the reader to replace by hand. The box
+             * asked for nothing and the address asked for everything, which is
+             * the opposite of what the panel says it does.
+             *
+             * It is an ordinary sign-in now. The value goes to the credential
+             * file like any other, the stored address keeps its placeholder,
+             * and the server fills the parameter in on each request -- so the
+             * key stays out of bookmarks-N.json and out of every export.
+             */
+            draft.auth = {
+                kind: 'query', queryName: preset.queryName || '',
+                headerName: '', basicUser: '',
+                fixedHeaders: preset.fixedHeaders || null,
+            };
         } else {
-            // none, or a service that carries its key in the address itself.
             draft.auth = { kind: 'none' };
         }
         this.repaintWidgetsBody();
@@ -17240,9 +17726,36 @@ class DashboardConfig {
         const stored = this.storedCredentialState(block);
         const config = { ...draft.config };
 
-        if (auth.kind === 'header' || auth.kind === 'basic') {
+        if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
+            || auth.kind === 'session') {
             const payload = { id: own, label: block.title || block.type || own };
-            if (auth.kind === 'header') {
+            if (auth.kind === 'session') {
+                const user = String(auth.basicUser || '').trim();
+                if (!user) { say(this.t('config.widgetAuthNeedsUser', 'Fill in the username first.')); return; }
+                if (!secret && !(stored.kind === 'session' && stored.basicUser === user)) {
+                    say(this.t('config.widgetAuthNeedsPassword', 'Fill in the password as well.'));
+                    return;
+                }
+                if (secret) {
+                    // The login is described by the preset, not typed: where to
+                    // post and what to call the fields is knowledge, not a
+                    // preference, and a box for it would be a box nobody can
+                    // answer.
+                    payload.session = { ...(auth.session || {}), user, password: secret };
+                }
+            } else if (auth.kind === 'query') {
+                const name = String(auth.queryName || '').trim();
+                if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
+                if (!secret && !(stored.kind === 'query' && stored.queryName === name)) {
+                    say(this.t('config.widgetAuthNeedsKey', 'Paste the key as well.'));
+                    return;
+                }
+                if (secret) payload.query = { [name]: secret };
+                // Plex answers XML unless asked otherwise, and that Accept
+                // header is not a secret anyone should be asked to type: it
+                // rides along with the key rather than being a second question.
+                if (auth.fixedHeaders) payload.headers = { ...auth.fixedHeaders };
+            } else if (auth.kind === 'header') {
                 const name = String(auth.headerName || '').trim();
                 if (!name) { say(this.t('config.widgetAuthNeedsHeader', 'Name the header first.')); return; }
                 if (!secret && !(stored.kind === 'header' && stored.headerName === name)) {
@@ -17276,7 +17789,7 @@ class DashboardConfig {
             // Nothing to write when only the label changed and the secret is
             // already filed: the value never comes back from the server, so
             // re-filing it is not something this panel can do.
-            if (payload.headers || payload.basicPassword) {
+            if (payload.headers || payload.basicPassword || payload.query || payload.session) {
                 say(this.t('config.widgetAuthSaving', 'Saving…'));
                 try {
                     const res = await this.writeFetch('/api/health/credentials', {

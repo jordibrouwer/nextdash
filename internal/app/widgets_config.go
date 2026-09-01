@@ -458,6 +458,19 @@ func sanitizeCustomWidgetFields(raw any) []any {
 				clean["tone"] = tone
 			}
 		}
+		// How many decimal places, when the reader chose. Kept as a number, and
+		// left out entirely when nothing was chosen -- a stored 0 means "round
+		// to whole", which is a different answer from "however this format
+		// writes it", and writing 0 for both would collapse the two.
+		if places := decimalsFrom(entry["decimals"]); places != nil {
+			clean["decimals"] = *places
+		}
+		// Which unit a Data figure already counts in. Only meaningful for that
+		// format, and left out where it is not, so a config says nothing it
+		// does not mean.
+		if format == "data" {
+			clean["dataUnit"] = dataUnitFrom(entry["dataUnit"])
+		}
 		out = append(out, clean)
 	}
 	if len(out) == 0 {
