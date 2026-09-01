@@ -1972,6 +1972,8 @@
     "widgetShape.meter": "Barre",
     "widgetCustomShape": "Taille",
     "widgetCustomFound": "Trouvé",
+    "widgetCustomFoundWaiting": "Pas encore demandé",
+    "widgetCustomFoundNothing": "introuvable",
     "widgetCustomDecimals": "Décimales",
     "widgetDecimalsAuto": "Auto",
     "widgetFormat.bytes": "Taille",

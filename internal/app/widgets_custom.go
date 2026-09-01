@@ -450,6 +450,80 @@ func clampInt(value, low, high int) int {
 }
 
 /*
+lookupNamedListEntry reads "sensor.temperatuur_beneden.state" against a list.
+
+An entity_id is dotted, and so is the path syntax, so the two cannot be told
+apart by splitting: "sensor.temperatuur_beneden_temperatuur.state" is either one
+name and one step, or three steps, and only the document knows which.
+
+So the longest prefix that names an entry wins, and whatever is left is walked
+into it. Longest first, because a service with both "a" and "a.b" should give
+the more specific one -- and because a prefix that matches nothing costs one
+comparison against a list this code was going to walk anyway.
+
+Only against a list, and only when a whole prefix matches an identifying field.
+A document that is an object is left entirely alone: the old walk is what runs,
+and nothing that used to resolve resolves differently.
+*/
+func lookupNamedListEntry(document any, path string) (any, bool) {
+	list, ok := document.([]any)
+	if !ok || len(list) == 0 {
+		return nil, false
+	}
+	segments := splitCustomPath(path)
+	// A single segment cannot be a dotted name, and a bracket in the first
+	// segment means the reader already said which entry they meant.
+	if len(segments) < 2 || strings.Contains(segments[0], "[") {
+		return nil, false
+	}
+	for take := len(segments); take >= 2; take-- {
+		name := strings.Join(segments[:take], ".")
+		entry, found := listEntryNamed(list, name)
+		if !found {
+			continue
+		}
+		rest := segments[take:]
+		if len(rest) == 0 {
+			// The name on its own: a reader who wrote only the entity means the
+			// reading it carries, which is what every one of these documents
+			// calls "state". Falling back to the entry itself would put a whole
+			// object on a tile.
+			if object, isObject := entry.(map[string]any); isObject {
+				if state, has := object["state"]; has {
+					return state, true
+				}
+			}
+			return entry, true
+		}
+		return customWidgetLookup(entry, strings.Join(rest, "."))
+	}
+	return nil, false
+}
+
+/*
+listEntryNamed finds the entry of a list that identifies itself by this name.
+
+The identifying field is not universal, so a short list of the ones services
+actually use is tried in order. entity_id is Home Assistant's; id and name cover
+most of the rest. Exactly one entry is returned and the first match wins, which
+is the promise every other path makes.
+*/
+func listEntryNamed(list []any, name string) (any, bool) {
+	for _, key := range []string{"entity_id", "id", "name", "key", "slug"} {
+		for _, entry := range list {
+			object, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			if value, has := object[key]; has && fmt.Sprint(value) == name {
+				return entry, true
+			}
+		}
+	}
+	return nil, false
+}
+
+/*
 splitCustomPath splits on dots, except inside brackets.
 
 An entity_id is itself dotted -- "sensor.p1_meter_vermogen" -- so splitting the
@@ -495,6 +569,9 @@ Still exactly one: the first match wins and a second identical key would be the
 service's own problem, but nothing here fans out. A path names one value.
 */
 func customWidgetLookup(document any, path string) (any, bool) {
+	if value, ok := lookupNamedListEntry(document, path); ok {
+		return value, true
+	}
 	current := document
 	for _, segment := range splitCustomPath(path) {
 		segment = strings.TrimSpace(segment)
@@ -539,11 +616,33 @@ func customWidgetLookup(document any, path string) (any, bool) {
 		if name != "" {
 			object, ok := current.(map[string]any)
 			if !ok {
-				return nil, false
-			}
-			current, ok = object[name]
-			if !ok {
-				return nil, false
+				/*
+				 * A name against a list, which is how a reader writes it.
+				 *
+				 * Home Assistant calls a thing "sensor.temperatuur_beneden" and
+				 * answers /api/states with every entity in one array, so that is
+				 * the name anyone types -- and it found nothing, because an
+				 * array has no keys. The bracket form says the same thing and
+				 * says it in a syntax nobody was told about.
+				 *
+				 * So a name against a list is read as "the entry that calls
+				 * itself this". Safe by construction: an array has no keys of
+				 * its own, so there is nothing this can shadow.
+				 */
+				if list, isList := current.([]any); isList {
+					entry, found := listEntryNamed(list, name)
+					if !found {
+						return nil, false
+					}
+					current = entry
+				} else {
+					return nil, false
+				}
+			} else {
+				current, ok = object[name]
+				if !ok {
+					return nil, false
+				}
 			}
 		}
 		for _, sel := range selectors {

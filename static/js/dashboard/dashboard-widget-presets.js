@@ -392,9 +392,12 @@
             fillIn: 'YOUR_SENSOR',
             note: 'A long-lived access token from your profile page. Then replace YOUR_SENSOR in each figure with an entity of your own — Developer tools → States lists them.',
             fields: [
-                { path: '[entity_id=sensor.YOUR_SENSOR].state', label: 'now', format: 'text', shape: 'large' },
-                { path: '[entity_id=sensor.YOUR_SENSOR].attributes.friendly_name', label: 'sensor', format: 'text' },
-                { path: '[entity_id=sensor.YOUR_SENSOR].last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
+                // The entity's own name, as Home Assistant writes it. The
+                // [entity_id=…] form says the same thing and says it in a
+                // syntax nobody was told about.
+                { path: 'sensor.YOUR_SENSOR', label: 'now', format: 'text', shape: 'large' },
+                { path: 'sensor.YOUR_SENSOR.attributes.friendly_name', label: 'sensor', format: 'text' },
+                { path: 'sensor.YOUR_SENSOR.last_updated', label: 'updated', format: 'relativeDate', shape: 'small' },
             ],
         },
         {

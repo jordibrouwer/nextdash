@@ -876,3 +876,107 @@ func TestPathSplittingKeepsBracketsWhole(t *testing.T) {
 		}
 	}
 }
+
+/*
+A list entry named the way its own service names it.
+
+Home Assistant calls a thing "sensor.temperatuur_beneden_temperatuur" and
+answers /api/states with every entity in one array. That name is what anyone
+types, and it found nothing: an array has no keys, and the path was split on
+every dot into "sensor" and the rest. The bracket form said the same thing in a
+syntax nobody had been told about.
+*/
+func TestABareEntityNameFindsItsEntry(t *testing.T) {
+	var document any
+	if err := json.Unmarshal([]byte(`[
+		{"entity_id":"sensor.temperatuur_beneden_temperatuur","state":"23.5",
+		 "attributes":{"friendly_name":"Woonkamer"}},
+		{"entity_id":"sensor.p1_meter_vermogen","state":"-1029"},
+		{"id":"disk.one","used":42},
+		{"name":"eth0","rx":7}
+	]`), &document); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, c := range []struct {
+		path   string
+		want   any
+		ok     bool
+		reason string
+	}{
+		// The name on its own means the reading it carries, not the whole
+		// object -- a tile has nowhere to put an object.
+		{"sensor.temperatuur_beneden_temperatuur", "23.5", true, "a bare name reads its state"},
+		{"sensor.temperatuur_beneden_temperatuur.state", "23.5", true, "and says so explicitly"},
+		{"sensor.temperatuur_beneden_temperatuur.attributes.friendly_name", "Woonkamer", true,
+			"the walk carries on into what was named"},
+		{"sensor.p1_meter_vermogen", "-1029", true, "another entity, same rule"},
+		// entity_id is Home Assistant's; id and name cover most of the rest.
+		{"disk.one.used", float64(42), true, "an id names an entry too"},
+		// The bracket form still works, and still means exactly one entry.
+		{"[entity_id=sensor.p1_meter_vermogen].state", "-1029", true, "the explicit form is unchanged"},
+		{"[0].state", "23.5", true, "and so is a position"},
+		{"sensor.does_not_exist", nil, false, "a name that matches nothing finds nothing"},
+	} {
+		got, ok := customWidgetLookup(document, c.path)
+		if ok != c.ok {
+			t.Errorf("%s found = %v, want %v (%s)", c.path, ok, c.ok, c.reason)
+			continue
+		}
+		if ok && got != c.want {
+			t.Errorf("%s = %v, want %v (%s)", c.path, got, c.want, c.reason)
+		}
+	}
+}
+
+/*
+An object document is left entirely alone.
+
+This only ever runs against a list, so nothing that used to resolve against an
+object can start resolving differently -- which is the whole risk of adding a
+fallback to a path reader every widget shares.
+*/
+func TestTheBareNameFallbackDoesNotTouchObjects(t *testing.T) {
+	var document any
+	if err := json.Unmarshal([]byte(`{
+		"server": {"disk": [{"used": 10}], "name": "one"},
+		"sensor": {"temperatuur": {"state": "9"}}
+	}`), &document); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		path string
+		want any
+	}{
+		{"server.name", "one"},
+		{"server.disk[0].used", float64(10)},
+		{"sensor.temperatuur.state", "9"},
+	} {
+		got, ok := customWidgetLookup(document, c.path)
+		if !ok || got != c.want {
+			t.Errorf("%s = %v (ok=%v), want %v", c.path, got, ok, c.want)
+		}
+	}
+	// And a name that never existed still does not.
+	if _, ok := customWidgetLookup(document, "server.nope"); ok {
+		t.Error("a missing key resolved")
+	}
+}
+
+// The longest prefix wins, so a service with both "a" and "a.b" gives the more
+// specific one rather than whichever happens to sit earlier in the list.
+func TestTheLongestNameWins(t *testing.T) {
+	var document any
+	if err := json.Unmarshal([]byte(`[
+		{"id":"a","state":"short"},
+		{"id":"a.b","state":"long"}
+	]`), &document); err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := customWidgetLookup(document, "a.b"); !ok || got != "long" {
+		t.Errorf("a.b = %v (ok=%v), want the longer name", got, ok)
+	}
+	if got, ok := customWidgetLookup(document, "a.b.state"); !ok || got != "long" {
+		t.Errorf("a.b.state = %v (ok=%v), want the longer name", got, ok)
+	}
+}

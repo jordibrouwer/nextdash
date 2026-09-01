@@ -1972,6 +1972,8 @@
     "widgetShape.meter": "Balken",
     "widgetCustomShape": "Größe",
     "widgetCustomFound": "Gefunden",
+    "widgetCustomFoundWaiting": "Noch nicht gefragt",
+    "widgetCustomFoundNothing": "nicht gefunden",
     "widgetCustomDecimals": "Dezimalstellen",
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Größe",

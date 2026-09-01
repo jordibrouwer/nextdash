@@ -1972,6 +1972,8 @@
     "widgetShape.meter": "Balk",
     "widgetCustomShape": "Formaat",
     "widgetCustomFound": "Gevonden",
+    "widgetCustomFoundWaiting": "Nog niet gevraagd",
+    "widgetCustomFoundNothing": "niet gevonden",
     "widgetCustomDecimals": "Decimalen",
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Grootte",

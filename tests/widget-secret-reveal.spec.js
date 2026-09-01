@@ -873,8 +873,13 @@ test.describe('a preset that needs something filled into its address says so', (
         const url = page.locator(`${row} [data-widget-setting="url"]`);
         await expect(url).toHaveValue(/\/api\/states$/);
 
+        /*
+         * The entity's own name, as Home Assistant writes it. The bracket form
+         * still works and is there for a list keyed by something unusual, but
+         * it is not what a reader would ever think to type.
+         */
         const first = page.locator(`${row} [data-custom-field="path"]`).first();
-        await expect(first).toHaveValue(/^\[entity_id=/);
+        await expect(first).toHaveValue(/^sensor\./);
     });
 
     test('a preset with nothing to fill in says nothing', async ({ page }) => {
@@ -1027,9 +1032,10 @@ test.describe('a figure shows what its path found', () => {
 
         const found = page.locator(`${row} .config-custom-found`);
         await expect(found.nth(0)).toHaveText('23.5 °C', { timeout: 10_000 });
-        // A path that found nothing is the one worth seeing, so it is marked
-        // rather than left blank -- blank reads as "not asked yet".
-        await expect(found.nth(1)).toHaveText('—');
+        // A path that found nothing says so in words. A dash was the first
+        // attempt and it read as an empty cell -- the eye slides over it, and
+        // "the column shows nothing" was the report.
+        await expect(found.nth(1)).toHaveText('not found');
     });
 
     test('it is blank until something has been asked', async ({ page }) => {
@@ -1038,11 +1044,15 @@ test.describe('a figure shows what its path found', () => {
         const index = await addCustom(page);
         const row = `[data-widget-row="${index}"]`;
 
-        // A widget with no figures has no cells at all; one is added so there
-        // is something to be blank.
+        /*
+         * Not blank: an empty column under a heading reads as broken rather
+         * than as waiting, which is exactly how it was reported. It names the
+         * button to press instead.
+         */
         await page.locator(`${row} [data-custom-add="${index}"]`).click();
         const found = page.locator(`${row} .config-custom-found`);
-        await expect(found.first()).toHaveText('', { timeout: 10_000 });
+        await expect(found.first()).toHaveText('Ask now', { timeout: 10_000 });
+        await expect(found.first()).toHaveClass(/is-waiting/);
     });
 
     test('the row still lays out, with the column added', async ({ page }) => {

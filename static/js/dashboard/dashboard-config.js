@@ -15700,13 +15700,21 @@ class DashboardConfig {
     renderFieldFound(widget, row) {
         const esc = (v) => this.dash.escapeHtml(v);
         const values = this.customProbeState(widget?.id)?.data?.result?.values;
+        /*
+         * An empty column under a heading reads as broken rather than as
+         * waiting, so it says which of the two it is. Nothing has been asked is
+         * the state every panel opens in and the one where the reader most
+         * needs telling what to press.
+         */
         if (!Array.isArray(values) || !values[row]) {
-            return '<span class="config-custom-found"></span>';
+            return `<span class="config-custom-found is-waiting">${esc(
+                this.t('config.widgetCustomFoundWaiting', 'Ask now'))}</span>`;
         }
         const value = values[row];
         if (value.missing) {
             return `<span class="config-custom-found is-missing" title="${esc(
-                this.t('config.widgetCustomTestMissing', 'that path found nothing'))}">—</span>`;
+                this.t('config.widgetCustomTestMissing', 'that path found nothing'))}">${esc(
+                this.t('config.widgetCustomFoundNothing', 'not found'))}</span>`;
         }
         const shown = String(value.value ?? '');
         // Titled as well as shown: a figure can be longer than the column, and

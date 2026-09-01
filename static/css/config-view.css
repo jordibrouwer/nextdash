@@ -6173,11 +6173,19 @@ button.config-bm-shortcut-pill {
     color: var(--text-color, #ddd);
 }
 
-/* A path that found nothing is the thing worth seeing, so it is marked rather
+/* A path that found nothing is the thing worth seeing, so it is named rather
    than left as a dash the eye slides over. */
 .config-custom-found.is-missing {
+    color: var(--danger-color, #e06c75);
+    opacity: 0.85;
+}
+
+/* Nothing asked yet is not a failure -- it is the state every panel opens in --
+   so it is quieter than either a value or a miss. */
+.config-custom-found.is-waiting {
     color: var(--text-muted, #888);
-    opacity: 0.7;
+    opacity: 0.55;
+    font-style: italic;
 }
 
 .config-probe-head {
