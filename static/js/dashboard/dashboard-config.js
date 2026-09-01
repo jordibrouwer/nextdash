@@ -16208,6 +16208,34 @@ class DashboardConfig {
     }
 
     /*
+     * What to say when nextDash itself would not answer.
+     *
+     * Each of these is a different thing for the reader to do, and the panel
+     * saying "check your write token" over a rate limit or a refused address
+     * sends them to look at something that is working.
+     */
+    customProbeFailure(status) {
+        if (status === 401 || status === 403) {
+            return this.t('config.widgetCustomTestUnauthorized',
+                'nextDash refused the request. If this install uses a write token, check it is set.');
+        }
+        if (status === 429) {
+            return this.t('config.widgetCustomTestRateLimited',
+                'Too many requests in a row — wait a moment and ask again.');
+        }
+        if (status === 400) {
+            return this.t('config.widgetCustomTestRejected',
+                'This panel is not filled in enough to ask yet — check the address.');
+        }
+        if (status >= 500) {
+            return this.t('config.widgetCustomTestServerError',
+                'nextDash ran into an error trying to ask. The log will say more.');
+        }
+        return this.t('config.widgetCustomTestFailed',
+            'nextDash itself could not be asked. If this install uses a write token, check it is set.');
+    }
+
+    /*
      * Which figures moved since the last answer.
      *
      * The point of watching something is seeing it change, and four numbers
@@ -16260,20 +16288,26 @@ class DashboardConfig {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.customTestPayload(index)),
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res.status });
             const data = await res.json();
             state.changed = this.customProbeChanges(state.data, data);
             state.data = data;
             state.at = Date.now();
-        } catch (_error) {
+        } catch (error) {
             /*
-             * This one is nextDash refusing, not the service: the route is
-             * behind the write token, and a panel saying "no answer from that
-             * address" over a token problem would send the reader to check a
-             * machine that is perfectly fine.
+             * This one is nextDash refusing, not the service -- but which
+             * refusal matters, and the message used to name a write token
+             * whatever had gone wrong. An install with no token set was sent to
+             * check a token it does not have, over a panel that had rejected
+             * the request for some entirely different reason.
+             *
+             * So the status says what to say. Anything unrecognised keeps the
+             * old wording, which is the honest answer when the answer is not
+             * known: something between the panel and the server, and the token
+             * is the one thing a reader can check.
              */
-            state.failed = this.t('config.widgetCustomTestFailed',
-                'nextDash itself could not be asked. If this install uses a write token, check it is set.');
+            const status = Number(error?.cause) || 0;
+            state.failed = this.customProbeFailure(status);
             state.data = null;
             this.stopCustomProbeLive();
             this.syncCustomProbeControls(index);

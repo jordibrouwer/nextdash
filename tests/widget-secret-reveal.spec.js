@@ -756,3 +756,64 @@ test.describe('a service that hands out a session', () => {
             .toHaveValue('jordi');
     });
 });
+
+/*
+ * When nextDash itself will not answer, the panel says which refusal it was.
+ *
+ * Every failure used to read "check your write token", so an install with no
+ * token set -- which is most of them -- was sent to look at something it does
+ * not have, over a request that had been turned down for an entirely different
+ * reason. A rate limit reached after a few minutes of testing is the likeliest
+ * one, and it is the one that reads least like itself.
+ */
+test.describe('a refused request says what was refused', () => {
+    const failWith = async (page, status) => {
+        await page.route('**/api/widgets/custom/test', (route) =>
+            route.fulfill({ status, contentType: 'text/plain', body: 'no' }));
+    };
+
+    const probeText = async (page, row) => {
+        await page.locator(`${row} [data-custom-test]`).click();
+        const probe = page.locator(`${row} .config-custom-probe`);
+        await expect(probe).not.toBeEmpty({ timeout: 10_000 });
+        return probe;
+    };
+
+    test('a rate limit says to wait, not to check a token', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await failWith(page, 429);
+        const probe = await probeText(page, row);
+        await expect(probe).toContainText('Too many requests');
+        await expect(probe).not.toContainText('write token');
+    });
+
+    test('a refusal still names the token, because that is the one thing to check', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await failWith(page, 401);
+        const probe = await probeText(page, row);
+        await expect(probe).toContainText('write token');
+    });
+
+    test('an error inside nextDash points at the log', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+
+        await failWith(page, 500);
+        const probe = await probeText(page, row);
+        await expect(probe).toContainText('log');
+        await expect(probe).not.toContainText('write token');
+    });
+});
