@@ -226,6 +226,31 @@ test.describe('a service whose key goes in the address', () => {
         await expect(page.locator(`${row} .config-widget-note-hint`)).toContainText('apikey');
     });
 
+    test('the address a preset writes never mentions the key', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+
+        /*
+         * The address used to arrive reading `apikey=YOUR_KEY`, directly above a
+         * box asking for that same key -- so the panel asked for the key twice
+         * and meant it once. The parameter is left out entirely now; the server
+         * adds it, and what is on screen is only what the reader has to fill in.
+         */
+        await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
+        await expect(url).not.toHaveValue(/apikey/);
+        await expect(url).not.toHaveValue(/YOUR_/);
+        // The rest of the path survives: without mode and output SABnzbd
+        // answers something else entirely.
+        await expect(url).toHaveValue(/mode=queue/);
+        await expect(url).toHaveValue(/output=json/);
+
+        await page.locator(`${row} [data-widget-preset]`).selectOption('plex');
+        await expect(url).not.toHaveValue(/X-Plex-Token/);
+        await expect(url).not.toHaveValue(/YOUR_/);
+    });
+
     test('the key is stored rather than written into the address', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
@@ -233,7 +258,7 @@ test.describe('a service whose key goes in the address', () => {
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
-        await url.fill('http://sab.local:8081/api?mode=queue&output=json&apikey=YOUR_KEY');
+        await url.fill('http://sab.local:8081/api?mode=queue&output=json');
         await url.blur();
 
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
@@ -243,13 +268,14 @@ test.describe('a service whose key goes in the address', () => {
         await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
 
         /*
-         * The placeholder stays. A url is stored in bookmarks-N.json, which is
-         * in the backup allowlist and in every export, so a key written in here
-         * would travel in a ZIP -- which is the whole reason the credential file
-         * exists.
+         * The key is nowhere in the address. A url is stored in
+         * bookmarks-N.json, which is in the backup allowlist and in every
+         * export, so a key written here would travel in a ZIP -- the whole
+         * reason the credential file exists. The server puts the parameter on
+         * as the request goes out.
          */
-        await expect(url).toHaveValue(/apikey=YOUR_KEY/);
         await expect(url).not.toHaveValue(/746071e5/);
+        await expect(url).not.toHaveValue(/apikey/);
     });
 
     test('the stored address key can be looked at too', async ({ page }) => {
@@ -259,7 +285,7 @@ test.describe('a service whose key goes in the address', () => {
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
-        await url.fill('http://sab.local:8081/api?mode=queue&output=json&apikey=YOUR_KEY');
+        await url.fill('http://sab.local:8081/api?mode=queue&output=json');
         await url.blur();
 
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
@@ -287,5 +313,68 @@ test.describe('a service whose key goes in the address', () => {
 
         await expect(page.locator(`${row} [data-widget-auth="kind"]`)).toHaveValue('query');
         await expect(page.locator(`${row} .config-widget-note-hint`)).toContainText('X-Plex-Token');
+    });
+});
+
+/*
+ * The bug this guards was silent twice over: `auth: 'query'` had no branch in
+ * the panel, so four presets fell through to "no credential needed" and their
+ * sign-in block simply was not drawn. `auth: 'cookie'` did the same to
+ * qBittorrent, and went unnoticed for longer because nobody looked past the
+ * preset that was reported.
+ *
+ * So this asks the question of every preset at once rather than of the ones
+ * somebody thought to check.
+ */
+test.describe('every preset that needs a credential asks for one', () => {
+    test('no preset falls through to no sign-in block', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        const presets = await page.evaluate(() =>
+            (window.DashboardWidgetPresets?.PRESETS || [])
+                .map((p) => ({ id: p.id, name: p.name, auth: p.auth || 'none' })));
+        expect(presets.length).toBeGreaterThan(20);
+
+        const wrong = [];
+        for (const preset of presets) {
+            await page.locator(`${row} [data-widget-preset]`).selectOption(preset.id);
+            const kind = await page.locator(`${row} [data-widget-auth="kind"]`).inputValue();
+            // A preset that needs no credential is allowed to say so; one that
+            // does must land on a kind that draws a box to type it into.
+            const needsOne = preset.auth !== 'none';
+            const asksForOne = kind !== 'none'
+                && await page.locator(`${row} [data-widget-auth="secret"]`).count() > 0;
+            if (needsOne !== asksForOne) {
+                wrong.push(`${preset.id} (auth: ${preset.auth}) landed on kind "${kind}"`);
+            }
+        }
+        expect(wrong).toEqual([]);
+    });
+
+    test('no preset leaves a key for the reader to paste into the address', async ({ page }) => {
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        const url = page.locator(`${row} [data-widget-setting="url"]`);
+
+        const ids = await page.evaluate(() =>
+            (window.DashboardWidgetPresets?.PRESETS || []).map((p) => p.id));
+
+        const leaking = [];
+        for (const id of ids) {
+            await page.locator(`${row} [data-widget-preset]`).selectOption(id);
+            const address = await url.inputValue();
+            /*
+             * YOUR_NODE and YOUR_SENSOR are fine: a Proxmox node and a Home
+             * Assistant sensor are names, not secrets, and naming one is the
+             * reader's job. A key is not.
+             */
+            if (/YOUR_(KEY|TOKEN|API|SECRET|PASS)/i.test(address)) {
+                leaking.push(`${id}: ${address}`);
+            }
+        }
+        expect(leaking).toEqual([]);
     });
 });

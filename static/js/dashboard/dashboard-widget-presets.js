@@ -126,7 +126,7 @@
             // Tautulli takes its key in the query string and offers no header
             // form. That is why widget addresses are withheld from the blocks
             // route: this URL is a credential.
-            path: '/api/v2?apikey=YOUR_KEY&cmd=get_activity',
+            path: '/api/v2?cmd=get_activity',
             auth: 'query', queryName: 'apikey',
             note: 'Settings → Web Interface → API key. It goes in the address, which nextDash fills in for you.',
             fields: [
@@ -150,7 +150,7 @@
         {
             id: 'plex', name: 'Plex', group: 'media',
             sample: 'http://plex.local:32400',
-            path: '/status/sessions?X-Plex-Token=YOUR_TOKEN',
+            path: '/status/sessions',
             // The token is the query parameter; the Accept header is not a
             // secret and is sent for every Plex widget rather than asked for.
             auth: 'query', queryName: 'X-Plex-Token',
@@ -176,8 +176,10 @@
             id: 'qbittorrent', name: 'qBittorrent', group: 'media',
             sample: 'http://qbittorrent.local:8080',
             path: '/api/v2/transfer/info',
-            auth: 'cookie',
-            note: 'qBittorrent signs in for a session: send the SID as a Cookie header.',
+            // A cookie is a header, so it is one: the box asks for the SID and
+            // the scheme in front of it is filled in, the way Bearer is.
+            auth: 'header', authName: 'Cookie', scheme: 'SID=',
+            note: 'The SID cookie from a signed-in session — its value goes here.',
             ttl: 60,
             fields: [
                 { path: 'dl_info_speed', label: 'down/s', format: 'bytes', shape: 'large' },
@@ -188,7 +190,7 @@
         {
             id: 'sabnzbd', name: 'SABnzbd', group: 'media',
             sample: 'http://sabnzbd.local:8080',
-            path: '/api?mode=queue&output=json&apikey=YOUR_KEY',
+            path: '/api?mode=queue&output=json',
             auth: 'query', queryName: 'apikey',
             note: 'Config → General → API Key. It goes in the address, which nextDash fills in for you.',
             ttl: 60,
@@ -229,7 +231,7 @@
         {
             id: 'pihole5', name: 'Pi-hole (v5)', group: 'network',
             sample: 'http://pi.hole',
-            path: '/admin/api.php?summaryRaw&auth=YOUR_TOKEN',
+            path: '/admin/api.php?summaryRaw',
             auth: 'query', queryName: 'auth',
             note: 'Settings → API. It goes in the address, which nextDash fills in for you.',
             columns: 2,

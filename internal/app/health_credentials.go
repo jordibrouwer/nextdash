@@ -463,6 +463,12 @@ A parameter already carrying a real value is left alone: someone who typed their
 key into the address by hand meant it, and overwriting it would break a widget
 that was working. The placeholder shape is what marks a slot as free -- and an
 empty value counts as free too, since "?apikey=" is a slot nobody filled.
+
+Usually there is no slot at all. The presets stopped writing the parameter into
+the address once the panel started asking for the key properly: showing
+"apikey=YOUR_KEY" beside a box asking for that same key is the confusion this
+was meant to end. It is still recognised, because a widget saved before that
+change has the placeholder stored and must go on working.
 */
 func applyCredentialQuery(req *http.Request, credential HealthCredential) {
 	if len(credential.Query) == 0 || req.URL == nil {
