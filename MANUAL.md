@@ -1032,7 +1032,7 @@ the only widget that talks to anything outside.
 - **Sign-in** — optionally one of the stored health sign-ins (see §15), so a
   service behind an API key can be read without putting the key in a widget.
   Those live in a separate file that no export or backup ZIP includes.
-- **A key that goes in the address** (**v1.4.4.1**) — SABnzbd, Tautulli, Pi-hole
+- **A key that goes in the address** — SABnzbd, Tautulli, Pi-hole
   v5 and Plex offer no header form at all: their key belongs in the query string.
   You still type it into the **API key** box. It is kept in the credential file
   like any other, the stored address keeps a `YOUR_KEY` placeholder, and the
