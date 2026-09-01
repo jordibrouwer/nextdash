@@ -1096,6 +1096,10 @@ the only widget that talks to anything outside.
   and `diskspace1` in gigabytes, and read as bytes those come out as `0 B` and
   `3.3 KB`. Choose the unit and the figure reads `3.3 TB` as it should. Bytes is
   the default, which is what *Size* always assumed.
+- **Found** — once you have pressed *Ask now*, each row shows what its own path
+  read out of the answer, right beside the path itself. A path that matched
+  nothing shows a dash. This is the column to watch while writing paths: it says
+  whether the one you just typed works without scrolling anywhere.
 - **Decimals per figure** — how many places to round to: *Auto*, or 0 to 3.
   *Auto* is what every figure did before this existed, so nothing changes unless
   you ask it to. It applies to any figure that is a number, including one the

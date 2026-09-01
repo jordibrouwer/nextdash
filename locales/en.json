@@ -1971,6 +1971,7 @@
     "widgetShape.small": "Small",
     "widgetShape.meter": "Bar",
     "widgetCustomShape": "Size",
+    "widgetCustomFound": "Found",
     "widgetCustomDecimals": "Decimals",
     "widgetDecimalsAuto": "Auto",
     "widgetFormat.bytes": "Size",

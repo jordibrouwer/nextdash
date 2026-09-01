@@ -1971,6 +1971,7 @@
     "widgetShape.small": "小",
     "widgetShape.meter": "条形",
     "widgetCustomShape": "尺寸",
+    "widgetCustomFound": "找到",
     "widgetCustomDecimals": "小数位",
     "widgetDecimalsAuto": "自动",
     "widgetFormat.bytes": "大小",

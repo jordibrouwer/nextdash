@@ -5957,7 +5957,7 @@ button.config-bm-shortcut-pill {
 .config-custom-field {
     display: grid;
     grid-template-columns:
-        minmax(0, 2fr) minmax(0, 1.2fr) 8.5rem 5.5rem 6.5rem 5.5rem;
+        minmax(0, 3fr) minmax(0, 1.2fr) 8.5rem 5rem 6rem minmax(0, 1.1fr) 5.5rem;
     gap: 8px;
     align-items: center;
 }
@@ -6155,6 +6155,31 @@ button.config-bm-shortcut-pill {
 
 /* The answer's heading and its search box share a line: the box belongs to the
    document below it, not to the block above. */
+/*
+   What a path found, in the row that names it.
+
+   Right-aligned against the Delete button so a column of figures lines up on
+   its digits, and clipped rather than wrapped: a long value would otherwise
+   make one row twice the height of its neighbours. The whole value is on the
+   title, for the ones that do not fit.
+*/
+.config-custom-found {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--text-color, #ddd);
+}
+
+/* A path that found nothing is the thing worth seeing, so it is marked rather
+   than left as a dash the eye slides over. */
+.config-custom-found.is-missing {
+    color: var(--text-muted, #888);
+    opacity: 0.7;
+}
+
 .config-probe-head {
     display: flex;
     align-items: center;

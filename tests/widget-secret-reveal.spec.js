@@ -498,7 +498,8 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
 
         expect(geometry.overflowing).toBe(0);
         expect(geometry.overlapping).toBe(0);
-        expect(geometry.headings).toBe(6);
+        // Path, label, format, decimals/unit, size, found, delete.
+        expect(geometry.headings).toBe(7);
     });
 });
 
@@ -530,7 +531,7 @@ test.describe('the figures table lines up', () => {
             };
         }, row);
 
-        expect(columns.head).toHaveLength(6);
+        expect(columns.head).toHaveLength(7);
         for (const cells of columns.rows) {
             expect(cells).toEqual(columns.head);
         }
@@ -982,5 +983,91 @@ test.describe('a long answer can be searched', () => {
         await page.locator(`${row} [data-custom-find]`).fill('nothing_like_this');
         await expect(page.locator(`${row} .config-probe-note`).first())
             .toContainText('Nothing in the answer matches', { timeout: 10_000 });
+    });
+});
+
+/*
+ * What a path found, in the row that names it.
+ *
+ * The trial always knew -- it reports a value per figure -- but it reported
+ * them in a block below the address, the sign-in and often the fold. So writing
+ * a path meant typing it, pressing Ask now, scrolling down to read "that path
+ * found nothing", scrolling back, and guessing again.
+ */
+test.describe('a figure shows what its path found', () => {
+    const answerWith = (page, values) => page.route('**/api/widgets/custom/test', (route) =>
+        route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                status: 200, signedIn: true, json: true, body: '{"ok":true}',
+                result: { values },
+            }),
+        }));
+
+    test('the value lands beside the path that read it', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
+        await page.locator(`${row} [data-widget-setting="url"]`).blur();
+        // A fresh custom widget has no figures, so both rows are added here --
+        // the second is what proves a missing path is marked rather than blank.
+        const rows = page.locator(`${row} .config-custom-field`);
+        while (await rows.count() < 2) {
+            await page.locator(`${row} [data-custom-add="${index}"]`).click();
+            await page.waitForTimeout(200);
+        }
+
+        await answerWith(page, [
+            { label: 'a', value: '23.5 °C' },
+            { label: 'b', value: '', missing: true },
+        ]);
+        await page.locator(`${row} [data-custom-test]`).click();
+
+        const found = page.locator(`${row} .config-custom-found`);
+        await expect(found.nth(0)).toHaveText('23.5 °C', { timeout: 10_000 });
+        // A path that found nothing is the one worth seeing, so it is marked
+        // rather than left blank -- blank reads as "not asked yet".
+        await expect(found.nth(1)).toHaveText('—');
+    });
+
+    test('it is blank until something has been asked', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+
+        // A widget with no figures has no cells at all; one is added so there
+        // is something to be blank.
+        await page.locator(`${row} [data-custom-add="${index}"]`).click();
+        const found = page.locator(`${row} .config-custom-found`);
+        await expect(found.first()).toHaveText('', { timeout: 10_000 });
+    });
+
+    test('the row still lays out, with the column added', async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 1100 });
+        await openWidgets(page);
+        const index = await addCustom(page);
+        const row = `[data-widget-row="${index}"]`;
+        await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
+        await page.waitForSelector(`${row} .config-custom-field`);
+
+        const geometry = await page.evaluate((sel) => {
+            const visible = (el) => [...el.children].filter((c) => !c.hidden)
+                .map((c) => Math.round(c.getBoundingClientRect().x));
+            const rows = [...document.querySelectorAll(`${sel} .config-custom-field`)];
+            return {
+                head: visible(document.querySelector(`${sel} .config-custom-head`)),
+                rows: rows.map(visible),
+                overflowing: rows.filter((r) => r.scrollWidth > r.clientWidth + 1).length,
+            };
+        }, row);
+
+        expect(geometry.head).toHaveLength(7);
+        expect(geometry.overflowing).toBe(0);
+        for (const cells of geometry.rows) {
+            expect(cells).toEqual(geometry.head);
+        }
     });
 });

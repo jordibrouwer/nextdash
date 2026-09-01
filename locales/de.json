@@ -1971,6 +1971,7 @@
     "widgetShape.small": "Klein",
     "widgetShape.meter": "Balken",
     "widgetCustomShape": "Größe",
+    "widgetCustomFound": "Gefunden",
     "widgetCustomDecimals": "Dezimalstellen",
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Größe",

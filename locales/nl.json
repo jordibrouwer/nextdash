@@ -1971,6 +1971,7 @@
     "widgetShape.small": "Klein",
     "widgetShape.meter": "Balk",
     "widgetCustomShape": "Formaat",
+    "widgetCustomFound": "Gevonden",
     "widgetCustomDecimals": "Decimalen",
     "widgetDecimalsAuto": "Automatisch",
     "widgetFormat.bytes": "Grootte",

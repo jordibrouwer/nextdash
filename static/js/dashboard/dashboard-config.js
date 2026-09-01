@@ -15659,6 +15659,61 @@ class DashboardConfig {
         return seeds.some((seed) => typed === seed.trim());
     }
 
+    /*
+     * Redraws the figures table in place, keeping whatever is being typed.
+     *
+     * The whole panel is not repainted, because the address, the key and every
+     * path are text boxes: redrawing them takes the caret with it, and a trial
+     * finishing while somebody is mid-path would move it out from under them.
+     */
+    repaintCustomFields(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block) return;
+        const host = document.querySelector(`[data-widget-row="${index}"]`);
+        const group = host?.querySelector('.config-custom-field')?.closest('.config-custom-group');
+        if (!group) return;
+        const active = document.activeElement;
+        const rows = [...group.querySelectorAll('.config-custom-field')];
+        rows.forEach((rowEl, row) => {
+            const found = rowEl.querySelector('.config-custom-found');
+            if (!found) return;
+            // Only the one cell is replaced, so nothing the reader is typing in
+            // is touched at all.
+            found.outerHTML = this.renderFieldFound(block, row);
+        });
+        if (active && document.contains(active) && active.focus) active.focus();
+    }
+
+    /*
+     * What this path actually found, beside the path itself.
+     *
+     * The trial already knew: it reports a value per figure, in the same order
+     * as the rows. But it reported them in a block of its own, below the
+     * address and the sign-in and often below the fold -- so writing a path
+     * meant typing it here, pressing Ask now, scrolling down, reading "that
+     * path found nothing", scrolling back, and guessing again. Beside the box,
+     * the same answer is read while the path is being written.
+     *
+     * Blank until something has been asked. A row that has never been tried has
+     * no answer to give, and inventing one would be worse than the space.
+     */
+    renderFieldFound(widget, row) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const values = this.customProbeState(widget?.id)?.data?.result?.values;
+        if (!Array.isArray(values) || !values[row]) {
+            return '<span class="config-custom-found"></span>';
+        }
+        const value = values[row];
+        if (value.missing) {
+            return `<span class="config-custom-found is-missing" title="${esc(
+                this.t('config.widgetCustomTestMissing', 'that path found nothing'))}">—</span>`;
+        }
+        const shown = String(value.value ?? '');
+        // Titled as well as shown: a figure can be longer than the column, and
+        // the whole of it is what the reader is checking against.
+        return `<span class="config-custom-found" title="${esc(shown)}">${esc(shown)}</span>`;
+    }
+
     /** Open and struck-through eyes, as one inline SVG each. */
     secretEyeIcon(revealed) {
         const open = `<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2.2"/>`;
@@ -15971,6 +16026,7 @@ class DashboardConfig {
                         ? this.t('config.widgetCustomDataUnit', 'Counted in')
                         : this.t('config.widgetCustomDecimals', 'Decimals'))}</span>
                     <span>${esc(this.t('config.widgetCustomShape', 'Size'))}</span>
+                    <span>${esc(this.t('config.widgetCustomFound', 'Found'))}</span>
                     <span></span>
                 </div>` : '';
 
@@ -16000,6 +16056,7 @@ class DashboardConfig {
                     data-custom-row="${row}"
                     aria-label="${esc(this.t('config.widgetCustomShape', 'Size'))}">${
                     shapeOptions(field?.format || 'text', field?.shape || 'normal')}</select>
+                ${this.renderFieldFound(widget, row)}
                 <button type="button" class="config-btn config-btn--small config-btn--danger"
                     data-custom-remove="${row}" data-custom-index="${index}"
                     aria-label="${esc(this.t('config.widgetCustomRemoveField', 'Remove this figure'))}">${esc(
@@ -16405,6 +16462,12 @@ class DashboardConfig {
             state.changed = this.customProbeChanges(state.data, data);
             state.data = data;
             state.at = Date.now();
+            /*
+             * The figures table shows what each path found, so it is stale the
+             * moment a new answer lands. Redrawn here rather than left to the
+             * next repaint: the reader pressed Ask now to see this.
+             */
+            this.repaintCustomFields(index);
         } catch (error) {
             /*
              * This one is nextDash refusing, not the service -- but which
