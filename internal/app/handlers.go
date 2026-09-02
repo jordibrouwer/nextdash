@@ -2441,6 +2441,10 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	if useCache && cache != nil {
 		if entry, ok := cache.Cache[cacheKey]; ok {
 			if time.Now().UnixMilli()-entry.FetchedAt < previewCacheTTLMs {
+				// Queued here too, not only on a miss: an entry whose file was
+				// evicted, cleared or never restored from a backup still knows
+				// where it came from, and this is where it heals.
+				h.queuePreviewMediaFetch(cacheKey, entry)
 				return entry
 			}
 		}
@@ -2499,13 +2503,44 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	if preview.Description == "" {
 		preview.Description = h.extractMetaFromHTML(htmlBody, "property", "og:description")
 	}
-	preview.Image = h.extractMetaFromHTML(htmlBody, "property", "og:image")
-	if preview.Image != "" {
-		preview.Image = h.resolveRelativeURL(preview.URL, preview.Image)
+	// Into the *Source fields, not Image and Icon: those hold a local path once
+	// the media has been fetched, and never the remote address. Handing the
+	// remote one to the card would have it load the third party directly, which
+	// is what caching these is meant to stop.
+	preview.ImageSource = h.extractMetaFromHTML(htmlBody, "property", "og:image")
+	if preview.ImageSource != "" {
+		preview.ImageSource = h.resolveRelativeURL(preview.URL, preview.ImageSource)
 	}
-	preview.Icon = h.extractIconFromHTML(htmlBody)
-	if preview.Icon != "" {
-		preview.Icon = h.resolveRelativeURL(preview.URL, preview.Icon)
+	preview.IconSource = h.extractIconFromHTML(htmlBody)
+	if preview.IconSource != "" {
+		preview.IconSource = h.resolveRelativeURL(preview.URL, preview.IconSource)
+	}
+
+	/*
+	 * Carry the pictures we already have across a re-parse.
+	 *
+	 * A preview expires after a week and is parsed again, and a fresh struct
+	 * has no media fields -- so every expiry re-downloaded the image whether or
+	 * not the page still points at the same one. Refreshing the whole
+	 * collection once then lined every bookmark up to reach out again on the
+	 * same day, a week later.
+	 *
+	 * Only when the address is unchanged: a page that now advertises a
+	 * different og:image gets that one, immediately.
+	 */
+	if cache != nil {
+		if previous, ok := cache.Cache[cacheKey]; ok {
+			if previous.ImageSource == preview.ImageSource {
+				preview.Image = previous.Image
+				preview.ImageFetchedAt = previous.ImageFetchedAt
+			}
+			if previous.IconSource == preview.IconSource {
+				preview.Icon = previous.Icon
+				if preview.ImageFetchedAt == 0 {
+					preview.ImageFetchedAt = previous.ImageFetchedAt
+				}
+			}
+		}
 	}
 
 	// The page's own feed, if it advertises one. Recorded even when feed polling
@@ -2549,6 +2584,9 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		}
 		cache.Cache[cacheKey] = preview
 	}
+	// After the cache is written, so the worker's own write lands on top of this
+	// entry rather than being overwritten by it.
+	h.queuePreviewMediaFetch(cacheKey, preview)
 	return preview
 }
 
@@ -2561,7 +2599,28 @@ func bookmarkHasPreviewMetadata(bm Bookmark) bool {
 func applyPreviewToBookmark(bm *Bookmark, preview BookmarkPreview) {
 	bm.PreviewTitle = strings.TrimSpace(preview.Title)
 	bm.PreviewDesc = strings.TrimSpace(preview.Description)
-	bm.PreviewImage = strings.TrimSpace(preview.Image)
+	// No image: the preview cache owns cached media, and a bookmark holding its
+	// own copy of the address is how the card ended up loading the third party
+	// directly. This runs while the media fetch is still queued anyway, so
+	// there would be no local path to write here even if it did.
+	bm.PreviewImage = ""
+}
+
+// stripBookmarkPreviewImages clears the image every bookmark used to carry.
+//
+// The value was the remote address, and the card's shortcut path builds its
+// picture from the bookmark without asking the server -- so these kept loading
+// the third party after the cache was in place. Returns how many were cleared.
+func stripBookmarkPreviewImages(bookmarks []Bookmark) int {
+	stripped := 0
+	for i := range bookmarks {
+		if bookmarks[i].PreviewImage == "" {
+			continue
+		}
+		bookmarks[i].PreviewImage = ""
+		stripped++
+	}
+	return stripped
 }
 
 func clearBookmarkPreviewFields(bm *Bookmark) {

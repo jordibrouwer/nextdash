@@ -790,6 +790,15 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			if skips.archives && info.Name() == archiveDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
+			// Cached preview media. isValidImportFilename already refuses it
+			// one file at a time -- this only saves the stats, the same reason
+			// archives above is refused whole. Never in a backup on purpose:
+			// it is re-fetchable decoration capped at a couple of hundred
+			// megabytes, and a restore heals it from the source URL the preview
+			// cache still holds.
+			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 

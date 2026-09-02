@@ -326,6 +326,13 @@ func (h *Handlers) DeleteTrashItem(w http.ResponseWriter, r *http.Request) {
 		if !respondStorePersistError(w, err) {
 			return
 		}
+		// The bookmarks have truly stopped existing now, so their cached
+		// preview media has nothing pointing at it. Best-effort: the cap reaps
+		// orphans anyway, this only stops them lingering on an install that
+		// never fills it.
+		if swept := h.pruneOrphanPreviewImages(); swept > 0 {
+			logInfo(logComponentStore, "swept %d cached preview images no bookmark points at", swept)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"status": "success", "count": count})
 		return
@@ -345,6 +352,9 @@ func (h *Handlers) DeleteTrashItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		return
+	}
+	if swept := h.pruneOrphanPreviewImages(); swept > 0 {
+		logInfo(logComponentStore, "swept %d cached preview images no bookmark points at", swept)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{"status": "success", "count": 1})

@@ -7,6 +7,33 @@ import (
 	"time"
 )
 
+// normalizePreviewCacheFile migrates entries written before preview media was
+// cached locally: their Image and Icon hold remote URLs, which is now what the
+// *Source fields mean. Anything that is not an http(s) address is left alone —
+// a local path is already migrated, and a bare Icon filename is a data/icons/
+// name that was never ours to move.
+func normalizePreviewCacheFile(cache PreviewCacheFile) PreviewCacheFile {
+	if cache.Cache == nil {
+		cache.Cache = map[string]BookmarkPreview{}
+		return cache
+	}
+	isRemote := func(v string) bool {
+		return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
+	}
+	for key, entry := range cache.Cache {
+		if isRemote(entry.Image) {
+			entry.ImageSource = entry.Image
+			entry.Image = ""
+		}
+		if isRemote(entry.Icon) {
+			entry.IconSource = entry.Icon
+			entry.Icon = ""
+		}
+		cache.Cache[key] = entry
+	}
+	return cache
+}
+
 func readPreviewCacheFile() PreviewCacheFile {
 	data, err := os.ReadFile(previewCacheFilePath())
 	if err != nil {
@@ -16,7 +43,7 @@ func readPreviewCacheFile() PreviewCacheFile {
 	if err := json.Unmarshal(data, &cache); err != nil || cache.Cache == nil {
 		return PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
 	}
-	return cache
+	return normalizePreviewCacheFile(cache)
 }
 
 func writePreviewCacheFile(cache PreviewCacheFile) error {
@@ -66,15 +93,29 @@ func (h *Handlers) ensurePreviewCacheLoadedLocked() {
 	h.previewLoaded = true
 }
 
+/*
+ * Handing out a cached preview is also where its media gets chased.
+ *
+ * The queueing used to sit on the cache-hit branch inside fetchBookmarkPreview,
+ * which the preview endpoint never reaches: it looks the entry up here first
+ * and returns. So every bookmark whose picture had not been fetched yet stayed
+ * that way no matter how often it was hovered — never even attempted.
+ *
+ * It belongs here instead. This is the one place a stored preview is served, so
+ * anything that reads one keeps the promise that a missing picture is on its
+ * way. Queueing happens after the lock is released: the check stats a file, and
+ * that has no business running under the cache mutex.
+ */
 func (h *Handlers) getPreviewCacheEntry(key string) (BookmarkPreview, bool) {
 	h.previewCacheMu.Lock()
-	defer h.previewCacheMu.Unlock()
-
 	h.ensurePreviewCacheLoadedLocked()
 	entry, ok := h.previewCache.Cache[key]
+	h.previewCacheMu.Unlock()
+
 	if !ok || !previewCacheEntryValid(entry) {
 		return BookmarkPreview{}, false
 	}
+	h.queuePreviewMediaFetch(key, entry)
 	return entry, true
 }
 
