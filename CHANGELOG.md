@@ -8,6 +8,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
+- [v1.4.5.2 — 2 September 2026](#v1452--2-september-2026)
 - [v1.4.5.1 — 2 September 2026](#v1451--2-september-2026)
 - [v1.4.5 — 1 September 2026](#v145--1-september-2026)
 - [v1.4.4.1 — 31 August 2026](#v1441--31-august-2026)
@@ -192,6 +194,26 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.4.5.3 — 2 September 2026
+
+### Dashboard
+
+- **fix — a deleted bookmark leaves the page there and then.** The delete always persisted, but the row stayed on screen until a reload — and stayed bound to a bookmark that no longer existed, so it then ignored its own context menu. Adding a tag showed the same damage for a moment. `ensureCategorySortControls()` found the chevron with `titleEl.querySelector()`, which matches at any depth, then passed it to `titleEl.insertBefore()`, which requires a direct child. The chevron moved into `.category-title-trailing` in v1.4.4, so the call threw `NotFoundError` and took down the `patchBookmarkData()` pass with it, leaving every category it had not reached yet holding stale rows. The controls go in beside the chevron now, in the wrapper the full render already builds.
+
+### Docs
+
+- The Unraid template installs from Docker Hub (`foobar1452/nextdash`) rather than GHCR, so Community Applications can show Last Update and download counts — GHCR does not expose the registry metadata CA reads for those. The GHCR image is unchanged and is named in the template's overview.
+
+---
+
+## v1.4.5.2 — 2 September 2026
+
+### Docs
+
+- Release plumbing only: dev-only files are pruned from main after the merge. Nothing user-facing, so this release is kept out of the What's new modal with `hideFromModal` while staying in the index.
+
+---
+
 ## v1.4.5.1 — 2 September 2026
 
 ### Pages & tags
@@ -205,7 +227,6 @@ For install and security, see the [README](README.md). For how to use features, 
 - Saving a category span sends the write token, so the call succeeds on installs that set `NEXTDASH_WRITE_TOKEN`.
 - The Docker build cross-compiles per target architecture instead of compiling under QEMU emulation, which shortens arm64 image builds.
 - The Unraid template carries a fuller overview, the donate links and four more screenshots.
-- The Unraid template installs from Docker Hub (`foobar1452/nextdash`) rather than GHCR, so Community Applications can show Last Update and download counts — GHCR does not expose the registry metadata CA reads for those. The GHCR image is unchanged and is named in the template's overview.
 - The release script keeps the files main needs but dev's merge silently deletes: `KEEP_FILES` and `is_kept()` were defined *after* the conflict loop that calls them, so the guard ran against an empty array. They move ahead of the merge, and a restore pass afterwards covers files resolved as a clean delete rather than a conflict.
 
 ---

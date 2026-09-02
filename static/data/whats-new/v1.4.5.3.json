@@ -1,0 +1,21 @@
+{
+  "tag": "v1.4.5.3",
+  "date": "2 September 2026",
+  "releasedAt": "2026-09-02",
+  "modalLead": "A correction to what the dashboard shows you after a change. Deleting a bookmark left its row on the page until you reloaded, and while it sat there it answered nothing &mdash; the same fault made a category flash the wrong names for a moment when a tag was added.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A deleted bookmark leaves the page straight away.</strong> It was always really deleted &mdash; gone from the file, and gone after a reload &mdash; but the row stayed on screen until you reloaded, and while it sat there it ignored its own right-click menu, because it still pointed at a bookmark that no longer existed. Deleting a whole category at once left the same rows behind."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Adding a tag no longer flashes the wrong names.</strong> For a moment every row in a category showed the same bookmark, before settling down again. It was the same fault: the redraw that follows a change was stopping partway through a category heading, so everything after it kept what it had."
+        }
+      ]
+    }
+  ]
+}
