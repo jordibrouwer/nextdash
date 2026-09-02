@@ -3,18 +3,44 @@
   <Name>NextDash</Name>
   <Repository>ghcr.io/jordibrouwer/nextdash:latest</Repository>
   <Registry>https://github.com/jordibrouwer/nextdash/pkgs/container/nextdash</Registry>
-  <Project>https://www.nextdash.cc</Project>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
   <Support>https://github.com/jordibrouwer/nextdash/issues</Support>
+  <Project>https://www.nextdash.cc</Project>
   <ReadMe>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/README.md</ReadMe>
   <TemplateURL>https://raw.githubusercontent.com/jordibrouwer/unraid_templates/main/nextdash.xml</TemplateURL>
   <Icon>https://github.com/jordibrouwer/nextdash/blob/main/static/nextdash-logo.png?raw=true</Icon>
-  <Network>bridge</Network>
-  <Privileged>false</Privileged>
-  <WebUI>http://[IP]:[PORT:8080]</WebUI>
   <ExtraParams>--restart unless-stopped</ExtraParams>
-  <Overview>A lightweight, self-hosted bookmark dashboard that features a minimalist, keyboard-driven interface with extensive customization options, making it the perfect personal dashboard for power users. Based on the excellent ThinkDashboard.</Overview>
-  <Date>2026-08-25</Date>
-  <Category>Network:Web Tools:Utilities</Category>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText>Find NextDash useful? Consider supporting the project.</DonateText>
+  <DonateLink>https://github.com/sponsors/jordibrouwer</DonateLink>
+  <Requires/>
+
+  <Overview>
+NextDash is a lightweight, self-hosted bookmark dashboard that features a minimalist, keyboard-driven interface with extensive customization options, making it the perfect personal dashboard for power users. Based on the excellent ThinkDashboard.
+
+Key features:
+• Keyboard-driven navigation for fast access to all your bookmarks
+• Extensive theme and layout customization
+• Inbox feature to quickly collect new links and organize them later
+• Lightweight and fast, no heavy dependencies
+• Actively maintained with regular releases
+
+Links:
+• Website: https://www.nextdash.cc
+• Source code and releases: https://github.com/jordibrouwer/nextdash
+• Changelog: https://github.com/jordibrouwer/nextdash/releases
+• Devlog / release updates: https://www.nextdash.cc/blog
+
+Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
+  </Overview>
+
+  <Category>Tools: Productivity: Network:Web</Category>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <Date>2026-09-02</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
@@ -30,7 +56,7 @@
           Target="/app/data"
           Default="/mnt/user/appdata/nextdash/"
           Mode="rw"
-          Description="Persistent storage path for NextDash data"
+          Description="Persistent storage path for NextDash data (bookmarks, settings)"
           Type="Path"
           Display="always"
           Required="true"
@@ -41,4 +67,8 @@
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-3.png</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-4.png</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-5.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-6.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-7.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-8.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-9.png</Screenshot>
 </Container>
