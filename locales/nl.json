@@ -5536,7 +5536,14 @@
     "overviewNewFeatureSearchGroupsWhat": "Eén letter vulde vroeger het scherm. Typte u g, dan stonden Gmail en widGetonderzoek in dezelfde kolom, in dezelfde stijl, in een volgorde die nergens werd uitgelegd — en de rangschikking zag er bij uw duizendste zoekopdracht net zo uit als bij uw eerste.",
     "overviewNewFeatureSearchGroupsHow": "Resultaten groeperen nu op waaróm ze matchen: de sterke blijven open, de rest vouwt weg achter een kop met een telling, en er gaat niets verloren. De rangschikking leest hoe vaak u een bladwijzer opent en onthoudt welk resultaat u koos bij welke toetsaanslagen, zodat mail uw eigen alias voor Gmail kan worden zonder er een sneltoets voor te maken.",
     "overviewNewFeatureSearchGroupsEnable": "Niets aan te zetten — open de zoekfunctie en typ.",
-    "overviewNewFeatureSearchGroupsCta": "Zoekinstellingen openen →"
+    "overviewNewFeatureSearchGroupsCta": "Zoekinstellingen openen →",
+    "previewImageCacheSizeLabel": "Grootte afbeeldingscache",
+    "previewImageCacheUsage": "{files} gecachte afbeeldingen, {used} van {cap}",
+    "previewImageCacheUnknown": "Gecachte afbeeldingen: tellen…",
+    "clearPreviewImagesBtn": "Gecachte afbeeldingen wissen",
+    "clearPreviewImagesConfirm": "Alle gecachte preview-afbeeldingen verwijderen? Ze worden opnieuw opgehaald zodra ze nodig zijn.",
+    "clearPreviewImagesDone": "Gecachte afbeeldingen verwijderd.",
+    "clearPreviewImagesError": "Kon de gecachte afbeeldingen niet verwijderen."
   },
   "colors": {
     "title": "thema-aanpassing",

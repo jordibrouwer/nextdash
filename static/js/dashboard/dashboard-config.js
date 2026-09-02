@@ -4806,6 +4806,9 @@ class DashboardConfig {
             return this.renderDataWebhooks();
         }
         if (this.dbTab === 'icons') {
+            // The figure is fetched rather than held in settings, so the panel
+            // draws with whatever it had and fills the line in when it lands.
+            void this.refreshPreviewImageStats();
             return this.renderDataIcons();
         }
         if (this.dbTab === 'logs') {
@@ -4987,6 +4990,13 @@ class DashboardConfig {
             ['always', this.t('config.faviconPolicyAlways', 'Every load')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        // A cap is a disk-space decision, not a dial, so it is a short list.
+        // The server refuses anything else and falls back to 200.
+        const previewCacheMB = Number(s.previewImageCacheMB) || 200;
+        const previewCacheSizeOptions = [50, 200, 500]
+            .map((mb) => `<option value="${mb}" ${mb === previewCacheMB ? 'selected' : ''}>${esc(this.formatBytes(mb * 1024 * 1024))}</option>`)
+            .join('');
+
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.iconsSectionTitle', 'Icons & previews'))}</h3>
@@ -4995,11 +5005,17 @@ class DashboardConfig {
                     <select class="config-select" data-backup-select="faviconRefreshPolicy">${faviconPolicyOptions}</select>
                     ${this.renderFieldAffordances('faviconRefreshPolicy', s.faviconRefreshPolicy) ? `<span class="config-field-affordances">${this.renderFieldAffordances('faviconRefreshPolicy', s.faviconRefreshPolicy)}</span>` : ''}
                 </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.previewImageCacheSizeLabel', 'Image cache size'))}</span>
+                    <select class="config-select" data-backup-select="previewImageCacheMB">${previewCacheSizeOptions}</select>
+                </div>
                 <p class="config-panel-note">${esc(this.t('config.bookmarkPreviewMaintenanceHint', 'Link preview cards are fetched once and cached. Refresh them all after a site redesign, or clear them to free space.'))}</p>
+                <p class="config-panel-note" data-testid="preview-image-cache-usage">${esc(this.previewImageCacheUsageText())}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="refresh-favicons">${esc(this.t('config.bulkRefreshFaviconsBtn', 'Refresh all favicons'))}</button>
                     <button type="button" class="config-btn" data-backup-action="refresh-previews">${esc(this.t('config.refreshAllPreviewsBtn', 'Refresh all link previews'))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-previews">${esc(this.t('config.clearAllPreviewsBtn', 'Clear all link previews'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-testid="clear-preview-images" data-backup-action="clear-preview-images">${esc(this.t('config.clearPreviewImagesBtn', 'Remove cached images'))}</button>
                 </div>
             </div>
         `;
@@ -6427,6 +6443,7 @@ class DashboardConfig {
             case 'refresh-favicons': void this.refreshAllFavicons(); break;
             case 'refresh-previews': void this.refreshAllPreviews(); break;
             case 'clear-previews': void this.clearAllPreviews(); break;
+            case 'clear-preview-images': void this.clearPreviewImages(); break;
             case 'delete-bookmarks': void this.deleteAllBookmarks(); break;
             case 'download-all': void this.downloadAllBackups(); break;
         }
@@ -6514,6 +6531,13 @@ class DashboardConfig {
             void this.loadBackupData();
             return;
         }
+        if (name === 'previewImageCacheMB') {
+            this.dash.settings.previewImageCacheMB = Number(value) || 200;
+            void this.saveSettingsWithFeedback();
+            // The read-out names the cap, so it is now out of date.
+            void this.refreshPreviewImageStats();
+            return;
+        }
         if (name !== 'healthAutoRecheckIntervalHours') return;
         this.dash.settings.healthAutoRecheckIntervalHours = Number(value) || 24;
         void this.saveSettingsWithFeedback();
@@ -6599,6 +6623,52 @@ class DashboardConfig {
                     .replace('{n}', String(refreshed)).replace('{total}', String(total))
                 : this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.');
             this.notify(partial, 'error');
+        }
+    }
+
+    /**
+     * The cached-image read-out, drawn from whatever the last stats call left
+     * behind. Rendered synchronously so the panel never flashes a blank line;
+     * refreshPreviewImageStats fills it in and repaints.
+     */
+    previewImageCacheUsageText() {
+        const stats = this._previewImageStats;
+        if (!stats) return this.t('config.previewImageCacheUnknown', 'Cached images: counting…');
+        return this.t('config.previewImageCacheUsage', '{files} cached images, {used} of {cap}')
+            .replace('{files}', String(stats.files || 0))
+            .replace('{used}', this.formatBytes(stats.bytes || 0))
+            .replace('{cap}', this.formatBytes(stats.capBytes || 0));
+    }
+
+    async refreshPreviewImageStats() {
+        try {
+            const res = await dashFetch('/api/previews/images');
+            if (!res.ok) return;
+            this._previewImageStats = await res.json();
+        } catch {
+            // Leave the previous figure standing rather than blanking the line:
+            // a failed count is not the same as an empty cache.
+            return;
+        }
+        const el = document.querySelector('[data-testid="preview-image-cache-usage"]');
+        if (el) el.textContent = this.previewImageCacheUsageText();
+    }
+
+    /**
+     * Give the disk back without giving up the pictures: the server keeps each
+     * source address, so every image returns on its next hover.
+     */
+    async clearPreviewImages() {
+        if (!await this.confirmAction(
+            this.t('config.clearPreviewImagesConfirm', 'Remove every cached preview image? They are fetched again when next needed.'),
+            { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
+        try {
+            const res = await this.writeFetch('/api/previews/images/clear', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.clearPreviewImagesDone', 'Cached images removed.'), 'success');
+            await this.refreshPreviewImageStats();
+        } catch {
+            this.notify(this.t('config.clearPreviewImagesError', 'Could not remove the cached images.'), 'error');
         }
     }
 

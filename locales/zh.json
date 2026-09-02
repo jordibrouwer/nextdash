@@ -5536,7 +5536,14 @@
     "overviewNewFeatureSearchGroupsWhat": "一个字母就能塞满整屏。输入 g，Gmail 和 widGetonderzoek 会挤在同一列里，样式相同，顺序却没有任何解释——而且你搜第一千次时的排序，和第一次时一模一样。",
     "overviewNewFeatureSearchGroupsHow": "现在结果会按「为什么匹配」分组：最贴切的保持展开，其余的收进一个带计数的标题里，什么都不会被丢掉。排序会读取你打开某个书签的频率，也会记住你在敲下某串按键后选了哪个结果——于是 mail 可以成为你自己的 Gmail 别名，而不必为它建一个快捷方式。",
     "overviewNewFeatureSearchGroupsEnable": "无需开启——打开搜索并输入即可。",
-    "overviewNewFeatureSearchGroupsCta": "打开搜索设置 →"
+    "overviewNewFeatureSearchGroupsCta": "打开搜索设置 →",
+    "previewImageCacheSizeLabel": "图片缓存大小",
+    "previewImageCacheUsage": "已缓存 {files} 张图片，已用 {used}／共 {cap}",
+    "previewImageCacheUnknown": "缓存图片：正在统计…",
+    "clearPreviewImagesBtn": "清除缓存的图片",
+    "clearPreviewImagesConfirm": "要清除所有缓存的预览图片吗？需要时会重新获取。",
+    "clearPreviewImagesDone": "已清除缓存的图片。",
+    "clearPreviewImagesError": "无法清除缓存的图片。"
   },
   "colors": {
     "title": "主题自定义",

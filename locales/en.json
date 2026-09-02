@@ -5536,7 +5536,14 @@
     "overviewNewFeatureSearchGroupsWhat": "One letter used to fill the screen. Typing g put Gmail and widGetonderzoek in the same column, in the same style, in an order nothing on screen explained — and the ranking looked the same on your thousandth search as on your first.",
     "overviewNewFeatureSearchGroupsHow": "Results now group by why they matched: the strong ones stay open, the rest fold behind a heading and a count, and nothing is thrown away. The ranking reads how often you open a bookmark and remembers which result you picked for the keystrokes you picked it with, so mail can become your own alias for Gmail without a shortcut for it.",
     "overviewNewFeatureSearchGroupsEnable": "Nothing to switch on — open the search and type.",
-    "overviewNewFeatureSearchGroupsCta": "Open search settings →"
+    "overviewNewFeatureSearchGroupsCta": "Open search settings →",
+    "previewImageCacheSizeLabel": "Image cache size",
+    "previewImageCacheUsage": "{files} cached images, {used} of {cap}",
+    "previewImageCacheUnknown": "Cached images: counting…",
+    "clearPreviewImagesBtn": "Remove cached images",
+    "clearPreviewImagesConfirm": "Remove every cached preview image? They are fetched again when next needed.",
+    "clearPreviewImagesDone": "Cached images removed.",
+    "clearPreviewImagesError": "Could not remove the cached images."
   },
   "colors": {
     "title": "theme customization",

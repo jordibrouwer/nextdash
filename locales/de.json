@@ -5536,7 +5536,14 @@
     "overviewNewFeatureSearchGroupsWhat": "Ein Buchstabe füllte früher den Bildschirm. Ein g setzte Gmail und widGetonderzoek in dieselbe Spalte, im selben Stil, in einer Reihenfolge, die nichts erklärte — und die Rangfolge sah bei der tausendsten Suche aus wie bei der ersten.",
     "overviewNewFeatureSearchGroupsHow": "Treffer werden jetzt danach gruppiert, warum sie passen: die starken bleiben offen, der Rest klappt hinter eine Überschrift mit Anzahl, und nichts geht verloren. Die Rangfolge liest, wie oft Sie ein Lesezeichen öffnen, und merkt sich, welches Ergebnis Sie zu welchen Tasten gewählt haben — so wird mail zu Ihrem eigenen Kürzel für Gmail, ohne eines anzulegen.",
     "overviewNewFeatureSearchGroupsEnable": "Nichts einzuschalten — Suche öffnen und tippen.",
-    "overviewNewFeatureSearchGroupsCta": "Sucheinstellungen öffnen →"
+    "overviewNewFeatureSearchGroupsCta": "Sucheinstellungen öffnen →",
+    "previewImageCacheSizeLabel": "Größe des Bild-Caches",
+    "previewImageCacheUsage": "{files} zwischengespeicherte Bilder, {used} von {cap}",
+    "previewImageCacheUnknown": "Zwischengespeicherte Bilder: wird gezählt…",
+    "clearPreviewImagesBtn": "Zwischengespeicherte Bilder entfernen",
+    "clearPreviewImagesConfirm": "Alle zwischengespeicherten Vorschaubilder entfernen? Sie werden bei Bedarf erneut geladen.",
+    "clearPreviewImagesDone": "Zwischengespeicherte Bilder entfernt.",
+    "clearPreviewImagesError": "Die zwischengespeicherten Bilder konnten nicht entfernt werden."
   },
   "colors": {
     "title": "themenanpassung",

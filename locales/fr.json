@@ -5536,7 +5536,14 @@
     "overviewNewFeatureSearchGroupsWhat": "Une lettre remplissait l’écran. Taper g plaçait Gmail et widGetonderzoek dans la même colonne, dans le même style, dans un ordre que rien n’expliquait — et le classement était identique à votre millième recherche comme à la première.",
     "overviewNewFeatureSearchGroupsHow": "Les résultats sont désormais regroupés selon la raison de leur correspondance : les plus forts restent ouverts, les autres se replient derrière un titre et un compte, et rien n’est écarté. Le classement lit la fréquence à laquelle vous ouvrez un favori et retient le résultat choisi pour les touches saisies, si bien que mail devient votre propre alias pour Gmail sans créer de raccourci.",
     "overviewNewFeatureSearchGroupsEnable": "Rien à activer — ouvrez la recherche et tapez.",
-    "overviewNewFeatureSearchGroupsCta": "Ouvrir les réglages de recherche →"
+    "overviewNewFeatureSearchGroupsCta": "Ouvrir les réglages de recherche →",
+    "previewImageCacheSizeLabel": "Taille du cache d'images",
+    "previewImageCacheUsage": "{files} images en cache, {used} sur {cap}",
+    "previewImageCacheUnknown": "Images en cache : comptage…",
+    "clearPreviewImagesBtn": "Supprimer les images en cache",
+    "clearPreviewImagesConfirm": "Supprimer toutes les images d'aperçu en cache ? Elles seront récupérées à nouveau si nécessaire.",
+    "clearPreviewImagesDone": "Images en cache supprimées.",
+    "clearPreviewImagesError": "Impossible de supprimer les images en cache."
   },
   "colors": {
     "title": "personnalisation du thème",
