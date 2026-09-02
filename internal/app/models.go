@@ -436,18 +436,20 @@ type Settings struct {
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
-	LinkPreviewParts          []string                     `json:"linkPreviewParts,omitempty"`
-	LinkPreviewHoverDelayMs   int                          `json:"linkPreviewHoverDelayMs"`     // Hover delay before preview card appears
-	ShowShortcuts             bool                         `json:"showShortcuts"`               // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
-	ShortcutDisplay           string                       `json:"shortcutDisplay,omitempty"`   // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
-	ShowPinIcon               bool                         `json:"showPinIcon"`                 // Show pin icon next to pinned bookmarks
-	ShowNoteIcon              bool                         `json:"showNoteIcon"`                // Show note icon next to bookmarks with a note
-	IncludeFindersInSearch    bool                         `json:"includeFindersInSearch"`      // Include finders in normal search
-	SortMethod                string                       `json:"sortMethod,omitempty"`        // Legacy global sort (migrated to per-category sortMode)
-	CategorySortModes         map[string]map[string]string `json:"categorySortModes,omitempty"` // Per-page sort for uncategorized/orphan categories
-	CategorySortModesMigrated bool                         `json:"categorySortModesMigrated"`   // Legacy sortMethod migrated to per-category modes
-	LayoutPreset              string                       `json:"layoutPreset"`                // Dashboard layout preset
-	LayoutVersion             string                       `json:"layoutVersion"`               // Dashboard layout version: classic, modern
+	LinkPreviewParts              []string                     `json:"linkPreviewParts,omitempty"`
+	LinkPreviewHoverDelayMs       int                          `json:"linkPreviewHoverDelayMs"`       // Hover delay before preview card appears
+	PreviewImageCacheMB           int                          `json:"previewImageCacheMB,omitempty"` // Disk cap for data/preview-images
+	ShowShortcuts                 bool                         `json:"showShortcuts"`                 // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
+	ShortcutDisplay               string                       `json:"shortcutDisplay,omitempty"`     // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
+	ShowPinIcon                   bool                         `json:"showPinIcon"`                   // Show pin icon next to pinned bookmarks
+	ShowNoteIcon                  bool                         `json:"showNoteIcon"`                  // Show note icon next to bookmarks with a note
+	IncludeFindersInSearch        bool                         `json:"includeFindersInSearch"`        // Include finders in normal search
+	SortMethod                    string                       `json:"sortMethod,omitempty"`          // Legacy global sort (migrated to per-category sortMode)
+	CategorySortModes             map[string]map[string]string `json:"categorySortModes,omitempty"`   // Per-page sort for uncategorized/orphan categories
+	CategorySortModesMigrated     bool                         `json:"categorySortModesMigrated"`     // Legacy sortMethod migrated to per-category modes
+	PreviewImagesStrippedMigrated bool                         `json:"previewImagesStrippedMigrated"` // Cached image taken off every bookmark; the preview cache owns media now
+	LayoutPreset                  string                       `json:"layoutPreset"`                  // Dashboard layout preset
+	LayoutVersion                 string                       `json:"layoutVersion"`                 // Dashboard layout version: classic, modern
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
 	 * its greys, the surface ladder, the wash behind the page.
@@ -1194,6 +1196,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowLinkPreviewCards:         true,
 			LinkPreviewMode:              "hover",
 			ShowSiteNews:                 true,
+			PreviewImageCacheMB:          200,
 			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
 			ShortcutDisplay:              shortcutDisplayAlways,
@@ -1305,7 +1308,94 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateShortcutOpenModeDefaultInstant()
 	fs.migrateHideEmptyCategoriesDefaultOn()
 	fs.migrateConfigButtonDefaultOn()
+	fs.migrateStripBookmarkPreviewImages()
 
+}
+
+/*
+ * One-time migration: take the cached image off every bookmark.
+ *
+ * Bookmarks carried a previewImage of their own and it held the remote address.
+ * The card's shortcut path builds its picture straight from the bookmark
+ * without asking the server, so those bookmarks kept loading the third party
+ * even once preview media was cached locally -- on a real store, 21 bookmarks
+ * against 16 entries in the cache itself.
+ *
+ * The preview cache is the one owner of cached media now, so the field is
+ * cleared and never written again. Nothing is lost: the image comes back from
+ * the cache, addressed by the source URL the cache still holds.
+ */
+func (fs *FileStore) migrateStripBookmarkPreviewImages() {
+	// The marker is read and written as raw JSON rather than through
+	// GetSettings/SaveSettings. Several migration markers here live only as a
+	// key in settings.json with no field on Settings, so a struct round-trip
+	// drops them and every one of those migrations runs again.
+	if fs.migrationMarkerSet("previewImagesStrippedMigrated") {
+		return
+	}
+
+	stripped := 0
+	for _, page := range fs.GetPages() {
+		_ = fs.MutateBookmarksOnPage(page.ID, func(bookmarks []Bookmark) ([]Bookmark, error) {
+			stripped += stripBookmarkPreviewImages(bookmarks)
+			return bookmarks, nil
+		})
+	}
+
+	// Left unmarked on a write failure so the next start tries again; the walk
+	// is idempotent.
+	if !fs.setMigrationMarker("previewImagesStrippedMigrated") {
+		return
+	}
+	if stripped > 0 {
+		logInfo(logComponentStore, "took the cached image off %d bookmarks; the preview cache owns them now", stripped)
+	}
+}
+
+// migrationMarkerSet reports whether a one-time migration has already recorded
+// that it ran, reading settings.json as raw JSON so no key is disturbed.
+func (fs *FileStore) migrationMarkerSet(key string) bool {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return false
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	if marker, ok := raw[key]; ok {
+		var done bool
+		return json.Unmarshal(marker, &done) == nil && done
+	}
+	return false
+}
+
+// setMigrationMarker records that a one-time migration ran, leaving every other
+// key in settings.json exactly as it found it. Reports whether it stuck.
+func (fs *FileStore) setMigrationMarker(key string) bool {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return false
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	raw[key] = json.RawMessage(`true`)
+
+	out, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return false
+	}
+	return writeFileAtomic(fs.settingsFile, out, 0644) == nil
 }
 
 func (fs *FileStore) migrateCustomThemesToUserManaged() {
@@ -3048,6 +3138,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowLinkPreviewCards:           true,
 			LinkPreviewMode:                "hover",
 			ShowSiteNews:                   true,
+			PreviewImageCacheMB:            200,
 			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
 			ShortcutDisplay:                shortcutDisplayAlways,
@@ -4497,6 +4588,20 @@ type BookmarkPreview struct {
 	Image       string `json:"image"`
 	Domain      string `json:"domain"`
 	Icon        string `json:"icon"`
+	/*
+	 * ImageSource and IconSource are where Image and Icon were fetched from.
+	 *
+	 * Image and Icon hold a local path under /data/preview-images/ and never a
+	 * remote URL: a card that loaded the remote address would announce the
+	 * reader to every site they had saved, which is the whole reason these are
+	 * cached at all. The source is kept so an evicted, cleared or
+	 * never-backed-up file can be fetched again without re-parsing the page.
+	 */
+	ImageSource string `json:"imageSource,omitempty"`
+	IconSource  string `json:"iconSource,omitempty"`
+	// ImageFetchedAt is when the media fetch was last attempted, successful or
+	// not, so a source that 404s is not retried on every hover forever.
+	ImageFetchedAt int64 `json:"imageFetchedAt,omitempty"`
 	/*
 	 * SiteName is og:site_name -- what the publisher calls itself.
 	 *

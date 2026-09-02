@@ -499,6 +499,16 @@ class SearchComponent {
         return false;
     }
 
+    /** Whether this digit addresses a page that exists, on the view that has pages. */
+    _digitNamesAPage(key) {
+        const dash = window.dashboardInstance;
+        if (!dash || this._isDashboardViewActive()) {
+            return false;
+        }
+        const index = parseInt(key, 10) - 1;
+        return Number.isInteger(index) && index >= 0 && index < (dash.pages?.length || 0);
+    }
+
     _isInboxLauncherKey(e, key) {
         return key === '>'
             || key === ':'
@@ -576,6 +586,23 @@ class SearchComponent {
         }
 
         if (!this.searchActive && key >= '1' && key <= '9' && window.dashboardInstance?.keyboardNavigation?.isGChordActive?.()) {
+            return;
+        }
+
+        /*
+         * A digit that names a page belongs to the page switcher.
+         *
+         * Both answer the same keystroke in the bubble phase on document, so
+         * which one wins comes down to registration order — and the dashboard's
+         * own handler stands down the moment this palette is open. Pressing 2
+         * therefore threw the palette over the dashboard and did not switch the
+         * page at all.
+         *
+         * Only on the bookmark view. On inbox, health and config a digit is a
+         * launcher key with nothing else to mean, which is what the guard above
+         * this one is about.
+         */
+        if (!this.searchActive && key >= '1' && key <= '9' && this._digitNamesAPage(key)) {
             return;
         }
 

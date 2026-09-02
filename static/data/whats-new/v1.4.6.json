@@ -1,0 +1,42 @@
+{
+  "tag": "v1.4.6",
+  "date": "2 September 2026",
+  "releasedAt": "2026-09-02",
+  "modalLead": "Hovering a bookmark used to tell that website you were looking at your own dashboard. The picture on the preview card now comes from nextDash instead of from the site, so the only machine that hears about your hover is your own — and the sites that refused to hand their picture over finally show one.",
+  "sections": [
+    {
+      "title": "Link previews",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The picture on a preview card comes from nextDash now.</strong> Hovering a bookmark asked that website for its picture directly, which told the site you were there &mdash; and some sites refuse to hand a picture to anyone but themselves, so those cards stayed blank. nextDash fetches the picture and the site's icon once and keeps them, so hovering reaches nothing but your own dashboard."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The first hover shows the card, the picture follows.</strong> The card never waits on a slow website: it opens with its text straight away, and the picture appears on the card you already have open. No reload, no second hover."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config &rarr; Icons &amp; previews shows what the pictures are using.</strong> How many are stored and how much room they take, a size to keep them under &mdash; 50, 200 or 500 MB &mdash; and a button to remove them all. Removing them costs nothing: each is fetched again the next time you hover that bookmark."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>And you can switch it off.</strong> Under Config &rarr; Appearance &rarr; Display, untick <em>Image</em> in the card's row checklist and no pictures are drawn &mdash; or fetched or stored, because the setting is read before anything is downloaded. Setting preview cards to <em>Off</em> stops all of it. Anything already kept can be removed under Icons &amp; previews."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The grey tooltip no longer covers the preview card.</strong> A card and a tooltip answered the same hover, and the tooltip landed on top. With preview cards off the tooltip is exactly as it was."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A number key switches pages again.</strong> Pressing 2 could throw the search window open and leave you on page 1. A number that names one of your pages now goes to that page and nothing else; a number with no page behind it still opens search."
+        }
+      ]
+    }
+  ]
+}

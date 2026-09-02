@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.6 — 2 September 2026](#v146--2-september-2026)
 - [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
 - [v1.4.5.2 — 2 September 2026](#v1452--2-september-2026)
 - [v1.4.5.1 — 2 September 2026](#v1451--2-september-2026)
@@ -191,6 +192,31 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.6 — 2 September 2026
+
+### Link previews
+
+- **new — the preview picture is fetched by nextDash, not by your browser.** Hovering a bookmark used to make your browser ask that site for its picture directly, which told the site you were looking at your own dashboard. It also failed outright against a host that refuses to serve its image to other origins — claude.ai was 2 of the 16 pictures in a real cache, and the third-party traffic was all 16. The server now fetches the card's image and the site's icon, stores them under `data/preview-images/`, and the card draws from your own address. The first hover on a bookmark shows the card without its picture: the download runs in the background so one slow host can never hold up the card, and the picture arrives on the card that is already open, without a reload.
+- **new — none of it is compulsory.** Unticking *Image* in the card's row checklist under **Config → Appearance → Display** stops the pictures being drawn *and* being fetched — the checklist and the card's mode are read on the server before anything is downloaded — and setting preview cards to *Off* stops all of it, icons included. An install that wants none of this stores nothing and contacts nobody.
+- **new — Config → Icons & previews says what the picture cache is using, and can empty it.** A size to cap it at (50, 200 or 500 MB) and a button to remove every stored picture. Nothing is lost by clearing: each one is fetched again the next time it is needed, because the address it came from is kept.
+- **fix — the grey tooltip no longer sits on top of the preview card.** The card removes the native tooltip from the row, but since v1.4.4 the text also sat on the row's label and on the whole category list when a sort order locks dragging — and a tooltip on a child wins over an absent one on its parent. Both now stand aside when a card is coming. With preview cards off the tooltip is unchanged, and the drag hint still appears as a notification when a locked row is dragged.
+
+### Keyboard
+
+- **fix — a digit switches pages again instead of opening the search palette.** Both answered the same keystroke on the same element, so which one won came down to load order, and the dashboard's own handler stands down whenever the palette is open. Pressing `2` could therefore open the palette *and* leave you on page 1. The palette now leaves a digit alone when it names a page that exists; a digit beyond the last page still reaches it, and on Inbox, Health and Config a digit is unchanged.
+
+### Under the hood
+
+- **fix — the bundle's source map is accepted again.** Safari reported both `dashboard.js.map` and `search.js.map` as having an invalid `sourcesContent` and dropped them, so a stack trace named `dashboard.js` and a line number nobody could place. The map set `sourcesContent` to `null`, and the spec makes that key an optional *array*. The originals are served from disk under their own URLs, so the key is now left out.
+- Cached pictures are addressed by the source URL rather than by their bytes, so a missing file heals itself: the worker knows what to fetch from the path alone. They are capped, evicted oldest-first, swept when the trash is emptied, and deliberately left out of backups — `preview-cache.json` and `health-cache.json` are already dropped on import for the same reason, and a restore fetches them again.
+- Bookmarks no longer carry a preview image of their own. The field held the remote address and the card's shortcut path drew from it without asking the server, so those bookmarks kept reaching the third party; a one-time migration clears it.
+
+### Docs
+
+- Changelog, What's new, Config → Overview, About → News & features, Config → Help and the manual updated for v1.4.6.
 
 ---
 

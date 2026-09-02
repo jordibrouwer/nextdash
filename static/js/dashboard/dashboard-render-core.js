@@ -1204,7 +1204,19 @@ class DashboardRenderCore {
             { mode: modeLabel },
             `Sorted by ${modeLabel} — switch this category to manual order to drag bookmarks.`
         );
-        listElement.setAttribute('title', hint);
+        /*
+         * A title on the list is a tooltip on every row inside it: the browser
+         * walks up to the nearest ancestor that has one, so a sort-locked
+         * category put this grey box over every preview card it opened. Only
+         * where no card is coming, then — and the hint is not lost either way,
+         * because dragging one of these rows raises it as a notification, which
+         * is the moment the question is actually asked.
+         */
+        if (!d.preview?.cardsEnabled?.()) {
+            listElement.setAttribute('title', hint);
+        } else {
+            listElement.removeAttribute('title');
+        }
 
         const showHintToast = () => {
             const now = Date.now();
