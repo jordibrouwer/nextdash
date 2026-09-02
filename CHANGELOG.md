@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.5.4 — 2 September 2026](#v1454--2-september-2026)
 - [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
 - [v1.4.5.2 — 2 September 2026](#v1452--2-september-2026)
 - [v1.4.5.1 — 2 September 2026](#v1451--2-september-2026)
@@ -191,6 +192,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.5.4 — 2 September 2026
+
+### Under the hood
+
+- **fix — the bundle's source map is accepted again.** Safari reported both `dashboard.js.map` and `search.js.map` as having an invalid `sourcesContent` and dropped them, so the bundle lost exactly the attribution the map was added to give it: a stack trace named `dashboard.js` and a line number nobody could place. The map set `sourcesContent` to `null`, and the spec makes that key an optional *array* — null is neither an array nor absent. The originals are served from disk under their own URLs, so the key is now left out, which is what the code already said it meant.
 
 ---
 

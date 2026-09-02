@@ -103,14 +103,15 @@ func buildBundleSourceMap(b assetBundle, bundlePath string) string {
 		prevSourceLine = within[line]
 	}
 
+	// No sourcesContent: the originals are served from disk under their own
+	// URLs, so the browser fetches them rather than reading them from here.
+	// The key is left out rather than set to null -- the spec makes it an
+	// optional array, and Safari rejects the whole map over a null.
 	out := map[string]any{
 		"version":  3,
 		"file":     bundlePath,
 		"sources":  sources,
 		"mappings": mappings.String(),
-		// The originals are served from disk under their own URLs, so the
-		// browser fetches them rather than reading them from here.
-		"sourcesContent": nil,
 	}
 	raw, err := json.Marshal(out)
 	if err != nil {

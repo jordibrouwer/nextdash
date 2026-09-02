@@ -92,6 +92,41 @@ func TestBundleSourceMapNamesEveryFile(t *testing.T) {
 	}
 }
 
+// Safari rejected the map with "invalid sourcesContent" and dropped it, so the
+// bundle lost the attribution the map exists to give it.
+//
+// The spec makes sourcesContent an optional *array*. We were emitting the key
+// with a JSON null, which is neither an array nor absent. The originals are
+// served from disk under their own URLs, so leaving the key out is what we
+// meant all along.
+func TestBundleSourceMapOmitsSourcesContent(t *testing.T) {
+	b := assetBundle{
+		files:      []string{"js/one.js"},
+		content:    []byte("\n/* ==== js/one.js ==== */\nlineA\n"),
+		hash:       "abc123",
+		lineStarts: []int{2},
+	}
+
+	raw := buildBundleSourceMap(b, bundleJSPath)
+	if raw == "" {
+		t.Fatal("no source map produced")
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &fields); err != nil {
+		t.Fatalf("source map is not valid JSON: %v", err)
+	}
+	got, present := fields["sourcesContent"]
+	if !present {
+		return // Absent is valid, and is what we want.
+	}
+	// Present is only allowed if it is a real array.
+	var list []*string
+	if err := json.Unmarshal(got, &list); err != nil || list == nil {
+		t.Errorf("sourcesContent = %s, want the key absent or a JSON array", got)
+	}
+}
+
 // The banner comment buildBundle already writes is what the line offsets are
 // counted from, so the two cannot drift apart.
 func TestBuildBundleRecordsWhereEachFileStarts(t *testing.T) {
