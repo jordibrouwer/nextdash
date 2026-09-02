@@ -137,6 +137,31 @@ publish_github_release() {
   echo "Published GitHub Release ${tag} (latest)."
 }
 
+# Files that must exist on main regardless of PRUNE_DIRS — the Dockerfile
+# needs the two scripts/ entries to build at all, and docker-publish.yml is
+# the workflow that builds and publishes that same image on every release.
+#
+# Defined here (before the merge) rather than down by PRUNE_DIRS because a
+# file deleted on main in an earlier release and left untouched on dev since
+# is resolved by git as a clean, silent delete — not a conflict. It never
+# shows up in the modify/delete conflict loop below, so it's already gone
+# from the merged tree by the time PRUNE_DIRS would otherwise have spared
+# it. These have to be restored explicitly after the merge, every time.
+KEEP_FILES=(
+  scripts/docker-entrypoint.sh
+  scripts/gen-asset-hashes.go
+  .github/workflows/docker-publish.yml
+)
+
+is_kept() {
+  local candidate="$1"
+  local k
+  for k in "${KEEP_FILES[@]}"; do
+    [[ "$candidate" == "$k" ]] && return 0
+  done
+  return 1
+}
+
 git config merge.ours.driver true
 
 git checkout main
@@ -169,6 +194,11 @@ if ! git merge dev --no-edit; then
     #
     # None of these were in PRUNE_DIRS or the explicit git rm list, so they
     # were never deliberately dropped — they just fell through this case.
+    if is_kept "$path"; then
+      git checkout --theirs -- "$path" 2>/dev/null || true
+      git add -- "$path" 2>/dev/null || true
+      continue
+    fi
     case "$path" in
       static/js/*|static/css/*|static/data/*|templates/*|locales/*|CHANGELOG.md|internal/app/asset_hashes_gen.go)
         git checkout --theirs -- "$path" 2>/dev/null || true
@@ -188,6 +218,17 @@ if ! git merge dev --no-edit; then
   git commit --no-edit
 fi
 
+# Belt-and-braces: restore any KEEP_FILES entry that the merge silently
+# dropped (no conflict shown, because it was unchanged on dev since main
+# deleted it in an earlier release). Safe to run even when the file was
+# never touched by the merge at all — checkout + add is a no-op then.
+for f in "${KEEP_FILES[@]}"; do
+  if git cat-file -e "dev:${f}" 2>/dev/null; then
+    git checkout dev -- "$f" 2>/dev/null || true
+    git add -- "$f" 2>/dev/null || true
+  fi
+done
+
 PRUNE_DIRS=(
   tests
   scripts
@@ -197,26 +238,6 @@ PRUNE_DIRS=(
   playwright-report
   node_modules
 )
-
-# Files that live under one of the PRUNE_DIRS above but are required on main
-# regardless — the Dockerfile needs the two scripts/ entries to build at all,
-# and docker-publish.yml is the workflow that builds and publishes that same
-# image on every release, so pruning it here would delete it on the very
-# release that's supposed to use it.
-KEEP_FILES=(
-  scripts/docker-entrypoint.sh
-  scripts/gen-asset-hashes.go
-  .github/workflows/docker-publish.yml
-)
-
-is_kept() {
-  local candidate="$1"
-  local k
-  for k in "${KEEP_FILES[@]}"; do
-    [[ "$candidate" == "$k" ]] && return 0
-  done
-  return 1
-}
 
 for dir in "${PRUNE_DIRS[@]}"; do
   while IFS= read -r f; do
