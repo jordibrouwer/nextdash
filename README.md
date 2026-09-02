@@ -4,6 +4,8 @@
 
 # nextDash
 
+> 🇨🇳 **本应用支持简体中文。** nextDash 的界面提供中文语言选项 — 在设置中将语言切换为「中文」即可。
+
 **A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
 
 My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
