@@ -90,8 +90,39 @@ func previewMediaPresent(localPath string) bool {
 const previewMediaQueueDepth = 64
 
 type previewMediaJob struct {
-	key   string
-	entry BookmarkPreview
+	key       string
+	entry     BookmarkPreview
+	wantImage bool
+	wantIcon  bool
+}
+
+/*
+ * What the reader has actually asked to see.
+ *
+ * Fetching is worth doing only for something that will be drawn. With preview
+ * cards switched off the rows still ask the server for their tooltip text, so
+ * without this the pictures were fetched and stored for a card that never
+ * opens — and "turn it off" was not an answer anyone could give.
+ *
+ * The card's row checklist is the finer control: unticking Image stops the
+ * pictures while the site icon, which is part of the card's header rather than
+ * one of the rows, carries on.
+ */
+func (h *Handlers) previewMediaWanted() (image bool, icon bool) {
+	settings := h.store.GetSettings()
+	if normalizeLinkPreviewMode(settings.LinkPreviewMode, settings.ShowLinkPreviewCards) == "off" {
+		return false, false
+	}
+	parts := settings.LinkPreviewParts
+	if parts == nil {
+		return true, true
+	}
+	for _, part := range parts {
+		if part == "image" {
+			return true, true
+		}
+	}
+	return false, true
 }
 
 var (
@@ -119,9 +150,13 @@ func (h *Handlers) queuePreviewMediaFetch(key string, entry BookmarkPreview) {
 	if key == "" || !previewMediaFetchDue(entry) {
 		return
 	}
+	wantImage, wantIcon := h.previewMediaWanted()
+	if !wantImage && !wantIcon {
+		return
+	}
 	h.startPreviewMediaWorkers()
 	select {
-	case previewMediaQueue <- previewMediaJob{key: key, entry: entry}:
+	case previewMediaQueue <- previewMediaJob{key: key, entry: entry, wantImage: wantImage, wantIcon: wantIcon}:
 	default:
 		// Full. The next hover asks again.
 	}
@@ -131,12 +166,12 @@ func (h *Handlers) runPreviewMediaJob(job previewMediaJob) {
 	entry := job.entry
 	allowLocal := h.allowLocalBookmarks()
 
-	if entry.ImageSource != "" && !previewMediaPresent(entry.Image) {
+	if job.wantImage && entry.ImageSource != "" && !previewMediaPresent(entry.Image) {
 		if name, err := downloadPreviewImage(entry.ImageSource, allowLocal); err == nil && name != "" {
 			entry.Image = "/data/" + previewImageDirName + "/" + name
 		}
 	}
-	if entry.IconSource != "" && !previewMediaPresent(entry.Icon) {
+	if job.wantIcon && entry.IconSource != "" && !previewMediaPresent(entry.Icon) {
 		if name, err := downloadPreviewIcon(entry.IconSource, allowLocal); err == nil && name != "" {
 			entry.Icon = "/data/" + previewImageDirName + "/" + name
 		}

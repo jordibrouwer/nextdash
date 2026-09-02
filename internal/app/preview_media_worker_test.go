@@ -116,7 +116,7 @@ func TestRunPreviewMediaJobStoresLocallyAndUpdatesTheCache(t *testing.T) {
 	}
 
 	key := "https://example.com"
-	h.runPreviewMediaJob(previewMediaJob{key: key, entry: BookmarkPreview{
+	h.runPreviewMediaJob(previewMediaJob{key: key, wantImage: true, wantIcon: true, entry: BookmarkPreview{
 		URL: key,
 		// A real entry always carries this: it is when the page was parsed, and
 		// getPreviewCacheEntry treats a zero as long expired.
@@ -160,7 +160,7 @@ func TestRunPreviewMediaJobStampsAFailedFetch(t *testing.T) {
 	}
 
 	key := "https://example.com"
-	h.runPreviewMediaJob(previewMediaJob{key: key, entry: BookmarkPreview{
+	h.runPreviewMediaJob(previewMediaJob{key: key, wantImage: true, wantIcon: true, entry: BookmarkPreview{
 		URL:         key,
 		FetchedAt:   time.Now().UnixMilli(),
 		ImageSource: server.URL + "/gone.png",
@@ -204,5 +204,52 @@ func TestPreviewMediaTTLIsSpreadPerSource(t *testing.T) {
 	// Nothing to spread on falls back to the flat week rather than to zero.
 	if previewMediaTTLMs("") != previewCacheTTLMs {
 		t.Error("an empty source did not fall back to the base TTL")
+	}
+}
+
+// Turning the card off has to turn the fetching off with it. The rows still ask
+// the server for their tooltip text when cards are off, so without this the
+// pictures were fetched and stored for a card that never opens.
+func TestPreviewMediaWantedFollowsWhatTheReaderAskedFor(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	h := &Handlers{store: NewStore()}
+
+	set := func(mutate func(*Settings)) {
+		s := h.store.GetSettings()
+		mutate(&s)
+		if err := h.store.SaveSettings(s); err != nil {
+			t.Fatalf("save settings: %v", err)
+		}
+	}
+
+	set(func(s *Settings) {
+		s.LinkPreviewMode = "hover"
+		s.ShowLinkPreviewCards = true
+		s.LinkPreviewParts = nil
+	})
+	if image, icon := h.previewMediaWanted(); !image || !icon {
+		t.Errorf("with the card on and no checklist: image=%v icon=%v, want both", image, icon)
+	}
+
+	// Off means off: nothing is drawn, so nothing is worth fetching.
+	set(func(s *Settings) { s.LinkPreviewMode = "off"; s.ShowLinkPreviewCards = false })
+	if image, icon := h.previewMediaWanted(); image || icon {
+		t.Errorf("with the card off: image=%v icon=%v, want neither", image, icon)
+	}
+
+	// The checklist is the finer control. Unticking Image stops the pictures;
+	// the site icon sits in the card's header rather than in the rows.
+	set(func(s *Settings) {
+		s.LinkPreviewMode = "hover"
+		s.ShowLinkPreviewCards = true
+		s.LinkPreviewParts = []string{"description", "note"}
+	})
+	if image, icon := h.previewMediaWanted(); image || !icon {
+		t.Errorf("with Image unticked: image=%v icon=%v, want image off and icon on", image, icon)
+	}
+
+	set(func(s *Settings) { s.LinkPreviewParts = []string{"image", "description"} })
+	if image, _ := h.previewMediaWanted(); !image {
+		t.Error("Image is ticked, so pictures are wanted")
 	}
 }
