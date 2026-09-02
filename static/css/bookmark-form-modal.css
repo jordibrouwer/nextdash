@@ -39,7 +39,7 @@
     flex-direction: column;
     margin: auto;
     flex-shrink: 0;
-    border-radius: 14px;
+    border-radius: var(--radius-7, 14px);
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.28));
     background: var(--background-primary, #fff);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
@@ -65,7 +65,7 @@
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: transparent;
     color: inherit;
     font-size: 1.35rem;
@@ -156,7 +156,7 @@
     .bookmark-form-modal-body .bookmark-inline-col {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
+        gap: var(--space-1-5, 0.35rem);
         min-width: 0;
     }
 

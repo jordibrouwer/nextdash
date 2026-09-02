@@ -50,7 +50,7 @@ body {
 }
 
 .dashboard-section.section-controls {
-    padding-top: 2rem;
+    padding-top: var(--space-6, 2rem);
     padding-bottom: 0;
 }
 
@@ -87,13 +87,13 @@ body {
  * 100px per side back to the grid on a wide screen; "airy" is for people who
  * want the columns pulled together. */
 body[data-side-margin="snug"] {
-    --dashboard-side-margin: clamp(1rem, 2.5vw, 3rem);
+    --dashboard-side-margin: clamp(var(--space-4, 1rem), 2.5vw, var(--space-7, 3rem));
 }
 body[data-side-margin="balanced"] {
-    --dashboard-side-margin: clamp(2rem, 6vw, 8rem);
+    --dashboard-side-margin: clamp(var(--space-6, 2rem), 6vw, 8rem);
 }
 body[data-side-margin="airy"] {
-    --dashboard-side-margin: clamp(3rem, 9vw, 12rem);
+    --dashboard-side-margin: clamp(var(--space-7, 3rem), 9vw, 12rem);
 }
 
 /* Header Top - Contains date, tabs, and config button */
@@ -106,7 +106,7 @@ body[data-side-margin="airy"] {
 .date {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     font-size: calc(var(--font-size-controls) * 1.2);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
@@ -150,8 +150,8 @@ body[data-side-margin="airy"] {
     z-index: 9000;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 0.85rem 1rem 0.7rem;
+    border-radius: var(--radius-7, 12px);
+    padding: var(--space-3, 0.85rem) var(--space-4, 1rem) var(--space-3, 0.7rem);
     min-width: 210px;
     color: var(--text-primary);
     font-family: var(--font-family-main);
@@ -165,11 +165,11 @@ body[data-side-margin="airy"] {
 }
 
 .date-popover-week-label {
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-secondary);
-    margin-bottom: 0.55rem;
+    margin-bottom: var(--space-2, 0.55rem);
 }
 
 .date-popover-grid {
@@ -180,18 +180,18 @@ body[data-side-margin="airy"] {
 }
 
 .date-popover-col-label {
-    font-size: 0.62rem;
+    font-size: var(--text-2xs, 0.62rem);
     color: var(--text-tertiary, var(--text-secondary));
-    padding-bottom: 0.25rem;
+    padding-bottom: var(--space-1, 0.25rem);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
 .date-popover-day {
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-weight: var(--font-weight-semibold, 600);
-    padding: 0.3rem 0;
-    border-radius: 6px;
+    padding: var(--space-1, 0.3rem) 0;
+    border-radius: var(--radius-4, 6px);
     line-height: 1;
     color: var(--text-primary);
 }
@@ -206,14 +206,14 @@ body[data-side-margin="airy"] {
 }
 
 .date-popover-footer {
-    margin-top: 0.7rem;
-    padding-top: 0.55rem;
+    margin-top: var(--space-3, 0.7rem);
+    padding-top: var(--space-2, 0.55rem);
     border-top: 1px solid var(--border-primary);
     text-align: center;
 }
 
 .date-popover-cal-link {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-secondary);
     text-decoration: none;
     transition: color 0.1s ease;
@@ -232,8 +232,8 @@ body[data-side-margin="airy"] {
     position: fixed;
     z-index: 10160;
     max-width: min(19rem, calc(100vw - 1rem));
-    padding: 0.4rem 0.6rem;
-    border-radius: 0.5rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
+    border-radius: var(--radius-5, 0.5rem);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-primary);
@@ -260,8 +260,8 @@ body[data-side-margin="airy"] {
     z-index: 9000;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.65rem;
-    padding: 0.35rem 0 0.45rem;
+    border-radius: var(--radius-6, 0.65rem);
+    padding: var(--space-1-5, 0.35rem) 0 var(--space-2, 0.45rem);
     min-width: 12rem;
     max-width: min(16rem, calc(100vw - 1rem));
     max-height: min(70vh, 20rem);
@@ -311,11 +311,11 @@ body[data-side-margin="airy"] {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-secondary);
-    padding: 0.4rem 0.85rem 0.25rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.85rem) var(--space-1, 0.25rem);
 }
 
 .move-popover-current-hint {
-    padding: 0 0.85rem 0.55rem;
+    padding: 0 var(--space-3, 0.85rem) var(--space-2, 0.55rem);
     font-size: calc(var(--font-size-controls) * 0.88);
     font-weight: var(--font-weight-medium);
     color: var(--text-primary);
@@ -328,20 +328,20 @@ body[data-side-margin="airy"] {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-tertiary, var(--text-secondary));
-    padding: 0.5rem 0.85rem 0.2rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem) var(--space-1, 0.2rem);
 }
 
 .move-popover-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.45rem 0.85rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.85rem);
     font-size: calc(var(--font-size-controls) * 0.92);
     font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     cursor: pointer;
-    border-radius: 0.4rem;
-    margin: 0 0.3rem;
+    border-radius: var(--radius-4, 0.4rem);
+    margin: 0 var(--space-1, 0.3rem);
     transition:
         background-color 0.12s ease,
         color 0.12s ease;
@@ -381,22 +381,22 @@ body[data-side-margin="airy"] {
 .move-popover-check {
     width: 0.9rem;
     flex-shrink: 0;
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     color: var(--accent-primary);
     text-align: center;
 }
 
 .move-popover-divider {
     height: 1px;
-    margin: 0.35rem 0.5rem;
+    margin: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     background: var(--border-primary);
 }
 
 /* Marks an entry that opens a submenu rather than acting immediately. */
 .move-popover-submenu-caret {
     margin-left: auto;
-    padding-left: 0.5rem;
-    font-size: 0.7rem;
+    padding-left: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
 }
 
@@ -406,8 +406,8 @@ body[data-side-margin="airy"] {
    right-aligned blocks. */
 .move-popover-item-detail {
     margin-left: auto;
-    padding-left: 0.5rem;
-    font-size: 0.7rem;
+    padding-left: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
     white-space: nowrap;
 }
@@ -441,20 +441,20 @@ body[data-side-margin="airy"] {
 }
 
 .bookmark-check-mode-menu .move-popover-check {
-    margin-top: 0.15rem;
+    margin-top: var(--space-hairline, 0.15rem);
 }
 
 .check-mode-option-text {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--space-hairline, 0.1rem);
     min-width: 0;
 }
 
 .check-mode-option-label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 /* The accelerator is printed on the option rather than taught elsewhere, so the
@@ -464,28 +464,28 @@ body[data-side-margin="airy"] {
    .check-mode-option-key, which sits inside a label rather than beside one. */
 .move-popover-item-key {
     margin-left: auto;
-    padding: 0 0.25rem;
+    padding: 0 var(--space-1, 0.25rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.2rem;
+    border-radius: var(--radius-2, 0.2rem);
     font-family: inherit;
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     line-height: 1.4;
     color: var(--text-tertiary);
     white-space: nowrap;
 }
 
 .check-mode-option-key {
-    padding: 0 0.25rem;
+    padding: 0 var(--space-1, 0.25rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.2rem;
+    border-radius: var(--radius-2, 0.2rem);
     font-family: inherit;
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     line-height: 1.4;
     color: var(--text-tertiary);
 }
 
 .check-mode-option-body {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-normal);
     color: var(--text-secondary);
     white-space: normal;
@@ -513,22 +513,22 @@ body[data-side-margin="airy"] {
 }
 
 .tag-popover-bookmark-name {
-    padding-bottom: 0.35rem;
+    padding-bottom: var(--space-1-5, 0.35rem);
 }
 
 .tag-popover-current-tags {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem 0.4rem;
-    padding: 0 0.85rem 0.65rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-1-5, 0.4rem);
+    padding: 0 var(--space-3, 0.85rem) var(--space-3, 0.65rem);
 }
 
 .tag-popover-current-tags-label {
     font-size: calc(var(--font-size-controls) * 0.72);
     font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
-    margin-right: 0.15rem;
+    margin-right: var(--space-hairline, 0.15rem);
 }
 
 .tag-popover-current-tags-none {
@@ -539,11 +539,11 @@ body[data-side-margin="airy"] {
 
 .tag-popover-current-chip {
     font-size: calc(var(--font-size-controls) * 0.78);
-    padding: 0.12rem 0.45rem;
+    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
 }
 
 .tag-popover-empty-hint {
-    padding: 0.15rem 0.85rem 0.65rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-3, 0.85rem) var(--space-3, 0.65rem);
     font-size: calc(var(--font-size-controls) * 0.86);
     color: var(--text-secondary);
     line-height: 1.35;
@@ -561,7 +561,7 @@ body[data-side-margin="airy"] {
     font-size: calc(var(--font-size-controls) * 0.72);
     color: var(--text-tertiary, var(--text-secondary));
     margin-left: auto;
-    padding-left: 0.35rem;
+    padding-left: var(--space-1-5, 0.35rem);
 }
 
 .move-popover-item.is-current .tag-popover-item-meta {
@@ -575,13 +575,13 @@ body[data-side-margin="airy"] {
 
 /* Add spacing below the date/weather block to separate from page title */
 .dashboard-section.section-controls {
-    padding-bottom: 1.5rem;
+    padding-bottom: var(--space-5, 1.5rem);
 }
 
 .weather-icon {
     display: inline-flex;
     align-items: center;
-    margin: 0 0.22rem 0 0.18rem;
+    margin: 0 var(--space-1, 0.22rem) 0 var(--space-hairline, 0.18rem);
     vertical-align: -0.12em;
 }
 
@@ -611,7 +611,7 @@ body[data-side-margin="airy"] {
 /* Section trail under the view name. Sits in the header's own type scale, not
    the title's, so it reads as orientation rather than a second heading. */
 .title-breadcrumb {
-    margin: 0.15rem 0 0;
+    margin: var(--space-hairline, 0.15rem) 0 0;
     font-family: var(--font-family-main);
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
@@ -623,7 +623,7 @@ body[data-side-margin="airy"] {
 }
 
 .header-actions {
-    --header-control-gap: 0.5rem;
+    --header-control-gap: var(--space-2, 0.5rem);
     display: flex;
     align-items: center;
     gap: var(--header-control-gap);
@@ -649,7 +649,7 @@ body[data-side-margin="airy"] {
     flex-direction: column;
     align-items: stretch;
     grid-template-columns: unset;
-    row-gap: 0.75rem;
+    row-gap: var(--space-3, 0.75rem);
     width: 100%;
     max-width: 100%;
 }
@@ -658,8 +658,8 @@ body[data-side-margin="airy"] {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.55rem;
-    padding: 0.35rem 0.5rem 0.65rem;
+    gap: var(--space-2, 0.55rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem) var(--space-3, 0.65rem);
     flex-shrink: 0;
     width: 100%;
 }
@@ -686,12 +686,12 @@ body[data-side-margin="airy"] {
 .tag-filter-indicator-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.28rem;
+    gap: var(--space-1, 0.28rem);
     max-width: 100%;
     min-width: 0;
-    padding: 0.22rem 0.55rem;
+    padding: var(--space-1, 0.22rem) var(--space-2, 0.55rem);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
     color: var(--text-primary);
     font-family: var(--font-family-main);
@@ -722,7 +722,7 @@ body[data-side-margin="airy"] {
 
 .tag-filter-indicator-count::before {
     content: '·';
-    margin-right: 0.28rem;
+    margin-right: var(--space-1, 0.28rem);
     opacity: 0.55;
 }
 
@@ -731,7 +731,7 @@ body[data-side-margin="airy"] {
 .tag-filter-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-width: 0;
     max-width: 100%;
 }
@@ -744,7 +744,7 @@ body[data-side-margin="airy"] {
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     max-width: 100%;
     min-width: 0;
 }
@@ -753,7 +753,7 @@ body[data-side-margin="airy"] {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     min-width: 0;
     max-width: 100%;
 }
@@ -761,7 +761,7 @@ body[data-side-margin="airy"] {
 .tag-filter-indicator-tag-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.1rem;
+    gap: var(--space-hairline, 0.1rem);
     max-width: 100%;
     min-width: 0;
 }
@@ -773,8 +773,8 @@ body[data-side-margin="airy"] {
     color: var(--text-tertiary);
     width: 1.25rem;
     height: 1.25rem;
-    border-radius: 999px;
-    font-size: 0.95rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-base, 0.95rem);
     line-height: 1;
     cursor: pointer;
     transition:
@@ -801,7 +801,7 @@ body[data-side-margin="airy"] {
 
 .tag-filter-indicator-summary::before {
     content: '·';
-    margin-right: 0.28rem;
+    margin-right: var(--space-1, 0.28rem);
     opacity: 0.55;
 }
 
@@ -828,8 +828,8 @@ body[data-side-margin="airy"] {
     color: var(--text-secondary);
     width: 1.55rem;
     height: 1.55rem;
-    border-radius: 999px;
-    font-size: 1rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-md, 1rem);
     line-height: 1;
     cursor: pointer;
     transition:
@@ -901,7 +901,7 @@ body[data-side-margin="airy"] {
 #dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
     display: grid;
     grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
-    row-gap: 0.5rem;
+    row-gap: var(--space-2, 0.5rem);
     flex-direction: unset;
     flex-wrap: unset;
 }
@@ -1022,8 +1022,8 @@ body[data-side-margin="airy"] {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1.5rem 0.75rem;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.5rem) var(--space-3, 0.75rem);
     color: var(--text-tertiary);
     font-size: var(--font-size-text);
 }
@@ -1036,7 +1036,7 @@ body[data-side-margin="airy"] {
 .empty-state--tag-filter-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .empty-state--tag-filter-btn {
@@ -1045,7 +1045,7 @@ body[data-side-margin="airy"] {
     border-radius: var(--header-chip-radius, 999px);
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     color: var(--text-secondary);
-    padding: 0.35rem 0.8rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.8rem);
     font: inherit;
     font-size: var(--font-size-controls);
     cursor: pointer;
@@ -1064,7 +1064,7 @@ body[data-side-margin="airy"] {
 .page-navigation {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .page-swipe-hint {
@@ -1101,7 +1101,7 @@ body[data-side-margin="airy"] {
 }
 
 .page-nav-btn {
-    padding: 0.4rem 0.6rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
@@ -1164,19 +1164,19 @@ body[data-side-margin="airy"] {
     z-index: 1100;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.65rem;
-    padding: 0.6rem 0.7rem;
+    border-radius: var(--radius-6, 0.65rem);
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
     box-shadow: 0 4px 18px rgba(0,0,0,0.22);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     min-width: 12rem;
     max-width: min(20rem, calc(100vw - 1rem));
 }
 
 .page-tab-popover-row {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     align-items: center;
 }
 
@@ -1186,9 +1186,9 @@ body[data-side-margin="airy"] {
     font-size: 1.1em;
     background: var(--background-primary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
-    padding: 0.2rem 0.3rem;
+    padding: var(--space-1, 0.2rem) var(--space-1, 0.3rem);
     outline: none;
 }
 .page-tab-popover-icon:focus { border-color: var(--accent-primary); }
@@ -1197,18 +1197,18 @@ body[data-side-margin="airy"] {
     flex: 1;
     background: var(--background-primary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-controls);
-    padding: 0.2rem 0.4rem;
+    padding: var(--space-1, 0.2rem) var(--space-1-5, 0.4rem);
     outline: none;
 }
 .page-tab-popover-name:focus { border-color: var(--accent-primary); }
 
 .page-tab-color-swatches {
     display: flex;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     flex-wrap: wrap;
 }
 
@@ -1235,7 +1235,7 @@ body[data-side-margin="airy"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
+    font-size: var(--text-2xs, 0.6rem);
     color: var(--text-secondary);
     line-height: 1;
     pointer-events: none;
@@ -1312,7 +1312,7 @@ body[data-side-margin="airy"] {
     font-weight: var(--font-weight-bold);
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     color: #fff;
     background: var(--accent-error);
     pointer-events: none;
@@ -1341,8 +1341,8 @@ body[data-side-margin="airy"] {
     display: inline-flex;
     align-items: center;
     flex-wrap: nowrap;
-    gap: 0.3rem;
-    padding: 0.4rem 0.5rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
     border-radius: var(--layout-radius-sm, 8px);
 }
 
@@ -1415,10 +1415,10 @@ body[data-side-margin="airy"] {
     right: auto;
     min-width: 1.35rem;
     height: auto;
-    padding: 0.1rem 0.4rem;
-    font-size: 0.72rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid color-mix(in srgb, var(--accent-error) 40%, transparent);
     background: color-mix(in srgb, var(--accent-error) 18%, transparent);
     color: var(--accent-error);
@@ -1484,7 +1484,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     /* The horizontal space between two categories. Named because a wide
        category has to reproduce it between its own inner columns, and packed
        mode sets a different one. */
-    --dashboard-column-gap: 1.5rem;
+    --dashboard-column-gap: var(--space-5, 1.5rem);
     display: grid;
     row-gap: var(--category-row-gap, 2rem);
     column-gap: var(--dashboard-column-gap);
@@ -1594,7 +1594,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     gap: 0.15em;
     padding: 0 0.3em;
     border: 1px solid var(--border-secondary);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
     font-size: 0.7em;
     line-height: 1.5;
     color: var(--text-tertiary);
@@ -1693,7 +1693,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 .dashboard-grid.packed-columns .dashboard-column {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: var(--space-7, 3rem);
     flex: 0 0 var(--packed-column-width);
     width: var(--packed-column-width);
     max-width: var(--packed-column-width);
@@ -1753,85 +1753,85 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 }
 
 .dashboard-grid.layout-compact.packed-columns .dashboard-column {
-    gap: 1.5rem;
+    gap: var(--space-5, 1.5rem);
 }
 
 .dashboard-grid.layout-cards.packed-columns .dashboard-column {
-    gap: 1.5rem;
+    gap: var(--space-5, 1.5rem);
 }
 
 .dashboard-grid.layout-terminal.packed-columns .dashboard-column {
-    gap: 2rem;
+    gap: var(--space-6, 2rem);
 }
 
 /* Layout presets */
 .dashboard-grid.layout-default {
     row-gap: var(--category-row-gap, 2rem);
-    column-gap: 1.5rem;
+    column-gap: var(--space-5, 1.5rem);
 }
 
 .dashboard-grid.layout-compact {
-    row-gap: 1.5rem;
-    column-gap: 1rem;
+    row-gap: var(--space-5, 1.5rem);
+    column-gap: var(--space-4, 1rem);
 }
 
 .dashboard-grid.layout-compact .category {
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 .dashboard-grid.layout-compact .bookmarks-list {
-    gap: 0.3rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .dashboard-grid.layout-compact .bookmark-link {
-    padding: 0.25rem var(--bookmark-row-end-pad, 3px) 0.25rem var(--bookmark-row-start-pad, 6px);
+    padding: var(--space-1, 0.25rem) var(--bookmark-row-end-pad, 3px) var(--space-1, 0.25rem) var(--bookmark-row-start-pad, 6px);
 }
 
 .dashboard-grid.density-comfortable .bookmark-link {
     min-height: 2.05rem;
-    padding-block: 0.5rem;
+    padding-block: var(--density-row-pad-comfortable, 0.5rem);
 }
 
 .dashboard-grid.density-compact .bookmark-link {
     min-height: 1.85rem;
-    padding-block: 0.35rem;
+    padding-block: var(--density-row-pad-compact, 0.35rem);
 }
 
 .dashboard-grid.density-dense .bookmark-link {
     min-height: 1.65rem;
-    padding-block: 0.2rem;
-    gap: 0.45rem;
+    padding-block: var(--density-row-pad-dense, 0.2rem);
+    gap: var(--density-row-inner-gap-dense, 0.45rem);
 }
 
 /* auto: grid class density-auto had no row rules → smart vs normal drifted; align with compact baseline */
 .dashboard-grid.density-auto .bookmark-link {
     min-height: 1.85rem;
-    padding-block: 0.35rem;
+    padding-block: var(--density-row-pad-compact, 0.35rem);
 }
 
 /* Inter-row gap scales with density for every bookmarks list (smart + reorderable). */
 .dashboard-grid.density-comfortable .bookmarks-list {
-    gap: 0.42rem;
+    gap: var(--density-row-list-gap-comfortable, 0.42rem);
 }
 .dashboard-grid.density-compact .bookmarks-list {
-    gap: 0.3rem;
+    gap: var(--density-row-list-gap-compact, 0.3rem);
 }
 .dashboard-grid.density-dense .bookmarks-list {
-    gap: 0.18rem;
+    gap: var(--density-row-list-gap-dense, 0.18rem);
 }
 .dashboard-grid.density-auto .bookmarks-list {
-    gap: 0.3rem;
+    gap: var(--density-row-list-gap-compact, 0.3rem);
 }
 
 .dashboard-grid.layout-cards {
-    gap: 1.5rem;
+    gap: var(--space-5, 1.5rem);
 }
 
 .dashboard-grid.layout-cards .category {
     background: color-mix(in srgb, var(--background-primary) 92%, var(--text-secondary) 8%);
     border: 1px solid var(--border-primary);
-    border-radius: 10px;
-    padding: 0.9rem;
+    border-radius: var(--radius-6, 10px);
+    padding: var(--space-4, 1rem);
 }
 
 .dashboard-grid.layout-cards .bookmark-link {
@@ -1854,8 +1854,8 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 }
 
 .dashboard-grid.layout-terminal {
-    row-gap: 2rem;
-    column-gap: 1.5rem;
+    row-gap: var(--space-6, 2rem);
+    column-gap: var(--space-5, 1.5rem);
 }
 
 /* Note badge tooltip */
@@ -1872,12 +1872,12 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     right: 0;
     width: max-content;
     max-width: 20rem;
-    padding: 0.3rem 0.55rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-primary);
     border-radius: var(--layout-radius-sm, 8px);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     white-space: normal;
     word-break: break-word;
     text-align: left;
@@ -1895,8 +1895,8 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 .bookmark-inline-textarea {
     width: 100%;
     min-height: 3.2rem;
-    padding: 0.4rem;
-    font-size: 0.9rem;
+    padding: var(--space-1-5, 0.4rem);
+    font-size: var(--text-base, 0.9rem);
     resize: vertical;
     font-family: inherit;
     border: 1px solid var(--border-primary);
@@ -1911,8 +1911,8 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
  * the site's marketing description.
  */
 .bookmark-preview-card-note {
-    margin: 0.6rem 0.8rem 0;
-    padding: 0.38rem 0.55rem;
+    margin: var(--space-2, 0.6rem) var(--space-3, 0.8rem) 0;
+    padding: var(--space-1-5, 0.38rem) var(--space-2, 0.55rem);
     border-left: 2px solid var(--accent-primary, var(--text-secondary));
     border-radius: 0 5px 5px 0;
     background: color-mix(in srgb, var(--accent-primary, var(--text-secondary)) 8%, transparent);
@@ -1953,7 +1953,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 }
 
 .tag-ac-item {
-    padding: 0.35rem 0.6rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
     font-family: inherit;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
@@ -1979,7 +1979,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    padding: 0.55rem 0.8rem 0;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.8rem) 0;
 }
 
 .dashboard-grid.layout-terminal .category-title-label::before {
@@ -1995,8 +1995,8 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 .dashboard-grid.layout-terminal .bookmark-link {
     font-family: "Source Code Pro", monospace;
     letter-spacing: 0.01em;
-    gap: 0.35rem;
-    padding-left: 1rem;
+    gap: var(--space-1-5, 0.35rem);
+    padding-left: var(--space-4, 1rem);
     white-space: nowrap;
     overflow: hidden;
 }
@@ -2030,18 +2030,18 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 
 /* New layout presets: masonry, list, widgets */
 .dashboard-grid.layout-masonry {
-    gap: 1rem;
+    gap: var(--space-4, 1rem);
 }
 .dashboard-grid.layout-masonry .category {
     /* allow variable-height cards and denser packing */
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
 }
 .dashboard-grid.layout-masonry .bookmark-open {
     align-items: stretch;
 }
 
 .dashboard-grid.layout-list {
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
 }
 .dashboard-grid.layout-list .category {
     background: transparent;
@@ -2053,7 +2053,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 }
 .dashboard-grid.layout-list .bookmark-link {
     grid-template-columns: var(--bookmark-lead-col) minmax(0, 1fr) max-content;
-    padding: 0.6rem 0.4rem;
+    padding: var(--space-2, 0.6rem) var(--space-1-5, 0.4rem);
     border-bottom: 1px solid var(--border-primary);
 }
 .dashboard-grid.layout-list .bookmark-text {
@@ -2061,16 +2061,16 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 }
 
 .dashboard-grid.layout-widgets {
-    gap: 1.5rem;
+    gap: var(--space-5, 1.5rem);
 }
 .dashboard-grid.layout-widgets .category {
     background: color-mix(in srgb, var(--background-primary) 94%, var(--text-secondary) 6%);
     border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: var(--radius-7, 12px);
+    padding: var(--space-4, 1rem);
 }
 .dashboard-grid.layout-widgets .bookmark-link {
-    padding: 0.6rem;
+    padding: var(--space-2, 0.6rem);
     border: none;
     border-radius: var(--layout-radius-sm, 8px);
     background: transparent;
@@ -2090,45 +2090,45 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 
 /* Layout presets: set default variable values */
 body[data-layout-preset="default"] .dashboard-grid {
-    --gap: 3rem;
-    --card-padding: 0.9rem;
+    --gap: var(--space-7, 3rem);
+    --card-padding: var(--space-4, 0.9rem);
     --dashboard-font-size: 14px;
-    --bookmark-font-size: 1rem;
+    --bookmark-font-size: var(--text-md, 1rem);
 }
 body[data-layout-preset="compact"] .dashboard-grid {
-    --gap: 1.5rem;
-    --card-padding: 0.45rem;
+    --gap: var(--space-5, 1.5rem);
+    --card-padding: var(--space-2, 0.45rem);
     --dashboard-font-size: 13px;
-    --bookmark-font-size: 0.98rem;
+    --bookmark-font-size: var(--text-md, 0.98rem);
 }
 body[data-layout-preset="cards"] .dashboard-grid {
-    --gap: 1.5rem;
-    --card-padding: 0.9rem;
+    --gap: var(--space-5, 1.5rem);
+    --card-padding: var(--space-4, 0.9rem);
     --dashboard-font-size: 14px;
 }
 body[data-layout-preset="terminal"] .dashboard-grid {
-    --gap: 2rem;
-    --card-padding: 0.35rem;
+    --gap: var(--space-6, 2rem);
+    --card-padding: var(--space-1-5, 0.35rem);
     --dashboard-font-size: 13px;
 }
 body[data-layout-preset="masonry"] .dashboard-grid {
-    --gap: 1rem;
-    --card-padding: 0.6rem;
+    --gap: var(--space-4, 1rem);
+    --card-padding: var(--space-2, 0.6rem);
     --dashboard-font-size: 14px;
 }
 body[data-layout-preset="list"] .dashboard-grid {
-    --gap: 0.6rem;
-    --card-padding: 0.6rem;
+    --gap: var(--space-2, 0.6rem);
+    --card-padding: var(--space-2, 0.6rem);
     --dashboard-font-size: 14px;
 }
 body[data-layout-preset="widgets"] .dashboard-grid {
-    --gap: 1.5rem;
-    --card-padding: 1rem;
+    --gap: var(--space-5, 1.5rem);
+    --card-padding: var(--space-4, 1rem);
     --dashboard-font-size: 15px;
 }
 body[data-layout-preset="launcher"] .dashboard-grid {
-    --gap: 0.4rem;
-    --card-padding: 0.5rem;
+    --gap: var(--space-1-5, 0.4rem);
+    --card-padding: var(--space-2, 0.5rem);
     --dashboard-font-size: 14px;
 }
 
@@ -2137,7 +2137,7 @@ body[data-layout-preset="launcher"] .dashboard-grid {
 .dashboard-grid.layout-launcher.packed-columns {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: var(--space-6, 2rem);
 }
 
 /* With packed-columns: dissolve .dashboard-column wrappers so     */
@@ -2150,7 +2150,7 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
     padding: 0;
 }
 
@@ -2165,7 +2165,7 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     width: 100%;
 }
 
@@ -2175,9 +2175,9 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     align-items: center;
     justify-content: flex-start;
     width: 88px;
-    padding: 0.65rem 0.5rem 0.5rem;
-    border-radius: 10px;
-    gap: 0.4rem;
+    padding: var(--space-3, 0.65rem) var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-6, 10px);
+    gap: var(--space-1-5, 0.4rem);
     cursor: pointer;
     transition: background 0.12s ease, transform 0.1s ease;
     /* prevent subgrid/grid-row from base styles bleeding in */
@@ -2195,7 +2195,7 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     z-index: 1;
 }
 
@@ -2236,7 +2236,7 @@ body[data-layout-preset="launcher"] .dashboard-grid {
     flex: 0 0 auto;
 }
 .layout-launcher .bookmark-text {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     text-align: center;
     white-space: normal;
     overflow: hidden;
@@ -2272,7 +2272,7 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 :root {
     --corner-fab-edge: 1.5rem;
     --corner-fab-height: 2.75rem;
-    --corner-fab-gap: 0.4rem;
+    --corner-fab-gap: var(--space-1-5, 0.4rem);
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
@@ -2287,7 +2287,7 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     bottom: var(--corner-fab-edge);
     left: var(--corner-fab-edge);
     z-index: 1001;
-    padding: 0.62rem 0.72rem;
+    padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
     border: 1px solid var(--border-primary);
     /* Opaque, and in both layout versions: this FAB floats over the grid with
        nothing behind it either way -- modern styles the dock and the / FAB but
@@ -2302,7 +2302,7 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.65rem;
+    border-radius: var(--radius-6, 0.65rem);
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
@@ -2370,10 +2370,10 @@ body.no-animations .whats-new-btn-update-dot {
     bottom: calc(100% + 6px);
     left: 0;
     white-space: nowrap;
-    padding: 0.2rem 0.5rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.5rem);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     color: var(--text-secondary);
     font-family: var(--font-family-main);
     font-size: calc(var(--font-size-controls) * 0.85);
@@ -2417,12 +2417,12 @@ body[data-density-mode="comfortable"] .dashboard-grid {
     --cards-pad-block: 0.6rem;
 }
 body[data-density-mode="compact"] .dashboard-grid {
-    --card-padding: 0.8rem;
+    --card-padding: var(--space-3, 0.8rem);
     --dashboard-font-size: 14px;
     --cards-pad-block: 0.45rem;
 }
 body[data-density-mode="dense"] .dashboard-grid {
-    --card-padding: 0.45rem;
+    --card-padding: var(--space-2, 0.45rem);
     --dashboard-font-size: 13px;
     --cards-pad-block: 0.3rem;
 }
@@ -2442,10 +2442,10 @@ body[data-category-spacing="snug"] {
     --category-row-gap: 1.25rem;
 }
 body[data-category-spacing="balanced"] {
-    --category-row-gap: 2rem;
+    --category-row-gap: var(--space-6, 2rem);
 }
 body[data-category-spacing="airy"] {
-    --category-row-gap: 3rem;
+    --category-row-gap: var(--space-7, 3rem);
 }
 
 
@@ -2458,11 +2458,11 @@ body[data-category-spacing="airy"] {
 .category {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-4, 1rem);
     min-width: 0; /* Allow flex items to shrink below content size */
     /* Named, because a wide category has to add it back between its inner
        columns — see the column-gap on its bookmarks list. */
-    --category-inline-pad: 0.5rem;
+    --category-inline-pad: var(--space-2, 0.5rem);
     padding-left: var(--category-inline-pad);
     padding-right: var(--category-inline-pad);
 }
@@ -2595,7 +2595,7 @@ body[data-category-spacing="airy"] {
     min-height: 1.45em;
     padding: 0.15em 0.4em;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: none;
     color: var(--text-tertiary);
     cursor: pointer;
@@ -2632,7 +2632,7 @@ body[data-category-spacing="airy"] {
     text-align: left;
     padding: 0.3em 0.5em;
     border: 0;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: none;
     color: var(--text-secondary);
     cursor: pointer;
@@ -2663,7 +2663,7 @@ body[data-category-spacing="airy"] {
     min-height: 1.45em;
     padding: 0.15em 0.42em;
     border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
     color: var(--text-tertiary);
     cursor: pointer;
@@ -2791,7 +2791,7 @@ body.no-animations .category-body > .dashboard-widget-body {
 .category-title:hover {
     background: color-mix(in srgb, var(--hover-bg) 65%, transparent);
     border-radius: var(--layout-radius-sm, 8px);
-    padding-left: 0.25rem;
+    padding-left: var(--space-1, 0.25rem);
     margin-left: -0.25rem;
 }
 
@@ -2850,9 +2850,9 @@ body.no-animations .category-chevron {
     position: fixed;
     z-index: 200000;
     margin: 0;
-    padding: 0.5rem 0.65rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
     max-width: min(22rem, calc(100vw - 1rem));
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
     background: var(--background-secondary, #141414);
     color: var(--text-secondary);
@@ -2880,9 +2880,9 @@ body.no-animations .category-chevron {
 .smart-collection-empty {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    margin: 0.35rem 0 0.15rem;
-    padding: 0.55rem 0.75rem;
+    gap: var(--space-2, 0.45rem);
+    margin: var(--space-1-5, 0.35rem) 0 var(--space-hairline, 0.15rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.75rem);
     font-size: var(--font-size-controls);
     font-style: normal;
     font-weight: var(--font-weight-semibold);
@@ -2929,7 +2929,7 @@ body.no-animations .category-chevron {
 .bookmarks-list {
     display: grid;
     grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
-    row-gap: 0.5rem;
+    row-gap: var(--space-2, 0.5rem);
     min-width: 0;
     min-height: 2rem;
     width: 100%;
@@ -2981,13 +2981,13 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     grid-column: 1 / -1;
     grid-auto-rows: auto;
     align-items: center;
-    column-gap: 0.6rem;
+    column-gap: var(--space-2, 0.6rem);
     text-decoration: none;
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
     transition: transform 140ms ease, opacity 120ms ease, color 140ms ease, background 140ms ease;
     position: relative;
-    padding: 0.5rem var(--bookmark-row-end-pad, 3px) 0.5rem var(--bookmark-row-start-pad, 6px);
+    padding: var(--space-2, 0.5rem) var(--bookmark-row-end-pad, 3px) var(--space-2, 0.5rem) var(--bookmark-row-start-pad, 6px);
     color: var(--text-primary);
     max-width: 100%;
     min-height: 1.9rem;
@@ -3035,7 +3035,7 @@ a.bookmark-open {
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     color: inherit;
     text-decoration: none;
     overflow: hidden;
@@ -3052,7 +3052,7 @@ a.bookmark-open:hover {
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-width: 1.15em;
     min-height: 1.15em;
     cursor: grab;
@@ -3065,7 +3065,7 @@ a.bookmark-open:hover {
 .bookmark-reorder-handle {
     position: absolute;
     inset: 0;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     cursor: grab;
     touch-action: none;
     background: transparent;
@@ -3103,11 +3103,11 @@ a.bookmark-open:hover {
     display: inline-flex;
     align-items: center;
     gap: 0.15em;
-    font-size: 0.6rem;
+    font-size: var(--text-2xs, 0.6rem);
     font-weight: var(--font-weight-semibold);
     line-height: 1;
     padding: 0.18em 0.38em;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: var(--background-secondary);
     color: var(--text-tertiary);
     border: 1px solid var(--border-secondary);
@@ -3169,15 +3169,15 @@ a.bookmark-open:hover {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.2rem;
-    margin-left: 0.35rem;
+    gap: var(--space-1, 0.2rem);
+    margin-left: var(--space-1-5, 0.35rem);
 }
 
 .bookmark-tag-chip {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     line-height: 1;
     padding: 0.15em 0.45em;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--background-secondary);
     color: var(--text-tertiary);
     border: 1px solid var(--border-secondary);
@@ -3221,8 +3221,8 @@ a.bookmark-open:hover {
 .empty-state--category {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.5rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     color: var(--text-tertiary);
     font-size: var(--font-size-controls);
 }
@@ -3231,7 +3231,7 @@ a.bookmark-open:hover {
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
     border-radius: var(--layout-radius-sm, 8px);
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
     font-size: var(--font-size-controls);
     color: var(--accent-primary);
     cursor: pointer;
@@ -3255,8 +3255,8 @@ a.bookmark-open:hover {
 .category-show-more {
     display: inline-flex;
     align-items: center;
-    margin-top: 0.15rem;
-    padding: 0.1rem 0.35rem;
+    margin-top: var(--space-hairline, 0.15rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.35rem);
     background: transparent;
     border: none;
     border-radius: var(--layout-radius-sm, 8px);
@@ -3283,7 +3283,7 @@ a.bookmark-open:hover {
 
 /* Terminal layout: monospace style with > prefix */
 .dashboard-grid.layout-terminal .empty-state--category {
-    padding-left: 1rem;
+    padding-left: var(--space-4, 1rem);
     position: relative;
 }
 
@@ -3311,8 +3311,8 @@ a.bookmark-open:hover {
     justify-content: center;
     width: 88px;
     height: 80px;
-    padding: 0.5rem;
-    gap: 0.3rem;
+    padding: var(--space-2, 0.5rem);
+    gap: var(--space-1, 0.3rem);
 }
 
 .layout-launcher .empty-state--category-text {
@@ -3326,7 +3326,7 @@ a.bookmark-open:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     border-style: dashed;
     border-width: 1.5px;
     padding: 0;
@@ -3361,7 +3361,7 @@ a.bookmark-open:hover {
 
 .bookmark-link.bookmark-inline-editing {
     display: block;
-    padding: 0.35rem 0;
+    padding: var(--space-1-5, 0.35rem) 0;
     min-height: 0;
     min-width: 0;
 }
@@ -3487,9 +3487,9 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     max-width: none;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    padding: 0.7rem 0.8rem;
-    border-radius: 8px;
+    gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-3, 0.7rem) var(--space-3, 0.8rem);
+    border-radius: var(--radius-5, 8px);
     /* Solid panel — never rgba modal (see --inline-edit-panel-bg). */
     background-color: var(--inline-edit-panel-bg);
     border: 2px solid var(--border-primary);
@@ -3534,14 +3534,14 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-field {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-hairline, 0.15rem);
     min-width: 0;
 }
 
 .bookmark-inline-field.bookmark-inline-check {
     flex-direction: row;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
@@ -3553,7 +3553,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
 }
 
 /* The real checkbox stays focusable and reachable by screen readers; the pill
@@ -3574,10 +3574,10 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.25rem 0.55rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.55rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background-color: var(--inline-edit-field-bg);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
@@ -3621,7 +3621,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .bookmark-inline-checkmode-input {
@@ -3638,9 +3638,9 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 }
 
 .bookmark-inline-checkmode-option {
-    padding: 0.25rem 0.6rem;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background-color: var(--inline-edit-field-bg);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
@@ -3675,7 +3675,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     border-radius: 50%;
     background: transparent;
     color: var(--text-tertiary);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     font-style: italic;
     line-height: 1;
     cursor: pointer;
@@ -3689,12 +3689,12 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 
 /* Explainer modal */
 .check-mode-explain-row + .check-mode-explain-row {
-    margin-top: 0.9rem;
+    margin-top: var(--space-4, 0.9rem);
 }
 
 .check-mode-explain-row h4 {
-    margin: 0 0 0.2rem;
-    font-size: 0.95rem;
+    margin: 0 0 var(--space-1, 0.2rem);
+    font-size: var(--text-base, 0.95rem);
     color: var(--text-primary);
 }
 
@@ -3719,7 +3719,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     width: auto;
     min-width: 0;
     max-width: 100%;
-    padding: 0.2rem 0.4rem;
+    padding: var(--space-1, 0.2rem) var(--space-1-5, 0.4rem);
     font-size: var(--font-size-controls);
 }
 
@@ -3740,7 +3740,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     width: 100%;
     font-family: inherit;
     font-size: var(--font-size-controls);
-    padding: 0.25rem 0.4rem;
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.4rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
@@ -3793,8 +3793,8 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.25rem;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-1, 0.25rem);
     align-items: center;
     position: relative;
     z-index: 5;
@@ -3809,7 +3809,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     flex: 1 1 auto;
     min-width: 0;
     margin-left: auto;
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
     white-space: nowrap;
     pointer-events: none;
@@ -3818,19 +3818,19 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 
 .bookmark-inline-hint kbd {
     font-family: var(--font-family-main);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 3px;
-    padding: 0.05rem 0.3rem;
+    border-radius: var(--radius-2, 3px);
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
     color: var(--text-secondary);
 }
 
 .bookmark-inline-conflict {
     display: block;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--accent-error);
-    margin-top: 0.2rem;
+    margin-top: var(--space-1, 0.2rem);
 }
 
 .bookmark-inline-conflict[hidden] {
@@ -3846,7 +3846,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .bookmark-inline-create[hidden] {
@@ -3894,7 +3894,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     padding: 0.15em 0.3em;
     margin-left: 0.25em;
     border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
     color: var(--text-tertiary);
     cursor: pointer;
@@ -3921,14 +3921,14 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 .bookmark-inline-create.category-add-create {
     grid-column: 1 / -1;
     max-width: 22rem;
-    margin-top: 0.75rem;
+    margin-top: var(--space-3, 0.75rem);
 }
 
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.3rem;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-1, 0.3rem);
 }
 
 .bookmark-inline-icon-preview {
@@ -3941,7 +3941,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     justify-content: center;
     background: var(--background-primary);
     color: var(--text-tertiary);
-    margin-top: 0.25rem;
+    margin-top: var(--space-1, 0.25rem);
     overflow: hidden;
 }
 
@@ -3953,7 +3953,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
 }
 
 .bookmark-inline-icon-preview span {
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     line-height: 1;
 }
 
@@ -3968,7 +3968,7 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     background: var(--background-primary);
     color: var(--text-primary);
     font-size: var(--font-size-controls);
-    padding: 0.3rem 0.55rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.55rem);
     border-radius: var(--layout-radius-sm, 8px);
     cursor: pointer;
 }
@@ -4113,7 +4113,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     z-index: 2000;
     display: none;
     width: min(360px, calc(100vw - 24px));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
@@ -4146,9 +4146,9 @@ body.no-animations .bookmarks-list.reorder-container::after {
 
 .bookmark-preview-card-head {
     display: flex;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     align-items: flex-start;
-    padding: 0.7rem 0.8rem 0.5rem;
+    padding: var(--space-3, 0.7rem) var(--space-3, 0.8rem) var(--space-2, 0.5rem);
 }
 
 .bookmark-preview-card-fav {
@@ -4156,7 +4156,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     width: 17px;
     height: 17px;
     margin-top: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     overflow: hidden;
     background: var(--background-primary);
 }
@@ -4237,7 +4237,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     align-items: center;
     gap: 5px;
     padding: 4px 7px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
@@ -4289,7 +4289,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
 }
 
 .bookmark-preview-card-description {
-    padding: 0.55rem 0.8rem 0;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.8rem) 0;
     font-size: calc(var(--font-size-controls) * 0.92);
     color: var(--text-secondary);
     line-height: 1.42;
@@ -4301,15 +4301,15 @@ body.no-animations .bookmarks-list.reorder-container::after {
 
 .bookmark-preview-card-empty {
     margin: 0;
-    padding: 0.55rem 0.8rem 0;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.8rem) 0;
     font-size: calc(var(--font-size-controls) * 0.88);
     font-style: italic;
     color: var(--text-tertiary);
 }
 
 .bookmark-preview-card-facts {
-    margin: 0.7rem 0 0;
-    padding: 0.5rem 0.8rem 0.6rem;
+    margin: var(--space-3, 0.7rem) 0 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.8rem) var(--space-2, 0.6rem);
     border-top: 1px solid var(--border-secondary);
     display: grid;
     grid-template-columns: auto 1fr;
@@ -4350,7 +4350,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
     font-size: calc(var(--font-size-controls) * 0.78);
     border: 1px solid var(--border-primary);
     border-bottom-width: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     padding: 1px 5px;
     color: var(--text-primary);
 }
@@ -4364,14 +4364,14 @@ body.no-animations .bookmarks-list.reorder-container::after {
     display: flex;
     gap: 4px;
     align-items: center;
-    padding: 0.45rem 0.55rem;
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
     border-top: 1px solid var(--border-secondary);
     background: rgba(0, 0, 0, 0.18);
 }
 
 .bookmark-preview-card-action {
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     padding: 5px 8px;
     background: none;
     color: var(--text-secondary);
@@ -4474,7 +4474,7 @@ body.no-animations .layout-launcher .bookmark-link.bookmark-pulse {
 .bookmark-shortcut {
     flex-shrink: 0;
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     font-weight: var(--font-weight-normal);
     color: var(--text-tertiary);
     background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
@@ -4571,11 +4571,11 @@ body[data-show-note-icon="false"] .bookmark-note-badge {
 body[data-show-shortcuts="false"] .dashboard-grid.layout-terminal .bookmark-link,
 body[data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link,
 body[data-show-note-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    gap: 0.28rem;
+    gap: var(--space-1, 0.28rem);
 }
 
 body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    gap: 0.24rem;
+    gap: var(--space-1, 0.24rem);
 }
 
 /* Recent bookmarks modal */
@@ -4587,23 +4587,23 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 .modal.recent-bookmarks-modal .modal-body {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-top: var(--space-4, 1rem);
+    margin-bottom: var(--space-4, 1rem);
 }
 
 .recent-bookmarks-modal-toolbar {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 0.85rem;
-    padding-bottom: 0.85rem;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.85rem);
+    padding-bottom: var(--space-3, 0.85rem);
     border-bottom: 1px solid var(--border-primary);
 }
 
 .recent-bookmarks-open-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .recent-bookmarks-open-btn.modal-button {
@@ -4622,21 +4622,21 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 .recent-bookmarks-modal-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     max-height: 58vh;
     overflow-y: auto;
-    padding-right: 0.25rem;
+    padding-right: var(--space-1, 0.25rem);
 }
 
 .recent-bookmarks-modal-item {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-primary);
-    padding: 0.55rem 0.7rem;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.7rem);
     color: var(--text-primary);
     text-decoration: none;
     transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
@@ -4660,7 +4660,7 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 .recent-bookmarks-modal-body {
     display: flex;
     flex-direction: column;
-    gap: 0.12rem;
+    gap: var(--space-hairline, 0.12rem);
     min-width: 0;
 }
 
@@ -4684,12 +4684,12 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.18rem;
+    gap: var(--space-hairline, 0.18rem);
     flex-shrink: 0;
 }
 
 .recent-bookmarks-modal-recency {
-    padding: 0.12rem 0.45rem;
+    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
     border-radius: var(--layout-radius-pill, 999px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
@@ -4713,7 +4713,7 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 .recent-bookmarks-empty {
-    padding: 1.5rem 0.5rem;
+    padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
     color: var(--text-tertiary);
     font-size: var(--font-size-text);
     text-align: center;
@@ -4765,7 +4765,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
  * the same lopsidedness, but neither was what anybody was looking at.
  */
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
-    padding-top: max(2rem, env(safe-area-inset-top, 0px));
+    padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
 }
 
 body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
@@ -4791,7 +4791,7 @@ body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.moda
 body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
 body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) {
     justify-content: center;
-    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
 }
 
 body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
@@ -4879,31 +4879,31 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-ove
 .recent-bookmarks-skeleton {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .recent-bookmarks-skeleton-row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
-    padding: 0.55rem 0.7rem;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.7rem);
     border-radius: var(--layout-radius-sm, 8px);
 }
 
 .recent-bookmarks-skeleton-rank {
     width: 1.35rem;
     height: 0.75em;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: var(--background-secondary);
 }
 
 .recent-bookmarks-skeleton-body {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     min-width: 0;
 }
 
@@ -4911,7 +4911,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-ove
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
 }
 
 .recent-bookmarks-skeleton-name,
@@ -4919,7 +4919,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-ove
 .recent-bookmarks-skeleton-recency,
 .recent-bookmarks-skeleton-opens {
     display: block;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     background: linear-gradient(
         90deg,
         var(--background-secondary) 25%,
@@ -4969,7 +4969,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-ove
 
 .category.nextdash-stale-flash {
     animation: nextdashStaleFlash 1.1s ease-out 2;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
 }
 
 @keyframes bookmarkDeepLinkFocus {
@@ -5031,11 +5031,11 @@ body.no-animations .bookmark-move-out {
 .omnibox-box {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     box-sizing: border-box;
-    padding: 0.75rem 1.25rem;
+    padding: var(--space-3, 0.75rem) 1.25rem;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
     border-radius: var(--layout-radius-md, 12px);
     background: color-mix(in srgb, var(--background-modal) 90%, transparent);
@@ -5057,7 +5057,7 @@ body.no-animations .bookmark-move-out {
 
 .omnibox-hint {
     font-family: "Source Code Pro", monospace;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     white-space: nowrap;
     flex-shrink: 0;
@@ -5066,7 +5066,7 @@ body.no-animations .bookmark-move-out {
 .omnibox-hint::before {
     content: '+';
     color: var(--accent-primary);
-    margin-right: 0.4rem;
+    margin-right: var(--space-1-5, 0.4rem);
     font-weight: var(--font-weight-bold);
 }
 
@@ -5077,7 +5077,7 @@ body.no-animations .bookmark-move-out {
     outline: none;
     color: var(--text-primary);
     font-family: "Source Code Pro", monospace;
-    font-size: 0.9rem;
+    font-size: var(--text-base, 0.9rem);
     padding: 0;
     caret-color: var(--accent-primary);
 }
@@ -5088,7 +5088,7 @@ body.no-animations .bookmark-move-out {
 }
 
 .omnibox-status {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     white-space: nowrap;
     flex-shrink: 0;
@@ -5166,8 +5166,8 @@ body.no-animations .bookmark-move-out {
     display: inline-flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 0.25rem;
-    margin-left: 0.4rem;
+    gap: var(--space-1, 0.25rem);
+    margin-left: var(--space-1-5, 0.4rem);
     min-width: 0;
     /* Never at the cost of the name: the strip gives way first. */
     flex: 0 1 auto;
@@ -5175,12 +5175,12 @@ body.no-animations .bookmark-move-out {
 }
 
 .bookmark-tag-chip {
-    padding: 0.05rem 0.45rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.05rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     font-weight: var(--font-weight-normal, 400);
     line-height: 1.5;
     white-space: nowrap;
@@ -5200,7 +5200,7 @@ body.no-animations .bookmark-move-out {
 .dashboard-grid.layout-list .bookmark-tag-chip {
     border: 0;
     background: none;
-    padding: 0 0.15rem;
+    padding: 0 var(--space-hairline, 0.15rem);
     opacity: 0.7;
 }
 
@@ -5219,13 +5219,13 @@ body[data-g-chord="armed"]::after {
     right: 1rem;
     bottom: 1rem;
     z-index: 60;
-    padding: 0.2rem 0.55rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
     color: var(--accent-primary);
     font-family: var(--font-family-main);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     letter-spacing: 0.04em;
     pointer-events: none;
 }
@@ -5237,9 +5237,9 @@ body[data-g-chord="armed"]::after {
     display: none;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.3rem 0.9rem;
-    margin: 1rem 0 0.25rem;
-    font-size: 0.72rem;
+    gap: var(--space-1, 0.3rem) var(--space-4, 0.9rem);
+    margin: var(--space-4, 1rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     opacity: 0.75;
 }
@@ -5253,9 +5253,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .dashboard-legend kbd {
-    font-size: 0.7rem;
-    padding: 0.05rem 0.32rem;
-    border-radius: 0.25rem;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem);
     border: 1px solid var(--border-secondary);
     background: var(--background-secondary);
     color: var(--text-secondary);
@@ -5270,19 +5270,19 @@ body[data-grid-keys="shown"] .dashboard-legend {
     z-index: 70;
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.45rem;
+    gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.45rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: var(--background-secondary);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 .category-icon-input {
     width: 3.2rem;
-    padding: 0.15rem 0.35rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-1-5, 0.35rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     background: var(--background-primary);
     color: var(--text-primary);
     font: inherit;
@@ -5290,13 +5290,13 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .category-icon-clear {
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     cursor: pointer;
 }
 
@@ -5314,13 +5314,13 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .grid-filter-bar {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     /* It sits above the grid rather than in it, so it takes the container's
        width whatever shape the grid itself is in. */
     width: 100%;
     box-sizing: border-box;
-    margin: 0 0 0.6rem;
-    padding: 0.3rem 0.5rem;
+    margin: 0 0 var(--space-2, 0.6rem);
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
@@ -5333,8 +5333,8 @@ body[data-grid-keys="shown"] .dashboard-legend {
     background: transparent;
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.85rem;
-    padding: 0.15rem 0;
+    font-size: var(--text-sm, 0.85rem);
+    padding: var(--space-hairline, 0.15rem) 0;
 }
 
 .grid-filter-input:focus {
@@ -5343,7 +5343,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
 
 .grid-filter-count {
     color: var(--text-tertiary);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -5352,10 +5352,10 @@ body[data-grid-keys="shown"] .dashboard-legend {
     border: 0;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: var(--text-md, 1rem);
     line-height: 1;
     cursor: pointer;
-    padding: 0 0.2rem;
+    padding: 0 var(--space-1, 0.2rem);
 }
 
 .grid-filter-clear:hover {
@@ -5406,25 +5406,25 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .paste-choice-url {
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-secondary);
     word-break: break-all;
-    margin-bottom: 0.65rem;
-    padding: 0.45rem 0.55rem;
-    border-radius: 0.35rem;
+    margin-bottom: var(--space-3, 0.65rem);
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-secondary);
     border: 1px solid var(--border-secondary);
 }
 
 .paste-choice-lead {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-3, 0.75rem);
     color: var(--text-primary);
 }
 
 .paste-choice-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 .paste-choice-card {
@@ -5432,8 +5432,8 @@ body[data-grid-keys="shown"] .dashboard-legend {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.2rem;
-    padding: 0.75rem 0.8rem 0.8rem;
+    gap: var(--space-1, 0.2rem);
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.8rem) var(--space-3, 0.8rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
@@ -5448,7 +5448,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .paste-choice-card-icon {
-    font-size: 1.1rem;
+    font-size: var(--text-lg, 1.1rem);
 }
 
 .paste-choice-card-title {
@@ -5457,7 +5457,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .paste-choice-card-hint {
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     line-height: 1.35;
 }
@@ -5466,9 +5466,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
     position: absolute;
     top: 0.45rem;
     right: 0.45rem;
-    font-size: 0.68rem;
-    padding: 0.1rem 0.3rem;
-    border-radius: 0.25rem;
+    font-size: var(--text-2xs, 0.68rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1, 0.3rem);
+    border-radius: var(--radius-3, 0.25rem);
     border: 1px solid var(--border-secondary);
     color: var(--text-tertiary);
 }
@@ -5476,9 +5476,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .paste-choice-remember {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-top: 0.85rem;
-    font-size: 0.82rem;
+    gap: var(--space-1-5, 0.4rem);
+    margin-top: var(--space-3, 0.85rem);
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-secondary);
     cursor: pointer;
 }
@@ -5526,9 +5526,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 .dashboard-widget .dashboard-widget-body {
-    padding: 0.75rem 0.85rem;
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
-    border-radius: 9px;
+    border-radius: var(--radius-5, 9px);
     background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
     /*
      * Reserved before the data arrives.
@@ -5578,7 +5578,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
        reason. */
     gap: 1px;
     padding: 1px;
-    border-radius: 7px;
+    border-radius: var(--radius-4, 7px);
     overflow: hidden;
     background: var(--dashboard-widget-rule);
 }
@@ -5586,9 +5586,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-health-row {
     display: flex;
     align-items: baseline;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
     width: 100%;
-    padding: 0.34rem 0.55rem;
+    padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
     border: none;
     background: var(--dashboard-widget-cell);
     color: inherit;
@@ -5674,7 +5674,7 @@ body[data-grid-keys="shown"] .dashboard-legend {
     /* Taller than it was: these rows sit under a block of figures now, and a
        three-pixel row against a 1.5em number reads as an afterthought. It is
        also a click target on most of the tiles that use it. */
-    padding: 0.28rem 0.45rem;
+    padding: var(--space-1, 0.28rem) var(--space-2, 0.45rem);
     border: 0;
     border-radius: var(--layout-radius-sm, 5px);
     background: transparent;
@@ -5779,7 +5779,7 @@ button.dashboard-widget-row.keyboard-selected {
 .dashboard-widget-spark-tick {
     width: 2px;
     height: 10px;
-    border-radius: 1px;
+    border-radius: var(--radius-1, 1px);
     background: var(--border-secondary);
 }
 
@@ -5959,7 +5959,7 @@ button.dashboard-widget-row--more {
     container-type: inline-size;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 /*
@@ -5984,7 +5984,7 @@ button.dashboard-widget-row--more {
      */
     gap: 1px;
     padding: 1px;
-    border-radius: 7px;
+    border-radius: var(--radius-4, 7px);
     overflow: hidden;
     background: var(--dashboard-widget-rule);
 }
@@ -6012,7 +6012,7 @@ button.dashboard-widget-row--more {
     flex-direction: column;
     gap: 3px;
     min-width: 0;
-    padding: 0.45rem 0.55rem;
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
     border: 0;
     background: var(--dashboard-widget-cell);
     color: inherit;
@@ -6103,7 +6103,7 @@ button.dashboard-widget-stat:focus-visible {
  */
 .dashboard-widget-meter {
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     overflow: hidden;
     /* A track that can be seen when the fill is short: at four pixels on a
        16%-tint ground the empty part of the bar was invisible, so a bar at 5%
@@ -6168,7 +6168,7 @@ button.dashboard-widget-stat:focus-visible {
     .dashboard-widget-rows--pairs {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px 1.4rem;
+        gap: 2px var(--space-5, 1.4rem);
         align-content: start;
     }
 

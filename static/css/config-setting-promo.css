@@ -3,7 +3,7 @@
 .config-setting-promo-anchor-highlight {
     position: relative;
     z-index: 1;
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     outline: 2px solid color-mix(in srgb, var(--accent-primary, #4a90d9) 55%, transparent);
     outline-offset: 4px;
     animation: config-setting-promo-anchor-pulse 2.4s ease-in-out infinite;
@@ -38,8 +38,8 @@
     position: relative;
     background: var(--background-secondary, var(--card-bg, #1e1e1e));
     border: 1px solid var(--border-primary, var(--border-color, rgba(128, 128, 128, 0.35)));
-    border-radius: 0.75rem;
-    padding: 0.85rem 0.95rem 0.9rem;
+    border-radius: var(--radius-7, 0.75rem);
+    padding: var(--space-3, 0.85rem) var(--space-4, 0.95rem) var(--space-4, 0.9rem);
     box-shadow:
         0 10px 28px rgba(0, 0, 0, 0.22),
         0 0 0 1px color-mix(in srgb, var(--accent-primary, #4a90d9) 18%, transparent);
@@ -47,10 +47,10 @@
 
 .config-setting-promo-badge {
     display: inline-block;
-    margin-bottom: 0.35rem;
-    padding: 0.12rem 0.45rem;
-    border-radius: 999px;
-    font-size: 0.68rem;
+    margin-bottom: var(--space-1-5, 0.35rem);
+    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.68rem);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -59,7 +59,7 @@
 }
 
 .config-setting-promo-title {
-    margin: 0 0 0.35rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
     font-size: calc(var(--font-size-text, 14px) * 1.05);
     font-weight: 600;
     color: var(--text-primary, inherit);
@@ -67,7 +67,7 @@
 }
 
 .config-setting-promo-body {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-3, 0.75rem);
     font-size: calc(var(--font-size-text, 14px) * 0.94);
     color: var(--text-secondary, var(--text-muted, #aaa));
     line-height: 1.45;
@@ -77,9 +77,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem 0.75rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.75rem);
     border: none;
-    border-radius: 0.45rem;
+    border-radius: var(--radius-5, 0.45rem);
     font: inherit;
     font-size: calc(var(--font-size-text, 14px) * 0.94);
     font-weight: 600;

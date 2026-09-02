@@ -7,7 +7,7 @@
 kbd {
     background: var(--background-primary);
     border: 1px solid var(--border-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     padding: 4px 8px;
     font-family: monospace;
     font-size: 12px;
@@ -22,7 +22,7 @@ kbd {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    padding: 3rem 0;
+    padding: var(--space-7, 3rem) 0;
     text-align: left;
     color: var(--text-secondary);
     max-width: 40ch;
@@ -32,7 +32,7 @@ kbd {
     font-size: var(--font-size-category);
     font-weight: var(--font-weight-bold);
     color: var(--text-tertiary);
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3, 0.75rem);
     letter-spacing: 0.04em;
 }
 
@@ -40,13 +40,13 @@ kbd {
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2, 0.5rem);
 }
 
 .empty-state-action {
-    margin-top: 1.5rem;
+    margin-top: var(--space-5, 1.5rem);
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     flex-wrap: wrap;
 }
 
@@ -54,11 +54,11 @@ kbd {
     margin-top: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 .empty-state-hint {
-    margin: 0.85rem 0 0;
+    margin: var(--space-3, 0.85rem) 0 0;
     font-size: calc(var(--font-size-controls) * 0.92);
     color: var(--text-tertiary, var(--text-secondary));
     line-height: 1.45;
@@ -81,7 +81,7 @@ kbd {
     gap: 0.5em;
     background: none;
     border: none;
-    padding: 0.2rem 0;
+    padding: var(--space-1, 0.2rem) 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     cursor: pointer;
@@ -99,7 +99,7 @@ kbd {
     color: var(--text-primary);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     padding: 0 0.3em;
     transition: background 0.12s ease;
 }
@@ -113,11 +113,11 @@ kbd {
    Styled locally because the global .btn styles are config-only and don't load
    on the dashboard — bare <a> would otherwise render as raw browser links. */
 .empty-state-links {
-    margin-top: 1.5rem;
+    margin-top: var(--space-5, 1.5rem);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
 }
 
 .empty-state-link {
@@ -145,7 +145,7 @@ kbd {
     background: linear-gradient(90deg, var(--background-modal) 25%, var(--background-primary) 50%, var(--background-modal) 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     width: 1.15em;
     height: 1.15em;
     display: inline-block;

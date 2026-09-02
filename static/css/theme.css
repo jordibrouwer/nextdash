@@ -68,14 +68,14 @@ body.has-custom-background.bg-image::after {
     height: 28px;
     display: inline-block;
     margin-right: 8px;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
 }
 
 /* Themed icon wrappers and variants */
 .icon-themed, .icon-themed img, .icon-themed .preview-icon {
     transition: filter .15s ease, opacity .15s ease, background-color .15s ease;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
 }
 .icon-themed--muted img, .icon-themed--muted .preview-icon {
     filter: grayscale(calc(var(--icon-theme-intensity, 0.6))); 
@@ -132,7 +132,7 @@ a:focus-visible,
 .category-title:focus-visible {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: var(--radius-1, 2px);
 }
 
 .search-command-group-header:focus-visible {

@@ -23,21 +23,21 @@
     display: block;
     font-size: var(--font-size-small, 0.75rem);
     color: var(--text-tertiary);
-    margin-top: 0.2rem;
+    margin-top: var(--space-1, 0.2rem);
 }
 
 .bookmark-detail-checkmode-header {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .bookmark-detail-checkmode-options {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.3rem;
+    gap: var(--space-1, 0.25rem);
+    margin-top: var(--space-1, 0.3rem);
 }
 
 .bookmark-detail-checkmode-input {
@@ -57,9 +57,9 @@
 }
 
 .bookmark-detail-checkmode-option {
-    padding: 0.25rem 0.6rem;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--background-primary);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
@@ -94,7 +94,7 @@
     border-radius: 50%;
     background: transparent;
     color: var(--text-tertiary);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     font-style: italic;
     line-height: 1;
     cursor: pointer;
@@ -107,7 +107,7 @@
 }
 
 .bookmark-detail-checkmode .bookmark-detail-field-hint {
-    margin-top: 0.35rem;
+    margin-top: var(--space-1-5, 0.35rem);
 }
 
 .bookmark-detail-checkmode .custom-select-wrapper,
@@ -126,7 +126,7 @@
 /* The modal is narrower than the config panel, so the row wraps rather than
    pushing the interval select off the edge. */
 .modal-new-bookmark .bookmark-detail-checkmode-options {
-    row-gap: 0.35rem;
+    row-gap: var(--space-1-5, 0.35rem);
 }
 
 /* ─── Explainer stacking ─────────────────────────────────────────────────────
@@ -164,7 +164,7 @@
     width: 1.75rem;
     height: 1.75rem;
     border: 1px solid var(--border-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -197,12 +197,12 @@
     bottom: calc(100% + 6px);
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.2rem 0.45rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.45rem);
     border: 1px solid var(--border-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     background: var(--background-secondary);
     color: var(--text-primary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
@@ -217,7 +217,7 @@
 
 /* The label beside the pill, and the modal's own spacing for it. */
 .bookmark-detail-toggle {
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     cursor: pointer;
 }
 
@@ -227,5 +227,5 @@
 }
 
 .nbm-pin-toggle {
-    margin-top: 0.15rem;
+    margin-top: var(--space-hairline, 0.15rem);
 }

@@ -17,7 +17,7 @@ body[data-rail] {
     --rail-bg: color-mix(in srgb, var(--background-secondary) 88%, transparent);
     --rail-border: color-mix(in srgb, var(--border-primary) 45%, transparent);
     --rail-btn-radius: 0.45rem;
-    --rail-btn-padding: 0.62rem 0;
+    --rail-btn-padding: var(--space-2, 0.62rem) 0;
     --rail-sep-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
 }
 
@@ -251,7 +251,7 @@ body[data-rail] .search-flow-hint-text {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
-    gap: 0.12rem 0.3rem;
+    gap: var(--space-hairline, 0.12rem) var(--space-1, 0.3rem);
     text-align: left;
     line-height: 1.45;
 }
@@ -269,7 +269,7 @@ body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
     z-index: 1002;
     width: min(13.5rem, calc(100vw - var(--rail-width) - 1.5rem));
     margin: 0;
-    padding: 0.55rem 0.65rem 0.5rem;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.65rem) var(--space-2, 0.5rem);
     border: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
     border-radius: var(--layout-radius-sm, 8px);
     background: color-mix(in srgb, var(--background-secondary) 92%, transparent);
@@ -293,7 +293,7 @@ body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
 }
 
 .side-rail-legend-title {
-    margin: 0 0 0.35rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
     font-size: calc(var(--font-size-controls) * 0.88);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.04em;
@@ -307,13 +307,13 @@ body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.18rem;
+    gap: var(--space-hairline, 0.18rem);
 }
 
 .side-rail-legend-item {
     display: flex;
     align-items: baseline;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
     min-width: 0;
 }
 
@@ -331,7 +331,7 @@ body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
 }
 
 .side-rail-legend-foot {
-    margin: 0.4rem 0 0.45rem;
+    margin: var(--space-1-5, 0.4rem) 0 var(--space-2, 0.45rem);
     font-size: calc(var(--font-size-controls) * 0.88);
     color: var(--text-tertiary);
 }
@@ -341,7 +341,7 @@ body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 0.28rem 0.55rem;
+    padding: var(--space-1, 0.28rem) var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-xs, 4px);
     background: var(--background-primary);
@@ -373,13 +373,13 @@ body[data-rail] .container {
 
 /* ── Page section: reduce bottom padding (no floating bar) ───────────────────── */
 body[data-rail] .dashboard-section.section-content {
-    padding-bottom: 3rem;
+    padding-bottom: var(--space-7, 3rem);
 }
 
 /* ── Page tabs: keep numbers/names visible (respect showPageNamesInTabs) ─────── */
 body[data-rail] .page-nav-btn {
     font-size: var(--font-size-controls);
-    padding: 0.4rem 0.6rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     min-width: 0;
 }
 
@@ -457,7 +457,7 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
-        padding: 0.7rem 0 0;
+        padding: var(--space-3, 0.7rem) 0 0;
         gap: 0;
         background: transparent;
         border-right: none;
@@ -474,7 +474,7 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
         flex-direction: row;
         width: auto;
         padding: 0;
-        gap: 0.55rem;
+        gap: var(--space-2, 0.55rem);
     }
 
     /* reset button ordering and spacers */
@@ -496,7 +496,7 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
         right: auto;
         bottom: auto;
         width: auto;
-        padding: 0.62rem 0.82rem;
+        padding: var(--space-2, 0.62rem) var(--space-3, 0.82rem);
         margin: 0;
         transform: none;
         border-top: none;
@@ -512,10 +512,10 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
     }
 
     body[data-rail] .search-button {
-        padding: 0.62rem 0.92rem;
+        padding: var(--space-2, 0.62rem) var(--space-4, 0.92rem);
         width: auto;
         height: auto;
-        border-radius: 0.65rem;
+        border-radius: var(--radius-6, 0.65rem);
         border: 1px solid var(--border-primary);
         background: var(--button-secondary-bg, var(--background-secondary));
     }
@@ -534,7 +534,7 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
 
     body[data-rail] .page-nav-btn {
         font-size: var(--font-size-controls);
-        padding: 0.4rem 0.6rem;
+        padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     }
 
     body[data-rail] .page-tab-dot {
@@ -558,7 +558,7 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
         right: var(--corner-fab-edge, 1.5rem);
         bottom: calc(var(--corner-fab-edge, 1.5rem) + var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem));
         width: auto;
-        padding: 0.62rem 0.82rem;
+        padding: var(--space-2, 0.62rem) var(--space-3, 0.82rem);
         margin: 0;
         transform: none;
     }
@@ -575,8 +575,8 @@ body[data-layout-version="modern"][data-rail] .whats-new-btn {
         bottom: var(--corner-fab-edge, 1.5rem);
         width: auto;
         height: auto;
-        padding: 0.62rem 0.72rem;
-        border-radius: 0.65rem;
+        padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
+        border-radius: var(--radius-6, 0.65rem);
         border-top: 1px solid var(--border-primary);
     }
 

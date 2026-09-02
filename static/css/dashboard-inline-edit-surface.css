@@ -14,8 +14,8 @@ body.bookmark-inline-edit-active {
 
 body.bookmark-inline-edit-active .bookmark-link.bookmark-inline-editing {
     background: var(--inline-edit-panel-bg);
-    border-radius: 8px;
-    padding: 0.35rem;
+    border-radius: var(--radius-5, 8px);
+    padding: var(--space-1-5, 0.35rem);
     box-shadow: 0 16px 48px color-mix(in srgb, var(--text-primary) 22%, transparent);
 }
 

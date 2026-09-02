@@ -1,0 +1,37 @@
+/* Typography tokens — the scale for font-size across the dashboard.
+
+   Unscoped, same reasoning as spacing-tokens.css: classic is the default
+   layout, so a token layer classic cannot reach helps almost nobody.
+
+   Anchored on the actual distribution rather than a clean textbook ratio.
+   Measured across every static/css/*.css file: 365 font-size declarations
+   using rem, spread over 40 distinct values between 0.46rem and 1.65rem —
+   most of them within a couple hundredths of a rem of their neighbour.
+   0.72rem alone accounts for 65 of the 365 — more than any other single
+   value — with 0.68rem (45) and 0.7rem (30) immediately next to it.
+
+   Seven steps, each placed at the densest point of a real cluster in that
+   distribution, not at a round mathematical interval:
+
+     --text-2xs   0.65rem   the smallest meta text (absorbs 0.58–0.68rem)
+     --text-xs    0.72rem   labels, shortcuts, status text (absorbs 0.7–0.76rem)
+     --text-sm    0.8rem    secondary body text (absorbs 0.78–0.85rem)
+     --text-base  0.9rem    primary small body text (absorbs 0.86–0.95rem)
+     --text-md    1rem      the app's base size (absorbs 0.98–1.05rem)
+     --text-lg    1.1rem    small headings, emphasised values (absorbs 1.1–1.15rem)
+     --text-xl    1.25rem   section headings (absorbs 1.25–1.32rem)
+
+   A handful of values fell outside every cluster (0.46–0.54rem and
+   1.35–1.65rem, 14 declarations total) and were left as literals rather than
+   forced onto the nearest step — those are few enough, and far enough from
+   their neighbours, to read as deliberate rather than accidental. */
+
+:root {
+    --text-2xs: 0.65rem;
+    --text-xs: 0.72rem;
+    --text-sm: 0.8rem;
+    --text-base: 0.9rem;
+    --text-md: 1rem;
+    --text-lg: 1.1rem;
+    --text-xl: 1.25rem;
+}

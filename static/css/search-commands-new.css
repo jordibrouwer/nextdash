@@ -24,8 +24,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.65rem 1rem;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-3, 0.65rem) var(--space-4, 1rem);
     border-bottom: 1px solid var(--border-primary);
     background: var(--background-secondary);
     flex-shrink: 0;
@@ -40,7 +40,7 @@
 .nbm-header-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     flex-shrink: 0;
 }
 
@@ -52,17 +52,17 @@
 }
 
 .nbm-section {
-    padding: 0.65rem 1rem;
+    padding: var(--space-3, 0.65rem) var(--space-4, 1rem);
     border-bottom: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
 }
 
 .nbm-section-row {
     flex-direction: row;
     align-items: flex-end;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     flex-wrap: wrap;
 }
 
@@ -82,7 +82,7 @@
 .nbm-availability-row {
     flex-direction: row;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--space-4, 1rem);
 }
 
 .nbm-availability-main {
@@ -94,7 +94,7 @@
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
 }
 
 .nbm-availability-aside .nbm-input {
@@ -105,7 +105,7 @@
 @media (max-width: 520px) {
     .nbm-availability-row {
         flex-direction: column;
-        gap: 0.6rem;
+        gap: var(--space-2, 0.6rem);
     }
 
     .nbm-availability-aside {
@@ -131,7 +131,7 @@
 /* ── Inputs ── */
 .nbm-input {
     width: 100%;
-    padding: 0.38rem 0.5rem;
+    padding: var(--space-1-5, 0.38rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -166,7 +166,7 @@
 
 .nbm-conflict-hint {
     display: inline;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--accent-error);
     white-space: nowrap;
     flex-shrink: 1;
@@ -189,15 +189,15 @@
 
 .nbm-url-conflict-hint {
     display: block;
-    margin-top: 0.35rem;
+    margin-top: var(--space-1-5, 0.35rem);
 }
 
 /* Not a conflict: the same link on another page is allowed, and this only says
    where it is. Muted rather than red for exactly that reason. */
 .nbm-elsewhere-hint {
     display: block;
-    margin-top: 0.35rem;
-    font-size: 0.72rem;
+    margin-top: var(--space-1-5, 0.35rem);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -223,7 +223,7 @@
 .nbm-col {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     flex: 1;
     min-width: 0;
 }
@@ -241,11 +241,11 @@
 .nbm-inline-create {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    margin-top: 0.4rem;
-    padding: 0.5rem;
+    gap: var(--space-1, 0.3rem);
+    margin-top: var(--space-1-5, 0.4rem);
+    padding: var(--space-2, 0.5rem);
     border: 1px dashed var(--accent-success, #34d399);
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: color-mix(in srgb, var(--accent-success, #34d399) 8%, transparent);
 }
 
@@ -255,7 +255,7 @@
 }
 
 .nbm-inline-create-hint {
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-weight: 600;
     color: var(--text-secondary, #9ca3af);
     letter-spacing: 0.02em;
@@ -264,7 +264,7 @@
 .nbm-inline-create-row {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .nbm-inline-create-row .nbm-input {
@@ -277,10 +277,10 @@
     flex: 0 0 auto;
     width: 2.1rem;
     height: 2.1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     border: 1px solid transparent;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--text-md, 1rem);
     font-weight: 700;
     line-height: 1;
     display: inline-flex;
@@ -315,7 +315,7 @@
 }
 
 .nbm-more-options > summary {
-    padding: 0.55rem 1rem;
+    padding: var(--space-2, 0.55rem) var(--space-4, 1rem);
     cursor: pointer;
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-semibold);
@@ -353,16 +353,16 @@
 }
 
 .nbm-more-content .bookmark-form-preview-section {
-    padding: 0.65rem 1rem;
-    gap: 0.65rem;
+    padding: var(--space-3, 0.65rem) var(--space-4, 1rem);
+    gap: var(--space-3, 0.65rem);
 }
 
 /* ── Mobile wizard ── */
 .nbm-wizard-nav {
     display: none;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
     border-bottom: 1px solid var(--border-primary);
     background: var(--background-secondary);
     flex-shrink: 0;
@@ -375,10 +375,10 @@
 .nbm-wizard-step {
     flex: 1;
     text-align: center;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     color: var(--text-tertiary);
-    padding: 0.25rem 0.35rem;
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem);
     border: 1px solid transparent;
 }
 
@@ -440,7 +440,7 @@
 /* ── URL row ── */
 .nbm-url-row {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     align-items: center;
 }
 
@@ -452,7 +452,7 @@
 /* ── Icon row ── */
 .nbm-icon-row {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     align-items: center;
 }
 
@@ -477,7 +477,7 @@
 }
 
 .nbm-icon-preview-empty {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     line-height: 1;
 }
 
@@ -489,21 +489,21 @@
 .nbm-icon-clear {
     flex-shrink: 0;
     min-width: 2rem;
-    padding: 0 0.45rem;
+    padding: 0 var(--space-2, 0.45rem);
 }
 
 .nbm-icon-state {
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
     min-height: 1em;
-    padding-top: 0.1rem;
+    padding-top: var(--space-hairline, 0.1rem);
 }
 
 /* ── Toggles ── */
 .nbm-toggle-label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     cursor: pointer;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
@@ -542,7 +542,7 @@
 
 /* ── Buttons ── */
 .nbm-btn {
-    padding: 0.38rem 0.75rem;
+    padding: var(--space-1-5, 0.38rem) var(--space-3, 0.75rem);
     border: 1px solid var(--border-primary);
     background: transparent;
     color: var(--text-primary);
@@ -587,9 +587,9 @@
 /* ── Footer ── */
 .nbm-footer {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     justify-content: flex-end;
-    padding: 0.65rem 1rem;
+    padding: var(--space-3, 0.65rem) var(--space-4, 1rem);
     background: var(--background-secondary);
     flex-shrink: 0;
 }
@@ -602,7 +602,7 @@
 
     .nbm-section-row {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .nbm-col-narrow {
