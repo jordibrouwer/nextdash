@@ -1,0 +1,17 @@
+{
+  "tag": "v1.4.5.1",
+  "date": "2 September 2026",
+  "releasedAt": "2026-09-02",
+  "modalLead": "A correction to the keyboard cursor in Config. Moving through a list with the arrow keys marks the row you are on &mdash; on Pages &amp; tags it was marking every widget in the list at once, from the moment the tab opened.",
+  "sections": [
+    {
+      "title": "Pages & tags",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>One row at a time carries the keyboard cursor.</strong> Opening <em>Pages &amp; tags</em> lit up every widget sitting between your categories in the accent colour the cursor uses, so the list looked like a dozen rows were selected before a key had been touched &mdash; and the row you actually moved to was impossible to pick out among them. The mark now sits on one row, the one you are on."
+        }
+      ]
+    }
+  ]
+}
