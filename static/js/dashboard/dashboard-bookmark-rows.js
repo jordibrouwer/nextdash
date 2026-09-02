@@ -558,7 +558,15 @@ class DashboardBookmarkRows {
         const textSpan = document.createElement('span');
         textSpan.className = 'bookmark-text';
         textSpan.textContent = displayLabel;
-        textSpan.title = this.bookmarkRowTitle(bookmark);
+        // Only when no card is coming. The card removes the title from the
+        // anchor, but a title on a descendant wins over an absent one on its
+        // parent — so setting it here unconditionally put the grey native box
+        // on top of the card it was meant to make way for. The text itself is
+        // not lost: applyPreviewDescription moves it to the hidden element the
+        // row points at with aria-describedby.
+        if (!d.preview?.cardsEnabled?.()) {
+            textSpan.title = this.bookmarkRowTitle(bookmark);
+        }
         openLink.appendChild(textSpan);
 
         this.ensureBookmarkOpenDelegation();
@@ -1026,7 +1034,9 @@ class DashboardBookmarkRows {
         // The meta line beside this shows the category, so the counts are new
         // information here — unlike the recent-opened modal, which prints its
         // own recency and open count on every row.
-        textWrapper.title = this.bookmarkRowTitle(bookmark);
+        if (!d.preview?.cardsEnabled?.()) {
+            textWrapper.title = this.bookmarkRowTitle(bookmark);
+        }
         link.appendChild(textWrapper);
 
         const meta = document.createElement('span');
