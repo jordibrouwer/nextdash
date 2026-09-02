@@ -74,7 +74,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-bookmark-rows.js":                "d07f718a207d",
 	"js/dashboard/dashboard-category-add.js":                 "3647a618aa0c",
 	"js/dashboard/dashboard-category-menu.js":                "9b86aab66770",
-	"js/dashboard/dashboard-category-sort.js":                "b648ac19bff1",
+	"js/dashboard/dashboard-category-sort.js":                "7d10f5238753",
 	"js/dashboard/dashboard-category-span.js":                "2e3431f6c56c",
 	"js/dashboard/dashboard-category-title-fit.js":           "02a4e3822dbd",
 	"js/dashboard/dashboard-config-bookmarks.js":             "9d0c34b7529e",
@@ -209,7 +209,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/visual-settings.js":                                  "c373da16066f",
 	"js/weather.js":                                          "2e4cddbdcd40",
 	"js/whats-new-modal.js":                                  "204479e4a8d7",
-	"js/whats-new-stub.js":                                   "90d872902c4f",
+	"js/whats-new-stub.js":                                   "a570f0341b82",
 	"js/widgets-tutorial.js":                                 "4bd39fee3746",
 	"js/write-api.js":                                        "25afcd408905",
 }

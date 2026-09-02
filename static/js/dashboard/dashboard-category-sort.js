@@ -413,10 +413,16 @@
             }
             const chevron = titleEl.querySelector('.category-chevron');
             const controls = createSortControls(dash, category, renderCore);
-            if (chevron) {
-                titleEl.insertBefore(controls, chevron);
+            // The full render builds the header as label + trailing wrapper, and
+            // puts the controls and the chevron inside that wrapper. querySelector
+            // finds the chevron at any depth, so inserting against titleEl threw
+            // NotFoundError once the chevron moved into the wrapper -- which took
+            // down the whole patch pass, leaving stale rows on screen. Insert into
+            // the chevron's own parent, so both paths build the same header.
+            if (chevron?.parentNode) {
+                chevron.parentNode.insertBefore(controls, chevron);
             } else {
-                titleEl.appendChild(controls);
+                (titleEl.querySelector('.category-title-trailing') || titleEl).appendChild(controls);
             }
         }
         updateCategorySortUi(dash, categoryEl, category);
