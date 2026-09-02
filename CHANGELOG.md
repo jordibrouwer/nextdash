@@ -205,6 +205,8 @@ For install and security, see the [README](README.md). For how to use features, 
 - Saving a category span sends the write token, so the call succeeds on installs that set `NEXTDASH_WRITE_TOKEN`.
 - The Docker build cross-compiles per target architecture instead of compiling under QEMU emulation, which shortens arm64 image builds.
 - The Unraid template carries a fuller overview, the donate links and four more screenshots.
+- The Unraid template installs from Docker Hub (`foobar1452/nextdash`) rather than GHCR, so Community Applications can show Last Update and download counts — GHCR does not expose the registry metadata CA reads for those. The GHCR image is unchanged and is named in the template's overview.
+- The release script keeps the files main needs but dev's merge silently deletes: `KEEP_FILES` and `is_kept()` were defined *after* the conflict loop that calls them, so the guard ran against an empty array. They move ahead of the merge, and a restore pass afterwards covers files resolved as a clean delete rather than a conflict.
 
 ---
 

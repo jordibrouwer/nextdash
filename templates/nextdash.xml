@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>NextDash</Name>
-  <Repository>ghcr.io/jordibrouwer/nextdash:latest</Repository>
-  <Registry>https://github.com/jordibrouwer/nextdash/pkgs/container/nextdash</Registry>
+  <Repository>foobar1452/nextdash:latest</Repository>
+  <Registry>https://hub.docker.com/r/foobar1452/nextdash</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>sh</Shell>
@@ -34,12 +34,16 @@ Links:
 • Source code and releases: https://github.com/jordibrouwer/nextdash
 • Changelog: https://github.com/jordibrouwer/nextdash/releases
 • Devlog / release updates: https://www.nextdash.cc/blog
+• Also available on GHCR: ghcr.io/jordibrouwer/nextdash:latest
 
 Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
   </Overview>
 
   <Category>Tools: Productivity: Network:Web</Category>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
+       so Unraid CA can show Last Update / download stats — GHCR doesn't
+       expose the public registry metadata CA relies on for that. -->
   <Date>2026-09-02</Date>
 
   <Config Name="WebUI Port"
