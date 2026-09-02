@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeaturePreviewMediaTitle",
+      "titleFallback": "Preview pictures come from nextDash",
+      "whatKey": "config.overviewNewFeaturePreviewMediaWhat",
+      "whatFallback": "Hovering a bookmark asked that website for its picture directly, so the site learned you were looking at your own dashboard — and a site that refuses to hand its picture to anyone else left the card blank. On a real collection that was every picture leaking and two of sixteen cards empty.",
+      "howKey": "config.overviewNewFeaturePreviewMediaHow",
+      "howFallback": "nextDash fetches the picture and the site's icon once and keeps them, so hovering reaches nothing but your own dashboard. The card opens with its text straight away and the picture lands on the card you already have open — it never waits on someone else's server.",
+      "enableKey": "config.overviewNewFeaturePreviewMediaEnable",
+      "enableFallback": "Nothing to switch on — and you can switch it off: untick Image in the card's row checklist under Appearance → Display, and nothing is drawn, fetched or stored. Icons & previews shows what is kept and can remove it.",
+      "ctaKey": "config.overviewNewFeaturePreviewMediaCta",
+      "ctaFallback": "Open icons & previews →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "icons"
+      },
+      "since": "v1.4.6"
+    },
+    {
       "titleKey": "config.overviewNewFeatureChineseTitle",
       "titleFallback": "nextDash speaks Chinese",
       "whatKey": "config.overviewNewFeatureChineseWhat",

@@ -582,9 +582,20 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 
 A row with nothing to say is left out rather than drawn empty, so a bookmark you have never opened and never checked gets a short card instead of a long one full of dashes.
 
-**None of it costs a request.** Everything on the card is already in the browser: the health figures come from the report the health icon fetched on load, the Fresh count from the feed poller, the rest from the bookmark itself. Hovering across a page of bookmarks therefore asks the server for nothing at all.
+**Nothing on the card reaches another website.** The figures are already in the browser: the health numbers come from the report the health icon fetched on load, the Fresh count from the feed poller, the rest from the bookmark itself.
 
-Where the card appears — **on hover**, **keyboard only**, or **off** — is set under **Config → Appearance → Display**, along with the hover delay (**Fast**, **Balanced** or **Calm**, Calm by default) and a checklist of which rows the card draws.
+The picture used to be the exception. Until **v1.4.6** the card pointed your browser straight at the site's own image, so hovering a bookmark told that website you were looking at your own dashboard — and a site that refuses to serve its picture to other origins left the card blank instead. Since **v1.4.6** nextDash fetches the picture and the site's icon itself, stores them under `data/preview-images/`, and the card draws from your own address. The first hover on a bookmark opens the card with its text straight away and the picture arrives on it a moment later: the download runs in the background so one slow site can never hold up the card, and the picture lands on the card you already have open without a reload.
+
+Stored pictures are capped and looked after on their own. **Config → Data & backups → Icons & previews** shows how many there are and how much room they take, offers a cap of 50, 200 or 500 MB, and can remove them all — nothing is lost by clearing, because the address each came from is kept and it is fetched again the next time you hover that bookmark. When the cap is reached the oldest go first, emptying the trash sweeps any that no bookmark points at, and they are deliberately left out of backups: a backup would carry hundreds of megabytes that a restore can simply fetch again. A site that advertises a picture which does not exist is tried once and then left alone.
+
+**You can switch it off, and switching it off really stops it.** Two levels, both under **Config → Appearance → Display**:
+
+- **Untick *Image* in the card's row checklist.** The card keeps everything else and draws no picture, and nextDash stops fetching and storing them. The site's own icon, which sits in the card's header rather than in the rows, carries on.
+- **Set link preview cards to *Off*.** No card, no picture, and nothing fetched for either.
+
+Neither is a display trick: the row checklist and the card's mode are read on the server before anything is downloaded, so an install that wants none of this stores nothing and reaches nobody. Whatever is already on disk can be removed under **Icons & previews** at any time.
+
+Where the card appears — **on hover**, **keyboard only**, or **off** — is set in the same place, along with the hover delay (**Fast**, **Balanced** or **Calm**, Calm by default) and that row checklist. With cards on, the row's plain grey tooltip stands aside so it cannot cover the card; with cards **off** the tooltip is what you get, unchanged.
 
 ### Hyprland / special setups
 
