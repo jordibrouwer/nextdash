@@ -1034,9 +1034,10 @@
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-5, 9px);
+    border-radius: var(--radius-6, 10px);
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
 .config-backup-meta {
@@ -1625,9 +1626,9 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-5, 9px);
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -2437,10 +2438,11 @@ body.no-animations .config-new-features-panel-star {
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-left-width: 3px;
-    border-radius: var(--radius-5, 9px);
+    border-radius: var(--radius-6, 10px);
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
 .config-attention-row--crit { border-left-color: var(--accent-error, #d1493f); }
@@ -6497,9 +6499,9 @@ button.config-bm-shortcut-pill {
     align-items: start;
     column-gap: 12px;
     row-gap: 3px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-5, 9px);
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
