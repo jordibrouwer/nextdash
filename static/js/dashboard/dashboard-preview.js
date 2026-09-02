@@ -168,14 +168,33 @@ class DashboardPreview {
     }
 
 
-    async fetchBookmarkPreviewData(openLink, bookmark, { forceRefresh = false } = {}) {
+    /**
+     * @param {{forceRefresh?: boolean, bypassMemo?: boolean}} [options]
+     *   forceRefresh asks the server to read the page again. bypassMemo only
+     *   skips what this page already holds — the entry on the server may have
+     *   gained a picture since, and re-reading the site to learn that would be
+     *   a page fetch for a file we already have.
+     */
+    async fetchBookmarkPreviewData(openLink, bookmark, { forceRefresh = false, bypassMemo = false } = {}) {
         const d = this.dash;
-        if (!forceRefresh && openLink._previewData) {
-            return openLink._previewData;
+        /*
+         * The memo answers, and only a pending picture makes it expire.
+         *
+         * Bypassing it whenever a picture was outstanding meant every hover
+         * over a column of such bookmarks asked the server again — straight
+         * through the 60-per-minute gate on this endpoint, after which the call
+         * 429s, the card gets nothing and stops opening at all. So a pending
+         * answer is reused too, just not forever.
+         */
+        const memo = openLink._previewData;
+        if (!forceRefresh && !bypassMemo && memo) {
+            const pending = this.previewMediaPending(memo);
+            const age = Date.now() - Number(openLink._previewDataAt || 0);
+            if (!pending || age < DashboardPreview.PENDING_MEMO_MS) return memo;
         }
         try {
             let preview = null;
-            if (!forceRefresh && (bookmark.previewTitle || bookmark.previewDesc || bookmark.previewImage)) {
+            if (!forceRefresh && !bypassMemo && (bookmark.previewTitle || bookmark.previewDesc || bookmark.previewImage)) {
                 /*
                  * The shortcut that skips the server, for a bookmark whose
                  * preview is already in hand.
@@ -191,6 +210,9 @@ class DashboardPreview {
                     title: bookmark.previewTitle || bookmark.name || '',
                     description: bookmark.previewDesc || '',
                     image: bookmark.previewImage || '',
+                    // Without this the shortcut cannot tell "no picture" from
+                    // "picture not here yet", and answers the stale one forever.
+                    imageSource: bookmark.previewImageSource || '',
                     siteName: bookmark.previewSiteName || '',
                     author: bookmark.previewAuthor || '',
                     publishedAt: Number(bookmark.previewPublishedAt || 0) || 0,
@@ -208,15 +230,28 @@ class DashboardPreview {
                 if (!bookmark.previewEnriched) {
                     preview = null;
                 }
+                // A picture still on its way makes this answer provisional. The
+                // shortcut exists to skip a round trip that would tell us
+                // nothing new; here it would tell us the one thing we are
+                // waiting for, so it stands aside.
+                if (preview && this.previewMediaPending(preview)) {
+                    preview = null;
+                }
+
             }
             if (!preview) {
                 const refreshParam = forceRefresh ? '&refresh=1' : '';
                 const response = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`);
-                if (!response.ok) return null;
+                // A refused call is not an empty preview. Rate limiting is the
+                // common one — this endpoint allows 60 a minute — and returning
+                // null there took the card away entirely rather than leaving
+                // the answer we already had on screen.
+                if (!response.ok) return memo || null;
                 preview = await response.json();
                 bookmark.previewTitle = preview.title || bookmark.previewTitle || '';
                 bookmark.previewDesc = preview.description || bookmark.previewDesc || '';
-                bookmark.previewImage = preview.image || bookmark.previewImage || '';
+                bookmark.previewImage = preview.image || '';
+                bookmark.previewImageSource = preview.imageSource || '';
                 bookmark.previewSiteName = preview.siteName || '';
                 bookmark.previewAuthor = preview.author || '';
                 bookmark.previewPublishedAt = Number(preview.publishedAt || 0) || 0;
@@ -240,6 +275,7 @@ class DashboardPreview {
             }
             openLink.dataset.previewLoaded = 'true';
             openLink._previewData = preview;
+            openLink._previewDataAt = Date.now();
             return preview;
         } catch (_error) {
             openLink.dataset.previewLoaded = 'true';
@@ -266,6 +302,10 @@ class DashboardPreview {
             title: this.decodeEntities(preview?.title || bookmark?.name || '').trim(),
             domain: String(preview?.domain || this.extractDomainFromUrl(url) || '').trim(),
             image: preview?.image || '',
+            // Carried so the card can tell "no picture" from "picture not here
+            // yet". Every shape that rebuilds a preview has to pass this on, or
+            // the refill never fires and the image waits for a page reload.
+            imageSource: preview?.imageSource || '',
             description: this.decodeEntities(preview?.description || '').trim(),
             note: String(bookmark?.note || '').trim(),
             tags,
@@ -437,6 +477,7 @@ class DashboardPreview {
                 bm.previewTitle = bookmark.previewTitle || '';
                 bm.previewDesc = bookmark.previewDesc || '';
                 bm.previewImage = bookmark.previewImage || '';
+                bm.previewImageSource = bookmark.previewImageSource || '';
                 bm.previewSiteName = bookmark.previewSiteName || '';
                 bm.previewAuthor = bookmark.previewAuthor || '';
                 bm.previewPublishedAt = Number(bookmark.previewPublishedAt || 0) || 0;
@@ -450,6 +491,7 @@ class DashboardPreview {
                 bm.previewTitle = bookmark.previewTitle || '';
                 bm.previewDesc = bookmark.previewDesc || '';
                 bm.previewImage = bookmark.previewImage || '';
+                bm.previewImageSource = bookmark.previewImageSource || '';
                 bm.previewSiteName = bookmark.previewSiteName || '';
                 bm.previewAuthor = bookmark.previewAuthor || '';
                 bm.previewPublishedAt = Number(bookmark.previewPublishedAt || 0) || 0;
@@ -767,6 +809,62 @@ class DashboardPreview {
      * element the card sits beside — the row — so the card is placed once and
      * holds still.
      */
+    /*
+     * The picture is fetched by the server after the card has been drawn, so a
+     * preview can arrive complete except for it. That is the trade the design
+     * took — the card never waits on someone else's host — but it means "no
+     * image yet" and "no image at all" look identical, and only the source
+     * address tells them apart.
+     */
+    /*
+     * How long a pending answer is reused before the card asks again.
+     *
+     * Long enough that sweeping the mouse across a column costs one request per
+     * bookmark rather than one per pass, short enough that a picture landing in
+     * the background is on screen the next time you look at that row. The
+     * endpoint allows 60 requests a minute and shares that budget with
+     * everything else behind the SSRF gate.
+     */
+    static get PENDING_MEMO_MS() { return 15_000; }
+
+    previewMediaPending(preview) {
+        return !!(preview?.imageSource && !preview?.image);
+    }
+
+    /*
+     * Fill the picture in while the card is still open.
+     *
+     * Without this the card was right once and stale forever: the first hover
+     * cached a preview with no image on the element and on the bookmark, and
+     * every later hover answered from that cache, so the picture only appeared
+     * after a page reload. Modelled on the health-facts refill below — ask
+     * again, and repaint only if the same card is still on screen.
+     */
+    schedulePendingMediaRefill(card, context) {
+        const { openLink, bookmark } = context || {};
+        if (!openLink || !bookmark) return;
+
+        // Bounded: a source that 404s stays pending for as long as the server's
+        // backoff lasts, and retrying it on a timer forever is not free.
+        // Once. The background fetch takes about as long as one round trip, and
+        // a second timer per card is how a handful of open cards turned into a
+        // rate-limited flood.
+        if (openLink._previewMediaRefillDone) return;
+        openLink._previewMediaRefillDone = true;
+
+        window.clearTimeout(openLink._previewMediaTimer);
+        openLink._previewMediaTimer = window.setTimeout(async () => {
+            // forceRefresh bypasses the memo without asking the server to parse
+            // the page again: the entry it holds already has the picture if the
+            // background fetch has landed.
+            const fresh = await this.fetchBookmarkPreviewData(openLink, bookmark, { bypassMemo: true });
+            if (!fresh || this.previewMediaPending(fresh)) return;
+            const ctx = card._previewContext;
+            if (!card.classList.contains('is-visible') || ctx?.openLink !== openLink) return;
+            this.paintPreviewCard(card, this.buildPreviewPayload(bookmark, fresh), { mode: ctx.mode });
+        }, 1200);
+    }
+
     showBookmarkPreviewCard(preview, event = null, context = null) {
         const card = this.ensureBookmarkPreviewCard();
         const mode = context?.mode === 'pinned' ? 'pinned' : 'peek';
@@ -783,6 +881,10 @@ class DashboardPreview {
         card.classList.add('is-visible');
         document.body.classList.add('preview-card-active');
         this.positionBookmarkPreviewCard(context?.openLink || null, event);
+
+        if (this.previewMediaPending(preview) && card._previewContext) {
+            this.schedulePendingMediaRefill(card, card._previewContext);
+        }
 
         if (mode === 'pinned') {
             card.focus?.();
@@ -979,9 +1081,7 @@ class DashboardPreview {
 
         const imageWrap = card.querySelector('.bookmark-preview-card-image-wrap');
         const imageEl = card.querySelector('.bookmark-preview-card-image');
-        const image = want.has('image')
-            ? (window.BookmarkUrlUtils?.safeHttpResourceUrl?.(preview?.image) || '')
-            : '';
+        const image = want.has('image') ? this.resolvePreviewImageSrc(preview?.image) : '';
         if (image) {
             imageEl.alt = title;
             imageEl.src = image;
@@ -1086,6 +1186,28 @@ class DashboardPreview {
     }
 
     /** Bare filenames are served from /data/icons/, as everywhere else. */
+    /*
+     * The card draws the cached copy, and only that.
+     *
+     * This used to be safeHttpResourceUrl, which exists to reject javascript:
+     * and data: and so demands an http(s) address. Once the image became a path
+     * on our own origin that call mangled it: ensureHttpUrl prepended a scheme
+     * and turned /data/preview-images/x.png into the host "data". The card drew
+     * nothing and asked DNS about a hostname that does not exist.
+     *
+     * Nothing else is accepted. A stored remote address is not merely
+     * unnecessary now that media is cached — drawing one is the leak the cache
+     * exists to close, so it is refused here rather than sanitised.
+     */
+    resolvePreviewImageSrc(image) {
+        const value = String(image || '').trim();
+        const prefix = '/data/preview-images/';
+        if (!value.startsWith(prefix)) return '';
+        const name = value.slice(prefix.length);
+        if (!name || name.includes('/') || name.includes('..')) return '';
+        return value;
+    }
+
     resolvePreviewIconSrc(icon) {
         const value = String(icon || '').trim();
         if (!value) return '';
