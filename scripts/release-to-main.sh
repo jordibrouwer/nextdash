@@ -198,8 +198,32 @@ PRUNE_DIRS=(
   node_modules
 )
 
+# Files that live under one of the PRUNE_DIRS above but are required on main
+# regardless — the Dockerfile needs the two scripts/ entries to build at all,
+# and docker-publish.yml is the workflow that builds and publishes that same
+# image on every release, so pruning it here would delete it on the very
+# release that's supposed to use it.
+KEEP_FILES=(
+  scripts/docker-entrypoint.sh
+  scripts/gen-asset-hashes.go
+  .github/workflows/docker-publish.yml
+)
+
+is_kept() {
+  local candidate="$1"
+  local k
+  for k in "${KEEP_FILES[@]}"; do
+    [[ "$candidate" == "$k" ]] && return 0
+  done
+  return 1
+}
+
 for dir in "${PRUNE_DIRS[@]}"; do
-  git rm -rf --ignore-unmatch "$dir" >/dev/null 2>&1 || true
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    is_kept "$f" && continue
+    git rm -f --ignore-unmatch "$f" >/dev/null 2>&1 || true
+  done < <(git ls-files "$dir")
 done
 
 git rm --ignore-unmatch \
@@ -226,4 +250,4 @@ push_main_and_tag "$TAG"
 publish_github_release "$TAG"
 git checkout dev
 
-echo "Released $TAG on main." 
+echo "Released $TAG on main."
