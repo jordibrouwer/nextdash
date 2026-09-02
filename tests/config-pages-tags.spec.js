@@ -131,6 +131,45 @@ test.describe('config pages & tags', () => {
         expect(posted[posted.length - 1].id).toBeTruthy();
     });
 
+    // A widget row on the categories tab carries data-block-row, which
+    // listRowKey did not know about: it returned null, and the stored
+    // selection key is null too until an arrow key is pressed, so every widget
+    // row matched at once and the whole list lit up with the cursor accent.
+    test('widget rows on the categories tab are not all marked as the cursor', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        });
+        await page.route('**/api/categories**', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: 'work', name: 'Work' }, { id: 'home', name: 'Home' },
+            ]) });
+        });
+        await loadDashboard(page);
+
+        // Two widgets on the page, so the categories tab interleaves block rows.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config;
+            cfg._catWidgets = [
+                { id: 'w1', type: 'uptime', title: 'Uptime' },
+                { id: 'w2', type: 'custom', title: 'Adguard' },
+            ];
+            cfg._catBlockOrder = ['w1', 'work', 'w2', 'home'];
+        });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await expect(page.locator('[data-block-row]').first()).toBeVisible();
+
+        // Nothing is selected until an arrow key moves the cursor.
+        expect(await page.locator('.config-crud-row.keyboard-selected').count()).toBe(0);
+
+        // And once it does move, exactly one row carries it.
+        await page.locator('.config-crud-row').first().click();
+        await page.keyboard.press('ArrowDown');
+        expect(await page.locator('.config-crud-row.keyboard-selected').count()).toBeLessThanOrEqual(1);
+    });
+
     test('pages, categories and collections all show bookmark statistics', async ({ page }) => {
         await page.route('**/api/finders', async (route) => {
             if (route.request().method() !== 'GET') return route.fallback();

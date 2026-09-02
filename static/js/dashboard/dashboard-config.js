@@ -1756,6 +1756,11 @@ class DashboardConfig {
         if (row.hasAttribute('data-tag-row')) return `tag:${row.getAttribute('data-tag-row')}`;
         if (row.hasAttribute('data-finder-index')) return `finder:${row.getAttribute('data-finder-index')}`;
         if (row.hasAttribute('data-collection-row')) return `collection:${row.getAttribute('data-collection-row')}`;
+        // Widget rows spliced into the categories list by interleaveWidgetRows.
+        // Without a key of their own they all returned null -- and since the
+        // stored key is null too until an arrow key is pressed, every widget row
+        // matched it at once and the whole list wore the cursor accent.
+        if (row.hasAttribute('data-block-row')) return `block:${row.getAttribute('data-block-row')}`;
         return null;
     }
 
@@ -1776,7 +1781,10 @@ class DashboardConfig {
     applyListKeyboardSelection(rows) {
         const list = Array.isArray(rows) && rows.length ? rows : this.getListKeyboardRows();
         list.forEach((row) => {
-            const selected = this.listRowKey(row) === this._listKeyboardKey;
+            // A null key means "this row cannot be the cursor" -- never "it
+            // matches the null stored key", which would light up every such row.
+            const key = this.listRowKey(row);
+            const selected = key !== null && key === this._listKeyboardKey;
             row.classList.toggle('keyboard-selected', selected);
             if (selected) {
                 row.setAttribute('aria-selected', 'true');
@@ -1958,7 +1966,10 @@ class DashboardConfig {
     applyBookmarkKeyboardSelection(rows) {
         const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
         list.forEach((row) => {
-            const selected = this.bookmarkRowKey(row) === this._bmKeyboardKey;
+            // Same null guard as the Pages & tags list: a row without a key is
+            // not the cursor, however null the stored key happens to be.
+            const key = this.bookmarkRowKey(row);
+            const selected = key !== null && key === this._bmKeyboardKey;
             row.classList.toggle('keyboard-selected', selected);
             if (selected) {
                 row.setAttribute('aria-selected', 'true');
