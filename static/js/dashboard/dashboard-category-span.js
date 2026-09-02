@@ -223,9 +223,12 @@
                 dash.data?.invalidatePageDataCache?.(pageId);
             } else {
                 try {
+                    const headers = typeof nextDashWriteHeaders === 'function'
+                        ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+                        : { 'Content-Type': 'application/json' };
                     await fetch(`/api/categories?page=${pageId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers,
                         body: JSON.stringify(categories.map((cat) => ({ ...cat, originalId: cat.id }))),
                     });
                 } catch (_err) {
