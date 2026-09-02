@@ -5,17 +5,17 @@
     right: max(1rem, env(safe-area-inset-right));
     bottom: max(1rem, env(safe-area-inset-bottom));
     max-width: min(380px, calc(100vw - 1.5rem));
-    padding: 0.75rem 1rem;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold);
     font-family: var(--font-family-main);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-primary);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
     opacity: 0;
     visibility: hidden;
@@ -79,9 +79,9 @@
 
 .app-notification-promo-label {
     display: inline-block;
-    margin-right: 0.35rem;
-    padding: 0.1rem 0.42rem;
-    border-radius: 999px;
+    margin-right: var(--space-1-5, 0.35rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.42rem);
+    border-radius: var(--radius-pill, 999px);
     font-size: 0.72em;
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.05em;
@@ -102,7 +102,7 @@
     text-transform: uppercase;
     font-size: 0.78em;
     letter-spacing: 0.06em;
-    margin-right: 0.15rem;
+    margin-right: var(--space-hairline, 0.15rem);
 }
 
 .app-notification-text code {
@@ -110,8 +110,8 @@
     font-size: 0.88em;
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
     border: 1px solid var(--border-primary);
-    border-radius: 3px;
-    padding: 0.03rem 0.26rem;
+    border-radius: var(--radius-2, 3px);
+    padding: var(--space-hairline, 0.03rem) var(--space-1, 0.26rem);
     color: var(--text-primary);
     white-space: nowrap;
 }
@@ -127,8 +127,8 @@
     border: 1px solid currentColor;
     background: transparent;
     color: inherit;
-    border-radius: 0.25rem;
-    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius-3, 0.25rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.55rem);
     font-size: var(--font-size-controls);
     font-family: inherit;
     font-weight: var(--font-weight-semibold);

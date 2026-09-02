@@ -14,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1.5rem;
+    padding: var(--space-5, 1.5rem);
     background: var(--background-modal, rgba(0, 0, 0, 0.6));
     animation: health-focus-fade 0.14s ease-out;
 }
@@ -23,9 +23,9 @@
     width: min(34rem, 100%);
     max-height: 85vh;
     overflow-y: auto;
-    padding: 1.5rem;
+    padding: var(--space-5, 1.5rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-7, 0.75rem);
     background: var(--background-secondary);
     color: var(--text-primary);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
@@ -44,12 +44,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+    gap: var(--space-4, 1rem);
+    margin-bottom: var(--space-3, 0.75rem);
 }
 
 .health-focus-progress {
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
 }
@@ -60,9 +60,9 @@
     color: var(--text-secondary);
     font-size: 1.4rem;
     line-height: 1;
-    padding: 0 0.25rem;
+    padding: 0 var(--space-1, 0.25rem);
     cursor: pointer;
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
 }
 
 .health-focus-close:hover {
@@ -75,8 +75,8 @@
 .health-focus-identity {
     display: flex;
     align-items: flex-start;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
+    gap: var(--space-2, 0.6rem);
+    margin-bottom: var(--space-2, 0.5rem);
 }
 
 .health-focus-identity-text {
@@ -91,7 +91,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: var(--text-md, 1rem);
     line-height: 1;
 }
 
@@ -99,12 +99,12 @@
     width: 1.5rem;
     height: 1.5rem;
     object-fit: contain;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
 }
 
 .health-focus-title {
-    margin: 0 0 0.25rem;
-    font-size: 1.15rem;
+    margin: 0 0 var(--space-1, 0.25rem);
+    font-size: var(--text-lg, 1.15rem);
     line-height: 1.3;
     /* Long bookmark names break rather than widening the card past the
        measure the rest of the layout is built on. */
@@ -113,7 +113,7 @@
 
 .health-focus-url {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-secondary);
     overflow-wrap: anywhere;
 }
@@ -121,8 +121,8 @@
 /* The line the Open button changes. Never-opened is called out in the warning
    colour because it is one of the findings, not a neutral timestamp. */
 .health-focus-opened {
-    margin: 0 0 0.75rem;
-    font-size: 0.78rem;
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
 }
@@ -134,8 +134,8 @@
 .health-focus-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-bottom: 0.75rem;
+    gap: var(--space-1-5, 0.35rem);
+    margin-bottom: var(--space-3, 0.75rem);
 }
 
 /* Collapses to nothing when the row has no badges, so the gap above the
@@ -149,9 +149,9 @@
    decision, it is not the decision, so it never grows tall enough to push the
    buttons off the card. */
 .health-focus-preview {
-    margin: 0 0 0.9rem;
+    margin: 0 0 var(--space-4, 0.9rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: var(--background-primary);
     overflow: hidden;
 }
@@ -159,14 +159,14 @@
 .health-focus-preview-toggle {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     width: 100%;
-    padding: 0.4rem 0.6rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     border: none;
     background: transparent;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     text-align: left;
     cursor: pointer;
 }
@@ -176,7 +176,7 @@
 }
 
 .health-focus-preview-caret {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     opacity: 0.7;
 }
 
@@ -192,12 +192,12 @@
 }
 
 .health-focus-preview-body {
-    padding: 0 0.6rem 0.6rem;
+    padding: 0 var(--space-2, 0.6rem) var(--space-2, 0.6rem);
 }
 
 .health-focus-preview-image {
-    margin-bottom: 0.5rem;
-    border-radius: 0.35rem;
+    margin-bottom: var(--space-2, 0.5rem);
+    border-radius: var(--radius-4, 0.35rem);
     overflow: hidden;
     background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
@@ -210,15 +210,15 @@
 }
 
 .health-focus-preview-title {
-    margin: 0 0 0.2rem;
-    font-size: 0.86rem;
+    margin: 0 0 var(--space-1, 0.2rem);
+    font-size: var(--text-base, 0.86rem);
     color: var(--text-primary);
     overflow-wrap: anywhere;
 }
 
 .health-focus-preview-desc {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     line-height: 1.45;
     color: var(--text-secondary);
     /* Three lines is enough to tell what a page is about; more turns the card
@@ -232,7 +232,7 @@
 
 .health-focus-preview-empty {
     margin: 0;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-tertiary, var(--text-secondary));
 }
 
@@ -241,15 +241,15 @@
 }
 
 .health-focus-reasons {
-    margin: 0 0 1.1rem;
-    padding-left: 1.1rem;
-    font-size: 0.86rem;
+    margin: 0 0 var(--space-4, 1.1rem);
+    padding-left: var(--space-4, 1.1rem);
+    font-size: var(--text-base, 0.86rem);
     color: var(--text-secondary);
     line-height: 1.5;
 }
 
 .health-focus-reasons li + li {
-    margin-top: 0.2rem;
+    margin-top: var(--space-1, 0.2rem);
 }
 
 /* A reason answered on this card. Struck rather than removed: the score and the
@@ -262,33 +262,33 @@
 
 .health-focus-reason-done {
     text-decoration: none;
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
     color: var(--accent-success, var(--text-secondary));
 }
 
 .health-focus-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.9rem;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 0.9rem);
 }
 
 /* The key hint rides inside its button, the same pairing the row actions use,
    so the shortcut is learned from the control rather than from a legend. */
 .health-focus-actions kbd {
-    margin-left: 0.4rem;
-    padding: 0.05rem 0.3rem;
+    margin-left: var(--space-1-5, 0.4rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
     border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
     background: color-mix(in srgb, var(--text-primary) 6%, transparent);
     font-family: inherit;
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     opacity: 0.8;
 }
 
 .health-focus-legend {
     margin: 0;
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
     color: var(--text-tertiary, var(--text-secondary));
 }
 
@@ -313,12 +313,12 @@
    button ends up too narrow to hit. */
 @media (max-width: 30rem) {
     .health-focus-overlay {
-        padding: 0.75rem;
+        padding: var(--space-3, 0.75rem);
     }
 
     .health-focus-card {
         width: 100%;
-        padding: 1.1rem;
+        padding: var(--space-4, 1.1rem);
     }
 
     .health-focus-actions .config-btn {
@@ -331,14 +331,14 @@
 .health-view-focus-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.1rem;
-    padding: 0.3rem 0.6rem;
+    gap: var(--space-hairline, 0.1rem);
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: var(--background-primary);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     cursor: pointer;
 }
 
@@ -348,12 +348,12 @@
 }
 
 .health-view-focus-btn kbd {
-    margin-left: 0.3rem;
-    padding: 0.02rem 0.28rem;
+    margin-left: var(--space-1, 0.3rem);
+    padding: var(--space-hairline, 0.02rem) var(--space-1, 0.28rem);
     border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
     font-family: inherit;
-    font-size: 0.66rem;
+    font-size: var(--text-2xs, 0.66rem);
     opacity: 0.75;
 }
 
@@ -364,14 +364,14 @@
 }
 
 .health-focus-done-count {
-    margin: 0.75rem 0 0.25rem;
-    font-size: 1.05rem;
+    margin: var(--space-3, 0.75rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--text-md, 1.05rem);
     color: var(--text-primary);
 }
 
 .health-focus-done-rest {
     margin: 0 0 1.25rem;
-    font-size: 0.85rem;
+    font-size: var(--text-sm, 0.85rem);
     color: var(--text-secondary);
 }
 

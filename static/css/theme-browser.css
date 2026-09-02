@@ -13,13 +13,13 @@
 .theme-browser {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     max-height: min(70vh, 40rem);
 }
 
 .theme-browser-bar {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     align-items: center;
     flex-wrap: wrap;
 }
@@ -27,7 +27,7 @@
 .theme-browser-search {
     flex: 1 1 14rem;
     min-width: 0;
-    padding: 0.45rem 0.6rem;
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.6rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid var(--hairline-strong, var(--border-primary));
     background: var(--surface-1, var(--background-secondary));
@@ -42,12 +42,12 @@
 
 .theme-browser-segments {
     display: inline-flex;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .theme-browser-segment,
 .theme-browser-variant {
-    padding: 0.3rem 0.6rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
     border-radius: var(--layout-radius-pill, 999px);
     border: 1px solid var(--hairline, var(--border-secondary));
     background: transparent;
@@ -73,7 +73,7 @@
 .theme-browser-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     overflow-y: auto;
     /* Room for the focus ring, which would otherwise be clipped by the scroll
        container on the first and last row. */
@@ -83,8 +83,8 @@
 .theme-browser-card {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.55rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-2, 0.55rem);
     border-radius: var(--layout-radius-md, 12px);
     border: 1px solid var(--hairline, var(--border-secondary));
     background: var(--surface-1, var(--background-secondary));
@@ -125,7 +125,7 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 .theme-browser-card-name {
@@ -137,7 +137,7 @@
 .theme-browser-star {
     border: none;
     background: none;
-    padding: 0 0.1rem;
+    padding: 0 var(--space-hairline, 0.1rem);
     cursor: pointer;
     color: var(--text-tertiary);
     font-size: 1em;
@@ -158,13 +158,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     margin-top: auto;
 }
 
 .theme-browser-variants {
     display: inline-flex;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
 }
 
 .theme-browser-single,
@@ -178,7 +178,7 @@
 }
 
 .theme-browser-empty {
-    margin: 1rem 0;
+    margin: var(--space-4, 1rem) 0;
     color: var(--text-tertiary);
     grid-column: 1 / -1;
 }
@@ -197,7 +197,7 @@
    the field still reads as one control with a way out of it. */
 .config-theme-row {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     align-items: stretch;
 }
 

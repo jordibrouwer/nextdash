@@ -8,7 +8,7 @@
 }
 
 .modal.note-command-modal-inner .modal-header {
-    padding: 0.65rem 1rem;
+    padding: var(--space-3, 0.65rem) var(--space-4, 1rem);
     border-bottom: 1px solid var(--border-primary);
     background: var(--background-secondary);
 }
@@ -26,13 +26,13 @@
 }
 
 .modal.note-command-modal-inner .modal-actions {
-    padding: 0.6rem 1rem;
+    padding: var(--space-2, 0.6rem) var(--space-4, 1rem);
     border-top: 1px solid var(--border-primary);
     background: var(--background-secondary);
 }
 
 .note-cmd-body {
-    padding: 0.75rem 1rem;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
 }
 
 .note-cmd-textarea {
@@ -42,7 +42,7 @@
     color: var(--text-primary);
     border: 1px solid var(--border-primary);
     border-radius: var(--border-radius-sm, 3px);
-    padding: 0.6rem 0.75rem;
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
     font-family: inherit;
     font-size: var(--font-size-text);
     line-height: 1.5;
@@ -61,7 +61,7 @@
 }
 
 .note-cmd-hint {
-    margin: 0.5rem 0 0;
+    margin: var(--space-2, 0.5rem) 0 0;
     font-size: var(--font-size-small);
     color: var(--text-secondary);
 }

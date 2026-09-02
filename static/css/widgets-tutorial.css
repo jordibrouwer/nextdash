@@ -28,21 +28,21 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 }
 
 .widgets-tutorial-progress {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text-tertiary);
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1-5, 0.4rem);
 }
 
 .widgets-tutorial-step-title {
-    margin: 0 0 0.7rem;
-    font-size: 1.1rem;
+    margin: 0 0 var(--space-3, 0.7rem);
+    font-size: var(--text-lg, 1.1rem);
     color: var(--text-primary);
 }
 
 .widgets-tutorial-step-body p {
-    margin: 0 0 0.7rem;
+    margin: 0 0 var(--space-3, 0.7rem);
     color: var(--text-secondary);
     line-height: 1.55;
 }
@@ -57,11 +57,11 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     display: grid;
     grid-template-columns: minmax(0, 1fr) 2.5rem minmax(0, 1.2fr);
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.9rem 0.85rem;
-    margin: 0 0 0.9rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 0.9rem) var(--space-3, 0.85rem);
+    margin: 0 0 var(--space-4, 0.9rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-6, 0.6rem);
     background: var(--background-secondary);
     overflow: hidden;
 }
@@ -69,12 +69,12 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 .widgets-tutorial-hero-source {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     min-width: 0;
 }
 
 .widgets-tutorial-hero-label {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text-tertiary);
@@ -82,11 +82,11 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 
 .widgets-tutorial-hero-url {
     font-family: var(--font-mono, monospace);
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
     color: var(--text-secondary);
-    padding: 0.28rem 0.45rem;
+    padding: var(--space-1, 0.28rem) var(--space-2, 0.45rem);
     border: 1px dashed var(--border-secondary);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-primary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -97,7 +97,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 .widgets-tutorial-hero-wire {
     position: relative;
     height: 2px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--border-secondary);
 }
 
@@ -107,7 +107,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     left: 0;
     width: 8px;
     height: 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--accent-primary);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 22%, transparent);
     animation: widgets-tutorial-travel 3.2s cubic-bezier(0.5, 0, 0.2, 1) infinite;
@@ -123,11 +123,11 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 .widgets-tutorial-hero-tile {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-width: 0;
-    padding: 0.45rem 0.5rem;
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.45rem;
+    border-radius: var(--radius-5, 0.45rem);
     background: var(--background-primary);
     animation: widgets-tutorial-tile-wake 3.2s ease-out infinite;
 }
@@ -140,13 +140,13 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 
 .widgets-tutorial-hero-tile-title {
     font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
 }
 
 .widgets-tutorial-hero-figures {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 /*
@@ -165,7 +165,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 }
 
 .widgets-tutorial-hero-figure b {
-    font-size: 1.05rem;
+    font-size: var(--text-md, 1.05rem);
     font-weight: 600;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
@@ -173,7 +173,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 
 .widgets-tutorial-hero-figure i {
     font-style: normal;
-    font-size: 0.64rem;
+    font-size: var(--text-2xs, 0.64rem);
     color: var(--text-tertiary);
 }
 
@@ -190,25 +190,25 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.6rem 0.75rem;
-    margin: 0 0 0.9rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-4, 0.9rem);
     border: 1px dashed var(--border-secondary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: var(--background-secondary);
 }
 
 .widgets-tutorial-visual-hint {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     flex: 1 1 12rem;
     min-width: 0;
 }
 
 .widgets-tutorial-chip {
-    font-size: 0.72rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     color: var(--text-secondary);
     background: var(--background-primary);
@@ -227,7 +227,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 /* Two stand-in tiles side by side, so "a widget" is a shape before it is a
    sentence. */
 .widgets-tutorial-visual--tiles {
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .widgets-tutorial-tile {
@@ -235,22 +235,22 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    padding: 0.45rem 0.55rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.45rem;
+    border-radius: var(--radius-5, 0.45rem);
     background: var(--background-primary);
 }
 
 .widgets-tutorial-tile-title {
     font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
 }
 
 .widgets-tutorial-tile-body {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
 }
 
 .widgets-tutorial-stat {
@@ -260,14 +260,14 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 }
 
 .widgets-tutorial-stat-value {
-    font-size: 1rem;
+    font-size: var(--text-md, 1rem);
     font-weight: 600;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
 }
 
 .widgets-tutorial-stat-label {
-    font-size: 0.64rem;
+    font-size: var(--text-2xs, 0.64rem);
     color: var(--text-tertiary);
 }
 
@@ -275,19 +275,19 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 .widgets-tutorial-visual--map {
     flex-wrap: nowrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
 }
 
 .widgets-tutorial-json {
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
-    padding: 0.4rem 0.5rem;
-    border-radius: 0.35rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-primary);
     border: 1px solid var(--border-secondary);
     font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     line-height: 1.45;
     color: var(--text-secondary);
     overflow-x: auto;
@@ -307,45 +307,45 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     flex: 0 0 auto;
     display: inline-flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
 }
 
 .widgets-tutorial-paths .widgets-tutorial-chip {
     font-family: var(--font-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
 }
 
 /* Nineteen names is a wall unless it is allowed to be one — small, quiet, and
    scrollable rather than pushing the prose off the modal. */
 .widgets-tutorial-visual--presets {
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     max-height: 6.5rem;
     overflow-y: auto;
 }
 
 .widgets-tutorial-visual--presets .widgets-tutorial-chip {
-    font-size: 0.68rem;
-    padding: 0.15rem 0.45rem;
+    font-size: var(--text-2xs, 0.68rem);
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
 }
 
 .widgets-tutorial-visual--keys {
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
 }
 
 .widgets-tutorial-key {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    font-size: 0.72rem;
+    gap: var(--space-1, 0.3rem);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     white-space: nowrap;
 }
 
 .widgets-tutorial-key kbd {
     font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
-    padding: 0.1rem 0.35rem;
-    border-radius: 0.3rem;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.35rem);
+    border-radius: var(--radius-3, 0.3rem);
     border: 1px solid var(--border-secondary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -354,14 +354,14 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
 .widgets-tutorial-dots {
     display: flex;
     justify-content: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     margin-top: 1.2rem;
 }
 
 .widgets-tutorial-dot {
     width: 0.4rem;
     height: 0.4rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--border-secondary);
     transition: background-color 0.15s ease, transform 0.15s ease;
 }

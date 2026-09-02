@@ -53,6 +53,13 @@
          after the CSS bundle had downloaded and parsed. -->
     <!-- bundle:css -->
     <link rel="stylesheet" href="{{asset "css/theme.css"}}">
+    <!-- Spacing tokens — unscoped (unlike layout-modern-tokens.css below),
+         since classic is the default layout and needs these too. Ahead of
+         everything that reads a --space-* or --density-row-* value. -->
+    <link rel="stylesheet" href="{{asset "css/spacing-tokens.css"}}">
+    <!-- Typography and radius tokens — same reasoning, same scope. -->
+    <link rel="stylesheet" href="{{asset "css/typography-tokens.css"}}">
+    <link rel="stylesheet" href="{{asset "css/radius-tokens.css"}}">
     <!-- Depth tokens, derived from the thirteen colours a theme declares. Ahead
          of layout-modern-tokens.css, which may consume them. -->
     <link rel="stylesheet" href="{{asset "css/theme-depth.css"}}">

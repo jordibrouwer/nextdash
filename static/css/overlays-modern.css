@@ -41,8 +41,8 @@ body[data-layout-version="modern"] .search-match.keyboard-selected {
 }
 
 body[data-layout-version="modern"] .search-command-group-header {
-    margin-top: 0.35rem;
-    padding: 0.45rem 0.55rem 0.25rem;
+    margin-top: var(--space-1-5, 0.35rem);
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem) var(--space-1, 0.25rem);
     border-top: none;
     border-radius: var(--layout-radius-sm);
     opacity: 0.72;
@@ -59,9 +59,9 @@ body[data-layout-version="modern"] .search-command-group-header.keyboard-selecte
 }
 
 body[data-layout-version="modern"] .search-mode-tabs {
-    gap: 0.35rem;
-    padding: 0.35rem;
-    margin-top: 0.5rem;
+    gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
     border-top: none;
     border-radius: var(--layout-radius-md);
     background: var(--background-secondary);

@@ -26,21 +26,21 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 }
 
 .fresh-tutorial-progress {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text-tertiary);
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1-5, 0.4rem);
 }
 
 .fresh-tutorial-step-title {
-    margin: 0 0 0.7rem;
-    font-size: 1.1rem;
+    margin: 0 0 var(--space-3, 0.7rem);
+    font-size: var(--text-lg, 1.1rem);
     color: var(--text-primary);
 }
 
 .fresh-tutorial-step-body p {
-    margin: 0 0 0.7rem;
+    margin: 0 0 var(--space-3, 0.7rem);
     color: var(--text-secondary);
     line-height: 1.55;
 }
@@ -53,11 +53,11 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    margin: 0 0 0.9rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-4, 0.9rem);
     border: 1px dashed var(--border-secondary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: var(--background-secondary);
 }
 
@@ -70,19 +70,19 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 0.3rem;
-    padding: 0.4rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1-5, 0.4rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-primary);
 }
 
 .fresh-tutorial-collection-title {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-bottom: 0.15rem;
-    font-size: 0.78rem;
+    gap: var(--space-1, 0.3rem);
+    margin-bottom: var(--space-hairline, 0.15rem);
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
 }
 
@@ -95,9 +95,9 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 .fresh-tutorial-row {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.25rem 0.35rem;
-    border-radius: 0.25rem;
+    gap: var(--space-2, 0.45rem);
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem);
+    border-radius: var(--radius-3, 0.25rem);
     background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
 }
 
@@ -105,13 +105,13 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
     width: 0.7rem;
     height: 0.7rem;
     flex: 0 0 auto;
-    border-radius: 0.18rem;
+    border-radius: var(--radius-2, 0.18rem);
     background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .fresh-tutorial-name {
     flex: 1 1 auto;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     color: var(--text-secondary);
 }
 
@@ -119,11 +119,11 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 .fresh-tutorial-badge {
     flex: 0 0 auto;
     min-width: 1.15rem;
-    padding: 0.05rem 0.3rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
+    border-radius: var(--radius-pill, 999px);
     background: var(--accent-primary);
     color: var(--background-primary);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     font-weight: var(--font-weight-semibold);
     line-height: 1.4;
     text-align: center;
@@ -132,14 +132,14 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 
 .fresh-tutorial-arrow {
     color: var(--text-tertiary);
-    font-size: 0.95rem;
+    font-size: var(--text-base, 0.95rem);
 }
 
 .fresh-tutorial-chip {
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 999px;
-    font-size: 0.72rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
     white-space: nowrap;
 }
@@ -154,7 +154,7 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 
 .fresh-tutorial-note {
     flex: 1 1 auto;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     line-height: 1.5;
     color: var(--text-secondary);
 }
@@ -162,14 +162,14 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tu
 .fresh-tutorial-dots {
     display: flex;
     justify-content: center;
-    gap: 0.35rem;
-    margin-top: 0.9rem;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-4, 0.9rem);
 }
 
 .fresh-tutorial-dot {
     width: 0.4rem;
     height: 0.4rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--border-primary);
 }
 

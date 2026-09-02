@@ -9,10 +9,10 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     width: 100%;
-    margin-bottom: 0.75rem;
-    padding: 0.45rem 0.65rem;
+    margin-bottom: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.65rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
@@ -24,16 +24,16 @@
 }
 
 .multi-select-count {
-    margin-right: 0.25rem;
-    font-size: 0.8rem;
+    margin-right: var(--space-1, 0.25rem);
+    font-size: var(--text-sm, 0.8rem);
     font-weight: 600;
     color: var(--accent-primary);
     font-variant-numeric: tabular-nums;
 }
 
 .multi-select-btn {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.8rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
+    font-size: var(--text-sm, 0.8rem);
     font-family: inherit;
     color: var(--text-primary);
     background: var(--background-primary);

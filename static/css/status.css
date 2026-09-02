@@ -129,7 +129,7 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
 .bookmark-status-toggle input[type="checkbox"] {
     width: 14px !important;
     height: 14px !important;
-    margin-right: 0.25rem;
+    margin-right: var(--space-1, 0.25rem);
 }
 
 .bookmark-status-toggle label {
@@ -138,22 +138,22 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     color: var(--text-secondary);
 }
 
 /* Status monitoring settings group */
 .status-settings-group {
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
+    border-radius: var(--radius-5, 8px);
+    padding: var(--space-4, 1rem);
+    margin-top: var(--space-4, 1rem);
     background: var(--background-secondary);
 }
 
 .status-settings-info {
-    margin-top: 0.5rem;
-    margin-left: 1.625rem; /* Align with checkbox text */
+    margin-top: var(--space-2, 0.5rem);
+    margin-left: var(--space-5, 1.625rem); /* Align with checkbox text */
 }
 
 .status-settings-info small {
@@ -164,16 +164,16 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
 
 /* Nested setting for ping display */
 .status-settings-nested {
-    margin-left: 1.625rem;
-    margin-top: 0.75rem;
-    padding-left: 1rem;
+    margin-left: var(--space-5, 1.625rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-left: var(--space-4, 1rem);
     border-left: 2px solid var(--border-primary);
 }
 
 /* Refresh button for manual status check */
 .status-refresh-btn {
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
+    margin-left: var(--space-2, 0.5rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
     border: 1px solid var(--border-primary);
@@ -198,9 +198,9 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
     font-weight: var(--font-weight-bold);
     color: var(--accent-warning);
     opacity: 0.8;
-    margin-left: 1rem;
+    margin-left: var(--space-4, 1rem);
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     white-space: nowrap;
 }
 
@@ -235,7 +235,7 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
 @media (max-width: 768px) {
     .status-loading-indicator {
         font-size: calc(var(--font-size-controls) * 0.9);
-        margin-left: 0.5rem;
+        margin-left: var(--space-2, 0.5rem);
     }
 }
 

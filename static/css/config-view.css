@@ -130,7 +130,7 @@
     text-align: left;
     padding: 9px 12px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: transparent;
     color: var(--text-muted, #777);
     font: inherit;
@@ -224,7 +224,7 @@
     margin: 0;
     padding: 24px;
     border: 1px dashed var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     color: var(--text-muted, #888);
     text-align: center;
 }
@@ -253,7 +253,7 @@
 .config-tiles--bookmarks .config-tile {
     padding: 12px 10px;
     gap: 6px;
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     min-width: 0;
 }
 
@@ -286,9 +286,9 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.25rem 0.35rem 0.5rem;
-    margin-bottom: 0.85rem;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.85rem);
 }
 
 .config-bm-subtitle {
@@ -302,7 +302,7 @@
 .config-bm-header-meta {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
     flex-shrink: 0;
 }
 
@@ -311,12 +311,12 @@
     align-items: center;
     justify-content: center;
     min-width: 1.35rem;
-    padding: 0.1rem 0.4rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
     color: var(--accent-primary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
 }
@@ -328,26 +328,26 @@
  * exactly why Health and Inbox use a select for their sort too. What is shared
  * is the shape — same radius, same type size, same surface. */
 .config-crud-toolbar--view {
-    gap: 0.55rem;
-    padding: 0 0.35rem 0.35rem;
-    margin-bottom: 0.65rem;
+    gap: var(--space-2, 0.55rem);
+    padding: 0 var(--space-1-5, 0.35rem) var(--space-1-5, 0.35rem);
+    margin-bottom: var(--space-3, 0.65rem);
 }
 
 .config-crud-toolbar--view .config-text {
     flex: 1 1 12rem;
     min-width: 8rem;
-    padding: 0.35rem 0.55rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.4rem);
     background: var(--background-primary);
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
 }
 
 .config-crud-toolbar--view .config-select {
-    padding: 0.35rem 0.5rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-4, 0.4rem);
     background: var(--background-primary);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
 }
 
 .config-crud-toolbar--view .config-select:hover {
@@ -356,11 +356,11 @@
 }
 
 .config-crud-toolbar--view .config-btn {
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
     background: var(--background-primary);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
 }
 
 .config-crud-toolbar--view .config-btn:hover {
@@ -381,13 +381,13 @@
 .config-tiles--bookmarks {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1rem);
 }
 
 .config-tiles--bookmarks .config-tile {
-    gap: 0.15rem;
-    padding: 0.5rem 0.6rem;
+    gap: var(--space-hairline, 0.15rem);
+    padding: var(--space-2, 0.5rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
@@ -399,21 +399,21 @@
 }
 
 .config-tiles--bookmarks .config-tile-label {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text-tertiary);
 }
 
 .config-tiles--bookmarks .config-tile-value {
-    font-size: 1.05rem;
+    font-size: var(--text-md, 1.05rem);
     font-weight: var(--font-weight-semibold);
     line-height: 1.2;
     color: var(--text-primary);
 }
 
 .config-tiles--bookmarks .config-tile-detail {
-    font-size: 0.66rem;
+    font-size: var(--text-2xs, 0.66rem);
     color: var(--text-secondary);
 }
 
@@ -460,7 +460,7 @@
     gap: 8px;
     padding: 16px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     position: relative;
     overflow: hidden;
@@ -539,7 +539,7 @@
     margin-top: 20px;
     padding: 18px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
 }
 
@@ -564,7 +564,7 @@
     margin-left: 12px;
     padding: 2px 8px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: transparent;
     color: var(--text-muted, #888);
     font: inherit;
@@ -666,7 +666,7 @@
 .config-link-button:focus-visible {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 2px;
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
 }
 
 .config-panel-note {
@@ -732,7 +732,7 @@
     display: inline-block;
     width: 12px;
     height: 3px;
-    border-radius: 2px;
+    border-radius: var(--radius-1, 2px);
     flex: 0 0 auto;
 }
 
@@ -919,7 +919,7 @@
 .config-btn {
     padding: 8px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--button-bg, transparent);
     color: var(--text-color, inherit);
     font: inherit;
@@ -1034,9 +1034,10 @@
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 9px;
+    border-radius: var(--radius-6, 10px);
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
 .config-backup-meta {
@@ -1164,14 +1165,14 @@
     flex-wrap: wrap;
     padding: 3px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 9px;
+    border-radius: var(--radius-5, 9px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
 }
 
 .config-choice {
     padding: 6px 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: transparent;
     color: var(--text-muted, #888);
     font: inherit;
@@ -1229,7 +1230,7 @@
     padding: 12px 14px;
     text-align: left;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     color: var(--text-muted, #888);
     font: inherit;
@@ -1327,7 +1328,7 @@
     height: 44px;
     padding: 0;
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     cursor: pointer;
     /* The gradient itself is the label, so the box must not tint it. */
     background-clip: padding-box;
@@ -1385,7 +1386,7 @@
 .config-select {
     padding: 7px 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     color: var(--text-color, inherit);
     font: inherit;
@@ -1465,7 +1466,7 @@
     padding: 4px;
     list-style: none;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--background-modal, var(--card-bg, rgba(20, 20, 20, 0.95)));
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
@@ -1476,7 +1477,7 @@
 
 .config-theme-picker-option {
     padding: 6px 10px;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     font-size: calc(var(--font-size-text) * 0.971);
     cursor: pointer;
     /* nowrap so the list sizes to the longest name rather than wrapping every
@@ -1499,7 +1500,7 @@
 .config-text {
     padding: 7px 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     color: var(--text-color, inherit);
     font: inherit;
@@ -1559,7 +1560,7 @@
 .config-subtab {
     padding: 7px 14px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: transparent;
     color: var(--text-muted, #888);
     font: inherit;
@@ -1625,9 +1626,9 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 9px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -1670,7 +1671,7 @@
 
 .config-stat-bar {
     height: 0.28rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--border-color, rgba(128, 128, 128, 0.35)) 80%, transparent);
     overflow: hidden;
 }
@@ -1732,7 +1733,7 @@
     height: 34px;
     padding: 2px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--card-bg, transparent);
     cursor: pointer;
     flex: none;
@@ -1904,7 +1905,7 @@
     padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
 }
 
 .config-panel-empty--action {
@@ -2000,7 +2001,7 @@
 
 .config-zone-rule > span {
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-tertiary);
@@ -2015,7 +2016,7 @@
 
 .config-zone-rule > a {
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--accent-primary);
     text-decoration: none;
     white-space: nowrap;
@@ -2036,10 +2037,10 @@
 
 .config-src-filter {
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     letter-spacing: 0.06em;
     padding: 3px 9px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
     background: transparent;
     color: var(--text-secondary);
@@ -2115,11 +2116,11 @@
 
 .config-src-chip {
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.62rem;
+    font-size: var(--text-2xs, 0.62rem);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding: 2px 6px;
-    border-radius: 2px;
+    border-radius: var(--radius-1, 2px);
     grid-row: span 3;
     align-self: start;
     margin-top: 3px;
@@ -2178,7 +2179,7 @@
 .config-news-when {
     grid-row: span 2;
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -2231,11 +2232,11 @@
 .config-nav-count {
     margin-left: auto;
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.64rem;
+    font-size: var(--text-2xs, 0.64rem);
     font-weight: var(--font-weight-semibold);
     background: var(--accent-primary);
     color: var(--background-primary);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     padding: 1px 6px;
     line-height: 1.5;
 }
@@ -2300,7 +2301,7 @@
     border: none;
     background: transparent;
     padding: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
 }
 
 .config-new-features-panel--animated {
@@ -2311,7 +2312,7 @@
     position: relative;
     z-index: 1;
     padding: 16px 18px;
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     border: 1px solid color-mix(in srgb, var(--accent-primary, #4a7038) 18%, var(--border-primary, rgba(128, 128, 128, 0.2)));
     background: var(--surface-secondary, rgba(128, 128, 128, 0.04));
 }
@@ -2336,7 +2337,7 @@
 .config-new-features-panel-star::before {
     content: '★';
     display: block;
-    font-size: 0.62rem;
+    font-size: var(--text-2xs, 0.62rem);
 }
 
 .config-new-features-panel-star:nth-child(1) { top: -0.05rem; left: 8%; animation-delay: 0s; }
@@ -2437,10 +2438,11 @@ body.no-animations .config-new-features-panel-star {
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-left-width: 3px;
-    border-radius: 9px;
+    border-radius: var(--radius-6, 10px);
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
 .config-attention-row--crit { border-left-color: var(--accent-error, #d1493f); }
@@ -2475,11 +2477,11 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
     margin: 0;
     padding: 12px 16px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
 }
 
@@ -2631,7 +2633,7 @@ body.no-animations .config-new-features-panel-star {
     transform: translateY(6px);
     z-index: 2100;
     padding: 7px 14px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
     background: var(--background-secondary, rgba(20, 20, 20, 0.92));
     color: var(--text-secondary, #666);
@@ -2723,7 +2725,7 @@ body.no-animations .config-new-features-panel-star {
     flex: 1;
     height: 10px;
     min-width: 0;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--border-primary, rgba(128, 128, 128, 0.22));
     overflow: hidden;
 }
@@ -2896,7 +2898,7 @@ body.no-animations .config-new-features-panel-star {
     gap: 1px;
     padding: 5px 9px;
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.35));
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: var(--background-primary, #fff);
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
     font-size: calc(var(--font-size-text) * 0.8);
@@ -3129,7 +3131,7 @@ body.no-animations .config-new-features-panel-star {
     margin-left: 10px;
     padding: 2px 8px;
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     font-size: calc(var(--font-size-text) * 0.800);
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -3159,7 +3161,7 @@ body.no-animations .config-new-features-panel-star {
     font-weight: 600;
     font-size: calc(var(--font-size-text) * 0.914);
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     text-align: center;
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
 }
@@ -3230,7 +3232,7 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-feed {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
     margin: 0 0 16px;
 }
 
@@ -3255,7 +3257,7 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
-    border-radius: 0.2rem;
+    border-radius: var(--radius-2, 0.2rem);
     box-shadow: 0 0 0 2px var(--background-secondary);
     background: var(--background-secondary);
 }
@@ -3281,7 +3283,7 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: var(--text-xl, 1.25rem);
     color: var(--text-tertiary);
     overflow: hidden;
 }
@@ -3324,7 +3326,7 @@ body.no-animations .config-new-features-panel-star {
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
-    gap: 0.35rem 0.6rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
     min-width: 0;
 }
 
@@ -3350,11 +3352,11 @@ body.no-animations .config-new-features-panel-star {
  */
 /* Matches .inbox-item-tags. */
 .config-bm-tag-row {
-    margin: 0.3rem 0 0;
+    margin: var(--space-1, 0.3rem) 0 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     min-width: 0;
 }
 
@@ -3375,7 +3377,7 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-actions-inner {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-height: 0;
     overflow: hidden;
 }
@@ -3385,28 +3387,28 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-item.keyboard-selected .config-bm-actions,
 .config-bm-item.is-open .config-bm-actions {
     grid-template-rows: 1fr;
-    margin-top: 0.55rem;
+    margin-top: var(--space-2, 0.55rem);
     opacity: 1;
 }
 
 .config-bm-action-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.35rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-family: inherit;
     cursor: pointer;
 }
 
 .config-bm-action-btn kbd {
-    font-size: 0.68rem;
-    padding: 0.02rem 0.28rem;
-    border-radius: 0.25rem;
+    font-size: var(--text-2xs, 0.68rem);
+    padding: var(--space-hairline, 0.02rem) var(--space-1, 0.28rem);
+    border-radius: var(--radius-3, 0.25rem);
     border: 1px solid var(--border-secondary);
     background: var(--background-secondary);
     color: var(--text-tertiary);
@@ -3431,11 +3433,11 @@ body.no-animations .config-new-features-panel-star {
 .config-list-keyboard-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 1rem;
-    margin: 1rem 0 0.25rem;
-    padding-top: 0.75rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+    margin: var(--space-4, 1rem) 0 var(--space-1, 0.25rem);
+    padding-top: var(--space-3, 0.75rem);
     border-top: 1px solid var(--border-secondary);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-tertiary);
 }
 
@@ -3445,24 +3447,24 @@ body.no-animations .config-new-features-panel-star {
    dashboard's order, so this has to be hard to miss. */
 .config-pt-view-only {
     margin: 0 0 10px;
-    padding-left: 0.6rem;
+    padding-left: var(--space-2, 0.6rem);
     border-left: 2px solid var(--border-secondary);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
 }
 
 /* "8 of 14 shown" — only rendered when a filter actually hides something. */
 .config-pt-count {
     margin: 0 0 8px;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-tertiary);
 }
 
 .config-bm-keyboard-legend kbd,
 .config-form-keyboard-legend kbd,
 .config-list-keyboard-legend kbd {
-    font-size: 0.7rem;
-    padding: 0.05rem 0.32rem;
-    border-radius: 0.25rem;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem);
     border: 1px solid var(--border-secondary);
     background: var(--background-secondary);
     color: var(--text-secondary);
@@ -3495,7 +3497,7 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
-    border-radius: 0.2rem;
+    border-radius: var(--radius-2, 0.2rem);
     box-shadow: 0 0 0 2px var(--background-secondary);
     background: var(--background-secondary);
 }
@@ -3513,11 +3515,11 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-meta-category {
-    margin: 0.25rem 0 0;
+    margin: var(--space-1, 0.25rem) 0 0;
     /* Larger than the 0.78rem it was: this line answers "where does this live",
        which is the question the list is most often open for, and it was set
        smaller than the tag chips beside it. */
-    font-size: 0.86rem;
+    font-size: var(--text-base, 0.86rem);
     color: var(--text-secondary);
     overflow-wrap: anywhere;
 }
@@ -3528,11 +3530,11 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-crumb {
     display: inline-flex;
     align-items: baseline;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     max-width: 100%;
-    padding: 0.1rem 0.5rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
 }
 
@@ -3573,15 +3575,15 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 0.35rem;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-1-5, 0.35rem);
     min-height: 1.35rem;
 }
 
 .config-bm-page-name {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3597,11 +3599,11 @@ body.no-animations .config-new-features-panel-star {
     display: inline-flex;
     align-items: baseline;
     justify-content: flex-end;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-width: 10rem;
     max-width: 48%;
     text-align: right;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
@@ -3614,11 +3616,11 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-tiles-wrap {
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3, 0.75rem);
 }
 
 .config-bm-tiles-hint {
-    margin: 0 0 0.35rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
     font-size: calc(var(--font-size-text) * 0.821);
     color: var(--text-muted, #888);
 }
@@ -3627,8 +3629,8 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 0.75rem;
-    margin: 0 0 0.65rem;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-3, 0.65rem);
 }
 
 .config-bm-count {
@@ -3641,20 +3643,20 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-filter-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-width: 0;
 }
 
 .config-bm-filter-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.12rem 0.45rem;
-    border-radius: 999px;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     background: var(--background-secondary);
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-family: inherit;
     cursor: pointer;
 }
@@ -3671,19 +3673,19 @@ body.no-animations .config-new-features-panel-star {
 /* ── Bookmark tag cloud ──────────────────────────────────────────────────── */
 
 .config-bm-cloud {
-    margin: 0 0 0.6rem;
+    margin: 0 0 var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: color-mix(in srgb, var(--background-secondary) 40%, transparent);
 }
 
 .config-bm-cloud-summary {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-weight: var(--font-weight-semibold);
     color: var(--text-secondary);
     list-style: none;
@@ -3709,13 +3711,13 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-cloud-body {
-    padding: 0 0.6rem 0.55rem;
+    padding: 0 var(--space-2, 0.6rem) var(--space-2, 0.55rem);
 }
 
 .config-bm-cloud-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem 0.35rem;
+    gap: var(--space-1, 0.3rem) var(--space-1-5, 0.35rem);
     /* A large library can carry a hundred tags; cap the cloud and scroll rather
        than pushing the list it filters off the screen. */
     max-height: 11rem;
@@ -3725,14 +3727,14 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-cloud-tag {
     display: inline-flex;
     align-items: baseline;
-    gap: 0.28rem;
-    padding: 0.08rem 0.45rem;
-    border-radius: 999px;
+    gap: var(--space-1, 0.28rem);
+    padding: var(--space-hairline, 0.08rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
     cursor: pointer;
 }
 
@@ -3740,13 +3742,13 @@ body.no-animations .config-new-features-panel-star {
    rows losing their common baseline. */
 /* --s0 is the base size the rule above already sets; it exists so every chip
    carries a step class and the scale reads as four deliberate steps. */
-.config-bm-cloud-tag--s0 { font-size: 0.74rem; }
+.config-bm-cloud-tag--s0 { font-size: var(--text-xs, 0.74rem); }
 
-.config-bm-cloud-tag--s1 { font-size: 0.79rem; }
+.config-bm-cloud-tag--s1 { font-size: var(--text-sm, 0.79rem); }
 
-.config-bm-cloud-tag--s2 { font-size: 0.85rem; }
+.config-bm-cloud-tag--s2 { font-size: var(--text-sm, 0.85rem); }
 
-.config-bm-cloud-tag--s3 { font-size: 0.92rem; font-weight: var(--font-weight-semibold); }
+.config-bm-cloud-tag--s3 { font-size: var(--text-base, 0.92rem); font-weight: var(--font-weight-semibold); }
 
 .config-bm-cloud-tag:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
@@ -3772,20 +3774,20 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-cloud-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
 }
 
 /* Same chip as the inbox rows (.inbox-item-tag): a tag should look like a tag
    wherever it is listed, and the two were drifting — a tinted fill against a
    solid one, and two different border tokens. */
 .config-bm-tag-chip {
-    padding: 0.05rem 0.45rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.05rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     font-family: inherit;
     cursor: pointer;
 }
@@ -3802,12 +3804,12 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-duplicate-badge {
-    padding: 0.05rem 0.35rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, transparent);
     background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
     color: var(--accent-warning);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -3839,7 +3841,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-load-hint {
-    margin: 0.35rem 0 0;
+    margin: var(--space-1-5, 0.35rem) 0 0;
     font-size: calc(var(--font-size-text) * 0.821);
     color: var(--text-muted, #888);
     text-align: center;
@@ -3857,14 +3859,14 @@ body.no-animations .config-new-features-panel-star {
 .config-bm-feed .health-view-item:focus-within .health-view-item-actions,
 .config-bm-feed .health-view-item.keyboard-selected .health-view-item-actions {
     grid-template-rows: 1fr;
-    margin-top: 0.55rem;
+    margin-top: var(--space-2, 0.55rem);
     opacity: 1;
 }
 
 @media (hover: none) {
     .config-bm-feed .health-view-item-actions {
         grid-template-rows: 1fr;
-        margin-top: 0.55rem;
+        margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
 }
@@ -3893,7 +3895,7 @@ body.no-animations .config-new-features-panel-star {
     margin-bottom: 12px;
     padding: 10px 12px;
     border: 1px solid var(--accent-color, rgba(74, 144, 217, 0.5));
-    border-radius: 9px;
+    border-radius: var(--radius-5, 9px);
     background: color-mix(in srgb, var(--accent-color, #4a90d9) 7%, transparent);
 }
 
@@ -3908,7 +3910,7 @@ body.no-animations .config-new-features-panel-star {
 .config-bulk-offscreen {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     flex-wrap: wrap;
     font-size: calc(var(--font-size-text) * 0.9);
     color: var(--accent-warning, var(--text-secondary));
@@ -4107,7 +4109,7 @@ body.no-animations .config-new-features-panel-star {
     margin: 0 0 -4px 2px;
     padding: 2px 8px;
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: transparent;
     color: var(--text-secondary, inherit);
     font: inherit;
@@ -4156,7 +4158,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-help-prose code {
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     background: var(--accent-soft, rgba(128, 128, 128, 0.16));
     font-family: var(--font-family-mono, monospace);
     font-size: 0.92em;
@@ -4179,7 +4181,7 @@ body.no-animations .config-new-features-panel-star {
     display: block;
     width: 18px;
     height: 18px;
-    border-radius: 5px;
+    border-radius: var(--radius-3, 5px);
     background: linear-gradient(135deg, #e8663d 0%, #3d7de8 50%, #35c07a 100%);
 }
 
@@ -4193,18 +4195,18 @@ body.no-animations .config-new-features-panel-star {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     margin: 16px 0 4px;
     padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 9px;
+    border-radius: var(--radius-5, 9px);
     font-size: calc(var(--font-size-text) * 0.914);
     text-align: center;
 }
 
 .help-support-block .wn-kofi-btn {
     font-size: calc(var(--font-size-text) * 0.957);
-    padding: 0.5rem 1.1rem;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1.1rem);
 }
 
 .help-support-label {
@@ -4243,7 +4245,7 @@ body.no-animations .config-new-features-panel-star {
 .config-help-panel.is-linked {
     outline: 2px solid var(--accent-primary, #4a90d9);
     outline-offset: 4px;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     transition: outline-color 0.6s ease;
 }
 
@@ -4308,8 +4310,8 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
-    margin-top: 0.85rem;
+    gap: var(--space-2, 0.6rem);
+    margin-top: var(--space-3, 0.85rem);
 }
 
 /* Match the Ko-fi button's height so the pair reads as one row rather than two
@@ -4322,8 +4324,8 @@ body.no-animations .config-new-features-panel-star {
 .config-about-actions .config-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.7rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-1, 0.3rem) var(--space-3, 0.7rem);
     text-decoration: none;
 }
 
@@ -4375,7 +4377,7 @@ body.no-animations .config-new-features-panel-star {
 .config-theme-swatch {
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
     display: inline-block;
 }
@@ -4437,7 +4439,7 @@ body.no-animations .config-new-features-panel-star {
     block-size: 28px;
     padding: 0;
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: none;
     cursor: pointer;
     flex: none;
@@ -4445,9 +4447,9 @@ body.no-animations .config-new-features-panel-star {
 
 .config-theme-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
 
-.config-theme-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-webkit-color-swatch { border: none; border-radius: var(--radius-3, 4px); }
 
-.config-theme-color-input::-moz-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-moz-color-swatch { border: none; border-radius: var(--radius-3, 4px); }
 
 .config-theme-hex {
     flex: 1 1 110px;
@@ -4511,7 +4513,7 @@ body.no-animations .config-new-features-panel-star {
 .config-tiles--text .config-tile {
     padding: 12px 10px;
     gap: 6px;
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     justify-content: flex-start;
 }
 
@@ -4576,7 +4578,7 @@ body.no-animations .config-new-features-panel-star {
     margin: 12px 0 16px;
     padding: 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
-    border-radius: 12px;
+    border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     justify-content: flex-start;
 }
@@ -4588,7 +4590,7 @@ body.no-animations .config-new-features-panel-star {
    filtered to" is answerable at a glance. */
 .config-tag-cloud .tag-cloud-word {
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
@@ -4872,7 +4874,7 @@ body[data-layout-version="modern"] .config-subtab.is-active {
     flex-direction: column;
     gap: 2px;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     cursor: pointer;
 }
 
@@ -4980,7 +4982,7 @@ body[data-layout-version="modern"] .config-backup-row {
     margin: 12px 0;
     padding: 8px 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     font-family: var(--font-family-mono, monospace);
     font-size: calc(var(--font-size-text) * 0.86);
@@ -4994,7 +4996,7 @@ body[data-layout-version="modern"] .config-backup-row {
     grid-template-columns: auto auto 1fr;
     gap: 0 8px;
     padding: 2px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
 }
 
 .config-log-line + .config-log-line {
@@ -5010,7 +5012,7 @@ body[data-layout-version="modern"] .config-backup-row {
 /* The subsystem prefix, so one component can be picked out at a glance. */
 .config-log-source {
     padding: 0 5px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     background: var(--accent-soft, rgba(128, 128, 128, 0.16));
     color: var(--text-muted, #888);
     white-space: nowrap;
@@ -5077,7 +5079,7 @@ body[data-layout-version="modern"] .config-backup-row {
     min-width: 2.4rem;
     padding: 3px 6px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: transparent;
     color: var(--text-secondary, inherit);
     font: inherit;
@@ -5132,8 +5134,8 @@ body[data-layout-version="modern"] .config-backup-row {
     color: var(--text-primary);
     background: var(--background-primary);
     border: 1px solid var(--accent-primary);
-    border-radius: 4px;
-    padding: 0.05rem 0.3rem;
+    border-radius: var(--radius-3, 4px);
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
     min-width: 4rem;
     max-width: 100%;
 }
@@ -5162,12 +5164,12 @@ button.config-bm-shortcut-pill {
 
 /* Which settings do not follow the rule the rest follow — see fieldScopeNote. */
 .config-field-scope {
-    margin-left: 0.35rem;
-    padding: 0.05rem 0.35rem;
-    border-radius: 999px;
+    margin-left: var(--space-1-5, 0.35rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     color: var(--text-tertiary);
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     white-space: nowrap;
 }
 
@@ -5196,9 +5198,9 @@ button.config-bm-shortcut-pill {
 
 .config-bm-inline-conflict {
     display: inline-block;
-    margin-left: 0.4rem;
+    margin-left: var(--space-1-5, 0.4rem);
     color: var(--accent-error);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     white-space: nowrap;
 }
 
@@ -5207,8 +5209,8 @@ button.config-bm-shortcut-pill {
 .config-help-tips-filter {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin: 0 0 0.8rem;
+    gap: var(--space-2, 0.6rem);
+    margin: 0 0 var(--space-3, 0.8rem);
 }
 
 .config-help-tips-filter .config-text {
@@ -5218,7 +5220,7 @@ button.config-bm-shortcut-pill {
 
 .config-help-tips-count {
     flex: 0 0 auto;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     color: var(--text-muted, #777);
     font-variant-numeric: tabular-nums;
 }
@@ -5229,11 +5231,11 @@ button.config-bm-shortcut-pill {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.4rem;
-    margin: 0.9rem 0 0;
-    padding-top: 0.6rem;
+    gap: var(--space-1-5, 0.4rem);
+    margin: var(--space-4, 0.9rem) 0 0;
+    padding-top: var(--space-2, 0.6rem);
     border-top: 1px solid var(--border-secondary, rgba(128, 128, 128, 0.2));
-    font-size: 0.85rem;
+    font-size: var(--text-sm, 0.85rem);
 }
 
 .config-help-see-also-label {
@@ -5258,7 +5260,7 @@ button.config-bm-shortcut-pill {
 
 .config-help-see-also-link + .config-help-see-also-link::before {
     content: "·";
-    margin-right: 0.4rem;
+    margin-right: var(--space-1-5, 0.4rem);
     color: var(--text-muted, #777);
     text-decoration: none;
     display: inline-block;
@@ -5272,14 +5274,14 @@ button.config-bm-shortcut-pill {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .config-stats-summary-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
 }
 
 .config-stats-summary-text {
@@ -5290,7 +5292,7 @@ button.config-bm-shortcut-pill {
 /* Which way a count moved this week, beside the count itself. Quiet: the
    number is the fact, the direction is the footnote. */
 .config-tile-delta {
-    margin-left: 0.35rem;
+    margin-left: var(--space-1-5, 0.35rem);
     font-size: 0.62em;
     font-weight: var(--font-weight-semibold);
     white-space: nowrap;
@@ -5310,8 +5312,8 @@ button.config-bm-shortcut-pill {
 /* The chart in a sentence, above the bars: the shape a table of thirty numbers
    cannot give, and the peak a sighted reader would otherwise have to hover for. */
 .config-chart-summary {
-    margin: 0 0 0.5rem;
-    font-size: 0.82rem;
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-muted, #777);
 }
 
@@ -5322,28 +5324,28 @@ button.config-bm-shortcut-pill {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem;
-    margin: 0 0 0.6rem;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0 0 var(--space-2, 0.6rem);
 }
 
 .config-bm-quickbar-label {
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text-muted, #777);
-    margin-right: 0.15rem;
+    margin-right: var(--space-hairline, 0.15rem);
 }
 
 .config-choice--small {
-    padding: 0.2rem 0.55rem;
-    font-size: 0.78rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
+    font-size: var(--text-sm, 0.78rem);
 }
 
 /* The keys the list answers to, said once under the toolbar rather than left
    to be discovered. */
 .config-bm-keys-hint {
-    margin: 0 0 0.6rem;
-    font-size: 0.75rem;
+    margin: 0 0 var(--space-2, 0.6rem);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-muted, #777);
 }
 
@@ -5365,8 +5367,8 @@ button.config-bm-shortcut-pill {
 .config-checkset {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 0.4rem 1rem;
-    margin: 0.2rem 0 0.6rem;
+    gap: var(--space-1-5, 0.4rem) var(--space-4, 1rem);
+    margin: var(--space-1, 0.2rem) 0 var(--space-2, 0.6rem);
 }
 
 .config-checkset-item {
@@ -5376,7 +5378,7 @@ button.config-bm-shortcut-pill {
 .config-preview-sample {
     display: flex;
     justify-content: flex-start;
-    margin: 0.4rem 0 0.2rem;
+    margin: var(--space-1-5, 0.4rem) 0 var(--space-1, 0.2rem);
 }
 
 /* The sample is the card, so it inherits every rule the card has — it only has
@@ -5392,8 +5394,8 @@ button.config-bm-shortcut-pill {
 /* About's addresses, one per line: the side column is too narrow for a row. */
 .config-about-links {
     list-style: none;
-    margin: 0.6rem 0 0.8rem;
-    padding: 0.6rem 0 0;
+    margin: var(--space-2, 0.6rem) 0 var(--space-3, 0.8rem);
+    padding: var(--space-2, 0.6rem) 0 0;
     border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
     display: flex;
     flex-direction: column;
@@ -5535,7 +5537,7 @@ button.config-bm-shortcut-pill {
 
 .config-copies-count {
     padding: 0 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--text-secondary) 15%, transparent);
     font-size: var(--font-size-small);
     font-weight: normal;
@@ -5606,7 +5608,7 @@ button.config-bm-shortcut-pill {
     gap: 6px;
     padding: 22px 18px;
     border: 1px dashed var(--border-color, rgba(128, 128, 128, 0.3));
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -5664,7 +5666,7 @@ button.config-bm-shortcut-pill {
     gap: 6px;
     padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -5713,7 +5715,7 @@ button.config-bm-shortcut-pill {
 .config-widget-row-kind {
     flex: none;
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
     font-size: calc(var(--font-size-text) * 0.8);
     color: var(--text-muted, #888);
@@ -5911,7 +5913,7 @@ button.config-bm-shortcut-pill {
     color: var(--text-muted, #888);
     background: transparent;
     border: 1px solid var(--border-color, #333);
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     transition: color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -6053,10 +6055,10 @@ button.config-bm-shortcut-pill {
 
 .config-probe-chip {
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     letter-spacing: 0.04em;
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
     color: var(--text-secondary);
     white-space: nowrap;
@@ -6105,7 +6107,7 @@ button.config-bm-shortcut-pill {
     align-items: baseline;
     gap: 8px;
     padding: 3px 6px;
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     font-size: calc(var(--font-size-text) * 0.9);
 }
 
@@ -6206,11 +6208,11 @@ button.config-bm-shortcut-pill {
     max-height: 22rem;
     overflow: auto;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
     background: var(--background-secondary, rgba(128, 128, 128, 0.08));
     font-family: var(--font-family-mono, monospace);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     line-height: 1.5;
     white-space: pre;
     tab-size: 2;
@@ -6293,7 +6295,7 @@ button.config-bm-shortcut-pill {
     flex: none;
     align-self: center;
     padding: 2px 9px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
     font-size: calc(var(--font-size-text) * 0.78);
     color: var(--text-muted, #888);
@@ -6364,7 +6366,7 @@ button.config-bm-shortcut-pill {
 .config-widget-choice {
     display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     flex-wrap: wrap;
 }
 
@@ -6377,7 +6379,7 @@ button.config-bm-shortcut-pill {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem 1.5rem;
+    gap: var(--space-4, 1rem) var(--space-5, 1.5rem);
     flex-wrap: wrap;
 }
 
@@ -6443,7 +6445,7 @@ button.config-bm-shortcut-pill {
     min-width: 0;
     padding: 10px 12px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 9px;
+    border-radius: var(--radius-5, 9px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
     color: inherit;
     font: inherit;
@@ -6497,9 +6499,9 @@ button.config-bm-shortcut-pill {
     align-items: start;
     column-gap: 12px;
     row-gap: 3px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 9px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -6531,7 +6533,7 @@ button.config-bm-shortcut-pill {
 .config-widget-custom-ref {
     padding: 14px 16px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: 10px;
+    border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
 }
 
@@ -6594,7 +6596,7 @@ button.config-bm-shortcut-pill {
 
 .config-widget-custom-code {
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
     font-size: 0.95em;
     /* Whatever the reader set config to, a path is a path. */

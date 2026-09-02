@@ -34,7 +34,7 @@ body[data-layout-version="modern"] .skip-to-content {
 /* ─── Header shell ───────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .dashboard-section.section-controls {
-    padding-bottom: 1.15rem;
+    padding-bottom: var(--space-4, 1.15rem);
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 32%, transparent);
     overflow-x: clip;
     max-width: 100%;
@@ -82,7 +82,7 @@ body[data-layout-version="modern"] .date-time-line {
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    padding: 0.2rem 0.55rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
     margin: -0.2rem -0.55rem;
     border-radius: var(--layout-radius-sm);
     transition:
@@ -100,7 +100,7 @@ body[data-layout-version="modern"] .date-weather-line {
 }
 
 body[data-layout-version="modern"] .dashboard-mini-status {
-    padding: 0.15rem 0.5rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.5rem);
     border-radius: var(--layout-radius-pill);
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     border: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
@@ -114,7 +114,7 @@ body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
 body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox {
     display: inline-flex;
     align-items: center;
-    padding: 0.38rem 0.8rem;
+    padding: var(--space-1-5, 0.38rem) var(--space-3, 0.8rem);
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
@@ -144,7 +144,7 @@ body[data-layout-version="modern"] .health-link a {
 
 body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
 body[data-layout-version="modern"] .page-overview-header-btn {
-    padding: 0.38rem 0.8rem;
+    padding: var(--space-1-5, 0.38rem) var(--space-3, 0.8rem);
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
@@ -169,8 +169,8 @@ body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor:focus-vi
 /* The page-tab strip is its own pill; the pages overview icon sits beside it,
    then inbox · health · config share .header-destinations — all at .header-actions gap. */
 body[data-layout-version="modern"] .page-navigation {
-    gap: 0.2rem;
-    padding: 0.18rem;
+    gap: var(--space-1, 0.2rem);
+    padding: var(--space-hairline, 0.18rem);
     border-radius: var(--layout-radius-pill);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
@@ -189,7 +189,7 @@ body[data-layout-version="modern"] .page-nav-btn[data-view-tab] {
 body[data-layout-version="modern"] .page-nav-btn {
     border-bottom: none;
     border-radius: var(--layout-radius-pill);
-    padding: 0.22rem 0.7rem;
+    padding: var(--space-1, 0.22rem) var(--space-3, 0.7rem);
     transition:
         color var(--layout-transition),
         background-color var(--layout-transition),
@@ -260,7 +260,7 @@ body[data-layout-version="modern"] .move-popover-item.is-focused {
 /* ─── Title section ──────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .dashboard-section.section-title {
-    padding-top: 0.35rem;
+    padding-top: var(--space-1-5, 0.35rem);
 }
 
 body[data-layout-version="modern"] .title {
@@ -285,14 +285,14 @@ body[data-layout-version="modern"] .tag-filter-indicator-clear {
 body[data-layout-version="modern"]:not([data-button-position="side-left"]) .button-container {
     width: fit-content;
     max-width: min(52rem, calc(100vw - 2.5rem));
-    padding: 0.55rem 0.8rem 0.65rem;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.8rem) var(--space-3, 0.65rem);
     border-radius: var(--layout-radius-lg);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
     box-shadow: var(--layout-shadow-md);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
 }
 
 /* Collapse button groups when every child is disabled via settings */
@@ -344,7 +344,7 @@ body[data-layout-version="modern"][data-button-position="bottom-right"] .button-
 body[data-layout-version="modern"][data-button-position="bottom-left"] .btn-group,
 body[data-layout-version="modern"][data-button-position="bottom-right"] .btn-group {
     width: fit-content;
-    padding: 0.4rem;
+    padding: var(--space-1-5, 0.4rem);
     border-radius: var(--layout-radius-md);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
@@ -448,7 +448,7 @@ body[data-layout-version="modern"].no-animations .tag-filter-indicator-chip:hove
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
     body[data-layout-version="modern"]:not([data-mobile-layout="true"]):not([data-button-position="side-left"]) .button-container {
         border-radius: var(--layout-radius-md);
-        padding: 0.5rem 0.55rem 0.58rem;
+        padding: var(--space-2, 0.5rem) var(--space-2, 0.55rem) var(--space-2, 0.58rem);
     }
 
     body[data-layout-version="modern"] .search-button-labeled {
@@ -467,7 +467,7 @@ body[data-layout-version="modern"].no-animations .tag-filter-indicator-chip:hove
 
 @media (max-width: 575px) {
     body[data-layout-version="modern"] .dashboard-section.section-controls {
-        padding-bottom: 0.85rem;
+        padding-bottom: var(--space-3, 0.85rem);
     }
 
     body[data-layout-version="modern"] .health-link a,
@@ -475,7 +475,7 @@ body[data-layout-version="modern"].no-animations .tag-filter-indicator-chip:hove
     body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
     body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox,
     body[data-layout-version="modern"] .page-overview-header-btn {
-        padding: 0.32rem 0.62rem;
+        padding: var(--space-1-5, 0.32rem) var(--space-2, 0.62rem);
     }
 }
 
@@ -500,7 +500,7 @@ body[data-layout-version="modern"] .category-title {
 
 body[data-layout-version="modern"] .category-title:hover {
     border-radius: var(--layout-radius-sm);
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
     margin: -0.15rem -0.45rem;
     background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-primary) 35%, transparent);
@@ -591,26 +591,26 @@ body[data-layout-version="modern"].bookmark-dragging .bookmarks-list.reorder-con
 
 body[data-layout-version="modern"][data-layout-preset="default"] .dashboard-grid {
     row-gap: 2.75rem;
-    column-gap: 1.35rem;
+    column-gap: var(--space-5, 1.35rem);
 }
 
 body[data-layout-version="modern"][data-layout-preset="default"] .category {
-    gap: 0.85rem;
+    gap: var(--space-3, 0.85rem);
 }
 
 /* ─── Compact preset ─────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"][data-layout-preset="compact"] .dashboard-grid {
-    row-gap: 1.35rem;
-    column-gap: 0.9rem;
+    row-gap: var(--space-5, 1.35rem);
+    column-gap: var(--space-4, 0.9rem);
 }
 
 body[data-layout-version="modern"][data-layout-preset="compact"] .category {
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-compact .bookmarks-list {
-    gap: 0.22rem;
+    gap: var(--space-1, 0.22rem);
 }
 
 /* ─── Cards preset ─────────────────────────────────────────────────────────── */
@@ -620,7 +620,7 @@ body[data-layout-version="modern"] .dashboard-grid.layout-cards .category {
     background: color-mix(in srgb, var(--background-secondary) 58%, var(--background-primary));
     border-color: color-mix(in srgb, var(--border-primary) 55%, transparent);
     box-shadow: var(--layout-shadow-sm);
-    padding: 1rem;
+    padding: var(--space-4, 1rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-cards .bookmark-link {
@@ -681,14 +681,14 @@ body[data-layout-version="modern"] .dashboard-grid.layout-terminal .bookmark-sho
 /* ─── Masonry preset ─────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .dashboard-grid.layout-masonry .category {
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-masonry .bookmark-link {
     border-radius: var(--layout-radius-sm);
     border: 1px solid color-mix(in srgb, var(--border-primary) 38%, transparent);
     background: color-mix(in srgb, var(--background-secondary) 48%, transparent);
-    padding-inline: 0.55rem;
+    padding-inline: var(--space-2, 0.55rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-masonry .bookmark-link:hover:not(.bookmark-inline-editing) {
@@ -706,12 +706,12 @@ body[data-layout-version="modern"] .dashboard-grid.layout-masonry .bookmark-link
 /* ─── List preset ──────────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .dashboard-grid.layout-list .category {
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-list .bookmark-link {
     border-radius: 0;
-    padding: 0.6rem 0.4rem;
+    padding: var(--space-2, 0.6rem) var(--space-1-5, 0.4rem);
     margin-bottom: 0;
     background: transparent;
     border-bottom: 1px solid var(--border-primary);
@@ -741,7 +741,7 @@ body[data-layout-version="modern"] .dashboard-grid.layout-widgets .category {
     background: color-mix(in srgb, var(--background-secondary) 62%, var(--background-primary));
     border-color: color-mix(in srgb, var(--border-primary) 50%, transparent);
     box-shadow: var(--layout-shadow-md);
-    padding: 1.1rem;
+    padding: var(--space-4, 1.1rem);
 }
 
 body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link {
@@ -771,7 +771,7 @@ body[data-layout-version="modern"] .dashboard-grid.layout-widgets .bookmark-link
 /* ─── Launcher preset ────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .layout-launcher .category-title {
-    padding: 0.1rem 0.35rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.35rem);
     border-radius: var(--layout-radius-sm);
 }
 
@@ -820,16 +820,16 @@ body[data-layout-version="modern"] .layout-launcher .bookmark-icon-slot {
 /* ─── Density modes ──────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"][data-density-mode="comfortable"] .bookmarks-list {
-    gap: 0.48rem;
+    gap: var(--space-2, 0.48rem);
 }
 
 body[data-layout-version="modern"][data-density-mode="compact"] .bookmarks-list,
 body[data-layout-version="modern"][data-density-mode="auto"] .bookmarks-list {
-    gap: 0.28rem;
+    gap: var(--space-1, 0.28rem);
 }
 
 body[data-layout-version="modern"][data-density-mode="dense"] .bookmarks-list {
-    gap: 0.14rem;
+    gap: var(--space-hairline, 0.14rem);
 }
 
 body[data-layout-version="modern"][data-density-mode="comfortable"] .dashboard-grid:not(.layout-launcher) .bookmark-link {
@@ -838,7 +838,7 @@ body[data-layout-version="modern"][data-density-mode="comfortable"] .dashboard-g
 
 body[data-layout-version="modern"][data-density-mode="dense"] .dashboard-grid:not(.layout-launcher) .bookmark-link {
     min-height: 1.55rem;
-    column-gap: 0.4rem;
+    column-gap: var(--space-1-5, 0.4rem);
 }
 
 /* ─── Badge visibility polish ────────────────────────────────────────────── */
@@ -930,11 +930,11 @@ body[data-layout-version="modern"].no-animations .dashboard-grid:not(.layout-lau
 @media (max-width: 991px) {
     body[data-layout-version="modern"] .dashboard-grid.layout-cards .category,
     body[data-layout-version="modern"] .dashboard-grid.layout-widgets .category {
-        padding: 0.85rem;
+        padding: var(--space-3, 0.85rem);
     }
 
     body[data-layout-version="modern"] .dashboard-grid.layout-list .bookmark-link {
-        padding: 0.5rem 0.4rem;
+        padding: var(--space-2, 0.5rem) var(--space-1-5, 0.4rem);
     }
 }
 
@@ -962,7 +962,7 @@ body[data-layout-version="modern"][data-mobile-layout="true"] .mobile-experience
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .dashboard-section.section-controls {
-    padding-bottom: 0.75rem;
+    padding-bottom: var(--space-3, 0.75rem);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] #page-overview-header-btn,
@@ -986,12 +986,12 @@ body[data-layout-version="modern"][data-mobile-layout="true"] .button-container 
     width: fit-content;
     max-width: calc(100% - 2rem);
     border-radius: var(--layout-radius-lg);
-    padding: 0.5rem 0.65rem 0.58rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem) var(--space-2, 0.58rem);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .btn-group-primary {
     width: auto;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .search-button-labeled {
@@ -1015,7 +1015,7 @@ body[data-layout-version="modern"][data-mobile-layout="true"] .app-notification 
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .dashboard-grid .category-title:hover {
     margin: -0.15rem -0.35rem;
-    padding: 0.15rem 0.35rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-1-5, 0.35rem);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .dashboard-grid:not(.layout-launcher) .bookmark-link {
@@ -1065,7 +1065,7 @@ body[data-layout-version="modern"] #dashboard-layout > .empty-state {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 2rem 1.5rem;
+    padding: var(--space-6, 2rem) var(--space-5, 1.5rem);
     box-sizing: border-box;
     border-radius: var(--layout-radius-md);
     border: 1px solid var(--layout-surface-border);

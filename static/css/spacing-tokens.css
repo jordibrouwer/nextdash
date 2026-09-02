@@ -1,0 +1,63 @@
+/* Spacing tokens — the single scale for padding/margin/gap across the
+   dashboard.
+
+   Unlike layout-modern-tokens.css, this is NOT scoped to
+   body[data-layout-version="modern"]: classic is the default layout every
+   fresh install starts on (LayoutVersion defaults to "classic" — see
+   models.go), so a token layer that only modern can reach would help almost
+   nobody. These apply everywhere.
+
+   Two groups:
+
+   1. The macro scale — steps on a 0.25rem (4px) rhythm, for spacing where no
+      other value nearby carries a different meaning. Loaded ahead of every
+      view stylesheet so every declaration that adopts var(--space-N, …)
+      resolves to the token, with the existing literal kept as the fallback.
+
+      --space-1-5 breaks the strict 0.25rem rhythm on purpose: 0.35rem is not
+      an outlier, it is the single most common spacing value in the app —
+      roughly 120 uses across dashboard.css, config-view.css, health-view.css
+      and dashboard-inbox.css combined, more than any other value including
+      0.25rem and 0.5rem. Rounding it onto the strict rhythm would have been
+      the single largest visual change in this whole pass, applied at the
+      widest scale, to the value the app already leans on hardest. Naming it
+      instead of erasing it is the more honest read of what the CSS is
+      already doing.
+
+   2. A separate, deliberately finer density sub-scale for the three bookmark
+      row densities (comfortable/compact/dense). These do NOT collapse onto
+      the macro scale: the three-way distinction between them is the entire
+      point of the setting, and 0.25rem steps are too coarse to hold three
+      readable levels apart (0.35rem and 0.2rem, the current compact/dense
+      values, are both closer to the same macro step than to each other).
+      Named here so the relationship between the six values is visible in one
+      place instead of scattered across three separate rules, without
+      pretending they are three cases of one number. */
+
+:root {
+    /* ── Macro scale ─────────────────────────────────────────────────── */
+    --space-hairline: 0.15rem;
+    --space-1: 0.25rem;
+    --space-1-5: 0.35rem; /* deliberate exception — see note above */
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+
+    /* ── Bookmark row density sub-scale ──────────────────────────────── */
+    /* Vertical padding inside a row. */
+    --density-row-pad-comfortable: 0.5rem;
+    --density-row-pad-compact: 0.35rem;
+    --density-row-pad-dense: 0.2rem;
+
+    /* Gap between rows in a list. */
+    --density-row-list-gap-comfortable: 0.42rem;
+    --density-row-list-gap-compact: 0.3rem;
+    --density-row-list-gap-dense: 0.18rem;
+
+    /* Gap between the elements inside one row (favicon / name / shortcut /
+       response time). Only "dense" narrows this today. */
+    --density-row-inner-gap-dense: 0.45rem;
+}

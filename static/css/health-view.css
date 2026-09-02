@@ -7,7 +7,7 @@
 #dashboard-layout.health-layout {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-4, 1rem);
     max-width: min(100%, 52rem);
     margin: 0 auto;
     width: 100%;
@@ -22,8 +22,8 @@
 .health-view-header {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.25rem 0.35rem 0.5rem;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     border-bottom: 1px solid var(--border-primary);
 }
 
@@ -34,7 +34,7 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
 }
 
 /* The way from a symptom on this screen to the setting behind it. A real
@@ -52,7 +52,7 @@
     border: none;
     outline: 1px solid var(--border-primary);
     background: var(--background-secondary);
-    padding: 0 0.5rem;
+    padding: 0 var(--space-2, 0.5rem);
     color: var(--text-secondary);
     font-family: inherit;
     font-size: var(--font-size-controls);
@@ -84,8 +84,8 @@
 .health-view-note-row {
     display: flex;
     align-items: flex-start;
-    gap: 1.5rem;
-    margin: 0.6rem 0 0.9rem;
+    gap: var(--space-5, 1.5rem);
+    margin: var(--space-2, 0.6rem) 0 var(--space-4, 0.9rem);
 }
 
 /* The note keeps its own top margin from the shared stylesheet; inside this row
@@ -103,9 +103,9 @@
 .health-view-trend {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
     min-width: 0;
-    padding: 0.35rem 0.6rem 0.3rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem) var(--space-1, 0.3rem);
     border: 1px solid var(--border-secondary);
     border-radius: var(--layout-radius-sm, 8px);
 }
@@ -114,11 +114,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .health-view-trend-title {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text-secondary);
@@ -130,9 +130,9 @@
 /* Smaller than the toolbar's ℹ: this one annotates a panel, not the view. */
 .health-view-trend-help {
     flex: none;
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     line-height: 1;
-    padding: 0.1rem 0.3rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1, 0.3rem);
 }
 
 /* Holds the chart, the axis labels and the hit zones in one positioned box. */
@@ -141,13 +141,13 @@
     display: flex;
     /* Room for the axis labels, which sit outside the plot area so the stretched
        viewBox cannot distort them. */
-    padding-left: 2.1rem;
+    padding-left: var(--space-6, 2.1rem);
 }
 
 .health-view-trend-axis {
     position: absolute;
     left: 0;
-    font-size: 0.6rem;
+    font-size: var(--text-2xs, 0.6rem);
     line-height: 1;
     color: var(--text-tertiary, var(--text-secondary));
     opacity: 0.7;
@@ -166,9 +166,9 @@
 .health-view-trend-xaxis {
     display: flex;
     justify-content: space-between;
-    padding-left: 2.1rem;
-    margin-top: 0.15rem;
-    font-size: 0.6rem;
+    padding-left: var(--space-6, 2.1rem);
+    margin-top: var(--space-hairline, 0.15rem);
+    font-size: var(--text-2xs, 0.6rem);
     color: var(--text-tertiary, var(--text-secondary));
     opacity: 0.75;
     font-variant-numeric: tabular-nums;
@@ -201,12 +201,12 @@
     top: calc(100% - 0.15rem);
     transform: translateX(-50%);
     z-index: 2;
-    padding: 0.1rem 0.4rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
     background: var(--background-primary);
     color: var(--text-primary);
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     line-height: 1.4;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -237,12 +237,12 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .health-view-trend-caption,
 .health-view-trend-now {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-secondary);
     opacity: 0.75;
     white-space: nowrap;
@@ -259,7 +259,7 @@
 @media (max-width: 900px) {
     .health-view-note-row {
         flex-direction: column;
-        gap: 0.7rem;
+        gap: var(--space-3, 0.7rem);
     }
 
 }
@@ -267,7 +267,7 @@
 /* Direction of travel beside the healthy badge. Green for up, red for down —
    more healthy bookmarks is unambiguously the good direction here. */
 .health-view-trend-delta {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -296,7 +296,7 @@
     display: block;
     width: 100%;
     height: 1.1rem;
-    margin-top: 0.1rem;
+    margin-top: var(--space-hairline, 0.1rem);
     color: var(--accent-primary);
     opacity: 0.85;
 }
@@ -321,7 +321,7 @@
 
 .health-trend-modal .health-view-trend-axis,
 .health-trend-modal .health-view-trend-xaxis {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     opacity: 0.9;
 }
 
@@ -338,7 +338,7 @@
 /* The explainer is four separate points; without this they run together into
    one wall of text, because the modal body has no paragraph spacing of its own. */
 .health-trend-explainer-modal p + p {
-    margin-top: 0.7rem;
+    margin-top: var(--space-3, 0.7rem);
 }
 
 /* ─── Collection-wide monitoring ────────────────────────────────────────── */
@@ -346,8 +346,8 @@
 .health-fleet {
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
-    padding: 0.85rem 0.9rem 0.7rem;
-    margin-bottom: 0.9rem;
+    padding: var(--space-3, 0.85rem) var(--space-4, 0.9rem) var(--space-3, 0.7rem);
+    margin-bottom: var(--space-4, 0.9rem);
     background: var(--background-secondary, transparent);
 }
 
@@ -355,18 +355,18 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.7rem;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.7rem);
 }
 
 .health-fleet-title {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-base, 0.9rem);
     font-weight: var(--font-weight-semibold);
 }
 
 .health-fleet-headline {
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     color: var(--accent-success);
 }
 
@@ -376,7 +376,7 @@
 }
 
 .health-fleet-avg {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
 }
@@ -386,12 +386,12 @@
    does not move depending on which fields happen to be in the report. */
 .health-fleet-collapse-btn {
     margin-left: auto;
-    padding: 0.25rem 0.6rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.6rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     cursor: pointer;
     flex: 0 0 auto;
 }
@@ -407,12 +407,12 @@
 }
 
 .health-fleet-block {
-    margin-top: 0.75rem;
+    margin-top: var(--space-3, 0.75rem);
 }
 
 .health-fleet-heading {
-    margin: 0 0 0.35rem;
-    font-size: 0.72rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
+    font-size: var(--text-xs, 0.72rem);
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -423,7 +423,7 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
 }
 
 /* The outage list is the one that can run long, so it scrolls inside the panel
@@ -436,9 +436,9 @@
 .health-fleet-row {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    padding: 0.15rem 0;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.75rem);
+    padding: var(--space-hairline, 0.15rem) 0;
 }
 
 .health-fleet-row-name {
@@ -461,18 +461,18 @@
 
 .health-fleet-row-when,
 .health-fleet-row-ping {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
     flex: 0 0 auto;
 }
 
 .health-fleet-row-tag {
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     color: var(--text-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    padding: 0 0.25rem;
+    border-radius: var(--radius-3, 4px);
+    padding: 0 var(--space-1, 0.25rem);
     flex: 0 0 auto;
 }
 
@@ -483,8 +483,8 @@
 }
 
 .health-fleet-more {
-    margin: 0.35rem 0 0;
-    font-size: 0.68rem;
+    margin: var(--space-1-5, 0.35rem) 0 0;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-secondary);
     opacity: 0.8;
 }
@@ -497,12 +497,12 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
 }
 
 .health-view-title {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: var(--text-lg, 1.15rem);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
 }
@@ -526,7 +526,7 @@
 .health-view-header-meta {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
     flex-shrink: 0;
 }
 
@@ -541,9 +541,9 @@
        and any extra height here sets the row's — which is what keeps this
        header level with .inbox-header. The pill shape comes from the
        horizontal padding and the radius, not from height. */
-    padding: 0 0.45rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
+    padding: 0 var(--space-2, 0.45rem);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     background: color-mix(in srgb, var(--health-view-band) 18%, transparent);
     color: var(--health-view-band);
@@ -551,14 +551,14 @@
 }
 
 .health-view-issue-count {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
 }
 
 /* The report's age. Quieter than the broken count beside it: it qualifies the
    numbers rather than being one of them. */
 .health-view-report-age {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-secondary);
     opacity: 0.75;
     white-space: nowrap;
@@ -591,18 +591,18 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.15rem 0.9rem;
+    gap: var(--space-hairline, 0.15rem) var(--space-4, 0.9rem);
     min-width: 0;
     max-width: 100%;
-    padding: 0 0.35rem;
+    padding: 0 var(--space-1-5, 0.35rem);
 }
 
 .health-view-tile {
     display: inline-flex;
     flex: 0 0 auto;
     align-items: baseline;
-    gap: 0.3rem;
-    padding: 0.1rem 0.15rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-hairline, 0.15rem);
     border: 1px solid transparent;
     border-radius: var(--layout-radius-sm, 8px);
     background: none;
@@ -627,14 +627,14 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-tile-label {
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     letter-spacing: 0.01em;
     color: var(--text-tertiary);
     order: 2;
 }
 
 .health-view-tile-value {
-    font-size: 0.92rem;
+    font-size: var(--text-base, 0.92rem);
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -646,7 +646,7 @@ button.health-view-tile:hover .health-view-tile-value {
    detail, so it gets a visible line instead of requiring a hover to learn
    something is actually down. */
 .health-view-tile-sub {
-    font-size: 0.66rem;
+    font-size: var(--text-2xs, 0.66rem);
     color: var(--accent-error);
     font-variant-numeric: tabular-nums;
 }
@@ -688,9 +688,9 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-toolbar {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     flex-wrap: wrap;
-    padding: 0 0.35rem 0.35rem;
+    padding: 0 var(--space-1-5, 0.35rem) var(--space-1-5, 0.35rem);
 }
 
 /* Search and sort always share their own full-width row under the filter
@@ -700,7 +700,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-toolbar-search-row {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     flex-basis: 100%;
 }
 
@@ -713,7 +713,7 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     flex-basis: 100%;
     /* The anchor for the ⋯ menu, which is absolutely placed like the row
        menus it borrows its markup from. */
@@ -747,8 +747,8 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-filter-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.2rem;
-    padding: 0.15rem;
+    gap: var(--space-1, 0.2rem);
+    padding: var(--space-hairline, 0.15rem);
     border-radius: var(--layout-radius-sm, 12px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
@@ -766,7 +766,7 @@ button.health-view-tile:hover .health-view-tile-value {
     bottom: 1px;
     width: 1.6rem;
     pointer-events: none;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     z-index: 1;
 }
 
@@ -786,9 +786,9 @@ button.health-view-tile:hover .health-view-tile-value {
     color: var(--text-secondary);
     /* Tighter than it was (0.78rem/0.65rem): with every filter in the row, the
        width each pill costs decides whether the row fits at all. */
-    font-size: 0.72rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-pill, 999px);
     cursor: pointer;
     white-space: nowrap;
     flex: 0 0 auto;
@@ -800,7 +800,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-filter-count {
-    margin-left: 0.3rem;
+    margin-left: var(--space-1, 0.3rem);
     opacity: 0.7;
 }
 
@@ -814,13 +814,13 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-filter-more-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.78rem;
-    padding: 0.25rem 0.65rem;
-    border-radius: 999px;
+    font-size: var(--text-sm, 0.78rem);
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.65rem);
+    border-radius: var(--radius-pill, 999px);
     cursor: pointer;
 }
 
@@ -831,7 +831,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-filter-more-caret {
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     opacity: 0.7;
 }
 
@@ -852,7 +852,7 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
 }
 
 .health-view-filter-overflow-menu .health-view-filter-count {
@@ -860,11 +860,11 @@ button.health-view-tile:hover .health-view-tile-value {
     opacity: 1;
     flex: 0 0 auto;
     min-width: 1.5rem;
-    padding: 0.05rem 0.35rem;
-    border-radius: 0.6rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
+    border-radius: var(--radius-6, 0.6rem);
     background: color-mix(in srgb, var(--text-primary) 10%, transparent);
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-variant-numeric: tabular-nums;
     text-align: center;
 }
@@ -872,61 +872,61 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-search-input {
     flex: 1 1 12rem;
     min-width: 8rem;
-    padding: 0.35rem 0.55rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
 }
 
 /* The rot report: a list per finding, tight enough that five of them fit on
    one screen. */
 .health-rot-list {
-    margin: 0.2rem 0 0;
-    padding-left: 1.1rem;
+    margin: var(--space-1, 0.2rem) 0 0;
+    padding-left: var(--space-4, 1.1rem);
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .health-rot-list li {
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-primary);
 }
 
 .health-rot-row-meta {
     display: block;
     color: var(--text-tertiary);
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
 }
 
 .health-rot-count {
     display: inline-block;
-    margin-left: 0.3rem;
-    padding: 0 0.4rem;
-    border-radius: 999px;
+    margin-left: var(--space-1, 0.3rem);
+    padding: 0 var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
     color: var(--accent-primary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
 }
 
 .health-rot-more {
-    margin: 0.3rem 0 0;
+    margin: var(--space-1, 0.3rem) 0 0;
     color: var(--text-tertiary);
-    font-size: 0.74rem;
+    font-size: var(--text-xs, 0.74rem);
 }
 
 /* Toggles grouping the list by site. Sits beside the sort because it answers
    the same kind of question — how the list is arranged, not what is in it. */
 .health-view-groupby-btn {
-    padding: 0.3rem 0.55rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     cursor: pointer;
     white-space: nowrap;
 }
@@ -942,25 +942,25 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-sort-select {
-    padding: 0.3rem 0.4rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1, 0.3rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     cursor: pointer;
 }
 
 .health-view-retest-btn,
 .health-view-load-more-btn,
 .health-view-retry-btn {
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     color: var(--accent-primary);
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     cursor: pointer;
 }
 
@@ -985,12 +985,12 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-merge-duplicates-btn,
 .health-view-fetch-previews-btn,
 .health-view-checkoff-btn {
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     cursor: pointer;
 }
 
@@ -1018,12 +1018,12 @@ button.health-view-tile:hover .health-view-tile-value {
    the error colour: this one adds monitoring rather than taking it away. */
 .health-view-bulk-monitor-btn,
 .health-view-bulk-periodic-btn {
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     cursor: pointer;
 }
 
@@ -1036,7 +1036,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-load-more-btn {
     display: block;
     width: 100%;
-    margin-top: 0.35rem;
+    margin-top: var(--space-1-5, 0.35rem);
 }
 
 /* ─── Feed ──────────────────────────────────────────────────────────────── */
@@ -1044,7 +1044,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-feed {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 /* Status sections on the All filter under the Status sort — mirrors Inbox's
@@ -1053,15 +1053,15 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-status-group {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
 }
 
 .health-view-status-group-title {
     display: flex;
     align-items: baseline;
-    gap: 0.4rem;
-    margin: 0.35rem 0 0;
-    font-size: 0.72rem;
+    gap: var(--space-1-5, 0.4rem);
+    margin: var(--space-1-5, 0.35rem) 0 0;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1076,7 +1076,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-status-group-items {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 .health-view-load-sentinel {
@@ -1104,7 +1104,7 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: var(--text-xl, 1.25rem);
     color: var(--text-tertiary);
     overflow: hidden;
 }
@@ -1119,7 +1119,7 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
 }
 
 .health-view-item-title {
@@ -1181,12 +1181,12 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-item-handled {
     flex-shrink: 0;
     align-self: center;
-    padding: 0.05rem 0.4rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-color);
     background: var(--bg-tertiary, transparent);
     color: var(--text-tertiary);
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     letter-spacing: 0.03em;
     text-transform: lowercase;
     white-space: nowrap;
@@ -1195,7 +1195,7 @@ button.health-view-tile:hover .health-view-tile-value {
 /* Reasons that cost no points sit under their own heading, so a full score with
    "Never opened" listed under it does not read as broken arithmetic. */
 .health-view-score-intro--notes {
-    margin-top: 0.55rem;
+    margin-top: var(--space-2, 0.55rem);
 }
 
 /* Row score doubles as the breakdown disclosure — it is a real <button>. */
@@ -1203,15 +1203,15 @@ button.health-view-tile:hover .health-view-tile-value {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
     min-width: 2.5rem;
     justify-content: center;
-    padding: 0.1rem 0.4rem;
-    border-radius: 999px;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid color-mix(in srgb, var(--health-view-band) 35%, transparent);
     background: color-mix(in srgb, var(--health-view-band) 14%, transparent);
     color: var(--health-view-band);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     font-family: inherit;
     cursor: pointer;
@@ -1222,7 +1222,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-item-score-caret {
-    font-size: 0.6rem;
+    font-size: var(--text-2xs, 0.6rem);
     opacity: 0.8;
     transition: transform 0.15s ease;
 }
@@ -1232,12 +1232,12 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-item-meta {
-    margin: 0.2rem 0 0;
+    margin: var(--space-1, 0.2rem) 0 0;
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.75rem;
-    font-size: 0.78rem;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     min-width: 0;
 }
@@ -1246,7 +1246,7 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.35rem 0.6rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
     flex: 1 1 auto;
     min-width: 0;
 }
@@ -1259,7 +1259,7 @@ button.health-view-tile:hover .health-view-tile-value {
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: flex-end;
-    gap: 0.35rem 0.6rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
     max-width: 58%;
     text-align: right;
 }
@@ -1302,13 +1302,13 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-check-mode {
-    padding: 0.05rem 0.4rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: transparent;
     color: inherit;
     font-family: inherit;
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     line-height: 1.5;
     white-space: nowrap;
     cursor: pointer;
@@ -1351,7 +1351,7 @@ button.health-view-tile:hover .health-view-tile-value {
    printing "c" on every badge would turn the meta line into a keymap. */
 .health-check-mode kbd {
     display: none;
-    margin-left: 0.3rem;
+    margin-left: var(--space-1, 0.3rem);
     font-size: 0.9em;
     opacity: 0.7;
 }
@@ -1375,11 +1375,11 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-check-option {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--space-hairline, 0.1rem);
 }
 
 .health-check-option-body {
-    font-size: 0.7rem;
+    font-size: var(--text-xs, 0.7rem);
     color: var(--text-secondary);
     white-space: normal;
 }
@@ -1402,9 +1402,9 @@ button.health-view-tile:hover .health-view-tile-value {
    "what kind of checking" from "how often", which are two different questions. */
 .health-check-interval {
     display: block;
-    padding: 0.5rem 0.6rem 0.15rem;
+    padding: var(--space-2, 0.5rem) var(--space-2, 0.6rem) var(--space-hairline, 0.15rem);
     border-top: 1px solid var(--border-color);
-    margin-top: 0.3rem;
+    margin-top: var(--space-1, 0.3rem);
 }
 
 /* The menu entry that opens the expectations panel. Same two-line shape as the
@@ -1413,10 +1413,10 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-check-expect-open {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: var(--space-hairline, 0.1rem);
     border-top: 1px solid var(--border-color);
-    margin-top: 0.3rem;
-    padding-top: 0.45rem;
+    margin-top: var(--space-1, 0.3rem);
+    padding-top: var(--space-2, 0.45rem);
 }
 
 /* ─── Expectations panel ────────────────────────────────────────────────
@@ -1426,19 +1426,19 @@ button.health-view-tile:hover .health-view-tile-value {
    they get its full width, so the fields sit two across and nothing is hidden. */
 
 .health-view-expect-panel {
-    margin-top: 0.5rem;
+    margin-top: var(--space-2, 0.5rem);
 }
 
 .health-expect-form {
-    padding: 0.7rem 0.85rem 0.75rem;
+    padding: var(--space-3, 0.7rem) var(--space-3, 0.85rem) var(--space-3, 0.75rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: color-mix(in srgb, var(--text-primary) 3%, var(--background-primary));
 }
 
 .health-expect-intro {
-    margin: 0 0 0.7rem;
-    font-size: 0.74rem;
+    margin: 0 0 var(--space-3, 0.7rem);
+    font-size: var(--text-xs, 0.74rem);
     line-height: 1.45;
     color: var(--text-secondary);
 }
@@ -1448,7 +1448,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-expect-form {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-    gap: 0.35rem 1.1rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1.1rem);
 }
 
 .health-expect-intro,
@@ -1460,25 +1460,25 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-expect-field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    gap: var(--space-1, 0.25rem);
+    margin-bottom: var(--space-2, 0.5rem);
 }
 
 .health-expect-label {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
 }
 
 .health-expect-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.35rem 0.45rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.45rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-primary);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
 }
 
 .health-expect-input:focus-visible {
@@ -1487,7 +1487,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-expect-note {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-tertiary, var(--text-secondary));
     opacity: 0.85;
 }
@@ -1495,8 +1495,8 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-expect-check {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.74rem;
+    gap: var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.74rem);
     color: var(--text-secondary);
     cursor: pointer;
 }
@@ -1504,24 +1504,24 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-expect-toggles {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem 1.4rem;
-    margin: 0.15rem 0 0.65rem;
+    gap: var(--space-1, 0.3rem) var(--space-5, 1.4rem);
+    margin: var(--space-hairline, 0.15rem) 0 var(--space-3, 0.65rem);
 }
 
 .health-expect-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .health-expect-save,
 .health-expect-cancel {
-    padding: 0.3rem 0.85rem;
+    padding: var(--space-1, 0.3rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-secondary);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.76rem;
+    font-size: var(--text-xs, 0.76rem);
     cursor: pointer;
 }
 
@@ -1543,10 +1543,10 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-cert-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.05rem 0.35rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
     border: 1px solid currentColor;
-    border-radius: 999px;
-    font-size: 0.66rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.66rem);
     white-space: nowrap;
     opacity: 0.9;
 }
@@ -1566,10 +1566,10 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-drift-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.05rem 0.35rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
     border: 1px solid currentColor;
-    border-radius: 999px;
-    font-size: 0.66rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.66rem);
     white-space: nowrap;
     opacity: 0.9;
     color: var(--accent-warning, #b45309);
@@ -1581,10 +1581,10 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-muted-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.05rem 0.35rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
     border: 1px solid currentColor;
-    border-radius: 999px;
-    font-size: 0.66rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.66rem);
     white-space: nowrap;
     opacity: 0.75;
     color: var(--text-tertiary, var(--text-secondary));
@@ -1598,24 +1598,24 @@ button.health-view-tile:hover .health-view-tile-value {
 
 .health-check-interval-label {
     display: block;
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-secondary);
-    margin-bottom: 0.35rem;
+    margin-bottom: var(--space-1-5, 0.35rem);
 }
 
 .health-check-interval-options {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .health-check-interval-btn {
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
-    border-radius: 4px;
-    padding: 0.15rem 0.4rem;
-    font-size: 0.7rem;
+    border-radius: var(--radius-3, 4px);
+    padding: var(--space-hairline, 0.15rem) var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.7rem);
     font-variant-numeric: tabular-nums;
     cursor: pointer;
     line-height: 1.4;
@@ -1635,21 +1635,21 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-check-note {
-    margin: 0.5rem 0 0;
+    margin: var(--space-2, 0.5rem) 0 0;
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     line-height: 1.45;
 }
 
 /* ─── Uptime monitoring ─────────────────────────────────────────────────── */
 
 .health-monitor-strip {
-    margin-top: 0.4rem;
+    margin-top: var(--space-1-5, 0.4rem);
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    font-size: 0.72rem;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
 }
 
@@ -1674,7 +1674,7 @@ button.health-view-tile:hover .health-view-tile-value {
     flex: 0 0 auto;
     width: 3px;
     height: 100%;
-    border-radius: 1px;
+    border-radius: var(--radius-1, 1px);
     background: var(--border-secondary);
 }
 
@@ -1736,13 +1736,13 @@ button.health-view-tile:hover .health-view-tile-value {
    monitored rows is not a column of icons competing with the heartbeats. */
 .health-monitor-expand-btn {
     margin-left: auto;
-    padding: 0.05rem 0.35rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
     border: 1px solid transparent;
     border-radius: var(--layout-radius-sm, 8px);
     background: transparent;
     color: inherit;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     line-height: 1.4;
     opacity: 0.45;
     cursor: pointer;
@@ -1758,8 +1758,8 @@ button.health-view-tile:hover .health-view-tile-value {
 
 .health-monitor-expand-btn kbd {
     display: none;
-    margin-left: 0.25rem;
-    font-size: 0.62rem;
+    margin-left: var(--space-1, 0.25rem);
+    font-size: var(--text-2xs, 0.62rem);
     opacity: 0.7;
 }
 
@@ -1781,14 +1781,14 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-monitor-stats-url {
-    margin: 0 0 0.75rem;
-    font-size: 0.75rem;
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-secondary);
     word-break: break-all;
 }
 
 .health-monitor-stats-down {
-    margin: 0 0 0.5rem;
+    margin: 0 0 var(--space-2, 0.5rem);
     color: var(--accent-error);
     font-weight: 600;
 }
@@ -1796,8 +1796,8 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-monitor-stat-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1rem);
 }
 
 @media (max-width: 30rem) {
@@ -1809,22 +1809,22 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-monitor-stat {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    padding: 0.55rem 0.6rem;
+    gap: var(--space-hairline, 0.1rem);
+    padding: var(--space-2, 0.55rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: color-mix(in srgb, var(--border-primary) 12%, transparent);
 }
 
 .health-monitor-stat-label {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     opacity: 0.8;
 }
 
 .health-monitor-stat-value {
-    font-size: 1.15rem;
+    font-size: var(--text-lg, 1.15rem);
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -1832,7 +1832,7 @@ button.health-view-tile:hover .health-view-tile-value {
 
 /* A window with no samples reads as absent, not as a measured zero. */
 .health-monitor-stat--empty .health-monitor-stat-value {
-    font-size: 0.85rem;
+    font-size: var(--text-sm, 0.85rem);
     font-weight: 400;
     font-style: italic;
     color: var(--text-secondary);
@@ -1840,14 +1840,14 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-monitor-stat-sub {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
 }
 
 .health-monitor-stats-heading {
-    margin: 0 0 0.35rem;
-    font-size: 0.72rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
+    font-size: var(--text-xs, 0.72rem);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--text-secondary);
@@ -1858,7 +1858,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-monitor-chart {
     max-width: 100%;
     overflow-x: auto;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3, 0.75rem);
 }
 
 .health-sparkline--large {
@@ -1915,14 +1915,14 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.2rem 0.6rem;
+    gap: var(--space-1, 0.2rem) var(--space-2, 0.6rem);
     min-height: 1.9rem;
-    margin-bottom: 0.85rem;
-    padding: 0.35rem 0.55rem;
+    margin-bottom: var(--space-3, 0.85rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
     border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
     border: 1px solid var(--border-secondary);
     background: var(--background-primary);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
 }
 
 .health-monitor-readout-hint {
@@ -1931,7 +1931,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-monitor-readout-value {
-    font-size: 0.95rem;
+    font-size: var(--text-base, 0.95rem);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--accent-primary);
@@ -1948,9 +1948,9 @@ button.health-view-tile:hover .health-view-tile-value {
 
 .health-monitor-readout-state {
     margin-left: auto;
-    padding: 0.05rem 0.4rem;
-    border-radius: 999px;
-    font-size: 0.68rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-2xs, 0.68rem);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     background: color-mix(in srgb, var(--accent-success) 16%, transparent);
@@ -1979,7 +1979,7 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-monitor-chart-empty {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-3, 0.75rem);
     font-style: italic;
     opacity: 0.8;
 }
@@ -1992,17 +1992,17 @@ button.health-view-tile:hover .health-view-tile-value {
     height: 34px;
     max-width: 100%;
     overflow-x: auto;
-    margin-bottom: 0.6rem;
+    margin-bottom: var(--space-2, 0.6rem);
 }
 
 .health-monitor-stats-heartbeat .health-heartbeat-bar {
     width: 6px;
-    border-radius: 2px;
+    border-radius: var(--radius-1, 2px);
 }
 
 .health-monitor-meta {
-    margin: 0 0 0.85rem;
-    font-size: 0.72rem;
+    margin: 0 0 var(--space-3, 0.85rem);
+    font-size: var(--text-xs, 0.72rem);
     opacity: 0.85;
 }
 
@@ -2014,16 +2014,16 @@ button.health-view-tile:hover .health-view-tile-value {
 /* ─── Score breakdown ───────────────────────────────────────────────────── */
 
 .health-view-score-panel {
-    margin-top: 0.55rem;
-    padding: 0.55rem 0.65rem;
+    margin-top: var(--space-2, 0.55rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.65rem);
     border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
     border: 1px solid var(--border-secondary);
     background: var(--background-primary);
 }
 
 .health-view-score-intro {
-    margin: 0 0 0.4rem;
-    font-size: 0.75rem;
+    margin: 0 0 var(--space-1-5, 0.4rem);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-tertiary);
 }
 
@@ -2033,15 +2033,15 @@ button.health-view-tile:hover .health-view-tile-value {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
 }
 
 .health-view-score-item {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.75rem;
-    font-size: 0.78rem;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
 }
 
@@ -2061,11 +2061,11 @@ button.health-view-tile:hover .health-view-tile-value {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 0.45rem;
-    padding-top: 0.4rem;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.45rem);
+    padding-top: var(--space-1-5, 0.4rem);
     border-top: 1px solid var(--border-secondary);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
 }
@@ -2091,12 +2091,12 @@ button.health-view-tile:hover .health-view-tile-value {
 /* Never hide an action from assistive tech or keyboard users: opacity:0 keeps
    the buttons focusable, and focus-within reveals them on Tab. */
 .health-view-action-btn {
-    padding: 0.2rem 0.55rem;
-    border-radius: 0.35rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-4, 0.35rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     font-family: inherit;
     cursor: pointer;
 }
@@ -2117,8 +2117,8 @@ button.health-view-tile:hover .health-view-tile-value {
 }
 
 .health-view-action-btn kbd {
-    margin-left: 0.25rem;
-    font-size: 0.68rem;
+    margin-left: var(--space-1, 0.25rem);
+    font-size: var(--text-2xs, 0.68rem);
     opacity: 0.75;
 }
 
@@ -2141,12 +2141,12 @@ button.health-view-tile:hover .health-view-tile-value {
     left: 0;
     z-index: 20;
     min-width: 12rem;
-    padding: 0.35rem 0 0.45rem;
+    padding: var(--space-1-5, 0.35rem) 0 var(--space-2, 0.45rem);
     display: flex;
     flex-direction: column;
-    gap: 0.05rem;
+    gap: var(--space-hairline, 0.05rem);
     border: 1px solid var(--border-primary);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-6, 0.65rem);
     background: var(--background-secondary);
     color: var(--text-primary);
     font-family: var(--font-family-main);
@@ -2209,10 +2209,10 @@ body[data-layout-version="modern"] .health-view-menu {
 }
 
 .health-view-menu-item {
-    padding: 0.45rem 0.85rem;
-    margin: 0 0.3rem;
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.85rem);
+    margin: 0 var(--space-1, 0.3rem);
     border: none;
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: transparent;
     color: var(--text-primary);
     font-family: inherit;
@@ -2260,7 +2260,7 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 
 .health-view-menu-label {
     margin: 0;
-    padding: 0.5rem 0.85rem 0.2rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem) var(--space-1, 0.2rem);
     font-size: calc(var(--font-size-controls) * 0.68);
     font-weight: var(--font-weight-medium);
     letter-spacing: 0.05em;
@@ -2277,12 +2277,12 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 .health-view-group {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
 }
 
 .health-view-group-title {
-    margin: 0.35rem 0 0;
-    font-size: 0.72rem;
+    margin: var(--space-1-5, 0.35rem) 0 0;
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -2292,29 +2292,29 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 .health-view-group-items {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 .health-view-empty-state,
 .health-view-empty {
-    padding: 2rem 1rem;
+    padding: var(--space-6, 2rem) var(--space-4, 1rem);
     text-align: center;
     color: var(--text-secondary);
 }
 
 .health-view-empty-title {
-    margin: 0 0 0.35rem;
+    margin: 0 0 var(--space-1-5, 0.35rem);
     font-size: var(--font-size-controls);
     color: var(--text-primary);
 }
 
 .health-view-empty-hint {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: var(--text-sm, 0.85rem);
 }
 
 .health-view-retry-btn {
-    margin-top: 0.85rem;
+    margin-top: var(--space-3, 0.85rem);
 }
 
 /* Keyboard shortcut hints below the list so a long scroll never hides them. */
@@ -2329,10 +2329,10 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 .health-view-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem 0.8rem;
-    padding: 0 0.35rem;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.8rem);
+    padding: 0 var(--space-1-5, 0.35rem);
     margin: 0;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
 }
 
@@ -2343,11 +2343,11 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 }
 
 .health-view-legend kbd {
-    padding: 0.05rem 0.3rem;
-    border-radius: 3px;
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
+    border-radius: var(--radius-2, 3px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
 }
 
 /* ─── Motion & narrow viewports ─────────────────────────────────────────── */
@@ -2371,7 +2371,7 @@ body.no-animations .health-view-item-score-caret {
 @media (hover: none) {
     .health-view-item-actions {
         grid-template-rows: 1fr;
-        margin-top: 0.55rem;
+        margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
 }
@@ -2400,7 +2400,7 @@ body.no-animations .health-view-item-score-caret {
 
     .health-view-item-actions {
         grid-template-rows: 1fr;
-        margin-top: 0.55rem;
+        margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
 
@@ -2454,7 +2454,7 @@ body[data-layout-version="modern"] .health-view-item:focus-visible {
    rather than a full-strength border. */
 body[data-layout-version="modern"] .health-view-header {
     border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
-    padding-bottom: 0.7rem;
+    padding-bottom: var(--space-3, 0.7rem);
 }
 
 /* ─── Summary tiles ─────────────────────────────────────────────────────── */
@@ -2674,17 +2674,17 @@ body[data-layout-version="modern"] .health-view-empty {
 .health-monitor-stats-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 0.85rem;
+    margin-top: var(--space-3, 0.85rem);
 }
 
 .health-monitor-export-btn {
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.4rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.7rem);
+    border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     cursor: pointer;
 }
 
@@ -2711,7 +2711,7 @@ body[data-layout-version="modern"] .health-view-empty {
     align-items: flex-start;
     justify-content: center;
     width: 1.1rem;
-    padding-top: 0.15rem;
+    padding-top: var(--space-hairline, 0.15rem);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.12s ease;
@@ -2742,7 +2742,7 @@ body[data-layout-version="modern"] .health-view-empty {
    pairs — so ticking rows works the same way in both places. Only the spacing
    below is Health's own, because this bar sits inside the feed column. */
 .health-bulk-bar {
-    margin-bottom: 0.85rem;
+    margin-bottom: var(--space-3, 0.85rem);
 }
 
 #health-bulk-bar:empty {
@@ -2761,18 +2761,18 @@ body[data-layout-version="modern"] .health-view-empty {
 .health-view-trend-series {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 0.2rem;
+    gap: var(--space-1, 0.2rem);
     margin-left: auto;
 }
 
 .health-view-trend-series-btn {
-    padding: 0.05rem 0.4rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
     border: 1px solid transparent;
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     background: none;
     color: var(--text-tertiary);
     font: inherit;
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     cursor: pointer;
 }
 
@@ -2797,9 +2797,9 @@ body[data-layout-version="modern"] .health-view-empty {
  */
 .health-view-ignored-badge {
     flex: none;
-    font-size: 0.7rem;
-    padding: 0.05rem 0.4rem;
-    border-radius: 999px;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px dashed var(--border-secondary);
     color: var(--text-tertiary);
     white-space: nowrap;
@@ -2830,12 +2830,12 @@ body[data-layout-version="modern"] .health-view-empty {
     align-items: center;
     justify-content: center;
     min-width: 2.1rem;
-    padding: 0.35rem 0.6rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
     border: 1px solid var(--border-secondary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: var(--text-md, 1rem);
     line-height: 1;
     cursor: pointer;
 }
@@ -2871,7 +2871,7 @@ body[data-layout-version="modern"] .health-view-empty {
 .health-view-menu--toolbar > button {
     width: 100%;
     justify-content: flex-start;
-    padding: 0.4rem 0.7rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.7rem);
     border: 0;
     border-radius: 0;
     background: none;
@@ -2893,8 +2893,8 @@ body[data-layout-version="modern"] .health-view-empty {
 /* The settings link is the one entry that leaves the view rather than acting
    on the list, so it sits under a rule instead of among the actions. */
 .health-view-menu--toolbar > .health-view-settings-link {
-    margin-top: 0.3rem;
-    padding-top: 0.45rem;
+    margin-top: var(--space-1, 0.3rem);
+    padding-top: var(--space-2, 0.45rem);
     border-top: 1px solid var(--border-secondary);
     color: var(--text-secondary);
 }

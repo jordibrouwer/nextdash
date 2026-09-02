@@ -13,9 +13,9 @@
 /* One sentence about the active filter, under the toolbar. Quiet enough to be
    skipped once it is known, present enough to be read the first time. */
 .view-filter-note {
-    margin: -0.2rem 0 0.7rem;
-    padding: 0 0.35rem;
-    font-size: 0.74rem;
+    margin: -0.2rem 0 var(--space-3, 0.7rem);
+    padding: 0 var(--space-1-5, 0.35rem);
+    font-size: var(--text-xs, 0.74rem);
     line-height: 1.5;
     color: var(--text-secondary);
     max-width: 70ch;
@@ -32,10 +32,10 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     line-height: 1;
     cursor: pointer;
 }
@@ -76,18 +76,18 @@ body:has(#config-main) #app-modal.modal-overlay:has(.view-explain-modal) .modal 
 /* Tighter than the 0.9rem gap the check-mode explainer uses: six sections at
    that spacing is what made health's too tall to fit. */
 .view-explain-row + .view-explain-row {
-    margin-top: 0.65rem;
+    margin-top: var(--space-3, 0.65rem);
 }
 
 .view-explain-row h4 {
-    margin: 0 0 0.1rem;
-    font-size: 0.88rem;
+    margin: 0 0 var(--space-hairline, 0.1rem);
+    font-size: var(--text-base, 0.88rem);
     color: var(--text-primary);
 }
 
 .view-explain-row p {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: var(--text-sm, 0.82rem);
     color: var(--text-secondary);
     line-height: 1.45;
 }

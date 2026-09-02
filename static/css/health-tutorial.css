@@ -21,21 +21,21 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
 }
 
 .health-tutorial-progress {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text-tertiary);
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1-5, 0.4rem);
 }
 
 .health-tutorial-step-title {
-    margin: 0 0 0.7rem;
-    font-size: 1.1rem;
+    margin: 0 0 var(--space-3, 0.7rem);
+    font-size: var(--text-lg, 1.1rem);
     color: var(--text-primary);
 }
 
 .health-tutorial-step-body p {
-    margin: 0 0 0.7rem;
+    margin: 0 0 var(--space-3, 0.7rem);
     color: var(--text-secondary);
     line-height: 1.55;
 }
@@ -54,17 +54,17 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.6rem 0.75rem;
-    margin: 0 0 0.9rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-4, 0.9rem);
     border: 1px dashed var(--border-secondary);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-5, 0.5rem);
     background: var(--background-secondary);
 }
 
 .health-tutorial-visual-url {
     font-family: var(--font-mono, monospace);
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     color: var(--text-secondary);
     flex: 1 1 auto;
     min-width: 0;
@@ -75,22 +75,22 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
 
 .health-tutorial-visual-modes {
     display: inline-flex;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
     flex: 0 0 auto;
 }
 
 .health-tutorial-visual code {
     font-family: var(--font-mono, monospace);
-    font-size: 0.8rem;
-    padding: 0.15rem 0.45rem;
-    border-radius: 0.35rem;
+    font-size: var(--text-sm, 0.8rem);
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-4, 0.35rem);
     background: var(--background-primary);
     border: 1px solid var(--border-secondary);
     color: var(--text-primary);
 }
 
 .health-tutorial-visual-hint {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
 }
 
@@ -99,13 +99,13 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
 }
 
 .health-tutorial-visual--services {
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .health-tutorial-visual-chip {
-    font-size: 0.72rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
+    font-size: var(--text-xs, 0.72rem);
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-secondary);
     color: var(--text-secondary);
     background: var(--background-primary);
@@ -116,10 +116,10 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
 .health-tutorial-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.05rem 0.4rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.4rem);
     border: 1px solid currentColor;
-    border-radius: 999px;
-    font-size: 0.7rem;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-xs, 0.7rem);
     white-space: nowrap;
     opacity: 0.9;
     color: var(--accent-warning, #b45309);
@@ -134,14 +134,14 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
 .health-tutorial-dots {
     display: flex;
     justify-content: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     margin-top: 1.2rem;
 }
 
 .health-tutorial-dot {
     width: 0.4rem;
     height: 0.4rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: var(--border-secondary);
     transition: background-color 0.15s ease, transform 0.15s ease;
 }

@@ -3,20 +3,20 @@
 .bookmark-form-preview-section {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3, 0.75rem);
 }
 
 .bookmark-form-preview-block {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .bookmark-form-preview-block-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     flex-wrap: wrap;
 }
 
@@ -27,7 +27,7 @@
 }
 
 .bookmark-form-preview-hint {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     font-weight: var(--font-weight-normal, 400);
 }
@@ -41,7 +41,7 @@
 
 .bookmark-detail-link-preview-actions {
     display: flex;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     flex-shrink: 0;
 }
 
@@ -53,9 +53,9 @@
 
 .config-bookmark-preview {
     border: 1px solid var(--border-primary);
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: color-mix(in srgb, var(--background-primary) 55%, transparent);
-    padding: 0.35rem 0.5rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
 }
 
 .config-bookmark-preview--compact {
@@ -71,9 +71,9 @@
     z-index: 40;
     min-width: min(22rem, 100%);
     max-width: min(28rem, calc(100vw - 2rem));
-    padding: 0.5rem 0.65rem;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
-    border-radius: 8px;
+    border-radius: var(--radius-5, 8px);
     background: var(--background-primary);
     box-shadow: 0 10px 28px color-mix(in srgb, var(--background-primary) 20%, transparent),
         0 0 0 1px color-mix(in srgb, var(--accent-primary) 12%, transparent);
@@ -94,8 +94,8 @@
     display: grid;
     grid-template-columns: minmax(1rem, max-content) minmax(0, 1fr) max-content;
     align-items: center;
-    column-gap: 0.35rem;
-    padding: 0.1rem 0;
+    column-gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-hairline, 0.1rem) 0;
     min-height: 1.55rem;
     font-size: var(--font-size-bookmark, 0.8125rem);
     font-weight: var(--font-weight-semibold, 600);
@@ -119,7 +119,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     overflow: hidden;
 }
 
@@ -140,7 +140,7 @@
 .config-bookmark-preview-tile--expanded.bookmark-link {
     white-space: normal;
     min-height: 2rem;
-    padding: 0.15rem 0;
+    padding: var(--space-hairline, 0.15rem) 0;
 }
 
 .config-bookmark-preview-tile--expanded .bookmark-open {
@@ -151,19 +151,19 @@
 .config-link-preview-card {
     display: grid;
     grid-template-columns: 5.5rem 1fr;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
     align-items: start;
     border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    padding: 0.55rem 0.65rem;
+    border-radius: var(--radius-5, 8px);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.65rem);
     background: color-mix(in srgb, var(--background-primary) 55%, transparent);
-    margin-top: 0.25rem;
+    margin-top: var(--space-1, 0.25rem);
 }
 
 .config-link-preview-card-image-wrap {
     width: 5.5rem;
     height: 3.25rem;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     overflow: hidden;
     background: var(--background-secondary);
     border: 1px solid var(--border-secondary);
@@ -185,7 +185,7 @@
     font-size: var(--font-size-text);
     color: var(--text-primary);
     line-height: 1.35;
-    margin-bottom: 0.2rem;
+    margin-bottom: var(--space-1, 0.2rem);
 }
 
 .config-link-preview-card-desc {
@@ -199,8 +199,8 @@
 }
 
 .config-link-preview-card-domain {
-    margin-top: 0.35rem;
-    font-size: 0.75rem;
+    margin-top: var(--space-1-5, 0.35rem);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-tertiary);
 }
 
@@ -223,7 +223,7 @@
 
 .config-bookmark-preview-tile .bookmark-icon-slot--empty {
     border: 1px dashed var(--border-secondary);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     opacity: 0.45;
 }
 
@@ -253,7 +253,7 @@
 }
 
 .modal-new-bookmark .bookmark-form-preview-section {
-    margin: 0.25rem 0 0.5rem;
+    margin: var(--space-1, 0.25rem) 0 var(--space-2, 0.5rem);
 }
 
 .modal-new-bookmark .config-link-preview-card {
@@ -269,10 +269,10 @@
 .bookmark-form-preview-strip {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    padding: 0.45rem 0.55rem;
+    gap: var(--space-2, 0.55rem);
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
     border: 1px solid var(--border-primary);
-    border-radius: 6px;
+    border-radius: var(--radius-4, 6px);
     background: color-mix(in srgb, var(--background-primary) 55%, transparent);
     min-height: 2.35rem;
 }
@@ -299,7 +299,7 @@
     width: 100%;
     height: 100%;
     border: 1px dashed var(--border-secondary);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     opacity: 0.45;
 }
 
@@ -308,7 +308,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.05rem;
+    gap: var(--space-hairline, 0.05rem);
 }
 
 .bookmark-form-preview-strip-title {
@@ -321,7 +321,7 @@
 }
 
 .bookmark-form-preview-strip-domain {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -336,19 +336,19 @@
 }
 
 .bookmark-form-preview-strip-tile .config-bookmark-preview-tile.bookmark-link {
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     min-height: 1.35rem;
     padding: 0;
 }
 
 .nbm-section-compact-preview {
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
+    padding-top: var(--space-1-5, 0.35rem);
+    padding-bottom: var(--space-1-5, 0.35rem);
 }
 
 .ext-preview-section .config-link-preview-card {
     grid-template-columns: 3.5rem 1fr;
-    padding: 0.45rem 0.5rem;
+    padding: var(--space-2, 0.45rem) var(--space-2, 0.5rem);
 }
 
 .ext-preview-section .config-link-preview-card-image-wrap {
@@ -357,7 +357,7 @@
 }
 
 .ext-preview-section .bookmark-form-preview-block-header {
-    margin-top: 0.35rem;
+    margin-top: var(--space-1-5, 0.35rem);
 }
 
 /* The feed behind this bookmark, when Fresh knows of one.
@@ -366,9 +366,9 @@
 .bookmark-form-feed-line {
     display: flex;
     align-items: baseline;
-    gap: 0.4rem;
-    margin: 0.5rem 0 0;
-    font-size: 0.8rem;
+    gap: var(--space-1-5, 0.4rem);
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--text-sm, 0.8rem);
     color: var(--text-secondary, #666);
     overflow: hidden;
 }
@@ -385,5 +385,5 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-mono, ui-monospace, monospace);
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
 }

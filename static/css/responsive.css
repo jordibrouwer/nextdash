@@ -2,7 +2,7 @@
 
 /* General mobile button styles */
 .button-container {
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 /* Large Desktop (1200px+) - Default styles already applied */
@@ -15,11 +15,11 @@
     }
     
     .dashboard-section.section-content {
-        padding-bottom: 3rem; /* Space for search button */
+        padding-bottom: var(--space-7, 3rem); /* Space for search button */
     }
     
     .config-section.section-content {
-        padding-top: 0.875rem;
+        padding-top: var(--space-3, 0.875rem);
         padding-bottom: 1.75rem;
     }
     
@@ -27,7 +27,7 @@
         /* Roomier clamp() margin (not a percentage) so the columns sit closer
            together, shrinking toward the floor as the window narrows. */
         max-width: 100%;
-        padding: 0 clamp(1.5rem, 5vw, 6rem);
+        padding: 0 clamp(var(--space-5, 1.5rem), 5vw, 6rem);
     }
 
     /* Keep the config page shell in step with the dashboard .container at this
@@ -35,18 +35,18 @@
     html:has(#config-main) .config-page-shell {
         grid-template-columns: minmax(0, 1fr);
         max-width: 1600px;
-        padding-inline: clamp(1.5rem, 5vw, 6rem);
+        padding-inline: clamp(var(--space-5, 1.5rem), 5vw, 6rem);
     }
 
     /* Same for the health shell, so its header/nav stay aligned too. */
     .health-shell {
         max-width: 100%;
-        padding-left: clamp(1.5rem, 5vw, 6rem);
-        padding-right: clamp(1.5rem, 5vw, 6rem);
+        padding-left: clamp(var(--space-5, 1.5rem), 5vw, 6rem);
+        padding-right: clamp(var(--space-5, 1.5rem), 5vw, 6rem);
     }
 
     .dashboard-grid {
-        gap: 2rem;
+        gap: var(--space-6, 2rem);
     }
     
     .search-container {
@@ -63,7 +63,7 @@
        its data-tooltip attribute) was lifted out of the row by exactly that
        many pixels as soon as a breakpoint applied. */
     .search-button {
-        padding: 0.8rem 1rem;
+        padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
     }
     
     /* Tabs responsive - desktop */
@@ -77,7 +77,7 @@
     .bookmark-item,
     .finder-item {
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
     
     .form-group {
@@ -86,7 +86,7 @@
     
     .config-actions-top {
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
 }
 
@@ -94,26 +94,26 @@
 @media (max-width: 991px) {
     .dashboard-section.section-controls,
     .config-section.section-header {
-        padding-top: 1.5rem;
+        padding-top: var(--space-5, 1.5rem);
     }
     
     .dashboard-section.section-content {
-        padding-bottom: 3rem; /* Space for search button */
+        padding-bottom: var(--space-7, 3rem); /* Space for search button */
     }
     
     .config-section.section-content {
-        padding-top: 0.75rem;
-        padding-bottom: 1.5rem;
+        padding-top: var(--space-3, 0.75rem);
+        padding-bottom: var(--space-5, 1.5rem);
     }
     
     .container {
         max-width: 95%;
-        padding: 0 0.75rem;
+        padding: 0 var(--space-3, 0.75rem);
     }
     
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1.5rem;
+        gap: var(--space-5, 1.5rem);
     }
 
     body[data-layout-version="modern"] .dashboard-grid {
@@ -125,7 +125,7 @@
         flex-wrap: wrap;
         justify-content: center;
         grid-template-columns: unset !important;
-        gap: 1.5rem;
+        gap: var(--space-5, 1.5rem);
     }
 
     body[data-layout-version="modern"] .dashboard-grid.packed-columns {
@@ -136,7 +136,7 @@
 
     .dashboard-grid.packed-columns .dashboard-column {
         flex: 1 1 calc(50% - 0.75rem);
-        gap: 1.5rem;
+        gap: var(--space-5, 1.5rem);
     }
 
     body[data-layout-version="modern"] .dashboard-grid.packed-columns .dashboard-column {
@@ -153,7 +153,7 @@
     }
     
     .page-nav-btn {
-        padding: 0.35rem 0.5rem;
+        padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
         font-size: var(--font-size-controls);
     }
     
@@ -162,21 +162,21 @@
     }
     
     .bookmark-link {
-        padding: 0.4rem 0;
+        padding: var(--space-1-5, 0.4rem) 0;
     }
     
     .config-button {
-        padding: 0.75rem 1rem;
+        padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     }
     
     .search-container {
         width: min(52rem, calc(100vw - 2rem));
         max-width: 100%;
-        padding: 1.25rem 1.5rem 0.875rem 2rem;
+        padding: 1.25rem var(--space-5, 1.5rem) var(--space-3, 0.875rem) var(--space-6, 2rem);
     }
     
     .search-button {
-        padding: 0.8rem 1rem;
+        padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
         font-size: var(--font-size-controls);
     }
     
@@ -184,13 +184,13 @@
     .bookmark-item {
         display: grid;
         grid-template-columns: 1fr 1fr 100px 120px 80px;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .finder-item {
         display: grid;
         grid-template-columns: 1fr 1fr 100px 80px;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .category-item {
@@ -199,14 +199,14 @@
     }
     
     .section {
-        margin-bottom: 2rem;
+        margin-bottom: var(--space-6, 2rem);
     }
     
     /* Colors page - stack vertically on tablet */
     .config-main,
     .custom-themes-main-grid {
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: var(--space-6, 2rem);
     }
     
     /* Tabs responsive - tablet */
@@ -215,25 +215,25 @@
     }
     
     .tab-button {
-        padding: 0.625rem 1.25rem;
+        padding: var(--space-2, 0.625rem) 1.25rem;
         font-size: var(--font-size-controls);
     }
     
     .config-actions-top {
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
 }
 
 /* Mobile Large (576px - 767px) */
 @media (max-width: 767px) {
     .container {
-        padding: 1rem 0.5rem;
+        padding: var(--space-4, 1rem) var(--space-2, 0.5rem);
     }
     
     .dashboard-grid {
         grid-template-columns: 1fr !important;
-        gap: 1.5rem;
+        gap: var(--space-5, 1.5rem);
     }
 
     body[data-layout-version="modern"] .dashboard-grid {
@@ -241,15 +241,15 @@
     }
     
     .category h3 {
-        margin-bottom: 0.75rem;
+        margin-bottom: var(--space-3, 0.75rem);
     }
     
     .bookmark-link {
-        padding: 0.35rem 0;
+        padding: var(--space-1-5, 0.35rem) 0;
     }
     
     .config-button {
-        padding: 0.625rem 0.875rem;
+        padding: var(--space-2, 0.625rem) var(--space-3, 0.875rem);
     }
     
     .shortcut-hint {
@@ -257,13 +257,13 @@
         right: 1rem;
         left: 1rem;
         text-align: center;
-        padding: 0.5rem;
+        padding: var(--space-2, 0.5rem);
     }
     
     .search-container {
         width: calc(100vw - 2rem);
         max-width: 100%;
-        padding: 1rem 1.25rem 0.75rem 2rem;
+        padding: var(--space-4, 1rem) 1.25rem var(--space-3, 0.75rem) var(--space-6, 2rem);
     }
     
     /* Prevent horizontal scroll on small screens */
@@ -275,11 +275,11 @@
     }
     
     .search-match {
-        padding: 0.4rem 0;
+        padding: var(--space-1-5, 0.4rem) 0;
     }
     
     .search-button {
-        padding: 0.8rem 1rem;
+        padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
         font-size: var(--font-size-controls);
     }
     
@@ -297,7 +297,7 @@
     
     .dashboard-section.section-controls,
     .config-section.section-header {
-        padding-top: 1.5rem;
+        padding-top: var(--space-5, 1.5rem);
     }
 
     .dashboard-section.section-controls {
@@ -316,22 +316,22 @@
     
     .dashboard-section.section-content {
         padding-top: 0;
-        padding-bottom: 3rem; /* Space for search button */
+        padding-bottom: var(--space-7, 3rem); /* Space for search button */
     }
     
     .config-section.section-content {
-        padding-top: 0.75rem;
-        padding-bottom: 1.5rem;
+        padding-top: var(--space-3, 0.75rem);
+        padding-bottom: var(--space-5, 1.5rem);
     }
     
     .container {
-        padding: 0 0.75rem;
+        padding: 0 var(--space-3, 0.75rem);
     }
     
     .header-top {
         flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .date {
@@ -347,7 +347,7 @@
         background: var(--background-secondary);
         border: 1px solid var(--border-primary);
         border-radius: 20px;
-        padding: 0.18rem 0.6rem;
+        padding: var(--space-hairline, 0.18rem) var(--space-2, 0.6rem);
         cursor: pointer;
         white-space: nowrap;
         user-select: none;
@@ -369,7 +369,7 @@
     .header-actions {
         flex-direction: row;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
         margin-left: auto;
         min-width: 0;
     }
@@ -377,7 +377,7 @@
     .header {
         flex-direction: column;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
 
     .header .nav-links,
@@ -385,14 +385,14 @@
         order: -1;
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
 
     .header.config-header-top {
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 0.5rem 0.75rem;
+        gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
 
     .header.config-header-top .header-links {
@@ -400,7 +400,7 @@
         flex-direction: row;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.75rem 1rem;
+        gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
     }
 
     .config-header-top .header-actions {
@@ -408,7 +408,7 @@
     }
 
     .page-navigation {
-        gap: 0.125rem;
+        gap: var(--space-hairline, 0.125rem);
         flex-wrap: nowrap;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
@@ -427,7 +427,7 @@
     }
 
     .page-nav-btn {
-        padding: 0.3rem 0.45rem;
+        padding: var(--space-1, 0.3rem) var(--space-2, 0.45rem);
         font-size: var(--font-size-controls);
     }
 
@@ -457,13 +457,13 @@
     
     /* Config page mobile large styles */
     .section {
-        margin-bottom: 1.5rem;
+        margin-bottom: var(--space-5, 1.5rem);
     }
     
     .page-selector-wrapper {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .page-selector-wrapper label {
@@ -481,7 +481,7 @@
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .category-item input,
@@ -489,12 +489,12 @@
     .bookmark-item select,
     .finder-item input {
         width: 100%;
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2, 0.5rem);
     }
     
     .config-actions {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .config-actions .btn {
@@ -514,7 +514,7 @@
     .modal {
         max-width: 320px;
         width: 95%;
-        padding: 1rem 1.25rem;
+        padding: var(--space-4, 1rem) 1.25rem;
     }
     
     .modal-body {
@@ -522,7 +522,7 @@
     }
     
     .modal-button {
-        padding: 0.375rem 0.75rem;
+        padding: var(--space-1-5, 0.375rem) var(--space-3, 0.75rem);
     }
     
     .modal-button-prefix {
@@ -533,11 +533,11 @@
     .config-main,
     .custom-themes-main-grid {
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: var(--space-6, 2rem);
     }
     
     .colors-grid {
-        gap: 2rem;
+        gap: var(--space-6, 2rem);
     }
     
     /* Tabs responsive - mobile large */
@@ -548,7 +548,7 @@
     }
     
     .tab-button {
-        padding: 0.5rem 1rem;
+        padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
         font-size: var(--font-size-controls);
         flex: 1 1 auto;
         min-width: 120px;
@@ -556,7 +556,7 @@
     
     .config-actions-top {
         flex-wrap: wrap;
-        gap: 0.625rem;
+        gap: var(--space-2, 0.625rem);
     }
     
     .config-actions-top .btn {
@@ -568,7 +568,7 @@
 /* Mobile Small (480px - 575px) */
 @media (max-width: 575px) {
     .container {
-        padding: 0.75rem 0.375rem;
+        padding: var(--space-3, 0.75rem) var(--space-1-5, 0.375rem);
     }
     
     .dashboard-grid {
@@ -576,26 +576,26 @@
     }
     
     .bookmark-link {
-        padding: 0.3rem 0;
+        padding: var(--space-1, 0.3rem) 0;
     }
     
     .config-button {
-        padding: 0.5rem 0.75rem;
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
     
     .search-container {
         width: calc(100% - 2rem);
         max-width: 100%;
         margin: 0 auto;
-        padding: 0.875rem 1rem 0.625rem 2rem;
+        padding: var(--space-3, 0.875rem) var(--space-4, 1rem) var(--space-2, 0.625rem) var(--space-6, 2rem);
     }
     
     .search-prompt {
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2, 0.5rem);
     }
     
     .search-button {
-        padding: 0.8rem 1rem;
+        padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
         font-size: var(--font-size-text);
     }
     
@@ -620,7 +620,7 @@
     }
 
     .config-section.section-header {
-        padding-bottom: 1.125rem;
+        padding-bottom: var(--space-4, 1.125rem);
     }
     
     .dashboard-section.section-title,
@@ -631,22 +631,22 @@
     
     .dashboard-section.section-content {
         padding-top: 0;
-        padding-bottom: 3rem; /* Space for search button */
+        padding-bottom: var(--space-7, 3rem); /* Space for search button */
     }
     
     .config-section.section-content {
-        padding-top: 0.625rem;
+        padding-top: var(--space-2, 0.625rem);
         padding-bottom: 1.25rem;
     }
     
     .container {
-        padding: 0 0.5rem;
+        padding: 0 var(--space-2, 0.5rem);
     }
     
     .header-top {
         flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .title {
@@ -654,14 +654,14 @@
     }
 
     .header-actions {
-        gap: 0.625rem;
+        gap: var(--space-2, 0.625rem);
         margin-left: auto;
     }
     
     .header {
         flex-direction: column;
         align-items: center;
-        gap: 0.625rem;
+        gap: var(--space-2, 0.625rem);
     }
     
     .header .nav-links,
@@ -669,14 +669,14 @@
         order: -1;
         display: flex;
         flex-direction: column;
-        gap: 0.625rem;
+        gap: var(--space-2, 0.625rem);
     }
 
     .header.config-header-top {
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 0.5rem 0.625rem;
+        gap: var(--space-2, 0.5rem) var(--space-2, 0.625rem);
     }
 
     .header.config-header-top .header-links {
@@ -684,7 +684,7 @@
         flex-direction: row;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.625rem 0.85rem;
+        gap: var(--space-2, 0.625rem) var(--space-3, 0.85rem);
     }
 
     .config-header-top .header-actions {
@@ -692,7 +692,7 @@
     }
     
     .page-nav-btn {
-        padding: 0.25rem 0.4rem;
+        padding: var(--space-1, 0.25rem) var(--space-1-5, 0.4rem);
         font-size: var(--font-size-controls);
     }
 
@@ -706,11 +706,11 @@
     }
     
     .form-group {
-        margin-bottom: 1rem;
+        margin-bottom: var(--space-4, 1rem);
     }
     
     .btn {
-        padding: 0.625rem 1rem;
+        padding: var(--space-2, 0.625rem) var(--space-4, 1rem);
     }
     
     /* Tabs responsive - mobile small */
@@ -720,7 +720,7 @@
     }
     
     .tab-button {
-        padding: 0.5rem 0.75rem;
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
         font-size: var(--font-size-controls);
         flex: 1 1 auto;
         min-width: 100px;
@@ -738,33 +738,33 @@
 /* Mobile Extra Small (up to 479px) */
 @media (max-width: 479px) {
     .container {
-        padding: 0.5rem 0.25rem;
+        padding: var(--space-2, 0.5rem) var(--space-1, 0.25rem);
     }
     
     .dashboard-grid {
-        gap: 0rem;
+        gap: var(--space-hairline, 0rem);
     }
     
     .category {
-        margin-bottom: 1.5rem;
+        margin-bottom: var(--space-5, 1.5rem);
     }
     
     .category h3 {
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2, 0.5rem);
     }
     
     .bookmark-link {
-        padding: 0.25rem 0;
+        padding: var(--space-1, 0.25rem) 0;
     }
     
     .config-button {
         top: 0.5rem;
         right: 0.5rem;
-        padding: 0.4rem 0.625rem;
+        padding: var(--space-1-5, 0.4rem) var(--space-2, 0.625rem);
     }
     
     .shortcut-hint {
-        padding: 0.375rem;
+        padding: var(--space-1-5, 0.375rem);
         bottom: 0.5rem;
         right: 0.5rem;
         left: 0.5rem;
@@ -774,15 +774,15 @@
         width: calc(100% - 2rem);
         max-width: 100%;
         margin: 0 auto;
-        padding: 0.75rem 0.875rem 0.5rem 2rem;
+        padding: var(--space-3, 0.75rem) var(--space-3, 0.875rem) var(--space-2, 0.5rem) var(--space-6, 2rem);
     }
     
     .search-prompt {
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--space-2, 0.5rem);
     }
     
     .search-match {
-        padding: 0.3rem 0;
+        padding: var(--space-1, 0.3rem) 0;
     }
     
     .search-match-shortcut {
@@ -790,7 +790,7 @@
     }
     
     .search-button {
-        padding: 0.8rem 1rem;
+        padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
         font-size: var(--font-size-controls);
     }
     
@@ -811,7 +811,7 @@
     
     .dashboard-section.section-controls,
     .config-section.section-header {
-        padding-top: 1rem;
+        padding-top: var(--space-4, 1rem);
     }
 
     .dashboard-section.section-controls {
@@ -819,7 +819,7 @@
     }
 
     .config-section.section-header {
-        padding-bottom: 1rem;
+        padding-bottom: var(--space-4, 1rem);
     }
     
     .dashboard-section.section-title,
@@ -830,22 +830,22 @@
     
     .dashboard-section.section-content {
         padding-top: 0;
-        padding-bottom: 3rem; /* Space for search button */
+        padding-bottom: var(--space-7, 3rem); /* Space for search button */
     }
     
     .config-section.section-content {
-        padding-top: 0.5rem;
-        padding-bottom: 1rem;
+        padding-top: var(--space-2, 0.5rem);
+        padding-bottom: var(--space-4, 1rem);
     }
     
     .container {
-        padding: 0 0.5rem;
+        padding: 0 var(--space-2, 0.5rem);
     }
     
     .header-top {
         flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .title {
@@ -853,14 +853,14 @@
     }
 
     .header-actions {
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
         margin-left: auto;
     }
     
     .header {
         flex-direction: column;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
     
     .header .nav-links,
@@ -868,14 +868,14 @@
         order: -1;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .header.config-header-top {
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .header.config-header-top .header-links {
@@ -883,7 +883,7 @@
         flex-direction: row;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.5rem 0.75rem;
+        gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
 
     .config-header-top .header-actions {
@@ -893,12 +893,12 @@
     .page-navigation {
         flex-wrap: nowrap;
         overflow-x: auto;
-        gap: 0.125rem;
+        gap: var(--space-hairline, 0.125rem);
         justify-content: flex-start;
     }
 
     .page-nav-btn {
-        padding: 0.25rem 0.35rem;
+        padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem);
         font-size: var(--font-size-controls);
         white-space: nowrap;
     }
@@ -910,27 +910,27 @@
     
     /* Config page mobile extra small styles */
     .section {
-        margin-bottom: 1rem;
+        margin-bottom: var(--space-4, 1rem);
     }
     
     .section h2 {
-        margin-bottom: 0.75rem;
+        margin-bottom: var(--space-3, 0.75rem);
     }
     
     .form-group {
-        margin-bottom: 0.875rem;
+        margin-bottom: var(--space-3, 0.875rem);
     }
     
     .form-control {
-        padding: 0.5rem;
+        padding: var(--space-2, 0.5rem);
     }
     
     .btn {
-        padding: 0.5rem 0.75rem;
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
     
     .config-actions {
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
     
     .notification {
@@ -939,45 +939,45 @@
         left: auto;
         margin: 0;
         max-width: 280px;
-        padding: 0.75rem;
+        padding: var(--space-3, 0.75rem);
         text-align: left;
     }
     
     .category-item,
     .bookmark-item,
     .finder-item {
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
     
     .category-item input,
     .bookmark-item input,
     .bookmark-item select,
     .finder-item input {
-        margin-bottom: 0.375rem;
+        margin-bottom: var(--space-1-5, 0.375rem);
     }
     
     /* Modal extra small */
     .modal {
         max-width: 280px;
         width: 90%;
-        padding: 0.875rem 1rem;
+        padding: var(--space-3, 0.875rem) var(--space-4, 1rem);
     }
     
     .modal-body {
-        margin-bottom: 1rem;
+        margin-bottom: var(--space-4, 1rem);
     }
     
     .modal-actions {
-        gap: 0.75rem;
+        gap: var(--space-3, 0.75rem);
     }
     
     .modal-button {
-        padding: 0.3rem 0.5rem;
+        padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
     }
     
     .modal-button-prefix {
         min-width: 2ch;
-        margin-right: 0.75rem;
+        margin-right: var(--space-3, 0.75rem);
     }
     
     /* Tabs responsive - mobile extra small */
@@ -988,7 +988,7 @@
     }
     
     .tab-button {
-        padding: 0.5rem;
+        padding: var(--space-2, 0.5rem);
         font-size: var(--font-size-controls);
         text-align: center;
         width: 100%;
@@ -1004,7 +1004,7 @@
     .form-group:has(#language-select) {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: var(--space-2, 0.5rem);
     }
 
     .form-group:has(#theme-select) label,

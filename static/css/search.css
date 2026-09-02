@@ -29,7 +29,7 @@
 }
 
 .search-container {
-    padding: 1rem 1.25rem 0.75rem;
+    padding: var(--space-4, 1rem) 1.25rem var(--space-3, 0.75rem);
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
@@ -61,13 +61,13 @@
     align-items: center;
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2, 0.5rem);
     justify-content: flex-start;
 }
 
 .search-prefix {
     font-family: var(--font-family-main);
-    margin-right: 0.5rem;
+    margin-right: var(--space-2, 0.5rem);
     color: var(--accent-success);
     font-size: 0.65em;
     font-weight: var(--font-weight-semibold);
@@ -123,7 +123,7 @@
 .search-cursor {
     font-family: var(--font-family-main);
     animation: blink 1s infinite;
-    margin-left: 0.25rem;
+    margin-left: var(--space-1, 0.25rem);
     color: var(--text-primary);
 }
 
@@ -148,7 +148,7 @@
 .search-matches {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-hairline, 0.15rem);
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
@@ -165,8 +165,8 @@
     .search-container {
         width: calc(100vw - 1.5rem);
         max-height: calc(100dvh - 1.5rem);
-        padding: 0.85rem 1rem 0.65rem;
-        border-radius: 10px;
+        padding: var(--space-3, 0.85rem) var(--space-4, 1rem) var(--space-3, 0.65rem);
+        border-radius: var(--radius-6, 10px);
     }
 
     .search-matches {
@@ -184,12 +184,12 @@
 }
 
 .search-match {
-    padding: 0.4rem 0.5rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
     cursor: pointer;
     transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
     border: none;
     border-left: 2px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--radius-3, 4px);
     background: transparent;
     text-align: left;
     display: flex;
@@ -233,7 +233,7 @@
 
 .search-match-shortcut {
     font-weight: var(--font-weight-bold);
-    margin-right: 1rem;
+    margin-right: var(--space-4, 1rem);
     min-width: 3ch;
     font-size: var(--font-size-controls);
     color: var(--accent-success);
@@ -245,8 +245,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-right: 0.6rem;
-    border-radius: 6px;
+    margin-right: var(--space-2, 0.6rem);
+    border-radius: var(--radius-4, 6px);
     overflow: hidden;
 }
 
@@ -268,7 +268,7 @@
 
 .search-match-meta {
     display: block;
-    margin-top: 0.08rem;
+    margin-top: var(--space-hairline, 0.08rem);
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-normal);
     color: var(--text-tertiary);
@@ -278,14 +278,14 @@
 .search-command-group-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.5rem 0.2rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-2, 0.5rem) var(--space-1, 0.2rem);
     cursor: pointer;
     user-select: none;
-    margin-top: 0.25rem;
+    margin-top: var(--space-1, 0.25rem);
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
     opacity: 0.55;
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     transition: opacity 0.15s ease;
@@ -371,7 +371,7 @@
     opacity: 0.9;
     cursor: default;
     pointer-events: none;
-    padding: 0.45rem 0.75rem;
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.75rem);
 }
 
 .search-no-match-label {
@@ -393,7 +393,7 @@
 .search-match.search-hint-entry {
     opacity: 0.7;
     border-left: 2px solid transparent;
-    padding-left: 0.25rem;
+    padding-left: var(--space-1, 0.25rem);
     transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
@@ -435,12 +435,12 @@
     flex-wrap: wrap;
     justify-content: center;
     align-content: flex-start;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     z-index: 1000;
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     box-sizing: border-box;
-    padding: 0.7rem 0 0;
+    padding: var(--space-3, 0.7rem) 0 0;
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -483,7 +483,7 @@
 .search-flow-chip,
 kbd.search-flow-chip {
     display: inline-block;
-    margin: 0 0.05rem;
+    margin: 0 var(--space-hairline, 0.05rem);
     color: var(--accent-primary);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-semibold);
@@ -555,10 +555,10 @@ body.no-animations .sfh-seg {
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
-    padding: 0.2rem 0.5rem;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.5rem);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     color: var(--text-secondary);
     font-family: var(--font-family-main);
     font-size: calc(var(--font-size-controls) * 0.85);
@@ -590,7 +590,7 @@ body.no-animations .search-button[data-tooltip]::after {
 /* Search Button */
 .search-button {
     /* Button styling */
-    padding: 0.62rem 0.92rem;
+    padding: var(--space-2, 0.62rem) var(--space-4, 0.92rem);
     border: 1px solid var(--border-primary);
     /* --search-button-under is what the wash sits on: transparent by default,
        and the page background wherever the button floats over content with no
@@ -605,7 +605,7 @@ body.no-animations .search-button[data-tooltip]::after {
     /* TTY terminal style */
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
     border-radius: var(--layout-radius-md, 0.65rem);
     
     /* Transitions */
@@ -753,7 +753,7 @@ body[data-button-position="bottom-right"] .button-container {
     align-items: flex-end;
     width: auto;
     padding: 0;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     border-radius: 0;
     background: transparent;
     backdrop-filter: none;
@@ -769,7 +769,7 @@ body[data-button-position="bottom-left"] .btn-group,
 body[data-button-position="bottom-right"] .btn-group {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1, 0.3rem);
 }
 
 body[data-button-position="bottom-left"] .btn-group-secondary,
@@ -861,9 +861,9 @@ mark.search-highlight {
 /* Search mode tabs — shown at the bottom of the search container */
 .search-mode-tabs {
     display: flex;
-    gap: 0.4rem;
-    padding-top: 0.6rem;
-    margin-top: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding-top: var(--space-2, 0.6rem);
+    margin-top: var(--space-1-5, 0.4rem);
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
     flex-shrink: 0;
 }
@@ -871,10 +871,10 @@ mark.search-highlight {
 .search-mode-tab {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.2rem 0.55rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
     border: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: transparent;
     color: var(--text-tertiary);
     font-family: var(--font-family-main);
@@ -895,7 +895,7 @@ mark.search-highlight {
 .search-mode-tab:focus-visible {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
 }
 
 .search-mode-tab-key {
@@ -938,26 +938,26 @@ body.no-animations .search-mode-tab {
 .search-history-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
-    padding: 0.4rem 1.25rem 0.5rem;
+    gap: var(--space-1-5, 0.35rem);
+    padding: var(--space-1-5, 0.4rem) 1.25rem var(--space-2, 0.5rem);
 }
 
 .search-history-chip-wrap {
     display: inline-flex;
     align-items: center;
-    gap: 0.1rem;
+    gap: var(--space-hairline, 0.1rem);
     max-width: 100%;
 }
 
 .search-history-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.2rem 0.6rem;
-    border-radius: 999px;
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.6rem);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--text-xs, 0.72rem);
     font-family: inherit;
     line-height: 1.4;
     cursor: pointer;
@@ -978,7 +978,7 @@ body.no-animations .search-mode-tab {
 .search-history-chip.keyboard-selected-chip {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
 }
 
 .search-history-chip.keyboard-selected-chip {
@@ -989,7 +989,7 @@ body.no-animations .search-mode-tab {
 
 .search-history-chip-row.keyboard-selected {
     background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
 }
 
 .search-history-chip-remove,
@@ -1002,10 +1002,10 @@ body.no-animations .search-mode-tab {
     height: 1.25rem;
     padding: 0;
     border: none;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
     background: transparent;
     color: var(--text-tertiary);
-    font-size: 0.95rem;
+    font-size: var(--text-base, 0.95rem);
     line-height: 1;
     cursor: pointer;
     opacity: 0;
@@ -1019,7 +1019,7 @@ body.no-animations .search-mode-tab {
     opacity: 1;
     outline: 2px solid var(--accent-primary);
     outline-offset: 1px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill, 999px);
 }
 
 .search-history-chip-remove:hover,
@@ -1031,7 +1031,7 @@ body.no-animations .search-mode-tab {
 .search-match.history-entry {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .search-match.history-entry .search-match-name {
@@ -1050,7 +1050,7 @@ body[data-button-position="side-left"] .shortcut-search,
 body[data-button-position="bottom-left"] .shortcut-search,
 body[data-button-position="bottom-right"] .shortcut-search {
     justify-content: center;
-    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
 }
 
 body[data-button-position="side-left"] .shortcut-search .search-container,
@@ -1061,7 +1061,7 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 
 .search-command-chip {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.68rem;
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--accent-primary);
     border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
@@ -1093,7 +1093,7 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
    single-letter bookmark shortcut is visible when you need it. */
 .search-chevron {
     font-family: var(--font-family-main);
-    margin-right: 0.3rem;
+    margin-right: var(--space-1, 0.3rem);
     font-size: 0.85em;
     font-weight: var(--font-weight-semibold);
     color: var(--accent-success);
@@ -1108,7 +1108,7 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 /* Shown only once there is something to clear. Escape does the same, but a line
    you typed into needs an exit you can point at — and touch has no Escape. */
 .search-clear {
-    margin-left: 0.5rem;
+    margin-left: var(--space-2, 0.5rem);
     padding: 0 0.35em;
     border: 1px solid var(--border-secondary);
     border-radius: var(--layout-radius-sm, 8px);
@@ -1141,12 +1141,12 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 .search-group-more {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.5rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     cursor: pointer;
     user-select: none;
     opacity: 0.6;
-    font-size: 0.78rem;
+    font-size: var(--text-sm, 0.78rem);
     transition: opacity 0.15s ease;
 }
 

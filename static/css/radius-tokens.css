@@ -1,0 +1,42 @@
+/* Radius tokens — the scale for border-radius across the dashboard.
+
+   Unscoped, same reasoning as spacing-tokens.css and typography-tokens.css.
+
+   layout-modern-tokens.css already defines --layout-radius-sm/md/lg/pill
+   (8/12/16px/pill), but only for body[data-layout-version="modern"] — and
+   only four steps, which is coarser than what classic actually uses today.
+   Measured across every static/css/*.css file: 352 border-radius
+   declarations, mixing px and rem for the same handful of intended sizes
+   (3px sitting next to 0.2rem, 4px next to 0.25rem, and so on), clustering
+   around eight real steps rather than four:
+
+     --radius-1     2px    barely-rounded corners (chips, thin borders)
+     --radius-2     3px
+     --radius-3     4px    the single largest cluster in the app
+     --radius-4     6px    the second-largest cluster
+     --radius-5     8px    matches --layout-radius-sm in the modern layer
+     --radius-6     10px
+     --radius-7     12px   matches --layout-radius-md in the modern layer
+     --radius-pill  999px  fully round — already used consistently (82
+                           uses, already all 999px); named for the same
+                           reason the others are, not because it needed
+                           consolidating
+
+   Deliberately in px, not rem: border-radius does not need to scale with
+   the user's font-size setting the way spacing and type do, and every
+   existing literal in the codebase already mixes both units for the same
+   intended size — a single unit removes that mismatch outright.
+
+   One declaration (20px, in responsive.css) sat 8px from the nearest step
+   and was left as a literal rather than forced onto --radius-7. */
+
+:root {
+    --radius-1: 2px;
+    --radius-2: 3px;
+    --radius-3: 4px;
+    --radius-4: 6px;
+    --radius-5: 8px;
+    --radius-6: 10px;
+    --radius-7: 12px;
+    --radius-pill: 999px;
+}

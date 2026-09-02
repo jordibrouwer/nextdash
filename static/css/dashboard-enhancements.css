@@ -42,11 +42,11 @@ kbd,
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.35rem 0.55rem;
+    gap: var(--space-1, 0.2rem);
+    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-3, 0.3rem);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     pointer-events: none;
     white-space: nowrap;
@@ -80,7 +80,7 @@ kbd,
 .toolbar-kbd-tooltip-keys {
     display: inline-flex;
     align-items: center;
-    gap: 0.15rem;
+    gap: var(--space-hairline, 0.15rem);
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -103,7 +103,7 @@ kbd,
     left: -9999px;
     top: 0;
     z-index: 10000;
-    padding: 0.5rem 1rem;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
     background: var(--bg-primary, #000);
     color: var(--text-primary, #fff);
     border: 1px solid var(--text-primary);
@@ -126,13 +126,13 @@ kbd,
 
 .header-top {
     flex-wrap: wrap;
-    gap: 0.75rem 1rem;
+    gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
 }
 
 .header-top-primary {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     flex: 1 1 12rem;
     min-width: 0;
 }
@@ -171,14 +171,14 @@ body[data-layout-version="classic"] .page-swipe-hint {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.15rem;
+    gap: var(--space-hairline, 0.15rem);
     min-width: 2.75rem;
-    padding: 0.55rem 0.45rem !important;
+    padding: var(--space-2, 0.55rem) var(--space-2, 0.45rem) !important;
 }
 
 .search-button-label {
     display: none;
-    font-size: 0.58rem;
+    font-size: var(--text-2xs, 0.58rem);
     line-height: 1;
     text-transform: lowercase;
     color: var(--text-secondary);

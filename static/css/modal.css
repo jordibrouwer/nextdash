@@ -22,7 +22,7 @@
 }
 
 .modal {
-    padding: 1.5rem 2rem;
+    padding: var(--space-5, 1.5rem) var(--space-6, 2rem);
     max-width: 400px;
     width: 90%;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
@@ -59,7 +59,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 0.25rem;
+    padding-right: var(--space-1, 0.25rem);
 }
 
 /* Config → Help: same What's new shell as dashboard toolbar modals (centered) */
@@ -94,13 +94,13 @@ body.no-animations:has(#config-main) #app-modal.modal-overlay:has(.whats-new-mod
 .wn-skeleton-stack {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
-    margin-top: 0.5rem;
+    gap: var(--space-2, 0.55rem);
+    margin-top: var(--space-2, 0.5rem);
 }
 
 .wn-skeleton-line {
     height: 0.72rem;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-3, 0.25rem);
     background: linear-gradient(
         90deg,
         color-mix(in srgb, var(--border-primary) 55%, transparent) 0%,
@@ -116,16 +116,16 @@ body.no-animations:has(#config-main) #app-modal.modal-overlay:has(.whats-new-mod
 }
 
 .wn-empty {
-    margin: 0.5rem 0;
+    margin: var(--space-2, 0.5rem) 0;
     color: var(--text-secondary);
     line-height: 1.55;
 }
 
 .wn-release-loading {
-    margin: 1rem 0;
+    margin: var(--space-4, 1rem) 0;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
 }
 
 @keyframes wnSkeletonShimmer {
@@ -163,7 +163,7 @@ body.no-animations .wn-skeleton-line {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: 0.65rem 1rem;
+    gap: var(--space-3, 0.65rem) var(--space-4, 1rem);
     flex-wrap: nowrap;
 }
 
@@ -181,7 +181,7 @@ body.no-animations .wn-skeleton-line {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     min-width: 0;
 }
 
@@ -204,15 +204,15 @@ body.no-animations .wn-skeleton-line {
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 0.35rem 0.45rem;
+    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.45rem);
     min-width: 0;
     flex: 1 1 auto;
 }
 
 .wn-update-check-dismiss {
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
     border: none;
-    border-radius: 0.35rem;
+    border-radius: var(--radius-4, 0.35rem);
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
@@ -262,12 +262,12 @@ body.no-animations .wn-skeleton-line {
 .wn-kofi-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.75rem;
+    gap: var(--space-1-5, 0.4rem);
+    padding: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
     background: color-mix(in srgb, var(--accent-primary) 13%, transparent);
     color: var(--accent-primary);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 32%, transparent);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-4, 0.4rem);
     text-decoration: none;
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -340,7 +340,7 @@ body.no-animations .wn-skeleton-line {
 .wn-kofi-star::before {
     content: '★';
     display: block;
-    font-size: 0.62rem;
+    font-size: var(--text-2xs, 0.62rem);
 }
 
 .wn-kofi-star:nth-child(1) {
@@ -449,8 +449,8 @@ body.no-animations .wn-kofi-star {
    =========================================================================== */
 
 .wn-hero {
-    padding-bottom: 1.1rem;
-    margin-bottom: 0.4rem;
+    padding-bottom: var(--space-4, 1.1rem);
+    margin-bottom: var(--space-1-5, 0.4rem);
     border-bottom: 1px solid var(--border-primary);
 }
 
@@ -467,7 +467,7 @@ body.no-animations .wn-kofi-star {
 }
 
 .wn-hero-meta {
-    margin: 0.2rem 0 0;
+    margin: var(--space-1, 0.2rem) 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-tertiary);
     letter-spacing: 0.02em;
@@ -476,14 +476,14 @@ body.no-animations .wn-kofi-star {
 /* modalLead, written per release and previously boxed. A subtitle is what it
    always was. */
 .wn-hero-lead {
-    margin: 0.75rem 0 0;
+    margin: var(--space-3, 0.75rem) 0 0;
     font-size: var(--font-size-text);
     line-height: 1.55;
     color: var(--text-primary);
     max-width: 46ch;
 }
 
-.wn-group { margin-top: 1.5rem; }
+.wn-group { margin-top: var(--space-5, 1.5rem); }
 
 /* An eyebrow rather than a heading: the group name is a label on what follows,
    and at heading weight it competed with the entry titles it introduces. */
@@ -491,9 +491,9 @@ body.no-animations .wn-kofi-star {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.6rem;
-    margin: 0 0 0.6rem;
-    padding-bottom: 0.35rem;
+    gap: var(--space-2, 0.6rem);
+    margin: 0 0 var(--space-2, 0.6rem);
+    padding-bottom: var(--space-1-5, 0.35rem);
     border-bottom: 1px solid var(--border-primary);
     font-size: calc(var(--font-size-controls) * 0.86);
     font-weight: var(--font-weight-semibold);
@@ -516,8 +516,8 @@ body.no-animations .wn-kofi-star {
 .wn-entry {
     display: grid;
     grid-template-columns: 2.4rem 1fr;
-    gap: 0 0.6rem;
-    padding: 0.5rem 0;
+    gap: 0 var(--space-2, 0.6rem);
+    padding: var(--space-2, 0.5rem) 0;
     align-items: start;
 }
 .wn-entry + .wn-entry {
@@ -545,10 +545,10 @@ body.no-animations .wn-kofi-star {
    and neither can collide with a hue it does not use. */
 .wn-badge {
     justify-self: start;
-    margin-top: 0.34rem;
-    padding: 0.08rem 0.3rem;
-    border-radius: 0.25rem;
-    font-size: 0.62rem;
+    margin-top: var(--space-1-5, 0.34rem);
+    padding: var(--space-hairline, 0.08rem) var(--space-1, 0.3rem);
+    border-radius: var(--radius-3, 0.25rem);
+    font-size: var(--text-2xs, 0.62rem);
     font-weight: var(--font-weight-semibold);
     line-height: 1.5;
     letter-spacing: 0.06em;
@@ -592,7 +592,7 @@ body.no-animations .wn-kofi-star {
 }
 
 .wn-entry-body {
-    margin-top: 0.15rem;
+    margin-top: var(--space-hairline, 0.15rem);
     font-size: calc(var(--font-size-text) * 0.95);
     line-height: 1.55;
     color: var(--text-secondary);
@@ -614,12 +614,12 @@ body.no-animations .wn-kofi-star {
     font-size: 0.88em;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    padding: 0.05rem 0.28rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.28rem);
     color: var(--text-primary);
 }
 
 .wn-entry-more {
-    margin-top: 0.2rem;
+    margin-top: var(--space-1, 0.2rem);
     padding: 0;
     background: none;
     border: 0;
@@ -638,7 +638,7 @@ body.no-animations .wn-kofi-star {
 .wn-entry--keys {
     grid-template-columns: auto 1fr;
     align-items: baseline;
-    gap: 0 0.55rem;
+    gap: 0 var(--space-2, 0.55rem);
 }
 .wn-keycap {
     flex-shrink: 0;
@@ -649,7 +649,7 @@ body.no-animations .wn-kofi-star {
     background: color-mix(in srgb, var(--accent-warning) 12%, var(--background-primary));
     border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, transparent);
     border-radius: var(--layout-radius-sm, 5px);
-    padding: 0.1rem 0.4rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
     white-space: nowrap;
     min-width: 2.2rem;
     text-align: center;
@@ -659,13 +659,13 @@ body.no-animations .wn-kofi-star {
 /* ---- Everything older, one row each ------------------------------------- */
 
 .wn-earlier {
-    margin-top: 2rem;
-    padding-top: 1.1rem;
+    margin-top: var(--space-6, 2rem);
+    padding-top: var(--space-4, 1.1rem);
     border-top: 1px solid var(--border-primary);
 }
 
 .wn-earlier-title {
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1-5, 0.4rem);
     font-size: calc(var(--font-size-controls) * 0.86);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.14em;
@@ -682,9 +682,9 @@ body.no-animations .wn-kofi-star {
 .wn-earlier-row {
     display: flex;
     align-items: baseline;
-    gap: 0.6rem;
+    gap: var(--space-2, 0.6rem);
     width: 100%;
-    padding: 0.45rem 0;
+    padding: var(--space-2, 0.45rem) 0;
     background: none;
     border: 0;
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
@@ -719,11 +719,11 @@ body.no-animations .wn-earlier-chevron { transition: none; }
    one place the old left-hand accent rule still earns its keep: it marks a
    containment that is really there. */
 .wn-earlier-body {
-    padding: 0.1rem 0 1rem 0.9rem;
-    margin-left: 0.15rem;
+    padding: var(--space-hairline, 0.1rem) 0 var(--space-4, 1rem) var(--space-4, 0.9rem);
+    margin-left: var(--space-hairline, 0.15rem);
     border-left: 2px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
-.wn-earlier-body .wn-group:first-child { margin-top: 0.8rem; }
+.wn-earlier-body .wn-group:first-child { margin-top: var(--space-3, 0.8rem); }
 .wn-earlier-body .wn-group-title { border-bottom-color: color-mix(in srgb, var(--border-primary) 70%, transparent); }
 
 /* ---- The footer, where the asking happens ------------------------------- */
@@ -738,10 +738,10 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem 1rem;
+    gap: var(--space-2, 0.6rem) var(--space-4, 1rem);
     flex-wrap: wrap;
-    margin-top: 1.6rem;
-    padding: 0.6rem 0 0.2rem;
+    margin-top: var(--space-5, 1.6rem);
+    padding: var(--space-2, 0.6rem) 0 var(--space-1, 0.2rem);
     border-top: 1px solid var(--border-primary);
     background: var(--background-primary);
 }
@@ -756,7 +756,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
    width -- a horizontal scrollbar under a modal that has nothing to scroll
    sideways to. The gap is where the decoration lives, so it does not read as
    a misalignment. */
-.wn-foot .wn-kofi-btn { margin-right: 0.75rem; }
+.wn-foot .wn-kofi-btn { margin-right: var(--space-3, 0.75rem); }
 
 /* Smaller here than in the Config panels that share this class.
 
@@ -765,9 +765,9 @@ body.no-animations .wn-earlier-chevron { transition: none; }
    reachable, but sized like the footnote it now is rather than like the
    heaviest thing on screen. */
 .wn-foot .wn-kofi-btn {
-    gap: 0.3rem;
-    padding: 0.18rem 0.5rem;
-    border-radius: 0.3rem;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-hairline, 0.18rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-3, 0.3rem);
     font-size: calc(var(--font-size-controls) * 0.88);
 }
 .wn-foot .wn-kofi-icon {
@@ -784,14 +784,14 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.2rem;
+    padding: var(--space-4, 1rem) 1.2rem;
 }
 
 .modal.keyboard-cheat-sheet-modal .modal-body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 0.25rem;
+    padding-right: var(--space-1, 0.25rem);
 }
 
 .modal.inbox-intro-modal {
@@ -802,27 +802,27 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.2rem;
+    padding: var(--space-4, 1rem) 1.2rem;
 }
 
 .modal.inbox-intro-modal .modal-body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 0.25rem;
+    padding-right: var(--space-1, 0.25rem);
 }
 
 .inbox-intro-content {
     display: flex;
     flex-direction: column;
-    gap: 1.1rem;
+    gap: var(--space-4, 1.1rem);
 }
 
 .inbox-intro-hero {
     display: flex;
     align-items: flex-start;
-    gap: 0.85rem;
-    padding: 0.85rem 0.95rem;
+    gap: var(--space-3, 0.85rem);
+    padding: var(--space-3, 0.85rem) var(--space-4, 0.95rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
     border-left: 3px solid var(--accent-primary);
@@ -833,7 +833,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     flex-shrink: 0;
     font-size: 1.65rem;
     line-height: 1;
-    margin-top: 0.05rem;
+    margin-top: var(--space-hairline, 0.05rem);
 }
 
 .inbox-intro-hero-text {
@@ -850,7 +850,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .inbox-intro-section {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: var(--space-2, 0.55rem);
     margin: 0;
     padding: 0;
 }
@@ -858,7 +858,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .inbox-intro-section-title {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
     margin: 0;
     font-size: var(--font-size-category);
     font-weight: var(--font-weight-semibold);
@@ -872,7 +872,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     justify-content: center;
     width: 1.35rem;
     height: 1.35rem;
-    font-size: 0.95rem;
+    font-size: var(--text-base, 0.95rem);
     line-height: 1;
     flex-shrink: 0;
 }
@@ -882,14 +882,14 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.5rem;
+    gap: var(--space-2, 0.5rem);
 }
 
 .inbox-intro-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.65rem;
-    padding: 0.55rem 0.65rem;
+    gap: var(--space-3, 0.65rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.65rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
@@ -903,8 +903,8 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     justify-content: center;
     width: 1.65rem;
     height: 1.65rem;
-    border-radius: 0.4rem;
-    font-size: 1rem;
+    border-radius: var(--radius-4, 0.4rem);
+    font-size: var(--text-md, 1rem);
     line-height: 1;
     background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
     border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
@@ -930,21 +930,21 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     font-size: 0.88em;
     background: var(--background-primary);
     border: 1px solid var(--border-primary);
-    padding: 0.05rem 0.3rem;
-    border-radius: 0.25rem;
+    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
+    border-radius: var(--radius-3, 0.25rem);
     color: var(--text-primary);
 }
 
 .inbox-intro-shortcuts {
     display: grid;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
 }
 
 .inbox-intro-shortcut {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.65rem;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
     border-radius: var(--layout-radius-sm, 8px);
     border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
     background: color-mix(in srgb, var(--accent-primary) 6%, var(--background-secondary));
@@ -962,7 +962,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .modal.inbox-intro-modal .modal-header .modal-title {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 /* Page overview — compact centered modal (dashboard header pages button) */
@@ -974,20 +974,20 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.15rem;
+    padding: var(--space-4, 1rem) var(--space-4, 1.15rem);
 }
 
 .modal.page-overview-modal .modal-body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 0.2rem;
+    padding-right: var(--space-1, 0.2rem);
     /* The last child ends flush with this scroll box, and overflow clipping eats
        the final pixel row — the name input's bottom border went missing. A pixel
        of padding gives that border somewhere to land. */
     padding-bottom: 1px;
-    margin-top: 0.55rem;
-    margin-bottom: 0.25rem;
+    margin-top: var(--space-2, 0.55rem);
+    margin-bottom: var(--space-1, 0.25rem);
 }
 
 .page-overview-modal-list {
@@ -996,7 +996,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: var(--space-2, 0.45rem);
     max-height: min(52vh, 24rem);
     overflow-y: auto;
 }
@@ -1010,10 +1010,10 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
     width: 100%;
     margin: 0;
-    padding: 0.55rem 0.7rem;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.7rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-primary);
@@ -1043,7 +1043,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .page-overview-modal-lead {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--space-1, 0.25rem);
     min-width: 1.5rem;
     justify-content: flex-end;
 }
@@ -1078,8 +1078,8 @@ body.no-animations .wn-earlier-chevron { transition: none; }
    border: a thing to do, not a page to go to. */
 
 .page-overview-modal-actions {
-    margin-top: 0.55rem;
-    padding-top: 0.55rem;
+    margin-top: var(--space-2, 0.55rem);
+    padding-top: var(--space-2, 0.55rem);
     border-top: 1px solid var(--border-primary);
 }
 
@@ -1108,7 +1108,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
 }
 
 .page-overview-modal-actions .bookmark-inline-create[hidden] {
@@ -1118,7 +1118,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .page-overview-modal-actions .bookmark-inline-create-input {
     flex: 1 1 8rem;
     min-width: 0;
-    padding: 0.4rem 0.5rem;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-primary);
@@ -1150,23 +1150,23 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 }
 
 .modal-title {
-    margin-right: 0.5rem;
+    margin-right: var(--space-2, 0.5rem);
     color: var(--text-primary);
 }
 
 .modal-body {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-top: var(--space-5, 1.5rem);
+    margin-bottom: var(--space-5, 1.5rem);
 }
 
 /* New bookmark modal textarea */
 .new-bookmark-textarea {
     width: 100%;
     min-height: 4rem;
-    padding: 0.5rem;
-    font-size: 0.95rem;
+    padding: var(--space-2, 0.5rem);
+    font-size: var(--text-base, 0.95rem);
     resize: vertical;
-    margin-top: 0.35rem;
+    margin-top: var(--space-1-5, 0.35rem);
 }
 
 .modal-text {
@@ -1178,7 +1178,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 /* The existing bookmark inside the "already saved" dialog: a link, because
    knowing where a copy is only helps if you can go there from here. */
 .duplicate-existing {
-    margin-top: 0.6rem;
+    margin-top: var(--space-2, 0.6rem);
 }
 
 .duplicate-existing a {
@@ -1188,7 +1188,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 
 .duplicate-existing-hint {
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-secondary);
 }
 
@@ -1200,13 +1200,13 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .modal-actions {
     display: flex;
     flex-direction: row;
-    gap: 1rem;
+    gap: var(--space-4, 1rem);
     justify-content: center;
     align-items: center;
 }
 
 .modal-button {
-    padding: 0.5rem 1rem;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid var(--border-primary);
@@ -1238,7 +1238,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 
 .modal-button-prefix {
     font-weight: var(--font-weight-bold);
-    margin-right: 1rem;
+    margin-right: var(--space-4, 1rem);
     min-width: 3ch;
     font-size: var(--font-size-controls);
     color: var(--accent-success);
@@ -1288,8 +1288,8 @@ body.no-animations .modal-button.danger.selected {
 /* ESC to close hint */
 .modal-esc-hint {
     text-align: center;
-    margin-top: 0.75rem;
-    font-size: 0.68rem;
+    margin-top: var(--space-3, 0.75rem);
+    font-size: var(--text-2xs, 0.68rem);
     color: var(--text-tertiary);
     opacity: 0.6;
     user-select: none;
@@ -1298,13 +1298,13 @@ body.no-animations .modal-button.danger.selected {
 
 .modal-esc-hint kbd {
     font-family: var(--font-family-main);
-    font-size: 0.65rem;
+    font-size: var(--text-2xs, 0.65rem);
     font-weight: var(--font-weight-semibold);
-    padding: 0.1rem 0.32rem;
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.32rem);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     color: var(--text-tertiary);
-    border-radius: 3px;
+    border-radius: var(--radius-2, 3px);
     letter-spacing: 0.04em;
     line-height: 1;
     vertical-align: baseline;
@@ -1321,25 +1321,25 @@ body.no-animations .modal-button.danger.selected {
 /* Modal select styling */
 .modal-select {
     width: 100%;
-    padding: 0.5rem;
+    padding: var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
     font-family: inherit;
     font-size: var(--font-size-controls);
-    margin-top: 0.5rem;
+    margin-top: var(--space-2, 0.5rem);
 }
 
 /* Modal page list styling */
 .modal-page-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
 }
 
 .modal-page-btn {
-    padding: 0.5rem;
+    padding: var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -1373,10 +1373,10 @@ body.no-animations .modal-button.danger.selected {
     border-radius: var(--layout-radius-sm, 8px);
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.82rem;
-    margin-bottom: 0.75rem;
+    font-size: var(--text-sm, 0.82rem);
+    margin-bottom: var(--space-3, 0.75rem);
     outline: none;
-    padding: 0.35rem 0.65rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.65rem);
     transition: border-color 0.12s;
 }
 .cheat-sheet-filter:focus {
@@ -1388,9 +1388,9 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-no-results {
-    margin: 0.75rem 0 0;
+    margin: var(--space-3, 0.75rem) 0 0;
     color: var(--text-tertiary);
-    font-size: 0.9rem;
+    font-size: var(--text-base, 0.9rem);
 }
 
 /*
@@ -1398,8 +1398,8 @@ body.no-animations .modal-button.danger.selected {
  * shown outside the bookmarks default, where there is nothing to explain.
  */
 .cheat-sheet-context-lead {
-    margin: 0 0 0.6rem;
-    font-size: 0.72rem;
+    margin: 0 0 var(--space-2, 0.6rem);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-secondary);
 }
 
@@ -1413,7 +1413,7 @@ body.no-animations .modal-button.danger.selected {
  */
 .cheat-sheet-group--context > .cheat-sheet-group-title {
     border-left: 2px solid var(--accent-primary);
-    padding-left: 0.5rem;
+    padding-left: var(--space-2, 0.5rem);
     margin-left: -0.5rem;
     color: var(--accent-primary);
 }
@@ -1425,15 +1425,15 @@ body.no-animations .modal-button.danger.selected {
 .cheat-sheet-group-title {
     list-style: none;
     cursor: pointer;
-    padding: 0.5rem 0;
-    font-size: 0.7rem;
+    padding: var(--space-2, 0.5rem) 0;
+    font-size: var(--text-xs, 0.7rem);
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.06em;
     text-transform: lowercase;
     color: var(--text-tertiary);
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1-5, 0.4rem);
     user-select: none;
     border-radius: var(--layout-radius-xs, 6px);
 }
@@ -1476,11 +1476,11 @@ body.no-animations .modal-button.danger.selected {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2, 0.5rem);
 }
 
 .keyboard-cheat-sheet-table td {
-    padding: 0.22rem 0;
+    padding: var(--space-1, 0.22rem) 0;
     border-bottom: 1px solid var(--border-primary);
     vertical-align: top;
     line-height: 1.35;
@@ -1492,18 +1492,18 @@ body.no-animations .modal-button.danger.selected {
 
 .keyboard-cheat-sheet-keys {
     font-family: "Source Code Pro", monospace;
-    font-size: 0.8rem;
+    font-size: var(--text-sm, 0.8rem);
     font-weight: var(--font-weight-bold);
     color: var(--accent-primary);
     white-space: normal;
     word-break: break-word;
-    padding-right: 1rem;
+    padding-right: var(--space-4, 1rem);
     width: 40%;
 }
 
 .keyboard-cheat-sheet-description {
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: var(--text-base, 0.875rem);
     min-width: 0;
     overflow-wrap: anywhere;
     width: 60%;

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.5.1 — 2 September 2026](#v1451--2-september-2026)
 - [v1.4.5 — 1 September 2026](#v145--1-september-2026)
 - [v1.4.4.1 — 31 August 2026](#v1441--31-august-2026)
 - [v1.4.4 — 31 August 2026](#v144--31-august-2026)
@@ -188,6 +189,22 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.5.1 — 2 September 2026
+
+### Pages & tags
+
+- **fix — one row at a time carries the keyboard cursor.** `listRowKey()` knew five row kinds — page, category, tag, finder, collection — but not the widget rows `interleaveWidgetRows()` splices into the categories list, which carry `data-block-row`. Those returned `null`, and `applyListKeyboardSelection()` compared with `===` against a stored key that is also `null` until an arrow key is pressed, so every widget row matched at once: thirteen of twenty-four rows wore the cursor accent the moment the tab opened. Widget rows have a key of their own now, and a row without a key is never the cursor regardless of what is stored. The same null guard was applied to the bookmarks list, which had the identical comparison.
+
+### Docs
+
+- Config list rows share the widget row's border, radius, padding and fill — the Pages & tags, stored-backup, attention and add-widget rows each sat a step off it.
+- Spacing, type size and radius across the dashboard read from three new token files (`spacing-tokens.css`, `typography-tokens.css`, `radius-tokens.css`) rather than from literals repeated per stylesheet.
+- Saving a category span sends the write token, so the call succeeds on installs that set `NEXTDASH_WRITE_TOKEN`.
+- The Docker build cross-compiles per target architecture instead of compiling under QEMU emulation, which shortens arm64 image builds.
+- The Unraid template carries a fuller overview, the donate links and four more screenshots.
 
 ---
 

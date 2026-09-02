@@ -17,8 +17,8 @@
     position: relative;
     display: grid;
     grid-template-columns: 3rem 1fr;
-    gap: 0.85rem;
-    padding: 0.75rem 0.85rem;
+    gap: var(--space-3, 0.85rem);
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
@@ -101,7 +101,7 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 .feed-list {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--space-3, 0.65rem);
 }
 
 /* The row's action bar, revealed on hover, focus or the keyboard cursor.
@@ -121,7 +121,7 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 .feed-row-actions > * {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: var(--space-1-5, 0.35rem);
     min-height: 0;
     overflow: hidden;
 }
@@ -130,7 +130,7 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 .feed-row:focus-within .feed-row-actions,
 .feed-row.keyboard-selected .feed-row-actions {
     grid-template-rows: 1fr;
-    margin-top: 0.55rem;
+    margin-top: var(--space-2, 0.55rem);
     opacity: 1;
 }
 
@@ -147,7 +147,7 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 @media (hover: none) {
     .feed-row-actions {
         grid-template-rows: 1fr;
-        margin-top: 0.55rem;
+        margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
 }
@@ -155,7 +155,7 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 @media (max-width: 520px) {
     .feed-row-actions {
         grid-template-rows: 1fr;
-        margin-top: 0.55rem;
+        margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
 }
