@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.24-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -11,9 +11,15 @@ COPY . .
 # Precompute static asset hashes at build time (served from embed in production).
 RUN go run scripts/gen-asset-hashes.go
 
+# TARGETOS/TARGETARCH are set automatically by buildx per platform in the
+# build matrix (e.g. linux/arm64). Combined with --platform=$BUILDPLATFORM
+# above, this makes Go cross-compile natively instead of compiling under
+# QEMU emulation, which is dramatically faster for arm64 builds.
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=dev
 ARG COMMIT=unknown
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix cgo \
     -ldflags "-s -w -X github.com/jordibrouwer/nextDash/internal/app.buildVersion=${VERSION} -X github.com/jordibrouwer/nextDash/internal/app.buildCommit=${COMMIT}" \
     -o main .
 
