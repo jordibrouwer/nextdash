@@ -226,4 +226,4 @@ push_main_and_tag "$TAG"
 publish_github_release "$TAG"
 git checkout dev
 
-echo "Released $TAG on main."
+echo "Released $TAG on main." 
