@@ -9334,6 +9334,15 @@ class DashboardConfig {
                 // until the view was rebuilt from scratch.
                 this._themeList = null;
                 void this.loadThemeList();
+                // colors.json is hashed into the settings fingerprint too, so
+                // adopt what this save produced -- otherwise the revision poll
+                // reads our own theme change as another device's and runs a full
+                // settings refresh against it on the next focus.
+                try {
+                    await this.dash.data?.fetchDataRevision?.();
+                    const seen = this.dash.data?._lastSettingsRevision;
+                    if (seen) this.dash._serverSettingsRevision = seen;
+                } catch { /* the poll corrects itself on its next pass */ }
                 this.notify(this.t('config.saved', 'Saved'), 'success');
                 return true;
             } catch {

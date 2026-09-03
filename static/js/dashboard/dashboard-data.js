@@ -1350,6 +1350,26 @@ class DashboardData {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
             void d.inbox?.bootstrap?.();
+            /*
+             * Adopt the fingerprint this save just produced.
+             *
+             * The revision poll compares the server's settingsRevision against
+             * _serverSettingsRevision, and nothing recorded a save made *here* --
+             * so the next focus or tab-switch saw its own change as somebody
+             * else's and ran a full settings refresh against itself. That
+             * replaces d.settings wholesale and re-renders, which throws away a
+             * field typed but not yet committed: type a weather location, glance
+             * at another window, come back to an empty box.
+             *
+             * Awaited before publishing, so a listener that polls on the message
+             * sees the updated value rather than the one it replaces.
+             */
+            try {
+                await this.fetchDataRevision();
+                if (this._lastSettingsRevision) {
+                    d._serverSettingsRevision = this._lastSettingsRevision;
+                }
+            } catch { /* the poll corrects itself on its next pass */ }
             // Other tabs hold their own copy of settings; tell them it moved.
             d.configSync?.publishConfigSync?.('settings');
             return true;
