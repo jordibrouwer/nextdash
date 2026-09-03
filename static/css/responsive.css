@@ -742,7 +742,10 @@
     }
     
     .dashboard-grid {
-        gap: var(--space-hairline, 0rem);
+        /* Deliberately no gap on the narrowest screens, so this is a plain 0
+           rather than a token: the spacing scale has no zero step, and
+           --space-hairline turned it into 2.4px. */
+        gap: 0;
     }
     
     .category {
