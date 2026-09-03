@@ -21,7 +21,34 @@ async function dismissBlockingOverlays(page) {
     }
 }
 
+/*
+ * Wait until the palette has actually produced the match being aimed at.
+ *
+ * Typing is not the same as matching: the list is rebuilt as the query changes,
+ * and every test here that went from `type()` straight to Enter -- or straight
+ * to selectCommandMatch -- was racing that rebuild. Enter arriving early
+ * completes the command instead of running it, which the "Enter after command
+ * completion" test below pins as real behaviour, and selectCommandMatch threw
+ * `command match not found`. Both are the same missed beat, so waiting for it
+ * is the fix in one place.
+ */
+async function waitForCommandMatch(page, { stateId, shortcut, meta } = {}) {
+    await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => page.evaluate(({ stateId, shortcut, meta }) => {
+        const sc = window.dashboardInstance?.searchComponent;
+        return (sc?.selectableMatches || []).some((match) => {
+            if (stateId && match?.stateId === stateId) return true;
+            if (shortcut && String(match?.shortcut || '').toUpperCase() === String(shortcut).toUpperCase()) {
+                if (meta == null) return match?.type === 'command';
+                return String(match?.meta || '') === String(meta);
+            }
+            return false;
+        });
+    }, { stateId, shortcut, meta }), { timeout: 5000 }).toBe(true);
+}
+
 async function selectCommandMatch(page, { stateId, shortcut, meta } = {}) {
+    await waitForCommandMatch(page, { stateId, shortcut, meta });
     await page.evaluate(({ stateId, shortcut, meta }) => {
         const sc = window.dashboardInstance?.searchComponent;
         const idx = sc?.selectableMatches?.findIndex((match) => {
@@ -77,6 +104,13 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type('button', { delay: 20 });
+        /*
+         * Deliberately not waited for beyond the palette being up: the first
+         * Enter is supposed to arrive while `button` is still an incomplete
+         * command, so that it completes rather than runs. Waiting for the match
+         * makes the first press execute and the second toggle it straight back,
+         * which is the one arrangement this test cannot use.
+         */
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
@@ -89,6 +123,7 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type('buttons add', { delay: 20 });
+        await waitForCommandMatch(page, { stateId: 'buttons:add' });
         await page.locator('.search-match.command-entry').first().focus();
         await page.keyboard.press('Enter');
 
@@ -98,7 +133,7 @@ test.describe('dashboard command palette', () => {
     test(':buttons cheatsheet stays open and label updates after toggle', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('buttons cheatsheet', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await waitForCommandMatch(page, { shortcut: ':buttons' });
 
         const row = page.locator('.search-match.command-entry').first();
         const before = await row.innerText();
@@ -121,6 +156,7 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type(`page ${targetName}`, { delay: 15 });
+        await waitForCommandMatch(page, { shortcut: ':page' });
         await page.keyboard.press('Enter');
 
         await expect(page.locator('#shortcut-search.show')).toBeVisible();
@@ -134,7 +170,7 @@ test.describe('dashboard command palette', () => {
     test(':cheat closes palette and opens cheat sheet', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('cheat', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await selectCommandMatch(page, { shortcut: ':cheat' });
         await page.keyboard.press('Enter');
 
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
@@ -144,7 +180,8 @@ test.describe('dashboard command palette', () => {
     test(':help is an alias for :cheat', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('help', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        // Same command behind a second name, so the same match is waited for.
+        await selectCommandMatch(page, { shortcut: ':cheat' });
         await page.keyboard.press('Enter');
 
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
@@ -154,11 +191,7 @@ test.describe('dashboard command palette', () => {
     test(':cheat sheet lists health and inbox view sections', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('cheat', { delay: 20 });
-        // Waited for, as the two tests above do: Enter typed before the palette
-        // has matched the command completes it instead of running it, and the
-        // sheet never opens. This was the one of the three that went straight
-        // to Enter, and the one CI kept losing.
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await selectCommandMatch(page, { shortcut: ':cheat' });
         await page.keyboard.press('Enter');
         const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
         await expect(sheet).toBeVisible({ timeout: 3000 });
@@ -176,7 +209,7 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type('overview', { delay: 20 });
-        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await selectCommandMatch(page, { shortcut: ':overview' });
         await page.keyboard.press('Enter');
 
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
@@ -186,6 +219,7 @@ test.describe('dashboard command palette', () => {
     test(':find clear removes find-hidden tiles', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('find test-filter-xyz', { delay: 15 });
+        await waitForCommandMatch(page, { shortcut: ':find' });
         await page.keyboard.press('Enter');
 
         await page.waitForFunction(() => (
@@ -195,6 +229,7 @@ test.describe('dashboard command palette', () => {
         await page.keyboard.press('Escape');
         await page.keyboard.press(':');
         await page.keyboard.type('find clear', { delay: 15 });
+        await selectCommandMatch(page, { stateId: 'find:clear' });
         await page.keyboard.press('Enter');
 
         await expect.poll(async () => page.evaluate(() => (
@@ -234,6 +269,7 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type(before ? 'dark off' : 'dark on', { delay: 15 });
+        await waitForCommandMatch(page, { shortcut: ':dark' });
         await page.keyboard.press('Enter');
 
         await expect.poll(async () => page.evaluate(() => (
@@ -248,6 +284,7 @@ test.describe('dashboard command palette', () => {
 
         await page.keyboard.press(':');
         await page.keyboard.type(before ? 'collections today off' : 'collections today on', { delay: 15 });
+        await waitForCommandMatch(page, { shortcut: ':collections' });
         await page.keyboard.press('Enter');
 
         await expect.poll(async () => page.evaluate(() => (
