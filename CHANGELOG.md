@@ -257,6 +257,7 @@ For install and security, see the [README](README.md). For how to use features, 
 - The Docker build cross-compiles per target architecture instead of building under QEMU.
 - Go tests no longer fail on a shared outbound rate limiter: `TestMain` raises the limit for the test binary, since the limiter is a package-level singleton every test shares.
 - **`hideFromModal` is lifted from every release that carried it** — v1.4.5.2 was the last one holding it. The flag and the code that reads it stay, but no release uses it: a reader stepping back through the notes should not find a version missing between two that are there.
+- The Unraid template's devlog link points at `nextdash.cc/news` rather than the `/blog` path it used to.
 
 ---
 
