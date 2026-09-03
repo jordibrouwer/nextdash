@@ -404,6 +404,7 @@
       "navInboxView": "Inbox öffnen — Links zum späteren Lesen",
       "navHealthView": "Health öffnen — Lesezeichen mit Handlungsbedarf",
       "navSettingsView": "Konfiguration öffnen — Einstellungen, Seiten und Lesezeichen",
+      "navThemeBrowser": "Den Theme-Browser öffnen — ein Theme wählen oder ansehen, ohne die Konfiguration zu öffnen",
       "cbHealthPage": "Health gefiltert nach einer bestimmten Seitenzahl öffnen",
       "sectionHealthMultiSelect": "Mehrere Health-Zeilen auswählen",
       "hmsToggleRow": "Fokussierte Zeile markieren und zur nächsten springen — eine Reihe ist also x-x-x",

@@ -404,6 +404,7 @@
       "navInboxView": "Ouvrir Inbox — liens à lire plus tard",
       "navHealthView": "Ouvrir Health — favoris qui demandent de l’attention",
       "navSettingsView": "Ouvrir la configuration — réglages, pages et favoris",
+      "navThemeBrowser": "Ouvrir le navigateur de thèmes — choisir ou prévisualiser un thème sans ouvrir la configuration",
       "cbHealthPage": "Ouvrir Health filtré sur un numéro de page précis",
       "sectionHealthMultiSelect": "Sélectionner plusieurs lignes de santé",
       "hmsToggleRow": "Cocher la ligne ciblée et passer à la suivante — une série est donc x-x-x",

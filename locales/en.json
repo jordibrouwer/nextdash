@@ -423,6 +423,7 @@
       "navInboxView": "Open Inbox — links saved to read later",
       "navHealthView": "Open Health — bookmarks that need attention",
       "navSettingsView": "Open config — settings, pages, and bookmarks",
+      "navThemeBrowser": "Open the theme browser — pick or preview a theme without opening config",
       "cbHealthPage": "Open health filtered to a specific page number",
       "sectionHealthMultiSelect": "Selecting several health rows",
       "hmsToggleRow": "Tick the focused row and move to the next — so a run of rows is x-x-x",

@@ -423,6 +423,7 @@
       "navInboxView": "打开收件箱——存下来稍后再读的链接",
       "navHealthView": "打开健康视图——需要处理的书签",
       "navSettingsView": "打开配置——设置、页面和书签",
+      "navThemeBrowser": "打开主题浏览器 — 无需打开配置即可选择或预览主题",
       "cbHealthPage": "打开健康视图并过滤到指定页码",
       "sectionHealthMultiSelect": "同时选中多个健康视图行",
       "hmsToggleRow": "勾选当前行并移到下一行——连着按就是 x-x-x",
