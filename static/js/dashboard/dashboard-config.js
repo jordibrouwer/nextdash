@@ -21334,6 +21334,14 @@ class DashboardConfig {
         // across the repaint lives on the window, not on an element.
         const scrollHost = this.bookmarkListScrollHost();
         const scrollTop = scrollHost ? scrollHost.scrollTop : window.scrollY;
+        // Focus lives on a row, and every row is about to be replaced. The
+        // context menu deliberately hands focus back to its row on close, and
+        // this ran straight afterwards -- so Select dropped it to <body>, where
+        // j/k no longer reach the list and walk the section rail instead.
+        // repaintBookmarkRowsOnly has always done this; this one had not.
+        const focusedKey = document.activeElement?.classList?.contains('config-bm-row')
+            ? this.bookmarkRowKey(document.activeElement)
+            : null;
         this._bmLoadMoreObserver?.disconnect?.();
         this._bmLoadMoreObserver = null;
         host.innerHTML = this.renderBookmarksList();
@@ -21345,6 +21353,11 @@ class DashboardConfig {
         else window.scrollTo(0, scrollTop);
         this.setupBookmarkLoadMore(host);
         this.bindBookmarkWindowScroll();
+        if (focusedKey) {
+            const again = [...host.querySelectorAll('.config-bm-row')]
+                .find((row) => this.bookmarkRowKey(row) === focusedKey);
+            again?.focus({ preventScroll: true });
+        }
     }
 
     repaintBulkToolbar() {
