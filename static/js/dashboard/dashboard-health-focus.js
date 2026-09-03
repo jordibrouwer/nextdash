@@ -318,6 +318,14 @@ class DashboardHealthFocus {
         if (!this.active) return;
         this.active = false;
         this.session = null;
+        // Forgotten on the way out, which is what the comment beside
+        // _previewFailed.add() has always promised: a failure there means "this
+        // request did not answer", not "this page has no preview". Kept for the
+        // life of the session it happened in -- so a render does not re-ask on
+        // every frame -- and dropped here, so re-entering tries once more. The
+        // instance is cached for the tab's lifetime, so without this a single
+        // network blip left that card blank until a full reload.
+        this._previewFailed.clear();
         const landingKey = this.queue[this.position] || null;
 
         window.ScrollLock?.release(this.scrollLockToken);
