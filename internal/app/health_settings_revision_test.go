@@ -11,6 +11,11 @@ import (
 // two apart.
 func TestSettingsRevisionMovesOnlyWithSettings(t *testing.T) {
 	tmp := t.TempDir()
+	// t.Chdir alone does not isolate this: ResolveDataDir prefers
+	// NEXTDASH_DATA_DIR, which TestMain sets for the whole suite, so without
+	// this the test shared one directory with every other test and read
+	// whatever they had left in bookmarks-1.json.
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 	t.Chdir(tmp)
 	store := NewStore()
 

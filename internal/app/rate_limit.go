@@ -143,3 +143,19 @@ func (e *outboundRateLimitError) Error() string {
 }
 
 var globalOutboundLimiter = newSlidingWindowLimiter(outboundRequestsPerMinute(), time.Minute)
+
+// reset drops everything the limiter has recorded.
+//
+// The outbound limiter is a package-level singleton keyed on one bucket, so in
+// a test binary every test shares it: a suite that makes more than the limit's
+// worth of requests inside its window starts failing tests that have nothing
+// wrong with them, and which ones fail depends on the order they ran in. Tests
+// call this so each starts from an empty window.
+func (l *slidingWindowLimiter) reset() {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.events = make(map[string][]time.Time)
+}

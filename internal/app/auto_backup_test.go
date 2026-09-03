@@ -16,6 +16,11 @@ import (
 func newTestHandlers(t *testing.T) *Handlers {
 	t.Helper()
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	// The outbound limiter is shared by every test in this binary, and its
+	// window is a minute -- long enough that a full run exhausts it and later
+	// tests fail on "outbound rate limit exceeded" instead of on their own
+	// subject. Each test starts with an empty window.
+	globalOutboundLimiter.reset()
 	return &Handlers{store: NewStore()}
 }
 
