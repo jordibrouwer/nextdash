@@ -857,7 +857,11 @@
          */
         renderStatsHeadline(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped, because every figure it is divided into is scoped. Reading
+            // allBookmarks here put a page's count over the whole library's
+            // total: with 18 of a page's 20 bookmarks carrying a shortcut, the
+            // headline announced 9%.
+            const all = this.statsScopedBookmarks();
             const total = all.length;
             if (!total) return '';
 
@@ -908,7 +912,10 @@
          */
         renderStatsInsights(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped like the figures it is read alongside: this panel sits under
+            // the scope selector and mixed a scoped numerator into an unscoped
+            // total, so its percentages described neither view.
+            const all = this.statsScopedBookmarks();
             const total = all.length;
             if (!total) {
                 return `
@@ -983,7 +990,10 @@
         /** Shortcut coverage, and which shortcuts actually earn their keystroke. */
         renderStatsShortcuts(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped, so the table lists the same bookmarks the note above it
+            // counts: it used to say "18 of 20 have a shortcut" and then list
+            // twenty rows from pages the scope excluded.
+            const all = this.statsScopedBookmarks();
             const pageName = (id) => (this.dash.pages || [])
                 .find((p) => String(p.id) === String(id))?.name || String(id);
             const rows = all
