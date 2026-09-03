@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
  * The bookmark list could be narrowed five ways and said almost nothing about
@@ -16,6 +16,11 @@ async function openBookmarks(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The page-filter promo is anchored in this very panel and arrives half a
+    // second after it opens, on top of the quick bar. Marked seen before the
+    // section is opened, so it is never scheduled rather than dismissed once it
+    // has already covered the button under the pointer.
+    await markConfigSettingPromosSeen(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await page.waitForSelector('#config-bm-list', { timeout: 15_000 });
 }

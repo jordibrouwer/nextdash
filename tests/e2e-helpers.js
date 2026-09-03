@@ -166,6 +166,28 @@ async function markWidgetsTutorialSeen(page) {
 }
 
 /**
+ * Mark every registered config setting promo as seen.
+ *
+ * The promos are scheduled 500ms after a config section opens and are placed
+ * over the control they point at, so a test that opens a section and reaches
+ * for a nearby button is racing them: whichever arrives second wins. Only
+ * config-setting-promo.spec.js is about the popovers themselves; everywhere
+ * else they are furniture in the way. Call this after the page is loaded and
+ * before opening the section -- the registry lives in the page, so the ids do
+ * not have to be repeated here and a promo added later is covered too.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function markConfigSettingPromosSeen(page) {
+    await page.evaluate(() => {
+        const promo = window.ConfigSettingPromo;
+        if (!promo) return;
+        (promo._registry || []).forEach((p) => promo.markSeen?.(p.id));
+        promo.dismissActive?.({ persist: true });
+    });
+}
+
+/**
  * Dismiss What's new, search promo, and grid keyboard promo when they block interaction.
  * @param {import('@playwright/test').Page} page
  */
@@ -607,6 +629,7 @@ module.exports = {
     markInboxTutorialSeen,
     markWidgetsTutorialSeen,
     dismissBlockingOverlays,
+    markConfigSettingPromosSeen,
     prepareDashboardInteraction,
     dismissOnboardingIfPresent,
     ensurePageCategory,
