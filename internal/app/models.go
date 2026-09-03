@@ -806,7 +806,12 @@ type QuickStartState struct {
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
 	// records the decision rather than the subscription.
-	PushChoiceMade bool  `json:"pushChoiceMade,omitempty"`
+	// No omitempty, unlike the two below: this is a decision, and "declined"
+	// is an answer. Omitted, false reached the browser as undefined, so
+	// anything comparing it strictly -- the re-ask button's own spec among
+	// them -- saw a value that was never sent. AnalyticsChoiceMade, which this
+	// mirrors, has always been sent whole.
+	PushChoiceMade bool  `json:"pushChoiceMade"`
 	PushAskAfter   int64 `json:"pushAskAfter,omitempty"`
 	PushSnoozes    int   `json:"pushSnoozes,omitempty"`
 	// Bookmark counts at the moment setup finished. The checklist ticks "add a
