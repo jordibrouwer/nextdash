@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * Axis labels on the Statistics charts.
@@ -13,6 +13,12 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  */
 
 async function openStats(page) {
+    // Before navigating, not after: dismissBlockingOverlays only closes a modal
+    // that is already up. The what's-new prompt decides to open, then fetches
+    // its module -- so on a release whose cache token has just moved, the fetch
+    // is a miss and the modal lands well after the dismissal, over the config
+    // view, where it swallows the hover this file is built on.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
@@ -47,6 +53,7 @@ test.describe('statistics: what the activity chart counts', () => {
      * touched. Each bookmark now counts once, which is what the data supports.
      */
     async function seedAndCompute(page, seed) {
+        await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
