@@ -286,6 +286,23 @@ func healthIgnoreSet(entries []HealthIgnore, now time.Time) map[string]HealthIgn
 	return active
 }
 
+// The finder a fresh install ships with, and the one existing installs gain
+// once. The source parameter is how Brave attributes traffic from here; it
+// carries nothing about the reader.
+const braveSearchFinderURL = "https://search.brave.com/search?q=%s&source=nextdash"
+
+// Matched on the host rather than the whole URL: someone who added Brave
+// themselves will have their own parameters, casing and shortcut, and that
+// entry is theirs to keep.
+func hasBraveSearchFinder(finders []Finder) bool {
+	for _, f := range finders {
+		if strings.Contains(strings.ToLower(f.SearchUrl), "search.brave.com") {
+			return true
+		}
+	}
+	return false
+}
+
 type Finder struct {
 	ID        string   `json:"id,omitempty"`
 	Name      string   `json:"name"`
@@ -445,6 +462,7 @@ type Settings struct {
 	ShowNoteIcon                   bool                         `json:"showNoteIcon"`                             // Show note icon next to bookmarks with a note
 	IncludeFindersInSearch         bool                         `json:"includeFindersInSearch"`                   // Include finders in normal search
 	IncludeFindersInSearchMigrated bool                         `json:"includeFindersInSearchMigrated,omitempty"` // one-time: default finders-in-search to on
+	BraveFinderSeededMigrated      bool                         `json:"braveFinderSeededMigrated,omitempty"`      // one-time: add the Brave Search finder to existing installs
 	SortMethod                     string                       `json:"sortMethod,omitempty"`                     // Legacy global sort (migrated to per-category sortMode)
 	CategorySortModes              map[string]map[string]string `json:"categorySortModes,omitempty"`              // Per-page sort for uncategorized/orphan categories
 	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
@@ -1286,6 +1304,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	findersFile := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	if _, err := os.Stat(findersFile); os.IsNotExist(err) {
 		defaultFinders := []Finder{
+			{Name: "Brave Search", SearchUrl: braveSearchFinderURL, Shortcut: "b"},
 			{Name: "DuckDuckGo", SearchUrl: "https://duckduckgo.com/?q=%s", Shortcut: "du"},
 		}
 		data, _ := json.MarshalIndent(defaultFinders, "", "  ")
@@ -2206,9 +2225,67 @@ func (fs *FileStore) GetFinders() []Finder {
 		return []Finder{}
 	}
 
+	finders = fs.seedBraveFinderOnce(finders)
+
 	fs.readCache.finders = cloneFinders(finders)
 	fs.readCache.findersOK = true
 	return cloneFinders(finders)
+}
+
+/*
+Give an install that predates the Brave finder one copy of it, once.
+
+Written to disk rather than added on every read: without the marker the entry
+would come back the moment the reader deleted it, and deleting a finder they
+did not ask for is exactly the thing they would then have to do twice. An
+install that already reaches Brave -- with their own shortcut, name and
+parameters -- is left untouched and simply marked as done.
+
+Called from GetFinders with the write lock already held, so it writes through
+the same lock-free helper SaveFinders ends in rather than calling back into
+SaveFinders or SaveSettings.
+*/
+func (fs *FileStore) seedBraveFinderOnce(finders []Finder) []Finder {
+	settings := fs.readSettingsForBraveSeed()
+	if settings == nil || settings.BraveFinderSeededMigrated {
+		return finders
+	}
+
+	if !hasBraveSearchFinder(finders) {
+		finders = append(finders, Finder{
+			Name:      "Brave Search",
+			SearchUrl: braveSearchFinderURL,
+			Shortcut:  "b",
+		})
+		filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
+		if err := fs.writeStoreJSONFile(filePath, finders, 0); err != nil {
+			// The marker is not set, so the next boot tries again rather than
+			// leaving the install without a finder it was meant to gain.
+			return finders
+		}
+	}
+
+	settings.BraveFinderSeededMigrated = true
+	data, err := json.MarshalIndent(settings, "", "  ")
+	if err == nil {
+		_ = writeFileAtomic(fs.settingsFile, data, 0644)
+		fs.readCache.settingsOK = false
+	}
+	return finders
+}
+
+// The settings file as it is on disk, for the Brave seed's marker. Read
+// directly because GetSettings() takes the same lock this is called under.
+func (fs *FileStore) readSettingsForBraveSeed() *Settings {
+	raw, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return nil
+	}
+	var settings Settings
+	if json.Unmarshal(raw, &settings) != nil {
+		return nil
+	}
+	return &settings
 }
 
 func (fs *FileStore) SaveFinders(finders []Finder) error {
@@ -3677,6 +3754,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
+			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}
 	}
 
