@@ -94,20 +94,34 @@ class ConfigLanguage {
     async ensureHelpTranslations(lang) {
         const language = lang || this.currentLanguage;
         if (!language || this._helpLoadedFor === language) return;
-        if (this._helpLoading) return this._helpLoading;
+        // Keyed by language. One shared promise meant a request for German
+        // joined an English fetch already in flight, and when that landed it
+        // merged English help prose into the German bundle and stamped it as
+        // loaded -- so Help stayed English for the rest of the view, with both
+        // this check and ensureHelpProse's presence check saying it was done.
+        if (this._helpLoading && this._helpLoadingFor === language) {
+            return this._helpLoading;
+        }
+        this._helpLoadingFor = language;
         this._helpLoading = (async () => {
             try {
                 const res = await fetch(ConfigLanguage.localeUrl(language, 'help'));
                 if (!res.ok) return;
                 const extra = await res.json();
                 const help = extra?.config || {};
+                // The language may have changed again while this was in flight;
+                // merging now would drop the wrong prose into the new bundle.
+                if (this.currentLanguage && this.currentLanguage !== language) return;
                 this.translations = this.translations || {};
                 this.translations.config = { ...(this.translations.config || {}), ...help };
                 this._helpLoadedFor = language;
             } catch {
                 // Left for the next attempt; the fallbacks carry the panel.
             } finally {
-                this._helpLoading = null;
+                if (this._helpLoadingFor === language) {
+                    this._helpLoading = null;
+                    this._helpLoadingFor = null;
+                }
             }
         })();
         return this._helpLoading;
