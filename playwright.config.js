@@ -18,6 +18,18 @@ const isCI = Boolean(process.env.CI);
 
 module.exports = defineConfig({
     testDir: 'tests',
+    /*
+     * No platform in the snapshot path.
+     *
+     * The one snapshot this suite keeps is a JSON tally of the mark shapes the
+     * grid draws -- structure, not pixels, and identical on every OS. The
+     * default template puts the platform in the filename, so the file written
+     * on a Mac was `row-marks-darwin.json` and the runners looked for
+     * `row-marks-linux.json`, found nothing, and failed with "A snapshot
+     * doesn't exist ... writing actual". The actual they wrote matches the
+     * committed one byte for byte; only the name ever differed.
+     */
+    snapshotPathTemplate: '{testFileDir}/{testFileName}-snapshots/{arg}{ext}',
     // Playwright's default testMatch takes `*.test.cjs` as well, and `tests/`
     // holds node unit tests by that name — plain scripts that assert at their
     // top level. Collected here they *run* while specs are being gathered, so
