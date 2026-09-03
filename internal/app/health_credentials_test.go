@@ -228,6 +228,26 @@ func TestACheckCanTargetADifferentAddress(t *testing.T) {
 }
 
 /*
+denyLocalAddresses turns AllowLocalBookmarks off for a test's store.
+
+It ships on, because the dashboards this is for are full of 192.168 services,
+and while it is on the SSRF guards in validateHTTPURL and the dialer stand
+aside. The address tests below are about those guards, so they have to ask for
+the setting that arms them -- left at the default they proved nothing, and
+passed only on machines where nothing happens to answer at 169.254.169.254.
+GitHub's runners are not such a machine: the Azure metadata service lives
+there, so both tests failed on CI and nowhere else.
+*/
+func denyLocalAddresses(t *testing.T, h *Handlers) {
+	t.Helper()
+	settings := h.store.GetSettings()
+	settings.AllowLocalBookmarks = false
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+}
+
+/*
 The substituted address is validated exactly like the bookmark's own.
 
 It comes from a form, so a check that skipped validateHTTPURL would be a way to
@@ -236,6 +256,7 @@ ask the server to fetch anything it can reach.
 func TestASubstitutedAddressStillPassesTheHostChecks(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	h := newTestHandlers(t)
+	denyLocalAddresses(t, h)
 
 	for _, probe := range []string{
 		"http://169.254.169.254/latest/meta-data/",
@@ -255,6 +276,7 @@ func TestASubstitutedAddressStillPassesTheHostChecks(t *testing.T) {
 func TestAllowingAnUntrustedCertificateDoesNotOpenTheAddressChecks(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	h := newTestHandlers(t)
+	denyLocalAddresses(t, h)
 
 	result := h.pingURLExpecting(context.Background(), "http://169.254.169.254/latest/", expectation{
 		AllowInsecureTLS: true,
