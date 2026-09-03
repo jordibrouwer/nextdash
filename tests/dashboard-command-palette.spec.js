@@ -154,6 +154,11 @@ test.describe('dashboard command palette', () => {
     test(':cheat sheet lists health and inbox view sections', async ({ page }) => {
         await page.keyboard.press(':');
         await page.keyboard.type('cheat', { delay: 20 });
+        // Waited for, as the two tests above do: Enter typed before the palette
+        // has matched the command completes it instead of running it, and the
+        // sheet never opens. This was the one of the three that went straight
+        // to Enter, and the one CI kept losing.
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Enter');
         const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
         await expect(sheet).toBeVisible({ timeout: 3000 });
