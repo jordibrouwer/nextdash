@@ -310,7 +310,15 @@ class DashboardHealth {
     fetchReport({ refresh = false } = {}) {
         if (this._loadPromise) {
             if (refresh && !this._loadPromiseRefresh) {
-                return this._loadPromise.finally(() => this.fetchReport({ refresh: true }));
+                // then(), not finally(): finally resolves with the *original*
+                // promise's value, so the caller was handed the stale report the
+                // plain fetch returned -- and the refresh's own rejection had no
+                // handler, surfacing as an unhandled rejection while the caller's
+                // try/catch saw a success and showed no error. Both settlements
+                // chain on, so a failed refresh reaches the caller.
+                return this._loadPromise
+                    .catch(() => undefined)
+                    .then(() => this.fetchReport({ refresh: true }));
             }
             return this._loadPromise;
         }
