@@ -2474,9 +2474,14 @@ class DashboardInbox {
             return;
         }
         const d = this.dash;
-        const snapshots = targets.map((item) => JSON.parse(JSON.stringify(item)));
         const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
-        const removed = results.filter((r) => r.status === 'fulfilled').length;
+        // Snapshot only what really went, the same way bulkDelete does: undoing
+        // a partial batch used to re-PUT the survivors too, and the restore
+        // count then claimed more links came back than were ever deleted.
+        const snapshots = targets
+            .filter((_, i) => results[i].status === 'fulfilled')
+            .map((item) => JSON.parse(JSON.stringify(item)));
+        const removed = snapshots.length;
         if (this.isActiveView()) {
             this.render();
         } else {
