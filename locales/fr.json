@@ -5548,7 +5548,16 @@
     "overviewNewFeaturePreviewMediaWhat": "Survoler un favori demandait son image directement au site, qui apprenait ainsi que vous regardiez votre propre tableau de bord — et un site qui refuse de céder son image laissait la carte vide. Sur une vraie collection, cela faisait fuiter chaque image et laissait deux cartes sur seize vides.",
     "overviewNewFeaturePreviewMediaHow": "nextDash récupère l’image et l’icône du site une seule fois et les conserve : votre survol n’atteint plus que votre propre tableau de bord. La carte s’ouvre aussitôt avec son texte et l’image arrive sur la carte déjà ouverte — elle n’attend jamais le serveur d’un autre.",
     "overviewNewFeaturePreviewMediaEnable": "Rien à activer — et vous pouvez le désactiver : décochez Image dans la liste des lignes sous Apparence → Affichage, et rien n'est dessiné, récupéré ni conservé. Icons & previews montre ce qui est gardé et permet de tout supprimer.",
-    "overviewNewFeaturePreviewMediaCta": "Ouvrir icons & previews →"
+    "overviewNewFeaturePreviewMediaCta": "Ouvrir icons & previews →",
+    "statsPinned": "Épinglés",
+    "statsLastTouched": "Modifié en dernier",
+    "statsGrowthTitle": "Comment la collection a grandi",
+    "statsGrowthPartial": "Compté sur les {dated} des {total} favoris portant une date. Les plus anciens ont été enregistrés avant que nextDash ne la retienne.",
+    "statsAxisMonth": "Mois",
+    "statsAxisAdded": "Ajoutés",
+    "statsOldestBroken": "Sans réponse depuis le plus longtemps : {name}, depuis {when}.",
+    "statsLibraryLastArchive": "Dernière copie enregistrée",
+    "statsCoverageNoneYet": "Aucun pour l’instant."
   },
   "colors": {
     "title": "personnalisation du thème",

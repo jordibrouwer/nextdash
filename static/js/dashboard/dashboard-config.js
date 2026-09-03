@@ -22101,6 +22101,34 @@ class DashboardConfig {
      * an English one does not group the same way — so this goes through Intl
      * rather than through a hand-rolled regex.
      */
+    /**
+     * "3 days ago", in the reader's own language.
+     *
+     * Intl does the wording, so this needs no strings of its own and follows
+     * the language setting for free. Falls back to a plain date where Intl has
+     * no RelativeTimeFormat, and to '' for a missing timestamp -- a bookmark
+     * that was never edited has no answer, which is not the same as "now".
+     */
+    statsRelativeTime(value) {
+        const at = Number(value) || 0;
+        if (!at) return '';
+        const lang = this.dash.settings?.language || undefined;
+        const diffDays = Math.round((at - Date.now()) / 86400000);
+        try {
+            const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+            if (Math.abs(diffDays) < 1) {
+                const hours = Math.round((at - Date.now()) / 3600000);
+                return rtf.format(hours, 'hour');
+            }
+            if (Math.abs(diffDays) < 31) return rtf.format(diffDays, 'day');
+            const months = Math.round(diffDays / 30);
+            if (Math.abs(months) < 12) return rtf.format(months, 'month');
+            return rtf.format(Math.round(diffDays / 365), 'year');
+        } catch {
+            return new Date(at).toLocaleDateString(lang);
+        }
+    }
+
     statsNumber(value) {
         const n = Number(value);
         if (!Number.isFinite(n)) return String(value ?? '');
@@ -22225,6 +22253,18 @@ class DashboardConfig {
         let stale90 = 0;
         const urlCounts = new Map();
         const shortcutCounts = new Map();
+        let pinned = 0;
+        let lastTouched = 0;
+        let oldestBrokenAt = 0;
+        let lastArchiveAt = 0;
+        let oldestBrokenName = '';
+        // Added-per-month, for the growth panel. createdAt is absent on
+        // bookmarks that predate it -- an old import carries none -- so the
+        // count of how many *did* answer travels with the series, and the
+        // panel says so rather than drawing a flat line for years nobody
+        // recorded.
+        const addedByMonth = new Map();
+        let withCreatedAt = 0;
 
         all.forEach((b) => {
             const tags = Array.isArray(b.tags) ? b.tags : [];
@@ -22244,6 +22284,26 @@ class DashboardConfig {
             }
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
+            if (b.pinned === true) pinned += 1;
+            // The longest-standing failure. "1 broken" does not say whether it
+            // went yesterday or in March, and that is the half that decides
+            // between fixing it and letting it go.
+            const archived = Number(b.archiveCheckedAt || 0);
+            if (archived > lastArchiveAt) lastArchiveAt = archived;
+            const since = Number(b.brokenSince || 0);
+            if (since > 0 && (!oldestBrokenAt || since < oldestBrokenAt)) {
+                oldestBrokenAt = since;
+                oldestBrokenName = String(b.name || b.url || '');
+            }
+            const touched = Number(b.updatedAt || 0);
+            if (touched > lastTouched) lastTouched = touched;
+            const created = Number(b.createdAt || 0);
+            if (created > 0) {
+                withCreatedAt += 1;
+                const when = new Date(created);
+                const month = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}`;
+                addedByMonth.set(month, (addedByMonth.get(month) || 0) + 1);
+            }
             if (window.BookmarkPredicates.match('noted', b)) withNote += 1;
             if (!window.BookmarkPredicates.match('noicon', b)) withIcon += 1;
             if (b.checkStatus === true || b.monitor === true) checked += 1;
@@ -22347,6 +22407,16 @@ class DashboardConfig {
             tagCount: tagCounts.size,
             withShortcut,
             monitored,
+            pinned,
+            // The newest edit anywhere in scope, and how many bookmarks could
+            // be dated at all -- the growth panel needs both to say what its
+            // bars are drawn from.
+            lastTouched,
+            oldestBrokenAt,
+            oldestBrokenName,
+            lastArchiveAt,
+            growth: [...addedByMonth.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)),
+            withCreatedAt,
             tagged,
             withNote,
             withIcon,

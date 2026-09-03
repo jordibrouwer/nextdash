@@ -237,16 +237,34 @@
     gap: 12px;
 }
 
-/* Overview fits six summary tiles on one row; bookmarks summary uses five. */
+/* The overview row carries eight tiles and the bookmarks summary five.
+   auto-fit rather than a fixed count: a hard repeat(8, …) squeezed every tile
+   past legibility instead of letting the row wrap, and the row grows whenever
+   a figure is worth adding. The panel is ~810px wide whatever the window does,
+   so eight tiles land as 4 + 4 rather than a lopsided 6 + 2. */
 .config-tiles--overview {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
+/* Below the panel's usual width the four columns would crowd, so hand the row
+   back to auto-fit and let it find its own count. */
+@media (max-width: 900px) {
+    .config-tiles--overview {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+}
+
 .config-tiles--bookmarks {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 10px;
     margin-bottom: 16px;
+}
+
+/* Nothing to draw is not the same as a bar that failed to render: the track
+   stays visible and the row says "None yet." underneath. */
+.config-bar--empty {
+    opacity: 0.55;
 }
 
 .config-tiles--overview .config-tile,

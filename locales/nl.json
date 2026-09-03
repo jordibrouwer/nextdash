@@ -5548,7 +5548,16 @@
     "overviewNewFeaturePreviewMediaWhat": "Bij het zweven over een bookmark vroeg je browser die site rechtstreeks om de afbeelding, dus wist die site dat je naar je eigen dashboard keek — en een site die zijn afbeelding aan niemand anders afstaat, liet de kaart leeg. In een echte collectie lekten zo alle afbeeldingen en bleven er twee van de zestien kaarten leeg.",
     "overviewNewFeaturePreviewMediaHow": "nextDash haalt de afbeelding en het site-icoon één keer op en bewaart ze, dus je hover bereikt niets anders dan je eigen dashboard. De kaart opent meteen met tekst en de afbeelding landt op de kaart die al openstaat — hij wacht nooit op de server van een ander.",
     "overviewNewFeaturePreviewMediaEnable": "Niets aan te zetten — en je kunt het uitzetten: haal Image weg uit de rij-checklist onder Uiterlijk → Weergave en er wordt niets getekend, opgehaald of bewaard. Onder Icons & previews zie je wat er staat en wis je het.",
-    "overviewNewFeaturePreviewMediaCta": "Open icons & previews →"
+    "overviewNewFeaturePreviewMediaCta": "Open icons & previews →",
+    "statsPinned": "Vastgezet",
+    "statsLastTouched": "Laatst bewerkt",
+    "statsGrowthTitle": "Hoe je verzameling groeide",
+    "statsGrowthPartial": "Geteld vanaf de {dated} van {total} bookmarks met een datum. Oudere zijn bewaard voordat nextDash dit bijhield.",
+    "statsAxisMonth": "Maand",
+    "statsAxisAdded": "Toegevoegd",
+    "statsOldestBroken": "Langst onbereikbaar: {name}, sinds {when}.",
+    "statsLibraryLastArchive": "Laatste bewaarde kopie",
+    "statsCoverageNoneYet": "Nog geen."
   },
   "colors": {
     "title": "thema-aanpassing",

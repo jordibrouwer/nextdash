@@ -5548,7 +5548,16 @@
     "overviewNewFeaturePreviewMediaWhat": "将鼠标悬停在书签上时，浏览器会直接向该网站索取图片，于是网站就知道你正在看自己的仪表板——而拒绝把图片交给他人的网站，则让卡片一片空白。在真实的收藏中，这意味着每一张图片都会泄露行踪，十六张卡片中有两张始终是空的。",
     "overviewNewFeaturePreviewMediaHow": "nextDash 会把图片和网站图标获取一次并保存下来，因此你的悬停只会到达自己的仪表板。卡片会立刻带着文字打开，图片随后落在已经打开的卡片上——它从不等待别人的服务器。",
     "overviewNewFeaturePreviewMediaEnable": "无需开启——也可以关闭：在 外观 → 显示 的卡片行清单中取消勾选 Image，就不会绘制、获取或保存任何图片。Icons & previews 会显示已保存的内容，也可一并清除。",
-    "overviewNewFeaturePreviewMediaCta": "打开 icons & previews →"
+    "overviewNewFeaturePreviewMediaCta": "打开 icons & previews →",
+    "statsPinned": "已固定",
+    "statsLastTouched": "最后编辑",
+    "statsGrowthTitle": "收藏如何增长",
+    "statsGrowthPartial": "基于 {total} 个书签中带有日期的 {dated} 个统计。更早的书签在 nextDash 记录该信息之前就已保存。",
+    "statsAxisMonth": "月份",
+    "statsAxisAdded": "新增",
+    "statsOldestBroken": "最久无响应：{name}，自 {when} 起。",
+    "statsLibraryLastArchive": "最近保存的副本",
+    "statsCoverageNoneYet": "暂无。"
   },
   "colors": {
     "title": "主题自定义",

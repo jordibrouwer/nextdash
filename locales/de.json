@@ -5548,7 +5548,16 @@
     "overviewNewFeaturePreviewMediaWhat": "Beim Überfahren eines Lesezeichens fragte der Browser die Website direkt nach ihrem Bild — die Seite erfuhr also, dass du auf dein eigenes Dashboard schaust. Und eine Seite, die ihr Bild niemandem sonst überlässt, ließ die Karte leer. In einer echten Sammlung hieß das: jedes Bild verriet dich, und zwei von sechzehn Karten blieben leer.",
     "overviewNewFeaturePreviewMediaHow": "nextDash holt das Bild und das Symbol der Seite einmal und behält sie, sodass dein Überfahren nichts außer dem eigenen Dashboard erreicht. Die Karte öffnet sofort mit ihrem Text, und das Bild landet auf der bereits geöffneten Karte — sie wartet nie auf den Server eines anderen.",
     "overviewNewFeaturePreviewMediaEnable": "Nichts einzuschalten — und du kannst es abschalten: Nimm Image in der Zeilen-Checkliste unter Erscheinungsbild → Anzeige heraus, und es wird nichts gezeichnet, geholt oder gespeichert. Icons & previews zeigt das Gespeicherte und entfernt es.",
-    "overviewNewFeaturePreviewMediaCta": "Icons & previews öffnen →"
+    "overviewNewFeaturePreviewMediaCta": "Icons & previews öffnen →",
+    "statsPinned": "Angeheftet",
+    "statsLastTouched": "Zuletzt bearbeitet",
+    "statsGrowthTitle": "Wie die Sammlung gewachsen ist",
+    "statsGrowthPartial": "Gezählt aus den {dated} von {total} Lesezeichen mit Datum. Ältere wurden gespeichert, bevor nextDash das festhielt.",
+    "statsAxisMonth": "Monat",
+    "statsAxisAdded": "Hinzugefügt",
+    "statsOldestBroken": "Am längsten ohne Antwort: {name}, seit {when}.",
+    "statsLibraryLastArchive": "Zuletzt gespeicherte Kopie",
+    "statsCoverageNoneYet": "Noch keine."
   },
   "colors": {
     "title": "themenanpassung",

@@ -31,17 +31,25 @@ async function openStatsTab(page, tab) {
 }
 
 test.describe('config statistics visualisations', () => {
-    test('the overview tab shows six headline tiles on one row', async ({ page }) => {
+    test('the overview tab shows its headline tiles in an even grid', async ({ page }) => {
         await openStats(page);
         const tiles = page.locator('#config-stats-body .config-tiles--overview .config-tile');
-        await expect(tiles).toHaveCount(6);
-        const row = await page.evaluate(() => {
+        // Eight since Pinned and Last edited joined them. The count is pinned
+        // so that adding a ninth is a decision rather than an accident.
+        await expect(tiles).toHaveCount(8);
+        const grid = await page.evaluate(() => {
             const els = [...document.querySelectorAll('#config-stats-body .config-tiles--overview .config-tile')];
-            const ys = els.map((el) => Math.round(el.getBoundingClientRect().y));
-            return { count: els.length, sameRow: Math.max(...ys) - Math.min(...ys) < 8 };
+            const perRow = {};
+            els.forEach((el) => {
+                const y = Math.round(el.getBoundingClientRect().y);
+                perRow[y] = (perRow[y] || 0) + 1;
+            });
+            const widths = els.map((el) => Math.round(el.getBoundingClientRect().width));
+            return { rows: Object.values(perRow), narrowest: Math.min(...widths) };
         });
-        expect(row.count).toBe(6);
-        expect(row.sameRow).toBe(true);
+        // Four to a row rather than a squeezed single line or a lopsided wrap.
+        expect(grid.rows).toEqual([4, 4]);
+        expect(grid.narrowest).toBeGreaterThan(110);
     });
 
     test('the cleanup score shows a value, a bar and its penalties', async ({ page }) => {
