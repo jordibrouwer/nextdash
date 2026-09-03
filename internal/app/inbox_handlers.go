@@ -206,6 +206,20 @@ func (h *Handlers) backfillInboxIconsAsync() {
 }
 
 func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
+	/*
+	 * The same brake its sibling above already has.
+	 *
+	 * This goroutine outlives the request: it fetches a preview, downloads an
+	 * icon and then writes the item back. Under `go test` that write lands
+	 * wherever the data directory points *by the time it finishes*, which is
+	 * the next test's t.TempDir -- and a file appearing there mid-teardown
+	 * fails that test with "TempDir RemoveAll cleanup: directory not empty",
+	 * on a test that never touched the inbox. TestAddInboxItemKeepsTags was
+	 * the one adding the item; the failure landed on whoever came after.
+	 */
+	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
+		return
+	}
 	itemID = strings.TrimSpace(itemID)
 	url = strings.TrimSpace(url)
 	if itemID == "" || url == "" {
