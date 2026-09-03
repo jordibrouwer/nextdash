@@ -39,7 +39,28 @@ func healthRecheckTestHandlers(t *testing.T, settingsJSON string) (*Handlers, st
 	if err := os.WriteFile(settingsPath, []byte(settingsJSON), 0o644); err != nil {
 		t.Fatalf("write settings: %v", err)
 	}
-	return &Handlers{store: &FileStore{settingsFile: settingsPath, dataDir: dir}}, dir
+	/*
+	 * Every path the store may write to, not just the two this helper's own
+	 * tests read.
+	 *
+	 * With pageOrderFile left empty, GetPages -- which anything touching a
+	 * bookmark reaches eventually -- called savePageOrder with no filename, and
+	 * writeFileAtomic then built its temporary in the *working* directory and
+	 * failed to rename it. Harmless-looking: the write is discarded and the
+	 * error is only logged. But the working directory during a suite run
+	 * belongs to whichever test last called t.Chdir, and a stray `.tmp-...`
+	 * file appearing in someone else's t.TempDir made that test fail on
+	 * cleanup instead -- "directory not empty", on a test that had done
+	 * nothing wrong. That is what took go-test down in CI run #460, on
+	 * TestAddInboxItemKeepsTags.
+	 */
+	return &Handlers{store: &FileStore{
+		settingsFile:                settingsPath,
+		colorsFile:                  filepath.Join(dir, "colors.json"),
+		pageOrderFile:               filepath.Join(dir, "pages.json"),
+		customThemesMigrationMarker: filepath.Join(dir, ".custom-themes-reset-v1"),
+		dataDir:                     dir,
+	}}, dir
 }
 
 func TestHealthAutoRecheckDue(t *testing.T) {
