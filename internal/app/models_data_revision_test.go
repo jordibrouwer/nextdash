@@ -74,3 +74,71 @@ func TestGetDataRevisionIgnoresMtimeOnly(t *testing.T) {
 		t.Fatalf("expected revision unchanged after mtime-only touch (before=%q after=%q)", before, after)
 	}
 }
+
+// A health check writes LastChecked / LastError into bookmarks-*.json, and the
+// revision is hashed over those files. That made every ping bump the revision,
+// which invalidated the client's page cache — so switching pages refetched
+// everything every time, and the dashboard rebuilt itself on each switch.
+// Status is not content: it must not move the revision.
+func TestGetDataRevisionIgnoresStatusOnlyWrites(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{
+		dataDir:       dir,
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+	}
+	store.ensureDataDir()
+
+	if err := store.AddBookmarkToPage(1, Bookmark{
+		Name:        "Example",
+		URL:         "https://example.com",
+		CheckStatus: true,
+	}); err != nil {
+		t.Fatalf("AddBookmarkToPage: %v", err)
+	}
+
+	before := store.GetDataRevision()
+
+	bookmarks := store.GetBookmarksByPage(1)
+	if len(bookmarks) == 0 {
+		t.Fatal("expected the bookmark just added")
+	}
+	bookmarks[0].LastChecked = time.Now().Unix()
+	bookmarks[0].LastError = "some transient failure"
+	if err := store.SaveBookmarksByPage(1, bookmarks); err != nil {
+		t.Fatalf("SaveBookmarksByPage: %v", err)
+	}
+
+	if after := store.GetDataRevision(); before != after {
+		t.Fatalf("status-only write moved the revision (before=%q after=%q)", before, after)
+	}
+}
+
+// The other half of the same rule: a real edit still has to move it, or the
+// client would never learn about a change made on another device.
+func TestGetDataRevisionStillChangesOnContentEdit(t *testing.T) {
+	dir := t.TempDir()
+	store := &FileStore{
+		dataDir:       dir,
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		colorsFile:    filepath.Join(dir, "colors.json"),
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+	}
+	store.ensureDataDir()
+
+	if err := store.AddBookmarkToPage(1, Bookmark{Name: "Example", URL: "https://example.com"}); err != nil {
+		t.Fatalf("AddBookmarkToPage: %v", err)
+	}
+	before := store.GetDataRevision()
+
+	bookmarks := store.GetBookmarksByPage(1)
+	bookmarks[0].Name = "Renamed"
+	if err := store.SaveBookmarksByPage(1, bookmarks); err != nil {
+		t.Fatalf("SaveBookmarksByPage: %v", err)
+	}
+
+	if after := store.GetDataRevision(); before == after {
+		t.Fatalf("a content edit did not move the revision (before=%q after=%q)", before, after)
+	}
+}

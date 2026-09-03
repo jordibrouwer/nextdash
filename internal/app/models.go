@@ -4660,16 +4660,25 @@ func (fs *FileStore) GetDataRevision() string {
 		filepath.Join(fs.dataDir, "trash.json"),
 	}
 
+	// Bookmark files are hashed over their *content* rather than their bytes,
+	// below. A health check writes LastChecked and LastError straight into
+	// bookmarks-*.json, so hashing the raw file made every ping move the
+	// revision -- which is the signal clients use to drop their page cache.
+	// The result was that switching pages refetched bookmarks, categories and
+	// blocks every single time, and the dashboard visibly rebuilt itself on
+	// each switch. Status is not content, so it must not move this.
+	bookmarkPaths := []string{}
 	if entries, err := os.ReadDir(fs.dataDir); err == nil {
 		for _, entry := range entries {
 			name := entry.Name()
 			if strings.HasPrefix(name, "bookmarks-") && strings.HasSuffix(name, ".json") {
-				paths = append(paths, filepath.Join(fs.dataDir, name))
+				bookmarkPaths = append(bookmarkPaths, filepath.Join(fs.dataDir, name))
 			}
 		}
 	}
 
 	sort.Strings(paths)
+	sort.Strings(bookmarkPaths)
 
 	hash := sha256.New()
 	for _, path := range paths {
@@ -4681,6 +4690,39 @@ func (fs *FileStore) GetDataRevision() string {
 		fileHash := sha256.Sum256(data)
 		hash.Write([]byte(path + ":"))
 		hash.Write(fileHash[:])
+		hash.Write([]byte(";"))
+	}
+
+	for _, path := range bookmarkPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			hash.Write([]byte(path + ":missing;"))
+			continue
+		}
+		var page PageWithBookmarks
+		if err := json.Unmarshal(data, &page); err != nil {
+			// Unreadable as a page file: fall back to the raw bytes rather than
+			// silently treating it as empty.
+			fileHash := sha256.Sum256(data)
+			hash.Write([]byte(path + ":raw:"))
+			hash.Write(fileHash[:])
+			hash.Write([]byte(";"))
+			continue
+		}
+		hash.Write([]byte(path + ":"))
+		// Everything on the page except the bookmarks' status fields: the page
+		// itself, its categories and its block order all still move the
+		// revision, because a change to any of them is a change a client needs.
+		meta := page
+		meta.Bookmarks = nil
+		if metaBytes, err := json.Marshal(meta); err == nil {
+			metaHash := sha256.Sum256(metaBytes)
+			hash.Write(metaHash[:])
+		}
+		for _, bm := range page.Bookmarks {
+			hash.Write([]byte(bookmarkContentFingerprint(bm)))
+			hash.Write([]byte("\x02"))
+		}
 		hash.Write([]byte(";"))
 	}
 
