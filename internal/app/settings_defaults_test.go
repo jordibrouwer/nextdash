@@ -365,3 +365,85 @@ func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
 		}
 	}
 }
+
+// A pre-existing settings.json with no includeFindersInSearch key at all --
+// the shape every install had before this setting existed -- must come up
+// with it on, once. The setting is a plain bool: absent and explicit-false
+// are indistinguishable in JSON, so the migration marker is what lets a
+// reader who has since turned it off keep it off across a second boot.
+func TestMigrateIncludeFindersInSearchDefaultOn(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark"}`)
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewStore()
+	settings := store.GetSettings()
+
+	if !settings.IncludeFindersInSearch {
+		t.Fatal("migration: includeFindersInSearch should be true after upgrade")
+	}
+	if !settings.IncludeFindersInSearchMigrated {
+		t.Fatal("migration: includeFindersInSearchMigrated should be set")
+	}
+
+	// Second boot: migration must not run again -- an explicit off sticks.
+	// GetSettings() does not itself persist the computed defaults, so the
+	// migrated values are written out through SaveSettings first, the same
+	// way a real save from the running dashboard would.
+	settings.IncludeFindersInSearch = false
+	if err := store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+
+	store2 := NewStore()
+	settings2 := store2.GetSettings()
+	if settings2.IncludeFindersInSearch {
+		t.Fatal("after migration, explicit includeFindersInSearch:false should be respected")
+	}
+	if !settings2.IncludeFindersInSearchMigrated {
+		t.Fatal("the migration marker must survive the save")
+	}
+}
+
+// Exposes a defect in SaveSettings shared by every migration marker, not
+// just this one: the "preserve markers from disk" block reads the file as it
+// was *before* this save and overwrites the incoming value with it -- so a
+// marker set for the first time in this same call (GetSettings flips it in
+// memory only; nothing had written it to disk yet) is discarded, and the
+// migration is free to run again on the next boot.
+func TestSaveSettingsDoesNotLoseAFreshMigrationMarker(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+		t.Fatal(err)
+	}
+	body := []byte(`{"currentPage":1,"theme":"cherry-graphite-dark"}`)
+	if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewStore()
+	settings := store.GetSettings() // flips ConfigButtonDefaultOnMigrated true, in memory only
+	if !settings.ConfigButtonDefaultOnMigrated {
+		t.Fatal("expected GetSettings to flip the marker in memory")
+	}
+
+	// A save for an unrelated reason -- nothing about the marker changed.
+	if err := store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, _ := os.ReadFile(filepath.Join(ResolveDataDir(), "settings.json"))
+	if strings.Contains(string(raw), `"configButtonDefaultOnMigrated": true`) {
+		return // marker persisted correctly
+	}
+	t.Fatalf("SaveSettings dropped a migration marker set in this same call; raw=%s", raw)
+}

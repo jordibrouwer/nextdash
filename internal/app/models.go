@@ -436,20 +436,21 @@ type Settings struct {
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
-	LinkPreviewParts              []string                     `json:"linkPreviewParts,omitempty"`
-	LinkPreviewHoverDelayMs       int                          `json:"linkPreviewHoverDelayMs"`       // Hover delay before preview card appears
-	PreviewImageCacheMB           int                          `json:"previewImageCacheMB,omitempty"` // Disk cap for data/preview-images
-	ShowShortcuts                 bool                         `json:"showShortcuts"`                 // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
-	ShortcutDisplay               string                       `json:"shortcutDisplay,omitempty"`     // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
-	ShowPinIcon                   bool                         `json:"showPinIcon"`                   // Show pin icon next to pinned bookmarks
-	ShowNoteIcon                  bool                         `json:"showNoteIcon"`                  // Show note icon next to bookmarks with a note
-	IncludeFindersInSearch        bool                         `json:"includeFindersInSearch"`        // Include finders in normal search
-	SortMethod                    string                       `json:"sortMethod,omitempty"`          // Legacy global sort (migrated to per-category sortMode)
-	CategorySortModes             map[string]map[string]string `json:"categorySortModes,omitempty"`   // Per-page sort for uncategorized/orphan categories
-	CategorySortModesMigrated     bool                         `json:"categorySortModesMigrated"`     // Legacy sortMethod migrated to per-category modes
-	PreviewImagesStrippedMigrated bool                         `json:"previewImagesStrippedMigrated"` // Cached image taken off every bookmark; the preview cache owns media now
-	LayoutPreset                  string                       `json:"layoutPreset"`                  // Dashboard layout preset
-	LayoutVersion                 string                       `json:"layoutVersion"`                 // Dashboard layout version: classic, modern
+	LinkPreviewParts               []string                     `json:"linkPreviewParts,omitempty"`
+	LinkPreviewHoverDelayMs        int                          `json:"linkPreviewHoverDelayMs"`                  // Hover delay before preview card appears
+	PreviewImageCacheMB            int                          `json:"previewImageCacheMB,omitempty"`            // Disk cap for data/preview-images
+	ShowShortcuts                  bool                         `json:"showShortcuts"`                            // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
+	ShortcutDisplay                string                       `json:"shortcutDisplay,omitempty"`                // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
+	ShowPinIcon                    bool                         `json:"showPinIcon"`                              // Show pin icon next to pinned bookmarks
+	ShowNoteIcon                   bool                         `json:"showNoteIcon"`                             // Show note icon next to bookmarks with a note
+	IncludeFindersInSearch         bool                         `json:"includeFindersInSearch"`                   // Include finders in normal search
+	IncludeFindersInSearchMigrated bool                         `json:"includeFindersInSearchMigrated,omitempty"` // one-time: default finders-in-search to on
+	SortMethod                     string                       `json:"sortMethod,omitempty"`                     // Legacy global sort (migrated to per-category sortMode)
+	CategorySortModes              map[string]map[string]string `json:"categorySortModes,omitempty"`              // Per-page sort for uncategorized/orphan categories
+	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
+	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
+	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
+	LayoutVersion                  string                       `json:"layoutVersion"`                            // Dashboard layout version: classic, modern
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
 	 * its greys, the surface ladder, the wash behind the page.
@@ -1207,7 +1208,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutDisplay:              shortcutDisplayAlways,
 			ShowPinIcon:                  false,
 			ShowNoteIcon:                 true,
-			IncludeFindersInSearch:       false,
+			IncludeFindersInSearch:       true,
 			SortMethod:                   "order",
 			LayoutPreset:                 "default",
 			LayoutVersion:                "classic",
@@ -3149,7 +3150,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutDisplay:                shortcutDisplayAlways,
 			ShowPinIcon:                    false,
 			ShowNoteIcon:                   true,
-			IncludeFindersInSearch:         false,
+			IncludeFindersInSearch:         true,
 			BackgroundOpacity:              1,
 			FontWeight:                     "normal",
 			FontPreset:                     "source-code-pro",
@@ -3335,6 +3336,10 @@ func (fs *FileStore) GetSettings() Settings {
 		if !settings.TagCloudDefaultMigrated {
 			settings.ShowTagCloudButton = true
 			settings.TagCloudDefaultMigrated = true
+		}
+		if !settings.IncludeFindersInSearchMigrated {
+			settings.IncludeFindersInSearch = true
+			settings.IncludeFindersInSearchMigrated = true
 		}
 		if !settings.ConfigButtonDefaultOnMigrated {
 			settings.ShowConfigButton = true
@@ -3653,16 +3658,25 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 
 	// Preserve migration markers from the stored file so that importing
 	// settings from another instance cannot suppress pending migrations.
+	//
+	// OR'd with the incoming value, not simply overwritten by the stored one:
+	// GetSettings() flips a marker to true in memory only -- it never writes to
+	// disk -- so the first SaveSettings() call after a migration ran carried a
+	// marker this block used to unconditionally replace with the stale false
+	// still on disk. The migration then looked eligible to run again on the
+	// next boot, for every marker in this list, not only a newly added one. A
+	// marker can move false -> true here; nothing may move it back.
 	if raw, err := os.ReadFile(fs.settingsFile); err == nil {
 		var stored Settings
 		if json.Unmarshal(raw, &stored) == nil {
-			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
-			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
-			settings.ShortcutTooltipsOffMigrated = stored.ShortcutTooltipsOffMigrated
-			settings.ShortcutOpenModeInstantMigrated = stored.ShortcutOpenModeInstantMigrated
-			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
-			settings.ShortcutDisplayAlwaysMigrated = stored.ShortcutDisplayAlwaysMigrated
-			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
+			settings.TagCloudDefaultMigrated = settings.TagCloudDefaultMigrated || stored.TagCloudDefaultMigrated
+			settings.LinkPreviewCardsOffMigrated = settings.LinkPreviewCardsOffMigrated || stored.LinkPreviewCardsOffMigrated
+			settings.ShortcutTooltipsOffMigrated = settings.ShortcutTooltipsOffMigrated || stored.ShortcutTooltipsOffMigrated
+			settings.ShortcutOpenModeInstantMigrated = settings.ShortcutOpenModeInstantMigrated || stored.ShortcutOpenModeInstantMigrated
+			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
+			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
+			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
+			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 		}
 	}
 

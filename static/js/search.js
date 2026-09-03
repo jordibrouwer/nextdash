@@ -2406,8 +2406,13 @@ class SearchComponent {
                 this.matchElements.push(newHint);
                 this.selectableMatches.push({ type: 'hint-new', action: hintNewAction });
 
-                // Hint: search with top finders if any exist (up to 3, sorted by use count)
-                if (Array.isArray(this.finders) && this.finders.length > 0) {
+                // Hint: search with top finders if any exist (up to 3, sorted by use
+                // count) -- gated on the setting, like every other place that
+                // offers finders from plain search. Without this check the
+                // hints stayed on screen even with "Include finders in search"
+                // switched off.
+                if (this.settings.includeFindersInSearch
+                    && Array.isArray(this.finders) && this.finders.length > 0) {
                     const topFinders = [...this.finders]
                         .filter((f) => f.shortcut && f.shortcut.trim())
                         .sort((a, b) => {
