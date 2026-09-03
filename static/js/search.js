@@ -825,6 +825,16 @@ class SearchComponent {
     }
 
     addToQuery(key) {
+        // A space with nothing after the "?" yet has no shortcut to complete --
+        // the trim below reduces to "", which no finder is ever keyed on, so
+        // the space landing in the query anyway was never intentional. It left
+        // "? " on screen, and everything typed next was read as literal text
+        // after that space rather than as the shortcut letter it was meant to
+        // be -- "?" then Space then "jordi" searched for "? jordi" and always
+        // found nothing.
+        if (key === ' ' && this.currentQuery.startsWith('?') && !this.currentQuery.slice(1).trim()) {
+            return;
+        }
         this.currentQuery += key;
 
         // A query exists, so search is active -- say so now rather than after the
