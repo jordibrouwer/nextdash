@@ -45,7 +45,16 @@ module.exports = defineConfig({
     // gives each worker its own server and data directory, which is what makes
     // more than one safe -- see worker-server.js.
     workers: Number(process.env.PW_WORKERS || 4),
-    reporter: isCI ? [['github'], ['line']] : 'line',
+    /*
+     * The HTML reporter is what the workflow's "Upload report" step uploads,
+     * and without it in this list nothing was ever written: every failing run
+     * logged "No files were found with the provided path: playwright-report/"
+     * and uploaded an empty artifact. The one time a trace would have settled
+     * a question -- a test that fails only on the runners -- there was nothing
+     * to download. `open: 'never'` keeps it from trying to launch a browser on
+     * a machine with no display.
+     */
+    reporter: isCI ? [['github'], ['line'], ['html', { open: 'never' }]] : 'line',
     globalSetup: require.resolve('./tests/playwright-global-setup.js'),
     globalTeardown: require.resolve('./tests/playwright-global-teardown.js'),
     use: {
