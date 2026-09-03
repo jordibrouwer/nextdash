@@ -1636,6 +1636,18 @@ class DashboardInbox {
             if (d.activeView !== DashboardInbox.VIEW) return;
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
+            /*
+             * A menu layered over the view owns Escape while it is up.
+             *
+             * This handler sits on document in the capture phase and is bound
+             * when the view opens -- before any menu exists -- so it saw the key
+             * first and stopped it dead. The row's context menu never got its
+             * own Escape and stayed on screen, and the next right-click was then
+             * read as the click that dismisses it rather than one that opens it:
+             * the menu went away and no new one arrived. Health and config guard
+             * the same way.
+             */
+            if (document.querySelector('#bookmark-context-menu, .move-popover')) return;
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
             const tag = document.activeElement?.tagName;
