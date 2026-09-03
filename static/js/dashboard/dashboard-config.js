@@ -925,10 +925,22 @@ class DashboardConfig {
              * second press closed it and put the theme back.
              */
             const pickerOpen = document.querySelector('[data-theme-picker-list]:not([hidden])');
-            if (!pickerOpen && window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                return;
+            /*
+             * The promo goes away, but it does not get to keep the key.
+             *
+             * It appeared on its own, so Escape was never aimed at it: someone
+             * who presses Escape while a promo happens to be up is leaving the
+             * view, or clearing a selection, and got a popover they had not
+             * asked for in between. Consuming the press here meant that first
+             * Escape did nothing they wanted, and they had to press it again.
+             *
+             * So dismiss it and fall through -- the same press goes on to do
+             * what it was for. The picker above is the opposite case and still
+             * claims the key: it was opened deliberately and is previewing a
+             * theme, so there Escape means "cancel that".
+             */
+            if (!pickerOpen) {
+                window.ConfigSettingPromo?.dismissActive?.({ persist: true });
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
@@ -1102,6 +1114,14 @@ class DashboardConfig {
         if (!this.isActiveView() || !this.isEnabled()) return false;
         const d = this.dash;
         if (window.DashboardTagCloud?.modalOpen) return false;
+        // The right-click menu and its check-mode submenu own the keyboard while
+        // they are up. Both this handler and the menu's own bind a capture
+        // listener on document, and this one is registered at startup so it
+        // always ran first: Enter on "Delete" opened the bookmark instead, and
+        // stopImmediatePropagation meant the menu never saw the key at all. Its
+        // letter accelerators -- o, m -- went the same way. The Escape branch
+        // below has always asked this question; the rest of the keys had not.
+        if (this._bmContextMenu?.isOpen?.() && e.key !== 'Escape') return false;
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -1767,7 +1787,13 @@ class DashboardConfig {
     getListKeyboardRows() {
         const body = document.getElementById('config-pt-body');
         if (!body) return [];
-        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'));
+        // Only rows the cursor can actually name. The Collection sizes table on
+        // the Collections tab is built from .config-crud-row too, but its rows
+        // are read-only and carry no key -- and being first in the DOM they took
+        // index 0, where listRowKey answered null and the cursor could never
+        // move off them. That left the whole tab's up/down, g/G and Enter dead.
+        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'))
+            .filter((row) => this.listRowKey(row) !== null);
     }
 
     clearListKeyboardSelection() {
@@ -1834,7 +1860,12 @@ class DashboardConfig {
     }
 
     appendListKeyboardLegend(body) {
-        const list = body?.querySelector('.config-crud-list');
+        // The list the keys actually drive, not simply the first one on the
+        // panel: on Collections that is the read-only sizes table, so the legend
+        // promised keys under a table none of them apply to.
+        const lists = Array.from(body?.querySelectorAll('.config-crud-list') || []);
+        const list = lists.find((el) => Array.from(el.querySelectorAll('.config-crud-row'))
+            .some((row) => this.listRowKey(row) !== null)) || lists[0];
         if (!list || list.querySelector('.config-panel-empty')) return;
         if (body.querySelector('.config-list-keyboard-legend')) return;
         const legend = document.createElement('p');
@@ -3031,7 +3062,13 @@ class DashboardConfig {
 
     /** Headline counts — pass a subset stats object when filters are active. */
     bookmarksSummaryTiles(stats) {
-        const s = stats || this.computeStats();
+        // The whole library when no filter is on, counted here rather than
+        // through computeStats(): that one is narrowed by statsPageFilter, the
+        // Statistics scope selector, which lives on the instance for the whole
+        // session. Setting it there and coming back to Bookmarks left these
+        // tiles counting one page while the list and the count label beneath
+        // them counted everything, with nothing on screen to explain it.
+        const s = stats || this.computeBookmarkSubsetStats(this.dash.allBookmarks || []);
         const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
         return [
             {
@@ -9334,6 +9371,15 @@ class DashboardConfig {
                 // until the view was rebuilt from scratch.
                 this._themeList = null;
                 void this.loadThemeList();
+                // colors.json is hashed into the settings fingerprint too, so
+                // adopt what this save produced -- otherwise the revision poll
+                // reads our own theme change as another device's and runs a full
+                // settings refresh against it on the next focus.
+                try {
+                    await this.dash.data?.fetchDataRevision?.();
+                    const seen = this.dash.data?._lastSettingsRevision;
+                    if (seen) this.dash._serverSettingsRevision = seen;
+                } catch { /* the poll corrects itself on its next pass */ }
                 this.notify(this.t('config.saved', 'Saved'), 'success');
                 return true;
             } catch {
@@ -10378,7 +10424,7 @@ class DashboardConfig {
         rememberScrollPosition: { info: ['rememberScrollPositionInfoTitle', 'rememberScrollPositionInfoMessage'], def: true },
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
-        includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: false },
+        includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
         keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'], def: false },
@@ -18460,8 +18506,12 @@ class DashboardConfig {
     ensureDuplicateUrlSet() {
         if (this._bmDuplicateUrls) return this._bmDuplicateUrls;
         const counts = new Map();
+        // The same canonical key Statistics counts with. A plain lowercase
+        // compare treated a trailing slash or a fragment as a different link, so
+        // Statistics reported a duplicate that the Duplicate URLs filter then
+        // could not find and the row never got its badge.
         (this.dash.allBookmarks || []).forEach((b) => {
-            const url = String(b.url || '').trim().toLowerCase();
+            const url = this.canonicalStatsUrlKey(b.url);
             if (url) counts.set(url, (counts.get(url) || 0) + 1);
         });
         this._bmDuplicateUrls = new Set(
@@ -19613,8 +19663,10 @@ class DashboardConfig {
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),
         noicon: (b) => window.BookmarkPredicates.match('noicon', b),
-        duplicate: (b, dupes) => {
-            const url = String(b.url || '').trim().toLowerCase();
+        duplicate: (b, dupes, canonical) => {
+            const url = typeof canonical === 'function'
+                ? canonical(b.url)
+                : String(b.url || '').trim().toLowerCase();
             return url && dupes && dupes.has(url);
         },
         // What did I touch? The question after an import, a bulk retag, or an
@@ -19693,7 +19745,9 @@ class DashboardConfig {
         const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
         const rows = all.filter((b) => {
             if (cleanup) {
-                const ok = cleanupKey === 'duplicate' ? cleanup(b, dupes) : cleanup(b);
+                const ok = cleanupKey === 'duplicate'
+                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
+                    : cleanup(b);
                 if (!ok) return false;
             }
             if (pageFilter && String(b.pageId) !== pageFilter) return false;
@@ -21292,6 +21346,14 @@ class DashboardConfig {
         // across the repaint lives on the window, not on an element.
         const scrollHost = this.bookmarkListScrollHost();
         const scrollTop = scrollHost ? scrollHost.scrollTop : window.scrollY;
+        // Focus lives on a row, and every row is about to be replaced. The
+        // context menu deliberately hands focus back to its row on close, and
+        // this ran straight afterwards -- so Select dropped it to <body>, where
+        // j/k no longer reach the list and walk the section rail instead.
+        // repaintBookmarkRowsOnly has always done this; this one had not.
+        const focusedKey = document.activeElement?.classList?.contains('config-bm-row')
+            ? this.bookmarkRowKey(document.activeElement)
+            : null;
         this._bmLoadMoreObserver?.disconnect?.();
         this._bmLoadMoreObserver = null;
         host.innerHTML = this.renderBookmarksList();
@@ -21303,6 +21365,11 @@ class DashboardConfig {
         else window.scrollTo(0, scrollTop);
         this.setupBookmarkLoadMore(host);
         this.bindBookmarkWindowScroll();
+        if (focusedKey) {
+            const again = [...host.querySelectorAll('.config-bm-row')]
+                .find((row) => this.bookmarkRowKey(row) === focusedKey);
+            again?.focus({ preventScroll: true });
+        }
     }
 
     repaintBulkToolbar() {
@@ -22046,6 +22113,34 @@ class DashboardConfig {
      * an English one does not group the same way — so this goes through Intl
      * rather than through a hand-rolled regex.
      */
+    /**
+     * "3 days ago", in the reader's own language.
+     *
+     * Intl does the wording, so this needs no strings of its own and follows
+     * the language setting for free. Falls back to a plain date where Intl has
+     * no RelativeTimeFormat, and to '' for a missing timestamp -- a bookmark
+     * that was never edited has no answer, which is not the same as "now".
+     */
+    statsRelativeTime(value) {
+        const at = Number(value) || 0;
+        if (!at) return '';
+        const lang = this.dash.settings?.language || undefined;
+        const diffDays = Math.round((at - Date.now()) / 86400000);
+        try {
+            const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+            if (Math.abs(diffDays) < 1) {
+                const hours = Math.round((at - Date.now()) / 3600000);
+                return rtf.format(hours, 'hour');
+            }
+            if (Math.abs(diffDays) < 31) return rtf.format(diffDays, 'day');
+            const months = Math.round(diffDays / 30);
+            if (Math.abs(months) < 12) return rtf.format(months, 'month');
+            return rtf.format(Math.round(diffDays / 365), 'year');
+        } catch {
+            return new Date(at).toLocaleDateString(lang);
+        }
+    }
+
     statsNumber(value) {
         const n = Number(value);
         if (!Number.isFinite(n)) return String(value ?? '');
@@ -22170,6 +22265,18 @@ class DashboardConfig {
         let stale90 = 0;
         const urlCounts = new Map();
         const shortcutCounts = new Map();
+        let pinned = 0;
+        let lastTouched = 0;
+        let oldestBrokenAt = 0;
+        let lastArchiveAt = 0;
+        let oldestBrokenName = '';
+        // Added-per-month, for the growth panel. createdAt is absent on
+        // bookmarks that predate it -- an old import carries none -- so the
+        // count of how many *did* answer travels with the series, and the
+        // panel says so rather than drawing a flat line for years nobody
+        // recorded.
+        const addedByMonth = new Map();
+        let withCreatedAt = 0;
 
         all.forEach((b) => {
             const tags = Array.isArray(b.tags) ? b.tags : [];
@@ -22189,6 +22296,26 @@ class DashboardConfig {
             }
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
+            if (b.pinned === true) pinned += 1;
+            // The longest-standing failure. "1 broken" does not say whether it
+            // went yesterday or in March, and that is the half that decides
+            // between fixing it and letting it go.
+            const archived = Number(b.archiveCheckedAt || 0);
+            if (archived > lastArchiveAt) lastArchiveAt = archived;
+            const since = Number(b.brokenSince || 0);
+            if (since > 0 && (!oldestBrokenAt || since < oldestBrokenAt)) {
+                oldestBrokenAt = since;
+                oldestBrokenName = String(b.name || b.url || '');
+            }
+            const touched = Number(b.updatedAt || 0);
+            if (touched > lastTouched) lastTouched = touched;
+            const created = Number(b.createdAt || 0);
+            if (created > 0) {
+                withCreatedAt += 1;
+                const when = new Date(created);
+                const month = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}`;
+                addedByMonth.set(month, (addedByMonth.get(month) || 0) + 1);
+            }
             if (window.BookmarkPredicates.match('noted', b)) withNote += 1;
             if (!window.BookmarkPredicates.match('noicon', b)) withIcon += 1;
             if (b.checkStatus === true || b.monitor === true) checked += 1;
@@ -22292,6 +22419,16 @@ class DashboardConfig {
             tagCount: tagCounts.size,
             withShortcut,
             monitored,
+            pinned,
+            // The newest edit anywhere in scope, and how many bookmarks could
+            // be dated at all -- the growth panel needs both to say what its
+            // bars are drawn from.
+            lastTouched,
+            oldestBrokenAt,
+            oldestBrokenName,
+            lastArchiveAt,
+            growth: [...addedByMonth.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)),
+            withCreatedAt,
             tagged,
             withNote,
             withIcon,

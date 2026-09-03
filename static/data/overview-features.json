@@ -2,6 +2,55 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureFinderFallbackTitle",
+      "titleFallback": "A search that finds nothing offers your finders",
+      "whatKey": "config.overviewNewFeatureFinderFallbackWhat",
+      "whatFallback": "Searching for something that is not in your dashboard ended there: a line saying nothing matched, and no way onward without retyping the same words somewhere else.",
+      "howKey": "config.overviewNewFeatureFinderFallbackHow",
+      "howFallback": "The finders you use most now sit under that line, carrying the words you already typed. Click one, or arrow down and press Enter. Brave Search comes with nextDash on ?B — and if you had already added Brave yourself, yours is left exactly as you set it up.",
+      "enableKey": "config.overviewNewFeatureFinderFallbackEnable",
+      "enableFallback": "On by default. Include finders in search, under Behavior → Search, switches it off.",
+      "ctaKey": "config.overviewNewFeatureFinderFallbackCta",
+      "ctaFallback": "Open search settings →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "search"
+      },
+      "since": "v1.4.7"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemeShortcutTitle",
+      "titleFallback": "Shift+A opens the theme browser",
+      "whatKey": "config.overviewNewFeatureThemeShortcutWhat",
+      "whatFallback": "Trying a different theme meant leaving what you were doing: into config, into Appearance, then into the browser.",
+      "howKey": "config.overviewNewFeatureThemeShortcutHow",
+      "howFallback": "Shift+A opens it over whatever is on screen — all of your themes, searchable, previewing on the real dashboard as you move across them. Escape closes it and leaves the theme you had.",
+      "enableKey": "config.overviewNewFeatureThemeShortcutEnable",
+      "enableFallback": "Nothing to switch on. Press ! or F1 for the full list of shortcuts.",
+      "ctaKey": "config.overviewNewFeatureThemeShortcutCta",
+      "ctaFallback": "Open appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.4.7"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureStatsFiguresTitle",
+      "titleFallback": "Statistics shows what the install already knew",
+      "whatKey": "config.overviewNewFeatureStatsFiguresWhat",
+      "whatFallback": "Four things were recorded and never shown: how many bookmarks are pinned, when anything was last edited, when a page was last kept as a copy, and how long the longest-standing broken link has been failing. \"1 broken\" never said whether that was yesterday or March.",
+      "howKey": "config.overviewNewFeatureStatsFiguresHow",
+      "howFallback": "All four are on the Statistics section now, and a new panel counts what you added per month — saying how many bookmarks carry a date, so anything saved before nextDash recorded one is left out rather than quietly folded in.",
+      "enableKey": "config.overviewNewFeatureStatsFiguresEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureStatsFiguresCta",
+      "ctaFallback": "Open statistics →",
+      "go": {
+        "section": "stats"
+      },
+      "since": "v1.4.7"
+    },
+    {
       "titleKey": "config.overviewNewFeaturePreviewMediaTitle",
       "titleFallback": "Preview pictures come from nextDash",
       "whatKey": "config.overviewNewFeaturePreviewMediaWhat",

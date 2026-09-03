@@ -1,31 +1,30 @@
 {
-    "tag": "v2026.09.09.2",
-    "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true,
-    "modalLead": "Small fixes on top of v2026.09.09: tap targets on tablets, and clearer labels where a control did not say what it would act on.",
-    "sections": [
+  "tag": "v2026.09.09.2",
+  "date": "August 2026",
+  "releasedAt": "2026-08-11",
+  "modalLead": "Small fixes on top of v2026.09.09: tap targets on tablets, and clearer labels where a control did not say what it would act on.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
         {
-            "title": "Dashboard",
-            "items": [
-                {
-                    "badge": "fix",
-                    "text": "<strong>Page tabs are big enough to tap.</strong> On a tablet — a touch device wide enough to keep the desktop layout — the tabs measured 28×33, under the 44px iOS and Android ask for."
-                },
-                {
-                    "badge": "fix",
-                    "text": "<strong>A page tab names itself.</strong> With page names switched off the tab read as a bare number to a screen reader; it now carries the page's own name."
-                }
-            ]
+          "badge": "fix",
+          "text": "<strong>Page tabs are big enough to tap.</strong> On a tablet — a touch device wide enough to keep the desktop layout — the tabs measured 28×33, under the 44px iOS and Android ask for."
         },
         {
-            "title": "Health",
-            "items": [
-                {
-                    "badge": "fix",
-                    "text": "<strong>The bulk enable buttons say which rows they act on.</strong> <em>Monitor these 3</em> sat directly above <em>2 selected</em> with nothing saying which set each meant — they read <em>Monitor all 3 shown</em> now."
-                }
-            ]
+          "badge": "fix",
+          "text": "<strong>A page tab names itself.</strong> With page names switched off the tab read as a bare number to a screen reader; it now carries the page's own name."
         }
-    ]
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The bulk enable buttons say which rows they act on.</strong> <em>Monitor these 3</em> sat directly above <em>2 selected</em> with nothing saying which set each meant — they read <em>Monitor all 3 shown</em> now."
+        }
+      ]
+    }
+  ]
 }

@@ -392,6 +392,22 @@ class DashboardSetup {
                 }
                 return;
             }
+
+            // Shift+A opens the theme browser -- Appearance, the same
+            // first-letter mnemonic as Shift+I (Inbox), Shift+H (Health) and
+            // Shift+S (Settings) above. It goes straight to the modal that
+            // "Browse themes" in Appearance opens, via the config view's own
+            // openThemeBrowser(), rather than stopping at the section: config
+            // never has to be entered just to switch a theme.
+            if (e.shiftKey && e.code === 'KeyA') {
+                if (d.config?.openThemeBrowser) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashTrack?.('nav:theme-browser-shortcut');
+                    void d.config.openThemeBrowser();
+                }
+                return;
+            }
             if (key >= '1' && key <= '9') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;

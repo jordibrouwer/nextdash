@@ -1,0 +1,135 @@
+{
+  "tag": "v1.4.7",
+  "date": "3 September 2026",
+  "releasedAt": "2026-09-03",
+  "modalLead": "A search that finds nothing now offers somewhere else to look: your finders sit underneath, ready to take the words you already typed. Shift+A opens the theme browser from anywhere, Statistics reports four things the install always knew but never showed, and a stack of corrections across the dashboard, inbox and health.",
+  "sections": [
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A search that finds nothing offers your finders.</strong> Type something that is not in your dashboard and the finders you use most sit underneath it, carrying the words you already typed. Click one, or arrow down and press Enter. <em>Include finders in search</em> is on by default now, in Config &rarr; Behavior."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Brave Search comes with nextDash.</strong> A finder on <strong>?B</strong>, alongside DuckDuckGo. If you already added Brave yourself, yours is left exactly as you set it up &mdash; and removing the one nextDash added keeps it removed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A space straight after ? no longer breaks finder mode.</strong> Pressing space before typing a shortcut left a gap in the box, and everything after it was searched as plain text &mdash; so nothing was ever found. The space is simply ignored now."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shift+A opens the theme browser.</strong> All of your themes, searchable, over whatever you were looking at &mdash; without going into config first. Escape closes it and leaves the theme you had."
+        }
+      ]
+    },
+    {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Four figures the install already knew.</strong> How many bookmarks are pinned, when anything was last edited, when a page was last saved as a copy, and how long the longest-standing broken link has been failing &mdash; \"1 broken\" never said whether that was yesterday or March."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How the collection grew.</strong> A month-by-month count of what you added, on the Content tab. It says how many bookmarks carry a date: anything saved before nextDash recorded one is left out rather than quietly folded in."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The page you scope to is the page the figures describe.</strong> Choosing a page under <em>Showing</em> narrowed some panels and not others, so a percentage could be counted out of the whole library while its own number came from one page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Duplicates are counted the same way everywhere.</strong> Statistics and the Bookmarks list disagreed about links that differ only by a trailing slash: one reported a duplicate the other could not find."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Alt+&uarr; / Alt+&darr; moves a bookmark again.</strong> The shortcut for moving a bookmark within its category did nothing at all &mdash; no move, no message. Shift+Alt+&larr; / &rarr; now really does move it to the category beside it, rather than somewhere unrelated."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Switching pages is quicker, and keeps its widgets.</strong> Every switch fetched the whole page again, even one you had just left, and a dropped request could empty the page of its widgets until a reload. A page you have already seen is drawn from what is already here."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The sorting hint follows the sort you chose.</strong> A category switched from A&ndash;Z to Recent kept saying A&ndash;Z, and one switched back to manual order still said dragging was impossible while dragging worked fine."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Marking a link unread sticks.</strong> Pressing <em>u</em> while the inbox was refreshing quietly flipped it back to read a moment later."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+&uarr; at the top no longer selects the whole inbox.</strong> It jumped to the last row and ticked everything in between &mdash; one keystroke from a single selection to two hundred, with Delete right there."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Triage counts the whole run.</strong> Clearing twenty links and keeping eight reported eight; clearing all of them closed without a word. It now says what you went through, and the finish card appears either way."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Undo after clearing read links restores only what went.</strong> If some deletions failed, undo put those back too and claimed more had returned than ever left."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A preview that failed once is tried again.</strong> A brief network blip left that card blank for the rest of the session, however many times you came back to it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Re-checking a row keeps your place in the list.</strong> A long list jumped twice and landed somewhere else."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A refresh that fails says so.</strong> A failed refresh left the old rows on screen with no message at all."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The arrow keys work on the Collections tab.</strong> Up, down, g and Enter did nothing there &mdash; the cursor could never leave the first row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The right-click menu keeps its own keys.</strong> Pressing Enter on <em>Delete</em> opened the bookmark instead and left the menu standing; in the availability submenu, <em>o</em> and <em>m</em> did something else entirely."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Selecting a row from the menu keeps the keyboard in the list.</strong> After <em>Select</em>, j and k walked out of Bookmarks into Appearance."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A settings change no longer reloads the view against itself.</strong> Changing a setting and switching away and back ran a full reload, throwing away anything typed but not yet committed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help follows the language you picked.</strong> Switching language while Help was still loading left that section in English for the rest of the visit."
+        }
+      ]
+    }
+  ]
+}

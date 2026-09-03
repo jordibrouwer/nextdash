@@ -1,18 +1,17 @@
 {
-    "tag": "v2026.09.09.3",
-    "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true,
-    "modalLead": "A fix on top of v2026.09.09: opening a bookmark from Health no longer claims its category had been deleted.",
-    "sections": [
+  "tag": "v2026.09.09.3",
+  "date": "August 2026",
+  "releasedAt": "2026-08-11",
+  "modalLead": "A fix on top of v2026.09.09: opening a bookmark from Health no longer claims its category had been deleted.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
         {
-            "title": "Dashboard",
-            "items": [
-                {
-                    "badge": "fix",
-                    "text": "<strong>Opening a bookmark from Health no longer claims its category was deleted.</strong> The jump was following the link before the grid had been drawn at all, so it searched an empty page and reported a category that was sitting in plain sight. It now runs once the grid is up, and waits if it is still rendering."
-                }
-            ]
+          "badge": "fix",
+          "text": "<strong>Opening a bookmark from Health no longer claims its category was deleted.</strong> The jump was following the link before the grid had been drawn at all, so it searched an empty page and reported a category that was sitting in plain sight. It now runs once the grid is up, and waits if it is still rendering."
         }
-    ]
+      ]
+    }
+  ]
 }

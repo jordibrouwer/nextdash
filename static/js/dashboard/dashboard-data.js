@@ -890,9 +890,18 @@ class DashboardData {
          * arrive: an order left over from the previous page would arrange this
          * one's categories by ids that mean nothing here.
          */
+        //
+        // undefined means the block list was not answered for -- a dropped
+        // request on a slow link. Emptying the page on that turned a lost
+        // request into "this page has no widgets", which is why they sometimes
+        // vanished on a page switch. Keep what is on screen and let the next
+        // load correct it. A real answer, including one that genuinely carries
+        // no widgets, still replaces them.
         const blocks = options.blocks;
-        d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
-        d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
+        if (blocks !== undefined) {
+            d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
+            d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
+        }
         d.currentPageId = targetPageId;
         if (!preserveView) {
             d.setActiveView('bookmarks');
@@ -1078,7 +1087,13 @@ class DashboardData {
                 // addition, and a dashboard that will not load because a block
                 // list could not be read is a worse trade than one without its
                 // widgets for a moment.
-                blocks = blocksRes.ok ? await blocksRes.json().catch(() => null) : null;
+                //
+                // But null has to mean "not answered", not "no widgets": it used
+                // to reach _applyLoadedPageData as an empty widget list, so one
+                // dropped request emptied the page of its widgets until the next
+                // reload. Undefined says the answer never came, and the widgets
+                // already on screen are kept.
+                blocks = blocksRes.ok ? await blocksRes.json().catch(() => undefined) : undefined;
                 if (!this.isCurrentPageBookmarksLoad(loadId)) {
                     return false;
                 }
@@ -1335,6 +1350,26 @@ class DashboardData {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
             void d.inbox?.bootstrap?.();
+            /*
+             * Adopt the fingerprint this save just produced.
+             *
+             * The revision poll compares the server's settingsRevision against
+             * _serverSettingsRevision, and nothing recorded a save made *here* --
+             * so the next focus or tab-switch saw its own change as somebody
+             * else's and ran a full settings refresh against itself. That
+             * replaces d.settings wholesale and re-renders, which throws away a
+             * field typed but not yet committed: type a weather location, glance
+             * at another window, come back to an empty box.
+             *
+             * Awaited before publishing, so a listener that polls on the message
+             * sees the updated value rather than the one it replaces.
+             */
+            try {
+                await this.fetchDataRevision();
+                if (this._lastSettingsRevision) {
+                    d._serverSettingsRevision = this._lastSettingsRevision;
+                }
+            } catch { /* the poll corrects itself on its next pass */ }
             // Other tabs hold their own copy of settings; tell them it moved.
             d.configSync?.publishConfigSync?.('settings');
             return true;

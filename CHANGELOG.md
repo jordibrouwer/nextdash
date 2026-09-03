@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
 - [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
 - [v1.4.5.2 — 2 September 2026](#v1452--2-september-2026)
@@ -195,6 +196,71 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.4.7 — 3 September 2026
+
+### Search
+
+- **new — a no-match search offers your finders.** A plain search that matches nothing now lists your most-used finders under the "no matches" line, carrying the query already typed. Clickable, and reachable with the arrow keys like any other row. The block was already built and wired for both; it was missing the one check that asks whether the reader wants finders in search at all, so it appeared even with the setting off.
+- **new — `includeFindersInSearch` defaults on.** New installs start with it on, and existing ones are moved once through `IncludeFindersInSearchMigrated`. The config default marker in `dashboard-config.js` moved with it, so "reset to default" agrees.
+- **new — Brave Search ships as a finder.** `https://search.brave.com/search?q=%s&source=nextdash` on `b`, seeded for new installs beside DuckDuckGo and added to existing ones once via `BraveFinderSeededMigrated`. Matched on the `search.brave.com` host rather than the whole URL, so a reader who added Brave themselves keeps their own name, shortcut and parameters; the marker means deleting the seeded one keeps it deleted.
+- **fix — a space directly after `?` no longer breaks finder mode.** `addToQuery()` appends the key before asking whether space should complete a shortcut, and a bare `?` trims to `""`, which no finder is keyed on — so the check fell through and left `"? "`. Everything typed after landed past that space and was searched as literal text against finder names.
+
+### Themes
+
+- **new — Shift+A opens the theme browser.** Straight to `openThemeBrowser()`, the same modal Appearance's "Browse themes" opens, over whatever view is on screen. A for Appearance, matching Shift+I, Shift+H and Shift+S; `Ctrl+Shift+A` (new bookmark) is a different modifier and unaffected.
+
+### Statistics
+
+- **new — pinned, last edited, last saved copy, and how long the longest-standing break has lasted.** All four came from fields the install already recorded and none of them surfaced: `pinned`, `updatedAt`, `archiveCheckedAt` and `brokenSince`.
+- **new — a growth panel on Content.** Added-per-month from each bookmark's `createdAt`, last twelve months, with a note naming how many of the total carry a date — anything imported before nextDash recorded one is excluded rather than folded in silently.
+- **fix — the headline, insights and shortcuts panels honour the page scope.** All three read `allBookmarks` directly while dividing figures that `computeStats()` had already narrowed, so a scoped numerator sat over an unscoped total.
+- **fix — duplicates are counted on one key.** `ensureDuplicateUrlSet()` keyed on a plain lowercased URL while Statistics used `canonicalStatsUrlKey()`, so a trailing slash or fragment made the panel and the list disagree about the same pair.
+- **fix — the Bookmarks tiles count the library, not the Statistics scope.** They fell back to `computeStats()`, which `statsPageFilter` narrows for the whole session.
+- The overview tile row went from six tiles to eight and now lays out four to a row rather than being squeezed onto one.
+
+### Dashboard
+
+- **fix — Alt+↑ / Alt+↓ moves a bookmark again.** `moveCurrentBookmark()` resolved the list with `row.closest('[data-category-id]')`, and every row carries that attribute itself — `closest()` tests the element first, so the "list" was the row, no siblings were found and the shortcut returned false on every press. `Shift+Alt+←/→` had the same root cause with a worse outcome: an unqualified selector matched categories, lists and rows alike, so "the category beside it" was usually the next row.
+- **fix — switching pages reuses what is already loaded.** Health status writes land in `bookmarks-*.json`, which `GetDataRevision()` hashed, so every ping moved the revision and dropped the client's page cache — three fetches on every switch. The revision now hashes bookmark *content* via `bookmarkContentFingerprint()`, leaving status out.
+- **fix — a dropped block list no longer empties a page of its widgets.** `blocks` became `null` on a failed request and `_applyLoadedPageData` read that as "this page has no widgets"; `undefined` now means "not answered" and keeps what is on screen.
+- **fix — status writes are batched.** One write per result outside a checking round, and the viewport observer starts one check per row scrolling in; they are collected for 400 ms instead.
+- **fix — the sort-locked drag hint follows the sort mode.** The guard flag was one-shot on a DOM element the incremental render reuses, so the tooltip named whichever mode the category was first given, and returning to manual order left a hint saying dragging was impossible.
+
+### Inbox
+
+- **fix — marking a link unread survives a fetch in flight.** `fetchItems()` snapshots read stamps before its request and re-applies them after; a deliberate unread in between was overwritten by the stale stamp.
+- **fix — Shift+↑ at the first row no longer selects everything.** `moveKeyboardSelection` wraps, which is right for a plain arrow and wrong while extending a selection.
+- **fix — triage reports the run it walked.** `renderDone` counted `queue.length`, but `afterAction` splices out every delete, snooze and promote; a fully-cleared run closed without showing the panel at all.
+- **fix — undo after "clear read" restores only what was deleted.** Snapshots were taken for every target before the deletes rather than only for the ones that succeeded — the same defect `bulkDelete` had already fixed and documented.
+- **fix — a stale selection anchor is cleared with the ticks.** Six sites cleared `checkedIds` on a filter change and left `checkAnchorId` standing.
+
+### Health
+
+- **fix — a failed preview is retried in the next session.** `_previewFailed` was never cleared and the focus instance is cached for the tab's lifetime, so one network blip left a card blank until a full reload — the opposite of what the comment beside it promised.
+- **fix — `restoreKeptPlace()` is not overrun by a smooth scroll.** The animation kept running for hundreds of milliseconds after the three-frame settle gave up.
+- **fix — a failed refresh reaches the caller.** `fetchReport`'s refresh-join used `.finally()`, which resolves with the *original* promise's value and left the inner rejection unhandled, so the caller saw a success and showed no error.
+
+### Config
+
+- **fix — the Collections tab's list keyboard works.** `renderCollectionStats()` emits read-only `.config-crud-row` items with no key, and being first in the DOM they took index 0 where `listRowKey()` answered null — up, down, g and Enter were all dead on that tab. `getListKeyboardRows()` now offers only rows that have a key, which also puts the keyboard legend under the list the keys actually drive.
+- **fix — the right-click menu keeps its own keys.** Both the menu and the config view bind a capture listener on `document`, and the config one is registered at startup so it always ran first: Enter on "Delete" opened the bookmark and `stopImmediatePropagation()` meant the menu never saw the key. The check-mode submenu's `o` and `m` accelerators went the same way.
+- **fix — a full list repaint keeps focus on its row.** `repaintBookmarksList()` replaced every row without preserving focus, so "Select" from the menu dropped it to `<body>` and j/k walked the section rail instead of the list.
+- **fix — a tab does not refresh against its own settings save.** Nothing recorded a save made locally in `_serverSettingsRevision`, so the next focus read the tab's own change as another device's and ran a full settings refresh, discarding anything typed but not yet committed. `saveColorsData()` got the same treatment, since `colors.json` is hashed into the same fingerprint.
+- **fix — the storage-sync drain is reachable.** It sat after the `try`/`finally`, and both branches return from inside the `try` — a return runs `finally` and then leaves the function, so the drain was dead code on the path that needed it.
+- **fix — a help fetch in flight is not reused for another language.** `_helpLoading` carried no language, so a request for German could join an English fetch and merge English prose into the German bundle, stamping it as loaded.
+- **fix — a promo no longer eats the Escape that was leaving the view, or pulls an open menu out from under the pointer.**
+
+### Docs
+
+- **fix — `SaveSettings` no longer discards a migration marker set in the same call.** The "preserve markers from the stored file" block read the file as it was *before* the save and overwrote the incoming value with it. `GetSettings()` flips a marker in memory only and never writes, so the first save after any migration ran carried a marker this block replaced with the stale `false` still on disk — leaving the migration eligible to run again, for all seven markers, not only a newly added one. Markers now only move `false` → `true`.
+- Config list rows share the widget row's border, radius, padding and fill; spacing, type size and radius read from shared token files.
+- The Docker build cross-compiles per target architecture instead of building under QEMU.
+- Go tests no longer fail on a shared outbound rate limiter: `TestMain` raises the limit for the test binary, since the limiter is a package-level singleton every test shares.
+- **`hideFromModal` is lifted from every release that carried it** — v1.4.5.2 was the last one holding it. The flag and the code that reads it stay, but no release uses it: a reader stepping back through the notes should not find a version missing between two that are there.
+- The Unraid template's devlog link points at `nextdash.cc/news` rather than the `/blog` path it used to.
+
+---
+
 ## v1.4.6 — 2 September 2026
 
 ### Link previews
@@ -236,7 +302,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Docs
 
-- Release plumbing only: dev-only files are pruned from main after the merge. Nothing user-facing, so this release is kept out of the What's new modal with `hideFromModal` while staying in the index.
+- Release plumbing only: dev-only files are pruned from main after the merge. Nothing user-facing. It was held out of the What's new modal with `hideFromModal` at the time; that flag was lifted in v1.4.7, so the release now reads like any other.
 
 ---
 

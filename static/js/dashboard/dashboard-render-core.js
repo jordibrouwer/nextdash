@@ -1159,6 +1159,16 @@ class DashboardRenderCore {
                 return;
             }
 
+            // Back to manual order: the list is draggable again, so the hint
+            // that said it was not has to go. Without this it survived on the
+            // reused element -- a tooltip telling you to switch to manual order
+            // while you already had, over a list that dragged perfectly well.
+            if (listElement._sortLockedHintMode) {
+                listElement._sortLockedHintMode = null;
+                listElement._sortLockedHintText = '';
+                listElement.removeAttribute('title');
+            }
+
             const reorderInstance = new DragReorder({
                 container: listElement,
                 itemSelector: '.bookmark-link',
@@ -1189,10 +1199,18 @@ class DashboardRenderCore {
      */
     attachSortLockedDragHint(listElement, sortMode) {
         const d = this.dash;
-        if (!listElement || listElement._sortLockedHintBound) {
+        if (!listElement) {
             return;
         }
-        listElement._sortLockedHintBound = true;
+        // Keyed on the mode rather than a plain "already done" flag. The
+        // incremental render reuses this element, so a bare flag meant the hint
+        // was written once and never again: switching A-Z to Recent left the
+        // tooltip naming A-Z for the rest of the session.
+        if (listElement._sortLockedHintMode === sortMode) {
+            return;
+        }
+        const rebinding = Boolean(listElement._sortLockedHintMode);
+        listElement._sortLockedHintMode = sortMode;
 
         const modeLabel = {
             opened: d.formatDashboardLabel('sortModeRecent', {}, 'Recent'),
@@ -1218,13 +1236,22 @@ class DashboardRenderCore {
             listElement.removeAttribute('title');
         }
 
+        // Read from the element rather than from this call's closure: the
+        // listeners below are attached once, and a later mode change refreshes
+        // the wording without rebinding them.
+        listElement._sortLockedHintText = hint;
+
+        if (rebinding) {
+            return;
+        }
+
         const showHintToast = () => {
             const now = Date.now();
             if (d._sortLockedToastAt && now - d._sortLockedToastAt < 4000) {
                 return;
             }
             d._sortLockedToastAt = now;
-            d.showNotification?.(hint, 'info');
+            d.showNotification?.(listElement._sortLockedHintText || hint, 'info');
         };
 
         // Only a genuine drag gesture (press + move past a small threshold) gets the

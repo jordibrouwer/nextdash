@@ -2209,7 +2209,11 @@ class KeyboardNavigation {
     moveCurrentBookmark(direction) {
         const row = this._resolveActionPopoverRow();
         if (!row) return false;
-        const list = row.closest('[data-category-id]');
+        // .bookmarks-list, not a bare [data-category-id]: the row carries that
+        // attribute too, and closest() tests the element itself first -- so this
+        // used to resolve to the row, find no bookmarks inside it, and return
+        // false on every press. The shortcut did nothing at all.
+        const list = row.closest('.bookmarks-list[data-category-id]');
         if (!list || list.getAttribute('data-smart-collection') === 'true') return false;
 
         const d = this.dashboard;
@@ -2261,11 +2265,15 @@ class KeyboardNavigation {
     moveCurrentBookmarkToAdjacentCategory(direction) {
         const row = this._resolveActionPopoverRow();
         if (!row) return false;
-        const list = row.closest('[data-category-id]');
+        const list = row.closest('.bookmarks-list[data-category-id]');
         if (!list) return false;
 
         const d = this.dashboard;
-        const lists = [...document.querySelectorAll('#dashboard-layout [data-category-id]')]
+        // Lists only. An unqualified [data-category-id] matches the category
+        // wrapper, the list inside it *and* every row, so "the category beside
+        // it" was whatever node came next in document order -- usually the next
+        // bookmark in the same category, which made the move a silent no-op.
+        const lists = [...document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]')]
             .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
         const here = lists.indexOf(list);
         const target = lists[here + (direction < 0 ? -1 : 1)];

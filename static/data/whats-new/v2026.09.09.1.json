@@ -1,18 +1,17 @@
 {
-    "tag": "v2026.09.09.1",
-    "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true,
-    "modalLead": "A hotfix on top of v2026.09.09, tidying up the check-mode popover in Health.",
-    "sections": [
+  "tag": "v2026.09.09.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-11",
+  "modalLead": "A hotfix on top of v2026.09.09, tidying up the check-mode popover in Health.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
         {
-            "title": "Health",
-            "items": [
-                {
-                    "badge": "fix",
-                    "text": "<strong>The check-mode popover had become a form.</strong> Three releases added to it, and on a monitored row five of its fifteen controls — Save among them — sat below a scrollbar. The menu picks a mode again; <strong>expectations, drift watching and muting</strong> open in the row's own panel, where the fields get the row's full width and every control is on screen."
-                }
-            ]
+          "badge": "fix",
+          "text": "<strong>The check-mode popover had become a form.</strong> Three releases added to it, and on a monitored row five of its fifteen controls — Save among them — sat below a scrollbar. The menu picks a mode again; <strong>expectations, drift watching and muting</strong> open in the row's own panel, where the fields get the row's full width and every control is on screen."
         }
-    ]
+      ]
+    }
+  ]
 }

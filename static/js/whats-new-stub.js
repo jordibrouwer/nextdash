@@ -24,7 +24,7 @@
      * file, and always has to move: without a new token a browser that already
      * read the index keeps its copy and never learns v1.4.6 exists.
      */
-    const DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.4.6';
+    const DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.4.7';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -33,7 +33,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v273';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v274';
 
     let loadPromise = null;
 

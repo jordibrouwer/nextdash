@@ -825,6 +825,16 @@ class SearchComponent {
     }
 
     addToQuery(key) {
+        // A space with nothing after the "?" yet has no shortcut to complete --
+        // the trim below reduces to "", which no finder is ever keyed on, so
+        // the space landing in the query anyway was never intentional. It left
+        // "? " on screen, and everything typed next was read as literal text
+        // after that space rather than as the shortcut letter it was meant to
+        // be -- "?" then Space then "jordi" searched for "? jordi" and always
+        // found nothing.
+        if (key === ' ' && this.currentQuery.startsWith('?') && !this.currentQuery.slice(1).trim()) {
+            return;
+        }
         this.currentQuery += key;
 
         // A query exists, so search is active -- say so now rather than after the
@@ -2396,8 +2406,13 @@ class SearchComponent {
                 this.matchElements.push(newHint);
                 this.selectableMatches.push({ type: 'hint-new', action: hintNewAction });
 
-                // Hint: search with top finders if any exist (up to 3, sorted by use count)
-                if (Array.isArray(this.finders) && this.finders.length > 0) {
+                // Hint: search with top finders if any exist (up to 3, sorted by use
+                // count) -- gated on the setting, like every other place that
+                // offers finders from plain search. Without this check the
+                // hints stayed on screen even with "Include finders in search"
+                // switched off.
+                if (this.settings.includeFindersInSearch
+                    && Array.isArray(this.finders) && this.finders.length > 0) {
                     const topFinders = [...this.finders]
                         .filter((f) => f.shortcut && f.shortcut.trim())
                         .sort((a, b) => {

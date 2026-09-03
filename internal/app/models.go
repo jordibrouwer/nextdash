@@ -286,6 +286,23 @@ func healthIgnoreSet(entries []HealthIgnore, now time.Time) map[string]HealthIgn
 	return active
 }
 
+// The finder a fresh install ships with, and the one existing installs gain
+// once. The source parameter is how Brave attributes traffic from here; it
+// carries nothing about the reader.
+const braveSearchFinderURL = "https://search.brave.com/search?q=%s&source=nextdash"
+
+// Matched on the host rather than the whole URL: someone who added Brave
+// themselves will have their own parameters, casing and shortcut, and that
+// entry is theirs to keep.
+func hasBraveSearchFinder(finders []Finder) bool {
+	for _, f := range finders {
+		if strings.Contains(strings.ToLower(f.SearchUrl), "search.brave.com") {
+			return true
+		}
+	}
+	return false
+}
+
 type Finder struct {
 	ID        string   `json:"id,omitempty"`
 	Name      string   `json:"name"`
@@ -436,20 +453,22 @@ type Settings struct {
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
-	LinkPreviewParts              []string                     `json:"linkPreviewParts,omitempty"`
-	LinkPreviewHoverDelayMs       int                          `json:"linkPreviewHoverDelayMs"`       // Hover delay before preview card appears
-	PreviewImageCacheMB           int                          `json:"previewImageCacheMB,omitempty"` // Disk cap for data/preview-images
-	ShowShortcuts                 bool                         `json:"showShortcuts"`                 // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
-	ShortcutDisplay               string                       `json:"shortcutDisplay,omitempty"`     // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
-	ShowPinIcon                   bool                         `json:"showPinIcon"`                   // Show pin icon next to pinned bookmarks
-	ShowNoteIcon                  bool                         `json:"showNoteIcon"`                  // Show note icon next to bookmarks with a note
-	IncludeFindersInSearch        bool                         `json:"includeFindersInSearch"`        // Include finders in normal search
-	SortMethod                    string                       `json:"sortMethod,omitempty"`          // Legacy global sort (migrated to per-category sortMode)
-	CategorySortModes             map[string]map[string]string `json:"categorySortModes,omitempty"`   // Per-page sort for uncategorized/orphan categories
-	CategorySortModesMigrated     bool                         `json:"categorySortModesMigrated"`     // Legacy sortMethod migrated to per-category modes
-	PreviewImagesStrippedMigrated bool                         `json:"previewImagesStrippedMigrated"` // Cached image taken off every bookmark; the preview cache owns media now
-	LayoutPreset                  string                       `json:"layoutPreset"`                  // Dashboard layout preset
-	LayoutVersion                 string                       `json:"layoutVersion"`                 // Dashboard layout version: classic, modern
+	LinkPreviewParts               []string                     `json:"linkPreviewParts,omitempty"`
+	LinkPreviewHoverDelayMs        int                          `json:"linkPreviewHoverDelayMs"`                  // Hover delay before preview card appears
+	PreviewImageCacheMB            int                          `json:"previewImageCacheMB,omitempty"`            // Disk cap for data/preview-images
+	ShowShortcuts                  bool                         `json:"showShortcuts"`                            // Legacy on/off for the shortcut label (migrated to shortcutDisplay); read on upgrade, never written to again
+	ShortcutDisplay                string                       `json:"shortcutDisplay,omitempty"`                // When the shortcut label is on screen: "always", "hover" (pointer or keyboard selection only) or "never". Empty reads as "always"; see normalizeShortcutDisplay
+	ShowPinIcon                    bool                         `json:"showPinIcon"`                              // Show pin icon next to pinned bookmarks
+	ShowNoteIcon                   bool                         `json:"showNoteIcon"`                             // Show note icon next to bookmarks with a note
+	IncludeFindersInSearch         bool                         `json:"includeFindersInSearch"`                   // Include finders in normal search
+	IncludeFindersInSearchMigrated bool                         `json:"includeFindersInSearchMigrated,omitempty"` // one-time: default finders-in-search to on
+	BraveFinderSeededMigrated      bool                         `json:"braveFinderSeededMigrated,omitempty"`      // one-time: add the Brave Search finder to existing installs
+	SortMethod                     string                       `json:"sortMethod,omitempty"`                     // Legacy global sort (migrated to per-category sortMode)
+	CategorySortModes              map[string]map[string]string `json:"categorySortModes,omitempty"`              // Per-page sort for uncategorized/orphan categories
+	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
+	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
+	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
+	LayoutVersion                  string                       `json:"layoutVersion"`                            // Dashboard layout version: classic, modern
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
 	 * its greys, the surface ladder, the wash behind the page.
@@ -806,7 +825,12 @@ type QuickStartState struct {
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
 	// records the decision rather than the subscription.
-	PushChoiceMade bool  `json:"pushChoiceMade,omitempty"`
+	// No omitempty, unlike the two below: this is a decision, and "declined"
+	// is an answer. Omitted, false reached the browser as undefined, so
+	// anything comparing it strictly -- the re-ask button's own spec among
+	// them -- saw a value that was never sent. AnalyticsChoiceMade, which this
+	// mirrors, has always been sent whole.
+	PushChoiceMade bool  `json:"pushChoiceMade"`
 	PushAskAfter   int64 `json:"pushAskAfter,omitempty"`
 	PushSnoozes    int   `json:"pushSnoozes,omitempty"`
 	// Bookmark counts at the moment setup finished. The checklist ticks "add a
@@ -1202,7 +1226,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutDisplay:              shortcutDisplayAlways,
 			ShowPinIcon:                  false,
 			ShowNoteIcon:                 true,
-			IncludeFindersInSearch:       false,
+			IncludeFindersInSearch:       true,
 			SortMethod:                   "order",
 			LayoutPreset:                 "default",
 			LayoutVersion:                "classic",
@@ -1280,6 +1304,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	findersFile := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	if _, err := os.Stat(findersFile); os.IsNotExist(err) {
 		defaultFinders := []Finder{
+			{Name: "Brave Search", SearchUrl: braveSearchFinderURL, Shortcut: "b"},
 			{Name: "DuckDuckGo", SearchUrl: "https://duckduckgo.com/?q=%s", Shortcut: "du"},
 		}
 		data, _ := json.MarshalIndent(defaultFinders, "", "  ")
@@ -2200,9 +2225,67 @@ func (fs *FileStore) GetFinders() []Finder {
 		return []Finder{}
 	}
 
+	finders = fs.seedBraveFinderOnce(finders)
+
 	fs.readCache.finders = cloneFinders(finders)
 	fs.readCache.findersOK = true
 	return cloneFinders(finders)
+}
+
+/*
+Give an install that predates the Brave finder one copy of it, once.
+
+Written to disk rather than added on every read: without the marker the entry
+would come back the moment the reader deleted it, and deleting a finder they
+did not ask for is exactly the thing they would then have to do twice. An
+install that already reaches Brave -- with their own shortcut, name and
+parameters -- is left untouched and simply marked as done.
+
+Called from GetFinders with the write lock already held, so it writes through
+the same lock-free helper SaveFinders ends in rather than calling back into
+SaveFinders or SaveSettings.
+*/
+func (fs *FileStore) seedBraveFinderOnce(finders []Finder) []Finder {
+	settings := fs.readSettingsForBraveSeed()
+	if settings == nil || settings.BraveFinderSeededMigrated {
+		return finders
+	}
+
+	if !hasBraveSearchFinder(finders) {
+		finders = append(finders, Finder{
+			Name:      "Brave Search",
+			SearchUrl: braveSearchFinderURL,
+			Shortcut:  "b",
+		})
+		filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
+		if err := fs.writeStoreJSONFile(filePath, finders, 0); err != nil {
+			// The marker is not set, so the next boot tries again rather than
+			// leaving the install without a finder it was meant to gain.
+			return finders
+		}
+	}
+
+	settings.BraveFinderSeededMigrated = true
+	data, err := json.MarshalIndent(settings, "", "  ")
+	if err == nil {
+		_ = writeFileAtomic(fs.settingsFile, data, 0644)
+		fs.readCache.settingsOK = false
+	}
+	return finders
+}
+
+// The settings file as it is on disk, for the Brave seed's marker. Read
+// directly because GetSettings() takes the same lock this is called under.
+func (fs *FileStore) readSettingsForBraveSeed() *Settings {
+	raw, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return nil
+	}
+	var settings Settings
+	if json.Unmarshal(raw, &settings) != nil {
+		return nil
+	}
+	return &settings
 }
 
 func (fs *FileStore) SaveFinders(finders []Finder) error {
@@ -3144,7 +3227,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutDisplay:                shortcutDisplayAlways,
 			ShowPinIcon:                    false,
 			ShowNoteIcon:                   true,
-			IncludeFindersInSearch:         false,
+			IncludeFindersInSearch:         true,
 			BackgroundOpacity:              1,
 			FontWeight:                     "normal",
 			FontPreset:                     "source-code-pro",
@@ -3330,6 +3413,10 @@ func (fs *FileStore) GetSettings() Settings {
 		if !settings.TagCloudDefaultMigrated {
 			settings.ShowTagCloudButton = true
 			settings.TagCloudDefaultMigrated = true
+		}
+		if !settings.IncludeFindersInSearchMigrated {
+			settings.IncludeFindersInSearch = true
+			settings.IncludeFindersInSearchMigrated = true
 		}
 		if !settings.ConfigButtonDefaultOnMigrated {
 			settings.ShowConfigButton = true
@@ -3648,16 +3735,26 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 
 	// Preserve migration markers from the stored file so that importing
 	// settings from another instance cannot suppress pending migrations.
+	//
+	// OR'd with the incoming value, not simply overwritten by the stored one:
+	// GetSettings() flips a marker to true in memory only -- it never writes to
+	// disk -- so the first SaveSettings() call after a migration ran carried a
+	// marker this block used to unconditionally replace with the stale false
+	// still on disk. The migration then looked eligible to run again on the
+	// next boot, for every marker in this list, not only a newly added one. A
+	// marker can move false -> true here; nothing may move it back.
 	if raw, err := os.ReadFile(fs.settingsFile); err == nil {
 		var stored Settings
 		if json.Unmarshal(raw, &stored) == nil {
-			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
-			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
-			settings.ShortcutTooltipsOffMigrated = stored.ShortcutTooltipsOffMigrated
-			settings.ShortcutOpenModeInstantMigrated = stored.ShortcutOpenModeInstantMigrated
-			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
-			settings.ShortcutDisplayAlwaysMigrated = stored.ShortcutDisplayAlwaysMigrated
-			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
+			settings.TagCloudDefaultMigrated = settings.TagCloudDefaultMigrated || stored.TagCloudDefaultMigrated
+			settings.LinkPreviewCardsOffMigrated = settings.LinkPreviewCardsOffMigrated || stored.LinkPreviewCardsOffMigrated
+			settings.ShortcutTooltipsOffMigrated = settings.ShortcutTooltipsOffMigrated || stored.ShortcutTooltipsOffMigrated
+			settings.ShortcutOpenModeInstantMigrated = settings.ShortcutOpenModeInstantMigrated || stored.ShortcutOpenModeInstantMigrated
+			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
+			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
+			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
+			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
+			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}
 	}
 
@@ -4660,16 +4757,25 @@ func (fs *FileStore) GetDataRevision() string {
 		filepath.Join(fs.dataDir, "trash.json"),
 	}
 
+	// Bookmark files are hashed over their *content* rather than their bytes,
+	// below. A health check writes LastChecked and LastError straight into
+	// bookmarks-*.json, so hashing the raw file made every ping move the
+	// revision -- which is the signal clients use to drop their page cache.
+	// The result was that switching pages refetched bookmarks, categories and
+	// blocks every single time, and the dashboard visibly rebuilt itself on
+	// each switch. Status is not content, so it must not move this.
+	bookmarkPaths := []string{}
 	if entries, err := os.ReadDir(fs.dataDir); err == nil {
 		for _, entry := range entries {
 			name := entry.Name()
 			if strings.HasPrefix(name, "bookmarks-") && strings.HasSuffix(name, ".json") {
-				paths = append(paths, filepath.Join(fs.dataDir, name))
+				bookmarkPaths = append(bookmarkPaths, filepath.Join(fs.dataDir, name))
 			}
 		}
 	}
 
 	sort.Strings(paths)
+	sort.Strings(bookmarkPaths)
 
 	hash := sha256.New()
 	for _, path := range paths {
@@ -4681,6 +4787,39 @@ func (fs *FileStore) GetDataRevision() string {
 		fileHash := sha256.Sum256(data)
 		hash.Write([]byte(path + ":"))
 		hash.Write(fileHash[:])
+		hash.Write([]byte(";"))
+	}
+
+	for _, path := range bookmarkPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			hash.Write([]byte(path + ":missing;"))
+			continue
+		}
+		var page PageWithBookmarks
+		if err := json.Unmarshal(data, &page); err != nil {
+			// Unreadable as a page file: fall back to the raw bytes rather than
+			// silently treating it as empty.
+			fileHash := sha256.Sum256(data)
+			hash.Write([]byte(path + ":raw:"))
+			hash.Write(fileHash[:])
+			hash.Write([]byte(";"))
+			continue
+		}
+		hash.Write([]byte(path + ":"))
+		// Everything on the page except the bookmarks' status fields: the page
+		// itself, its categories and its block order all still move the
+		// revision, because a change to any of them is a change a client needs.
+		meta := page
+		meta.Bookmarks = nil
+		if metaBytes, err := json.Marshal(meta); err == nil {
+			metaHash := sha256.Sum256(metaBytes)
+			hash.Write(metaHash[:])
+		}
+		for _, bm := range page.Bookmarks {
+			hash.Write([]byte(bookmarkContentFingerprint(bm)))
+			hash.Write([]byte("\x02"))
+		}
 		hash.Write([]byte(";"))
 	}
 

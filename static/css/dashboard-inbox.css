@@ -677,7 +677,7 @@ body.no-animations .inbox-item-actions {
     flex-wrap: wrap;
     gap: var(--space-1, 0.2rem);
     padding: var(--space-hairline, 0.15rem);
-    border-radius: var(--layout-radius-sm, 12px);
+    border-radius: var(--radius-pill, 999px);
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
 }

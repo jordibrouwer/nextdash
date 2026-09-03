@@ -132,6 +132,7 @@
                         + this.renderStatsConcentration(s)
                         + this.renderStatsCategoryEffectiveness(s)
                         + this.renderStatsDistributions(s)
+                        + this.renderStatsGrowth(s)
                         + this.renderStatsLibrary()
                         + this.renderStatsCleanup(s);
                 case 'inbox':
@@ -160,6 +161,11 @@
                             ${tile(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
                             ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
                             ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
+                            ${tile(this.t('config.statsPinned', 'Pinned'), s.pinned)}
+                            ${tile(
+                                this.t('config.statsLastTouched', 'Last edited'),
+                                s.lastTouched ? this.statsRelativeTime(s.lastTouched) : '—',
+                            )}
                         </div>
                         ${this.renderStatsSummary(s, ago)}
                         ${this.renderStatsHeadline(s)}
@@ -477,10 +483,12 @@
                             <span class="config-ratio-label">${esc(label)}</span>
                             <span class="config-ratio-value">${esc(String(count))} / ${esc(String(total))} · ${pct}%</span>
                         </div>
-                        <div class="config-bar" role="img" aria-label="${esc(label)}: ${pct}%">
+                        <div class="config-bar${count ? '' : ' config-bar--empty'}" role="img" aria-label="${esc(label)}: ${pct}%">
                             <span class="config-bar-fill" style="width:${pct}%"></span>
                         </div>
-                        ${hint ? `<p class="config-field-hint">${esc(hint)}</p>` : ''}
+                        ${!count ? `<p class="config-field-hint">${esc(
+                            this.t('config.statsCoverageNoneYet', 'None yet.'))}</p>`
+                            : (hint ? `<p class="config-field-hint">${esc(hint)}</p>` : '')}
                     </div>`;
             };
             return `
@@ -664,6 +672,61 @@
         },
 
         /** Where the bookmarks sit: per page, per category. */
+        /**
+         * Added per month, from each bookmark's own createdAt.
+         *
+         * The field is not universal: a bookmark imported before nextDash
+         * started recording it carries none, and drawing only what is dated
+         * would quietly claim the collection began the month the first dated
+         * one arrived. So the note underneath says how many of the total could
+         * be placed, and the panel is left out entirely when nothing can.
+         */
+        renderStatsGrowth(s) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const series = Array.isArray(s.growth) ? s.growth.slice(-12) : [];
+            if (!series.length) return '';
+
+            const peak = series.reduce((max, [, n]) => Math.max(max, n), 0) || 1;
+            const monthLabel = (key) => {
+                const [year, month] = String(key).split('-');
+                const at = new Date(Number(year), Number(month) - 1, 1);
+                if (Number.isNaN(at.getTime())) return key;
+                try {
+                    return at.toLocaleDateString(this.dash.settings?.language || undefined,
+                        { month: 'short', year: 'numeric' });
+                } catch {
+                    return key;
+                }
+            };
+            const rows = series.map(([key, n]) => `
+                    <li class="config-dist-row">
+                        <span class="config-dist-label">${esc(monthLabel(key))}</span>
+                        <div class="config-bar config-bar--slim" role="img" aria-label="${esc(monthLabel(key))}: ${esc(this.statsNumber(n))}">
+                            <span class="config-bar-fill" style="width:${Math.round((n / peak) * 100)}%"></span>
+                        </div>
+                        <span class="config-dist-count">${esc(this.statsNumber(n))}</span>
+                    </li>`).join('');
+
+            const dated = Number(s.withCreatedAt) || 0;
+            const note = dated < Number(s.total)
+                ? `<p class="config-panel-note">${esc(
+                    this.t('config.statsGrowthPartial',
+                        'Counted from the {dated} of {total} bookmarks that carry a date. Older ones were saved before nextDash recorded it.')
+                        .replace('{dated}', this.statsNumber(dated))
+                        .replace('{total}', this.statsNumber(s.total)))}</p>`
+                : '';
+
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsGrowthTitle', 'How the collection grew'))}</h3>
+                    ${note}
+                    ${this.statsListAxisHeader(
+                        this.t('config.statsAxisMonth', 'Month'),
+                        this.t('config.statsAxisAdded', 'Added'))}
+                    <ul class="config-dist-list">${rows}</ul>
+                </div>`;
+        },
+
         renderStatsDistributions(s) {
             const esc = (v) => this.dash.escapeHtml(v);
             const rows = (pairs) => pairs.map(([label, count]) => {
@@ -840,6 +903,10 @@
                             .replace('{days}', String(this.bookmarkStaleDays())), s.stale90)}
                         ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
                     </ul>
+                    ${s.oldestBrokenAt ? `<p class="config-panel-note">${esc(
+                        this.t('config.statsOldestBroken', 'Longest unanswered: {name}, since {when}.')
+                            .replace('{name}', s.oldestBrokenName || '—')
+                            .replace('{when}', this.statsRelativeTime(s.oldestBrokenAt)))}</p>` : ''}
                 </div>`;
         },
 
@@ -857,7 +924,11 @@
          */
         renderStatsHeadline(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped, because every figure it is divided into is scoped. Reading
+            // allBookmarks here put a page's count over the whole library's
+            // total: with 18 of a page's 20 bookmarks carrying a shortcut, the
+            // headline announced 9%.
+            const all = this.statsScopedBookmarks();
             const total = all.length;
             if (!total) return '';
 
@@ -908,7 +979,10 @@
          */
         renderStatsInsights(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped like the figures it is read alongside: this panel sits under
+            // the scope selector and mixed a scoped numerator into an unscoped
+            // total, so its percentages described neither view.
+            const all = this.statsScopedBookmarks();
             const total = all.length;
             if (!total) {
                 return `
@@ -983,7 +1057,10 @@
         /** Shortcut coverage, and which shortcuts actually earn their keystroke. */
         renderStatsShortcuts(s) {
             const esc = (v) => this.dash.escapeHtml(v);
-            const all = this.dash.allBookmarks || [];
+            // Scoped, so the table lists the same bookmarks the note above it
+            // counts: it used to say "18 of 20 have a shortcut" and then list
+            // twenty rows from pages the scope excluded.
+            const all = this.statsScopedBookmarks();
             const pageName = (id) => (this.dash.pages || [])
                 .find((p) => String(p.id) === String(id))?.name || String(id);
             const rows = all
@@ -1579,6 +1656,13 @@
             add(this.t('config.statsLibraryTrash', 'Waiting in the trash'), this.statsNumber(lib.trash));
             add(this.t('config.statsLibraryBackups', 'Automatic backups kept'), this.statsNumber(lib.backups),
                 lib.backupsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
+            // When a page was last kept. It lives on the bookmarks rather than
+            // on this endpoint, so it rides in on the stats object beside them.
+            const lastArchive = Number(this.computeStats()?.lastArchiveAt || 0);
+            if (lastArchive) {
+                add(this.t('config.statsLibraryLastArchive', 'Last saved copy'),
+                    this.statsRelativeTime(lastArchive));
+            }
 
             if (!rows.length) {
                 return `<p class="config-panel-empty">${esc(this.t('config.statsLibraryUnavailable',

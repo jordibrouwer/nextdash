@@ -28,6 +28,11 @@ class DashboardInboxTriage {
 
     start(items) {
         this.queue = Array.isArray(items) ? items.slice() : [];
+        // What the run began with. The queue itself only keeps survivors --
+        // every delete, snooze and promote splices one out -- so counting it at
+        // the end reported the kept links and silently dropped the decisions,
+        // which are the work.
+        this.startedWith = this.queue.length;
         this.index = 0;
         // A fresh run, whatever the last one ended in.
         this.finished = false;
@@ -415,7 +420,12 @@ class DashboardInboxTriage {
             const removedId = sync.removedId ?? this.queue[this.index]?.id;
             this.queue.splice(this.index, 1);
             if (!this.queue.length) {
-                this.close();
+                // Clearing every link is the best run there is, and it used to
+                // be the one that closed without a word. Show the same panel a
+                // partly-kept run gets.
+                this.finished = true;
+                this.index = 0;
+                this.render();
                 if (this.inbox.isActiveView()) {
                     await this.inbox.loadAndRender();
                 }
@@ -467,7 +477,7 @@ class DashboardInboxTriage {
      */
     renderDone(card) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const total = this.queue.length;
+        const total = this.startedWith || this.queue.length;
         card.innerHTML = `
             <div class="inbox-triage-done">
                 <p class="inbox-triage-done-title">${esc(this.t('dashboard.inboxTriageDoneTitle', 'That is the lot.'))}</p>

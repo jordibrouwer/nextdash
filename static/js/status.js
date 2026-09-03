@@ -370,8 +370,29 @@ class StatusMonitor {
         this.applyLocalStatus(bookmark, resolved, detail);
 
         if (!this.isChecking) {
-            await this.flushPendingStatuses();
+            // Outside a checking round every result used to write on its own,
+            // and the viewport observer starts one check per row as it scrolls
+            // in -- so a page switch could send a dozen separate writes for one
+            // screenful. They are collected for a moment first, which turns
+            // that dozen into one write per page.
+            this.scheduleStatusFlush();
         }
+    }
+
+    /**
+     * Collect writes for a moment rather than sending each on its own.
+     *
+     * Short enough that a single check still lands promptly, long enough that a
+     * screenful of rows arriving together leaves as one write.
+     */
+    scheduleStatusFlush(delay = 400) {
+        if (this._statusFlushTimer) {
+            return;
+        }
+        this._statusFlushTimer = setTimeout(() => {
+            this._statusFlushTimer = null;
+            void this.flushPendingStatuses();
+        }, delay);
     }
 
     /** Keep the in-memory copy in step, so the grid does not need a reload. */
@@ -396,6 +417,10 @@ class StatusMonitor {
      * a round can cross pages when global shortcuts are on.
      */
     async flushPendingStatuses() {
+        if (this._statusFlushTimer) {
+            clearTimeout(this._statusFlushTimer);
+            this._statusFlushTimer = null;
+        }
         const pending = this._pendingStatuses;
         if (!pending || pending.size === 0) {
             return;
@@ -836,6 +861,11 @@ class StatusMonitor {
     // Cleanup method
     destroy() {
         this.stopPeriodicChecks();
+        // A scheduled flush would otherwise fire against a torn-down instance.
+        if (this._statusFlushTimer) {
+            clearTimeout(this._statusFlushTimer);
+            this._statusFlushTimer = null;
+        }
         this.detachViewportPingObserver();
         this.clearAllStatuses();
         this.clearCache();
