@@ -59,11 +59,17 @@ class DashboardConfigSync {
                 );
             } finally {
                 d._configReturnRefreshInFlight = false;
+                // Drain any sync event that arrived (and was skipped) while the
+                // refresh above held the in-flight guard, so a second edit isn't
+                // left until the next pageshow/visibilitychange.
+                //
+                // In the finally, not after the try: both branches above return
+                // from inside it -- the structure one explicitly, the own-tab
+                // guard earlier -- and a return runs finally and then leaves the
+                // function, so a drain placed after the block was never reached
+                // on the very path that most needs it.
+                void this.maybeRefreshAfterConfigReturn();
             }
-            // Drain any sync event that arrived (and was skipped) while the refresh
-            // above held the in-flight guard, so a second edit isn't left until the
-            // next pageshow/visibilitychange.
-            void this.maybeRefreshAfterConfigReturn();
         });
     }
 
