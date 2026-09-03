@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
  * The one-time Inbox tutorial — a guided tour shown the first time the Inbox
@@ -14,6 +14,13 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
 const STEPS = 7;
 
 async function openInboxWithoutMarkingTutorialSeen(page) {
+    // What's new is a different overlay from the tutorial and this file has no
+    // quarrel with it -- but it was never marked seen here, so it came up over
+    // the dashboard and swallowed the click on the header icon. Every test in
+    // this file lost its first attempt to it and was saved by the retry, which
+    // is what made the pair look chronically flaky. The tutorial itself is
+    // still left unseen below; that is the one this file is about.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     // discoverabilityState is server-backed, so it survives across tests that
