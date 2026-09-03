@@ -37,6 +37,7 @@ func TestStoreReadCacheHitsUntilMutation(t *testing.T) {
 func TestScopedMutationLeavesOtherPagesCached(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	if err := store.SaveBookmarksByPage(1, []Bookmark{{Name: "Page1", URL: "https://one.example.com"}}); err != nil {
@@ -79,6 +80,7 @@ func TestScopedMutationLeavesOtherPagesCached(t *testing.T) {
 func TestUnscopedMutationStillInvalidatesEverything(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	if err := store.SaveBookmarksByPage(1, []Bookmark{{Name: "Page1", URL: "https://one.example.com"}}); err != nil {
@@ -111,6 +113,7 @@ func TestUnscopedMutationStillInvalidatesEverything(t *testing.T) {
 func TestScopedMutationStillInvalidatesCrossPageAggregates(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	if err := store.SaveBookmarksByPage(1, []Bookmark{{Name: "Page1", URL: "https://one.example.com"}}); err != nil {

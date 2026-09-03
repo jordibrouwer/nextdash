@@ -11,6 +11,7 @@ import (
 func TestDeleteBookmarkFromPageMatchesCanonicalURLWithoutName(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	if err := store.SaveBookmarksByPage(1, []Bookmark{
@@ -41,6 +42,7 @@ func TestDeleteBookmarkFromPageMatchesCanonicalURLWithoutName(t *testing.T) {
 func TestDeleteBookmarkFromPageInvalidatesReadCache(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	if err := store.SaveBookmarksByPage(1, []Bookmark{
@@ -70,6 +72,7 @@ func TestDeleteBookmarkFromPageInvalidatesReadCache(t *testing.T) {
 func TestDeleteBookmarkHandlerReturns404WhenMissing(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

@@ -19,6 +19,7 @@ import (
 func TestImportBrowserBookmarksKeepsTagsNoteAndShortcut(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -76,6 +77,7 @@ func TestImportBrowserBookmarksKeepsTagsNoteAndShortcut(t *testing.T) {
 func TestImportBrowserBookmarksLeavesAbsentFieldsAlone(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

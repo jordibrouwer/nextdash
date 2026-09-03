@@ -27,6 +27,10 @@ func TestBookmarksNeedingIconsSkipsInvalidAndExisting(t *testing.T) {
 func TestPrefetchBookmarkIconsCountOnly(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	// NewStore reads ResolveDataDir(), which TestMain sets once for the whole
+	// suite -- so without this the count includes whatever every other test
+	// happened to add.
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	existing := len(bookmarksNeedingIcons(store.GetBookmarksByPage(1), false))
@@ -59,6 +63,7 @@ func TestPrefetchBookmarkIconsHandlerRequiresPageID(t *testing.T) {
 func TestPrefetchBookmarkIconsHandlerCountOnlyJSON(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	want := len(bookmarksNeedingIcons(store.GetBookmarksByPage(1), false))

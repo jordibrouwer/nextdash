@@ -11,6 +11,7 @@ import (
 func TestResetAllDataDoesNotDeadlock(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 
@@ -30,6 +31,7 @@ func TestResetAllDataDoesNotDeadlock(t *testing.T) {
 func TestResetAllDataClearsUserAssets(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	if err := os.MkdirAll(filepath.Join(ResolveDataDir(), "icons"), 0755); err != nil {
 		t.Fatal(err)

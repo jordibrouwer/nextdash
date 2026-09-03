@@ -9,6 +9,10 @@ import (
 func TestMergePreviewCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	// And the data directory, not just the working one: the caches live at
+	// ResolveDataDir(), which TestMain points at one directory for the whole
+	// suite. Without this the file being counted is everybody's.
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	h := &Handlers{}
 	var wg sync.WaitGroup
@@ -35,6 +39,8 @@ func TestMergePreviewCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 func TestMergeHealthCacheUpdatesPreservesConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	// See above: t.Chdir does not move the cache file, ResolveDataDir does.
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	seed := readHealthCacheFile()
 	seed.Cache["https://existing.test"] = HealthScanCache{URL: "https://existing.test", Status: "online"}

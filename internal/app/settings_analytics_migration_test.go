@@ -13,6 +13,7 @@ func writeSettings(t *testing.T, raw string) Settings {
 
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 		t.Fatal(err)
@@ -28,6 +29,7 @@ func TestFreshInstallAnalyticsIsOptedOut(t *testing.T) {
 
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	if NewStore().GetSettings().AnalyticsOptIn {
 		t.Fatal("fresh install: analyticsOptIn should be false until the user opts in")

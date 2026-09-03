@@ -10,6 +10,7 @@ import (
 func TestBookmarkURLExistsUsesCanonicalURL(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	page := PageWithBookmarks{
 		Page: Page{ID: 1, Name: "main"},

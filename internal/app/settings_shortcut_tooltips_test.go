@@ -16,7 +16,9 @@ import (
 // every start would be a choice taken away rather than a default changed.
 func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 	t.Run("fresh install", func(t *testing.T) {
-		t.Chdir(t.TempDir())
+		tmp := t.TempDir()
+		t.Chdir(tmp)
+		t.Setenv("NEXTDASH_DATA_DIR", tmp)
 		if got := NewStore().GetSettings().ShowShortcutTooltips; got {
 			t.Fatalf("fresh install: showShortcutTooltips = %v, want false", got)
 		}
@@ -25,6 +27,7 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 	t.Run("existing install that had them on", func(t *testing.T) {
 		dir := t.TempDir()
 		t.Chdir(dir)
+		t.Setenv("NEXTDASH_DATA_DIR", dir)
 		if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 			t.Fatal(err)
 		}
@@ -54,6 +57,7 @@ func TestShortcutTooltipsDefaultOffEverywhere(t *testing.T) {
 	t.Run("switching them back on sticks", func(t *testing.T) {
 		dir := t.TempDir()
 		t.Chdir(dir)
+		t.Setenv("NEXTDASH_DATA_DIR", dir)
 		if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
 			t.Fatal(err)
 		}

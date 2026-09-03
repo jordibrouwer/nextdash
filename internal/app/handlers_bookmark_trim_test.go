@@ -15,6 +15,7 @@ import (
 func TestAddBookmarkTrimsTextFields(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -61,6 +62,7 @@ func TestAddBookmarkTrimsTextFields(t *testing.T) {
 func TestSaveBookmarksTrimsTextFields(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

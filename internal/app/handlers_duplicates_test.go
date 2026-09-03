@@ -103,6 +103,7 @@ func TestMergeBookmarkMetadataCombinesUsageAndFields(t *testing.T) {
 func TestMergeDuplicatesMergesIntoKeeperAndRemovesSources(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

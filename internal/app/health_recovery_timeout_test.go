@@ -50,6 +50,7 @@ func TestRecoveryTitleNamesTheDuration(t *testing.T) {
 func TestHealthCheckTimeoutClampsAndDefaults(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 	h := &Handlers{store: NewStore()}
 
 	if got := h.healthCheckTimeout(); got != defaultHealthCheckTimeout {

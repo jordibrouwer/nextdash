@@ -15,6 +15,7 @@ import (
 func TestBulkExpectationsChangesOnlyWhatItIsGiven(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 	h := &Handlers{store: NewStore()}
 
 	if err := h.store.SaveBookmarksByPage(1, []Bookmark{
@@ -60,6 +61,7 @@ func TestBulkExpectationsChangesOnlyWhatItIsGiven(t *testing.T) {
 func TestBulkExpectationsSkipsStaleTargets(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 	h := &Handlers{store: NewStore()}
 	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "A", URL: "https://a.test"}}); err != nil {
 		t.Fatal(err)
@@ -91,6 +93,7 @@ func TestBulkExpectationsSkipsStaleTargets(t *testing.T) {
 func TestBulkExpectationsRejectsEmptyChange(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 	h := &Handlers{store: NewStore()}
 	body, _ := json.Marshal(map[string]any{
 		"targets": []map[string]any{{"pageId": 1, "index": 0, "url": "https://a.test"}},

@@ -18,6 +18,7 @@ import (
 func TestGetCategoriesReturns404ForNonexistentPage(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -34,6 +35,7 @@ func TestGetCategoriesReturns404ForNonexistentPage(t *testing.T) {
 func TestSaveCategoriesReturns404ForNonexistentPageAndDoesNotCreateFile(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -61,6 +63,7 @@ func TestSaveCategoriesReturns404ForNonexistentPageAndDoesNotCreateFile(t *testi
 func TestSaveCategoriesReturns409WhenBookmarksStillReferenceCategories(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -100,6 +103,7 @@ func TestSaveCategoriesStillWorksForAnExistingPage(t *testing.T) {
 	// against a check that rejects every page, not only missing ones.
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -130,6 +134,7 @@ func TestSaveCategoriesStillWorksForAnExistingPage(t *testing.T) {
 func TestSaveCategoriesDryRunPreviewsWithoutWriting(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -186,6 +191,7 @@ func TestSaveCategoriesDryRunPreviewsWithoutWriting(t *testing.T) {
 func TestSaveCategoriesWithoutDryRunStillApplies(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

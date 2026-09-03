@@ -13,6 +13,7 @@ import (
 func TestGetBookmarksRequiresPageOrAll(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -31,6 +32,7 @@ func TestGetBookmarksStillWorksWithPageParam(t *testing.T) {
 	// against a handler that rejects every request, not only bad ones.
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)
@@ -47,6 +49,7 @@ func TestGetBookmarksStillWorksWithPageParam(t *testing.T) {
 func TestGetBookmarksStillWorksWithAllParam(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	h := NewHandlers(store, embeddedFiles)

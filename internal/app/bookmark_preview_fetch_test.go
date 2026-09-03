@@ -23,6 +23,7 @@ func TestFetchBookmarkPreviewIgnoresErrorPageBody(t *testing.T) {
 
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	settings := store.GetSettings()
@@ -50,6 +51,7 @@ func TestFetchBookmarkPreviewParsesSuccessPageBody(t *testing.T) {
 
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	store := NewStore()
 	settings := store.GetSettings()

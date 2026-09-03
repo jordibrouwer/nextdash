@@ -14,6 +14,7 @@ import (
 func TestUploadIconOverwritesExistingFile(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	iconsDir := filepath.Join(ResolveDataDir(), "icons")
 	if err := os.MkdirAll(iconsDir, 0755); err != nil {
@@ -91,6 +92,7 @@ func TestDetectFontType(t *testing.T) {
 func TestUploadFontUsesMagicBytesNotClientType(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
