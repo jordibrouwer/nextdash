@@ -23,12 +23,44 @@ async function load(page) {
         null, { timeout: 15_000 });
 }
 
+/*
+ * Tag the rows that are on the grid, rather than the first three entries of a
+ * list that may not be the one being rendered.
+ *
+ * This indexed into `dashboard.bookmarks`, which is not always the array the
+ * grid draws from -- `allBookmarks` is a second one, and the two hold the same
+ * objects only while the data is the shipped set. Run alone this file gets that
+ * set and passed; run beside other files, which share the worker's data
+ * directory, whatever they left behind pushed the two apart and the tags landed
+ * on bookmarks nobody was looking at. The failure showed the seeded examples'
+ * own tags, which is exactly what an un-mutated row looks like.
+ *
+ * Reading the URLs off the rendered rows removes the assumption entirely: the
+ * three that get tags are by definition the three at the top of the grid, and
+ * writing through both lists means the render sees it whichever one it uses.
+ */
 const seed = (page, max = 2) => page.evaluate((m) => {
     const d = window.dashboardInstance;
     d.settings.showRowTags = true;
     d.settings.rowTagsMax = m;
-    (d.bookmarks || []).forEach((b, i) => {
-        b.tags = i === 0 ? ['dev'] : i === 1 ? ['docs', 'reference'] : i === 2 ? ['one', 'two', 'three', 'four'] : [];
+
+    const urls = [...document.querySelectorAll('.bookmark-link')]
+        .map((el) => el.getAttribute('data-bookmark-url'))
+        .filter((url, i, all) => url && all.indexOf(url) === i);
+    const wanted = new Map([
+        [urls[0], ['dev']],
+        [urls[1], ['docs', 'reference']],
+        [urls[2], ['one', 'two', 'three', 'four']],
+    ]);
+
+    const done = new Set();
+    [d.bookmarks, d.allBookmarks].forEach((list) => {
+        if (!Array.isArray(list)) return;
+        list.forEach((b) => {
+            if (done.has(b)) return;
+            done.add(b);
+            b.tags = wanted.get(b.url) || [];
+        });
     });
     d.renderDashboard({ animate: false });
 }, max);
