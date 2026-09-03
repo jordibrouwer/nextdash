@@ -192,15 +192,28 @@ test.describe('health view right-click menu', () => {
             const b = button.getBoundingClientRect();
             return {
                 stillAtCursor: menu.classList.contains('health-view-menu--at-cursor'),
-                inlineTop: menu.style.top,
                 alignedWithButton: Math.abs(m.left - b.left) < 2,
+                top: m.top,
+                viewport: window.innerHeight,
             };
         });
         // The cursor placement has to be torn down, or the button would open the
         // menu wherever the last right-click happened to leave it.
         expect(placement.stillAtCursor).toBe(false);
-        expect(placement.inlineTop).toBe('');
         expect(placement.alignedWithButton).toBe(true);
+        /*
+         * On screen, rather than "carrying no inline top".
+         *
+         * This asked for an empty style.top, which reads the mechanism instead
+         * of the outcome and forbids a branch the button path is supposed to
+         * take: a menu that fits neither above nor below is clamped to the top
+         * margin, which writes a top on purpose. At 1280x720 -- the CI viewport
+         * -- this menu is 638px against 152 below and 519 above, so the clamp is
+         * the ordinary case there and the spec failed on a placement that was
+         * correct. What the button owes us is a menu that is wholly reachable.
+         */
+        expect(placement.top).toBeGreaterThanOrEqual(7);
+        expect(placement.top).toBeLessThan(placement.viewport);
     });
 
     test('an action picked from the right-click menu runs on the right row', async ({ page }) => {
