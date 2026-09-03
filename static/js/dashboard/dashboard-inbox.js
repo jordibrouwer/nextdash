@@ -1800,8 +1800,11 @@ class DashboardInbox {
                 this.checkAnchorId = this.selectedItemId;
                 this.setChecked(this.selectedItemId, true);
             }
-            this.moveKeyboardSelection(e.key === 'ArrowDown' ? 1 : -1, cards);
-            if (this.selectedItemId) {
+            // No wrap: at the first row, Shift+ArrowUp used to jump to the last
+            // one and tick every row in between -- one keystroke turning a
+            // single selection into the whole inbox, with Delete right there.
+            const moved = this.moveKeyboardSelection(e.key === 'ArrowDown' ? 1 : -1, cards, { wrap: false });
+            if (moved && this.selectedItemId) {
                 this.extendCheckedTo(this.selectedItemId, true);
             }
             return true;
@@ -2514,10 +2517,10 @@ class DashboardInbox {
     }
 
 
-    moveKeyboardSelection(delta, cards) {
+    moveKeyboardSelection(delta, cards, { wrap = true } = {}) {
         const list = Array.isArray(cards) && cards.length ? cards : this.getVisibleItemCards();
         if (!list.length) {
-            return;
+            return false;
         }
         let index = this.selectedItemId
             ? list.findIndex((card) => card.dataset.inboxId === this.selectedItemId)
@@ -2527,13 +2530,19 @@ class DashboardInbox {
         } else {
             index += delta;
             if (index < 0) {
+                // Wrapping is right for a plain arrow -- running off the top
+                // brings you to the bottom. It is wrong while extending a
+                // selection, where it would sweep the whole list in one press.
+                if (!wrap) return false;
                 index = list.length - 1;
             } else if (index >= list.length) {
+                if (!wrap) return false;
                 index = 0;
             }
         }
         this.selectedItemId = list[index]?.dataset?.inboxId || null;
         this.applyKeyboardSelection(list);
+        return true;
     }
 
 
@@ -3429,6 +3438,10 @@ class DashboardInbox {
             // Ticks from a previous query would act on rows the user can no longer
             // see, so a search change starts the selection over (same as filter).
             this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a filter change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
             // The deep-link target is spent once its row has been shown; keeping it
             // would drag focus back to that row on every later keystroke.
             this.focusItemId = null;
@@ -3574,6 +3587,10 @@ class DashboardInbox {
                 this._trackAction('filter', { filter: this.filter, via: 'tile' });
                 this.visibleLimit = 50;
                 this.checkedIds.clear();
+                // The anchor a Shift+click range counts from belongs to the selection
+                // it was made in. Left standing across a filter change, a later
+                // Shift+click ticked everything back to a row this view never showed.
+                this.checkAnchorId = null;
                 this.focusItemId = null;
                 this.persistViewState();
                 this.syncUrlState();
@@ -3673,6 +3690,10 @@ class DashboardInbox {
             // Ticks from the previous filter would act on rows the user can no
             // longer see, so a filter change starts the selection over.
             this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a filter change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
             this.focusItemId = null;
             this.persistViewState();
             this.syncUrlState();
@@ -3725,6 +3746,10 @@ class DashboardInbox {
             this._trackAction('filter', { filter: 'domain', via: 'domain-select' });
             this.visibleLimit = 50;
             this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a filter change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
             this.focusItemId = null;
             this.persistViewState();
             this.syncUrlState();
@@ -3997,6 +4022,10 @@ class DashboardInbox {
             this._trackAction('filter', { filter: 'snoozed', via: 'footer' });
             this.visibleLimit = 50;
             this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a filter change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
             this.focusItemId = null;
             this.persistViewState();
             this.syncUrlState();
@@ -4170,6 +4199,10 @@ class DashboardInbox {
                 this.filter = 'all';
                 this.visibleLimit = 50;
                 this.checkedIds.clear();
+                // The anchor a Shift+click range counts from belongs to the selection
+                // it was made in. Left standing across a filter change, a later
+                // Shift+click ticked everything back to a row this view never showed.
+                this.checkAnchorId = null;
                 this.focusItemId = null;
                 this._trackAction('filter', { filter: 'tag', via: 'tag-click' });
                 this.syncUrlState();
