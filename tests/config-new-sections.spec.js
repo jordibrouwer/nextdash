@@ -835,7 +835,11 @@ test.describe('statistics tabs', () => {
         const titles = await page.locator('#config-stats-body .config-panel-title').allTextContents();
         // The old stats page had these as separate sections; folding conflicts
         // into the rot panel lost "conflicts & duplicates" and "search & status".
-        expect(titles.length).toBe(4);
+        // A floor rather than an exact count: uptime, certificates and archive
+        // joined this tab afterwards and each renders only when it has
+        // something to say, so the total moves with the fixture. What is worth
+        // pinning is that the four named panels are still their own.
+        expect(titles.length).toBeGreaterThanOrEqual(4);
         expect(titles.join(' | ')).toMatch(/rot/i);
         expect(titles.join(' | ')).toMatch(/conflicts/i);
         expect(titles.join(' | ')).toMatch(/search/i);

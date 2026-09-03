@@ -562,7 +562,11 @@ func TestCaptureLocallySizeCap(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			h := newTestHandlers(t)
-			withFakeMonolith(t, `dd if=/dev/zero of="$2" bs=1 count=0 seek=`+strconv.Itoa(tc.megs)+`m 2>/dev/null`)
+			// Capital M: BSD dd takes either case, GNU dd on the CI runners
+			// takes only the capital and calls "40m" an invalid number. The
+			// stub then failed instead of writing the file, and the test read
+			// that as the cap refusing a page it should have kept.
+			withFakeMonolith(t, `dd if=/dev/zero of="$2" bs=1 count=0 seek=`+strconv.Itoa(tc.megs)+`M 2>/dev/null`)
 
 			_, err := h.CaptureLocally(context.Background(), "https://example.com/page")
 

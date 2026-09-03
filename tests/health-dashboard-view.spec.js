@@ -220,7 +220,9 @@ test.describe('health dashboard view', () => {
         // Intercepting the plain left click must not cost the modified-click paths.
         const [popup] = await Promise.all([
             context.waitForEvent('page'),
-            page.click('.health-link a.health-link-anchor', { modifiers: ['Meta'] }),
+            // ControlOrMeta, not Meta: Cmd opens a tab on macOS and does
+            // nothing on the Linux runners, where the same gesture is Ctrl.
+            page.click('.health-link a.health-link-anchor', { modifiers: ['ControlOrMeta'] }),
         ]);
         // A fresh tab starts at about:blank, so wait for the real navigation rather
         // than reading url() straight away.
