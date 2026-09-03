@@ -62,6 +62,20 @@ test('the pin, note and fresh marks are what they were', async ({ page }) => {
     await page.waitForFunction(
         () => Boolean(window.dashboardInstance?.keyboardNavigation?.getSelectedBookmark?.()),
         null, { timeout: 10_000 });
+    /*
+     * Shift+P toggles, and this file shares its data directory with the rest of
+     * the suite. A row an earlier spec left pinned turns the press below into an
+     * unpin: nothing on the page then draws a pin, and the assertion further
+     * down fails on this test's own setup rather than on anything the grid did.
+     * Cleared first, so the press that matters is always the one that pins.
+     */
+    const selectedIsPinned = () => page.evaluate(() => Boolean(
+        window.dashboardInstance?.keyboardNavigation?.getSelectedBookmark?.()?.pinned));
+    if (await selectedIsPinned()) {
+        await page.keyboard.press('Shift+P');
+        await expect.poll(selectedIsPinned, { timeout: 10_000 }).toBe(false);
+    }
+
     await page.keyboard.press('Shift+P');
     await expect
         .poll(() => page.evaluate(() => document.querySelectorAll(
