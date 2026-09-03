@@ -99,11 +99,22 @@ test.describe('the sources tab', () => {
      */
     test('a source that needs no token still gets its state back', async ({ page }) => {
         await openSources(page);
-        const chips = await page.evaluate(() =>
-            [...document.querySelectorAll('.config-source-chip')].map((c) => c.textContent.trim()));
-        // One per source, and none of them blank.
-        expect(chips.length).toBeGreaterThan(4);
-        expect(chips.filter((c) => c === '')).toEqual([]);
+        /*
+         * Polled, because the chips are filled by the state loader rather than
+         * by the render that puts them on screen -- each arrives when its own
+         * source has been read. Taken in one go the moment the panels appear,
+         * this counted the ones not filled yet as blank, which is a race the
+         * assertion never meant to run: an unfilled chip is hidden by
+         * `.config-source-chip:empty`, so nobody sees the state it was failing
+         * on. On a loaded runner five of them lost it.
+         */
+        await expect.poll(() => page.evaluate(() =>
+            [...document.querySelectorAll('.config-source-chip')].filter((c) => !c.textContent.trim()).length),
+        { timeout: 15_000 }).toBe(0);
+
+        // One per source, and by now none of them blank.
+        const chips = await page.evaluate(() => document.querySelectorAll('.config-source-chip').length);
+        expect(chips).toBeGreaterThan(4);
     });
 });
 
