@@ -444,7 +444,10 @@
         const limit = this.bookmarkVisibleLimit(allRows.length);
         const rows = allRows.slice(0, limit);
         const ctx = { esc, pageName, showPageBadge, isDuplicate: (b) => {
-            const url = String(b.url || '').trim().toLowerCase();
+            // Canonical, matching the set it is asked about and the figure
+            // Statistics reports -- a trailing slash used to make the two
+            // disagree about the same pair of links.
+            const url = this.canonicalStatsUrlKey(b.url);
             return url && dupes.has(url);
         } };
         // Only the rows near the viewport are drawn. Infinite scroll answered

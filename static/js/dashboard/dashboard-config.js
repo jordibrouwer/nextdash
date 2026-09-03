@@ -3050,7 +3050,13 @@ class DashboardConfig {
 
     /** Headline counts — pass a subset stats object when filters are active. */
     bookmarksSummaryTiles(stats) {
-        const s = stats || this.computeStats();
+        // The whole library when no filter is on, counted here rather than
+        // through computeStats(): that one is narrowed by statsPageFilter, the
+        // Statistics scope selector, which lives on the instance for the whole
+        // session. Setting it there and coming back to Bookmarks left these
+        // tiles counting one page while the list and the count label beneath
+        // them counted everything, with nothing on screen to explain it.
+        const s = stats || this.computeBookmarkSubsetStats(this.dash.allBookmarks || []);
         const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
         return [
             {
@@ -18488,8 +18494,12 @@ class DashboardConfig {
     ensureDuplicateUrlSet() {
         if (this._bmDuplicateUrls) return this._bmDuplicateUrls;
         const counts = new Map();
+        // The same canonical key Statistics counts with. A plain lowercase
+        // compare treated a trailing slash or a fragment as a different link, so
+        // Statistics reported a duplicate that the Duplicate URLs filter then
+        // could not find and the row never got its badge.
         (this.dash.allBookmarks || []).forEach((b) => {
-            const url = String(b.url || '').trim().toLowerCase();
+            const url = this.canonicalStatsUrlKey(b.url);
             if (url) counts.set(url, (counts.get(url) || 0) + 1);
         });
         this._bmDuplicateUrls = new Set(
@@ -19641,8 +19651,10 @@ class DashboardConfig {
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),
         noicon: (b) => window.BookmarkPredicates.match('noicon', b),
-        duplicate: (b, dupes) => {
-            const url = String(b.url || '').trim().toLowerCase();
+        duplicate: (b, dupes, canonical) => {
+            const url = typeof canonical === 'function'
+                ? canonical(b.url)
+                : String(b.url || '').trim().toLowerCase();
             return url && dupes && dupes.has(url);
         },
         // What did I touch? The question after an import, a bulk retag, or an
@@ -19721,7 +19733,9 @@ class DashboardConfig {
         const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
         const rows = all.filter((b) => {
             if (cleanup) {
-                const ok = cleanupKey === 'duplicate' ? cleanup(b, dupes) : cleanup(b);
+                const ok = cleanupKey === 'duplicate'
+                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
+                    : cleanup(b);
                 if (!ok) return false;
             }
             if (pageFilter && String(b.pageId) !== pageFilter) return false;
