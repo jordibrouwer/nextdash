@@ -92,6 +92,20 @@ test.describe('the notice-card queue', () => {
 
     test('the what\'s-new modal holds the corner, and hands it back on close', async ({ page }) => {
         await loadDashboard(page);
+        /*
+         * Modal first, card second.
+         *
+         * This used to start the card and then open the modal, trusting the
+         * modal to be up before the card's 50ms delay elapsed. That is a race
+         * and the runners lose it: the card took the corner while what's new
+         * was still opening, and the assertion below read that as the queue
+         * ignoring the modal. Opening first makes the order the point rather
+         * than the timing -- the card's delay now runs with the modal
+         * certainly up, which is the situation this test is about.
+         */
+        await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
+        await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 15_000 });
+
         await page.evaluate(() => {
             window.NoticeCard.define({
                 id: 'probe-modal',
@@ -102,9 +116,6 @@ test.describe('the notice-card queue', () => {
                 actions: [{ name: 'ok', label: () => 'ok', onClick: (card) => card.close() }],
             }).autoStart();
         });
-        // Opened straight away, so it is up before the card's own delay elapses.
-        await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
-        await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 15_000 });
 
         // The modal is not a notice card and closes without telling anyone,
         // which is why the queue watches the document rather than trusting each
