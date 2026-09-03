@@ -945,9 +945,17 @@ class DashboardHealth {
             row.classList.toggle('keyboard-selected', selected);
             row.setAttribute('aria-selected', selected ? 'true' : 'false');
             if (selected) {
+                // Instant while a kept place is waiting to be restored. A smooth
+                // scroll keeps running for hundreds of milliseconds, long after
+                // restoreKeptPlace's three-frame settle has given up -- so the
+                // animation had the last word and the list landed somewhere the
+                // reader never asked for, which is the very thing _keepScrollY
+                // exists to prevent.
+                const instant = typeof this._keepScrollY === 'number'
+                    || document.body?.classList.contains('no-animations');
                 row.scrollIntoView({
                     block: 'nearest',
-                    behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+                    behavior: instant ? 'instant' : 'smooth',
                 });
             }
         });
