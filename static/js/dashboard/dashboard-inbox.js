@@ -1130,6 +1130,13 @@ class DashboardInbox {
                 const data = await res.json();
                 this.items = Array.isArray(data.items) ? data.items : [];
                 this.items.forEach((item) => {
+                    // An explicit "mark unread" outranks the snapshot: it says
+                    // what the reader just asked for, where the snapshot only
+                    // says what was true when the request left.
+                    if (this._deliberateUnread?.has(item.id)) {
+                        item.readAt = 0;
+                        return;
+                    }
                     const local = preserveRead.get(item.id);
                     if (local && (!item.readAt || Number(item.readAt) < local)) {
                         item.readAt = local;
@@ -1389,6 +1396,8 @@ class DashboardInbox {
         if (item) {
             item.readAt = Date.now();
         }
+        // Read again, so the unread override is spent.
+        this._deliberateUnread?.delete(id);
         this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
@@ -1415,6 +1424,15 @@ class DashboardInbox {
         if (item) {
             item.readAt = 0;
         }
+        // Remembered, because fetchItems snapshots read stamps before its
+        // request and re-applies them after. Marking unread while a fetch was
+        // in flight -- the poll after a capture, an R refresh, the first load --
+        // let that snapshot put the old stamp straight back, and the row
+        // silently flipped to read again.
+        if (!this._deliberateUnread) {
+            this._deliberateUnread = new Set();
+        }
+        this._deliberateUnread.add(id);
         this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
