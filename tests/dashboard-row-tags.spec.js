@@ -89,7 +89,11 @@ test.describe('tag chips on the grid', () => {
             const c = getComputedStyle(el);
             return { bg: c.backgroundColor, border: c.borderColor, fs: c.fontSize, radius: c.borderRadius };
         });
-        expect(chip.fs).toBe('10.88px');
+        // --text-2xs, the smallest step on the shared type scale. It was
+        // pinned at 10.88px (0.68rem) before that scale existed; the chip now
+        // reads the token like everything else its size, so this follows it
+        // rather than freezing a value the stylesheet no longer contains.
+        expect(chip.fs).toBe('10.4px');
         expect(chip.radius).toBe('999px');
     });
 });

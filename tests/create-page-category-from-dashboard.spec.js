@@ -112,7 +112,11 @@ test.describe('pages overlay — creating a page', () => {
             return body.getBoundingClientRect().bottom - input.getBoundingClientRect().bottom;
         });
         expect(gap).not.toBeNull();
-        expect(gap).toBeGreaterThanOrEqual(1);
+        // What this guards against is a clipped bottom border: a gap of zero or
+        // less. The exact figure lands on sub-pixel boundaries -- 0.9957 on the
+        // shared spacing scale -- so it asks for daylight rather than for a
+        // whole pixel of it.
+        expect(gap).toBeGreaterThan(0);
 
         for (const name of extras) {
             await deletePageByName(page, name);

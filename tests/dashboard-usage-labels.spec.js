@@ -7,6 +7,18 @@ async function loadDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The native title is deliberately left off a row that is getting a preview
+    // card, so that the grey box does not sit on top of the card (v1.4.6). This
+    // spec is about what the title says, so it turns the cards off and asks for
+    // the row to be built again -- rather than depending on whichever preview
+    // setting the fixture happens to ship.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.linkPreviewMode = 'off';
+        d.settings.showLinkPreviewCards = false;
+        d.renderDashboard();
+    });
+    await page.waitForTimeout(300);
 }
 
 /** Give the first rendered bookmark a known history and repaint. */

@@ -194,6 +194,16 @@ test.describe('dashboard bookmark drag', () => {
     test('a category sorted A–Z explains why bookmarks cannot be dragged', async ({ page }) => {
         await prepare(page);
 
+        // The hint is put on the list as a native title only where no preview
+        // card is coming, since a title on the list is a tooltip on every row
+        // inside it and would sit on top of the card (v1.4.6). This test reads
+        // that title, so it turns the cards off first.
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.linkPreviewMode = 'off';
+            d.settings.showLinkPreviewCards = false;
+        });
+
         // Sort every populated real category A–Z, so at least one sort-active list with
         // a row is reliably present (avoids racing one specific category's re-render).
         const anyPopulated = await page.evaluate(() => {
