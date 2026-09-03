@@ -29,7 +29,7 @@ module.exports = defineConfig({
      * doesn't exist ... writing actual". The actual they wrote matches the
      * committed one byte for byte; only the name ever differed.
      */
-    snapshotPathTemplate: '{testFileDir}/{testFileName}-snapshots/{arg}{ext}',
+    snapshotPathTemplate: '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}',
     // Playwright's default testMatch takes `*.test.cjs` as well, and `tests/`
     // holds node unit tests by that name — plain scripts that assert at their
     // top level. Collected here they *run* while specs are being gathered, so
