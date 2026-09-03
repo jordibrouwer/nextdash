@@ -1102,6 +1102,14 @@ class DashboardConfig {
         if (!this.isActiveView() || !this.isEnabled()) return false;
         const d = this.dash;
         if (window.DashboardTagCloud?.modalOpen) return false;
+        // The right-click menu and its check-mode submenu own the keyboard while
+        // they are up. Both this handler and the menu's own bind a capture
+        // listener on document, and this one is registered at startup so it
+        // always ran first: Enter on "Delete" opened the bookmark instead, and
+        // stopImmediatePropagation meant the menu never saw the key at all. Its
+        // letter accelerators -- o, m -- went the same way. The Escape branch
+        // below has always asked this question; the rest of the keys had not.
+        if (this._bmContextMenu?.isOpen?.() && e.key !== 'Escape') return false;
         if (d.isModalOpen?.()) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -1767,7 +1775,13 @@ class DashboardConfig {
     getListKeyboardRows() {
         const body = document.getElementById('config-pt-body');
         if (!body) return [];
-        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'));
+        // Only rows the cursor can actually name. The Collection sizes table on
+        // the Collections tab is built from .config-crud-row too, but its rows
+        // are read-only and carry no key -- and being first in the DOM they took
+        // index 0, where listRowKey answered null and the cursor could never
+        // move off them. That left the whole tab's up/down, g/G and Enter dead.
+        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'))
+            .filter((row) => this.listRowKey(row) !== null);
     }
 
     clearListKeyboardSelection() {
@@ -1834,7 +1848,12 @@ class DashboardConfig {
     }
 
     appendListKeyboardLegend(body) {
-        const list = body?.querySelector('.config-crud-list');
+        // The list the keys actually drive, not simply the first one on the
+        // panel: on Collections that is the read-only sizes table, so the legend
+        // promised keys under a table none of them apply to.
+        const lists = Array.from(body?.querySelectorAll('.config-crud-list') || []);
+        const list = lists.find((el) => Array.from(el.querySelectorAll('.config-crud-row'))
+            .some((row) => this.listRowKey(row) !== null)) || lists[0];
         if (!list || list.querySelector('.config-panel-empty')) return;
         if (body.querySelector('.config-list-keyboard-legend')) return;
         const legend = document.createElement('p');
