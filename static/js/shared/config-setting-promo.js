@@ -177,6 +177,18 @@
         if (typeof dash?.isModalOpen === 'function' && dash.isModalOpen()) return false;
         if (isWhatsNewOpen()) return false;
         if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
+        /*
+         * An open menu owns the pointer, and showing over it costs the click.
+         *
+         * The promo scrolls its anchor into view on the way up. The config
+         * bookmark context menu closes on any scroll it did not cause -- it is
+         * anchored to a viewport point, so the row would otherwise slide out
+         * from under it -- and a promo arriving a few hundred milliseconds
+         * after a right-click therefore took the menu away while the pointer
+         * was still on it. Waiting is free: the caller retries, so the promo
+         * arrives once the menu is gone.
+         */
+        if (document.querySelector('.move-popover, .config-bm-context-menu')) return false;
         if (ctx?.config && !ctx.config.isActiveView?.()) return false;
         return true;
     }
