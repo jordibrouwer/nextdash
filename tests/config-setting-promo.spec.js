@@ -36,14 +36,24 @@ test.describe('Config setting promo', () => {
         await expect(page.locator('.config-setting-promo')).toHaveCount(0, { timeout: 3000 });
     });
 
-    test('Escape dismisses the promo without closing config', async ({ page }) => {
+    /**
+     * One press, one intention.
+     *
+     * The promo used to swallow Escape and leave config open, which meant the
+     * press someone made to leave the view instead dismissed a popover they had
+     * not asked for -- and they had to press it again. A promo is ambient, so it
+     * is cleared on the way out rather than standing in the doorway.
+     */
+    test('Escape dismisses the promo and still leaves config', async ({ page }) => {
         await openAppearanceFresh(page);
         const promo = page.locator('.config-setting-promo');
         await expect(promo).toBeVisible({ timeout: 8000 });
 
         await page.keyboard.press('Escape');
         await expect(promo).toHaveCount(0);
-        await expect(page.locator('.config-view')).toBeVisible();
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })
+            .toBe('bookmarks');
     });
 
     /**

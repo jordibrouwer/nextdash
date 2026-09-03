@@ -925,10 +925,22 @@ class DashboardConfig {
              * second press closed it and put the theme back.
              */
             const pickerOpen = document.querySelector('[data-theme-picker-list]:not([hidden])');
-            if (!pickerOpen && window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                return;
+            /*
+             * The promo goes away, but it does not get to keep the key.
+             *
+             * It appeared on its own, so Escape was never aimed at it: someone
+             * who presses Escape while a promo happens to be up is leaving the
+             * view, or clearing a selection, and got a popover they had not
+             * asked for in between. Consuming the press here meant that first
+             * Escape did nothing they wanted, and they had to press it again.
+             *
+             * So dismiss it and fall through -- the same press goes on to do
+             * what it was for. The picker above is the opposite case and still
+             * claims the key: it was opened deliberately and is previewing a
+             * theme, so there Escape means "cancel that".
+             */
+            if (!pickerOpen) {
+                window.ConfigSettingPromo?.dismissActive?.({ persist: true });
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
