@@ -250,12 +250,19 @@ test.describe('the menu on a widget row', () => {
         // Focused inside the poll, not once before it. Closing the menu above
         // rebuilds the widget, and a focus that lands while navigableElements
         // is being rebuilt leaves currentIndex pointing at nothing -- cursor()
-        // then answers null and this read undefined rather than false. Asking
-        // again is what a reader does; a single focus was a race.
+        // then answers null and this reads undefined. Asking again is what a
+        // reader does; a single focus was a race.
+        //
+        // It has since failed the other way too: false rather than undefined,
+        // which is a cursor that is somewhere and not in the widget. That one
+        // does not reproduce here -- the row is always already in
+        // navigableElements by this point, 10 runs out of 10 -- so rather than
+        // add a wait for a state I cannot show happening, the failure now says
+        // where the cursor actually was. Next time it will name it.
         await expect.poll(async () => {
             await row.focus();
             const at = await cursor(page);
-            return at?.widget === true;
+            return at?.widget === true ? true : JSON.stringify(at);
         }, { timeout: 10_000 }).toBe(true);
         const opened = page.waitForEvent('popup', { timeout: 10_000 });
         await page.keyboard.press('Control+Enter');
