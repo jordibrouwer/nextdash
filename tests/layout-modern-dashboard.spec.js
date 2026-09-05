@@ -247,26 +247,53 @@ test.describe('modern layout — grid presets', () => {
                     doc.scrollWidth - doc.clientWidth,
                     document.body.scrollWidth - document.body.clientWidth,
                 );
-                const overlaps = [...document.querySelectorAll('.bookmarks-list')].slice(0, 3).flatMap((list) => {
-                    const rects = [...list.querySelectorAll(':scope > .bookmark-link')]
-                        .slice(0, 6)
-                        .map((el) => el.getBoundingClientRect());
-                    const bad = [];
-                    for (let i = 1; i < rects.length; i += 1) {
-                        // Same column (launcher and widgets tile sideways, so only
-                        // compare rows that actually stack) => must not overlap.
-                        const sameColumn = Math.abs(rects[i].left - rects[i - 1].left) < 2;
-                        if (sameColumn && rects[i].top < rects[i - 1].bottom - 1) {
-                            bad.push(Math.round(rects[i - 1].bottom - rects[i].top));
+                // Each overlap carries the two rows that made it. "2" on its own
+                // says nothing about why, and this has now failed on CI twice
+                // with nothing else to go on -- so the measurement travels with
+                // the verdict rather than being thrown away.
+                const box = (el) => {
+                    const r = el.getBoundingClientRect();
+                    const cs = getComputedStyle(el);
+                    return {
+                        top: Math.round(r.top),
+                        bottom: Math.round(r.bottom),
+                        left: Math.round(r.left),
+                        height: Math.round(r.height),
+                        marginTop: cs.marginTop,
+                        transform: cs.transform === 'none' ? '' : cs.transform,
+                        position: cs.position,
+                    };
+                };
+                const overlaps = [...document.querySelectorAll('.bookmarks-list')]
+                    .slice(0, 3)
+                    .flatMap((list, listIndex) => {
+                        const rows = [...list.querySelectorAll(':scope > .bookmark-link')].slice(0, 6);
+                        const rects = rows.map((el) => el.getBoundingClientRect());
+                        const bad = [];
+                        for (let i = 1; i < rects.length; i += 1) {
+                            // Same column (launcher and widgets tile sideways, so
+                            // only compare rows that actually stack) => must not
+                            // overlap.
+                            const sameColumn = Math.abs(rects[i].left - rects[i - 1].left) < 2;
+                            if (sameColumn && rects[i].top < rects[i - 1].bottom - 1) {
+                                bad.push({
+                                    by: Math.round(rects[i - 1].bottom - rects[i].top),
+                                    list: listIndex,
+                                    rows: [i - 1, i],
+                                    of: rows.length,
+                                    display: getComputedStyle(list).display,
+                                    above: box(rows[i - 1]),
+                                    below: box(rows[i]),
+                                });
+                            }
                         }
-                    }
-                    return bad;
-                });
+                        return bad;
+                    });
                 return { overflow, overlaps };
             });
 
             expect(geo.overflow).toBeLessThanOrEqual(0);
-            expect(geo.overlaps).toEqual([]);
+            expect(geo.overlaps, `rows overlap: ${JSON.stringify(geo.overlaps)}`).toEqual([]);
         });
     }
 });
