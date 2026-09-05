@@ -5840,6 +5840,66 @@ button.config-bm-shortcut-pill {
     font-size: var(--font-size-small, 0.66rem);
 }
 
+/* Group headings on the widgets tab, matching the catalogue's. */
+.config-widget-group {
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.config-widget-group-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.78rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.config-widget-count {
+    display: block;
+    margin-bottom: var(--space-2, 0.5rem);
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.config-widget-none {
+    padding: var(--space-4, 1rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.78rem);
+}
+
+/* What to do with the ticked rows: only on screen while something is ticked. */
+.config-widget-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-4, 0.35rem);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.config-widget-bulk-count {
+    font-size: var(--font-size-small, 0.74rem);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Which page a row belongs to, shown only while the list spans pages. */
+.config-widget-row-page {
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.66rem);
+    white-space: nowrap;
+}
+
+.config-widget-row-pick {
+    display: inline-flex;
+    align-items: center;
+    margin-right: var(--space-1, 0.3rem);
+}
+
 .config-widget-setup {
     /* Outside the settings grid, so it needs no track of its own. */
     margin-bottom: var(--space-3, 0.75rem);

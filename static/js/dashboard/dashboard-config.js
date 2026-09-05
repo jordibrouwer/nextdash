@@ -1,3 +1,7 @@
+/* The page picker's "every page" choice, kept as one value so the
+   comparisons cannot drift apart. */
+const WIDGETS_ALL_PAGES = 'all';
+
 /**
  * Config view — configuration as a dashboard view, modelled on DashboardHealth.
  *
@@ -162,6 +166,14 @@ class DashboardConfig {
         // Statistics sub-tab.
         this.statsTab = 'overview';
         this.widgetsTab = 'widgets';
+        // Grouped by default: the same headings the catalogue uses, so a long
+        // list arrives already sorted into the questions each type answers.
+        this.widgetSort = 'group';
+        // Ticked rows, by widget id rather than index: a repaint reorders the
+        // list and an index would then point at somebody else's widget.
+        this.widgetSelection = new Set();
+        this.widgetQuery = '';
+        this._widgetSearchTimer = null;
         // Which page the figures describe; '' is the whole library. Deliberately
         // not persisted, unlike the activity range: a range reframes the numbers
         // while this one hides most of them, and a filter still in force from
@@ -13424,6 +13436,9 @@ class DashboardConfig {
             links: ['config.widgetGroupLinks', 'Are the links still good?'],
             incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
+            // Custom widgets, and anything registered but not yet catalogued,
+            // land here rather than dropping out of the list entirely.
+            other: ['config.widgetGroupOther', 'Built by you'],
             upkeep: ['config.widgetGroupUpkeep', 'What needs tidying?'],
         };
         const [key, fallback] = map[group] || [group, group];
@@ -15131,7 +15146,11 @@ class DashboardConfig {
         const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
         const pageOptions = pages.map((p) =>
             `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
-        ).join('');
+        ).join('') + (pages.length > 1
+            ? `<option value="${WIDGETS_ALL_PAGES}"${
+                this.isAllPagesView() ? ' selected' : ''}>${
+                esc(this.t('config.widgetsAllPages', 'All pages'))}</option>`
+            : '');
 
         let body;
         if (this._widgetBlocks == null) {
@@ -15151,8 +15170,7 @@ class DashboardConfig {
                     ${this.renderWidgetAddButton()}
                 </div>`;
             } else {
-                const rows = widgets.map((widget) => {
-                    const index = this._widgetBlocks.indexOf(widget);
+                const renderRow = (widget, index) => {
                     const enabled = widget.config?.enabled !== false;
                     const open = this._widgetSettingsOpen === index;
                     return `
@@ -15160,7 +15178,17 @@ class DashboardConfig {
                     data-widget-row="${index}">
                     <div class="config-widget-row-head">
                         <div class="config-widget-row-identity">
+                            <label class="config-widget-row-pick"
+                                title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
+                                <input type="checkbox" data-widget-pick="${esc(widget.id)}"
+                                    ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
+                            </label>
                             <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                            ${this.isAllPagesView() && widget.pageName
+                                ? `<span class="config-widget-row-page" title="${
+                                    esc(this.t('config.widgetsPageLabel', 'Page'))}">${
+                                    esc(widget.pageName)}</span>`
+                                : ''}
                             <input type="text" class="config-text config-widget-row-title" data-widget="title"
                                 data-index="${index}" value="${esc(widget.title || '')}"
                                 aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
@@ -15183,28 +15211,391 @@ class DashboardConfig {
                     <div class="config-widget-settings" ${open ? '' : 'hidden'}>${
                         open ? this.renderWidgetSettings(widget, index) : ''}</div>
                 </li>`;
-                }).join('');
-                body = `<ul class="config-widget-list">${rows}</ul>`;
+                };
+
+                /*
+                 * Grouped by default, under the same headings the catalogue
+                 * uses. A flat list of fourteen is a list to read; four short
+                 * groups is a thing to scan.
+                 */
+                const groups = this.widgetRowsForDisplay();
+                const shown = groups.reduce((n, g) => n + g.rows.length, 0);
+
+                if (!shown) {
+                    body = `<p class="config-widget-none">${esc(this.t('config.widgetsNoMatch',
+                        'No widgets match that search.'))}</p>`;
+                } else {
+                    body = groups.map(({ group, rows }) => {
+                        const list = `<ul class="config-widget-list">${
+                            rows.map(({ block, index }) => renderRow(block, index)).join('')}</ul>`;
+                        if (!group) return list;
+                        return `
+                            <section class="config-widget-group">
+                                <h4 class="config-widget-group-title">${
+                                    esc(this.widgetTypeGroupLabel(group))}</h4>
+                                ${list}
+                            </section>`;
+                    }).join('');
+                }
+                body = `${this.renderWidgetCount(shown, widgets.length)}${
+                    this.renderWidgetBulkBar()}${body}`;
             }
         }
 
         const hasWidgets = Array.isArray(this._widgetBlocks)
             && this._widgetBlocks.some((b) => b.isWidget);
-        const pagePicker = pages.length > 1 ? `
-            <label class="config-widget-head-field">
-                <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
-                <select class="config-select" data-widget-page>${pageOptions}</select>
-            </label>` : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
+        const pagePicker = pages.length > 1
+            ? `<select class="config-select" data-widget-page aria-label="${
+                esc(this.t('config.widgetsPageLabel', 'Page'))}">${pageOptions}</select>`
+            : `<select class="config-select" data-widget-page hidden>${pageOptions}</select>`;
+
+        const sortOptions = [
+            ['group', this.t('config.widgetsSortGrouped', 'Grouped')],
+            ['order', this.t('config.widgetsSortOrder', 'Order on the page')],
+            ['name', this.t('config.widgetsSortName', 'Name A–Z')],
+            ['type', this.t('config.widgetsSortType', 'Type')],
+        ].map(([value, text]) => `<option value="${esc(value)}"${
+            value === this.widgetSort ? ' selected' : ''}>${esc(text)}</option>`).join('');
+
+        /*
+         * The same toolbar shape as the bookmarks tab: search, the narrowing
+         * selects, then the one button that adds something. Two lists in one
+         * config view that arrange their controls differently make the second
+         * one feel like somewhere else in the app.
+         */
+        // Adding needs one page to add to, and Add-while-showing-everything has
+        // no answer to "where". The picker is right there to choose one.
+        const canAdd = !this.isAllPagesView();
+        const toolbar = hasWidgets ? `
+            <div class="config-crud-toolbar config-crud-toolbar--view">
+                <input type="search" class="config-text" id="config-widget-search"
+                    placeholder="${esc(this.t('config.searchWidgets', 'Search widgets…'))}"
+                    value="${esc(this.widgetQuery || '')}">
+                ${pagePicker}
+                <select class="config-select" data-widget-sort aria-label="${
+                    esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
+                ${canAdd ? this.renderWidgetAddButton() : ''}
+            </div>` : pagePicker;
 
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
                 'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
-            <div class="config-widget-head">
-                ${pagePicker}
-                ${hasWidgets ? this.renderWidgetAddButton() : ''}
-            </div>
+            ${toolbar}
             ${body}
         `;
+    }
+
+    /*
+     * The widgets this tab is showing, in the order it shows them.
+     *
+     * Search matches the title and the type name both, because a widget with no
+     * title of its own is drawn under its type -- looking for "processor" and
+     * finding nothing, on a page that plainly shows one, is the kind of small
+     * lie a search should not tell.
+     */
+    widgetRowsForDisplay() {
+        const all = (this._widgetBlocks || [])
+            .map((block, index) => ({ block, index }))
+            .filter((row) => row.block.isWidget);
+
+        const query = String(this.widgetQuery || '').trim().toLowerCase();
+        const matched = !query ? all : all.filter(({ block }) => {
+            const title = String(block.title || '').toLowerCase();
+            const type = String(this.widgetTypeName(block.type) || '').toLowerCase();
+            return title.includes(query) || type.includes(query)
+                || String(block.type || '').toLowerCase().includes(query);
+        });
+
+        const byName = (a, b) => this.widgetRowLabel(a.block)
+            .localeCompare(this.widgetRowLabel(b.block), undefined, { sensitivity: 'base' });
+
+        switch (this.widgetSort) {
+            case 'order':
+                // The order they sit in on the page, which is the order the
+                // array already holds.
+                return [{ group: null, rows: matched }];
+            case 'name':
+                return [{ group: null, rows: [...matched].sort(byName) }];
+            case 'type':
+                return [{ group: null, rows: [...matched].sort((a, b) =>
+                    String(a.block.type).localeCompare(String(b.block.type)) || byName(a, b)) }];
+            default: {
+                /*
+                 * Grouped, and the default: fourteen rows in one column is a
+                 * list to read, four short groups is a thing to scan. The
+                 * groups are the ones the catalogue already uses, so a type
+                 * cannot sort itself into one place here and another there.
+                 */
+                const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => ({
+                    group,
+                    rows: matched.filter(({ block }) => types.includes(block.type)),
+                })).filter((entry) => entry.rows.length);
+
+                // Custom is in no group, and so is any type added to the
+                // register but not yet to the catalogue -- which would
+                // otherwise vanish from this tab entirely.
+                const grouped = new Set(
+                    DashboardConfig.WIDGET_TYPE_GROUPS.flatMap(([, types]) => types),
+                );
+                const rest = matched.filter(({ block }) => !grouped.has(block.type));
+                if (rest.length) groups.push({ group: 'other', rows: rest });
+                return groups;
+            }
+        }
+    }
+
+    /** What a row is called: its own title, or the name of its type. */
+    widgetRowLabel(block) {
+        return String(block?.title || '').trim() || this.widgetTypeName(block?.type) || '';
+    }
+
+    /** How many widgets this page holds, and how many the filters show. */
+    renderWidgetCount(shown, total) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const text = shown === total
+            ? this.t('config.widgetsCount', '{n} widgets').replace('{n}', String(total))
+            : this.t('config.widgetsCountFiltered', '{shown} of {n} widgets')
+                .replace('{shown}', String(shown)).replace('{n}', String(total));
+        return `<span class="config-widget-count">${esc(text)}</span>`;
+    }
+
+    /*
+     * What to do with the ticked rows.
+     *
+     * Only on screen while something is ticked: a permanent bar of buttons that
+     * usually refuse is the same mistake as a reset that never resets. Move is
+     * a select rather than a button, because the question is not "move" but
+     * "where to", and only pages other than this one are worth offering.
+     */
+    renderWidgetBulkBar() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const picked = this.selectedWidgetIds();
+        if (!picked.length) return '';
+
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const here = Number(this._widgetPageId);
+        const elsewhere = pages.filter((page) => Number(page.id) !== here);
+        const moveOptions = [`<option value="">${
+            esc(this.t('config.widgetsBulkMoveTo', 'Move to page…'))}</option>`]
+            .concat(elsewhere.map((page) =>
+                `<option value="${esc(page.id)}">${esc(page.name || page.id)}</option>`))
+            .join('');
+
+        return `
+            <div class="config-widget-bulk" role="group">
+                <span class="config-widget-bulk-count">${esc(
+                    this.t('config.widgetsBulkCount', '{n} selected')
+                        .replace('{n}', String(picked.length)))}</span>
+                <button type="button" class="config-btn config-btn--small" data-widget-bulk="show">${
+                    esc(this.t('config.widgetsBulkShow', 'Show'))}</button>
+                <button type="button" class="config-btn config-btn--small" data-widget-bulk="hide">${
+                    esc(this.t('config.widgetsBulkHide', 'Hide'))}</button>
+                ${elsewhere.length ? `<select class="config-select config-select--small"
+                    data-widget-bulk-move aria-label="${
+                        esc(this.t('config.widgetsBulkMoveTo', 'Move to page…'))}">${moveOptions}</select>` : ''}
+                <button type="button" class="config-btn config-btn--small config-btn--danger"
+                    data-widget-bulk="delete">${esc(this.t('config.widgetsBulkDelete', 'Delete'))}</button>
+                <button type="button" class="config-btn config-btn--small"
+                    data-widget-bulk="clear">${esc(this.t('config.widgetsBulkClear', 'Clear'))}</button>
+            </div>`;
+    }
+
+    /*
+     * Write every page the ticked widgets belong to.
+     *
+     * One page in the ordinary view, several in the all-pages one -- and each
+     * is written once rather than once per widget, so ten ticks across two
+     * pages are two requests.
+     */
+    async saveTouchedPages(ids) {
+        if (!this.isAllPagesView()) {
+            return this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+        }
+        const picked = new Set(ids);
+        const pages = new Set((this._widgetBlocks || [])
+            .filter((block) => block.isWidget && picked.has(block.id))
+            .map((block) => Number(block.pageId)));
+
+        for (const pageId of pages) {
+            if (!await this.savePageWidgets(pageId)) return false;
+        }
+        return true;
+    }
+
+    /** The ticked widgets that are still on this page, in page order. */
+    selectedWidgetIds() {
+        return (this._widgetBlocks || [])
+            .filter((block) => block.isWidget && this.widgetSelection.has(block.id))
+            .map((block) => block.id);
+    }
+
+    /*
+     * Show, hide, move or remove every ticked widget at once.
+     *
+     * Each action writes the whole page once rather than a request per widget:
+     * the endpoint takes the page's widgets as a set, so ten separate writes
+     * would be ten chances for two of them to race.
+     */
+    async runWidgetBulkAction(action) {
+        const ids = this.selectedWidgetIds();
+        if (!ids.length) return;
+        const picked = new Set(ids);
+
+        if (action === 'clear') {
+            this.widgetSelection.clear();
+            this.repaintWidgetsBody();
+            return;
+        }
+
+        if (action === 'delete') {
+            const ok = await this.confirmAction(
+                this.t('config.widgetsBulkDeleteBody',
+                    'Remove {n} widgets? Their settings and any sign-ins they hold go with them.')
+                    .replace('{n}', String(ids.length)),
+                { confirmLabel: this.t('config.backupDelete', 'Delete'), danger: true });
+            if (!ok) return;
+
+            // The credential a widget minted for itself goes with it, exactly
+            // as it does when one is deleted on its own.
+            for (const block of (this._widgetBlocks || [])) {
+                if (block.isWidget && picked.has(block.id)) {
+                    await this.forgetWidgetCredential(block);
+                    delete (this._widgetDrafts || {})[block.id];
+                }
+            }
+            // Which page each one lived on, read before they are dropped.
+            const byPage = new Map();
+            (this._widgetBlocks || []).forEach((block) => {
+                if (!block.isWidget || !picked.has(block.id)) return;
+                const page = this.isAllPagesView() ? Number(block.pageId) : Number(this._widgetPageId);
+                byPage.set(page, (byPage.get(page) || []).concat(block.id));
+            });
+
+            this._widgetBlocks = (this._widgetBlocks || [])
+                .filter((block) => !(block.isWidget && picked.has(block.id)));
+
+            if (this.isAllPagesView()) {
+                for (const [pageId, removed] of byPage) {
+                    for (const id of removed) {
+                        if (!await this.savePageWidgetsAfterRemoval(pageId, id)) return;
+                    }
+                }
+            } else if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+                return;
+            }
+
+            this.widgetSelection.clear();
+            this.notify(this.t('config.widgetsBulkDeleted', '{n} widgets removed.')
+                .replace('{n}', String(ids.length)), 'success');
+            this._widgetLoadedFor = null;
+            await this.loadWidgetsEditor();
+            await this.refreshDashboardBlocks();
+            return;
+        }
+
+        // Show and hide: one field on each, written in a single save.
+        const visible = action === 'show';
+        this._widgetBlocks = (this._widgetBlocks || []).map((block) => {
+            if (!block.isWidget || !picked.has(block.id)) return block;
+            const config = { ...(block.config || {}) };
+            // Absent is how "shown" is stored, so hiding sets a flag and
+            // showing removes one rather than writing enabled: true.
+            if (visible) delete config.enabled;
+            else config.enabled = false;
+            return { ...block, config };
+        });
+        if (!await this.saveTouchedPages(ids)) return;
+
+        this.repaintWidgetsBody();
+        await this.refreshDashboardBlocks();
+        this.notify(visible
+            ? this.t('config.widgetsBulkShown', '{n} widgets shown.').replace('{n}', String(ids.length))
+            : this.t('config.widgetsBulkHidden', '{n} widgets hidden.').replace('{n}', String(ids.length)),
+        'success');
+    }
+
+    /*
+     * Move the ticked widgets to another page.
+     *
+     * Two pages change, so this is two writes, and the order matters: the
+     * destination is written first. If that fails nothing has been removed
+     * from here, and a reader still has their widgets -- the other way round
+     * loses them to a failed second request.
+     */
+    async moveWidgetsToPage(targetPageId) {
+        const ids = this.selectedWidgetIds();
+        const target = Number(targetPageId);
+        if (!ids.length || !target || target === Number(this._widgetPageId)) return;
+
+        const picked = new Set(ids);
+        const moving = (this._widgetBlocks || [])
+            .filter((block) => block.isWidget && picked.has(block.id))
+            // In the all-pages view a tick may already be on the destination,
+            // and moving a widget to where it is would delete it from there.
+            .filter((block) => !this.isAllPagesView() || Number(block.pageId) !== target);
+        if (!moving.length) return;
+
+        let destination;
+        try {
+            const res = await fetch(`/api/pages/${target}/blocks`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            destination = await res.json();
+        } catch (_error) {
+            this.notify(this.t('config.widgetsMoveFailed',
+                'Could not read the other page — nothing was moved.'), 'error');
+            return;
+        }
+
+        /*
+         * The ids come along, and the server keeps them: a widget that kept
+         * its id keeps the credential and the collapsed state that are filed
+         * under it, so moving a page is not quietly a delete and a re-add.
+         */
+        const widgets = (destination.widgets || []).concat(moving.map((block) => ({
+            id: block.id, type: block.type, title: block.title, config: block.config || {},
+        })));
+
+        const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ widgets }),
+        }).then((res) => res.ok).catch(() => false);
+
+        if (!wrote) {
+            this.notify(this.t('config.widgetsMoveFailed',
+                'Could not read the other page — nothing was moved.'), 'error');
+            return;
+        }
+
+        // Only now: the widgets exist in both places for a moment, which is the
+        // safe half of the trade.
+        const sources = new Map();
+        moving.forEach((block) => {
+            const page = this.isAllPagesView() ? Number(block.pageId) : Number(this._widgetPageId);
+            sources.set(page, (sources.get(page) || []).concat(block.id));
+        });
+        this._widgetBlocks = (this._widgetBlocks || [])
+            .filter((block) => !(block.isWidget && picked.has(block.id)));
+
+        if (this.isAllPagesView()) {
+            for (const [pageId, removed] of sources) {
+                for (const id of removed) {
+                    if (!await this.savePageWidgetsAfterRemoval(pageId, id)) return;
+                }
+            }
+        } else if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+            return;
+        }
+
+        this.widgetSelection.clear();
+        const pageName = (this.dash.pages || [])
+            .find((page) => Number(page.id) === target)?.name || target;
+        this.notify(this.t('config.widgetsMoved', '{n} widgets moved to {page}.')
+            .replace('{n}', String(ids.length)).replace('{page}', String(pageName)), 'success');
+
+        this._widgetLoadedFor = null;
+        await this.loadWidgetsEditor();
+        await this.refreshDashboardBlocks();
     }
 
     /** The one door to the catalogue. Same label wherever it appears. */
@@ -15344,6 +15735,7 @@ class DashboardConfig {
             { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
             { key: 'show', kind: 'checkset', label: ['config.widgetDockerShow', 'Figures to show'],
+              info: ['widgetDockerShowInfoTitle', 'widgetDockerShowInfoBody'],
               options: [
                   ['running', ['config.widgetDockerShowRunning', 'Running']],
                   ['stopped', ['config.widgetDockerShowStopped', 'Stopped']],
@@ -15366,6 +15758,7 @@ class DashboardConfig {
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
             { key: 'showCache', kind: 'bool',
               label: ['config.widgetMemoryShowCache', 'Show the file cache'],
+              info: ['widgetMemoryCacheInfoTitle', 'widgetMemoryCacheInfoBody'],
               hint: ['config.widgetMemoryCacheHint',
                      'Memory the machine is keeping warm and will hand back the moment anything needs it.'] },
             { key: 'showSwap', kind: 'bool', label: ['config.widgetMemoryShowSwap', 'Show swap'] },
@@ -15377,6 +15770,7 @@ class DashboardConfig {
                      'Free space moves slowly, and reading a sleeping disk can stall.'] },
             { key: 'mounts', kind: 'tags', suggest: 'mounts',
               label: ['config.widgetDisksMounts', 'Disks to show'],
+              info: ['widgetDisksMountsInfoTitle', 'widgetDisksMountsInfoBody'],
               hint: ['config.widgetDisksMountsHint',
                      'Paths as this machine knows them — on Unraid /mnt/user and /mnt/cache, on a NAS /volume1.'] },
             { key: 'labels', kind: 'tags',
@@ -15389,6 +15783,7 @@ class DashboardConfig {
         cpu: [
             { key: 'refreshSeconds', kind: 'int', min: 1, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
+              info: ['widgetRefreshInfoTitle', 'widgetRefreshInfoBody'],
               hint: ['config.widgetCpuRefreshHint',
                      'One second is the fastest useful reading: below that the figure is noise.'] },
             { key: 'showLoad', kind: 'bool', label: ['config.widgetCpuShowLoad', 'Show load average'] },
@@ -16827,6 +17222,24 @@ class DashboardConfig {
     }
 
     /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
+    /*
+     * The ℹ beside a widget setting, on every kind of field.
+     *
+     * It was built for the number fields alone, so a choice or a tickbox that
+     * needed a paragraph had nowhere to put one -- and the same dialog every
+     * other setting in config uses was sitting there unused. Only drawn where
+     * there is text behind it: a row of ℹ buttons opening empty dialogs is a
+     * mistake this codebase has already made once.
+     */
+    widgetFieldInfoButton(field, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!field?.info || !this.hasInfoText(field.info)) return '';
+        return `<button type="button" class="config-info-btn" data-widget-info="${esc(field.key)}"
+            data-widget-index="${index}"
+            aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
+            title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
+    }
+
     renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
@@ -16852,7 +17265,7 @@ class DashboardConfig {
                         <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
                             data-widget-index="${index}" data-widget-kind="bool"
                             ${config[field.key] ? 'checked' : ''}>
-                        <span>${label}</span>
+                        <span>${label}${this.widgetFieldInfoButton(field, index)}</span>
                     </label>`;
             }
             if (field.kind === 'int') {
@@ -16866,12 +17279,7 @@ class DashboardConfig {
                  * same dialog every other setting in config uses.
                  */
                 const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const info = field.info
-                    ? `<button type="button" class="config-info-btn" data-widget-info="${esc(field.key)}"
-                            data-widget-index="${index}"
-                            aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
-                            title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`
-                    : '';
+                const info = this.widgetFieldInfoButton(field, index);
                 return `
                     <div class="config-widget-field">
                         <label for="${id}">${label}${info}</label>
@@ -16896,7 +17304,7 @@ class DashboardConfig {
                         esc(this.t(text[0], text[1]))}</option>`).join('');
                 return `
                     <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
+                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
                         <select id="${id}" class="config-select" data-widget-setting="${esc(field.key)}"
                             data-widget-index="${index}" data-widget-kind="text">${choices}</select>
                         ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
@@ -16906,7 +17314,7 @@ class DashboardConfig {
                 const placeholder = field.placeholder ? this.t(field.placeholder[0], field.placeholder[1]) : '';
                 return `
                     <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
+                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
                         <input type="text" id="${id}" class="config-text"
                             data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                             data-widget-kind="text" maxlength="${field.maxlength || 200}"
@@ -16924,7 +17332,7 @@ class DashboardConfig {
                     : '';
                 return `
                     <div class="config-widget-field">
-                        <label for="${id}">${label}</label>
+                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
                         <input type="text" id="${id}" class="config-text"
                             data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                             data-widget-kind="tags" maxlength="400" value="${esc(value)}"
@@ -16944,7 +17352,8 @@ class DashboardConfig {
                 </label>`).join('');
             return `
                 <div class="config-widget-field">
-                    <span class="config-widget-field-label">${label}</span>
+                    <span class="config-widget-field-label">${label}${
+                        this.widgetFieldInfoButton(field, index)}</span>
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
@@ -17167,6 +17576,58 @@ class DashboardConfig {
     }
 
     /*
+     * Everything back to how it arrived.
+     *
+     * Offered only when something is off its default, the rule the reset
+     * follows everywhere else in config: a permanent button that usually does
+     * nothing teaches people to ignore it.
+     *
+     * It clears the fields into the draft rather than writing, so the panel's
+     * own Save or Discard still decides -- a misclick costs a click, not a
+     * widget. The title and the Shown box are deliberately untouched: those
+     * are not settings with defaults, and quietly renaming or hiding a widget
+     * is not what "reset to default" should mean.
+     */
+    renderWidgetResetButton(index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!this.widgetHasNonDefaultSettings(index)) return '';
+        return `<button type="button" class="config-reset-btn is-visible" data-widget-reset="${index}"
+            aria-label="${esc(this.t('config.widgetResetAria', 'Reset this widget to its defaults'))}"
+            title="${esc(this.t('config.widgetResetTitle', 'Reset to default'))}">↺</button>`;
+    }
+
+    /** Whether this widget holds any setting that is not simply the default. */
+    widgetHasNonDefaultSettings(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return false;
+        const draft = this.widgetDraft(index);
+        const config = draft?.config || block.config || {};
+        // enabled is the Shown box, which this never touches.
+        return Object.keys(config).some((key) => key !== 'enabled' && config[key] !== undefined);
+    }
+
+    /*
+     * Clear this widget's settings back to their defaults, in the draft.
+     *
+     * Absent is exactly how the server stores a default, so emptying the map is
+     * the whole operation -- there is no second notion of "the default value"
+     * that could drift away from what the server would do with a missing key.
+     */
+    resetWidgetToDefaults(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (!block?.isWidget) return;
+        const draft = this.widgetDraft(index, { create: true });
+        if (!draft) return;
+
+        const enabled = (draft.config || block.config || {}).enabled;
+        draft.config = enabled === undefined ? {} : { enabled };
+        this._widgetJustSaved = null;
+        this.repaintWidgetsBody();
+        this.notify(this.t('config.widgetResetNotice',
+            'Settings back to their defaults — Save to keep this.'), 'info');
+    }
+
+    /*
      * One Save for the whole panel, and a Revert beside it.
      *
      * Every setting here is written by the same button, including the sign-in
@@ -17191,6 +17652,7 @@ class DashboardConfig {
                 <button type="button" class="config-btn config-btn--small"
                     data-widget-revert="${index}" ${dirty ? '' : 'disabled'}>${esc(
                     this.t('config.widgetRevert', 'Discard'))}</button>
+                ${this.renderWidgetResetButton(index)}
                 <span class="config-widget-savebar-state" data-widget-save-state>${esc(
                     dirty ? this.t('config.widgetUnsaved', 'Not saved yet')
                     : saved ? this.t('config.widgetSaved', 'Saved.')
@@ -17279,6 +17741,7 @@ class DashboardConfig {
      */
     async loadWidgetsEditor() {
         const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (this._widgetPageId === WIDGETS_ALL_PAGES) return this.loadAllPageWidgets(pages);
         const pageId = this._widgetPageId != null ? this._widgetPageId : (this.dash.currentPageId ?? pages[0]?.id);
         if (!pageId) return;
         this._widgetPageId = Number(pageId);
@@ -17321,6 +17784,61 @@ class DashboardConfig {
         }
         this._widgetLoadedFor = this._widgetPageId;
         this.repaintWidgetsBody();
+    }
+
+    /*
+     * Every widget on every page, in one list.
+     *
+     * A reader with four pages had to visit four tabs to answer "what have I
+     * actually got", and a widget on the page you are not looking at is the
+     * one you forget you are paying for. Each block remembers the page it came
+     * from, because a save writes one page at a time and this view spans them.
+     *
+     * The categories are left out here: they only mean something beside the
+     * widgets of their own page, and this list is not an order to rearrange.
+     */
+    async loadAllPageWidgets(pages) {
+        if (this._widgetBlocks != null && this._widgetLoadedFor === WIDGETS_ALL_PAGES) return;
+
+        const blocks = [];
+        try {
+            const answers = await Promise.all(pages.map(async (page) => {
+                const res = await this.writeFetch(`/api/pages/${page.id}/blocks`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return { page, data: await res.json() };
+            }));
+
+            answers.forEach(({ page, data }) => {
+                const byId = new Map((data.widgets || []).map((w) => [w.id, w]));
+                // In the page's own order, so the list reads the way each page
+                // is actually arranged rather than by whatever the API returns.
+                (data.order || []).forEach((id) => {
+                    const widget = byId.get(id);
+                    if (!widget) return;
+                    blocks.push({
+                        id,
+                        isWidget: true,
+                        type: widget.type,
+                        title: widget.title || '',
+                        config: widget.config || {},
+                        pageId: Number(page.id),
+                        pageName: page.name || String(page.id),
+                    });
+                });
+            });
+            this._widgetBlocks = blocks;
+            this._widgetOrder = blocks.map((b) => b.id);
+        } catch {
+            this._widgetBlocks = [];
+            this._widgetOrder = [];
+        }
+        this._widgetLoadedFor = WIDGETS_ALL_PAGES;
+        this.repaintWidgetsBody();
+    }
+
+    /** Whether the tab is showing every page at once. */
+    isAllPagesView() {
+        return this._widgetPageId === WIDGETS_ALL_PAGES;
     }
 
     /*
@@ -17398,6 +17916,20 @@ class DashboardConfig {
             const suggested = target.closest('[data-widget-suggest-add]');
             if (suggested) { this.addSuggestedMount(suggested); return; }
 
+            const bulk = target.closest('[data-widget-bulk]');
+            if (bulk) {
+                event.preventDefault();
+                void this.runWidgetBulkAction(bulk.getAttribute('data-widget-bulk'));
+                return;
+            }
+
+            const reset = target.closest('[data-widget-reset]');
+            if (reset) {
+                event.preventDefault();
+                this.resetWidgetToDefaults(indexOn(reset, 'data-widget-reset'));
+                return;
+            }
+
             const save = target.closest('[data-widget-save]');
             if (save) { void this.saveWidgetDraft(indexOn(save, 'data-widget-save')); return; }
 
@@ -17444,9 +17976,56 @@ class DashboardConfig {
             }
         });
 
+        /*
+         * Typing narrows the list, on the same debounce the bookmarks search
+         * uses: repainting on every keystroke rebuilds every row and loses the
+         * caret in the field that is being typed in.
+         */
+        body.addEventListener('input', (event) => {
+            if (event.target?.id !== 'config-widget-search') return;
+            this.widgetQuery = event.target.value;
+            clearTimeout(this._widgetSearchTimer);
+            this._widgetSearchTimer = setTimeout(() => {
+                this._widgetSearchTimer = null;
+                this.repaintWidgetsBody();
+                // The field is rebuilt by the repaint, so the caret goes back
+                // where the typist left it.
+                const field = document.getElementById('config-widget-search');
+                if (field) {
+                    field.focus();
+                    field.setSelectionRange(field.value.length, field.value.length);
+                }
+            }, 200);
+        });
+
         body.addEventListener('change', (event) => {
             const target = event.target;
             if (!target?.closest) return;
+
+            const pick = target.closest('[data-widget-pick]');
+            if (pick) {
+                const id = pick.getAttribute('data-widget-pick');
+                if (pick.checked) this.widgetSelection.add(id);
+                else this.widgetSelection.delete(id);
+                this.repaintWidgetsBody();
+                return;
+            }
+
+            const moveTo = target.closest('[data-widget-bulk-move]');
+            if (moveTo) {
+                const target_ = moveTo.value;
+                // Back to the prompt: the select is a verb, not a stored value.
+                moveTo.value = '';
+                if (target_) void this.moveWidgetsToPage(target_);
+                return;
+            }
+
+            const sort = target.closest('[data-widget-sort]');
+            if (sort) {
+                this.widgetSort = sort.value;
+                this.repaintWidgetsBody();
+                return;
+            }
 
             const page = target.closest('[data-widget-page]');
             if (page) {
@@ -17462,7 +18041,9 @@ class DashboardConfig {
                 const previousPageId = this._widgetPageId;
                 const goToPage = () => {
                     this.stopCustomProbeLive();
-                    this._widgetPageId = Number(page.value);
+                    this._widgetPageId = page.value === WIDGETS_ALL_PAGES
+                        ? WIDGETS_ALL_PAGES
+                        : Number(page.value);
                     this._widgetBlocks = null;
                     this._widgetLoadedFor = null;
                     this._widgetDrafts = {};
@@ -17495,8 +18076,16 @@ class DashboardConfig {
             // panel, and it has its own control on the row.
             const shown = target.closest('[data-widget-enabled]');
             if (shown) {
+                const visible = shown.checked;
                 void this.setWidgetConfig(indexOn(shown, 'data-widget-enabled'),
-                    { enabled: shown.checked });
+                    { enabled: visible })
+                    // Written straight to the server, so it says so: the panel
+                    // below has a Save button and this box does not, and a row
+                    // with two ways of saving needs both to be audible.
+                    .then((ok) => ok && this.notify(visible
+                        ? this.t('config.widgetShownNotice', 'Widget shown on the dashboard.')
+                        : this.t('config.widgetHiddenNotice', 'Widget hidden from the dashboard.'),
+                    'success'));
                 return;
             }
 
@@ -17671,9 +18260,95 @@ class DashboardConfig {
         };
     }
 
+    /*
+     * Write one page's widgets, whichever page a row belongs to.
+     *
+     * In the all-pages view the list spans pages, so "save the widgets" has no
+     * single destination: each row is written back to the page it came from,
+     * with that page's other widgets left exactly as they are.
+     */
+    async savePageWidgets(pageId) {
+        const target = Number(pageId);
+        if (!target) return false;
+
+        const mine = (this._widgetBlocks || [])
+            .filter((block) => block.isWidget && Number(block.pageId) === target);
+
+        try {
+            // Read first: this page's order and any widget the all-pages view
+            // is not showing must survive the write.
+            const res = await fetch(`/api/pages/${target}/blocks`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const current = await res.json();
+            const edited = new Map(mine.map((block) => [block.id, block]));
+
+            const widgets = (current.widgets || []).map((widget) => {
+                const block = edited.get(widget.id);
+                if (!block) return widget;
+                return { id: widget.id, type: block.type, title: block.title, config: block.config || {} };
+            });
+
+            const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets }),
+            });
+            if (!wrote.ok) throw new Error(`HTTP ${wrote.status}`);
+            return true;
+        } catch {
+            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+            return false;
+        }
+    }
+
+    /*
+     * Write a page with one widget taken out of it.
+     *
+     * Removal is the one edit the merging save cannot express: that one keeps
+     * whatever the server already holds, which is exactly the widget being
+     * deleted.
+     */
+    async savePageWidgetsAfterRemoval(pageId, removedId) {
+        const target = Number(pageId);
+        if (!target) return false;
+        try {
+            const res = await fetch(`/api/pages/${target}/blocks`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const current = await res.json();
+            const widgets = (current.widgets || []).filter((w) => w.id !== removedId);
+
+            const wrote = await this.writeFetch(`/api/pages/${target}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets }),
+            });
+            if (!wrote.ok) throw new Error(`HTTP ${wrote.status}`);
+            return true;
+        } catch {
+            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Save the page a row belongs to, in either view.
+     *
+     * One call site for every edit that starts from a row, so nothing has to
+     * ask which view it is in.
+     */
+    async saveWidgetRow(index) {
+        const block = (this._widgetBlocks || [])[index];
+        if (this.isAllPagesView()) {
+            return block?.pageId ? this.savePageWidgets(block.pageId) : false;
+        }
+        return this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+    }
+
     async saveWidgetBlocks(payload) {
         const pageId = this._widgetPageId;
-        if (!pageId) return false;
+        // The all-pages view spans pages, so there is no single page to write:
+        // everything reachable from it saves through savePageWidgets instead.
+        if (!pageId || pageId === WIDGETS_ALL_PAGES) return false;
         try {
             const res = await this.writeFetch(`/api/pages/${pageId}/blocks`, {
                 method: 'PUT',
@@ -17769,8 +18444,11 @@ class DashboardConfig {
         });
         blocks[index] = { ...blocks[index], config: merged };
         this._widgetBlocks = blocks;
-        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        // Answers whether it wrote, so a caller can say so without claiming a
+        // save that the server refused.
+        if (!await this.saveWidgetRow(index)) return false;
         await this.refreshDashboardBlocks();
+        return true;
     }
 
     /**
@@ -18225,7 +18903,7 @@ class DashboardConfig {
         const blocks = [...(this._widgetBlocks || [])];
         blocks[index] = { ...block, config };
         this._widgetBlocks = blocks;
-        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) {
+        if (!await this.saveWidgetRow(index)) {
             say(this.t('config.widgetsSaveError', 'Could not save the widgets.'));
             return;
         }
@@ -18259,8 +18937,17 @@ class DashboardConfig {
         if (next === String(blocks[index].title || '')) return;
         blocks[index] = { ...blocks[index], title: next };
         this._widgetBlocks = blocks;
-        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        if (!await this.saveWidgetRow(index)) return;
         await this.refreshDashboardBlocks();
+        /*
+         * Said out loud, because this one writes straight to the server.
+         *
+         * The settings panel below has a Save button, so its changes announce
+         * themselves; the title and the Shown box do not, and wrote silently.
+         * Two ways of saving in one row, one of them invisible, is what made
+         * this tab feel like it might not have taken.
+         */
+        this.notify(this.t('config.widgetRenamed', 'Widget name saved.'), 'success');
     }
 
     /** Remove the entry a widget minted for itself, leaving shared ones alone. */
@@ -18292,8 +18979,14 @@ class DashboardConfig {
         await this.forgetWidgetCredential(block);
         delete (this._widgetDrafts || {})[block.id];
 
+        // The page is read off the block before it goes: saveWidgetRow would
+        // look at whatever row slid into this index.
+        const fromPage = this.isAllPagesView() ? Number(block.pageId) : null;
         this._widgetBlocks = (this._widgetBlocks || []).filter((_, i) => i !== index);
-        if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
+        const wrote = fromPage
+            ? await this.savePageWidgetsAfterRemoval(fromPage, block.id)
+            : await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
+        if (!wrote) return;
         this.notify(this.t('config.widgetsDeleted', 'Widget removed.'), 'success');
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();
