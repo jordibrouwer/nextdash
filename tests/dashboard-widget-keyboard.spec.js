@@ -48,6 +48,37 @@ const cursor = (page) => page.evaluate(() => {
     };
 });
 
+/*
+ * Why the cursor is not on the row -- three faults answer with the same null.
+ *
+ * cursor() reads navigableElements[currentIndex], so it says null when the
+ * list is empty, when the row was never collected into it, and when the row is
+ * in it but currentIndex is still -1. Three causes, one word: that is what
+ * made the last two failures unreadable. "Nothing yet" and "the wrong thing"
+ * are different answers, and so are the three ways of having nothing.
+ *
+ * data-collapsed is here because a folded widget looks exactly like a live one
+ * to toBeVisible(): the fold is grid-template-rows: 0fr plus opacity 0, and
+ * Playwright counts neither as invisible. The row above therefore passes its
+ * visibility check while the grid is right to refuse it -- a state that would
+ * read as ten seconds of nothing and name itself nowhere.
+ */
+const cursorWhy = (page, selector) => page.evaluate((sel) => {
+    const kn = window.dashboardInstance.keyboardNavigation;
+    const row = document.querySelector(sel);
+    const el = kn.navigableElements[kn.currentIndex] || null;
+    const active = document.activeElement;
+    return {
+        stops: kn.navigableElements.length,
+        currentIndex: kn.currentIndex,
+        rowInStops: row ? kn.navigableElements.indexOf(row) : 'no such row',
+        collapsed: row?.closest('.dashboard-widget')?.getAttribute('data-collapsed') ?? 'no block',
+        rowHasFocus: Boolean(row) && active === row,
+        activeElement: `${active?.tagName || '?'}.${typeof active?.className === 'string' ? active.className : ''}`.slice(0, 60),
+        cursorOn: el ? (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40) : null,
+    };
+}, selector);
+
 /** Walk the cursor with real key presses until it lands inside a widget. */
 async function arrowIntoWidget(page, limit = 40) {
     for (let n = 0; n < limit; n += 1) {
@@ -238,8 +269,14 @@ test.describe('the menu on a widget row', () => {
         });
         await page.reload({ waitUntil: 'networkidle' });
 
-        const row = page.locator('.dashboard-widget button[data-widget-href]').first();
+        const rowSelector = '.dashboard-widget button[data-widget-href]';
+        const row = page.locator(rowSelector).first();
         await expect(row).toBeVisible({ timeout: 15_000 });
+        // Said here rather than discovered ten seconds later: a folded widget
+        // refuses its rows to the cursor, and the fold is invisible to the
+        // check above (see cursorWhy).
+        await expect(page.locator('.dashboard-widget').first())
+            .toHaveAttribute('data-collapsed', 'false');
         await row.click({ button: 'right' });
         await expect(page.locator('#widget-context-menu [data-action="row-open-tab"]')).toBeVisible({ timeout: 10_000 });
         await page.keyboard.press('Escape');
@@ -257,12 +294,18 @@ test.describe('the menu on a widget row', () => {
         // which is a cursor that is somewhere and not in the widget. That one
         // does not reproduce here -- the row is always already in
         // navigableElements by this point, 10 runs out of 10 -- so rather than
-        // add a wait for a state I cannot show happening, the failure now says
-        // where the cursor actually was. Next time it will name it.
+        // add a wait for a state I cannot show happening, the failure says
+        // where the cursor actually was.
+        //
+        // And null on CI said only "nowhere", which is three states wearing one
+        // word, so the report now separates them: how many stops the grid has,
+        // whether this row is one of them, whether the fold is on, and what
+        // actually holds focus.
         await expect.poll(async () => {
             await row.focus();
             const at = await cursor(page);
-            return at?.widget === true ? true : JSON.stringify(at);
+            if (at?.widget === true) return true;
+            return JSON.stringify(await cursorWhy(page, rowSelector));
         }, { timeout: 10_000 }).toBe(true);
         const opened = page.waitForEvent('popup', { timeout: 10_000 });
         await page.keyboard.press('Control+Enter');
