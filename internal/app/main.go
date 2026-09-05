@@ -193,6 +193,9 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
 	// The secrets a check sends, in their own file outside the backup.
+	// Host figures for the system widgets: read-only, and only what was
+	// mounted in for them.
+	r.HandleFunc("/api/system/metrics", handlers.SystemMetricsHandler).Methods("GET")
 	// The one widget that reads from outside, by widget id rather than by URL.
 	r.HandleFunc("/api/widgets/custom", handlers.CustomWidgetHandler).Methods("GET", "OPTIONS")
 	// The same fetch, made once on demand and answered in full: what the
