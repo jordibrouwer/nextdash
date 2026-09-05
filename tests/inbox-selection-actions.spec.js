@@ -33,10 +33,16 @@ async function seed(page, titles) {
     // The POSTs are accepted before the view has loaded them, so reading
     // inbox.items straight after seeding could find it empty, or half-filled —
     // which is worse, because a partial list reads as a real result.
-    await expect.poll(async () => page.evaluate((wanted) => {
+    //
+    // Asked for rather than waited on: waiting for the view's own refresh to
+    // notice is what made this seed the slowest and least certain step in the
+    // file, and :45 has been flaky on it for as long as anyone has looked.
+    await expect.poll(async () => page.evaluate(async (wanted) => {
         const ib = window.dashboardInstance.inbox;
+        await ib.loadItems?.();
+        ib.render();
         return wanted.every((t) => (ib.items || []).some((i) => (i.title || '') === t));
-    }, titles), { timeout: 10_000 }).toBe(true);
+    }, titles), { timeout: 15_000 }).toBe(true);
 }
 
 test.describe('inbox selection and row actions', () => {
