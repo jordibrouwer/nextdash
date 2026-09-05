@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefetch } = require('./e2e-helpers');
 
 /**
  * Choosing a theme in the browser has to leave that theme on screen.
@@ -26,9 +26,12 @@ async function openBrowser(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    // Quickstart's background favicon sweep reopens Overview when it finishes,
-    // taking whatever panel is on screen with it.
-    await page.waitForTimeout(6000);
+    // Was a six-second wait for Quickstart's background favicon sweep, which
+    // reopens Overview when it finishes and takes whatever panel is on screen
+    // with it. waitForFaviconPrefetch waits for the same thing by asking --
+    // the overlay gone and nextdashSetupFaviconsDone no longer false -- so it
+    // returns when the sweep is done rather than always spending the worst case.
+    await waitForFaviconPrefetch(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('appearance'); });
     await page.locator('[data-appearance-action="browse-themes"]').first().click();
     await expect(page.locator(`[data-theme-id="${PICK}"]`).first()).toBeAttached();

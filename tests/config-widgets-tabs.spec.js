@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefetch } = require('./e2e-helpers');
 
 /**
  * Widgets has a sub-tab strip, like every other section that edits something.
@@ -17,8 +17,14 @@ async function openWidgets(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    // Quickstart's background favicon sweep reopens Overview when it finishes.
-    await page.waitForTimeout(6000);
+    // Quickstart's background favicon sweep reopens Overview when it finishes,
+    // so this waited six seconds for it. waitForFaviconPrefetch waits for the
+    // same thing by asking -- the overlay gone and nextdashSetupFaviconsDone no
+    // longer false -- and returns the moment it is true instead of always
+    // spending the worst case. dismissBlockingOverlays above already called it
+    // once; a second call costs nothing when the sweep is already done and
+    // covers the case where it was still running.
+    await waitForFaviconPrefetch(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
     await expect(page.locator('[data-widgets-tab]').first()).toBeVisible();
 }

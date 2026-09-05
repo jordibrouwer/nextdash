@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefetch } = require('./e2e-helpers');
 
 /**
  * Adding a widget, and landing on the one you added.
@@ -23,8 +23,14 @@ async function openWidgets(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    // Quickstart's background favicon sweep reopens Overview when it finishes.
-    await page.waitForTimeout(6000);
+    // Quickstart's background favicon sweep reopens Overview when it finishes,
+    // so this waited six seconds for it. waitForFaviconPrefetch waits for the
+    // same thing by asking -- the overlay gone and nextdashSetupFaviconsDone no
+    // longer false -- and returns the moment it is true instead of always
+    // spending the worst case. dismissBlockingOverlays above already called it
+    // once; a second call costs nothing when the sweep is already done and
+    // covers the case where it was still running.
+    await waitForFaviconPrefetch(page);
     await page.evaluate(async () => {
         const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const headers = {
