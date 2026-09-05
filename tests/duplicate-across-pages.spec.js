@@ -72,9 +72,18 @@ async function bookmarksOnPage(page, pageId) {
 
 /** Fill the dashboard's own add form, the way a person reaches it. */
 async function fillAddForm(page, name, url) {
-    await page.evaluate(() => {
-        window.dashboardInstance.quickAddWidget?.open?.()
-            ?? window.dashboardInstance.searchComponent.commandsComponent.newCommandHandler.openModal();
+    await page.evaluate(async () => {
+        // Not `open?.() ?? fallback`: open() returns nothing on success, so ??
+        // took the right-hand side every single time and the test only passed
+        // when searchComponent happened to be there -- it is built from a
+        // lazily fetched bundle, so on a slow runner it was null and this threw.
+        const d = window.dashboardInstance;
+        if (d.quickAddWidget?.open) {
+            await d.quickAddWidget.open();
+            return;
+        }
+        await window.SearchLoader?.ensureReady?.();
+        d.searchComponent?.commandsComponent?.newCommandHandler?.openModal();
     });
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     const form = page.locator('#bookmark-form-modal .bookmark-inline-form');

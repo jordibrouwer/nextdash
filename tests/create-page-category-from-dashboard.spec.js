@@ -504,7 +504,13 @@ test.describe('commands — :page new and :category new', () => {
     async function runCommand(page, command) {
         return page.evaluate(async (cmd) => {
             const dash = window.dashboardInstance;
-            const commands = dash.searchComponent.commandsComponent;
+            // The palette ships in the lazily fetched search bundle, so on a
+            // cold load searchComponent is still null here -- which is what
+            // "Cannot read properties of null (reading 'commandsComponent')"
+            // was, three times over. Ask the loader instead of reading a field
+            // that may not be filled yet.
+            const search = dash.searchComponent || await window.SearchLoader?.ensureReady?.();
+            const commands = search.commandsComponent;
             const [name, ...args] = cmd.replace(/^:/, '').split(/\s+/);
             const rows = await commands.availableCommands[name](args, cmd);
             return (rows || []).map((r) => ({ name: r.name, type: r.type, completion: r.completion || null }));
