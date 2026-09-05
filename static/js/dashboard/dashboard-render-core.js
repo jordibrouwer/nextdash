@@ -2,6 +2,28 @@
  * Dashboard grid render, categories, reorder.
  */
 class DashboardRenderCore {
+    /*
+     * Which widget types keep a clock, and how fast they may beat.
+     *
+     * A table rather than a type check, because it is no longer only the
+     * custom widget: a processor reading is the same shape of problem -- a
+     * figure that is only true for a moment. Each floor is the interval below
+     * which re-reading stops saying anything new: a second for a CPU delta,
+     * and the custom widget's own thirty, which is a cache expiry as well as a
+     * cadence and is deliberately left as it was.
+     *
+     * A type absent from here draws from what the dashboard already holds and
+     * is redrawn when that arrives, so a clock on it would redraw the same
+     * figures for ever.
+     */
+    static POLLED_WIDGET_TYPES = {
+        custom: { configKey: 'ttl', floor: 30, fallback: 300 },
+        cpu: { configKey: 'refreshSeconds', floor: 1, fallback: 5 },
+        memory: { configKey: 'refreshSeconds', floor: 2, fallback: 10 },
+        docker: { configKey: 'refreshSeconds', floor: 2, fallback: 30 },
+        disks: { configKey: 'refreshSeconds', floor: 5, fallback: 60 },
+    };
+
     constructor(dashboard) {
         this.dash = dashboard;
     }
@@ -567,7 +589,8 @@ class DashboardRenderCore {
         // Only the custom tile has a clock; the others are redrawn by whatever
         // changed their data. Starting it here rather than at the end of a
         // render means a widget added or edited in config gets one too.
-        if (widget.type === 'custom') this.startCustomWidgetTimer(widget);
+        // The table decides which types keep one; the rest get none.
+        this.startWidgetTimer(widget);
         return block;
     }
 
@@ -594,19 +617,35 @@ class DashboardRenderCore {
      * shortest of those would redraw the hourly tile 1,440 times a day and make
      * its own setting meaningless.
      */
-    startCustomWidgetTimer(widget) {
-        if (!widget || widget.type !== 'custom' || !widget.id) return;
-        this._customWidgetTimers = this._customWidgetTimers || new Map();
+    startWidgetTimer(widget) {
+        if (!widget || !widget.id || !this.widgetPollSpec(widget)) return;
+        this._widgetTimers = this._widgetTimers || new Map();
         // Drawn again -- a repaint, a drag ending, a health figure arriving --
         // is not a second clock. Without this every redraw would double the
         // requests the tile makes from then on.
-        this.stopCustomWidgetTimer(widget.id);
+        this.stopWidgetTimer(widget.id);
 
-        const seconds = Math.max(Number(widget?.config?.ttl) || 300, 30);
         const timer = setInterval(() => {
-            void this.tickCustomWidget(widget);
-        }, seconds * 1000);
-        this._customWidgetTimers.set(widget.id, timer);
+            void this.tickWidget(widget);
+        }, this.widgetPollSeconds(widget) * 1000);
+        this._widgetTimers.set(widget.id, timer);
+    }
+
+    /** What this type's clock is called and how fast it may run, or null. */
+    widgetPollSpec(widget) {
+        return DashboardRenderCore.POLLED_WIDGET_TYPES[widget?.type] || null;
+    }
+
+    /** The cadence this tile actually beats at, its floor applied. */
+    widgetPollSeconds(widget) {
+        const spec = this.widgetPollSpec(widget);
+        if (!spec) return 0;
+        // A stored 0 means "as fast as allowed", not "unset": `|| fallback`
+        // would quietly turn it into the default and the floor would never
+        // apply.
+        const raw = Number(widget?.config?.[spec.configKey]);
+        const asked = Number.isFinite(raw) && raw > 0 ? raw : spec.fallback;
+        return Math.max(asked, spec.floor);
     }
 
     /*
@@ -619,11 +658,18 @@ class DashboardRenderCore {
      * which is better than every tile saying "Loading..." at once the moment
      * someone returns to the tab.
      */
-    async tickCustomWidget(widget) {
+    async tickWidget(widget) {
         if (document.visibilityState !== 'visible') return;
         const d = this.dash;
         const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
         if (d._widgetCustom) delete d._widgetCustom[`${pageId}:${widget.id}`];
+        // The system tiles cache their reading per widget, and a beat that did
+        // not drop it would redraw the same figure for ever.
+        if (d._widgetSystem) {
+            Object.keys(d._widgetSystem)
+                .filter((key) => key.endsWith(`:${widget.id}`))
+                .forEach((key) => delete d._widgetSystem[key]);
+        }
 
         const block = document.querySelector(
             `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
@@ -631,27 +677,41 @@ class DashboardRenderCore {
         // Gone from the page: the tile was closed or the reader moved on, and
         // the clock has nothing left to draw into.
         if (!body) {
-            this.stopCustomWidgetTimer(widget.id);
+            this.stopWidgetTimer(widget.id);
             return;
         }
         const cursor = d.keyboardNavigation?.captureWidgetCursor?.() || null;
-        await window.DashboardWidgets?.custom?.(body, widget, d);
+        await window.DashboardWidgets?.[widget.type]?.(body, widget, d);
         if (cursor) d.keyboardNavigation?.restoreWidgetCursor?.(cursor);
     }
 
-    stopCustomWidgetTimer(id) {
-        const timer = this._customWidgetTimers?.get(id);
+    stopWidgetTimer(id) {
+        const timer = this._widgetTimers?.get(id);
         if (timer) {
             clearInterval(timer);
-            this._customWidgetTimers.delete(id);
+            this._widgetTimers.delete(id);
         }
     }
 
     /* Every clock at once: leaving the dashboard, or rebuilding the grid. */
-    stopCustomWidgetTimers() {
-        this._customWidgetTimers?.forEach((timer) => clearInterval(timer));
-        this._customWidgetTimers?.clear();
+    stopWidgetTimers() {
+        this._widgetTimers?.forEach((timer) => clearInterval(timer));
+        this._widgetTimers?.clear();
     }
+
+    widgetTimerCount() {
+        return this._widgetTimers?.size || 0;
+    }
+
+    // The custom widget's own names, kept because callers and tests were
+    // written against them. Same map, same clocks.
+    startCustomWidgetTimer(widget) { return this.startWidgetTimer(widget); }
+
+    tickCustomWidget(widget) { return this.tickWidget(widget); }
+
+    stopCustomWidgetTimer(id) { return this.stopWidgetTimer(id); }
+
+    stopCustomWidgetTimers() { return this.stopWidgetTimers(); }
 
     /*
      * Ask this tile's service again, now.
@@ -703,7 +763,7 @@ class DashboardRenderCore {
 
     /* How many are running -- for the test that one tile keeps one clock. */
     customWidgetTimerCount() {
-        return this._customWidgetTimers?.size || 0;
+        return this.widgetTimerCount();
     }
 
     /*
@@ -729,6 +789,7 @@ class DashboardRenderCore {
         delete d._widgetTrash;
         delete d._widgetDuplicates;
         delete d._widgetBackups;
+        delete d._widgetSystem;
     }
 
     refreshWidgets(type) {

@@ -184,11 +184,20 @@
         const grid = document.createElement('div');
         grid.className = 'dashboard-widget-stats';
         const cells = (stats || []).filter(Boolean);
-        // Four abreast is only worth offering when there are four; three
-        // figures across a wide tile would leave a gap where a fourth is not.
+        /*
+         * Four abreast is only worth offering when there are four; three
+         * figures across a wide tile would leave a gap where a fourth is not.
+         *
+         * The count is also written onto the element, because the stylesheet
+         * cannot count children: a wide tile lays every stat grid out in four
+         * columns, which left two cells of empty ground under a row of six and
+         * half a row blank under a row of two. Two, three and six get a column
+         * count that divides them instead.
+         */
         if (cells.length >= 4 && cells.length % 4 === 0) {
             grid.classList.add('dashboard-widget-stats--wide');
         }
+        if (cells.length) grid.setAttribute('data-stat-count', String(cells.length));
         cells.forEach((stat) => {
             const cell = document.createElement(stat.onOpen ? 'button' : 'div');
             if (stat.onOpen) cell.type = 'button';

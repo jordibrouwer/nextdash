@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -147,7 +148,16 @@ func (h *Handlers) SavePageBlocksHandler(w http.ResponseWriter, r *http.Request)
 		order = *body.Order
 	}
 
-	if !respondStorePersistError(w, h.store.SavePageBlocks(pageID, widgets, order)) {
+	if err := h.store.SavePageBlocks(pageID, widgets, order); err != nil {
+		// A widget the server cannot store is the caller's mistake, not a
+		// failure to write: saying "Failed to save data" would send somebody
+		// looking at the disk. Refused rather than partly applied, so the page
+		// is still whatever it was.
+		if errors.Is(err, errUnknownWidgetType) || errors.Is(err, errTooManyWidgets) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		respondStorePersistError(w, err)
 		return
 	}
 

@@ -6155,6 +6155,27 @@ button.dashboard-widget-stat:focus-visible {
     .dashboard-widget-stats {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+
+    /*
+     * ...except where four does not divide the figures.
+     *
+     * A widget whose figures the reader chooses can hand this any number, and
+     * four columns under six cells leaves two patches of empty ground, while
+     * two cells fill half a row. These are the counts where a different number
+     * reads better; everything else keeps the four above.
+     */
+    .dashboard-widget-stats[data-stat-count="2"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-widget-stats[data-stat-count="3"],
+    .dashboard-widget-stats[data-stat-count="6"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dashboard-widget-stats[data-stat-count="5"] {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
 }
 
 /*

@@ -143,6 +143,28 @@ class DashboardContextMenu {
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
 
+        /*
+         * The menu owns Escape while it is up.
+         *
+         * Registered here rather than at module scope: this file is fetched on
+         * demand, so at load time escape-owner may not be in the page yet and an
+         * optional-chained call would quietly do nothing. By the time a menu is
+         * being built it certainly is.
+         *
+         * By selector, because the menu is built and thrown away per open and
+         * the dashboard and the inbox share this one id. Its own capture
+         * listener still does the closing; this only tells the view underneath
+         * to keep its hands off the key.
+         *
+         * .move-popover is the surface the move, tag and delete popovers share.
+         * It belongs with whichever module ends up owning that surface -- it is
+         * named here because this is where the inbox's hand-written list had
+         * it, and moving it is a separate change from centralising the question.
+         */
+        window.EscapeOwner?.registerOwner?.('bookmark-context-menu', {
+            isOpen: () => Boolean(document.querySelector('#bookmark-context-menu, .move-popover')),
+        });
+
         const pop = document.createElement('div');
         pop.id = 'bookmark-context-menu';
         pop.className = 'move-popover bookmark-context-menu';

@@ -7,8 +7,39 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      # ---------------------------------------------------------------------
+      # System widgets (Processor, Disks) -- both mounts are read-only.
+      #
+      # Commented out so this file starts anywhere: a bind mount whose source
+      # does not exist stops the container from starting at all. Uncomment what
+      # applies to your host.
+      #
+      # Processor: a container shares the host kernel, so /proc/stat already
+      # counts the host's CPU. Mount this to be explicit about which /proc is
+      # read, or where the container sees a different one.
+      # - /proc:/host/proc:ro
+      #
+      # Disks: required. A container can only measure what is mounted into it,
+      # so without this the tile reports its own overlay rather than your
+      # array. Mount the disks *under* NEXTDASH_HOST_ROOT keeping their own
+      # names, so the paths typed in the widget are the host's own:
+      #
+      #   Unraid / most Linux:  - /mnt:/host/root/mnt:ro,rslave
+      #   Synology / QNAP:      - /volume1:/host/root/volume1:ro,rslave
+      #   Everything:           - /:/host/root:ro,rslave
+      #
+      # On Unraid these are template rows: Config Type Path, Container Path
+      # /host/root/mnt, Host Path /mnt, Access Mode Read Only.
+      # - /mnt:/host/root/mnt:ro,rslave
+      # ---------------------------------------------------------------------
     environment:
       - PORT=8080
+      # Where the mounts above landed. Unset means that source is not
+      # available and the widget says so, rather than reporting a wrong number.
+      # NEXTDASH_HOST_ROOT is the prefix without the host's own tree: mounting
+      # /mnt at /host/root/mnt means the root is /host/root.
+      # - NEXTDASH_HOST_PROC=/host/proc
+      # - NEXTDASH_HOST_ROOT=/host/root
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.

@@ -579,31 +579,38 @@ class DashboardHealth {
         if (this._escapeHandler) {
             document.removeEventListener('keydown', this._escapeHandler, true);
         }
+        /*
+         * What can sit on top of Health, innermost first.
+         *
+         * Focus mode outranks a menu for the same reason a menu outranks the
+         * view: it is the innermost thing on screen, and closing the view
+         * instead would throw away the queue the reader was working through.
+         * Registration order is priority order, so this pair stays together.
+         *
+         * These used to be two if-blocks inside the handler below. They say the
+         * same thing; they say it where every view can hear it.
+         */
+        window.EscapeOwner?.registerOwner?.('health-focus', {
+            isOpen: () => Boolean(this._focus?.isActive?.()),
+            handleEscape: () => this._focus?.close?.(),
+        });
+        window.EscapeOwner?.registerOwner?.('health-view-menu', {
+            isOpen: () => Boolean(document.querySelector('.health-view-menu:not([hidden])')),
+            handleEscape: () => {
+                const openMenu = document.querySelector('.health-view-menu:not([hidden])');
+                this.closeAllMenus();
+                if (openMenu) this.focusMenuOwner(openMenu);
+            },
+        });
+
         this._escapeHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (d.activeView !== DashboardHealth.VIEW) return;
-            // Focus mode takes Escape before anything else, for the same reason
-            // an open menu does below: it is the innermost thing on screen, and
-            // closing the whole view instead would throw away the queue the
-            // user was working through. This handler is registered when the
-            // view loads, ahead of focus mode's own capture listener, so
-            // without this the overlay would never see the key at all.
-            if (this._focus?.isActive()) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this._focus.close();
-                return;
-            }
-            // An open menu takes Escape first: closing the whole view when the user
-            // only meant to dismiss a menu loses their place in the list.
-            const openMenu = document.querySelector('.health-view-menu:not([hidden])');
-            if (openMenu) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.closeAllMenus();
-                this.focusMenuOwner(openMenu);
-                return;
-            }
+            // Whatever is layered over the view takes the key and closes itself;
+            // the view stays where it is. This handler is registered when the
+            // view loads, ahead of every listener belonging to something inside
+            // it, so without asking first those would never see the key at all.
+            if (window.EscapeOwner?.handle?.(e)) return;
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
             if (d.searchComponent?.isActive()) return;
@@ -4242,7 +4249,7 @@ class DashboardHealth {
      * settings has no business appearing and disappearing with it.
      */
     renderSettingsLink() {
-        const label = this.t('dashboard.healthSettingsLink', 'settings');
+        const label = this.t('dashboard.healthSettingsLink', 'Settings');
         const hint = this.t(
             'dashboard.healthSettingsLinkHint',
             'Check interval, alert threshold, maintenance windows and downtime alerts'

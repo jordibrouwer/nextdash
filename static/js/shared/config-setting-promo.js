@@ -470,6 +470,17 @@
 
     bindAnchorClickDelegate();
 
+    /*
+     * Ambient, not an owner: a promo appears on its own, so an Escape that
+     * happens to arrive while one is up was aimed at something else. It goes
+     * away, and the press carries on to do what it was for -- one press, both
+     * things, which is what config-setting-promo.spec.js pins.
+     */
+    global.EscapeOwner?.registerAmbient?.('config-setting-promo', {
+        isOpen: () => Boolean(activePromoId),
+        dismiss: () => dismissActive({ persist: true }),
+    });
+
     global.ConfigSettingPromo = {
         register,
         registerAll,

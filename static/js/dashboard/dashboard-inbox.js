@@ -1644,10 +1644,15 @@ class DashboardInbox {
              * first and stopped it dead. The row's context menu never got its
              * own Escape and stayed on screen, and the next right-click was then
              * read as the click that dismisses it rather than one that opens it:
-             * the menu went away and no new one arrived. Health and config guard
-             * the same way.
+             * the menu went away and no new one arrived.
+             *
+             * This used to name the menus it knew about, which meant the snooze
+             * picker -- added later, on nobody's list -- had the same bug: one
+             * press closed the picker and left the inbox as well. The question
+             * is now "is anything on top of me", and each menu answers for
+             * itself in shared/escape-owner.js.
              */
-            if (document.querySelector('#bookmark-context-menu, .move-popover')) return;
+            if (window.EscapeOwner?.current?.()) return;
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
             const tag = document.activeElement?.tagName;
@@ -2309,6 +2314,11 @@ class DashboardInbox {
         };
         setTimeout(() => document.addEventListener('click', this._snoozeOutside, true), 0);
         document.addEventListener('keydown', this._snoozeEsc, true);
+        // The picker is on top of the inbox, so it takes Escape and the view
+        // stays. _snoozeEsc above still does the closing.
+        window.EscapeOwner?.registerOwner?.('inbox-snooze-menu', {
+            isOpen: () => Boolean(document.querySelector('.inbox-snooze-menu')),
+        });
     }
 
     closeSnoozeMenu() {
