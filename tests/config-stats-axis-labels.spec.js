@@ -24,6 +24,12 @@ async function openStats(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
+        // The config intro tip -- "In config: j/k move sections..." -- shows for
+        // fourteen seconds the first time config opens, in the bottom-right
+        // corner, which is where the activity chart's last bars are. It arrives
+        // after dismissBlockingOverlays has been and gone, so the only way past
+        // it is not to raise it. Three other config specs mark it the same way.
+        window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
         const DAY = 86400000;
         const now = Date.now();
         window.dashboardInstance.allBookmarks.forEach((b, i) => {
@@ -58,7 +64,12 @@ test.describe('statistics: what the activity chart counts', () => {
         await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+        await page.evaluate(() => {
+            window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
+            // Returned, not just called: openConfigView is awaited here, and
+            // dropping that is what left computeActivity with no buckets.
+            return window.dashboardInstance.config.openConfigView('stats');
+        });
         await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
         return page.evaluate((rows) => {
             const d = window.dashboardInstance, c = d.config;
@@ -277,14 +288,19 @@ test.describe('statistics: chart axis labels', () => {
         await page.mouse.move(2, 2);
         await expect(tip).toBeHidden();
 
-        const box = await bars.last().boundingBox();
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height - 10);
+        // hover() rather than a raw mouse.move to a measured point: it re-checks
+        // that the bar is really what the pointer lands on, and waits if
+        // something is over it. A coordinate taken once and moved to blindly
+        // cannot tell the difference between a bar and a toast in front of it,
+        // which is the shape this test kept failing in.
+        await bars.last().hover();
         await expect(tip).toBeVisible();
         // Value leads, date follows.
         await expect(tip.locator('strong')).toHaveText(/\d+/);
         await expect(tip.locator('span')).not.toBeEmpty();
 
         // Leaving the chart clears it.
+        const box = await bars.last().boundingBox();
         await page.mouse.move(box.x + box.width / 2, box.y - 200);
         await expect(tip).toBeHidden();
     });
