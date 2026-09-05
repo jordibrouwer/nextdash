@@ -966,7 +966,7 @@ width of one or two columns, and settings of its own. The order of widgets and
 categories is one list, so there is a single answer to where any block sits — the
 same list the **Categories** tab arranges.
 
-**The thirteen types**, grouped in the picker under the question each answers.
+**The seventeen types**, grouped in the picker under the question each answers.
 
 *Are the links still good?*
 
@@ -996,7 +996,19 @@ same list the **Categories** tab arranges.
 | **Trash** | What is waiting there, and when retention removes it |
 | **Backups** | How old the newest automatic backup is, and whether the last run failed |
 
-And a fourteenth that is a capability rather than a report: the **Custom** widget, below.
+*How is this machine doing?* (**v1.5.0**)
+
+| Type | What it shows |
+|---|---|
+| **Processor** | How hard the CPU is working, and the load average behind it. Either alone answers half the question: a load of 4 on four cores is a busy machine keeping up, 30% with a load of 12 is one that is not |
+| **Memory** | What is really in use, against the total, with the file cache counted as the spare room it is rather than as memory in use |
+| **Disks** | Free space on the disks you name, with used, free and reserved kept apart — reserved blocks belong to root, so folding them either way misreports the disk by gigabytes |
+| **Containers** | How many containers run of how many exist, which have a failing healthcheck, and which have just restarted |
+
+These four are the only widgets that read something outside nextDash, and the
+only ones that need setting up. See **[System widgets: what they need](#system-widgets-what-they-need)** below.
+
+And one more that is a capability rather than a report: the **Custom** widget, below.
 
 **Folding one away** (**v1.4.1.2**)
 
@@ -1017,6 +1029,30 @@ onto the new widget with its name ready to type. The **Types** tab is the same
 catalogue as reading matter — every kind with what it does, and an *Add* button
 on each — so you can read about one and take it without changing screens.
 
+**Finding one, once you have several** (**v1.5.0**)
+
+The tab carries the same toolbar as **Bookmarks**: a search, the page picker, a
+sort, and the one button that adds something. Search matches the title *and* the
+type, because a widget you never named is drawn under its type. Sorting defaults
+to **Grouped**, under the same headings the catalogue uses — a page of fourteen
+is a list to read, four short groups is a thing to scan — with *Order on the
+page*, *Name A–Z* and *Type* as the alternatives.
+
+The page picker also offers **All pages**, which puts every page's widgets in one
+list with a badge saying where each lives. It answers *what have I actually got*
+without visiting each page in turn. An edit made there is written back to the
+widget's own page. Adding is not offered while showing everything, since it has
+no answer to *where*.
+
+**Working on several at once** (**v1.5.0**)
+
+Tick any number of rows and a bar appears above them: **Show**, **Hide**, *Move
+to page…* and **Delete**. A move writes the destination first, so a failure
+leaves the widgets where they were rather than nowhere, and ids travel with them
+— a moved widget keeps the sign-in and the folded state filed under its id.
+Ticks are held by widget, not by row position, so re-sorting cannot retarget
+them.
+
 **Settings a widget can be given**
 
 Which page it counts (this page or the whole collection), how many rows it shows,
@@ -1024,11 +1060,127 @@ what it is called, and how wide it is. A tile that leaves rows out says how many
 — *5 of 12* rather than a silent five — because the row count is a choice about
 what you want to see, and what falls outside it has to stay visible.
 
+Since **v1.5.0** the panel carries an **ℹ** beside any setting that needs more
+than a line, and a **↺** that clears every setting back to its default — offered
+only when something is actually off it, and written into the draft so *Save* or
+*Discard* still decides. The title and the *Shown* box are left alone: those are
+not settings with defaults.
+
+Two changes save the moment you make them rather than waiting for *Save* — the
+title, and the *Shown* box. Both now say so, because a row with two ways of
+saving, one of them silent, is what made the tab feel like it might not have
+taken.
+
+#### System widgets: what they need
+
+The four system widgets report on the machine nextDash runs on. They are the
+only ones that need anything set up, because a container cannot see the machine
+around it unless you let it. **Running the binary directly needs none of this** —
+`/proc` and your disks are already the host's.
+
+**Processor and Memory usually need nothing.** `/proc` is not namespaced, so a
+container already reads the host's processor and memory — even one started with
+`--cpus` or `--memory`, because that limit lives in cgroups, which these do not
+read. Mount it only to be explicit about which `/proc` is read:
+
+```yaml
+volumes:
+  - /proc:/host/proc:ro
+environment:
+  - NEXTDASH_HOST_PROC=/host/proc
+```
+
+**Disks do need a mount.** A container can only measure filesystems mounted into
+it: without one it reports its own overlay — under a gigabyte — instead of your
+array. Mount the disks you want to watch *under* a prefix, keeping their own
+names, and point `NEXTDASH_HOST_ROOT` at that prefix:
+
+```yaml
+volumes:
+  - /mnt:/host/root/mnt:ro,rslave     # Unraid, most Linux
+  # - /volume1:/host/root/volume1:ro,rslave   # Synology, QNAP
+  # - /:/host/root:ro,rslave                  # everything, boot device included
+environment:
+  - NEXTDASH_HOST_ROOT=/host/root
+```
+
+Then name the disks in the widget's settings as **this machine** knows them —
+`/mnt/user`, `/mnt/cache`, `/volume1` — never as the container sees them; the
+server translates between the two. Whatever is mounted and readable is offered
+under the field, so you can click rather than type. They are named rather than
+found automatically because a container sees dozens of overlay and tmpfs mounts
+that have nothing to do with your storage.
+
+**Containers need the Docker socket, and that is a real grant.** Read-only still
+exposes the daemon's whole read API: every container, its image, its environment
+variables, its mounts. Add it only if you are content with that for a container
+count — and if you are not, put a socket proxy in front and point nextDash at
+that instead.
+
+```yaml
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock:ro
+environment:
+  - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+```
+
+Docker Desktop keeps its socket elsewhere; `docker context ls` names the path.
+
+**The variables, in full**
+
+| Variable | What it does | Needed for |
+|---|---|---|
+| `NEXTDASH_HOST_PROC` | Where the host's `/proc` is readable. Unset means `/proc` — the container's own, which on Linux is already the host's | Processor, Memory (optional) |
+| `NEXTDASH_HOST_ROOT` | The prefix your disks are mounted under. Paths you type in the widget are resolved against it | Disks (required) |
+| `NEXTDASH_DOCKER_SOCKET` | Path to the Docker socket. Unset means the Containers widget is not offered | Containers (required) |
+
+Each is independent: add the ones whose widgets you want. A source that is not
+mounted says so on the tile and names the step, rather than showing a plausible
+wrong number.
+
+**On Unraid**
+
+These are rows in the container template rather than compose lines. Each mount
+is one **Path** row with Access Mode **Read Only**; each variable is one
+**Variable** row.
+
+| Config Type | Name | Container Path / Key | Host Path / Value | Access Mode |
+|---|---|---|---|---|
+| Path | Host proc | `/host/proc` | `/proc` | Read Only |
+| Path | Host disks | `/host/root/mnt` | `/mnt` | Read Only |
+| Path | Docker socket | `/var/run/docker.sock` | `/var/run/docker.sock` | Read Only |
+| Variable | Host proc | `NEXTDASH_HOST_PROC` | `/host/proc` | — |
+| Variable | Host root | `NEXTDASH_HOST_ROOT` | `/host/root` | — |
+| Variable | Docker socket | `NEXTDASH_DOCKER_SOCKET` | `/var/run/docker.sock` | — |
+
+Then name `/mnt/user` and `/mnt/cache` in the Disks widget. Mount `/` to
+`/host/root` instead of `/mnt` to reach disks outside the array. A user share
+reports the pool total, which is the figure Unraid's own dashboard shows;
+individual `/mnt/diskN` paths report per disk.
+
+**What the tiles will and will not tell you**
+
+- The processor percentage is blank on the first reading and appears on the
+  second, because a percentage is the difference between two samples. Inventing
+  one from a single reading would report a number nobody measured.
+- Memory counts what cannot be handed back. The page cache is listed separately
+  rather than folded into "in use", which is why a healthy machine shows a low
+  figure here and a nearly full one in tools that count it as used.
+- Each widget refreshes on its own interval, set in its settings, with a floor
+  below which the reading stops meaning anything — one second for the processor,
+  five for disks, since reading a sleeping disk can stall. A hidden browser tab
+  asks for nothing at all.
+- On **Docker Desktop for Mac or Windows** the figures describe its Linux VM
+  rather than your computer. A laptop with 24 GB shows the VM's 8, and no mount
+  changes that, because the VM cannot see the memory outside it. On a NAS or
+  Linux server there is no VM in between.
+
 **The custom widget**
 
 The escape hatch, for a service that is not in the list. Give it an address that
-answers with JSON and name the fields you want on the tile. It is deliberately
-the only widget that talks to anything outside.
+answers with JSON and name the fields you want on the tile. Apart from the four
+system widgets above, which read the machine itself, it is the only widget that
+talks to anything outside nextDash.
 
 - **Address** — any `http` or `https` endpoint, `GET` or `POST`. It is fetched
   **by the server**, not by your browser, which is what makes a machine on your

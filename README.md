@@ -12,7 +12,7 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 
 Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard.
 
-It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all, and a fourteenth — the **custom widget** — points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
+It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all; four more report on the machine itself — **processor**, **memory**, **disks** and **containers** — behind read-only mounts you opt into; and the **custom widget** points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
@@ -123,6 +123,107 @@ docker compose up -d
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+### System widgets — reading the machine (v1.5.0)
+
+The **Processor**, **Memory**, **Disks** and **Containers** widgets report on the
+machine nextDash runs on. They are the only ones that need setting up, because a
+container cannot see the machine around it unless you let it. Running the binary
+directly needs none of this.
+
+```yaml
+    volumes:
+      - ./data:/app/data
+      # Disks: required. Mount what you want to watch UNDER the prefix, keeping
+      # its own name, so /mnt stays /mnt below /host/root.
+      - /mnt:/host/root/mnt:ro,rslave           # Unraid, most Linux
+      # - /volume1:/host/root/volume1:ro,rslave # Synology, QNAP
+      # - /:/host/root:ro,rslave                # everything, boot device included
+      # Processor and Memory: optional — /proc is not namespaced, so a container
+      # already reads the host's CPU and memory. Mount it to be explicit.
+      # - /proc:/host/proc:ro
+      # Containers: read-only still exposes the daemon's whole read API.
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NEXTDASH_HOST_ROOT=/host/root
+      # - NEXTDASH_HOST_PROC=/host/proc
+      # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+```
+
+| Variable | What it does | Needed for |
+|---|---|---|
+| `NEXTDASH_HOST_ROOT` | The prefix your disks are mounted under. Paths typed in the widget resolve against it | **Disks** — required |
+| `NEXTDASH_HOST_PROC` | Where the host's `/proc` is readable | Processor, Memory — optional |
+| `NEXTDASH_DOCKER_SOCKET` | Path to the Docker socket. Unset means the Containers widget is not offered | **Containers** — required |
+
+Name the disks in the widget's settings as **this machine** knows them —
+`/mnt/user`, `/mnt/cache`, `/volume1` — never as the container sees them; the
+server translates. Whatever is mounted and readable is offered under the field.
+A source that is not mounted says so on the tile rather than showing a plausible
+wrong number.
+
+**The Docker socket is a real grant.** Read-only still exposes every container,
+its image, its environment variables and its mounts. Add it only if you are
+content with that for a container count; a socket proxy in front is the smaller
+grant if you are not.
+
+#### Unraid
+
+Unraid has no compose file — the same thing is rows in the container template.
+Go to **Docker → nextDash → Edit**, then **Add another Path, Port, Variable,
+Label or Device** once per row below. Add only the rows for the widgets you
+want; each is independent.
+
+**For the Disks widget** (required — without it the tile reports the container's
+own overlay, not your array):
+
+| Config Type | Name | Container Path | Host Path | Access Mode |
+|---|---|---|---|---|
+| **Path** | Host disks | `/host/root/mnt` | `/mnt` | **Read Only** |
+
+| Config Type | Name | Key | Value |
+|---|---|---|---|
+| **Variable** | Host root | `NEXTDASH_HOST_ROOT` | `/host/root` |
+
+**For the Processor and Memory widgets** (optional — a container already reads
+the host's CPU and memory, so this only makes explicit which `/proc` is used):
+
+| Config Type | Name | Container Path | Host Path | Access Mode |
+|---|---|---|---|---|
+| **Path** | Host proc | `/host/proc` | `/proc` | **Read Only** |
+
+| Config Type | Name | Key | Value |
+|---|---|---|---|
+| **Variable** | Host proc | `NEXTDASH_HOST_PROC` | `/host/proc` |
+
+**For the Containers widget** (required for it, and the one row worth thinking
+about — read-only still exposes every container, its image, its environment
+variables and its mounts):
+
+| Config Type | Name | Container Path | Host Path | Access Mode |
+|---|---|---|---|---|
+| **Path** | Docker socket | `/var/run/docker.sock` | `/var/run/docker.sock` | **Read Only** |
+
+| Config Type | Name | Key | Value |
+|---|---|---|---|
+| **Variable** | Docker socket | `NEXTDASH_DOCKER_SOCKET` | `/var/run/docker.sock` |
+
+**Then press Apply.** Unraid recreates the container; your data in `/app/data` is
+untouched.
+
+**Afterwards, in nextDash:** add the widget under **Config → Widgets**, and for
+Disks open its **Settings** and name the disks — `/mnt/user` and `/mnt/cache` are
+the usual pair. Type them as **Unraid** knows them, not as the container sees
+them; whatever is mounted and readable is offered under the field, so you can
+click instead of typing. If a tile says it cannot read the machine, the mount or
+the variable for that widget is missing — it names which.
+
+Two Unraid specifics worth knowing: mount `/` to `/host/root` instead of `/mnt`
+if you want disks outside the array (the boot device, an unassigned disk), and a
+**user share reports the pool total** — the same figure Unraid's own dashboard
+shows — while individual `/mnt/diskN` paths report per disk.
+
+*[Manual → System widgets](MANUAL.md#system-widgets-what-they-need)*
+
 ### Build from source
 
 ```sh
@@ -197,6 +298,9 @@ environment:
 | `NEXTDASH_SSRF_API_RATE_PER_MIN` | `60` | Rate limit for preview/ping/icon APIs |
 | `NEXTDASH_CSP` | on | Set `off` to disable Content-Security-Policy headers |
 | `NEXTDASH_DISABLE_PREFETCH` | off | `1` = skip background favicon prefetch on startup |
+| `NEXTDASH_HOST_ROOT` | *(unset)* | Prefix the host's disks are mounted under, for the **Disks** widget. Paths typed in the widget resolve against it. Unset = no disks readable |
+| `NEXTDASH_HOST_PROC` | `/proc` | Where the host's `/proc` is readable, for **Processor** and **Memory**. A container's own `/proc` already reports the host on Linux |
+| `NEXTDASH_DOCKER_SOCKET` | *(unset)* | Path to the Docker socket, for the **Containers** widget. Unset = the widget is not offered. Read-only access still exposes the daemon's whole read API |
 
 ---
 
@@ -259,6 +363,7 @@ each thing works and why it behaves the way it does.
 - **A bookmarklet, and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet carrying this install's own address; installed as an app, nextDash joins the system share sheet. *[Manual §15](MANUAL.md#15-status-monitoring-and-health), [§19](MANUAL.md#19-mobile-pwa-and-touch)*
 - **Outgoing webhooks** — five events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme, so nothing has to poll nextDash to learn that something changed. *[Manual §21](MANUAL.md#outgoing-webhooks-v140)*
 - **An MCP endpoint** for an AI assistant — four tools, off until you switch it on. *[Manual §21](MANUAL.md#an-mcp-endpoint-for-an-ai-assistant-v140)*
+- **The machine it runs on** — the system widgets read `/proc`, the disks you name, and optionally the Docker socket, all read-only and all off until you mount them. Nothing leaves the machine. *[Quick Start](#system-widgets--reading-the-machine-v150), [Manual](MANUAL.md#system-widgets-what-they-need)*
 
 ---
 

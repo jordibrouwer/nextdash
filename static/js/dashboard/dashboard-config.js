@@ -25106,6 +25106,8 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-overview-go='{"section":"widgets"}'>${
                         esc(this.t('config.helpWidgetsOpen', 'Open Widgets'))}</button>
                 </div>`)
+            + this.helpPanel('config.helpWidgetSystemTitle', 'The system widgets, and the mounts they need',
+                'config.helpWidgetSystemBody', '')
             + this.helpPanel('config.helpWidgetCustomTitle', 'The Custom widget',
                 'config.helpWidgetCustomBody', '')
             + this.helpPanel('config.helpWidgetServicesTitle', 'The services it already knows',
