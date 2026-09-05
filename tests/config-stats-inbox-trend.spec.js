@@ -36,6 +36,43 @@ async function openStats(page) {
 }
 
 /**
+ * The painted colour of each series, read from whatever is on screen now.
+ *
+ * The stats body is repainted after it first appears -- the health trend and
+ * the category prefetch each land and redraw it -- so a locator can be resolved
+ * and the element it points at replaced before the callback runs. getComputedStyle
+ * on a detached element then answers "" for every property, without complaining,
+ * and the test fails as though both series were the same colour. Measured:
+ *
+ *   {"a":"","b":"","connected":false,"aConnected":false,"live":"rgb(74, 222, 128)"}
+ *
+ * Polled, so a read that landed on a replaced panel is simply taken again.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<{ a: string, b: string }>}
+ */
+async function seriesFills(page) {
+    let fills = { a: '', b: '' };
+    await expect.poll(async () => {
+        try {
+            fills = await trendPanel(page).evaluate((el) => {
+                const a = el.querySelector('.config-chart-bar-fill--a');
+                const b = el.querySelector('.config-chart-bar-fill--b');
+                return {
+                    a: a ? getComputedStyle(a).fill : '',
+                    b: b ? getComputedStyle(b).fill : '',
+                };
+            });
+        } catch {
+            // The panel was mid-repaint; nothing to read this time round.
+            return false;
+        }
+        return Boolean(fills.a && fills.b);
+    }, { timeout: 10_000, message: 'the trend chart never reported a fill for both series' }).toBe(true);
+    return fills;
+}
+
+/**
  * The index of a bar the pointer can actually reach, or a failure naming what
  * is in the way.
  *
@@ -144,10 +181,8 @@ test.describe('statistics: the inbox trend chart', () => {
         await seedTrend(page);
         // Several themes define --accent-success as the same colour as
         // --accent-primary, which made both series identical.
-        const fills = await trendPanel(page).evaluate((el) => ({
-            a: getComputedStyle(el.querySelector('.config-chart-bar-fill--a')).fill,
-            b: getComputedStyle(el.querySelector('.config-chart-bar-fill--b')).fill,
-        }));
+        const fills = await seriesFills(page);
+        expect(fills.a, 'the first series reported no fill at all').not.toBe('');
         expect(fills.a).not.toBe(fills.b);
     });
 
