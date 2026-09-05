@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
 - [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
@@ -193,6 +194,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.4.7.1 — 5 September 2026
+
+### Search
+
+- **fix — `/` works when the overlay says to press it.** The hint "Press / to search names" is only ever shown with *Switch Search Mode* off, and the `/` handler returned early in exactly that state — so the key the overlay named was dropped, and nothing switched. It also prefixes the query rather than appending: `_hasModeSwitchPrefix` reads the first character and the hint's own Enter action builds `/${query}`, so a trailing slash would have landed in the box and still switched nothing.
 
 ---
 

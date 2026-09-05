@@ -1,0 +1,17 @@
+{
+  "tag": "v1.4.7.1",
+  "date": "5 September 2026",
+  "releasedAt": "2026-09-05",
+  "modalLead": "One correction. When a search finds no shortcut but does know a bookmark by that name, it says so and names the key that gets there — and that key now works.",
+  "sections": [
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Pressing / after the hint actually searches names.</strong> Typing a bookmark's name looks for a shortcut first, and when there is none the overlay says so: &ldquo;no shortcut by that name &mdash; press / to search names&rdquo;. Pressing it did nothing at all. It switches now, and puts the query straight into a name search rather than leaving the slash sitting in the box."
+        }
+      ]
+    }
+  ]
+}

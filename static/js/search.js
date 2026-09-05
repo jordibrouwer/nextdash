@@ -706,10 +706,23 @@ class SearchComponent {
             if (!this.searchActive && dash && window.DashboardTagCloud?.isEligible?.()) {
                 return;
             }
-            if (!this.interleaveMode) {
+            // Not gated on interleaveMode. `/` is the mode switch in *both*
+            // directions -- the setting flips what it switches to, not whether
+            // it works -- and the "Press / to search names" hint is only ever
+            // shown with the setting off. Returning here dropped the key the
+            // overlay had just told the reader to press.
+            e.preventDefault();
+            // The prefix leads the query: _hasModeSwitchPrefix reads the first
+            // character, and the hint's own Enter action builds `/${query}`.
+            // Appending would have put it where nothing reads it -- the key
+            // would land in the box and still switch nothing.
+            if (this.searchActive && this.currentQuery && !this._hasModeSwitchPrefix(this.currentQuery)) {
+                this.currentQuery = `/${this.currentQuery}`;
+                this.updateSearch();
+                this.selectedMatchIndex = 0;
+                this.updateSelectionHighlight();
                 return;
             }
-            e.preventDefault();
             this.addToQuery('/');
             return;
         }
