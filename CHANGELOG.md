@@ -200,10 +200,39 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Widgets
+
+- **new — a processor widget.** How busy the CPU is and the load average behind it, as a built-in widget with its own refresh interval (one second at the fastest), and optional load-average and core-count figures. Given two columns the tile fills the width with more figures rather than stretching the same ones. It reads the host through an opt-in read-only `/proc` mount (`NEXTDASH_HOST_PROC`): nextDash runs in a container, so without that it would be reporting on itself. Unmounted, the tile names the setup step instead of showing zeros, and the percentage stays blank until a second sample exists rather than claiming an idle machine.
+
 ### Health
 
 - **new — the review offer can be put away for a month.** The "10 links to review" card had one way out, "Not today", which expires overnight — right for a postponement, wrong for someone who is not doing maintenance this month. **Remind me in 30 days** stamps `nextdashHealthReviewSnoozeUntil` and the card stays away until it passes, then returns on its own. Deliberately not called *ignore*: the health view's per-row **Ignore "Broken"** mutes what a bookmark reports, server-side, while this touches no bookmark at all and only decides whether the corner asks. It sits as a quiet text link rather than a third button — a long label wraps onto its own row, where a bordered full-width button would read as the heaviest choice on a card whose primary action is Start.
 - **new — `quiet` action styling on notice cards.** `NoticeCard.define()` accepts `quiet: true` beside `primary`, rendering an action as an underlined text link. For an answer that belongs on the card but not in the row of choices.
+- **fix — the settings item in the ⋯ menu carries a capital**, like Export rows, Retest all and Checking off beside it. English, Dutch and French; German already had one and Chinese has no case to change.
+
+### Dashboard
+
+- **fix — adding a bookmark works before the search bundle has arrived.** The `:new` form travels in the lazily fetched search stack, and the keys that fetch it are `>`, `:`, `?`, `*` and `/`. Add-a-bookmark is none of them, and the toolbar button is not on the hover-prefetch list either — so for the first seconds of a visit `+`, Shift+B, Ctrl+Shift+A and the button each found no handler and returned: no form, no message, and the press was not queued, so it stayed lost once the bundle landed a moment later. Measured rather than argued: with the bundle held back the click opened nothing, and the bundle had arrived by the time the test gave up. All four routes now ask the loader for the stack and open when it is there — which is the promise the loader's own comment already made for the keys it did cover.
+
+### Inbox
+
+- **fix — Escape on the snooze picker no longer leaves the inbox with it.** One press closed the picker *and* the view underneath. The guard that stops a view from eating an Escape meant for something layered over it named the menus it knew about, and the picker — added later — was on nobody's list.
+
+### Under the hood
+
+- **new — one place decides who owns Escape.** Every view binds a document-level Escape handler in the capture phase when it opens, before anything inside it exists, so the view always sees the key first; each then had its own hand-written list of what might be on top, and a menu added later was on none of them. That is four bugs so far. `shared/escape-owner.js` turns it around: anything that can be layered says so while it is up, and a view asks one question instead of naming the answers. Two roles, because the views already told them apart — an *owner* was opened deliberately and keeps the key, something *ambient* appeared on its own and is dismissed by the press without keeping it. The inbox and health are migrated and the setting promo registers as ambient. Config's chain stays where it is on purpose: its order interleaves the search, inline-edit and typing guards *between* the menu and the selections, which a flat registry cannot say, and the attempt to make it fit cost the test that pins exactly that ordering.
+- **fix — the CI actions are off Node 20.** `checkout`, `setup-node`, `setup-go` and `upload-artifact` were all being forced onto Node 24, with the same eight deprecation warnings on every job. All four are on their current majors and the warnings are gone.
+
+### Tests
+
+The suite went green and stayed there — the first green run since 30 June, 418 runs earlier, and seven more behind it. Almost every cause was one shape: a fixed pause where a wait belonged, or a measurement taken before the thing being measured had settled.
+
+- **fix — five overlays and one release tag.** The config intro tip shows for fourteen seconds in the bottom-right corner, which is where the activity chart's last bars are, and it arrives after the overlay dismissal has been and gone: four hover tests across two spec files were racing it. The what's-new modal decides to open *before* it fetches its own module, so on a release whose cache token has just moved it lands after the dismissal too. A setting promo anchored in the bookmarks panel covered the sort chip. And the version pattern on the newest release tag ended at three parts, so it called every four-part release the project has ever shipped malformed — 16 of 169 tags, including the one that broke it.
+- **fix — reads that landed on a replaced element.** `getComputedStyle` on a detached node answers `""` for every property without complaining, so a chart test failed as though both series were the same colour when the panel it measured had simply been swapped out underneath it. Held the repaint at the door to prove it: 20 failures out of 25, every one carrying `connected:false` while the live document had the colour.
+- **fix — seeds that waited for the view to notice them.** Two inbox specs POSTed through the API and then waited for a background refresh to spot the rows. They now ask for the list. The oldest flake on the board went from failing under load to 56 of 56.
+- **fix — four helpers read `searchComponent` before it existed.** Three wrote `quickAddWidget?.open?.() ?? searchComponent…`, and `open()` returns nothing on success — so the fallback was never a fallback, it was the path, and it only passed when the lazily fetched bundle happened to be there already.
+- **new — a failure says which overlay was in the way.** A modal that arrives mid-test intercepts every click and hover, and Playwright names the element but elides the part that identifies it. Four flaky tests in one run shared that line and nothing else. The harness now asks the page while it is still there — what is on top at the centre of the viewport, what `#app-modal` holds, any notification — and logs it beside the failure.
+- **fix — six seconds of sleeping per test, in three config helpers.** They waited out Quickstart's favicon sweep; `waitForFaviconPrefetch` already waits for exactly that by asking. One file went from 2.8 minutes to 1.2. Two more helpers with the same sleep were left alone: they each failed once in the runs with the change, in blocks that fail on the current code too, and where a pre-existing flake could not be told apart from a settle that had been removed, the sleep stays.
 
 ---
 
