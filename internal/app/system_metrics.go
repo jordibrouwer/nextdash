@@ -21,8 +21,10 @@ Built for the four sources the design names; the CPU is the first of them.
 // asked for, so a tile that wants the processor does not make the server read
 // anything else.
 type SystemMetrics struct {
-	CPU   *CPUMetrics  `json:"cpu,omitempty"`
-	Disks *DiskMetrics `json:"disks,omitempty"`
+	CPU    *CPUMetrics    `json:"cpu,omitempty"`
+	Memory *MemoryMetrics `json:"memory,omitempty"`
+	Disks  *DiskMetrics   `json:"disks,omitempty"`
+	Docker *DockerMetrics `json:"docker,omitempty"`
 }
 
 // The shortest interval at which re-reading says anything new. A tile may beat
@@ -33,6 +35,10 @@ const metricsFloor = time.Second
 // spun-down array disk can block -- so this source is read less often
 // however fast a tile asks.
 const metricsDiskFloor = 5 * time.Second
+
+// Two calls to the daemon per reading, and a container list does not change
+// from one second to the next.
+const metricsDockerFloor = 2 * time.Second
 
 type cachedMetric struct {
 	at    time.Time
@@ -45,16 +51,20 @@ type systemMetricsCache struct {
 	sampler *cpuSampler
 
 	// Swappable so the cache can be exercised without touching the host.
-	now         func() time.Time
-	readDisksFn func([]string, map[string]string) DiskMetrics
+	now          func() time.Time
+	readMemoryFn func() MemoryMetrics
+	readDisksFn  func([]string, map[string]string) DiskMetrics
+	readDockerFn func() DockerMetrics
 }
 
 func newSystemMetricsCache() *systemMetricsCache {
 	return &systemMetricsCache{
-		entries:     map[string]cachedMetric{},
-		sampler:     newCPUSampler(),
-		now:         time.Now,
-		readDisksFn: readDisks,
+		entries:      map[string]cachedMetric{},
+		sampler:      newCPUSampler(),
+		now:          time.Now,
+		readMemoryFn: readMemory,
+		readDisksFn:  readDisks,
+		readDockerFn: readDocker,
 	}
 }
 
@@ -91,6 +101,24 @@ func (c *systemMetricsCache) Get(want []string, mounts []string, labels map[stri
 			value := c.sampler.Read()
 			c.store("cpu", value)
 			out.CPU = &value
+		case "memory":
+			if v, ok := c.fresh("memory", metricsFloor); ok {
+				value := v.(MemoryMetrics)
+				out.Memory = &value
+				continue
+			}
+			value := c.readMemoryFn()
+			c.store("memory", value)
+			out.Memory = &value
+		case "docker":
+			if v, ok := c.fresh("docker", metricsDockerFloor); ok {
+				value := v.(DockerMetrics)
+				out.Docker = &value
+				continue
+			}
+			value := c.readDockerFn()
+			c.store("docker", value)
+			out.Docker = &value
 		case "disks":
 			// Keyed by the mounts asked for: two tiles watching different
 			// disks are two readings, not one answer serving both.

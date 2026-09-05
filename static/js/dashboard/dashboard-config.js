@@ -13416,7 +13416,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'disks']],
+        ['system', ['cpu', 'memory', 'disks', 'docker']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -15323,7 +15323,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'disks', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15340,6 +15340,36 @@ class DashboardConfig {
      * value dropped on save without explanation.
      */
     static WIDGET_SETTINGS = {
+        docker: [
+            { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'show', kind: 'checkset', label: ['config.widgetDockerShow', 'Figures to show'],
+              options: [
+                  ['running', ['config.widgetDockerShowRunning', 'Running']],
+                  ['stopped', ['config.widgetDockerShowStopped', 'Stopped']],
+                  ['paused', ['config.widgetDockerShowPaused', 'Paused']],
+                  ['unhealthy', ['config.widgetDockerShowUnhealthy', 'Unhealthy']],
+                  ['total', ['config.widgetDockerShowTotal', 'Total']],
+                  ['images', ['config.widgetDockerShowImages', 'Images']],
+              ] },
+            { key: 'showUnhealthyNames', kind: 'bool',
+              label: ['config.widgetDockerNames', 'Name what is failing'],
+              hint: ['config.widgetDockerNamesHint',
+                     'A count sends you looking; a name does not.'] },
+            { key: 'showRestarted', kind: 'bool',
+              label: ['config.widgetDockerRestarted', 'Name what just restarted'],
+              hint: ['config.widgetDockerRestartedHint',
+                     'Up for minutes while the rest have run for days — the shape of a crashloop.'] },
+        ],
+        memory: [
+            { key: 'refreshSeconds', kind: 'int', min: 2, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
+            { key: 'showCache', kind: 'bool',
+              label: ['config.widgetMemoryShowCache', 'Show the file cache'],
+              hint: ['config.widgetMemoryCacheHint',
+                     'Memory the machine is keeping warm and will hand back the moment anything needs it.'] },
+            { key: 'showSwap', kind: 'bool', label: ['config.widgetMemoryShowSwap', 'Show swap'] },
+        ],
         disks: [
             { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
@@ -17066,10 +17096,50 @@ class DashboardConfig {
                     + 'container template; mount / instead of /mnt to reach disks outside '
                     + 'the array. Running the binary directly needs nothing.'],
             },
+            docker: {
+                lead: ['config.widgetDockerSetupLead',
+                    'This one needs the Docker socket, and that is a real grant: read-only '
+                    + 'still exposes the daemon\u2019s whole read API \u2014 every container, its '
+                    + 'image, its environment, its mounts. Add it only if you are content '
+                    + 'with that for a container count.'],
+                lines: [
+                    'volumes:',
+                    '  - /var/run/docker.sock:/var/run/docker.sock:ro',
+                    'environment:',
+                    '  - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock',
+                ],
+                tail: ['config.widgetDockerSetupTail',
+                    'On Unraid that is one Path row (/var/run/docker.sock, Read Only) and one '
+                    + 'Variable row. Docker Desktop keeps its socket elsewhere \u2014 run '
+                    + '"docker context ls" to find it. If the grant is more than you want, put '
+                    + 'a socket proxy in front and point this at that instead.'],
+            },
+            memory: {
+                lead: ['config.widgetMemorySetupLead',
+                    'This reads the machine, not the container. /proc/meminfo is not '
+                    + 'namespaced, so a container sees the whole host — even one started '
+                    + 'with a memory limit reports the full amount, because that limit '
+                    + 'lives in cgroups, which this does not read.'],
+                lines: [
+                    'volumes:',
+                    '  - /proc:/host/proc:ro',
+                    'environment:',
+                    '  - NEXTDASH_HOST_PROC=/host/proc',
+                ],
+                tail: ['config.widgetMemorySetupTail',
+                    'So on a NAS or a Linux server nothing needs adding, and the mount below '
+                    + 'only makes explicit which /proc is read. On Docker Desktop for Mac or '
+                    + 'Windows the figures are its Linux VM, not your computer — a 24 GB '
+                    + 'laptop shows the VM\u2019s 8 GB, and no mount changes that, because the '
+                    + 'VM cannot see the memory outside it. On Unraid, one Path row (/proc to '
+                    + '/host/proc, Read Only) and one Variable row.'],
+            },
             cpu: {
                 lead: ['config.widgetCpuSetupLead',
-                    'Running nextDash in Docker? Add these to docker-compose.yml so the widget '
-                    + 'reads the machine rather than the container, then recreate the container.'],
+                    'This reads the machine, not the container. /proc/stat is not '
+                    + 'namespaced, so a container already counts the host\u2019s processor — '
+                    + 'even one started with a CPU limit, because that limit lives in '
+                    + 'cgroups, which this does not read.'],
                 lines: [
                     'volumes:',
                     '  - /proc:/host/proc:ro',
@@ -17077,10 +17147,12 @@ class DashboardConfig {
                     '  - NEXTDASH_HOST_PROC=/host/proc',
                 ],
                 tail: ['config.widgetCpuSetupTail',
-                    'On Unraid these are one Path row (/proc to /host/proc, Read Only) and one '
-                    + 'Variable row in the container template. Running the binary directly needs '
-                    + 'nothing. Without it the tile says so rather than showing figures you did '
-                    + 'not ask about.'],
+                    'So on a NAS or a Linux server nothing needs adding, and the mount below '
+                    + 'only makes explicit which /proc is read \u2014 on Unraid, one Path row '
+                    + '(/proc to /host/proc, Read Only) and one Variable row. On Docker Desktop '
+                    + 'for Mac or Windows the figures come from its Linux VM; it is usually '
+                    + 'given every core, so the processor reads true even there. Running the '
+                    + 'binary directly needs nothing at all.'],
             },
         };
         const note = notes[type];
@@ -17170,6 +17242,8 @@ class DashboardConfig {
     widgetTypeAbout(type) {
         const key = `config.widgetAbout.${type}`;
         const fallbacks = {
+            docker: 'How many containers run, how many do not, and which have a failing healthcheck.',
+            memory: 'How much memory is really in use, with the file cache counted as the spare room it is.',
             disks: 'How full each disk is, and how much room is actually left on it.',
             cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',

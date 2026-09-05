@@ -78,6 +78,20 @@ type widgetField struct {
 // widgetFields is what each type accepts. A type absent from here accepts
 // nothing, which is the safe default for a type added without its settings.
 var widgetFields = map[WidgetType][]widgetField{
+	WidgetTypeDocker: {
+		{Key: "refreshSeconds", Kind: "int", Min: 2, Max: 3600},
+		// Which figures to show. Absent means all, so a figure added later is
+		// included by default rather than hidden from everyone who saved once.
+		{Key: "show", Kind: "list", Allowed: []string{
+			"running", "stopped", "paused", "total", "images", "unhealthy"}},
+		{Key: "showUnhealthyNames", Kind: "bool"},
+		{Key: "showRestarted", Kind: "bool"},
+	},
+	WidgetTypeMemory: {
+		{Key: "refreshSeconds", Kind: "int", Min: 2, Max: 3600},
+		{Key: "showSwap", Kind: "bool"},
+		{Key: "showCache", Kind: "bool"},
+	},
 	WidgetTypeDisks: {
 		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
 		// Named rather than enumerated: a container sees dozens of overlay
@@ -377,7 +391,7 @@ func widgetTypeNames() []string {
 		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
-		WidgetTypeCPU, WidgetTypeDisks,
+		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

@@ -96,7 +96,13 @@ const (
 	WidgetTypeCPU WidgetType = "cpu"
 	// WidgetTypeDisks reports free space per configured mount -- the array and
 	// the cache on Unraid, a volume on a NAS.
-	WidgetTypeDisks  WidgetType = "disks"
+	WidgetTypeDisks WidgetType = "disks"
+	// WidgetTypeMemory reports memory in use against the total, counting the
+	// page cache as the reclaimable thing it is rather than as used.
+	WidgetTypeMemory WidgetType = "memory"
+	// WidgetTypeDocker counts containers: how many run, how many do not, and
+	// which have a healthcheck that is failing.
+	WidgetTypeDocker WidgetType = "docker"
 	WidgetTypeCustom WidgetType = "custom"
 )
 
@@ -119,6 +125,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBackups:    {},
 	WidgetTypeCPU:        {},
 	WidgetTypeDisks:      {},
+	WidgetTypeMemory:     {},
+	WidgetTypeDocker:     {},
 	WidgetTypeCustom:     {},
 }
 
