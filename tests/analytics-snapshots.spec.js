@@ -48,7 +48,14 @@ async function loadWithAnalyticsOn(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
-    await page.waitForTimeout(600);
+    // Waited for, not slept through. Six hundred milliseconds was long enough
+    // until it was not: on CI both snapshots arrived after it and every test
+    // here read an empty array -- which fails as "the events are wrong" when
+    // what happened is that they had not happened yet. The four tests that use
+    // this loader all want both events, so the loader waits for both.
+    await expect.poll(async () => page.evaluate(() =>
+        (window.__events || []).filter(([name]) => name.endsWith('-snapshot')).length),
+    { timeout: 20_000 }).toBe(2);
 }
 
 const snapshots = (page) => page.evaluate(() =>
