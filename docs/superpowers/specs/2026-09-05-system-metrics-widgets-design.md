@@ -34,6 +34,15 @@ node-exporter and Homepage already use. Nothing is inferred and nothing is
 guessed: if a source is not mounted, the widget says so plainly instead of
 showing a plausible wrong number.
 
+This was measured during design rather than assumed. A container run with
+`-v /:/host/root:ro` reported **0.8 GB total** for its own rootfs and
+**977.8 GB** for the mounted host filesystem — two entirely different answers
+to "how much space is there". Reading the wrong one produces a number that
+looks right and is not, which is the failure this whole arrangement exists to
+prevent. The `/proc` mount was verified the same way: `/host/proc/meminfo` and
+`/host/proc/stat` are readable inside a container in exactly the format the
+parsers expect.
+
 ```yaml
 # docker-compose.yml — additions, all read-only.
 # On Unraid these are three Path rows and three Variable rows in the
@@ -319,7 +328,13 @@ able to finish the setup.
 - **A 1-second poll on a Raspberry Pi** is four reads of small `/proc` files per
   second, which is negligible — but the floor exists so it cannot go lower, and
   polling stops entirely when the tab is hidden.
-- **Docker socket reachability is unverified against a real daemon** — there is
-  no Docker on the development machine. The stdlib dial path is confirmed
-  correct in shape; the first implementation step is to prove it against a live
-  daemon before building the widget on top.
+- **Docker socket reachability is proven.** Tested against a live daemon during
+  design: an `http.Client` with a unix `DialContext` reached `v1.41`
+  `/containers/json?all=1`, returned 200, and counted `running=1 total=1`
+  matching `docker ps -a` — stdlib only, no SDK. The remaining unknown is
+  Unraid's own daemon, which should behave identically on the same API version.
+- **The socket path varies by platform.** Docker Desktop uses
+  `~/.docker/run/docker.sock`, not `/var/run/docker.sock`; Unraid and most Linux
+  hosts use the latter. This is why the path is a variable rather than a
+  constant, and why the documentation tells the reader to check `docker context
+  ls` rather than assuming.
