@@ -68,8 +68,13 @@ test.describe('analytics — release version in the settings snapshot', () => {
             const index = await res.json();
             return index[0]?.tag || index[0]?.id || '';
         });
-        // Both schemes: tags were vYYYY.MM.N until the move to semver at v1.0.0.
-        expect(expected).toMatch(/^v(\d{4}\.|\d+\.\d+\.\d+$)/);
+        // Both schemes, and both shapes within each: tags were vYYYY.MM.DD.N
+        // until the move to semver at v1.0.0, and a semver release carries a
+        // fourth part when it is a patch on top of one -- v1.4.5.1, v1.4.7.1.
+        // The old pattern ended at three parts, so it called every one of those
+        // malformed; it only ever passed because it reads index[0] and a
+        // three-part release happened to be newest when it was written.
+        expect(expected).toMatch(/^v(\d{4}\.\d{2}\.\d{2}\.\d+|\d+\.\d+\.\d+(\.\d+)?)$/);
         expect(snap.props.appVersion).toBe(expected);
     });
 
