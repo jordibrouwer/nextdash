@@ -24,8 +24,52 @@ async function openStats(page) {
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+    await page.evaluate(() => {
+        // settleOverlays below strips the notifications that are up when it
+        // runs, but the config intro tip is raised on a timer after config
+        // opens and lands in the bottom-right corner -- over the last bars of
+        // these charts -- for fourteen seconds. Not raised beats removed.
+        window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
+        return window.dashboardInstance.config.openConfigView('stats');
+    });
     await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
+}
+
+/**
+ * The index of a bar the pointer can actually reach, or a failure naming what
+ * is in the way.
+ *
+ * Two different obstructions, which is why this polls rather than scanning
+ * once. The floating search bar sits over the middle of the panel for the whole
+ * visit, so some bars are never reachable and the scan has to look for one that
+ * is. Overlays like the icon-prefetch scrim come and go, so a single pass can
+ * also find nothing at a bad moment and be wrong a second later.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} bars
+ * @returns {Promise<number>}
+ */
+async function reachableBarIndex(page, bars) {
+    let hit = -1;
+    let inTheWay = '(nothing measured)';
+    await expect.poll(async () => {
+        const count = await bars.count();
+        for (let i = count - 1; i >= 0; i--) {
+            const box = await bars.nth(i).boundingBox();
+            if (!box) continue;
+            const at = await page.evaluate((p) => {
+                const el = document.elementFromPoint(p.x, p.y);
+                return { onBar: Boolean(el?.closest('.config-chart-bar')), what: el?.className || el?.tagName || '?' };
+            }, { x: box.x + box.width / 2, y: box.y + box.height - 12 });
+            if (at.onBar) {
+                hit = i;
+                return true;
+            }
+            inTheWay = String(at.what);
+        }
+        return false;
+    }, { timeout: 10_000, message: () => `no bar was reachable by pointer; last thing in the way: ${inTheWay}` }).toBe(true);
+    return hit;
 }
 
 /** Seeds daily buckets and shows the Inbox tab. */
@@ -144,20 +188,11 @@ test.describe('statistics: the inbox trend chart', () => {
         // The floating search/command bar hovers over the middle of the panel,
         // so aim at a bar it does not cover rather than at a fixed index.
         const bars = panel.locator('.config-chart-bar');
-        const count = await bars.count();
-        let hit = null;
-        for (let i = count - 1; i >= 0 && !hit; i--) {
-            const box = await bars.nth(i).boundingBox();
-            if (!box) continue;
-            const point = { x: box.x + box.width / 2, y: box.y + box.height - 12 };
-            const clear = await page.evaluate((p) => {
-                const el = document.elementFromPoint(p.x, p.y);
-                return Boolean(el?.closest('.config-chart-bar'));
-            }, point);
-            if (clear) hit = point;
-        }
-        expect(hit, 'no bar was reachable by pointer').not.toBeNull();
-        await page.mouse.move(hit.x, hit.y);
+        const hit = await reachableBarIndex(page, bars);
+        // The scan picks which bar; hover() does the pointing. The two were one
+        // step before, and the gap between them is where anything arriving in
+        // between took the pointer instead of the bar.
+        await bars.nth(hit).hover();
 
         const tip = panel.locator('.config-chart-tip');
         await expect(tip).toBeVisible();
@@ -186,9 +221,8 @@ test.describe('statistics: the inbox trend chart', () => {
         await page.locator('[data-stats-tab="activity"]').click();
         const activity = page.locator('.config-panel')
             .filter({ has: page.locator('.config-panel-title', { hasText: 'Bookmarks used over time' }) }).first();
-        const bar = activity.locator('.config-chart-bar').last();
-        const box = await bar.boundingBox();
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height - 10);
+        // hover(), not a measured point: same reason as the trend chart above.
+        await activity.locator('.config-chart-bar').last().hover();
         await expect(activity.locator('.config-chart-tip')).toBeVisible();
     });
 });
