@@ -86,7 +86,7 @@ test.describe('analytics — release version in the settings snapshot', () => {
         // would be a second copy to bump every release, and would drift.
         const attr = await page.evaluate(() => document
             .querySelector('script[data-nextdash-analytics="on"]')?.getAttribute('data-release'));
-        expect(attr).toMatch(/^v(\d{4}\.|\d+\.\d+\.\d+$)/);
+        expect(attr).toMatch(/^v(\d{4}\.\d{2}\.\d{2}\.\d+|\d+\.\d+\.\d+(\.\d+)?)$/);
     });
 
     test('no tracker and no version are emitted while analytics is off', async ({ page }) => {
