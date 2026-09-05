@@ -11,21 +11,47 @@ services:
       - ./static:/app/static
       - ./locales:/app/locales
       - ./templates:/app/templates
-      # System widgets: the processor tile reads the machine through this
-      # read-only mount. Without it nextDash reads its own container, so the
-      # tile says so rather than reporting the wrong numbers.
-      # - /proc:/host/proc:ro
-      # The disks widget measures what is mounted into the container, so mount
-      # the disks you want to watch *under* NEXTDASH_HOST_ROOT, keeping their
-      # own names: /mnt stays /mnt below the prefix. On Unraid that covers the
-      # array and cache; mount / to /host/root to reach disks outside it.
+      # ---------------------------------------------------------------------
+      # System widgets (Processor, Disks) -- both mounts are read-only.
+      #
+      # These stay commented out because this file has to start anywhere: on
+      # macOS and Windows there is no /mnt, and Docker refuses to start a
+      # container whose bind mount does not exist on the host. Uncomment the
+      # one you need for the machine you are actually running on.
+      #
+      # Processor: a container shares the host kernel, so /proc/stat already
+      # counts the host's CPU -- this mount is only needed where the container
+      # sees a different /proc (Docker Desktop's Linux VM), and to be explicit
+      # about which one is read.
+      - /proc:/host/proc:ro
+      #
+      # Disks: this one IS required. A container can only measure filesystems
+      # mounted into it -- without this it reports its own 0.8 GB overlay
+      # instead of your array. Mount the disks *under* NEXTDASH_HOST_ROOT,
+      # keeping their own names, so the paths you type in the widget's settings
+      # are the ones this machine uses:
+      #
+      #   Unraid / most Linux:  - /mnt:/host/root/mnt:ro,rslave
+      #   Synology / QNAP:      - /volume1:/host/root/volume1:ro,rslave
+      #   Everything, incl. the boot device:
+      #                         - /:/host/root:ro,rslave
+      #   macOS (this laptop):  - /Users:/host/root/Users:ro
+      #
+      # Then set NEXTDASH_HOST_ROOT below, and name the disks in the widget as
+      # the host knows them (/mnt/user, /mnt/cache) -- never as the container
+      # sees them. The settings panel offers whatever it finds mounted.
       # - /mnt:/host/root/mnt:ro,rslave
-      - /proc:/host/proc:ro   
+      # ---------------------------------------------------------------------
     environment:
       - PORT=8080
       # Live static mounts: re-hash assets on every read so ?v= tokens track edits.
       - NEXTDASH_STATIC_MUTABLE=1
+      # Where the mounts above landed. Unset means that source is simply not
+      # available and the widget says so, rather than reporting a wrong number.
       - NEXTDASH_HOST_PROC=/host/proc
+      # Must match the prefix used in the disks mount above, without the part
+      # that belongs to the host's own tree: mounting /mnt at /host/root/mnt
+      # means the root is /host/root.
       # - NEXTDASH_HOST_ROOT=/host/root
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
