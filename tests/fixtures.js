@@ -87,6 +87,65 @@ const test = base.test.extend({
     },
 
     /**
+     * On a failure, name whatever was covering the page.
+     *
+     * A modal that arrives mid-test intercepts every click and hover, and the
+     * test then dies of a timeout thirty seconds later. Playwright names the
+     * element in the way but elides its content, which is the one thing needed
+     * to tell which modal it was:
+     *
+     *   <div id="app-modal" ... class="modal-overlay show">…</div>
+     *   intercepts pointer events
+     *
+     * Four flaky tests in one CI run shared that line and nothing else -- two
+     * views, four unrelated specs -- and by the time the run is read the page
+     * is gone. So ask while it is still there.
+     *
+     * Written as an override of `page` rather than an auto fixture on purpose:
+     * a fixture is only built when a test asks for it, so a spec that never
+     * opens a page does not get one just to be watched.
+     */
+    page: async ({ page }, use, testInfo) => {
+        await use(page);
+        if (testInfo.status === testInfo.expectedStatus) return;
+        try {
+            if (page.isClosed()) return;
+            const covering = await page.evaluate(() => {
+                const describe = (el) => (el ? {
+                    tag: el.tagName,
+                    id: el.id || '',
+                    class: typeof el.className === 'string' ? el.className : '',
+                    text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+                } : null);
+                // What is actually on top in the middle of the viewport, which
+                // is what an intercepted click ran into.
+                const centre = document.elementFromPoint(
+                    Math.round(window.innerWidth / 2),
+                    Math.round(window.innerHeight / 2),
+                );
+                const modal = document.getElementById('app-modal');
+                return {
+                    topmostAtCentre: describe(centre),
+                    appModal: modal && modal.classList.contains('show') ? describe(modal) : null,
+                    notification: describe(document.querySelector('#app-notification.show')),
+                };
+            });
+            if (!covering?.appModal && !covering?.notification) return;
+            const report = JSON.stringify(covering, null, 2);
+            // Both: the log is what a CI annotation is read next to, the
+            // attachment is what survives into the uploaded report.
+            // eslint-disable-next-line no-console
+            console.log('[overlay-at-failure]', report);
+            await testInfo.attach('overlay-at-failure', {
+                body: report,
+                contentType: 'application/json',
+            });
+        } catch {
+            // Diagnostics must never turn a failure into a different failure.
+        }
+    },
+
+    /**
      * Auto fixture: resets the store when the worker moves to a new spec file.
      *
      * Test-scoped rather than worker-scoped because a worker runs several
