@@ -78,6 +78,15 @@ type widgetField struct {
 // widgetFields is what each type accepts. A type absent from here accepts
 // nothing, which is the safe default for a type added without its settings.
 var widgetFields = map[WidgetType][]widgetField{
+	WidgetTypeDisks: {
+		{Key: "refreshSeconds", Kind: "int", Min: 5, Max: 3600},
+		// Named rather than enumerated: a container sees dozens of overlay
+		// mounts, and a tile listing them all is noise.
+		{Key: "mounts", Kind: "list"},
+		{Key: "labels", Kind: "list"},
+		{Key: "showMeter", Kind: "bool"},
+		{Key: "showInodes", Kind: "bool"},
+	},
 	WidgetTypeCPU: {
 		// One second is the floor: below that the delta between two /proc reads
 		// is measurement noise rather than a reading.
@@ -368,7 +377,7 @@ func widgetTypeNames() []string {
 		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
-		WidgetTypeCPU,
+		WidgetTypeCPU, WidgetTypeDisks,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.
