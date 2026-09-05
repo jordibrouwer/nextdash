@@ -11,6 +11,14 @@ test.describe('config stats inbox block', () => {
         // Seed two inbox items via the API (also increments the durable "added" counters).
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        // #dashboard-layout is in the server's template, so it is there long
+        // before the dashboard object that fills it: measured at 36 runs out of
+        // 40 where the element exists and window.dashboardInstance is still
+        // undefined. This test then read .config off it, which is the
+        // "Cannot read properties of undefined (reading 'config')" on CI. What
+        // saved it most of the time was the API seeding in between.
+        await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView,
+            null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(async (s) => {
@@ -90,6 +98,9 @@ test.describe('config stats inbox block', () => {
 
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        // Same wait, same reason as above: this test also reaches for .config.
+        await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView,
+            null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
