@@ -42,16 +42,18 @@ async function openInboxWithItems(page, titles) {
     }, { titles, stamp });
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
-    // The POSTs are accepted before the view has loaded them, so waiting on the
-    // rows alone can find none, or half -- inbox-selection-actions makes the
-    // same point and waits on the model first.
-    await expect.poll(async () => page.evaluate((wanted) => {
+    // Fetched rather than waited for. The POSTs are accepted before the open
+    // view knows about them, and waiting for a background refresh to notice is
+    // what makes the same pattern in inbox-selection-actions flaky under load.
+    // Asking for the list, then drawing it, is the same two steps without the
+    // race -- and it is polled because another spec's writes can land in the
+    // same shared inbox between the fetch and the read.
+    await expect.poll(async () => page.evaluate(async (wanted) => {
         const ib = window.dashboardInstance.inbox;
+        await ib.loadItems?.();
+        ib.render();
         return wanted.every((t) => (ib.items || []).some((i) => (i.title || '') === t));
-    }, titles), { timeout: 10_000 }).toBe(true);
-    // Seeding over the API does not tell the open view about it, so the rows
-    // are still the empty state the tiles were drawn from.
-    await page.evaluate(() => window.dashboardInstance.inbox.render());
+    }, titles), { timeout: 15_000 }).toBe(true);
     await expect(page.locator('.inbox-item').first()).toBeVisible({ timeout: 10_000 });
 }
 

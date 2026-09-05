@@ -938,9 +938,13 @@ class DashboardConfig {
              * what it was for. The picker above is the opposite case and still
              * claims the key: it was opened deliberately and is previewing a
              * theme, so there Escape means "cancel that".
+             *
+             * That distinction is what escape-owner calls ambient, and the promo
+             * registers itself as such, so the rule lives with the thing it is
+             * about rather than in this view's handler.
              */
             if (!pickerOpen) {
-                window.ConfigSettingPromo?.dismissActive?.({ persist: true });
+                window.EscapeOwner?.dismissAmbient?.();
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
