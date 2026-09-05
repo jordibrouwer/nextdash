@@ -1881,7 +1881,20 @@
     "openBrokenConfirmBtn": "Links openen",
     "openBrokenFailed": "Openen van kapotte links mislukt",
     "openBrokenLinks": "Kapotte links openen",
-    "openBrokenTitle": "Alle kapotte bladwijzers in nieuwe tabbladen openen"
+    "openBrokenTitle": "Alle kapotte bladwijzers in nieuwe tabbladen openen",
+    "widgetType.cpu": "Processor",
+    "widgetCpuBusy": "in gebruik",
+    "widgetCpuSampling": "meten…",
+    "widgetCpuLoad1": "1 min",
+    "widgetCpuLoad5": "5 min",
+    "widgetCpuLoad15": "15 min",
+    "widgetCpuCores": "{n} cores",
+    "widgetCpuCoresLabel": "cores",
+    "widgetSystemNoProc": "Leest deze machine nog niet — koppel /proc en stel NEXTDASH_HOST_PROC in.",
+    "widgetSystemUnsupported": "Deze meting is beschikbaar op Linux-hosts.",
+    "widgetSystemNoDocker": "Geen verbinding met Docker — koppel de socket en stel NEXTDASH_DOCKER_SOCKET in.",
+    "widgetSystemNoMounts": "Nog geen schijven gekozen — benoem ze in de instellingen van deze widget.",
+    "widgetSystemReadFailed": "Deze machine gaf iets onleesbaars terug."
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -5574,7 +5587,16 @@
     "overviewNewFeatureStatsFiguresWhat": "Vier dingen werden vastgelegd en nooit getoond: hoeveel bookmarks vastgezet zijn, wanneer er voor het laatst iets bewerkt is, wanneer een pagina voor het laatst bewaard is, en hoe lang de langst kapotte link al niet meer antwoordt. „1 kapot” zei nooit of dat gisteren was of in maart.",
     "overviewNewFeatureStatsFiguresHow": "Alle vier staan nu in Statistieken, en een nieuw paneel telt wat je per maand toevoegde — met de vermelding hoeveel bookmarks een datum dragen, zodat alles van vóór nextDash dat bijhield eruit blijft in plaats van stilletjes meegeteld te worden.",
     "overviewNewFeatureStatsFiguresEnable": "Niets aan te zetten.",
-    "overviewNewFeatureStatsFiguresCta": "Statistieken openen →"
+    "overviewNewFeatureStatsFiguresCta": "Statistieken openen →",
+    "widgetAbout.cpu": "Hoe hard de processor werkt, en of er werk achter blijft staan.",
+    "widgetGroupSystem": "Hoe gaat het met deze machine?",
+    "widgetRefreshSeconds": "Ververs elke (seconden)",
+    "widgetCpuRefreshHint": "Eén seconde is de snelste zinnige meting: daaronder is het getal ruis.",
+    "widgetCpuShowLoad": "Load average tonen",
+    "widgetCpuShowCores": "Aantal cores tonen",
+    "widgetSetupTitle": "Zo stel je dit in",
+    "widgetCpuSetupLead": "Draait nextDash in Docker? Voeg dit toe aan docker-compose.yml zodat de widget de machine leest in plaats van de container, en maak de container daarna opnieuw aan.",
+    "widgetCpuSetupTail": "Op Unraid zijn dit één Path-rij (/proc naar /host/proc, Read Only) en één Variable-rij in de container-template. Draai je de binary rechtstreeks, dan hoeft er niets. Zonder dit zegt de tegel dat, in plaats van cijfers te tonen waar je niet om vroeg."
   },
   "colors": {
     "title": "thema-aanpassing",

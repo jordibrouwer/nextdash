@@ -91,6 +91,9 @@ const (
 	 * per upstream release it does not control; this answers "my service is not
 	 * in the list" without adding a codepath per service.
 	 */
+	// WidgetTypeCPU reports the processor: a percentage and the load average
+	// in one tile, because either alone answers half the question.
+	WidgetTypeCPU WidgetType = "cpu"
 	WidgetTypeCustom WidgetType = "custom"
 )
 
@@ -111,6 +114,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeUnchecked:  {},
 	WidgetTypeDuplicates: {},
 	WidgetTypeBackups:    {},
+	WidgetTypeCPU:        {},
 	WidgetTypeCustom:     {},
 }
 

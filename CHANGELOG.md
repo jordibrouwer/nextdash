@@ -202,6 +202,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Widgets
 
+- **new — widgets can keep their own refresh clock.** The machinery that kept the custom widget current was gated to that one type by name; it is now a table of which types poll and how fast, so a built-in widget can refresh itself. One clock per tile however often it is redrawn, nothing at all for a tile that draws from figures the dashboard already holds, and the custom widget's own `ttl` and 30-second floor untouched. A hidden tab still asks nothing.
 - **new — a processor widget.** How busy the CPU is and the load average behind it, as a built-in widget with its own refresh interval (one second at the fastest), and optional load-average and core-count figures. Given two columns the tile fills the width with more figures rather than stretching the same ones. It reads the host through an opt-in read-only `/proc` mount (`NEXTDASH_HOST_PROC`): nextDash runs in a container, so without that it would be reporting on itself. Unmounted, the tile names the setup step instead of showing zeros, and the percentage stays blank until a second sample exists rather than claiming an idle machine.
 
 ### Health

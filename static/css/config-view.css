@@ -5789,6 +5789,49 @@ button.config-bm-shortcut-pill {
     grid-column: 1 / -1;
 }
 
+/*
+ * What a widget needs from the host before it can report anything.
+ *
+ * Full width and folded shut: it is a setup step somebody follows once, so it
+ * should be findable beside the settings without sitting on top of them every
+ * time the panel opens.
+ */
+.config-widget-setup {
+    /* Outside the settings grid, so it needs no track of its own. */
+    margin-bottom: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.35rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background: var(--background-primary);
+}
+
+.config-widget-setup > summary {
+    cursor: pointer;
+    font-size: var(--font-size-small, 0.75rem);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.config-widget-setup > .config-field-hint {
+    margin: var(--space-2, 0.5rem) 0 0;
+}
+
+/* The lines to copy, kept as one block that scrolls rather than wrapping a
+   path across two lines where a reader would copy the break with it. */
+.config-widget-setup-code {
+    margin: var(--space-2, 0.5rem) 0 0;
+    padding: var(--space-2, 0.5rem) var(--space-2-5, 0.6rem);
+    border-radius: var(--radius-3, 0.25rem);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    overflow-x: auto;
+    font-size: var(--font-size-small, 0.72rem);
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre;
+    user-select: all;
+}
+
 .config-widget-settings-empty {
     margin: 0;
     color: var(--text-muted, #888);

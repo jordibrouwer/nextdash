@@ -78,6 +78,14 @@ type widgetField struct {
 // widgetFields is what each type accepts. A type absent from here accepts
 // nothing, which is the safe default for a type added without its settings.
 var widgetFields = map[WidgetType][]widgetField{
+	WidgetTypeCPU: {
+		// One second is the floor: below that the delta between two /proc reads
+		// is measurement noise rather than a reading.
+		{Key: "refreshSeconds", Kind: "int", Min: 1, Max: 3600},
+		{Key: "showLoad", Kind: "bool"},
+		{Key: "showCores", Kind: "bool"},
+	},
+
 	WidgetTypeHealth: {
 		// Read since the day the health widget shipped, and never settable
 		// until now: nothing in the config UI wrote it.
@@ -360,6 +368,7 @@ func widgetTypeNames() []string {
 		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
+		WidgetTypeCPU,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

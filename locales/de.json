@@ -1881,7 +1881,20 @@
     "openBrokenConfirmBtn": "Links öffnen",
     "openBrokenFailed": "Öffnen der defekten Links fehlgeschlagen",
     "openBrokenLinks": "Defekte Links öffnen",
-    "openBrokenTitle": "Alle defekten Lesezeichen in neuen Tabs öffnen"
+    "openBrokenTitle": "Alle defekten Lesezeichen in neuen Tabs öffnen",
+    "widgetType.cpu": "Prozessor",
+    "widgetCpuBusy": "ausgelastet",
+    "widgetCpuSampling": "messe…",
+    "widgetCpuLoad1": "1 Min",
+    "widgetCpuLoad5": "5 Min",
+    "widgetCpuLoad15": "15 Min",
+    "widgetCpuCores": "{n} Kerne",
+    "widgetCpuCoresLabel": "Kerne",
+    "widgetSystemNoProc": "Liest diesen Rechner noch nicht — /proc einbinden und NEXTDASH_HOST_PROC setzen.",
+    "widgetSystemUnsupported": "Dieser Wert ist auf Linux-Hosts verfügbar.",
+    "widgetSystemNoDocker": "Keine Verbindung zu Docker — Socket einbinden und NEXTDASH_DOCKER_SOCKET setzen.",
+    "widgetSystemNoMounts": "Noch keine Laufwerke gewählt — in den Einstellungen dieses Widgets benennen.",
+    "widgetSystemReadFailed": "Dieser Rechner antwortete unlesbar."
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -5574,7 +5587,16 @@
     "overviewNewFeatureStatsFiguresWhat": "Vier Dinge wurden festgehalten und nie angezeigt: wie viele Lesezeichen angeheftet sind, wann zuletzt etwas bearbeitet wurde, wann zuletzt eine Kopie einer Seite gespeichert wurde, und wie lange der am längsten defekte Link schon nicht mehr antwortet. „1 defekt“ sagte nie, ob das gestern war oder im März.",
     "overviewNewFeatureStatsFiguresHow": "Alle vier stehen jetzt in den Statistiken, und ein neues Panel zählt, was pro Monat dazukam — mit dem Hinweis, wie viele Lesezeichen ein Datum tragen, damit alles von vor dieser Aufzeichnung draußen bleibt statt still mitgezählt zu werden.",
     "overviewNewFeatureStatsFiguresEnable": "Nichts einzuschalten.",
-    "overviewNewFeatureStatsFiguresCta": "Darstellung öffnen →"
+    "overviewNewFeatureStatsFiguresCta": "Darstellung öffnen →",
+    "widgetAbout.cpu": "Wie stark der Prozessor arbeitet und ob sich Arbeit dahinter staut.",
+    "widgetGroupSystem": "Wie geht es diesem Rechner?",
+    "widgetRefreshSeconds": "Aktualisieren alle (Sekunden)",
+    "widgetCpuRefreshHint": "Eine Sekunde ist der schnellste sinnvolle Wert: darunter ist die Zahl Rauschen.",
+    "widgetCpuShowLoad": "Load Average zeigen",
+    "widgetCpuShowCores": "Kernanzahl zeigen",
+    "widgetSetupTitle": "So richten Sie das ein",
+    "widgetCpuSetupLead": "Läuft nextDash in Docker? Fügen Sie dies in docker-compose.yml ein, damit das Widget den Rechner statt des Containers liest, und erstellen Sie den Container neu.",
+    "widgetCpuSetupTail": "Auf Unraid sind das eine Path-Zeile (/proc nach /host/proc, Read Only) und eine Variable-Zeile in der Container-Vorlage. Wer die Binärdatei direkt ausführt, braucht nichts. Ohne dies sagt die Kachel das, statt Zahlen zu zeigen, nach denen niemand gefragt hat."
   },
   "colors": {
     "title": "themenanpassung",

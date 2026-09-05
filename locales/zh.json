@@ -1881,7 +1881,20 @@
     "openBrokenConfirmBtn": "打开链接",
     "openBrokenFailed": "打开失效链接失败",
     "openBrokenLinks": "打开失效链接",
-    "openBrokenTitle": "在新标签页中打开所有失效书签"
+    "openBrokenTitle": "在新标签页中打开所有失效书签",
+    "widgetType.cpu": "处理器",
+    "widgetCpuBusy": "使用中",
+    "widgetCpuSampling": "测量中…",
+    "widgetCpuLoad1": "1 分钟",
+    "widgetCpuLoad5": "5 分钟",
+    "widgetCpuLoad15": "15 分钟",
+    "widgetCpuCores": "{n} 个核心",
+    "widgetCpuCoresLabel": "核心",
+    "widgetSystemNoProc": "尚未读取这台机器 — 挂载 /proc 并设置 NEXTDASH_HOST_PROC。",
+    "widgetSystemUnsupported": "此读数在 Linux 主机上可用。",
+    "widgetSystemNoDocker": "未连接 Docker — 挂载套接字并设置 NEXTDASH_DOCKER_SOCKET。",
+    "widgetSystemNoMounts": "尚未选择磁盘 — 在此小组件的设置中指定。",
+    "widgetSystemReadFailed": "这台机器返回了无法读取的内容。"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -5574,7 +5587,16 @@
     "overviewNewFeatureStatsFiguresWhat": "有四项信息一直被记录却从未显示：有多少书签被固定、最后一次编辑发生在何时、页面最后一次被保存副本是何时，以及存在时间最长的失效链接已经多久没有响应。「1 个失效」从未说明那是昨天还是三月。",
     "overviewNewFeatureStatsFiguresHow": "这四项现已出现在统计中，新增面板还会按月统计你添加了什么——并注明有多少书签带有日期，因此早于 nextDash 记录该信息的条目会被排除，而不是被悄悄计入。",
     "overviewNewFeatureStatsFiguresEnable": "无需开启。",
-    "overviewNewFeatureStatsFiguresCta": "打开统计 →"
+    "overviewNewFeatureStatsFiguresCta": "打开统计 →",
+    "widgetAbout.cpu": "处理器有多忙，以及工作是否在后面排队。",
+    "widgetGroupSystem": "这台机器状况如何？",
+    "widgetRefreshSeconds": "刷新间隔（秒）",
+    "widgetCpuRefreshHint": "一秒是最快的有效读数：低于此值数字就是噪声。",
+    "widgetCpuShowLoad": "显示平均负载",
+    "widgetCpuShowCores": "显示核心数",
+    "widgetSetupTitle": "如何设置",
+    "widgetCpuSetupLead": "在 Docker 中运行 nextDash？将以下内容添加到 docker-compose.yml，让小组件读取这台机器而不是容器，然后重新创建容器。",
+    "widgetCpuSetupTail": "在 Unraid 上，这是容器模板中的一个 Path 行（/proc 到 /host/proc，只读）和一个 Variable 行。直接运行二进制文件则无需任何设置。没有它，磁贴会如实说明，而不是显示你没有要求的数字。"
   },
   "colors": {
     "title": "主题自定义",

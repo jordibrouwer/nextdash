@@ -1881,7 +1881,20 @@
     "openBrokenConfirmBtn": "Ouvrir les liens",
     "openBrokenFailed": "Échec de l’ouverture des liens cassés",
     "openBrokenLinks": "Ouvrir les liens cassés",
-    "openBrokenTitle": "Ouvrir tous les favoris cassés dans de nouveaux onglets"
+    "openBrokenTitle": "Ouvrir tous les favoris cassés dans de nouveaux onglets",
+    "widgetType.cpu": "Processeur",
+    "widgetCpuBusy": "utilisé",
+    "widgetCpuSampling": "mesure…",
+    "widgetCpuLoad1": "1 min",
+    "widgetCpuLoad5": "5 min",
+    "widgetCpuLoad15": "15 min",
+    "widgetCpuCores": "{n} cœurs",
+    "widgetCpuCoresLabel": "cœurs",
+    "widgetSystemNoProc": "Cette machine n’est pas encore lue — montez /proc et définissez NEXTDASH_HOST_PROC.",
+    "widgetSystemUnsupported": "Cette mesure est disponible sur les hôtes Linux.",
+    "widgetSystemNoDocker": "Pas de connexion à Docker — montez le socket et définissez NEXTDASH_DOCKER_SOCKET.",
+    "widgetSystemNoMounts": "Aucun disque choisi — nommez-les dans les réglages de ce widget.",
+    "widgetSystemReadFailed": "Cette machine a répondu quelque chose d’illisible."
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -5574,7 +5587,16 @@
     "overviewNewFeatureStatsFiguresWhat": "Quatre choses étaient enregistrées sans jamais être affichées : combien de favoris sont épinglés, quand quelque chose a été modifié pour la dernière fois, quand une page a été sauvegardée pour la dernière fois, et depuis combien de temps le lien cassé le plus ancien ne répond plus. « 1 cassé » ne disait jamais si c’était hier ou en mars.",
     "overviewNewFeatureStatsFiguresHow": "Les quatre figurent désormais dans Statistiques, et un nouveau panneau compte ce que vous avez ajouté par mois — en précisant combien de favoris portent une date, afin que tout ce qui précède cet enregistrement reste en dehors plutôt que d’être compté en silence.",
     "overviewNewFeatureStatsFiguresEnable": "Rien à activer.",
-    "overviewNewFeatureStatsFiguresCta": "Ouvrir les statistiques →"
+    "overviewNewFeatureStatsFiguresCta": "Ouvrir les statistiques →",
+    "widgetAbout.cpu": "À quel point le processeur travaille, et si le travail s’accumule derrière.",
+    "widgetGroupSystem": "Comment va cette machine ?",
+    "widgetRefreshSeconds": "Actualiser toutes les (secondes)",
+    "widgetCpuRefreshHint": "Une seconde est la mesure utile la plus rapide : en dessous, le chiffre est du bruit.",
+    "widgetCpuShowLoad": "Afficher la charge moyenne",
+    "widgetCpuShowCores": "Afficher le nombre de cœurs",
+    "widgetSetupTitle": "Comment configurer ceci",
+    "widgetCpuSetupLead": "nextDash tourne dans Docker ? Ajoutez ceci à docker-compose.yml pour que le widget lise la machine plutôt que le conteneur, puis recréez le conteneur.",
+    "widgetCpuSetupTail": "Sur Unraid, ce sont une ligne Path (/proc vers /host/proc, Read Only) et une ligne Variable dans le modèle du conteneur. Lancer le binaire directement ne demande rien. Sans cela, la tuile le dit plutôt que d’afficher des chiffres que vous n’avez pas demandés."
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -11,10 +11,16 @@ services:
       - ./static:/app/static
       - ./locales:/app/locales
       - ./templates:/app/templates
+      # System widgets: the processor tile reads the machine through this
+      # read-only mount. Without it nextDash reads its own container, so the
+      # tile says so rather than reporting the wrong numbers.
+      # - /proc:/host/proc:ro
+      - /proc:/host/proc:ro   
     environment:
       - PORT=8080
       # Live static mounts: re-hash assets on every read so ?v= tokens track edits.
       - NEXTDASH_STATIC_MUTABLE=1
+      - NEXTDASH_HOST_PROC=/host/proc
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.

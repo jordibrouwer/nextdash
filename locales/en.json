@@ -1881,7 +1881,20 @@
     "openBrokenConfirmBtn": "Open links",
     "openBrokenFailed": "Failed to open broken links",
     "openBrokenLinks": "Open broken links",
-    "openBrokenTitle": "Open all broken bookmarks in new tabs"
+    "openBrokenTitle": "Open all broken bookmarks in new tabs",
+    "widgetType.cpu": "Processor",
+    "widgetCpuBusy": "in use",
+    "widgetCpuSampling": "measuring…",
+    "widgetCpuLoad1": "1 min",
+    "widgetCpuLoad5": "5 min",
+    "widgetCpuLoad15": "15 min",
+    "widgetCpuCores": "{n} cores",
+    "widgetCpuCoresLabel": "cores",
+    "widgetSystemNoProc": "Not reading this machine yet — mount /proc and set NEXTDASH_HOST_PROC.",
+    "widgetSystemUnsupported": "This reading is available on Linux hosts.",
+    "widgetSystemNoDocker": "Not connected to Docker — mount the socket and set NEXTDASH_DOCKER_SOCKET.",
+    "widgetSystemNoMounts": "No disks chosen yet — name them in this widget’s settings.",
+    "widgetSystemReadFailed": "This machine answered with something unreadable."
   },
   "health": {
     "reloadPage": "Reload page",
@@ -5574,7 +5587,16 @@
     "overviewNewFeatureStatsFiguresWhat": "Four things were recorded and never shown: how many bookmarks are pinned, when anything was last edited, when a page was last kept as a copy, and how long the longest-standing broken link has been failing. “1 broken” never said whether that was yesterday or March.",
     "overviewNewFeatureStatsFiguresHow": "All four are on the Statistics section now, and a new panel counts what you added per month — saying how many bookmarks carry a date, so anything saved before nextDash recorded one is left out rather than quietly folded in.",
     "overviewNewFeatureStatsFiguresEnable": "Nothing to switch on.",
-    "overviewNewFeatureStatsFiguresCta": "Open statistics →"
+    "overviewNewFeatureStatsFiguresCta": "Open statistics →",
+    "widgetAbout.cpu": "How hard the processor is working, and whether work is queueing up behind it.",
+    "widgetGroupSystem": "How is this machine doing?",
+    "widgetRefreshSeconds": "Refresh every (seconds)",
+    "widgetCpuRefreshHint": "One second is the fastest useful reading: below that the figure is noise.",
+    "widgetCpuShowLoad": "Show load average",
+    "widgetCpuShowCores": "Show core count",
+    "widgetSetupTitle": "Setting this up",
+    "widgetCpuSetupLead": "Running nextDash in Docker? Add these to docker-compose.yml so the widget reads the machine rather than the container, then recreate the container.",
+    "widgetCpuSetupTail": "On Unraid these are one Path row (/proc to /host/proc, Read Only) and one Variable row in the container template. Running the binary directly needs nothing. Without it the tile says so rather than showing figures you did not ask about."
   },
   "colors": {
     "title": "theme customization",

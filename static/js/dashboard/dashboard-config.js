@@ -13416,12 +13416,14 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
+        ['system', ['cpu']],
     ];
 
     widgetTypeGroupLabel(group) {
         const map = {
             links: ['config.widgetGroupLinks', 'Are the links still good?'],
             incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
+            system: ['config.widgetGroupSystem', 'How is this machine doing?'],
             upkeep: ['config.widgetGroupUpkeep', 'What needs tidying?'],
         };
         const [key, fallback] = map[group] || [group, group];
@@ -15320,7 +15322,8 @@ class DashboardConfig {
 
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
-        'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups', 'custom'];
+        'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
+        'cpu', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15337,6 +15340,14 @@ class DashboardConfig {
      * value dropped on save without explanation.
      */
     static WIDGET_SETTINGS = {
+        cpu: [
+            { key: 'refreshSeconds', kind: 'int', min: 1, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
+              hint: ['config.widgetCpuRefreshHint',
+                     'One second is the fastest useful reading: below that the figure is noise.'] },
+            { key: 'showLoad', kind: 'bool', label: ['config.widgetCpuShowLoad', 'Show load average'] },
+            { key: 'showCores', kind: 'bool', label: ['config.widgetCpuShowCores', 'Show core count'] },
+        ],
         health: [
             { key: 'show', kind: 'checkset', label: ['config.widgetShow', 'Figures to show'],
               options: [
@@ -16912,8 +16923,59 @@ class DashboardConfig {
                 ${this.renderWidgetSaveBar(index)}
             </div>`;
         }
-        return `<div class="config-widget-settings-body">${
+        /*
+         * The setup note sits outside the settings grid rather than in it.
+         *
+         * The grid is auto-fit, so its track count is implicit and
+         * `grid-column: 1 / -1` cannot reliably claim the full row -- in Safari
+         * the note landed as one narrow column beside Width and Refresh, with
+         * the lines to copy wrapped down a strip. Above the grid it is simply a
+         * block, and needs nothing from the layout to be readable.
+         */
+        return `${this.renderWidgetSetupNote(widget.type)}<div class="config-widget-settings-body">${
             this.renderWidgetWidth(widget, index)}${rows}${this.renderWidgetSaveBar(index)}</div>`;
+    }
+
+    /*
+     * What this widget needs from the host before it can say anything.
+     *
+     * The system tiles read the machine nextDash runs on, which a container
+     * only reaches through mounts somebody has to add. The tile itself says
+     * when one is missing, but by then the reader is on the dashboard and the
+     * lines to copy are in a manual -- so they belong here, beside the settings,
+     * where somebody deciding to use the widget is already looking.
+     *
+     * Types with nothing to set up render nothing at all.
+     */
+    renderWidgetSetupNote(type) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const notes = {
+            cpu: {
+                lead: ['config.widgetCpuSetupLead',
+                    'Running nextDash in Docker? Add these to docker-compose.yml so the widget '
+                    + 'reads the machine rather than the container, then recreate the container.'],
+                lines: [
+                    'volumes:',
+                    '  - /proc:/host/proc:ro',
+                    'environment:',
+                    '  - NEXTDASH_HOST_PROC=/host/proc',
+                ],
+                tail: ['config.widgetCpuSetupTail',
+                    'On Unraid these are one Path row (/proc to /host/proc, Read Only) and one '
+                    + 'Variable row in the container template. Running the binary directly needs '
+                    + 'nothing. Without it the tile says so rather than showing figures you did '
+                    + 'not ask about.'],
+            },
+        };
+        const note = notes[type];
+        if (!note) return '';
+        return `
+            <details class="config-widget-setup">
+                <summary>${esc(this.t('config.widgetSetupTitle', 'Setting this up'))}</summary>
+                <p class="config-field-hint">${esc(this.t(note.lead[0], note.lead[1]))}</p>
+                <pre class="config-widget-setup-code"><code>${esc(note.lines.join('\n'))}</code></pre>
+                <p class="config-field-hint">${esc(this.t(note.tail[0], note.tail[1]))}</p>
+            </details>`;
     }
 
     /*
@@ -16992,6 +17054,7 @@ class DashboardConfig {
     widgetTypeAbout(type) {
         const key = `config.widgetAbout.${type}`;
         const fallbacks = {
+            cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
