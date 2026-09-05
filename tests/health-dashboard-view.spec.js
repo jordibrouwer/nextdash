@@ -1181,6 +1181,19 @@ test.describe('health view — export, persistence and monitor discoverability',
     });
 
     test('open broken links calls the API and opens returned URLs', async ({ page, context }) => {
+        // The popup really navigates, so the assertion below was reading the
+        // open internet: on a machine with no route to example.com the popup
+        // lands on chrome-error://chromewebdata and this fails as though the
+        // wrong URL had been opened. What the test is about is which URL the
+        // button hands to the browser, not what answers at it.
+        //
+        // On the context rather than the page: a popup is its own page, and a
+        // page-level route does not follow it.
+        await context.route('https://example.com/**', (route) => route.fulfill({
+            status: 200,
+            contentType: 'text/html',
+            body: '<!doctype html><title>stub</title>',
+        }));
         await page.route('**/api/health/open-broken', async (route) => {
             await route.fulfill({
                 status: 200,
