@@ -996,7 +996,7 @@ same list the **Categories** tab arranges.
 | **Trash** | What is waiting there, and when retention removes it |
 | **Backups** | How old the newest automatic backup is, and whether the last run failed |
 
-*How is this machine doing?* (**v1.5.0**)
+*How is this machine doing?* (**v1.4.8**)
 
 | Type | What it shows |
 |---|---|
@@ -1029,7 +1029,7 @@ onto the new widget with its name ready to type. The **Types** tab is the same
 catalogue as reading matter — every kind with what it does, and an *Add* button
 on each — so you can read about one and take it without changing screens.
 
-**Finding one, once you have several** (**v1.5.0**)
+**Finding one, once you have several** (**v1.4.8**)
 
 The tab carries the same toolbar as **Bookmarks**: a search, the page picker, a
 sort, and the one button that adds something. Search matches the title *and* the
@@ -1044,7 +1044,7 @@ without visiting each page in turn. An edit made there is written back to the
 widget's own page. Adding is not offered while showing everything, since it has
 no answer to *where*.
 
-**Working on several at once** (**v1.5.0**)
+**Working on several at once** (**v1.4.8**)
 
 Tick any number of rows and a bar appears above them: **Show**, **Hide**, *Move
 to page…* and **Delete**. A move writes the destination first, so a failure
@@ -1060,7 +1060,7 @@ what it is called, and how wide it is. A tile that leaves rows out says how many
 — *5 of 12* rather than a silent five — because the row count is a choice about
 what you want to see, and what falls outside it has to stay visible.
 
-Since **v1.5.0** the panel carries an **ℹ** beside any setting that needs more
+Since **v1.4.8** the panel carries an **ℹ** beside any setting that needs more
 than a line, and a **↺** that clears every setting back to its default — offered
 only when something is actually off it, and written into the draft so *Save* or
 *Discard* still decides. The title and the *Shown* box are left alone: those are

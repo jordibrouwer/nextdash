@@ -1,0 +1,67 @@
+{
+  "tag": "v1.4.8",
+  "date": "9 September 2026",
+  "releasedAt": "2026-09-09",
+  "modalLead": "Four new widgets report on the machine nextDash runs on: how hard the processor is working, how much memory is really in use, how full each disk is, and how many containers are running. The Widgets tab is rebuilt around them — a search, grouping, and acting on several at once — and the review card can now be put away for a month.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Four widgets that watch the machine.</strong> <strong>Processor</strong> shows how hard the CPU is working and the load average behind it &mdash; either alone answers half the question. <strong>Memory</strong> shows what is really in use, counting the file cache as the spare room it is rather than as memory in use. <strong>Disks</strong> shows free space on the disks you name. <strong>Containers</strong> shows how many run of how many exist, and which have a failing healthcheck."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>They tell you when they cannot see.</strong> These four read the machine rather than your bookmarks, so on Docker they need read-only mounts you opt into. Without one, the tile says so and names the step instead of showing a plausible wrong number. Each widget sets its own refresh interval, and a hidden browser tab asks for nothing at all. Config &rarr; Help and the README carry the setup, including the Unraid template rows."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Widgets tab now works like Bookmarks.</strong> A search across names and types, a page picker and a sort, in the same toolbar you already know. Sorting is <em>Grouped</em> by default, under the same headings the catalogue uses: a page of fourteen is a list to read, four short groups is a thing to scan."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>All pages, in one list.</strong> The page picker gains <em>All pages</em>, which shows every page's widgets at once with a badge saying where each one lives &mdash; a widget on the page you are not looking at is the one you forget you are running."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Move and act on several at once.</strong> Tick any number of widgets and show, hide, move or delete them together. A moved widget keeps its settings and its sign-in."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>&#8634; back to defaults, and &#8505; where a setting needs explaining.</strong> One click clears a widget's settings back to how it arrived &mdash; offered only when something is actually changed, and still yours to Save or Discard. The &#8505; now sits beside any kind of setting, not only numbers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A change that saves without pressing Save now says so.</strong> Renaming a widget and the <em>Shown</em> switch write straight away, while the settings below wait for Save. Two ways of saving in one row, one of them silent, is what made this tab feel like it might not have taken."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>One bad widget no longer empties the page.</strong> A save carrying something the server could not store used to discard every other widget on the page and answer as though it had worked. It now refuses, leaves the page exactly as it was, and says which one it could not store."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Put the review card away for a month.</strong> The &ldquo;10 links to review&rdquo; card had one way out, <em>Not today</em>, which comes back tomorrow. <strong>Remind me in 30 days</strong> puts it away properly and it returns on its own. It touches no bookmark: this is about the invitation, not about what health reports."
+        }
+      ]
+    },
+    {
+      "title": "Corrections",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Escape closes one thing at a time.</strong> Pressing Escape on the inbox's snooze picker used to close the picker and leave the inbox with it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Adding a bookmark works the moment the page does.</strong> The <code>:new</code> form no longer waits on a bundle that may not have arrived yet."
+        }
+      ]
+    }
+  ]
+}

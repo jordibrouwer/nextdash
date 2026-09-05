@@ -2,6 +2,54 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureSystemWidgetsTitle",
+      "titleFallback": "Four widgets that watch the machine",
+      "whatKey": "config.overviewNewFeatureSystemWidgetsWhat",
+      "whatFallback": "A dashboard that knew everything about your links knew nothing about the machine serving them — whether the disk was filling up, whether a container had quietly stopped.",
+      "howKey": "config.overviewNewFeatureSystemWidgetsHow",
+      "howFallback": "Processor, Memory, Disks and Containers report on the host itself. Memory counts the file cache as the spare room it is, so a healthy machine stops looking full. On Docker they need read-only mounts you opt into; without one the tile says so and names the step rather than showing a plausible wrong number.",
+      "enableKey": "config.overviewNewFeatureSystemWidgetsEnable",
+      "enableFallback": "Add them under Widgets. Config → Help and the README carry the mounts, including the Unraid template rows.",
+      "ctaKey": "config.overviewNewFeatureSystemWidgetsCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.8"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWidgetsTabTitle",
+      "titleFallback": "The Widgets tab works like Bookmarks",
+      "whatKey": "config.overviewNewFeatureWidgetsTabWhat",
+      "whatFallback": "A page with a dozen widgets was a single column to scroll, with no way to find one by name and no way to act on more than one at a time.",
+      "howKey": "config.overviewNewFeatureWidgetsTabHow",
+      "howFallback": "The same toolbar you already know: a search across names and types, a page picker and a sort, grouped by default. All pages shows every page's widgets at once, and ticking several lets you show, hide, move or delete them together.",
+      "enableKey": "config.overviewNewFeatureWidgetsTabEnable",
+      "enableFallback": "Nothing to switch on — it is how the tab works now.",
+      "ctaKey": "config.overviewNewFeatureWidgetsTabCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.4.8"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureReviewSnoozeTitle",
+      "titleFallback": "Put the review card away for a month",
+      "whatKey": "config.overviewNewFeatureReviewSnoozeWhat",
+      "whatFallback": "The card offering ten links to review had one way out, Not today, which comes back tomorrow. For someone not doing maintenance this month that is the pattern people learn to ignore.",
+      "howKey": "config.overviewNewFeatureReviewSnoozeHow",
+      "howFallback": "Remind me in 30 days puts it away properly, and it returns on its own. It touches no bookmark: this is about the invitation, not about what health reports.",
+      "enableKey": "config.overviewNewFeatureReviewSnoozeEnable",
+      "enableFallback": "On the card itself, beside Not today.",
+      "ctaKey": "config.overviewNewFeatureReviewSnoozeCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "section": "health"
+      },
+      "since": "v1.4.8"
+    },
+    {
       "titleKey": "config.overviewNewFeatureFinderFallbackTitle",
       "titleFallback": "A search that finds nothing offers your finders",
       "whatKey": "config.overviewNewFeatureFinderFallbackWhat",

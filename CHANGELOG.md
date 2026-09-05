@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.4.8 — 9 September 2026](#v148--9-september-2026)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
@@ -198,7 +198,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.4.8 — 9 September 2026
 
 ### Widgets
 

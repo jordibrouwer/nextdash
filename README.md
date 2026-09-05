@@ -123,7 +123,7 @@ docker compose up -d
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### System widgets — reading the machine (v1.5.0)
+### System widgets — reading the machine (v1.4.8)
 
 The **Processor**, **Memory**, **Disks** and **Containers** widgets report on the
 machine nextDash runs on. They are the only ones that need setting up, because a
@@ -363,7 +363,7 @@ each thing works and why it behaves the way it does.
 - **A bookmarklet, and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet carrying this install's own address; installed as an app, nextDash joins the system share sheet. *[Manual §15](MANUAL.md#15-status-monitoring-and-health), [§19](MANUAL.md#19-mobile-pwa-and-touch)*
 - **Outgoing webhooks** — five events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme, so nothing has to poll nextDash to learn that something changed. *[Manual §21](MANUAL.md#outgoing-webhooks-v140)*
 - **An MCP endpoint** for an AI assistant — four tools, off until you switch it on. *[Manual §21](MANUAL.md#an-mcp-endpoint-for-an-ai-assistant-v140)*
-- **The machine it runs on** — the system widgets read `/proc`, the disks you name, and optionally the Docker socket, all read-only and all off until you mount them. Nothing leaves the machine. *[Quick Start](#system-widgets--reading-the-machine-v150), [Manual](MANUAL.md#system-widgets-what-they-need)*
+- **The machine it runs on** — the system widgets read `/proc`, the disks you name, and optionally the Docker socket, all read-only and all off until you mount them. Nothing leaves the machine. *[Quick Start](#system-widgets--reading-the-machine-v148), [Manual](MANUAL.md#system-widgets-what-they-need)*
 
 ---
 
