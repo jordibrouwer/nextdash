@@ -1180,20 +1180,24 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(fields.nullish).toBe('""');
     });
 
-    test('open broken links calls the API and opens returned URLs', async ({ page, context }) => {
-        // The popup really navigates, so the assertion below was reading the
-        // open internet: on a machine with no route to example.com the popup
-        // lands on chrome-error://chromewebdata and this fails as though the
-        // wrong URL had been opened. What the test is about is which URL the
-        // button hands to the browser, not what answers at it.
+    test('open broken links calls the API and opens returned URLs', async ({ page }) => {
+        // Nothing is opened. example.com is a placeholder standing in for a
+        // broken bookmark, not somewhere to go, and this test is about which
+        // URL the button hands to the browser -- so window.open is recorded
+        // instead of followed. It used to open a real popup, which quietly made
+        // the test need the open internet: on a machine with no route to
+        // example.com the popup landed on chrome-error://chromewebdata and this
+        // read as though the wrong URL had been opened.
         //
-        // On the context rather than the page: a popup is its own page, and a
-        // page-level route does not follow it.
-        await context.route('https://example.com/**', (route) => route.fulfill({
-            status: 200,
-            contentType: 'text/html',
-            body: '<!doctype html><title>stub</title>',
-        }));
+        // Safe to replace: the caller passes _blank and noopener and ignores
+        // what comes back, so there is no popup-blocked path to imitate.
+        await page.addInitScript(() => {
+            window.__openedUrls = [];
+            window.open = (url) => {
+                window.__openedUrls.push(String(url));
+                return null;
+            };
+        });
         await page.route('**/api/health/open-broken', async (route) => {
             await route.fulfill({
                 status: 200,
@@ -1207,13 +1211,11 @@ test.describe('health view — export, persistence and monitor discoverability',
             });
         });
         await openHealthView(page);
-        const popupPromise = context.waitForEvent('page');
         await openHealthToolbarMenu(page);
         await page.locator('.health-view-open-broken-btn').click();
         await page.locator('#app-modal.show').getByRole('button', { name: /Open links/i }).click();
-        const popup = await popupPromise;
-        expect(popup.url()).toBe('https://example.com/broken');
-        await popup.close();
+        await expect.poll(() => page.evaluate(() => window.__openedUrls || []), { timeout: 10_000 })
+            .toEqual(['https://example.com/broken']);
     });
 
     test('merge duplicate group calls the merge API', async ({ page }) => {
