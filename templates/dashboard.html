@@ -426,6 +426,9 @@
     <script src="{{asset "js/shared/shortcut-keys.js"}}" defer></script>
     <script src="{{asset "js/shortcut-format.js"}}" defer></script>
     <script src="{{asset "js/app-notification.js"}}" defer></script>
+    <!-- Who owns Escape. Loaded before anything that can be layered over a
+         view, since those register with it as they come up. -->
+    <script src="{{asset "js/shared/escape-owner.js"}}" defer></script>
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->
     <script src="{{asset "js/shared/config-help-tips.js"}}" defer></script>
     <script src="{{asset "js/shared/config-setting-promo.js"}}" defer></script>
