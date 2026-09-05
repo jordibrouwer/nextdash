@@ -93,7 +93,7 @@ const (
 	 */
 	// WidgetTypeCPU reports the processor: a percentage and the load average
 	// in one tile, because either alone answers half the question.
-	WidgetTypeCPU WidgetType = "cpu"
+	WidgetTypeCPU    WidgetType = "cpu"
 	WidgetTypeCustom WidgetType = "custom"
 )
 
