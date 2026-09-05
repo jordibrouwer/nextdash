@@ -93,7 +93,10 @@ const (
 	 */
 	// WidgetTypeCPU reports the processor: a percentage and the load average
 	// in one tile, because either alone answers half the question.
-	WidgetTypeCPU    WidgetType = "cpu"
+	WidgetTypeCPU WidgetType = "cpu"
+	// WidgetTypeDisks reports free space per configured mount -- the array and
+	// the cache on Unraid, a volume on a NAS.
+	WidgetTypeDisks  WidgetType = "disks"
 	WidgetTypeCustom WidgetType = "custom"
 )
 
@@ -115,10 +118,16 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeDuplicates: {},
 	WidgetTypeBackups:    {},
 	WidgetTypeCPU:        {},
+	WidgetTypeDisks:      {},
 	WidgetTypeCustom:     {},
 }
 
 var errUnknownWidgetType = errors.New("unknown widget type")
+
+// errTooManyWidgets is a refusal rather than a truncation: a caller that sent
+// more than a page holds should be told, not quietly handed back the first
+// twenty-four.
+var errTooManyWidgets = errors.New("too many widgets for one page")
 
 /*
 Widget is one block.
@@ -272,6 +281,49 @@ or newer version should still open, minus the block that cannot be drawn. The
 cap is applied on the way out for the same reason -- a file that somehow holds
 more is read as its first twenty-four rather than refused entirely.
 */
+/*
+normalizeWidgetsForSave is the same cleaning, for a write rather than a read.
+
+The difference is what happens to a widget it cannot make sense of. Reading
+drops it, which is right: a file from another version should still open, minus
+the block nothing draws. Writing refuses, because dropping there is silent data
+loss -- one unknown type in a request had every other widget on the page
+discarded and answered 200, which is how a dashboard loses fourteen tiles to a
+single bad entry.
+
+Over the cap is refused for the same reason: truncating to twenty-four and
+answering 200 tells the caller nothing about the six that went missing.
+*/
+func normalizeWidgetsForSave(widgets []Widget) ([]Widget, error) {
+	if len(widgets) == 0 {
+		return nil, nil
+	}
+	if len(widgets) > widgetMaxPerPage {
+		return nil, fmt.Errorf("%w: a page holds at most %d, got %d",
+			errTooManyWidgets, widgetMaxPerPage, len(widgets))
+	}
+
+	out := make([]Widget, 0, len(widgets))
+	seen := make(map[string]struct{}, len(widgets))
+	for _, widget := range widgets {
+		normalized, err := normalizeWidget(widget)
+		if err != nil {
+			return nil, fmt.Errorf("widget %q: %w", widget.Type, err)
+		}
+		// A duplicate id is the client sending the same block twice; keeping
+		// the first is not a loss, since the second is the same block.
+		if _, dup := seen[normalized.ID]; dup {
+			continue
+		}
+		seen[normalized.ID] = struct{}{}
+		out = append(out, normalized)
+	}
+	if len(out) == 0 {
+		return nil, nil
+	}
+	return out, nil
+}
+
 func normalizeWidgets(widgets []Widget) []Widget {
 	if len(widgets) == 0 {
 		return nil
@@ -335,7 +387,11 @@ func (fs *FileStore) SavePageBlocks(pageID int, widgets []Widget, order []string
 		return err
 	}
 
-	page.Widgets = normalizeWidgets(widgets)
+	saved, err := normalizeWidgetsForSave(widgets)
+	if err != nil {
+		return err
+	}
+	page.Widgets = saved
 	// Resolved rather than stored as given, so a caller cannot write an order
 	// naming blocks that do not exist -- or leave one out and make it vanish.
 	page.BlockOrder = resolveBlockOrder(order, page.Categories, page.Widgets)

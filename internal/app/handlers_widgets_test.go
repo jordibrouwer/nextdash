@@ -97,11 +97,23 @@ func TestSaveBlocksCanClearTheWidgets(t *testing.T) {
 }
 
 // A type nothing renders is dropped rather than stored as an invisible block.
+/*
+An unknown type is refused outright.
+
+This asserted a 200 with an empty list -- the name said "refuses" while the
+behaviour was "accepts and silently discards", which is exactly the gap that
+let one bad entry empty a page.
+*/
 func TestSaveBlocksRefusesAnUnknownType(t *testing.T) {
 	h := newTestHandlers(t)
-	saved := callBlocks(t, h, http.MethodPut, `{"widgets":[{"type":"telepathy"}]}`)
-	if len(saved.Widgets) != 0 {
-		t.Errorf("stored %+v", saved.Widgets)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/pages/1/blocks",
+		strings.NewReader(`{"widgets":[{"type":"telepathy"}]}`))
+	rec := httptest.NewRecorder()
+	blocksRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
 
@@ -144,5 +156,64 @@ func TestGetBlocksAnswersEmptyRatherThanNull(t *testing.T) {
 	blocksRouter(h).ServeHTTP(rec, req)
 	if !strings.Contains(rec.Body.String(), `"widgets":[]`) {
 		t.Errorf("body = %s", rec.Body.String())
+	}
+}
+
+/*
+One bad widget does not empty the page.
+
+The save path shared its normaliser with the read path, which drops whatever it
+cannot draw so that a file from another version still opens. On a write that
+meant a request carrying one unknown type had every other widget discarded and
+was answered 200 -- a dashboard losing fourteen tiles to a single bad entry,
+with nothing in the response to say so.
+*/
+func TestSaveBlocksRefusesAnUnknownTypeAndKeepsThePage(t *testing.T) {
+	h := newTestHandlers(t)
+	saved := callBlocks(t, h, http.MethodPut,
+		`{"widgets":[{"type":"health","title":"Status"},{"type":"uptime"}]}`)
+	if len(saved.Widgets) != 2 {
+		t.Fatalf("setup stored %d widgets, want 2", len(saved.Widgets))
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/api/pages/1/blocks",
+		strings.NewReader(`{"widgets":[{"type":"health"},{"type":"telepathy"}]}`))
+	rec := httptest.NewRecorder()
+	blocksRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 -- a type the server cannot store is the caller's mistake",
+			rec.Code)
+	}
+	// And it says which one, rather than "Failed to save data", which would
+	// send somebody looking at the disk.
+	if !strings.Contains(rec.Body.String(), "telepathy") {
+		t.Errorf("body %q does not name the offending type", rec.Body.String())
+	}
+
+	// The page is untouched: refused, never partly applied.
+	after := callBlocks(t, h, http.MethodGet, "")
+	if len(after.Widgets) != 2 {
+		t.Fatalf("page now holds %d widgets, want the 2 it had before the refused save",
+			len(after.Widgets))
+	}
+}
+
+// Too many is refused rather than truncated, for the same reason.
+func TestSaveBlocksRefusesMoreThanThePageHolds(t *testing.T) {
+	h := newTestHandlers(t)
+
+	widgets := make([]string, widgetMaxPerPage+1)
+	for i := range widgets {
+		widgets[i] = `{"type":"health"}`
+	}
+	body := `{"widgets":[` + strings.Join(widgets, ",") + `]}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/pages/1/blocks", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+	blocksRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 rather than a silent truncation", rec.Code)
 	}
 }
