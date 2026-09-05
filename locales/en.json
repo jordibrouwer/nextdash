@@ -1452,6 +1452,7 @@
     "healthReviewNoticeBody": "Two minutes, one at a time: re-check it, open it, or let it go.",
     "healthReviewNoticeStart": "Start",
     "healthReviewNoticeLater": "Not today",
+    "healthReviewNoticeRemindLater": "Remind me in 30 days",
     "healthReviewNoticeDismiss": "Not today",
     "healthReviewPartBroken": "{count} broken",
     "healthReviewPartContent": "{count} changed",

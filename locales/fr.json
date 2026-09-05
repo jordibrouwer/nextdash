@@ -1452,6 +1452,7 @@
     "healthReviewNoticeBody": "Deux minutes, un par un : revérifier, ouvrir ou laisser partir.",
     "healthReviewNoticeStart": "Commencer",
     "healthReviewNoticeLater": "Pas aujourd'hui",
+    "healthReviewNoticeRemindLater": "Me le rappeler dans 30 jours",
     "healthReviewNoticeDismiss": "Pas aujourd'hui",
     "healthReviewPartBroken": "{count} cassés",
     "healthReviewPartContent": "{count} modifiés",

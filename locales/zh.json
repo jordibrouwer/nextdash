@@ -1452,6 +1452,7 @@
     "healthReviewNoticeBody": "两分钟，一次一个：重新检查、打开，或者放手。",
     "healthReviewNoticeStart": "开始",
     "healthReviewNoticeLater": "今天不了",
+    "healthReviewNoticeRemindLater": "30 天后提醒我",
     "healthReviewNoticeDismiss": "今天不了",
     "healthReviewPartBroken": "{count} 个失效",
     "healthReviewPartContent": "{count} 个有变动",

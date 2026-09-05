@@ -22,6 +22,11 @@
     // asking about them teaches people to dismiss the card.
     const MIN_TO_OFFER = 5;
     const DONE_KEY = 'nextdashHealthReviewDoneOn';
+    // Deliberately a separate key from DONE_KEY rather than a far-future value
+    // in it: isDoneToday() is exported and read at the end of a focus session,
+    // where it has to keep meaning exactly "done for today".
+    const SNOOZE_KEY = 'nextdashHealthReviewSnoozeUntil';
+    const SNOOZE_DAYS = 30;
     const SHOW_DELAY_MS = 9000;
 
     function dash() {
@@ -63,6 +68,33 @@
     function markDoneToday() {
         try {
             global.localStorage?.setItem(DONE_KEY, todayKey());
+        } catch {
+            /* nothing to fall back to, and nothing worth breaking over */
+        }
+    }
+
+    /**
+     * A month of quiet, for someone who is not going to do this now.
+     *
+     * "Not today" expires overnight, which is right for a postponement and
+     * wrong for a decision. Nothing here touches a bookmark: this is only about
+     * whether the corner asks. Muting what a bookmark *reports* is the health
+     * view's own per-flag ignore, which is a different thing entirely.
+     */
+    function isSnoozed() {
+        try {
+            const until = Number(global.localStorage?.getItem(SNOOZE_KEY));
+            return Number.isFinite(until) && until > Date.now();
+        } catch {
+            // Same reasoning as isDoneToday: asking again is the smaller failure.
+            return false;
+        }
+    }
+
+    function remindInThirtyDays() {
+        try {
+            const until = Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000;
+            global.localStorage?.setItem(SNOOZE_KEY, String(until));
         } catch {
             /* nothing to fall back to, and nothing worth breaking over */
         }
@@ -146,6 +178,7 @@
         dismissName: 'later',
         canShow: async () => {
             if (isDoneToday()) return false;
+            if (isSnoozed()) return false;
             if (dash()?.health?.isEnabled?.() === false) return false;
             const counts = await reviewCounts();
             if (!counts || counts.total < MIN_TO_OFFER) return false;
@@ -170,6 +203,13 @@
                 label: () => t('dashboard.healthReviewNoticeLater', 'Not today'),
                 onClick: (handle) => { markDoneToday(); handle.close(); },
             },
+            // Not "Ignore": in this app that word means a bookmark's health
+            // condition stops being reported. This only postpones the offer.
+            {
+                name: 'remind',
+                label: () => t('dashboard.healthReviewNoticeRemindLater', 'Remind me in 30 days'),
+                onClick: (handle) => { remindInThirtyDays(); handle.close(); },
+            },
         ],
     });
 
@@ -187,6 +227,8 @@
         describeCounts,
         isDoneToday,
         markDoneToday,
+        isSnoozed,
+        remindInThirtyDays,
         render: card.render,
         shouldShow: card.shouldShow,
     };

@@ -1452,6 +1452,7 @@
     "healthReviewNoticeBody": "Zwei Minuten, einer nach dem anderen: neu prüfen, öffnen oder loslassen.",
     "healthReviewNoticeStart": "Loslegen",
     "healthReviewNoticeLater": "Heute nicht",
+    "healthReviewNoticeRemindLater": "In 30 Tagen erinnern",
     "healthReviewNoticeDismiss": "Heute nicht",
     "healthReviewPartBroken": "{count} defekt",
     "healthReviewPartContent": "{count} verändert",

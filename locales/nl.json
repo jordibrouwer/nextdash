@@ -1452,6 +1452,7 @@
     "healthReviewNoticeBody": "Twee minuten, één voor één: opnieuw controleren, openen of loslaten.",
     "healthReviewNoticeStart": "Beginnen",
     "healthReviewNoticeLater": "Niet vandaag",
+    "healthReviewNoticeRemindLater": "Herinner me over 30 dagen",
     "healthReviewNoticeDismiss": "Niet vandaag",
     "healthReviewPartBroken": "{count} kapot",
     "healthReviewPartContent": "{count} veranderd",

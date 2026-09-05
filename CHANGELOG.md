@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
@@ -194,6 +195,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+### Health
+
+- **new — the review offer can be put away for a month.** The "10 links to review" card had one way out, "Not today", which expires overnight — right for a postponement, wrong for someone who is not doing maintenance this month. **Remind me in 30 days** stamps `nextdashHealthReviewSnoozeUntil` and the card stays away until it passes, then returns on its own. Deliberately not called *ignore*: the health view's per-row **Ignore "Broken"** mutes what a bookmark reports, server-side, while this touches no bookmark at all and only decides whether the corner asks.
 
 ---
 
