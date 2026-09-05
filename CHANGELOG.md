@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
 - [v1.4.5.3 — 2 September 2026](#v1453--2-september-2026)
@@ -196,6 +197,14 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.4.7.1 — 5 September 2026
+
+### Search
+
+- **fix — `/` works when the overlay says to press it.** The hint "Press / to search names" is only ever shown with *Switch Search Mode* off, and the `/` handler returned early in exactly that state — so the key the overlay named was dropped, and nothing switched. It also prefixes the query rather than appending: `_hasModeSwitchPrefix` reads the first character and the hint's own Enter action builds `/${query}`, so a trailing slash would have landed in the box and still switched nothing.
+
+---
+
 ## v1.4.7 — 3 September 2026
 
 ### Search
@@ -203,7 +212,6 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — a no-match search offers your finders.** A plain search that matches nothing now lists your most-used finders under the "no matches" line, carrying the query already typed. Clickable, and reachable with the arrow keys like any other row. The block was already built and wired for both; it was missing the one check that asks whether the reader wants finders in search at all, so it appeared even with the setting off.
 - **new — `includeFindersInSearch` defaults on.** New installs start with it on, and existing ones are moved once through `IncludeFindersInSearchMigrated`. The config default marker in `dashboard-config.js` moved with it, so "reset to default" agrees.
 - **new — Brave Search ships as a finder.** `https://search.brave.com/search?q=%s&source=nextdash` on `b`, seeded for new installs beside DuckDuckGo and added to existing ones once via `BraveFinderSeededMigrated`. Matched on the `search.brave.com` host rather than the whole URL, so a reader who added Brave themselves keeps their own name, shortcut and parameters; the marker means deleting the seeded one keeps it deleted.
-- **fix — `/` works when the overlay says to press it.** The hint "Press / to search names" is only ever shown with *Switch Search Mode* off, and the `/` handler returned early in exactly that state — so the key the overlay named was dropped, and nothing switched. It also prefixes the query rather than appending: `_hasModeSwitchPrefix` reads the first character and the hint's own Enter action builds `/${query}`, so a trailing slash would have landed in the box and still switched nothing.
 - **fix — a space directly after `?` no longer breaks finder mode.** `addToQuery()` appends the key before asking whether space should complete a shortcut, and a bare `?` trims to `""`, which no finder is keyed on — so the check fell through and left `"? "`. Everything typed after landed past that space and was searched as literal text against finder names.
 
 ### Themes

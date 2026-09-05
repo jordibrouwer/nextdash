@@ -3547,7 +3547,7 @@
     "helpFindersTitle": "查找器",
     "helpStartTitle": "入门",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "<p>这是 1.4.7 版，主题是搜索一无所获时会发生什么。你的 <strong>finders</strong> 现在就列在“无匹配结果”这一行下方，并带上你已经输入的词——点击其中一个，或用方向键下移后按 Enter。<strong>Brave Search</strong> 随 nextDash 提供，快捷键为 <strong>?B</strong>；如果你此前已自行添加过 Brave，你的那一条会原样保留。<strong>Shift+A</strong> 会在你当前所看的界面之上打开主题浏览器，无需先进入配置。</p> <p><strong>统计</strong> 呈现了四项安装一直知晓却从未显示的信息：有多少书签被固定、最后一次编辑发生在何时、页面最后一次被保存副本是何时，以及存在时间最长的失效链接已经多久没有响应。新增的面板按月统计你添加了什么。此外还有一长串修正——Alt+↑ 与 Alt+↓ 又能移动书签了，切换页面更快且保留其小组件，将链接标记为未读不会被撤销，方向键在“集合”标签页中也能正常使用。</p>",
+    "helpVersionBody": "<p>这是 1.4.7.1 版，主题是搜索一无所获时会发生什么。你的 <strong>finders</strong> 现在就列在“无匹配结果”这一行下方，并带上你已经输入的词——点击其中一个，或用方向键下移后按 Enter。<strong>Brave Search</strong> 随 nextDash 提供，快捷键为 <strong>?B</strong>；如果你此前已自行添加过 Brave，你的那一条会原样保留。<strong>Shift+A</strong> 会在你当前所看的界面之上打开主题浏览器，无需先进入配置。</p> <p><strong>统计</strong> 呈现了四项安装一直知晓却从未显示的信息：有多少书签被固定、最后一次编辑发生在何时、页面最后一次被保存副本是何时，以及存在时间最长的失效链接已经多久没有响应。新增的面板按月统计你添加了什么。此外还有一长串修正——Alt+↑ 与 Alt+↓ 又能移动书签了，切换页面更快且保留其小组件，将链接标记为未读不会被撤销，方向键在“集合”标签页中也能正常使用。</p> <p><strong>1.4.7.1</strong> 修正了一处：当搜索找不到快捷键、却知道有同名书签时，它会提示改为按名称搜索——现在按下该键真的有效了。</p>",
     "helpVersionWhatsNew": "看看有什么新东西",
     "helpConfigTitle": "在配置里找路",
     "showTagCollections": "智能：标签合集（每个标签一个）",
