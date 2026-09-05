@@ -1894,7 +1894,18 @@
     "widgetSystemUnsupported": "This reading is available on Linux hosts.",
     "widgetSystemNoDocker": "Not connected to Docker — mount the socket and set NEXTDASH_DOCKER_SOCKET.",
     "widgetSystemNoMounts": "No disks chosen yet — name them in this widget’s settings.",
-    "widgetSystemReadFailed": "This machine answered with something unreadable."
+    "widgetSystemReadFailed": "This machine answered with something unreadable.",
+    "widgetType.disks": "Disks",
+    "widgetDisksHeadline": "free of {total}",
+    "widgetDisksFree": "{free} free of {total}",
+    "widgetDisksFreeLabel": "free",
+    "widgetDisksUsedLabel": "used",
+    "widgetDisksTotalLabel": "total",
+    "widgetDisksFullLabel": "full",
+    "widgetDisksInodes": "files",
+    "widgetDisksUnreadable": "unreadable",
+    "widgetDisksRefused": "not allowed",
+    "widgetDisksSomeUnreadable": "{n} could not be read"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -5596,7 +5607,20 @@
     "widgetCpuShowCores": "Show core count",
     "widgetSetupTitle": "Setting this up",
     "widgetCpuSetupLead": "Running nextDash in Docker? Add these to docker-compose.yml so the widget reads the machine rather than the container, then recreate the container.",
-    "widgetCpuSetupTail": "On Unraid these are one Path row (/proc to /host/proc, Read Only) and one Variable row in the container template. Running the binary directly needs nothing. Without it the tile says so rather than showing figures you did not ask about."
+    "widgetCpuSetupTail": "On Unraid these are one Path row (/proc to /host/proc, Read Only) and one Variable row in the container template. Running the binary directly needs nothing. Without it the tile says so rather than showing figures you did not ask about.",
+    "widgetAbout.disks": "How full each disk is, and how much room is actually left on it.",
+    "widgetDisksRefreshHint": "Free space moves slowly, and reading a sleeping disk can stall.",
+    "widgetDisksMounts": "Disks to show",
+    "widgetDisksMountsHint": "Paths as this machine knows them — on Unraid /mnt/user and /mnt/cache, on a NAS /volume1.",
+    "widgetDisksLabels": "Names for them",
+    "widgetDisksLabelsHint": "Written as path=name, so /mnt/user=Files. Without one a disk shows its path.",
+    "widgetDisksMeter": "Show a bar per disk",
+    "widgetDisksInodesToggle": "Show how full the file table is",
+    "widgetDisksSetupLead": "Running nextDash in Docker? A container can only measure what is mounted into it, so add the disks you want to watch and point NEXTDASH_HOST_ROOT at them, then recreate the container.",
+    "widgetDisksSetupTail": "Then name the disks above as this machine knows them — /mnt/user, /mnt/cache — not as the container sees them. On Unraid that is one Path row (/mnt to /host/root/mnt, Read Only) and one Variable row in the container template; mount / to /host/root instead to reach disks outside the array. Running the binary directly needs nothing.",
+    "widgetDisksFound": "On this machine:",
+    "widgetDisksChipFree": "free",
+    "widgetDisksNoneFound": "No disks found to offer — type a path, or check the mount above."
   },
   "colors": {
     "title": "theme customization",

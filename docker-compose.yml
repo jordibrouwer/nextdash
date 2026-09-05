@@ -15,12 +15,18 @@ services:
       # read-only mount. Without it nextDash reads its own container, so the
       # tile says so rather than reporting the wrong numbers.
       # - /proc:/host/proc:ro
+      # The disks widget measures what is mounted into the container, so mount
+      # the disks you want to watch *under* NEXTDASH_HOST_ROOT, keeping their
+      # own names: /mnt stays /mnt below the prefix. On Unraid that covers the
+      # array and cache; mount / to /host/root to reach disks outside it.
+      # - /mnt:/host/root/mnt:ro,rslave
       - /proc:/host/proc:ro   
     environment:
       - PORT=8080
       # Live static mounts: re-hash assets on every read so ?v= tokens track edits.
       - NEXTDASH_STATIC_MUTABLE=1
       - NEXTDASH_HOST_PROC=/host/proc
+      # - NEXTDASH_HOST_ROOT=/host/root
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.

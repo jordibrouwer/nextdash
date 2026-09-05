@@ -1894,7 +1894,18 @@
     "widgetSystemUnsupported": "Cette mesure est disponible sur les hôtes Linux.",
     "widgetSystemNoDocker": "Pas de connexion à Docker — montez le socket et définissez NEXTDASH_DOCKER_SOCKET.",
     "widgetSystemNoMounts": "Aucun disque choisi — nommez-les dans les réglages de ce widget.",
-    "widgetSystemReadFailed": "Cette machine a répondu quelque chose d’illisible."
+    "widgetSystemReadFailed": "Cette machine a répondu quelque chose d’illisible.",
+    "widgetType.disks": "Disques",
+    "widgetDisksHeadline": "libres sur {total}",
+    "widgetDisksFree": "{free} libres sur {total}",
+    "widgetDisksFreeLabel": "libre",
+    "widgetDisksUsedLabel": "utilisé",
+    "widgetDisksTotalLabel": "total",
+    "widgetDisksFullLabel": "plein",
+    "widgetDisksInodes": "fichiers",
+    "widgetDisksUnreadable": "illisible",
+    "widgetDisksRefused": "non autorisé",
+    "widgetDisksSomeUnreadable": "{n} illisible(s)"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -5596,7 +5607,20 @@
     "widgetCpuShowCores": "Afficher le nombre de cœurs",
     "widgetSetupTitle": "Comment configurer ceci",
     "widgetCpuSetupLead": "nextDash tourne dans Docker ? Ajoutez ceci à docker-compose.yml pour que le widget lise la machine plutôt que le conteneur, puis recréez le conteneur.",
-    "widgetCpuSetupTail": "Sur Unraid, ce sont une ligne Path (/proc vers /host/proc, Read Only) et une ligne Variable dans le modèle du conteneur. Lancer le binaire directement ne demande rien. Sans cela, la tuile le dit plutôt que d’afficher des chiffres que vous n’avez pas demandés."
+    "widgetCpuSetupTail": "Sur Unraid, ce sont une ligne Path (/proc vers /host/proc, Read Only) et une ligne Variable dans le modèle du conteneur. Lancer le binaire directement ne demande rien. Sans cela, la tuile le dit plutôt que d’afficher des chiffres que vous n’avez pas demandés.",
+    "widgetAbout.disks": "À quel point chaque disque est plein, et l’espace qu’il reste vraiment.",
+    "widgetDisksRefreshHint": "L’espace libre bouge lentement, et lire un disque en veille peut bloquer.",
+    "widgetDisksMounts": "Disques à afficher",
+    "widgetDisksMountsHint": "Chemins tels que cette machine les connaît — sur Unraid /mnt/user et /mnt/cache, sur un NAS /volume1.",
+    "widgetDisksLabels": "Leurs noms",
+    "widgetDisksLabelsHint": "Écrit chemin=nom, donc /mnt/user=Fichiers. Sans nom, un disque affiche son chemin.",
+    "widgetDisksMeter": "Afficher une barre par disque",
+    "widgetDisksInodesToggle": "Afficher le remplissage de la table de fichiers",
+    "widgetDisksSetupLead": "nextDash tourne dans Docker ? Un conteneur ne mesure que ce qui y est monté : ajoutez les disques à surveiller, pointez NEXTDASH_HOST_ROOT dessus, puis recréez le conteneur.",
+    "widgetDisksSetupTail": "Nommez ensuite les disques ci-dessus tels que cette machine les connaît — /mnt/user, /mnt/cache — et non tels que le conteneur les voit. Sur Unraid, c’est une ligne Path (/mnt vers /host/root/mnt, Read Only) et une ligne Variable dans le modèle du conteneur ; montez / vers /host/root pour atteindre des disques hors du tableau. Lancer le binaire directement ne demande rien.",
+    "widgetDisksFound": "Sur cette machine :",
+    "widgetDisksChipFree": "libre",
+    "widgetDisksNoneFound": "Aucun disque à proposer — saisissez un chemin, ou vérifiez le montage ci-dessus."
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -52,6 +52,7 @@
 
         const query = new URLSearchParams({ want });
         if (params?.mounts?.length) query.set('mounts', params.mounts.join(','));
+        if (params?.labels) query.set('labels', params.labels);
         try {
             const res = await fetch(`/api/system/metrics?${query.toString()}`);
             if (!res.ok) return null;

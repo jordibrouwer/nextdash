@@ -1894,7 +1894,18 @@
     "widgetSystemUnsupported": "Dieser Wert ist auf Linux-Hosts verfügbar.",
     "widgetSystemNoDocker": "Keine Verbindung zu Docker — Socket einbinden und NEXTDASH_DOCKER_SOCKET setzen.",
     "widgetSystemNoMounts": "Noch keine Laufwerke gewählt — in den Einstellungen dieses Widgets benennen.",
-    "widgetSystemReadFailed": "Dieser Rechner antwortete unlesbar."
+    "widgetSystemReadFailed": "Dieser Rechner antwortete unlesbar.",
+    "widgetType.disks": "Laufwerke",
+    "widgetDisksHeadline": "frei von {total}",
+    "widgetDisksFree": "{free} frei von {total}",
+    "widgetDisksFreeLabel": "frei",
+    "widgetDisksUsedLabel": "belegt",
+    "widgetDisksTotalLabel": "gesamt",
+    "widgetDisksFullLabel": "voll",
+    "widgetDisksInodes": "Dateien",
+    "widgetDisksUnreadable": "nicht lesbar",
+    "widgetDisksRefused": "nicht erlaubt",
+    "widgetDisksSomeUnreadable": "{n} nicht lesbar"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -5596,7 +5607,20 @@
     "widgetCpuShowCores": "Kernanzahl zeigen",
     "widgetSetupTitle": "So richten Sie das ein",
     "widgetCpuSetupLead": "Läuft nextDash in Docker? Fügen Sie dies in docker-compose.yml ein, damit das Widget den Rechner statt des Containers liest, und erstellen Sie den Container neu.",
-    "widgetCpuSetupTail": "Auf Unraid sind das eine Path-Zeile (/proc nach /host/proc, Read Only) und eine Variable-Zeile in der Container-Vorlage. Wer die Binärdatei direkt ausführt, braucht nichts. Ohne dies sagt die Kachel das, statt Zahlen zu zeigen, nach denen niemand gefragt hat."
+    "widgetCpuSetupTail": "Auf Unraid sind das eine Path-Zeile (/proc nach /host/proc, Read Only) und eine Variable-Zeile in der Container-Vorlage. Wer die Binärdatei direkt ausführt, braucht nichts. Ohne dies sagt die Kachel das, statt Zahlen zu zeigen, nach denen niemand gefragt hat.",
+    "widgetAbout.disks": "Wie voll jedes Laufwerk ist und wie viel Platz wirklich bleibt.",
+    "widgetDisksRefreshHint": "Freier Platz ändert sich langsam, und ein schlafendes Laufwerk kann hängen.",
+    "widgetDisksMounts": "Anzuzeigende Laufwerke",
+    "widgetDisksMountsHint": "Pfade, wie dieser Rechner sie kennt — auf Unraid /mnt/user und /mnt/cache, auf einem NAS /volume1.",
+    "widgetDisksLabels": "Namen dafür",
+    "widgetDisksLabelsHint": "Als Pfad=Name geschrieben, also /mnt/user=Dateien. Ohne Namen zeigt ein Laufwerk seinen Pfad.",
+    "widgetDisksMeter": "Balken je Laufwerk zeigen",
+    "widgetDisksInodesToggle": "Zeigen, wie voll die Dateitabelle ist",
+    "widgetDisksSetupLead": "Läuft nextDash in Docker? Ein Container kann nur messen, was in ihn eingebunden ist. Binden Sie die gewünschten Laufwerke ein, zeigen Sie mit NEXTDASH_HOST_ROOT darauf und erstellen Sie den Container neu.",
+    "widgetDisksSetupTail": "Benennen Sie die Laufwerke oben so, wie dieser Rechner sie kennt — /mnt/user, /mnt/cache — nicht wie der Container sie sieht. Auf Unraid sind das eine Path-Zeile (/mnt nach /host/root/mnt, Read Only) und eine Variable-Zeile in der Container-Vorlage; binden Sie / nach /host/root ein, um Laufwerke außerhalb des Arrays zu erreichen. Wer die Binärdatei direkt ausführt, braucht nichts.",
+    "widgetDisksFound": "Auf diesem Rechner:",
+    "widgetDisksChipFree": "frei",
+    "widgetDisksNoneFound": "Keine Laufwerke gefunden — geben Sie einen Pfad ein oder prüfen Sie die Einbindung oben."
   },
   "colors": {
     "title": "themenanpassung",

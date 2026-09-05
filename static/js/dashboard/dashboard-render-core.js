@@ -19,6 +19,7 @@ class DashboardRenderCore {
     static POLLED_WIDGET_TYPES = {
         custom: { configKey: 'ttl', floor: 30, fallback: 300 },
         cpu: { configKey: 'refreshSeconds', floor: 1, fallback: 5 },
+        disks: { configKey: 'refreshSeconds', floor: 5, fallback: 60 },
     };
 
     constructor(dashboard) {

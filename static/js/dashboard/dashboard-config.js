@@ -13416,7 +13416,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu']],
+        ['system', ['cpu', 'disks']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -15323,7 +15323,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'custom'];
+        'cpu', 'disks', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15340,6 +15340,22 @@ class DashboardConfig {
      * value dropped on save without explanation.
      */
     static WIDGET_SETTINGS = {
+        disks: [
+            { key: 'refreshSeconds', kind: 'int', min: 5, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
+              hint: ['config.widgetDisksRefreshHint',
+                     'Free space moves slowly, and reading a sleeping disk can stall.'] },
+            { key: 'mounts', kind: 'tags', suggest: 'mounts',
+              label: ['config.widgetDisksMounts', 'Disks to show'],
+              hint: ['config.widgetDisksMountsHint',
+                     'Paths as this machine knows them — on Unraid /mnt/user and /mnt/cache, on a NAS /volume1.'] },
+            { key: 'labels', kind: 'tags',
+              label: ['config.widgetDisksLabels', 'Names for them'],
+              hint: ['config.widgetDisksLabelsHint',
+                     'Written as path=name, so /mnt/user=Files. Without one a disk shows its path.'] },
+            { key: 'showMeter', kind: 'bool', label: ['config.widgetDisksMeter', 'Show a bar per disk'] },
+            { key: 'showInodes', kind: 'bool', label: ['config.widgetDisksInodesToggle', 'Show how full the file table is'] },
+        ],
         cpu: [
             { key: 'refreshSeconds', kind: 'int', min: 1, max: 3600,
               label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'],
@@ -16869,6 +16885,13 @@ class DashboardConfig {
             }
             if (field.kind === 'tags') {
                 const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+                // A field whose values are discoverable offers them: the disks
+                // this machine actually has, filled in after they are fetched.
+                const suggestions = field.suggest
+                    ? `<div class="config-widget-suggest" data-widget-suggest="${esc(field.suggest)}"
+                            data-widget-suggest-index="${index}"
+                            data-widget-suggest-key="${esc(field.key)}"></div>`
+                    : '';
                 return `
                     <div class="config-widget-field">
                         <label for="${id}">${label}</label>
@@ -16876,6 +16899,7 @@ class DashboardConfig {
                             data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
                             data-widget-kind="tags" maxlength="400" value="${esc(value)}"
                             placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                        ${suggestions}
                     </div>`;
             }
             // checkset: an absent list means all, which is the default for the
@@ -16947,9 +16971,101 @@ class DashboardConfig {
      *
      * Types with nothing to set up render nothing at all.
      */
+    /*
+     * Fill in the disks this machine has, under the field that names them.
+     *
+     * Asked for once per panel and after the markup is on the page, because the
+     * answer needs a syscall per mount and the panel should not wait on it: the
+     * field works typed by hand either way, and the chips are a shortcut rather
+     * than the only way in.
+     */
+    async fillWidgetSuggestions(root) {
+        const boxes = [...(root || document).querySelectorAll('[data-widget-suggest="mounts"]')];
+        if (!boxes.length) return;
+
+        let mounts = this._mountCandidates;
+        if (!mounts) {
+            try {
+                const res = await fetch('/api/system/mounts');
+                mounts = res.ok ? (await res.json()).mounts || [] : [];
+            } catch (_error) {
+                mounts = [];
+            }
+            this._mountCandidates = mounts;
+        }
+
+        const esc = (v) => this.dash.escapeHtml(v);
+        const bytes = (n) => (window.DashboardWidgetSystem
+            ? window.DashboardWidgetSystem.formatBytes(n)
+            : `${Math.round((Number(n) || 0) / 1e9)} GB`);
+
+        boxes.forEach((box) => {
+            if (!mounts.length) {
+                // Nothing to offer is not a failure: on a machine with no
+                // mount table, or none reachable, typing still works.
+                box.innerHTML = `<p class="config-field-hint">${esc(this.t(
+                    'config.widgetDisksNoneFound',
+                    'No disks found to offer — type a path, or check the mount above.'))}</p>`;
+                return;
+            }
+            const chips = mounts.map((m) => {
+                const size = m.totalBytes
+                    ? ` <span class="config-widget-chip-size">${esc(bytes(m.freeBytes))} ${esc(this.t(
+                        'config.widgetDisksChipFree', 'free'))}</span>`
+                    : '';
+                return `<button type="button" class="config-widget-chip"
+                    data-widget-suggest-add="${esc(m.path)}"
+                    title="${esc(m.fsType || '')}">${esc(m.path)}${size}</button>`;
+            }).join('');
+            box.innerHTML = `<p class="config-field-hint">${esc(this.t(
+                'config.widgetDisksFound', 'On this machine:'))}</p>
+                <div class="config-widget-chips">${chips}</div>`;
+        });
+    }
+
+    /*
+     * Add a disk the reader clicked, without losing what they typed.
+     *
+     * Appends rather than replaces, and refuses a duplicate: the chips are a
+     * shortcut into the same field, not a second way of holding the value.
+     */
+    addSuggestedMount(button) {
+        const box = button.closest('[data-widget-suggest]');
+        const field = box?.parentElement?.querySelector('input[data-widget-kind="tags"]');
+        if (!field) return;
+
+        const path = button.getAttribute('data-widget-suggest-add') || '';
+        const current = field.value.split(',').map((v) => v.trim()).filter(Boolean);
+        if (current.includes(path)) return;
+
+        current.push(path);
+        field.value = current.join(', ');
+        // Through the field's own event, so the draft records it exactly as a
+        // typed edit would.
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     renderWidgetSetupNote(type) {
         const esc = (v) => this.dash.escapeHtml(v);
         const notes = {
+            disks: {
+                lead: ['config.widgetDisksSetupLead',
+                    'Running nextDash in Docker? A container can only measure what is '
+                    + 'mounted into it, so add the disks you want to watch and point '
+                    + 'NEXTDASH_HOST_ROOT at them, then recreate the container.'],
+                lines: [
+                    'volumes:',
+                    '  - /mnt:/host/root/mnt:ro,rslave',
+                    'environment:',
+                    '  - NEXTDASH_HOST_ROOT=/host/root',
+                ],
+                tail: ['config.widgetDisksSetupTail',
+                    'Then name the disks above as this machine knows them — /mnt/user, '
+                    + '/mnt/cache — not as the container sees them. On Unraid that is one '
+                    + 'Path row (/mnt to /host/mnt, Read Only) and one Variable row in the '
+                    + 'container template; mount / instead of /mnt to reach disks outside '
+                    + 'the array. Running the binary directly needs nothing.'],
+            },
             cpu: {
                 lead: ['config.widgetCpuSetupLead',
                     'Running nextDash in Docker? Add these to docker-compose.yml so the widget '
@@ -17054,6 +17170,7 @@ class DashboardConfig {
     widgetTypeAbout(type) {
         const key = `config.widgetAbout.${type}`;
         const fallbacks = {
+            disks: 'How full each disk is, and how much room is actually left on it.',
             cpu: 'How hard the processor is working, and whether work is queueing up behind it.',
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
@@ -17198,8 +17315,14 @@ class DashboardConfig {
                 this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
                 this._widgetJustSaved = null;
                 this.repaintWidgetsBody();
+                // The disks live on the machine, not in the panel's own state,
+                // so they are asked for after the markup exists.
+                void this.fillWidgetSuggestions();
                 return;
             }
+
+            const suggested = target.closest('[data-widget-suggest-add]');
+            if (suggested) { this.addSuggestedMount(suggested); return; }
 
             const save = target.closest('[data-widget-save]');
             if (save) { void this.saveWidgetDraft(indexOn(save, 'data-widget-save')); return; }
@@ -17483,10 +17606,27 @@ class DashboardConfig {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                /*
+                 * A refusal says which widget it could not store, and that is
+                 * the one thing worth repeating: "Could not save the widgets"
+                 * sends somebody looking at the disk for what is a bad entry.
+                 * Only for 4xx -- a 500 really is the server's problem, and
+                 * its body is not written for a reader.
+                 */
+                const detail = res.status >= 400 && res.status < 500
+                    ? (await res.text().catch(() => '')).trim()
+                    : '';
+                throw new Error(detail || `HTTP ${res.status}`);
+            }
             return true;
-        } catch {
-            this.notify(this.t('config.widgetsSaveError', 'Could not save the widgets.'), 'error');
+        } catch (error) {
+            const said = String(error?.message || '').trim();
+            const generic = this.t('config.widgetsSaveError', 'Could not save the widgets.');
+            this.notify(
+                said && !said.startsWith('HTTP ') ? `${generic} ${said}` : generic,
+                'error',
+            );
             return false;
         }
     }

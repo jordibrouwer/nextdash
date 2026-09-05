@@ -5796,6 +5796,50 @@ button.config-bm-shortcut-pill {
  * should be findable beside the settings without sitting on top of them every
  * time the panel opens.
  */
+/*
+ * The disks this machine has, offered under the field that names them.
+ *
+ * A shortcut into the same text field rather than a second way of holding the
+ * value: clicking appends, and what is typed by hand still works.
+ */
+.config-widget-suggest {
+    margin-top: var(--space-1-5, 0.4rem);
+}
+
+.config-widget-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-1, 0.3rem);
+}
+
+.config-widget-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1, 0.3rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    cursor: pointer;
+}
+
+.config-widget-chip:hover,
+.config-widget-chip:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* How much room is left, so a reader picks by size rather than guessing
+   which /mnt/diskN is the big one. */
+.config-widget-chip-size {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small, 0.66rem);
+}
+
 .config-widget-setup {
     /* Outside the settings grid, so it needs no track of its own. */
     margin-bottom: var(--space-3, 0.75rem);

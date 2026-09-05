@@ -1894,7 +1894,18 @@
     "widgetSystemUnsupported": "此读数在 Linux 主机上可用。",
     "widgetSystemNoDocker": "未连接 Docker — 挂载套接字并设置 NEXTDASH_DOCKER_SOCKET。",
     "widgetSystemNoMounts": "尚未选择磁盘 — 在此小组件的设置中指定。",
-    "widgetSystemReadFailed": "这台机器返回了无法读取的内容。"
+    "widgetSystemReadFailed": "这台机器返回了无法读取的内容。",
+    "widgetType.disks": "磁盘",
+    "widgetDisksHeadline": "可用，共 {total}",
+    "widgetDisksFree": "{free} 可用，共 {total}",
+    "widgetDisksFreeLabel": "可用",
+    "widgetDisksUsedLabel": "已用",
+    "widgetDisksTotalLabel": "总计",
+    "widgetDisksFullLabel": "已满",
+    "widgetDisksInodes": "文件",
+    "widgetDisksUnreadable": "无法读取",
+    "widgetDisksRefused": "不允许",
+    "widgetDisksSomeUnreadable": "{n} 个无法读取"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -5596,7 +5607,20 @@
     "widgetCpuShowCores": "显示核心数",
     "widgetSetupTitle": "如何设置",
     "widgetCpuSetupLead": "在 Docker 中运行 nextDash？将以下内容添加到 docker-compose.yml，让小组件读取这台机器而不是容器，然后重新创建容器。",
-    "widgetCpuSetupTail": "在 Unraid 上，这是容器模板中的一个 Path 行（/proc 到 /host/proc，只读）和一个 Variable 行。直接运行二进制文件则无需任何设置。没有它，磁贴会如实说明，而不是显示你没有要求的数字。"
+    "widgetCpuSetupTail": "在 Unraid 上，这是容器模板中的一个 Path 行（/proc 到 /host/proc，只读）和一个 Variable 行。直接运行二进制文件则无需任何设置。没有它，磁贴会如实说明，而不是显示你没有要求的数字。",
+    "widgetAbout.disks": "每块磁盘有多满，以及实际还剩多少空间。",
+    "widgetDisksRefreshHint": "可用空间变化缓慢，读取休眠的磁盘可能会卡住。",
+    "widgetDisksMounts": "要显示的磁盘",
+    "widgetDisksMountsHint": "使用这台机器所知的路径 — Unraid 上是 /mnt/user 和 /mnt/cache，NAS 上是 /volume1。",
+    "widgetDisksLabels": "它们的名称",
+    "widgetDisksLabelsHint": "写成 路径=名称，例如 /mnt/user=文件。没有名称时磁盘显示其路径。",
+    "widgetDisksMeter": "每块磁盘显示进度条",
+    "widgetDisksInodesToggle": "显示文件表的使用情况",
+    "widgetDisksSetupLead": "在 Docker 中运行 nextDash？容器只能测量挂载给它的内容，请添加要监控的磁盘并将 NEXTDASH_HOST_ROOT 指向它们，然后重新创建容器。",
+    "widgetDisksSetupTail": "然后按这台机器所知的方式填写上面的磁盘 — /mnt/user、/mnt/cache — 而不是容器看到的路径。在 Unraid 上这是容器模板中的一个 Path 行（/mnt 到 /host/root/mnt，只读）和一个 Variable 行；将 / 挂载到 /host/root 可访问阵列之外的磁盘。直接运行二进制文件则无需任何设置。",
+    "widgetDisksFound": "这台机器上：",
+    "widgetDisksChipFree": "可用",
+    "widgetDisksNoneFound": "未找到可提供的磁盘 — 请输入路径，或检查上面的挂载。"
   },
   "colors": {
     "title": "主题自定义",
