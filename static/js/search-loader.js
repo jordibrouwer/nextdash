@@ -68,6 +68,25 @@
     }
 
     /**
+     * Load the bundle, wire the component up, and hand it back.
+     *
+     * ensureSearch() only promises that the code has run; the component is
+     * built by initialiseComponent(), which every path in this file calls
+     * immediately after. Anything outside this file needs the same pair, and
+     * pairing it by hand means reaching for an internal -- so it is one call.
+     *
+     * Resolves with undefined when the bundle failed or this build has no
+     * search: callers treat that as "no overlay", exactly as they treat a
+     * dashboard whose search has not loaded yet.
+     */
+    function ensureReady() {
+        return ensureSearch().then(() => {
+            initialiseComponent();
+            return global.dashboardInstance?.searchComponent;
+        });
+    }
+
+    /**
      * A key arrived before the code did. Load, wire up, and open the overlay the
      * key asked for.
      *
@@ -167,5 +186,5 @@
         prefetchOnIdle();
     }
 
-    global.SearchLoader = { ensureSearch, isReady: () => ready };
+    global.SearchLoader = { ensureSearch, ensureReady, isReady: () => ready };
 }(typeof window !== 'undefined' ? window : globalThis));
