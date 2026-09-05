@@ -44,10 +44,9 @@ async function openInboxWithItems(page, titles) {
     await expect(page.locator('.inbox-layout')).toBeVisible();
     // Fetched rather than waited for. The POSTs are accepted before the open
     // view knows about them, and waiting for a background refresh to notice is
-    // what makes the same pattern in inbox-selection-actions flaky under load.
-    // Asking for the list, then drawing it, is the same two steps without the
-    // race -- and it is polled because another spec's writes can land in the
-    // same shared inbox between the fetch and the read.
+    // slower and less certain than asking for the list. Polled because the
+    // fetch and the read are two steps and the first can lose a race with the
+    // view's own refresh.
     await expect.poll(async () => page.evaluate(async (wanted) => {
         const ib = window.dashboardInstance.inbox;
         await ib.loadItems?.();
