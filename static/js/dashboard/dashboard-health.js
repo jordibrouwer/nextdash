@@ -4249,7 +4249,7 @@ class DashboardHealth {
      * settings has no business appearing and disappearing with it.
      */
     renderSettingsLink() {
-        const label = this.t('dashboard.healthSettingsLink', 'settings');
+        const label = this.t('dashboard.healthSettingsLink', 'Settings');
         const hint = this.t(
             'dashboard.healthSettingsLinkHint',
             'Check interval, alert threshold, maintenance windows and downtime alerts'

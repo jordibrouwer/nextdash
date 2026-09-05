@@ -1335,7 +1335,7 @@
     "healthTrendHelpAxis": "L'axe est fixé à 0–100 %, la courbe ne bouge donc que lorsque le chiffre bouge vraiment. Une collection oscillant entre 91 % et 93 % paraît plate ici, ce qui est l'image honnête — s'adapter à l'intervalle en ferait une falaise.",
     "healthTrendHelpGaps": "Une mesure est enregistrée lorsque le rapport de santé s'exécute. Les jours où vous n'avez pas ouvert nextDash laissent donc un trou, et la courbe s'interrompt au lieu de deviner.",
     "healthTrendHelpHealthy": "Sain signifie accessible si la vérification est active, ouvert assez récemment et sans conflit avec un autre favori — la règle même que compte la tuile Sains.",
-    "healthSettingsLink": "paramètres",
+    "healthSettingsLink": "Paramètres",
     "healthSettingsLinkHint": "Intervalle de vérification, seuil d’alerte, fenêtres de maintenance et alertes de panne",
     "healthTrendChartLabel": "Favoris sains sur les {days} derniers jours, de {first}% à {last}%",
     "healthFleetLabel": "Tous les moniteurs",
