@@ -247,8 +247,16 @@ test.describe('the menu on a widget row', () => {
         // From the keyboard: plain Enter is the tile's own action, Ctrl+Enter is
         // the address — the same split a bookmark row has. Focus is put on the
         // row the way Tab would, which the cursor has to follow.
-        await row.focus();
-        await expect.poll(() => cursor(page).then((at) => at?.widget), { timeout: 10_000 }).toBe(true);
+        // Focused inside the poll, not once before it. Closing the menu above
+        // rebuilds the widget, and a focus that lands while navigableElements
+        // is being rebuilt leaves currentIndex pointing at nothing -- cursor()
+        // then answers null and this read undefined rather than false. Asking
+        // again is what a reader does; a single focus was a race.
+        await expect.poll(async () => {
+            await row.focus();
+            const at = await cursor(page);
+            return at?.widget === true;
+        }, { timeout: 10_000 }).toBe(true);
         const opened = page.waitForEvent('popup', { timeout: 10_000 });
         await page.keyboard.press('Control+Enter');
         const tab = await opened;
