@@ -207,6 +207,7 @@
             // condition stops being reported. This only postpones the offer.
             {
                 name: 'remind',
+                quiet: true,
                 label: () => t('dashboard.healthReviewNoticeRemindLater', 'Remind me in 30 days'),
                 onClick: (handle) => { remindInThirtyDays(); handle.close(); },
             },

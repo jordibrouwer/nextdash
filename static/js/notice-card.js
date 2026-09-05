@@ -228,7 +228,11 @@ canShow every time.
             // hook says nothing at the call site and silently retargets the
             // moment a button is inserted before it.
             const actions = (spec.actions || []).map((action) => {
-                const kind = action.primary ? 'quickstart-btn-primary' : 'quickstart-btn-ghost';
+                // `quiet` is for an answer that belongs on the card but not in
+                // the row of choices -- a postponement beside a yes and a no.
+                let kind = 'quickstart-btn-ghost';
+                if (action.primary) kind = 'quickstart-btn-primary';
+                else if (action.quiet) kind = 'quickstart-btn-quiet';
                 return `<button type="button" class="quickstart-btn ${kind}" ${attr}="${escape(action.name)}">${escape(text(action.label))}</button>`;
             }).join('');
 

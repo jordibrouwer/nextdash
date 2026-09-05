@@ -341,6 +341,26 @@
     background: transparent;
 }
 
+/* A third answer that is not a third peer.
+   A long label ("Remind me in 30 days", and longer once translated) wraps onto
+   its own row, where a full-width bordered button reads as the heaviest choice
+   on the card -- the opposite of what a postponement should look like. As plain
+   text it can take the whole row without claiming it. */
+.quickstart-btn-quiet {
+    background: transparent;
+    border-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+    color: var(--text-muted, var(--text-secondary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.quickstart-btn-quiet:hover,
+.quickstart-btn-quiet:focus-visible {
+    color: var(--text-primary);
+}
+
 .quickstart-btn-primary {
     background: var(--accent-primary);
     border-color: var(--accent-primary);

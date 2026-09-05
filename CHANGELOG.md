@@ -202,7 +202,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Health
 
-- **new — the review offer can be put away for a month.** The "10 links to review" card had one way out, "Not today", which expires overnight — right for a postponement, wrong for someone who is not doing maintenance this month. **Remind me in 30 days** stamps `nextdashHealthReviewSnoozeUntil` and the card stays away until it passes, then returns on its own. Deliberately not called *ignore*: the health view's per-row **Ignore "Broken"** mutes what a bookmark reports, server-side, while this touches no bookmark at all and only decides whether the corner asks.
+- **new — the review offer can be put away for a month.** The "10 links to review" card had one way out, "Not today", which expires overnight — right for a postponement, wrong for someone who is not doing maintenance this month. **Remind me in 30 days** stamps `nextdashHealthReviewSnoozeUntil` and the card stays away until it passes, then returns on its own. Deliberately not called *ignore*: the health view's per-row **Ignore "Broken"** mutes what a bookmark reports, server-side, while this touches no bookmark at all and only decides whether the corner asks. It sits as a quiet text link rather than a third button — a long label wraps onto its own row, where a bordered full-width button would read as the heaviest choice on a card whose primary action is Start.
+- **new — `quiet` action styling on notice cards.** `NoticeCard.define()` accepts `quiet: true` beside `primary`, rendering an action as an underlined text link. For an answer that belongs on the card but not in the row of choices.
 
 ---
 
