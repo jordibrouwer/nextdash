@@ -2383,6 +2383,8 @@ class DashboardConfig {
         { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
         { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
+        { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
+        { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
         { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
@@ -2448,6 +2450,8 @@ class DashboardConfig {
         fontSize: ['font', 'size', 'text', 'zoom'],
         backgroundType: ['background', 'wallpaper', 'gradient', 'image'],
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
+        inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
+        themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
         layoutVersion: ['layout', 'modern', 'classic', 'beta'],
         buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
         showIcons: ['favicon', 'icon', 'image'],
@@ -8168,6 +8172,14 @@ class DashboardConfig {
         const opacity = window.VisualSettings?.clampBackgroundOpacity
             ? window.VisualSettings.clampBackgroundOpacity(s.backgroundOpacity)
             : (Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1);
+        // The ink gap is a lightness distance, not a percentage of anything, so
+        // it is shown as the contrast it buys rather than as its own number:
+        // "0.44" means nothing to a reader, "normal" and the ends of the range
+        // do. Kept in step with normalizeInkGap on the server.
+        const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
+            ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
+            : 0.44;
+        const inkGapLabel = esc(this.inkGapLabelFor(inkGap));
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -8273,6 +8285,21 @@ class DashboardConfig {
                     </select>
                     <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
                     ${this.appearanceAff('themeDepth')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
+                    <input type="range" class="config-range" data-appearance-range="inkGap" min="0.30" max="0.58" step="0.01" value="${inkGap}">
+                    <span class="config-range-value">${inkGapLabel}</span>
+                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
+                    ${this.appearanceAff('inkGap')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
+                    <select class="config-select" data-appearance-select="themeBackdrop">
+                        ${[['on', 'On'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.themeBackdrop || 'on') === option ? ' selected' : ''}>${esc(this.t('config.themeBackdrop' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.themeBackdropNote', 'Every theme brings its own backdrop, built from its own colours, so no two look alike. Turn it off for a flat surface. Your own background image, if you set one, is drawn over it either way.'))}</p>
+                    ${this.appearanceAff('themeBackdrop')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundPatternLabel', 'Backdrop'))}</span>
@@ -8939,7 +8966,19 @@ class DashboardConfig {
             });
             range.addEventListener('change', () => void this.saveSettingsWithFeedback());
         }
-        const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
+        const inkRange = container.querySelector('[data-appearance-range="inkGap"]');
+        if (inkRange) {
+            inkRange.addEventListener('input', () => {
+                // Applied before it is saved, same reason as the depth control:
+                // the whole point is watching the text lift while you drag.
+                const val = window.ThemeLoader?.applyInkGap?.(inkRange.value) ?? Number(inkRange.value);
+                this.dash.settings.inkGap = val;
+                const out = inkRange.parentElement?.querySelector('.config-range-value');
+                if (out) out.textContent = this.inkGapLabelFor(val);
+            });
+            inkRange.addEventListener('change', () => void this.saveSettingsWithFeedback());
+        }
+                const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
         if (titleInput) {
             titleInput.addEventListener('input', () => { this.dash.settings.customTitle = titleInput.value; });
             titleInput.addEventListener('change', () => {
@@ -10269,6 +10308,13 @@ class DashboardConfig {
             this.persistAppearance();
             return;
         }
+        if (name === 'themeBackdrop') {
+            const mode = value === 'off' ? 'off' : 'on';
+            this.dash.settings.themeBackdrop = mode;
+            window.ThemeLoader?.applyThemeBackdrop?.(mode);
+            this.persistAppearance();
+            return;
+        }
         if (name === 'themeDepth') {
             const depth = ['flat', 'soft', 'rich'].includes(value) ? value : 'rich';
             this.dash.settings.themeDepth = depth;
@@ -10277,6 +10323,22 @@ class DashboardConfig {
             window.ThemeLoader?.applyThemeDepth?.(depth);
             this.persistAppearance();
         }
+    }
+
+    /**
+     * Names a point on the ink-gap range.
+     *
+     * Four words instead of a number, because the number is a lightness step in
+     * OKLCH and nobody should have to know that to make their dashboard
+     * readable. The boundaries are where the measured contrast crosses into the
+     * next band: below 0.36 some themes fall under 4.5:1, above 0.50 the faint
+     * text starts competing with the bookmark names.
+     */
+    inkGapLabelFor(gap) {
+        if (gap < 0.36) return this.t('config.inkGapSoft', 'Soft');
+        if (gap < 0.48) return this.t('config.inkGapNormal', 'Normal');
+        if (gap < 0.54) return this.t('config.inkGapHigh', 'High');
+        return this.t('config.inkGapMax', 'Maximum');
     }
 
     setRandomThemeMode(mode) {

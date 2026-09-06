@@ -29,18 +29,29 @@
    variable cannot read an attribute from an element below it. Everything
    derived from them lives on body too, so a descendant inherits both. */
 
-body[data-depth="flat"] body {
-    --theme-tint: 0%;
-    --theme-depth: 0;
-}
+/* Deze drie stonden als `body[data-depth="flat"] body` -- een afstammelings-
+   selector, die een body binnen een body vraagt en dus nooit matcht. Alleen de
+   kale `body` hierboven raakte iets, waardoor elke installatie op tint 3% en
+   diepte 1 bleef staan en de keuze in Instellingen niets deed, welke stand je
+   ook koos. Nu op body zelf, met html[data-theme] ervoor om boven de kale
+   `body` uit te komen. */
 
-body,
-body[data-depth="soft"] body {
+body {
     --theme-tint: 3%;
     --theme-depth: 1;
 }
 
-body[data-depth="rich"] body {
+html[data-theme] body[data-depth="flat"] {
+    --theme-tint: 0%;
+    --theme-depth: 0;
+}
+
+html[data-theme] body[data-depth="soft"] {
+    --theme-tint: 3%;
+    --theme-depth: 1;
+}
+
+html[data-theme] body[data-depth="rich"] {
     --theme-tint: 5%;
     --theme-depth: 1.5;
 }

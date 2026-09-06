@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -2264,6 +2265,161 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(themesMap)
 }
 
+/*
+themeBackdropImage builds the backdrop a theme is drawn on.
+
+Every theme gets one and no two are alike, without anybody having to draw two
+hundred backgrounds: the shape is picked from the theme's own id and the colours
+come from its own palette, mixed down to the point where they read as
+atmosphere rather than decoration. A theme that is all greens gets a green
+backdrop; one built around a magenta accent gets a magenta one. The same id
+always lands on the same backdrop, so a theme does not change appearance
+between releases.
+
+The result is a CSS background-image list, referencing the custom properties
+declared in the same block. It is composed here rather than declared in the
+theme because sanitizeCSSColor (security.go) accepts only flat colours by
+design, and widening that to arbitrary gradients would mean parsing untrusted
+CSS. Generated on our side there is nothing to parse: every value below is a
+number this function chose.
+
+Nine recipes, in the order the hash reaches them. They differ in kind and not
+only in angle -- blooms, sweeps, wireframes, rings, scanlines -- because eight
+variations on one gradient would still read as one background.
+*/
+func themeBackdropImage(themeID string, tc ThemeColors) string {
+	h := fnv32(themeID)
+	pick := func(shift uint, span int) int {
+		if span <= 0 {
+			return 0
+		}
+		return int((h >> shift) % uint32(span))
+	}
+
+	accent := "var(--accent-primary)"
+	second := "var(--accent-error)"
+	if tc.AccentPrimary == "" {
+		accent = "var(--accent-success)"
+	}
+
+	// Mixed against the page rather than transparent: over a light theme a
+	// translucent accent turns milky, over a dark one it glows. Mixing with the
+	// theme's own background keeps a backdrop the same weight either way.
+	wash := func(color string, pct int) string {
+		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, var(--background-primary))"
+	}
+	veil := func(color string, pct int) string {
+		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, transparent)"
+	}
+
+	angle := 15 + pick(3, 150)
+	x1, y1 := 4+pick(7, 34), pick(11, 22)
+	x2, y2 := 62+pick(13, 34), pick(17, 26)
+	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
+		wash(accent, 6) + " 0%, var(--background-primary) 68%)"
+
+	switch pick(23, 9) {
+	case 0: // twee zachte blooms, de vorm van de referentie
+		return "radial-gradient(120% 88% at " + pct(x1) + " " + pct(y1) + ", " + veil(second, 26) + " 0%, transparent 56%), " +
+			"radial-gradient(110% 80% at " + pct(x2) + " " + pct(y2) + ", " + veil(accent, 24) + " 0%, transparent 60%), " + base
+	case 1: // brede sweep vanuit een hoek
+		return "conic-gradient(from " + strconv.Itoa(angle) + "deg at " + pct(x1) + " -10%, " +
+			veil(accent, 22) + " 0deg, transparent 140deg, " + veil(second, 16) + " 300deg, transparent 360deg), " + base
+	case 2: // wireframe: twee sets dunne lijnen onder een hoek
+		return "repeating-linear-gradient(" + strconv.Itoa(angle) + "deg, " + veil(accent, 12) + " 0 1px, transparent 1px " + strconv.Itoa(38+pick(2, 24)) + "px), " +
+			"repeating-linear-gradient(" + strconv.Itoa(-angle/2) + "deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(46+pick(5, 28)) + "px), " + base
+	case 3: // gloed van onderaf, vignet eromheen
+		return "radial-gradient(150% 70% at 50% 108%, " + veil(accent, 26) + " 0%, transparent 62%), " +
+			"radial-gradient(120% 120% at 50% 50%, transparent 42%, " + veil(second, 12) + " 100%), " + base
+	case 4: // diagonale band
+		return "linear-gradient(" + strconv.Itoa(angle) + "deg, transparent 0%, " + veil(accent, 20) + " " + pct(28+pick(2, 20)) + ", transparent " + pct(64+pick(5, 18)) + "), " + base
+	case 5: // concentrische ringen
+		return "repeating-radial-gradient(circle at " + pct(x1) + " " + pct(y1) + ", " +
+			veil(accent, 9) + " 0 1px, transparent 1px " + strconv.Itoa(52+pick(2, 40)) + "px), " + base
+	case 6: // scanlijnen met een bloom bovenin
+		return "repeating-linear-gradient(0deg, " + veil(accent, 10) + " 0 1px, transparent 1px 3px), " +
+			"radial-gradient(120% 96% at 50% 0%, " + veil(accent, 18) + " 0%, transparent 66%), " + base
+	case 7: // kruisarcering
+		return "repeating-linear-gradient(45deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(14+pick(2, 12)) + "px), " +
+			"repeating-linear-gradient(-45deg, " + veil(second, 6) + " 0 1px, transparent 1px " + strconv.Itoa(16+pick(5, 14)) + "px), " + base
+	default: // horizon: een lichte band met een donkere grond
+		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
+			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
+	}
+}
+
+// pct renders an integer as a CSS percentage, which the recipes above need in
+// enough places to be worth a name.
+func pct(v int) string {
+	return strconv.Itoa(v) + "%"
+}
+
+// fnv32 is FNV-1a. Any stable hash would do; what matters is that a theme id
+// always reaches the same recipe, on every install and every release.
+func fnv32(s string) uint32 {
+	const (
+		offset = 2166136261
+		prime  = 16777619
+	)
+	hash := uint32(offset)
+	for i := 0; i < len(s); i++ {
+		hash ^= uint32(s[i])
+		hash *= prime
+	}
+	return hash
+}
+
+/*
+themeInkDirection says which way the derived ink in theme-ink.css moves away
+from the surface it sits on: up in a dark theme, down in a light one.
+
+Computed from the relative luminance of background-primary rather than read off
+the theme id, because a theme somebody made themselves has no "-dark" or
+"-light" in its name and still needs the right answer. A colour this cannot
+parse -- a named colour, an rgb() or hsl(), anything sanitizeCSSColor lets
+through that is not hex -- falls back to +1, which is the direction the default
+theme wants and the one nearly every theme in the register wants.
+*/
+func themeInkDirection(background string) string {
+	if lum, okColor := hexLuminance(background); okColor && lum > 0.42 {
+		return "-1"
+	}
+	return "1"
+}
+
+// hexLuminance returns the WCAG relative luminance of a #rgb or #rrggbb colour.
+func hexLuminance(color string) (float64, bool) {
+	h := strings.TrimSpace(color)
+	if !strings.HasPrefix(h, "#") {
+		return 0, false
+	}
+	h = h[1:]
+	if len(h) == 3 {
+		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
+	}
+	if len(h) != 6 {
+		return 0, false
+	}
+	channel := func(part string) (float64, bool) {
+		v, err := strconv.ParseUint(part, 16, 16)
+		if err != nil {
+			return 0, false
+		}
+		c := float64(v) / 255
+		if c <= 0.04045 {
+			return c / 12.92, true
+		}
+		return math.Pow((c+0.055)/1.055, 2.4), true
+	}
+	r, okR := channel(h[0:2])
+	g, okG := channel(h[2:4])
+	b, okB := channel(h[4:6])
+	if !okR || !okG || !okB {
+		return 0, false
+	}
+	return 0.2126*r + 0.7152*g + 0.0722*b, true
+}
+
 func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	s := sanitizeThemeColors(tc)
 	/*
@@ -2292,6 +2448,8 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-primary: ` + accentPrimary + `;
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
+    --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
+    --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
 }
 `
 }

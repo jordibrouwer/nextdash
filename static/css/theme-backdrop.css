@@ -1,0 +1,59 @@
+/* Achtergrond per theme.
+
+   Elk theme heeft er een, en geen twee zijn hetzelfde: themeBackdropImage
+   (handlers.go) kiest de vorm uit de theme-id en de kleuren uit het palet van
+   dat theme, en zet het resultaat in --theme-backdrop. Hier wordt het alleen
+   nog opgehangen.
+
+   Op body zelf, niet op een pseudo-element, want die zijn allebei al vergeven:
+   ::before tekent het stippenraster (theme.css) en ::after is van de eigen
+   achtergrond van de gebruiker en van de dieptewas (theme-depth.css). Als
+   background-image van body komt de achtergrond precies waar hij hoort -- boven
+   de vlakke themekleur, onder alles wat daarna nog geschilderd wordt, want een
+   kind met een negatieve z-index staat boven de achtergrond van zijn ouder maar
+   onder de inhoud.
+
+   De stapeling van onder naar boven:
+
+     background-color   de vlakke themekleur
+     background-image   deze achtergrond
+     ::before           het stippen- of rasterpatroon
+     ::after            de eigen achtergrond van de gebruiker, of de dieptewas
+     inhoud
+
+   Een eigen achtergrond wint dus altijd: die ligt er letterlijk overheen. */
+
+html[data-theme] body[data-theme-backdrop="on"] {
+    background-image: var(--theme-backdrop, none);
+    background-repeat: repeat;
+    background-size: cover;
+
+    /*
+     * Vast ten opzichte van het venster, zodat de achtergrond blijft staan
+     * terwijl de bookmarks eroverheen scrollen. Een achtergrond die meescrolt
+     * verandert van een sfeer in een plaatje.
+     */
+    background-attachment: fixed;
+}
+
+/* Uit is uit: terug naar de vlakke themekleur, zonder overgang die je op het
+   moment van omschakelen als een flits ziet. */
+html[data-theme] body[data-theme-backdrop="off"] {
+    background-image: none;
+}
+
+/*
+ * data-depth="flat" is de stand waarin een lezer heeft gezegd dat hij geen
+ * lagen wil. De achtergrond blijft, maar halveert: hij hoort bij het theme, en
+ * flat gaat over diepte, niet over kleur.
+ */
+html[data-theme] body[data-theme-backdrop="on"][data-depth="flat"] {
+    background-image: none;
+    background-color: var(--background-primary);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-theme-backdrop="on"] {
+        background-image: none;
+    }
+}

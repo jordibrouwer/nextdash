@@ -319,6 +319,43 @@
     }
 
     /**
+     * Writes the ink gap onto <body> as an inline custom property.
+     *
+     * theme-ink.css derives the two faint text colours from the surface they
+     * sit on, and this is how far away it puts them. The server writes the same
+     * value inline for the first paint; this exists for the moment the reader
+     * moves the slider, which has to be visible before anything is saved.
+     *
+     * Clamped to the range the stylesheet was calibrated for, and to two
+     * decimals, so it agrees with normalizeInkGap on the server.
+     */
+    function applyInkGap(gap) {
+        const parsed = Number(gap);
+        const value = Number.isFinite(parsed) && parsed > 0
+            ? Math.round(Math.min(0.58, Math.max(0.30, parsed)) * 100) / 100
+            : 0.44;
+        if (document.body) {
+            document.body.style.setProperty('--ink-gap-3', String(value));
+        }
+        return value;
+    }
+
+    /**
+     * Turns the theme's own backdrop on or off.
+     *
+     * Anything that is not the word "off" is on: the backdrop is part of what a
+     * theme looks like, so an unknown value should leave it showing rather than
+     * quietly strip a theme back to a flat colour.
+     */
+    function applyThemeBackdrop(mode) {
+        const value = String(mode).toLowerCase() === 'off' ? 'off' : 'on';
+        if (document.body) {
+            document.body.setAttribute('data-theme-backdrop', value);
+        }
+        return value;
+    }
+
+    /**
      * Mirrors the backdrop pattern onto <html> and <body>.
      *
      * Unknown values fall back to auto rather than to nothing: an install that
@@ -563,6 +600,8 @@
         applyTheme: applyTheme,
         applyLayoutVersion: applyLayoutVersion,
         applyThemeDepth: applyThemeDepth,
+        applyInkGap: applyInkGap,
+        applyThemeBackdrop: applyThemeBackdrop,
         applyBackgroundPattern: applyBackgroundPattern,
         syncBackgroundDots: syncBackgroundDots,
         syncThemeColorMeta: syncThemeColorMeta,

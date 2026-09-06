@@ -1,0 +1,123 @@
+/* Inkt — de zwakkere tekstkleuren afgeleid van het vlak waar ze op liggen.
+
+   Een theme levert dertien platte kleuren, waarvan drie tekst. Die drie zijn
+   gekozen tegen background-primary en worden daarna nooit bijgesteld.
+   theme-depth.css leidt uit diezelfde dertien een surfaceladder af -- surface-1
+   tot surface-3, elk een stap lichter dan de pagina -- en dat is de goede
+   beweging, maar hij gaat maar een kant op: de vlakken schuiven omhoog, de inkt
+   blijft staan. Elke laag kost dus contrast, en niemand ziet het aankomen, want
+   tegen de pagina gemeten klopt elk theme.
+
+   Gemeten over de 107 donkere built-ins, met de surfaces zoals theme-depth.css
+   ze bij data-depth="rich" afleidt:
+
+     tertiaire tekst op surface-3               33 van de 107 onder 3,0:1
+     tertiaire tekst op surface-2               25 van de 107
+     tertiaire tekst op background-secondary    15 van de 107
+     primaire en secundaire tekst op de pagina   0 van de 107
+
+   Slechtste geval Cosmic Editor [dark] op 1,4:1, dan Slate One op 1,7:1.
+
+   Mengen richting text-primary helpt, maar loopt vast zodra een theme zelf al
+   weinig contrast heeft: Slate One komt zo niet verder dan 2,5:1. Wat wel werkt
+   is afleiden -- neem de lichtheid van het vlak, zet er een vaste afstand
+   bovenop, houd tint en verzadiging van datzelfde vlak vast. Contrast wordt
+   daarmee een eigenschap van het systeem in plaats van van het palet.
+
+   Dit bestand overschrijft --text-secondary en --text-tertiary op <body>. De
+   generated CSS zet ze op <html>, dus de palet-waarden blijven bestaan en
+   blijven bereikbaar; alles binnen body krijgt de afgeleide versie. Geen
+   wijziging nodig in de 229 plekken die deze twee tokens al gebruiken, geen
+   migratie van colors.json, geen aanpassing aan een van de 214 palettes.
+   --text-primary blijft ongemoeid: die haalde overal al ruim 4,5:1 en draagt de
+   eigen kleur van het theme.
+
+   Doorgerekend in internal/app/theme_ink_test.go, dat faalt zodra een theme
+   onder de vloer zakt. */
+
+@supports (color: oklch(from white l c h)) {
+
+    html[data-theme] body {
+        /*
+         * Het vlak waar de inkt van wordt afgeleid.
+         *
+         * surface-2 en niet de pagina, want de pagina is het gunstigste geval
+         * en niet het geval dat stukloopt. Static Noise [dark] laat zien
+         * waarom: pagina #000000, maar surface-3 komt op #2B2B2B uit. Inkt die
+         * op zwart is afgesteld haalt daar 2,4:1, hoe hard je de afstand ook
+         * opdraait. Vanaf surface-2 gerekend haalt datzelfde theme 4,8:1, en
+         * tekst die tóch op de kale pagina staat krijgt gratis wat meer.
+         *
+         * surface-2 volgt bovendien de diepte-instelling: op data-depth="flat"
+         * vallen de surfaces samen met de pagina, en dan klopt het anker weer
+         * precies, zonder dat hier iets voor nodig is.
+         */
+        --surf: var(--surface-2, var(--background-primary));
+
+        /*
+         * De afstand in OKLCH-lichtheid tussen inkt en vlak.
+         *
+         * Gekalibreerd over alle 214 built-ins, licht en donker, gemeten op
+         * elke laag waar de tekst kan belanden -- surface-0 tot surface-3 en
+         * background-secondary -- en bij zowel data-depth="soft" als "rich".
+         * Bij 0.44 haalt het slechtste theme 4,68:1 en de mediaan 5,0:1, met
+         * een spreiding over de hele bibliotheek van nog geen punt.
+         *
+         * Lager kan als hierarchie belangrijker is dan de norm: 0.34 zet alles
+         * boven 3,0:1. Hoger dan 0.46 laat tertiaire tekst zo hard meedoen dat
+         * het verschil met primair wegvalt. De lezer kan hem verzetten in
+         * Instellingen; die waarde komt als inline style op <body> binnen en
+         * wint van de default hier. Het bereik staat in normalizeInkGap
+         * (models.go) en loopt van 0.30 tot 0.58.
+         */
+        --ink-gap-3: 0.44;
+
+        /*
+         * Secundair loopt vast acht honderdsten voor op tertiair, zodat de
+         * volgorde blijft kloppen als de lezer aan de schuif draait: de twee
+         * treden schuiven samen op en houden hun onderlinge afstand. Alleen
+         * --ink-gap-3 wordt doorgegeven vanuit de instellingen; deze volgt.
+         */
+        --ink-gap-2: calc(var(--ink-gap-3) + 0.08);
+    }
+
+    /*
+     * De richting waarin de inkt van het vlak af beweegt: in een donker theme
+     * omhoog, in een licht theme omlaag. --ink-dir komt per theme uit
+     * renderThemeCSSBlock (handlers.go), berekend uit de helderheid van
+     * background-primary, zodat het ook klopt voor een zelfgemaakt theme dat
+     * geen -dark of -light in zijn naam heeft.
+     *
+     * De chroma wordt geschaald, nooit opgehoogd. Een opgeteld beetje kleur
+     * leek aardig tot het op de grijstinten-themes werd losgelaten: de tint van
+     * een neutrale kleur is onbepaald en komt als 0 binnen, dus Static Noise
+     * kreeg er een rode zweem bij. Schalen houdt neutraal neutraal en laat een
+     * getint vlak zijn tint doorgeven.
+     */
+    html[data-theme] body,
+    html[data-theme] [data-ink-surface] {
+        --text-secondary: oklch(from var(--surf)
+            clamp(0, calc(l + var(--ink-gap-2) * var(--ink-dir, 1)), 1)
+            calc(c * 0.5) h);
+        --text-tertiary: oklch(from var(--surf)
+            clamp(0, calc(l + var(--ink-gap-3) * var(--ink-dir, 1)), 1)
+            calc(c * 0.6) h);
+    }
+
+    /*
+     * De haak voor stap 2 van het voorstel.
+     *
+     * Een container die niet op surface-2 maar ergens anders staat, zet
+     * data-ink-surface en krijgt daarmee zijn eigen inkt -- de declaraties
+     * hierboven staan mee in die selector, want custom properties worden
+     * gesubstitueerd op het element waar ze gedeclareerd zijn, en overerven
+     * alleen is dus niet genoeg.
+     *
+     * Nog nergens gebruikt: het gaat hier eerst om de vloer, niet om de
+     * fijnregeling. Maar het contract staat er, zodat een view die overgaat
+     * alleen een attribuut hoeft te zetten.
+     */
+    [data-ink-surface="page"]    { --surf: var(--background-primary); }
+    [data-ink-surface="raised"]  { --surf: var(--surface-2, var(--background-secondary)); }
+    [data-ink-surface="overlay"] { --surf: var(--surface-3, var(--background-modal)); }
+}

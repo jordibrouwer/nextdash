@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -480,6 +481,36 @@ type Settings struct {
 	 * flat | soft | rich. Empty means rich.
 	 */
 	ThemeDepth string `json:"themeDepth,omitempty"`
+
+	/*
+	 * InkGap is how far the derived text colours sit from the surface they are
+	 * drawn on, in OKLCH lightness. theme-ink.css does the deriving; this is
+	 * the one number a reader gets to move.
+	 *
+	 * 0.44 is the calibrated default: measured across all 214 built-ins, on
+	 * every surface level and at both depth settings, the faintest text lands
+	 * between 4.68:1 and 5.5:1. Lower trades contrast for hierarchy — 0.34
+	 * still clears 3:1 everywhere — and higher flattens the difference between
+	 * a bookmark name and the note beside it.
+	 *
+	 * Zero means unset rather than "no gap": a settings file written before
+	 * this field existed must not read as a request for unreadable text.
+	 */
+	InkGap float64 `json:"inkGap,omitempty"`
+
+	/*
+	 * ThemeBackdrop switches the per-theme backdrop on or off ("on" | "off").
+	 *
+	 * Every theme has one: it is derived from that theme's own accent and
+	 * background by themeBackdropImage (handlers.go), so all of them differ
+	 * from each other without anybody drawing 214 backgrounds. A reader who
+	 * wants the flat surface back turns it off; a reader with their own
+	 * background image gets that instead, since a custom background wins.
+	 *
+	 * Empty means "on" — this arrives switched on for everybody who already
+	 * has a settings file.
+	 */
+	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
 	/*
 	 * BackgroundPattern is the shape of the backdrop texture: dots, grid,
 	 * lines, hatch or none.
@@ -1231,6 +1262,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LayoutPreset:                 "default",
 			LayoutVersion:                "classic",
 			ThemeDepth:                   "rich",
+			InkGap:                       defaultInkGap,
+			ThemeBackdrop:                "on",
 			BackgroundPattern:            "auto",
 			BackgroundOpacity:            1,
 			FontWeight:                   "normal",
@@ -3260,6 +3293,8 @@ func (fs *FileStore) GetSettings() Settings {
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
 			ThemeDepth:                     "rich",
+			InkGap:                         defaultInkGap,
+			ThemeBackdrop:                  "on",
 			BackgroundPattern:              "auto",
 			DensityMode:                    "compact",
 			CategorySpacing:                "balanced",
@@ -3551,6 +3586,8 @@ func (fs *FileStore) GetSettings() Settings {
 		 * rule at all, leaving a dashboard with the tokens defined and nothing
 		 * drawn — which reads as broken rather than as flat.
 		 */
+		settings.InkGap = normalizeInkGap(settings.InkGap)
+		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
 		switch settings.ThemeDepth {
 		case "flat", "soft", "rich":
 		default:
@@ -3815,6 +3852,45 @@ should not silently take somebody's star with it. The browser skips an id it
 cannot resolve, which is the right place to notice — it is the only one that
 knows what exists right now.
 */
+/*
+defaultInkGap is the calibrated distance between the derived text colours and
+the surface they sit on — see InkGap on Settings, and theme-ink.css for how it
+is spent. inkGapMin is not zero: below it the faint text starts disappearing
+into the card again, which is the thing this was built to stop.
+*/
+const (
+	defaultInkGap = 0.44
+	inkGapMin     = 0.30
+	inkGapMax     = 0.58
+)
+
+// normalizeInkGap keeps the gap inside the range the stylesheet was calibrated
+// for. An unset or unreadable value becomes the default rather than the floor:
+// a settings file from before this existed is not a request for less contrast.
+func normalizeInkGap(gap float64) float64 {
+	if math.IsNaN(gap) || gap <= 0 {
+		return defaultInkGap
+	}
+	if gap < inkGapMin {
+		return inkGapMin
+	}
+	if gap > inkGapMax {
+		return inkGapMax
+	}
+	// Rounded to the step the slider offers, so a hand-edited settings file and
+	// the config view agree on what is stored.
+	return math.Round(gap*100) / 100
+}
+
+// normalizeThemeBackdrop defaults to "on": the backdrop is part of what a theme
+// looks like, and an install that never heard of the setting should see it.
+func normalizeThemeBackdrop(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), "off") {
+		return "off"
+	}
+	return "on"
+}
+
 func normalizeFavoriteThemes(ids []string) []string {
 	if len(ids) == 0 {
 		return nil
