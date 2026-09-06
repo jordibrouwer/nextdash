@@ -2,6 +2,38 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureThemeCharacterTitle",
+      "titleFallback": "A theme can be more than a palette",
+      "whatKey": "config.overviewNewFeatureThemeCharacterWhat",
+      "whatFallback": "A theme was thirteen flat colours, which is why 214 of them could look like one theme in 214 tints: two themes could differ in hue and in nothing else — not in shape, not in weight, not in whether their surfaces were solid.",
+      "howKey": "config.overviewNewFeatureThemeCharacterHow",
+      "howFallback": "A theme can now say how solid its raised surfaces are, how much they blur and glow, how round the corners sit, and how the category labels are set. Glass joins Flat, Soft and Rich as a depth. Every existing theme renders exactly as it did — leaving a setting out means today's behaviour.",
+      "enableKey": "config.overviewNewFeatureThemeCharacterEnable",
+      "enableFallback": "Appearance → Theme, under Depth and backdrop.",
+      "ctaKey": "config.overviewNewFeatureThemeCharacterCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.5.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureDerivedInkTitle",
+      "titleFallback": "The faint text follows the surface it sits on",
+      "whatKey": "config.overviewNewFeatureDerivedInkWhat",
+      "whatFallback": "A theme picks its three text colours against the page and then never adjusts them, while the surfaces rise above it. Every layer costs contrast that nobody sees coming, because measured against the page each theme is fine — across the 107 dark built-ins, tertiary text was under 3.0:1 on a third of them.",
+      "howKey": "config.overviewNewFeatureDerivedInkHow",
+      "howFallback": "Secondary and tertiary text are now derived from the surface underneath them, so they hold their distance wherever they land. Every shipped theme clears the 4.5:1 floor for body text, and a test measures the whole register so a new theme that lands under it says so first.",
+      "enableKey": "config.overviewNewFeatureDerivedInkEnable",
+      "enableFallback": "Nothing to switch on. The step between ink and surface is yours to move under Appearance.",
+      "ctaKey": "config.overviewNewFeatureDerivedInkCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.5.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureSystemWidgetsTitle",
       "titleFallback": "Four widgets that watch the machine",
       "whatKey": "config.overviewNewFeatureSystemWidgetsWhat",
