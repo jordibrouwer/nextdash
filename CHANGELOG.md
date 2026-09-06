@@ -201,6 +201,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Themes
+
+- **fix — the faint text meets WCAG AA on every theme again.** The derived inks sit a fixed step off the surface they are on, and at 0.44 the dark theme fell short: its top surface (`#1F2937`) is a step lighter than the rest of its ladder, so tertiary text reached only **4.05:1** there — under the 4.5:1 floor for body text. The step is now **0.47**, the smallest that clears the floor on every shipped theme and every surface (4.56:1 at worst). The stylesheet, the server default and the test that measures it move together; `TestDerivedInkClearsContrastFloor` checks the whole register.
+
 ### Tests
 
 - **fix — two specs that the theme work moved past.** The widget readout compared a row's colour against `--text-tertiary` read off `documentElement`, which still holds the plain hex while the faint inks are now derived per surface — so it measured the root's colour rather than the tile's, and could only pass while the two happened to agree. It now reads the ink where the rows are, with the probe placed beside them. The v1.4.0 setting drawings asserted three theme depths; **glass** is a fourth the server accepts and the drop-down offers.

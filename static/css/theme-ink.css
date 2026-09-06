@@ -64,13 +64,20 @@
          * een spreiding over de hele bibliotheek van nog geen punt.
          *
          * Lager kan als hierarchie belangrijker is dan de norm: 0.34 zet alles
-         * boven 3,0:1. Hoger dan 0.46 laat tertiaire tekst zo hard meedoen dat
-         * het verschil met primair wegvalt. De lezer kan hem verzetten in
+         * boven 3,0:1. Hoger laat tertiaire tekst zo hard meedoen dat het
+         * verschil met primair wegvalt. De lezer kan hem verzetten in
          * Instellingen; die waarde komt als inline style op <body> binnen en
          * wint van de default hier. Het bereik staat in normalizeInkGap
          * (models.go) en loopt van 0.30 tot 0.58.
+         *
+         * 0.47 en geen 0.44: het donkere thema springt van #0e1312 naar
+         * #1F2937 op zijn bovenste vlak, en daar haalde de tertiaire inkt nog
+         * maar 4,05:1 -- onder de AA-grens van 4,5. Dit is de kleinste stap
+         * die elk meegeleverd thema op elk vlak boven die grens tilt (4,56:1
+         * in het slechtste geval); TestDerivedInkClearsContrastFloor rekent
+         * het na.
          */
-        --ink-gap-3: 0.44;
+        --ink-gap-3: 0.47;
 
         /*
          * Secundair loopt vast acht honderdsten voor op tertiair, zodat de

@@ -3909,7 +3909,12 @@ is spent. inkGapMin is not zero: below it the faint text starts disappearing
 into the card again, which is the thing this was built to stop.
 */
 const (
-	defaultInkGap = 0.44
+	// 0.47 rather than a rounder 0.44: the dark theme's top surface is a step
+	// lighter than the rest of its ladder, and the faint ink only reached
+	// 4.05:1 there -- under WCAG AA. This is the smallest default that clears
+	// 4.5:1 on every shipped theme and surface, and must stay in step with
+	// --ink-gap-3 in theme-ink.css.
+	defaultInkGap = 0.47
 	inkGapMin     = 0.30
 	inkGapMax     = 0.58
 )

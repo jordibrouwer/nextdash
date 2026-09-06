@@ -17,14 +17,14 @@ keeps holding when somebody adds a theme, so this test walks the whole register
 and re-does the arithmetic: build the surfaces the way theme-depth.css builds
 them, derive the ink the way theme-ink.css derives it, and measure.
 
-The lightness steps here (0.52 and 0.44) and the chroma scales (0.5 and 0.6)
+The lightness steps here (0.55 and 0.47) and the chroma scales (0.5 and 0.6)
 are the values in theme-ink.css. Change one there and this test says what it
 cost, in themes, before anybody sees it in a browser.
 */
 
 const (
-	inkGapSecondary = 0.52
-	inkGapTertiary  = 0.44
+	inkGapSecondary = 0.55
+	inkGapTertiary  = 0.47
 	inkChromaSecond = 0.5
 	inkChromaThird  = 0.6
 
