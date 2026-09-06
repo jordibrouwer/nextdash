@@ -114,6 +114,51 @@ html[data-theme] body[data-depth="glass"] :is(
     -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
 }
 
+/*
+ * En de klassieke layout, waar de meeste mensen zitten.
+ *
+ * Hierboven worden --layout-surface en --background-modal doorzichtig, en dat
+ * dekt de moderne layout, de modals en het zoekvenster. In classic komen de
+ * opgetilde vlakken ergens anders vandaan: theme-depth.css schildert de
+ * kaart-presets en het widgetlichaam rechtstreeks met --surface-1 en
+ * --surface-2. Zonder deze regel bleef glas daar dus onzichtbaar, en dat is
+ * precies de layout waar de default op staat.
+ *
+ * Het gaat op de achtergrond van die elementen en niet op --surface-2 zelf,
+ * en dat is met opzet: theme-ink.css leidt de inkt af van --surface-2, en een
+ * doorzichtige surface zou via oklch(from ...) een doorzichtige tekstkleur
+ * opleveren. Het vlak mag doorzichtig zijn, de inkt die erop ligt niet.
+ *
+ * Wat glas hier níet doet is de kaart-presets die geen vlak hebben er een
+ * geven. Masonry en de standaardweergave tekenen bewust geen kaart; daar
+ * blijft glas dus beperkt tot de widgets en de overlays. Doorzichtigheid is
+ * een eigenschap van een vlak, en waar geen vlak is valt niets door te kijken.
+ */
+html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category,
+html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+    background-color: color-mix(in srgb,
+        var(--surface-2) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+}
+
+html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {
+    background-color: color-mix(in srgb,
+        var(--surface-1) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category,
+    html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category,
+    html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+        background-color: var(--surface-2);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
 /* ── Gloed ───────────────────────────────────────────────────────────────
    Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default.
 
