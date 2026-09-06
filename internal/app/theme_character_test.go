@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -28,12 +29,19 @@ func TestCharacterFieldsClampToTheirRange(t *testing.T) {
 			want: []string{
 				"--theme-surface-alpha: 1;",
 				"--theme-surface-blur: 0px;",
-				"--theme-surface-glow: 0;",
+				"--theme-surface-glow: 0;", // geen palet om iets uit af te leiden
 				"--theme-radius-scale: 1;",
 				"--theme-label-transform: none;",
 				"--theme-label-spacing: normal;",
 				"--theme-label-weight: 700;",
 			},
+		},
+		{
+			name: "a negative glow means the theme wants none",
+			theme: ThemeColors{
+				SurfaceGlow: -1, AccentPrimary: "#39FF6A", BackgroundPrimary: "#050705",
+			},
+			want: []string{"--theme-surface-glow: 0;"},
 		},
 		{
 			name: "out of range is pulled back in",
@@ -119,6 +127,55 @@ func TestNoThemeCanCloseItsOwnBlock(t *testing.T) {
 	}
 	if strings.Contains(block, "display: none") || strings.Contains(block, "opacity: 0") {
 		t.Errorf("theme text was rendered verbatim:\n%s", block)
+	}
+}
+
+/*
+The derived glow, checked at the two ends and in the middle.
+
+The point of deriving is that a neon theme on black ends up brighter than a
+paper theme in daylight without anybody deciding that per theme, and that no
+derived value ever reaches the strength a theme can ask for by hand.
+*/
+func TestDerivedGlowFollowsThePalette(t *testing.T) {
+	glowOf := func(tc ThemeColors) float64 {
+		value := themeSurfaceGlow(tc)
+		parsed, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			t.Fatalf("themeSurfaceGlow returned %q, which is not a number", value)
+		}
+		return parsed
+	}
+
+	neon := glowOf(ThemeColors{AccentPrimary: "#4ADE80", BackgroundPrimary: "#030705"})
+	muted := glowOf(ThemeColors{AccentPrimary: "#A8A29E", BackgroundPrimary: "#171717"})
+	paper := glowOf(ThemeColors{AccentPrimary: "#2F6F5E", BackgroundPrimary: "#FBFAF7"})
+
+	if neon <= muted {
+		t.Errorf("a neon accent should out-glow a grey one: neon %.2f, muted %.2f", neon, muted)
+	}
+	if paper != 0 {
+		t.Errorf("a light page should not glow at all, got %.2f", paper)
+	}
+	if neon > 0.45 {
+		t.Errorf("a derived glow should stay well under what a theme can declare, got %.2f", neon)
+	}
+
+	// Declared beats derived, in both directions.
+	if got := glowOf(ThemeColors{SurfaceGlow: 1, AccentPrimary: "#A8A29E", BackgroundPrimary: "#171717"}); got != 1 {
+		t.Errorf("a declared glow of 1 came out as %.2f", got)
+	}
+	if got := glowOf(ThemeColors{SurfaceGlow: -1, AccentPrimary: "#4ADE80", BackgroundPrimary: "#030705"}); got != 0 {
+		t.Errorf("a theme that asked for no glow got %.2f", got)
+	}
+
+	// And the same theme id always lands on the same number.
+	first := glowOf(getDefaultBuiltInThemes()["retro-crt-dark"])
+	if second := glowOf(getDefaultBuiltInThemes()["retro-crt-dark"]); first != second {
+		t.Errorf("the derivation is not stable: %.2f then %.2f", first, second)
+	}
+	if first == 0 {
+		t.Error("the packaged terminal theme should have picked up a glow of its own")
 	}
 }
 

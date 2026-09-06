@@ -2266,6 +2266,116 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+themeSurfaceGlow answers how much of its own colour a theme bleeds around a
+raised surface.
+
+Declared wins. Unset does not mean none -- it means work it out, the same way
+the backdrop is worked out, because 218 of the themes in the register predate
+the field and hand-writing a number for each of them would be inventing 218
+opinions. A theme that wants no glow at all says so with a negative number.
+
+Derived from three things, all read off the theme's own palette:
+
+  - how much colour the accent actually carries, in OKLCH chroma rather than
+    HSL saturation. Saturation calls #58A6FF fully saturated because one
+    channel touches 255, which ranks GitHub's blue above a neon green; chroma
+    does not make that mistake.
+  - how light the accent is, because a glow is light. A dark accent glowing is
+    a shadow.
+  - how dark the page is, because a glow on paper is a smudge.
+
+Capped at 0.45, deliberately well under the 1.0 a theme can ask for by hand.
+A number this function chose should be felt and not seen; the flagships that
+declare 1.0 have earned it.
+*/
+func themeSurfaceGlow(tc ThemeColors) string {
+	if tc.SurfaceGlow < 0 {
+		return "0"
+	}
+	if tc.SurfaceGlow > 0 {
+		return formatFloat(clampFloat(tc.SurfaceGlow, 0, 1, 0))
+	}
+
+	accent := tc.AccentPrimary
+	if accent == "" {
+		accent = tc.AccentSuccess
+	}
+	accentLightness, accentChroma, okAccent := hexOklch(accent)
+	pageLightness, _, okPage := hexOklch(tc.BackgroundPrimary)
+	if !okAccent || !okPage {
+		return "0"
+	}
+
+	const derivedCap = 0.45
+	chroma := unitRange((accentChroma - 0.08) / 0.12)
+	light := unitRange((accentLightness - 0.45) / 0.30)
+	ground := unitRange((0.45 - pageLightness) / 0.25)
+
+	glow := chroma * light * ground * derivedCap * 2.2
+	if glow > derivedCap {
+		glow = derivedCap
+	}
+	return formatFloat(math.Round(glow*100) / 100)
+}
+
+// unitRange clamps to 0-1, which every one of the three factors above needs.
+func unitRange(v float64) float64 {
+	if math.IsNaN(v) || v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
+/*
+hexOklch returns a hex colour's OKLCH lightness and chroma.
+
+OKLab is worth the twenty lines here: it is the only space in this file where
+"how much colour is this" and "how light is this" are separate questions with
+honest answers. sRGB conflates them and HSL lies about both.
+*/
+func hexOklch(color string) (lightness, chroma float64, ok bool) {
+	h := strings.TrimSpace(color)
+	if !strings.HasPrefix(h, "#") {
+		return 0, 0, false
+	}
+	h = h[1:]
+	if len(h) == 3 {
+		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
+	}
+	if len(h) != 6 {
+		return 0, 0, false
+	}
+	linear := func(part string) (float64, bool) {
+		v, err := strconv.ParseUint(part, 16, 16)
+		if err != nil {
+			return 0, false
+		}
+		c := float64(v) / 255
+		if c <= 0.04045 {
+			return c / 12.92, true
+		}
+		return math.Pow((c+0.055)/1.055, 2.4), true
+	}
+	r, okR := linear(h[0:2])
+	g, okG := linear(h[2:4])
+	b, okB := linear(h[4:6])
+	if !okR || !okG || !okB {
+		return 0, 0, false
+	}
+	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b)
+	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b)
+	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b)
+	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+		math.Hypot(
+			1.9779984951*l-2.4285922050*m+0.4505937099*s,
+			0.0259040371*l+0.7827717662*m-0.8086757660*s,
+		), true
+}
+
+/*
 The character fields, rendered.
 
 Everything here is a number or one of a fixed set of words -- nothing a theme
@@ -2546,7 +2656,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
     --theme-surface-alpha: ` + formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1)) + `;
     --theme-surface-blur: ` + formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0)) + `px;
-    --theme-surface-glow: ` + formatFloat(clampFloat(tc.SurfaceGlow, 0, 1, 0)) + `;
+    --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
     --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;
