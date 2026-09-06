@@ -24,7 +24,17 @@
    Een eigen achtergrond wint dus altijd: die ligt er letterlijk overheen. */
 
 html[data-theme] body[data-theme-backdrop="on"] {
-    background-image: var(--theme-backdrop, none);
+    /*
+     * De theme-achtergrond bovenop, de twee accentwolken van theme-depth.css
+     * eronder. Allebei, en in die volgorde: de wolken zijn de diepte van de
+     * pagina en de achtergrond is het karakter van het theme, en het een is
+     * geen vervanging van het ander.
+     *
+     * Dit stond eerst als background-image zonder --depth-wash erachter. Die
+     * regel heeft dezelfde specificiteit als die in theme-depth.css en laadt
+     * erna, dus hij won -- en nam de gloed mee die daar al jaren stond.
+     */
+    background-image: var(--theme-backdrop, none), var(--depth-wash, none);
     background-repeat: repeat;
     background-size: cover;
 
@@ -39,7 +49,7 @@ html[data-theme] body[data-theme-backdrop="on"] {
 /* Uit is uit: terug naar de vlakke themekleur, zonder overgang die je op het
    moment van omschakelen als een flits ziet. */
 html[data-theme] body[data-theme-backdrop="off"] {
-    background-image: none;
+    background-image: var(--depth-wash, none);
 }
 
 /*

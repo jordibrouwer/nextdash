@@ -117,18 +117,32 @@ html[data-theme] body[data-depth="glass"] :is(
 /* ── Gloed ───────────────────────────────────────────────────────────────
    Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default.
 
-   Op de schaduw-tokens en niet op de elementen zelf. Dat was eerst anders en
-   dat was fout: een eigen box-shadow-regel op diezelfde selectors vervangt de
-   schaduw die er al stond in plaats van er iets aan toe te voegen -- box-shadow
-   stapelt binnen één declaratie, niet over declaraties heen. Kaarten verloren
-   hun schaduw aan de onderkant en kregen er bij glow 0 niets voor terug.
+   Niet aan de glas-stand gekoppeld. Gloed is iets van het theme, niet van de
+   diepte: Retro CRT Mk II hoort te gloeien omdat fosfor gloeit, ook als je op
+   rich staat. Alleen flat sluit hem uit, want daar heeft de lezer gezegd dat
+   hij geen lagen wil.
 
-   Via de tokens klopt het wel: de bestaande schaduw blijft de eerste laag en
-   de gloed komt er als tweede achteraan, in dezelfde declaratie. Elke plek die
-   --layout-shadow-* gebruikt doet automatisch mee, en bij gloed 0 is de tweede
-   laag volledig doorzichtig en verandert er niets. */
+   Op de schaduw-tokens en niet op de elementen. Dat was eerst anders en dat
+   was fout: een eigen box-shadow-regel op dezelfde selectors vervangt de
+   schaduw die er al staat in plaats van er iets aan toe te voegen -- box-shadow
+   stapelt binnen één declaratie, niet over declaraties heen. Via de tokens
+   blijft de bestaande schaduw de eerste laag en komt de gloed erachteraan.
 
-html[data-theme] body[data-depth="glass"] {
+   Twee tokens, want de app heeft twee kaart-idiomen: --edge-light is de lichte
+   bovenrand die theme-depth.css op de klassieke kaarten en widgets zet, en
+   --layout-shadow-* zijn die van de moderne layout. Bij gloed 0 is de tweede
+   laag volledig doorzichtig en verandert er in beide niets. */
+
+html[data-theme] body:not([data-depth="flat"]) {
+    --edge-light:
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth)), transparent),
+        0 calc(var(--theme-surface-glow, 0) * 10px)
+          calc(var(--theme-surface-glow, 0) * 26px)
+          calc(var(--theme-surface-glow, 0) * -12px)
+        color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 50%), transparent);
+}
+
+body[data-layout-version="modern"]:not([data-depth="flat"]) {
     --layout-shadow-sm:
         0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent),
         0 calc(var(--theme-surface-glow, 0) * 8px) calc(var(--theme-surface-glow, 0) * 20px) calc(var(--theme-surface-glow, 0) * -10px)

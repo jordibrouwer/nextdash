@@ -202,13 +202,24 @@ html[data-theme="graphite-prism-light"] body {
  * like light.
  */
 html[data-theme] body:not([data-depth="flat"]) {
-    background-image:
+    /*
+     * Als variabele en niet direct als background-image, omdat body er
+     * inmiddels nog een achtergrond bij heeft: die van het theme zelf
+     * (theme-backdrop.css). Twee regels die allebei background-image zetten
+     * vervangen elkaar in plaats van te stapelen, en de winnaar is degene die
+     * het laatst laadt -- wat betekende dat deze twee wolken stilletjes
+     * verdwenen zodra de theme-achtergrond erbij kwam. Nu zet één regel de
+     * hele stapel en staat hier alleen nog waar hij uit bestaat.
+     */
+    --depth-wash:
         radial-gradient(65rem 45rem at 12% -12%,
             color-mix(in srgb, var(--accent-primary) calc(7% * var(--theme-depth)), transparent),
             transparent 70%),
         radial-gradient(55rem 38rem at 96% 6%,
             color-mix(in srgb, var(--accent-warning) calc(5% * var(--theme-depth)), transparent),
             transparent 70%);
+
+    background-image: var(--depth-wash);
     background-attachment: fixed;
     background-repeat: no-repeat;
 }
