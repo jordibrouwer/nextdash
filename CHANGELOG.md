@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.4.8 — 9 September 2026](#v148--9-september-2026)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
@@ -195,6 +196,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+### Tests
+
+- **fix — two specs that the theme work moved past.** The widget readout compared a row's colour against `--text-tertiary` read off `documentElement`, which still holds the plain hex while the faint inks are now derived per surface — so it measured the root's colour rather than the tile's, and could only pass while the two happened to agree. It now reads the ink where the rows are, with the probe placed beside them. The v1.4.0 setting drawings asserted three theme depths; **glass** is a fourth the server accepts and the drop-down offers.
 
 ---
 

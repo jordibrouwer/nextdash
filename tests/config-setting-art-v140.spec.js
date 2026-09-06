@@ -33,7 +33,9 @@ test.describe('the v1.4.0 setting drawings', () => {
         // Every option is in the list, which is what a select is for.
         const depths = await page.locator('[data-appearance-select="themeDepth"] option')
             .evaluateAll((els) => els.map((e) => e.value));
-        expect(depths).toEqual(['flat', 'soft', 'rich']);
+        // glass joined the three this release named: it is a real depth the
+        // server accepts, not an extra the list forgot to drop.
+        expect(depths).toEqual(['flat', 'soft', 'rich', 'glass']);
         const backdrops = await page.locator('[data-appearance-select="backgroundPattern"] option')
             .evaluateAll((els) => els.map((e) => e.value));
         expect(backdrops).toEqual(['auto', 'dots', 'grid', 'lines', 'hatch', 'none']);

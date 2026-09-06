@@ -40,11 +40,19 @@ async function withWidgets(page) {
     { timeout: 20_000 }).toBeGreaterThan(0);
 }
 
-/** A computed colour as three 0-255 channels, whatever notation it came in. */
-const CHANNELS = `(value) => {
+/*
+A computed colour as three 0-255 channels, whatever notation it came in.
+
+The probe is placed beside the element being compared rather than on the body,
+because the faint inks are relative colours -- oklch(from var(--surf) ...) --
+and var(--surf) is declared per surface. Resolved anywhere else it either keeps
+the oklch notation or picks up a different surface's tint, and the comparison
+then measures where the probe stood rather than what the reader sees.
+*/
+const CHANNELS = `(value, host) => {
     const probe = document.createElement('span');
     probe.style.color = value;
-    document.body.appendChild(probe);
+    (host || document.body).appendChild(probe);
     const resolved = getComputedStyle(probe).color;
     probe.remove();
     return (resolved.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
@@ -92,11 +100,19 @@ test.describe('a widget reads as an instrument', () => {
                     quiet: row?.classList.contains('is-quiet'),
                 };
             };
+            /*
+             * The ink is read where the rows are, not off documentElement.
+             * The faint inks are derived from the surface a thing sits on, so
+             * the root carries a different value from the tile -- comparing
+             * against the root measured the wrong colour and could only pass
+             * while the two happened to agree.
+             */
+            const host = rows[0]?.closest('.dashboard-widget') || document.body;
             return {
                 broken: read('broken'),
                 down: read('monitored'),
-                tertiary: channels(getComputedStyle(document.documentElement)
-                    .getPropertyValue('--text-tertiary').trim()),
+                tertiary: channels(getComputedStyle(host)
+                    .getPropertyValue('--text-tertiary').trim(), host),
             };
         }, CHANNELS);
 
