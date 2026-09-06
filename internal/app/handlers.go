@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -2264,6 +2265,365 @@ func (h *Handlers) GetCustomThemesList(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(themesMap)
 }
 
+/*
+themeSurfaceGlow answers how much of its own colour a theme bleeds around a
+raised surface.
+
+Declared wins. Unset does not mean none -- it means work it out, the same way
+the backdrop is worked out, because 218 of the themes in the register predate
+the field and hand-writing a number for each of them would be inventing 218
+opinions. A theme that wants no glow at all says so with a negative number.
+
+Derived from three things, all read off the theme's own palette:
+
+  - how much colour the accent actually carries, in OKLCH chroma rather than
+    HSL saturation. Saturation calls #58A6FF fully saturated because one
+    channel touches 255, which ranks GitHub's blue above a neon green; chroma
+    does not make that mistake.
+  - how light the accent is, because a glow is light. A dark accent glowing is
+    a shadow.
+  - how dark the page is, because a glow on paper is a smudge.
+
+Capped at 0.45, deliberately well under the 1.0 a theme can ask for by hand.
+A number this function chose should be felt and not seen; the flagships that
+declare 1.0 have earned it.
+*/
+func themeSurfaceGlow(tc ThemeColors) string {
+	if tc.SurfaceGlow < 0 {
+		return "0"
+	}
+	if tc.SurfaceGlow > 0 {
+		return formatFloat(clampFloat(tc.SurfaceGlow, 0, 1, 0))
+	}
+
+	accent := tc.AccentPrimary
+	if accent == "" {
+		accent = tc.AccentSuccess
+	}
+	accentLightness, accentChroma, okAccent := hexOklch(accent)
+	pageLightness, _, okPage := hexOklch(tc.BackgroundPrimary)
+	if !okAccent || !okPage {
+		return "0"
+	}
+
+	const derivedCap = 0.45
+	chroma := unitRange((accentChroma - 0.08) / 0.12)
+	light := unitRange((accentLightness - 0.45) / 0.30)
+	ground := unitRange((0.45 - pageLightness) / 0.25)
+
+	glow := chroma * light * ground * derivedCap * 2.2
+	if glow > derivedCap {
+		glow = derivedCap
+	}
+	return formatFloat(math.Round(glow*100) / 100)
+}
+
+// unitRange clamps to 0-1, which every one of the three factors above needs.
+func unitRange(v float64) float64 {
+	if math.IsNaN(v) || v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
+/*
+hexOklch returns a hex colour's OKLCH lightness and chroma.
+
+OKLab is worth the twenty lines here: it is the only space in this file where
+"how much colour is this" and "how light is this" are separate questions with
+honest answers. sRGB conflates them and HSL lies about both.
+*/
+func hexOklch(color string) (lightness, chroma float64, ok bool) {
+	h := strings.TrimSpace(color)
+	if !strings.HasPrefix(h, "#") {
+		return 0, 0, false
+	}
+	h = h[1:]
+	if len(h) == 3 {
+		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
+	}
+	if len(h) != 6 {
+		return 0, 0, false
+	}
+	linear := func(part string) (float64, bool) {
+		v, err := strconv.ParseUint(part, 16, 16)
+		if err != nil {
+			return 0, false
+		}
+		c := float64(v) / 255
+		if c <= 0.04045 {
+			return c / 12.92, true
+		}
+		return math.Pow((c+0.055)/1.055, 2.4), true
+	}
+	r, okR := linear(h[0:2])
+	g, okG := linear(h[2:4])
+	b, okB := linear(h[4:6])
+	if !okR || !okG || !okB {
+		return 0, 0, false
+	}
+	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b)
+	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b)
+	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b)
+	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+		math.Hypot(
+			1.9779984951*l-2.4285922050*m+0.4505937099*s,
+			0.0259040371*l+0.7827717662*m-0.8086757660*s,
+		), true
+}
+
+/*
+The character fields, rendered.
+
+Everything here is a number or one of a fixed set of words -- nothing a theme
+writes reaches CSS unchecked. That is deliberate and it is the whole reason
+these are typed fields rather than a block of CSS a theme hands over: the
+sanitising is a clamp, not a parser.
+
+Each zero value renders as today's behaviour, so a theme that says nothing
+about its character gets the character every theme has now.
+*/
+
+/*
+clampFloat holds a number inside a range, answering with the fallback when the
+field is unset.
+
+Unset is zero, because that is what an absent JSON number decodes to and there
+is no way to tell it from a written 0. That is fine for three of the four
+fields, whose fallback is 0 anyway. For RadiusScale it means a theme cannot ask
+for exactly square by writing 0 -- it writes 0.05, which is the bottom of the
+range and lands every corner under half a pixel.
+*/
+func clampFloat(v, min, max, fallback float64) float64 {
+	if math.IsNaN(v) || v <= 0 {
+		return fallback
+	}
+	if v < min {
+		return min
+	}
+	if v > max {
+		return max
+	}
+	return v
+}
+
+// formatFloat writes a number the way CSS wants it: no trailing zeroes, no
+// exponent, and always something -- never an empty string that would make the
+// declaration around it invalid.
+func formatFloat(v float64) string {
+	return strconv.FormatFloat(v, 'f', -1, 64)
+}
+
+// themeLabelTransform is one of three words. Anything else is "none", which is
+// what a theme that never mentioned it gets.
+func themeLabelTransform(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "uppercase":
+		return "uppercase"
+	case "lowercase":
+		return "lowercase"
+	default:
+		return "none"
+	}
+}
+
+/*
+themeLabelSpacing accepts a letter-spacing in em and nothing else.
+
+em rather than px because the category title scales with the font-size setting
+and its spacing has to scale with it. Bounded at a quarter em: past that the
+title stops being a word and becomes a row of letters. "normal" is the CSS
+default and what an unset field renders as.
+*/
+func themeLabelSpacing(value string) string {
+	raw := strings.ToLower(strings.TrimSpace(value))
+	if raw == "" || raw == "normal" {
+		return "normal"
+	}
+	if !strings.HasSuffix(raw, "em") {
+		return "normal"
+	}
+	number, err := strconv.ParseFloat(strings.TrimSuffix(raw, "em"), 64)
+	if err != nil || math.IsNaN(number) {
+		return "normal"
+	}
+	if number < -0.05 {
+		number = -0.05
+	}
+	if number > 0.25 {
+		number = 0.25
+	}
+	return formatFloat(number) + "em"
+}
+
+// themeLabelWeight keeps the category title inside the weights the packaged
+// fonts actually carry. Outside 400-800 a browser rounds to the nearest one it
+// has, which makes a theme's choice depend on which font the reader picked.
+func themeLabelWeight(weight int) string {
+	if weight < 400 || weight > 800 {
+		return "700"
+	}
+	return strconv.Itoa(weight - weight%100)
+}
+
+/*
+themeBackdropImage builds the backdrop a theme is drawn on.
+
+Every theme gets one and no two are alike, without anybody having to draw two
+hundred backgrounds: the shape is picked from the theme's own id and the colours
+come from its own palette, mixed down to the point where they read as
+atmosphere rather than decoration. A theme that is all greens gets a green
+backdrop; one built around a magenta accent gets a magenta one. The same id
+always lands on the same backdrop, so a theme does not change appearance
+between releases.
+
+The result is a CSS background-image list, referencing the custom properties
+declared in the same block. It is composed here rather than declared in the
+theme because sanitizeCSSColor (security.go) accepts only flat colours by
+design, and widening that to arbitrary gradients would mean parsing untrusted
+CSS. Generated on our side there is nothing to parse: every value below is a
+number this function chose.
+
+Nine recipes, in the order the hash reaches them. They differ in kind and not
+only in angle -- blooms, sweeps, wireframes, rings, scanlines -- because eight
+variations on one gradient would still read as one background.
+*/
+func themeBackdropImage(themeID string, tc ThemeColors) string {
+	h := fnv32(themeID)
+	pick := func(shift uint, span int) int {
+		if span <= 0 {
+			return 0
+		}
+		return int((h >> shift) % uint32(span))
+	}
+
+	accent := "var(--accent-primary)"
+	second := "var(--accent-error)"
+	if tc.AccentPrimary == "" {
+		accent = "var(--accent-success)"
+	}
+
+	// Mixed against the page rather than transparent: over a light theme a
+	// translucent accent turns milky, over a dark one it glows. Mixing with the
+	// theme's own background keeps a backdrop the same weight either way.
+	wash := func(color string, pct int) string {
+		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, var(--background-primary))"
+	}
+	veil := func(color string, pct int) string {
+		return "color-mix(in srgb, " + color + " " + strconv.Itoa(pct) + "%, transparent)"
+	}
+
+	angle := 15 + pick(3, 150)
+	x1, y1 := 4+pick(7, 34), pick(11, 22)
+	x2, y2 := 62+pick(13, 34), pick(17, 26)
+	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
+		wash(accent, 6) + " 0%, var(--background-primary) 68%)"
+
+	switch pick(23, 9) {
+	case 0: // twee zachte blooms, de vorm van de referentie
+		return "radial-gradient(120% 88% at " + pct(x1) + " " + pct(y1) + ", " + veil(second, 26) + " 0%, transparent 56%), " +
+			"radial-gradient(110% 80% at " + pct(x2) + " " + pct(y2) + ", " + veil(accent, 24) + " 0%, transparent 60%), " + base
+	case 1: // brede sweep vanuit een hoek
+		return "conic-gradient(from " + strconv.Itoa(angle) + "deg at " + pct(x1) + " -10%, " +
+			veil(accent, 22) + " 0deg, transparent 140deg, " + veil(second, 16) + " 300deg, transparent 360deg), " + base
+	case 2: // wireframe: twee sets dunne lijnen onder een hoek
+		return "repeating-linear-gradient(" + strconv.Itoa(angle) + "deg, " + veil(accent, 12) + " 0 1px, transparent 1px " + strconv.Itoa(38+pick(2, 24)) + "px), " +
+			"repeating-linear-gradient(" + strconv.Itoa(-angle/2) + "deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(46+pick(5, 28)) + "px), " + base
+	case 3: // gloed van onderaf, vignet eromheen
+		return "radial-gradient(150% 70% at 50% 108%, " + veil(accent, 26) + " 0%, transparent 62%), " +
+			"radial-gradient(120% 120% at 50% 50%, transparent 42%, " + veil(second, 12) + " 100%), " + base
+	case 4: // diagonale band
+		return "linear-gradient(" + strconv.Itoa(angle) + "deg, transparent 0%, " + veil(accent, 20) + " " + pct(28+pick(2, 20)) + ", transparent " + pct(64+pick(5, 18)) + "), " + base
+	case 5: // concentrische ringen
+		return "repeating-radial-gradient(circle at " + pct(x1) + " " + pct(y1) + ", " +
+			veil(accent, 9) + " 0 1px, transparent 1px " + strconv.Itoa(52+pick(2, 40)) + "px), " + base
+	case 6: // scanlijnen met een bloom bovenin
+		return "repeating-linear-gradient(0deg, " + veil(accent, 10) + " 0 1px, transparent 1px 3px), " +
+			"radial-gradient(120% 96% at 50% 0%, " + veil(accent, 18) + " 0%, transparent 66%), " + base
+	case 7: // kruisarcering
+		return "repeating-linear-gradient(45deg, " + veil(accent, 8) + " 0 1px, transparent 1px " + strconv.Itoa(14+pick(2, 12)) + "px), " +
+			"repeating-linear-gradient(-45deg, " + veil(second, 6) + " 0 1px, transparent 1px " + strconv.Itoa(16+pick(5, 14)) + "px), " + base
+	default: // horizon: een lichte band met een donkere grond
+		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
+			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
+	}
+}
+
+// pct renders an integer as a CSS percentage, which the recipes above need in
+// enough places to be worth a name.
+func pct(v int) string {
+	return strconv.Itoa(v) + "%"
+}
+
+// fnv32 is FNV-1a. Any stable hash would do; what matters is that a theme id
+// always reaches the same recipe, on every install and every release.
+func fnv32(s string) uint32 {
+	const (
+		offset = 2166136261
+		prime  = 16777619
+	)
+	hash := uint32(offset)
+	for i := 0; i < len(s); i++ {
+		hash ^= uint32(s[i])
+		hash *= prime
+	}
+	return hash
+}
+
+/*
+themeInkDirection says which way the derived ink in theme-ink.css moves away
+from the surface it sits on: up in a dark theme, down in a light one.
+
+Computed from the relative luminance of background-primary rather than read off
+the theme id, because a theme somebody made themselves has no "-dark" or
+"-light" in its name and still needs the right answer. A colour this cannot
+parse -- a named colour, an rgb() or hsl(), anything sanitizeCSSColor lets
+through that is not hex -- falls back to +1, which is the direction the default
+theme wants and the one nearly every theme in the register wants.
+*/
+func themeInkDirection(background string) string {
+	if lum, okColor := hexLuminance(background); okColor && lum > 0.42 {
+		return "-1"
+	}
+	return "1"
+}
+
+// hexLuminance returns the WCAG relative luminance of a #rgb or #rrggbb colour.
+func hexLuminance(color string) (float64, bool) {
+	h := strings.TrimSpace(color)
+	if !strings.HasPrefix(h, "#") {
+		return 0, false
+	}
+	h = h[1:]
+	if len(h) == 3 {
+		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
+	}
+	if len(h) != 6 {
+		return 0, false
+	}
+	channel := func(part string) (float64, bool) {
+		v, err := strconv.ParseUint(part, 16, 16)
+		if err != nil {
+			return 0, false
+		}
+		c := float64(v) / 255
+		if c <= 0.04045 {
+			return c / 12.92, true
+		}
+		return math.Pow((c+0.055)/1.055, 2.4), true
+	}
+	r, okR := channel(h[0:2])
+	g, okG := channel(h[2:4])
+	b, okB := channel(h[4:6])
+	if !okR || !okG || !okB {
+		return 0, false
+	}
+	return 0.2126*r + 0.7152*g + 0.0722*b, true
+}
+
 func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 	s := sanitizeThemeColors(tc)
 	/*
@@ -2292,6 +2652,15 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-primary: ` + accentPrimary + `;
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
+    --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
+    --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
+    --theme-surface-alpha: ` + formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1)) + `;
+    --theme-surface-blur: ` + formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0)) + `px;
+    --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
+    --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
+    --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
+    --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;
+    --theme-label-weight: ` + themeLabelWeight(tc.LabelWeight) + `;
 }
 `
 }

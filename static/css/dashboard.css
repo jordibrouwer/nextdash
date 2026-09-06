@@ -2493,11 +2493,14 @@ body[data-category-spacing="airy"] {
    is simply as tall as its tallest child and a control that fits costs nothing.
    Titles that wrap keep flex-start (see .category-title--multiline): chips
    belong beside the first line there, not centred across both. */
+/* Categoriekoppen delen de pagina in, en stonden op --text-tertiary: de
+   zwakste kleur die een theme heeft. Op --text-secondary blijven ze
+   ondergeschikt aan de bookmarknamen zonder als eerste weg te vallen. */
 .category-title {
     font-size: var(--font-size-category);
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.05em;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: flex;
     flex-wrap: nowrap;
     align-items: center;

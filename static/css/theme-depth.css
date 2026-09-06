@@ -29,18 +29,29 @@
    variable cannot read an attribute from an element below it. Everything
    derived from them lives on body too, so a descendant inherits both. */
 
-body[data-depth="flat"] body {
-    --theme-tint: 0%;
-    --theme-depth: 0;
-}
+/* Deze drie stonden als `body[data-depth="flat"] body` -- een afstammelings-
+   selector, die een body binnen een body vraagt en dus nooit matcht. Alleen de
+   kale `body` hierboven raakte iets, waardoor elke installatie op tint 3% en
+   diepte 1 bleef staan en de keuze in Instellingen niets deed, welke stand je
+   ook koos. Nu op body zelf, met html[data-theme] ervoor om boven de kale
+   `body` uit te komen. */
 
-body,
-body[data-depth="soft"] body {
+body {
     --theme-tint: 3%;
     --theme-depth: 1;
 }
 
-body[data-depth="rich"] body {
+html[data-theme] body[data-depth="flat"] {
+    --theme-tint: 0%;
+    --theme-depth: 0;
+}
+
+html[data-theme] body[data-depth="soft"] {
+    --theme-tint: 3%;
+    --theme-depth: 1;
+}
+
+html[data-theme] body[data-depth="rich"] {
     --theme-tint: 5%;
     --theme-depth: 1.5;
 }
@@ -191,13 +202,24 @@ html[data-theme="graphite-prism-light"] body {
  * like light.
  */
 html[data-theme] body:not([data-depth="flat"]) {
-    background-image:
+    /*
+     * Als variabele en niet direct als background-image, omdat body er
+     * inmiddels nog een achtergrond bij heeft: die van het theme zelf
+     * (theme-backdrop.css). Twee regels die allebei background-image zetten
+     * vervangen elkaar in plaats van te stapelen, en de winnaar is degene die
+     * het laatst laadt -- wat betekende dat deze twee wolken stilletjes
+     * verdwenen zodra de theme-achtergrond erbij kwam. Nu zet één regel de
+     * hele stapel en staat hier alleen nog waar hij uit bestaat.
+     */
+    --depth-wash:
         radial-gradient(65rem 45rem at 12% -12%,
             color-mix(in srgb, var(--accent-primary) calc(7% * var(--theme-depth)), transparent),
             transparent 70%),
         radial-gradient(55rem 38rem at 96% 6%,
             color-mix(in srgb, var(--accent-warning) calc(5% * var(--theme-depth)), transparent),
             transparent 70%);
+
+    background-image: var(--depth-wash);
     background-attachment: fixed;
     background-repeat: no-repeat;
 }

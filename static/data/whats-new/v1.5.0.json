@@ -1,0 +1,37 @@
+{
+  "tag": "v1.5.0",
+  "date": "6 September 2026",
+  "releasedAt": "2026-09-06",
+  "modalLead": "A theme is no longer only a palette. It can say how solid its surfaces are, how much they glow, how round the corners sit and how the labels are set — so two themes can differ in more than hue. Glass joins the depth settings, the faint text is now derived from the surface it sits on rather than fixed against the page, and every shipped theme clears the contrast floor for body text.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A theme can be more than thirteen colours.</strong> Seven optional settings give a theme its own character: how solid a raised surface is, the blur behind it, how much the accent bleeds around it, how round the corners are, and how the category labels are set. Two themes can now differ in shape and weight rather than only in hue. Every existing theme keeps rendering exactly as it did &mdash; leaving a setting out means today's behaviour."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Glass, as a fourth depth.</strong> Alongside <em>Flat</em>, <em>Soft</em> and <em>Rich</em>, in Appearance &rarr; Theme. Surfaces turn translucent with the page showing through, in the classic layout as well as the modern one."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Themes glow without being told to.</strong> Four themes out of 222 set a glow by hand, so the rest were flat by omission rather than by intent. It is now worked out from the theme's own palette &mdash; how much colour the accent carries, how light it is, how dark the page behind it is &mdash; which gives 89 of them a glow that suits them. Terminals and neons at the top, editor greys faint, paper at nothing. A theme that names its own glow still gets exactly that."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The faint text follows the surface it sits on.</strong> A theme picks its three text colours against the page, and every raised layer above that costs contrast &mdash; which nobody sees coming, because measured against the page each theme is fine. Secondary and tertiary text are now derived from the surface underneath them, so they hold their distance wherever they land."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Every shipped theme clears the contrast floor.</strong> Faint text on the dark theme's top surface reached only 4.05:1, under the 4.5:1 WCAG AA floor for body text. The step between ink and surface is now the smallest one that clears it on every theme and every surface. A test measures the whole register, so a new theme that lands under it says so before anybody meets it in a browser."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The theme's backdrop no longer eats the accent wash.</strong> Two soft accent blooms give the page its glow; a theme with its own backdrop replaced them instead of sitting on top. Both are drawn now, and turning the backdrop off falls back to the blooms rather than to nothing &mdash; which is what off was always meant to mean."
+        }
+      ]
+    }
+  ]
+}

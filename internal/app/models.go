@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -480,6 +481,36 @@ type Settings struct {
 	 * flat | soft | rich. Empty means rich.
 	 */
 	ThemeDepth string `json:"themeDepth,omitempty"`
+
+	/*
+	 * InkGap is how far the derived text colours sit from the surface they are
+	 * drawn on, in OKLCH lightness. theme-ink.css does the deriving; this is
+	 * the one number a reader gets to move.
+	 *
+	 * 0.44 is the calibrated default: measured across all 214 built-ins, on
+	 * every surface level and at both depth settings, the faintest text lands
+	 * between 4.68:1 and 5.5:1. Lower trades contrast for hierarchy — 0.34
+	 * still clears 3:1 everywhere — and higher flattens the difference between
+	 * a bookmark name and the note beside it.
+	 *
+	 * Zero means unset rather than "no gap": a settings file written before
+	 * this field existed must not read as a request for unreadable text.
+	 */
+	InkGap float64 `json:"inkGap,omitempty"`
+
+	/*
+	 * ThemeBackdrop switches the per-theme backdrop on or off ("on" | "off").
+	 *
+	 * Every theme has one: it is derived from that theme's own accent and
+	 * background by themeBackdropImage (handlers.go), so all of them differ
+	 * from each other without anybody drawing 214 backgrounds. A reader who
+	 * wants the flat surface back turns it off; a reader with their own
+	 * background image gets that instead, since a custom background wins.
+	 *
+	 * Empty means "on" — this arrives switched on for everybody who already
+	 * has a settings file.
+	 */
+	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
 	/*
 	 * BackgroundPattern is the shape of the backdrop texture: dots, grid,
 	 * lines, hatch or none.
@@ -931,6 +962,56 @@ type ThemeColors struct {
 	AccentSuccess string `json:"accentSuccess"`
 	AccentWarning string `json:"accentWarning"`
 	AccentError   string `json:"accentError"`
+
+	/*
+	 * Character. Everything above is colour; everything below is what a theme
+	 * is allowed to be besides a palette.
+	 *
+	 * Thirteen flat colours is why 214 themes look like one theme in 214
+	 * tints: two themes can differ in hue and in nothing else -- not in shape,
+	 * not in weight, not in whether their surfaces are solid. These fields are
+	 * the difference between recolouring the dashboard and theming it.
+	 *
+	 * All optional, and the zero value of each one is exactly today's
+	 * behaviour, so every existing theme and every theme somebody made
+	 * themselves keeps rendering the way it does now. Same arrangement as
+	 * AccentPrimary when it arrived.
+	 */
+
+	// SurfaceAlpha is how solid a raised surface is, 0.3 to 1. Below 1 the
+	// theme becomes glass -- cards let the backdrop through. Only spent at
+	// data-depth="glass"; the other depths keep surfaces solid, because a
+	// reader who asked for flat did not ask to see through things.
+	SurfaceAlpha float64 `json:"surfaceAlpha,omitempty"`
+
+	// SurfaceBlur is the backdrop-filter blur behind those surfaces, in
+	// pixels, 0 to 32. Translucency without blur is a window; with it, glass.
+	SurfaceBlur float64 `json:"surfaceBlur,omitempty"`
+
+	// SurfaceGlow is how much of the accent bleeds out around a raised
+	// surface, 0 to 1.
+	//
+	// Unset means work it out -- themeSurfaceGlow (handlers.go) derives a
+	// modest one from the theme's own accent and page, so that the 218 themes
+	// written before this field existed are not all flat by omission. A theme
+	// that wants no glow at all says so with a negative number; only a
+	// declared value can reach 1.
+	SurfaceGlow float64 `json:"surfaceGlow,omitempty"`
+
+	// RadiusScale multiplies the radius tokens, 0.05 to 1.6. A terminal theme
+	// sets 0.05 and turns square; a glass theme sets 1.4 and softens. This is
+	// the cheapest shape lever there is -- one number moves 352 corners.
+	// Unset is zero and reads as 1, so square is 0.05 rather than 0.
+	RadiusScale float64 `json:"radiusScale,omitempty"`
+
+	// LabelTransform and LabelSpacing and LabelWeight govern the category
+	// title, the one element that names a section and so the one place where a
+	// terminal reads as a terminal. The first two already existed as derived
+	// tokens with a hand-kept list of theme ids above them in theme-depth.css;
+	// a theme can now say it for itself.
+	LabelTransform string `json:"labelTransform,omitempty"` // none | uppercase | lowercase
+	LabelSpacing   string `json:"labelSpacing,omitempty"`   // an em length, e.g. "0.14em"
+	LabelWeight    int    `json:"labelWeight,omitempty"`    // 400-800
 }
 
 type Store interface {
@@ -1231,6 +1312,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LayoutPreset:                 "default",
 			LayoutVersion:                "classic",
 			ThemeDepth:                   "rich",
+			InkGap:                       defaultInkGap,
+			ThemeBackdrop:                "on",
 			BackgroundPattern:            "auto",
 			BackgroundOpacity:            1,
 			FontWeight:                   "normal",
@@ -3260,6 +3343,8 @@ func (fs *FileStore) GetSettings() Settings {
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
 			ThemeDepth:                     "rich",
+			InkGap:                         defaultInkGap,
+			ThemeBackdrop:                  "on",
 			BackgroundPattern:              "auto",
 			DensityMode:                    "compact",
 			CategorySpacing:                "balanced",
@@ -3551,8 +3636,10 @@ func (fs *FileStore) GetSettings() Settings {
 		 * rule at all, leaving a dashboard with the tokens defined and nothing
 		 * drawn — which reads as broken rather than as flat.
 		 */
+		settings.InkGap = normalizeInkGap(settings.InkGap)
+		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
 		switch settings.ThemeDepth {
-		case "flat", "soft", "rich":
+		case "flat", "soft", "rich", "glass":
 		default:
 			settings.ThemeDepth = "rich"
 		}
@@ -3815,6 +3902,50 @@ should not silently take somebody's star with it. The browser skips an id it
 cannot resolve, which is the right place to notice — it is the only one that
 knows what exists right now.
 */
+/*
+defaultInkGap is the calibrated distance between the derived text colours and
+the surface they sit on — see InkGap on Settings, and theme-ink.css for how it
+is spent. inkGapMin is not zero: below it the faint text starts disappearing
+into the card again, which is the thing this was built to stop.
+*/
+const (
+	// 0.47 rather than a rounder 0.44: the dark theme's top surface is a step
+	// lighter than the rest of its ladder, and the faint ink only reached
+	// 4.05:1 there -- under WCAG AA. This is the smallest default that clears
+	// 4.5:1 on every shipped theme and surface, and must stay in step with
+	// --ink-gap-3 in theme-ink.css.
+	defaultInkGap = 0.47
+	inkGapMin     = 0.30
+	inkGapMax     = 0.58
+)
+
+// normalizeInkGap keeps the gap inside the range the stylesheet was calibrated
+// for. An unset or unreadable value becomes the default rather than the floor:
+// a settings file from before this existed is not a request for less contrast.
+func normalizeInkGap(gap float64) float64 {
+	if math.IsNaN(gap) || gap <= 0 {
+		return defaultInkGap
+	}
+	if gap < inkGapMin {
+		return inkGapMin
+	}
+	if gap > inkGapMax {
+		return inkGapMax
+	}
+	// Rounded to the step the slider offers, so a hand-edited settings file and
+	// the config view agree on what is stored.
+	return math.Round(gap*100) / 100
+}
+
+// normalizeThemeBackdrop defaults to "on": the backdrop is part of what a theme
+// looks like, and an install that never heard of the setting should see it.
+func normalizeThemeBackdrop(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), "off") {
+		return "off"
+	}
+	return "on"
+}
+
 func normalizeFavoriteThemes(ids []string) []string {
 	if len(ids) == 0 {
 		return nil
@@ -3844,6 +3975,28 @@ func normalizeFavoriteThemes(ids []string) []string {
 
 func getDefaultBuiltInThemes() map[string]ThemeColors {
 	return map[string]ThemeColors{
+		/*
+		 * The four that use the character fields.
+		 *
+		 * Everything above this is a palette and nothing else, because until
+		 * now that was all a theme could be. These four each lean on a
+		 * different one of the new fields, which is the point of them: Aurora
+		 * is glass and a backdrop, Nocturne is contrast and density with no
+		 * effects at all, Retro CRT Mk II is shape and case, Porcelain is a
+		 * light theme with the tint turned off entirely.
+		 *
+		 * Retro CRT Mk II keeps the palette of retro-crt-dark, which is the
+		 * theme a fresh install starts on, rather than replacing it: nobody's
+		 * dashboard should change colour because a new theme was added.
+		 */
+		"aurora-glass-dark":   {Name: "Aurora Glass [dark]", TextPrimary: "#E9EDFC", TextSecondary: "#A9B4DA", TextTertiary: "#6E7BAA", BackgroundPrimary: "#0B1020", BackgroundSecondary: "#141B33", BackgroundDots: "#1E2748", BackgroundModal: "rgba(11, 16, 32, 0.88)", BorderPrimary: "#27314F", BorderSecondary: "#1B2440", AccentPrimary: "#7DA2FF", AccentSuccess: "#46D399", AccentWarning: "#F2B441", AccentError: "#FB7185", SurfaceAlpha: 0.58, SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.4, LabelSpacing: "0.01em", LabelWeight: 600},
+		"aurora-glass-light":  {Name: "Aurora Glass [light]", TextPrimary: "#1B2340", TextSecondary: "#454F73", TextTertiary: "#6B759B", BackgroundPrimary: "#F4F6FE", BackgroundSecondary: "#E9EDFB", BackgroundDots: "#D8DFF6", BackgroundModal: "rgba(244, 246, 254, 0.9)", BorderPrimary: "#CBD5F0", BorderSecondary: "#DFE5F7", AccentPrimary: "#3D63D8", AccentSuccess: "#0F8A5F", AccentWarning: "#9A6B00", AccentError: "#C2405A", SurfaceAlpha: 0.62, SurfaceBlur: 18, SurfaceGlow: 0.6, RadiusScale: 1.4, LabelSpacing: "0.01em", LabelWeight: 600},
+		"nocturne-ink-dark":   {Name: "Nocturne Ink [dark]", TextPrimary: "#F5F3EF", TextSecondary: "#C6C2B9", TextTertiary: "#8E8A82", BackgroundPrimary: "#08090B", BackgroundSecondary: "#101216", BackgroundDots: "#1A1D22", BackgroundModal: "rgba(8, 9, 11, 0.92)", BorderPrimary: "#23262C", BorderSecondary: "#191C21", AccentPrimary: "#E4B363", AccentSuccess: "#7FB069", AccentWarning: "#E0A458", AccentError: "#D45D5D", SurfaceGlow: -1, RadiusScale: 0.5, LabelSpacing: "0.005em", LabelWeight: 500},
+		"nocturne-ink-light":  {Name: "Nocturne Ink [light]", TextPrimary: "#17181B", TextSecondary: "#4A4B50", TextTertiary: "#75767C", BackgroundPrimary: "#FCFBF9", BackgroundSecondary: "#F2F1EC", BackgroundDots: "#E3E2DB", BackgroundModal: "rgba(252, 251, 249, 0.93)", BorderPrimary: "#DEDCD4", BorderSecondary: "#EAE8E1", AccentPrimary: "#9A6B1F", AccentSuccess: "#4A7A38", AccentWarning: "#9A6B1F", AccentError: "#A63D3D", SurfaceGlow: -1, RadiusScale: 0.5, LabelSpacing: "0.005em", LabelWeight: 500},
+		"retro-crt-mk2-dark":  {Name: "Retro CRT Mk II [dark]", TextPrimary: "#D9FFDD", TextSecondary: "#86DF95", TextTertiary: "#4E9A5C", BackgroundPrimary: "#050705", BackgroundSecondary: "#0C140C", BackgroundDots: "#132013", BackgroundModal: "rgba(5, 7, 5, 0.92)", BorderPrimary: "#17361B", BorderSecondary: "#0F2412", AccentPrimary: "#39FF6A", AccentSuccess: "#39FF6A", AccentWarning: "#E8FF5A", AccentError: "#FF5A6E", SurfaceAlpha: 0.9, SurfaceGlow: 1, RadiusScale: 0.05, LabelTransform: "uppercase", LabelSpacing: "0.14em", LabelWeight: 700},
+		"retro-crt-mk2-light": {Name: "Retro CRT Mk II [light]", TextPrimary: "#082410", TextSecondary: "#1F5B2E", TextTertiary: "#3D7A4C", BackgroundPrimary: "#F3FAF3", BackgroundSecondary: "#E6F3E7", BackgroundDots: "#D2E8D5", BackgroundModal: "rgba(243, 250, 243, 0.93)", BorderPrimary: "#BEDCC2", BorderSecondary: "#D8ECDA", AccentPrimary: "#1B7A38", AccentSuccess: "#1B7A38", AccentWarning: "#7A6B00", AccentError: "#B03040", SurfaceAlpha: 0.9, SurfaceGlow: 0.5, RadiusScale: 0.05, LabelTransform: "uppercase", LabelSpacing: "0.14em", LabelWeight: 700},
+		"porcelain-dark":      {Name: "Porcelain [dark]", TextPrimary: "#F2EFE8", TextSecondary: "#C2BDB2", TextTertiary: "#8C877C", BackgroundPrimary: "#16150F", BackgroundSecondary: "#1F1E17", BackgroundDots: "#2A2820", BackgroundModal: "rgba(22, 21, 15, 0.92)", BorderPrimary: "#332F26", BorderSecondary: "#25231C", AccentPrimary: "#7FC0AC", AccentSuccess: "#7FC0AC", AccentWarning: "#D6A75A", AccentError: "#D97070", SurfaceGlow: -1, RadiusScale: 0.8, LabelSpacing: "0.01em", LabelWeight: 600},
+		"porcelain-light":     {Name: "Porcelain [light]", TextPrimary: "#22201C", TextSecondary: "#56524A", TextTertiary: "#8B857A", BackgroundPrimary: "#FBFAF7", BackgroundSecondary: "#F1EFE9", BackgroundDots: "#E4E1D8", BackgroundModal: "rgba(251, 250, 247, 0.93)", BorderPrimary: "#E2DED4", BorderSecondary: "#EDEAE2", AccentPrimary: "#2F6F5E", AccentSuccess: "#2F6F5E", AccentWarning: "#9A6B1F", AccentError: "#A33A3A", SurfaceGlow: -1, RadiusScale: 0.8, LabelSpacing: "0.01em", LabelWeight: 600},
 		/*
 		 * Twenty-five more palettes people arrive already knowing.
 		 *

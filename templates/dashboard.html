@@ -63,6 +63,9 @@
     <!-- Depth tokens, derived from the thirteen colours a theme declares. Ahead
          of layout-modern-tokens.css, which may consume them. -->
     <link rel="stylesheet" href="{{asset "css/theme-depth.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-ink.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-backdrop.css"}}">
+    <link rel="stylesheet" href="{{asset "css/theme-character.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-browser.css"}}">
     <!-- Modern design tokens load ahead of every view stylesheet, so view CSS
          that carries its own modern rules can read --layout-* directly. The
@@ -137,7 +140,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
         <div class="dashboard-noscript" role="alert">
