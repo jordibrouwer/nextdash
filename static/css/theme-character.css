@@ -1,0 +1,182 @@
+/* Karakter — wat een theme mag zijn behalve een palet.
+
+   Een theme leverde dertien platte kleuren, en dat is waarom 214 themes op
+   één theme in 214 tinten lijken: twee themes konden verschillen in tint en
+   verder in niets. Niet in vorm, niet in gewicht, niet in of hun vlakken
+   doorzichtig zijn.
+
+   renderThemeCSSBlock (handlers.go) schrijft nu zeven tokens mee, allemaal uit
+   getypte velden op ThemeColors en allemaal geklemd op de server -- er komt
+   geen CSS uit een theme, alleen getallen en woorden uit een vaste lijst. Het
+   nulwaarde van elk veld is precies het huidige gedrag, dus een theme dat
+   niets over zijn karakter zegt ziet er nog uit zoals nu:
+
+     --theme-surface-alpha    1      hoe massief een opgetild vlak is
+     --theme-surface-blur     0px    de blur erachter
+     --theme-surface-glow     0      hoeveel accent er omheen bloedt
+     --theme-radius-scale     1      vermenigvuldigt de radius-tokens
+     --theme-label-transform  none   kapitalen op de categoriekop
+     --theme-label-spacing    normal letterafstand daarvan
+     --theme-label-weight     700    gewicht daarvan
+*/
+
+/* ── Vorm ────────────────────────────────────────────────────────────────
+   Eén getal beweegt alle 352 hoeken in de app. De schaal wordt op de tokens
+   zelf toegepast, niet op de plekken die ze gebruiken, dus er hoeft geen
+   enkele view-CSS voor te veranderen. De pil blijft een pil: die is rond
+   omdat hij rond hoort, niet omdat het theme dat vindt. */
+
+html[data-theme] body {
+    --radius-1: calc(2px * var(--theme-radius-scale, 1));
+    --radius-2: calc(3px * var(--theme-radius-scale, 1));
+    --radius-3: calc(4px * var(--theme-radius-scale, 1));
+    --radius-4: calc(6px * var(--theme-radius-scale, 1));
+    --radius-5: calc(8px * var(--theme-radius-scale, 1));
+    --radius-6: calc(10px * var(--theme-radius-scale, 1));
+    --radius-7: calc(12px * var(--theme-radius-scale, 1));
+}
+
+/* ── Letter ──────────────────────────────────────────────────────────────
+   De categoriekop is het enige element dat een sectie benoemt, en daarmee de
+   plek waar een terminal als terminal leest en een bibliotheek als
+   bibliotheek. Het lettertype blijft van de lezer -- dat staat in
+   Instellingen en een theme dat het stilletjes vervangt gaat te ver.
+
+   --theme-title-spacing en --theme-title-transform bestonden al in
+   theme-depth.css, met een handmatig bijgehouden lijst theme-ids erboven. Die
+   lijst blijft staan en blijft winnen voor de acht themes die erin genoemd
+   worden -- html[data-theme="x"] body is specifieker dan wat hier staat. Voor
+   alle andere themes geldt vanaf nu wat het theme zelf zegt. Zodra die acht
+   hun eigen velden invullen kan de lijst weg; tot die tijd verandert er voor
+   ze niets, en dat is de bedoeling. */
+
+html[data-theme] body {
+    --theme-title-spacing: var(--theme-label-spacing, normal);
+    --theme-title-transform: var(--theme-label-transform, none);
+}
+
+html[data-theme] body:not([data-depth="flat"]) .category-title {
+    font-weight: var(--theme-label-weight, 700);
+}
+
+/* ── Glas ────────────────────────────────────────────────────────────────
+   De vierde dieptestand. Flat, soft en rich verschillen in hoeveel het theme
+   achter de inhoud getekend wordt; glas verschilt in of je er doorheen kijkt.
+
+   Alleen hier worden de vlakken doorzichtig. Bij de andere drie blijven ze
+   massief: wie om flat vroeg vroeg niet om doorkijk.
+
+   De doorzichtigheid gaat op de tokens, dus elke plek die --background-modal
+   of --layout-surface schildert doet automatisch mee. De blur kan dat niet --
+   backdrop-filter is een eigenschap van een element, geen kleur - en staat
+   daarom op de lijst hieronder. Die is niet verzonnen maar afgeleid: het zijn
+   de selectors die die twee tokens vandaag daadwerkelijk schilderen. Zodra de
+   .nd-* classlaag er is vervangt één naam de hele lijst. */
+
+html[data-theme] body[data-depth="glass"] {
+    --theme-tint: 5%;
+    --theme-depth: 1.5;
+
+    --layout-surface: color-mix(in srgb,
+        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 78%), transparent);
+    --background-modal: color-mix(in srgb,
+        var(--background-primary) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    --layout-modal-bg: var(--background-modal);
+}
+
+html[data-theme] body[data-depth="glass"] :is(
+    .config-tile,
+    .config-panel,
+    .config-choices,
+    .pages-link--icon .pages-link-anchor,
+    .page-overview-header-btn,
+    .page-navigation,
+    .page-nav-btn[data-view-tab],
+    :not([data-button-position="side-left"]) .button-container,
+    .search-button,
+    .btn-group,
+    .tag-cloud-toggle-btn.search-button,
+    #dashboard-layout > .empty-state,
+    .feed-row,
+    .search-container,
+    .button-container,
+    .quickstart-card,
+    .inbox-tile,
+    .inbox-filter-group,
+    .inbox-item,
+    .health-view-tile,
+    .health-view-filter-group,
+    .health-view-item,
+    .health-monitor-stat,
+    .modal
+) {
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+}
+
+/* ── Gloed ───────────────────────────────────────────────────────────────
+   Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default.
+
+   Op de schaduw-tokens en niet op de elementen zelf. Dat was eerst anders en
+   dat was fout: een eigen box-shadow-regel op diezelfde selectors vervangt de
+   schaduw die er al stond in plaats van er iets aan toe te voegen -- box-shadow
+   stapelt binnen één declaratie, niet over declaraties heen. Kaarten verloren
+   hun schaduw aan de onderkant en kregen er bij glow 0 niets voor terug.
+
+   Via de tokens klopt het wel: de bestaande schaduw blijft de eerste laag en
+   de gloed komt er als tweede achteraan, in dezelfde declaratie. Elke plek die
+   --layout-shadow-* gebruikt doet automatisch mee, en bij gloed 0 is de tweede
+   laag volledig doorzichtig en verandert er niets. */
+
+html[data-theme] body[data-depth="glass"] {
+    --layout-shadow-sm:
+        0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent),
+        0 calc(var(--theme-surface-glow, 0) * 8px) calc(var(--theme-surface-glow, 0) * 20px) calc(var(--theme-surface-glow, 0) * -10px)
+          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 45%), transparent);
+    --layout-shadow-md:
+        0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent),
+        0 calc(var(--theme-surface-glow, 0) * 16px) calc(var(--theme-surface-glow, 0) * 38px) calc(var(--theme-surface-glow, 0) * -18px)
+          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 55%), transparent);
+    --layout-shadow-lg:
+        0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent),
+        0 calc(var(--theme-surface-glow, 0) * 24px) calc(var(--theme-surface-glow, 0) * 54px) calc(var(--theme-surface-glow, 0) * -26px)
+          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 60%), transparent);
+}
+
+/* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan
+   zeggen. Dan valt glas terug op rich: de diepte blijft, de doorkijk gaat weg. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-depth="glass"] {
+        --layout-surface: var(--background-secondary);
+        --background-modal: var(--background-primary);
+    }
+    html[data-theme] body[data-depth="glass"] :is(
+        .config-tile,
+    .config-panel,
+    .config-choices,
+    .pages-link--icon .pages-link-anchor,
+    .page-overview-header-btn,
+    .page-navigation,
+    .page-nav-btn[data-view-tab],
+    :not([data-button-position="side-left"]) .button-container,
+    .search-button,
+    .btn-group,
+    .tag-cloud-toggle-btn.search-button,
+    #dashboard-layout > .empty-state,
+    .feed-row,
+    .search-container,
+    .button-container,
+    .quickstart-card,
+    .inbox-tile,
+    .inbox-filter-group,
+    .inbox-item,
+    .health-view-tile,
+    .health-view-filter-group,
+    .health-view-item,
+    .health-monitor-stat,
+    .modal
+    ) {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}

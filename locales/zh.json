@@ -5496,6 +5496,7 @@
     "themeDepthFlat": "扁平",
     "themeDepthSoft": "柔和",
     "themeDepthRich": "厚重",
+    "themeDepthGlass": "玻璃",
     "themeDepthNote": "主题在内容背后画多少东西：灰色里的那层色调、凸起的表面、页面背后的那层晕染。「扁平」就是这一切出现之前的仪表板。",
     "inkGapLabel": "文字对比度",
     "inkGapNote": "较弱的文字与其所在表面之间的距离。每个主题都以此为准衡量，所以无论选择哪种配色，书签旁边的说明都保持可读。调低层次更柔和，调高则把一切推向前景。",

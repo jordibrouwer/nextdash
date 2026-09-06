@@ -5496,6 +5496,7 @@
     "themeDepthFlat": "Flach",
     "themeDepthSoft": "Sanft",
     "themeDepthRich": "Kräftig",
+    "themeDepthGlass": "Glas",
     "themeDepthNote": "Wie viel vom Thema hinter dem Inhalt gezeichnet wird: der Farbton in seinen Grautönen, die erhabenen Flächen, der Schimmer hinter der Seite. Flach ist das Dashboard so, wie es vorher war.",
     "inkGapLabel": "Textkontrast",
     "inkGapNote": "Wie weit der schwächere Text von der Fläche entfernt liegt, auf der er steht. Jedes Theme wird daran gemessen, damit die Zeile neben einem Lesezeichen lesbar bleibt, welche Palette du auch wählst. Niedriger ergibt eine sanftere Hierarchie, höher schiebt alles nach vorn.",

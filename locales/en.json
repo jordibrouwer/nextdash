@@ -5496,6 +5496,7 @@
     "themeDepthFlat": "Flat",
     "themeDepthSoft": "Soft",
     "themeDepthRich": "Rich",
+    "themeDepthGlass": "Glass",
     "themeDepthNote": "How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.",
     "inkGapLabel": "Text contrast",
     "inkGapNote": "How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.",

@@ -8281,7 +8281,7 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
-                        ${['flat', 'soft', 'rich'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
                     </select>
                     <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
                     ${this.appearanceAff('themeDepth')}
@@ -10316,7 +10316,7 @@ class DashboardConfig {
             return;
         }
         if (name === 'themeDepth') {
-            const depth = ['flat', 'soft', 'rich'].includes(value) ? value : 'rich';
+            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'rich';
             this.dash.settings.themeDepth = depth;
             // Applied before it is saved: the point of the control is seeing the
             // difference, and a round trip to the server is a second of nothing.

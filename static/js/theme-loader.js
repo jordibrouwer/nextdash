@@ -310,7 +310,7 @@
      * copy is not the one that counts.
      */
     function applyThemeDepth(depth) {
-        const value = ['flat', 'soft', 'rich'].includes(depth) ? depth : 'rich';
+        const value = ['flat', 'soft', 'rich', 'glass'].includes(depth) ? depth : 'rich';
         document.documentElement.setAttribute('data-depth', value);
         if (document.body) {
             document.body.setAttribute('data-depth', value);
