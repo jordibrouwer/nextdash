@@ -144,6 +144,12 @@ class DashboardToolbar {
             // refuses to stack on top of another modal by itself; swallowing the
             // key here as well keeps it from reaching anything behind.
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
+                // Recent bookmarks is a dashboard button; inert in a
+                // full-container view. (! stays live everywhere -- see below --
+                // and is deliberately not given this same guard.)
+                if (!d.isBookmarksView()) {
+                    return;
+                }
                 const ownModalOpen = d.isRecentBookmarksModalOpen?.() === true;
                 if (!ownModalOpen && d.isModalOpen()) {
                     return;
@@ -172,6 +178,10 @@ class DashboardToolbar {
             }
 
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '.') {
+                // Fold-all is a dashboard button; inert in a full-container view.
+                if (!d.isBookmarksView()) {
+                    return;
+                }
                 if (d.isModalOpen()) {
                     return;
                 }

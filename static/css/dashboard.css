@@ -4551,6 +4551,20 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
     display: none !important;
 }
 
+/* The quick-action toolbar (add / search / commands / finders / recent / help /
+   fold, plus the search-flow-hint that advertises their keys) belongs to the
+   bookmarks dashboard. Gone in every full-container view, keyed off the same
+   layout class each one already stamps on #dashboard-layout -- no new class or
+   attribute needed. :has() reading #dashboard-layout from up at body is the
+   same trick fresh-tutorial.css and inbox-tutorial.css already use. display:none,
+   not opacity, so Tab cannot land in it either. What's New (outside
+   .button-container) is untouched. */
+body:has(#dashboard-layout.config-layout) .button-container,
+body:has(#dashboard-layout.health-layout) .button-container,
+body:has(#dashboard-layout.inbox-layout) .button-container {
+    display: none;
+}
+
 /* Side rail: / tag cloud is a direct .button-container child (not inside secondary group) */
 body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn.is-eligible {
     display: flex !important;

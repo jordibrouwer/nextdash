@@ -440,10 +440,16 @@
         },
 
         isEligible() {
+            // The / FAB filters the bookmarks grid, so it has nothing to do
+            // outside the dashboard -- gated here, at the source, rather than
+            // at each caller (the toggle button's own CSS, handleSlashKey, and
+            // the tag-filter-indicator chip all read this one answer).
+            const dash = window.dashboardInstance;
             return (
                 this.isFeatureAllowedInSettings() &&
                 this.libraryHasTags() &&
-                !isMobileLayout()
+                !isMobileLayout() &&
+                (!dash || dash.isBookmarksView())
             );
         },
 

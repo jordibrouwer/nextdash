@@ -202,6 +202,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Dashboard
+
+- **fix — the quick-action toolbar (add / search / commands / finders / recent / help / fold) followed you into Config, Inbox and Health.** It, its keys (`+` `>` `:` `?` `*` `.`) and the search-flow hint that advertises them are dashboard-only; they now hide and go inert the moment a full-container view opens, and come back the moment it closes. The `!` cheat-sheet shortcut, Shift-letter view switches and 1-9 page switching are unaffected. The `/` tag-cloud toggle had the same gap — it filters the bookmarks grid, so it is gone and inert outside the dashboard too.
+
 ### Health
 
 - **new — a review session can put a link aside for a month.** The card offered Re-check, Open, Delete and Skip, so a link that is broken on purpose — a service off for the winter, a host that only answers from another network — had no honest answer: Skip brings it back tomorrow, Delete is not what you meant. **Ignore 30d** (`z`) is that answer, and it makes the same write the row menu's `z` makes, so a link silenced here is silenced everywhere and returns on the same day. The row leaves the session afterwards, for the reason Delete's does: it is answered, and a session that keeps showing what you have dealt with is not counting honestly.

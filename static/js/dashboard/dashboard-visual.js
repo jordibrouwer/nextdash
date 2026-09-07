@@ -182,6 +182,10 @@ class DashboardVisual {
             return;
         }
         this.rotateRandomThemeIfViewMode();
+        // The / tag-cloud toggle only belongs to the bookmarks dashboard;
+        // isEligible() already reads isBookmarksView(), so re-running it here
+        // repaints the button (and disarms the key) on every transition.
+        window.DashboardTagCloud?.syncFromSettings?.();
     }
 
 

@@ -565,6 +565,15 @@ class SearchComponent {
             return;
         }
 
+        // Search, commands, finders and quick-add are bookmarks-dashboard
+        // buttons; their keys go inert in a full-container view instead of
+        // popping dashboard chrome over inbox/health/config. isBookmarksView()
+        // per its own docstring, rather than naming the views this is NOT.
+        if (!this.searchActive && window.dashboardInstance && !window.dashboardInstance.isBookmarksView()
+                && (key === '>' || key === ':' || key === '?' || e.key === '+')) {
+            return;
+        }
+
         if (!this.searchActive && this._isDashboardViewActive() && !this._isInboxLauncherKey(e, key)) {
             if (e.key.length === 1 && /^[A-Za-z0-9]$/.test(e.key)) {
                 return;
@@ -700,6 +709,15 @@ class SearchComponent {
         // / toggles dashboard tag cloud when enabled; config Tags tab uses / for its filter
         if (key === '/') {
             const dash = window.dashboardInstance;
+            // Outside the bookmarks dashboard, / has nothing to filter -- and
+            // without this the ineligible-tag-cloud fallback below would still
+            // fall through to opening the search overlay from inside inbox or
+            // health. Config keeps its own Tags-tab meaning for / on its own
+            // input, unreached by this document-level listener, and the check
+            // right after this one still covers it explicitly.
+            if (!this.searchActive && dash && !dash.isBookmarksView()) {
+                return;
+            }
             if (!this.searchActive && dash?.config?.isActiveView?.()) {
                 return;
             }

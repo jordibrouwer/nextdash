@@ -134,6 +134,10 @@
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (isTypingTarget(event.target)) return;
         if (!OPENING_KEYS.includes(event.key)) return;
+        // Every key this shim opens belongs to the bookmarks dashboard; before
+        // the real bundle lands to enforce that itself, don't let the race
+        // open dashboard chrome over inbox, health or config.
+        if (global.dashboardInstance && !global.dashboardInstance.isBookmarksView?.()) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         loadThenOpen(event.key);
