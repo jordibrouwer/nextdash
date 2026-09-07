@@ -1934,7 +1934,11 @@
     "listDensityComfortable": "宽松行距",
     "listDensityGroup": "行距",
     "healthSummaryUpdated": "已更新",
-    "healthSummaryJustNow": "刚刚"
+    "healthSummaryJustNow": "刚刚",
+    "findersNoneTitle": "尚未设置查找器",
+    "findersNoneBody": "查找器可直接从这里搜索其他网站。",
+    "findersNoneCta": "添加",
+    "findersNoneAction": "在配置 → 页面和标签 → 查找器中添加查找器"
   },
   "health": {
     "reloadPage": "重新加载页面",

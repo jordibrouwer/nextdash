@@ -1934,7 +1934,11 @@
     "listDensityComfortable": "Weite Zeilen",
     "listDensityGroup": "Zeilenhöhe",
     "healthSummaryUpdated": "Aktualisiert",
-    "healthSummaryJustNow": "gerade eben"
+    "healthSummaryJustNow": "gerade eben",
+    "findersNoneTitle": "Noch keine Finder eingerichtet",
+    "findersNoneBody": "Ein Finder durchsucht eine andere Website direkt von hier aus.",
+    "findersNoneCta": "Hinzufügen",
+    "findersNoneAction": "Finder hinzufügen unter Konfiguration → Seiten & Tags → Finder"
   },
   "health": {
     "reloadPage": "Seite neu laden",

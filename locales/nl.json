@@ -1934,7 +1934,11 @@
     "listDensityComfortable": "Ruime rijen",
     "listDensityGroup": "Rijhoogte",
     "healthSummaryUpdated": "Bijgewerkt",
-    "healthSummaryJustNow": "zojuist"
+    "healthSummaryJustNow": "zojuist",
+    "findersNoneTitle": "Nog geen finders ingesteld",
+    "findersNoneBody": "Een finder doorzoekt een andere site rechtstreeks vanaf hier.",
+    "findersNoneCta": "Toevoegen",
+    "findersNoneAction": "Voeg een finder toe via Config → Pagina's & tags → Finders"
   },
   "health": {
     "reloadPage": "Pagina herladen",

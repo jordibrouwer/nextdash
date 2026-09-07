@@ -1934,7 +1934,11 @@
     "listDensityComfortable": "Comfortable rows",
     "listDensityGroup": "Row density",
     "healthSummaryUpdated": "Updated",
-    "healthSummaryJustNow": "just now"
+    "healthSummaryJustNow": "just now",
+    "findersNoneTitle": "No finders set up yet",
+    "findersNoneBody": "A finder searches another site straight from here.",
+    "findersNoneCta": "Add",
+    "findersNoneAction": "Add a finder in Config → Pages & tags → Finders"
   },
   "health": {
     "reloadPage": "Reload page",

@@ -1934,7 +1934,11 @@
     "listDensityComfortable": "Lignes aérées",
     "listDensityGroup": "Hauteur des lignes",
     "healthSummaryUpdated": "Mis à jour",
-    "healthSummaryJustNow": "à l'instant"
+    "healthSummaryJustNow": "à l'instant",
+    "findersNoneTitle": "Aucun finder configuré",
+    "findersNoneBody": "Un finder interroge un autre site directement depuis ici.",
+    "findersNoneCta": "Ajouter",
+    "findersNoneAction": "Ajoutez un finder dans Config → Pages et tags → Finders"
   },
   "health": {
     "reloadPage": "Recharger la page",
