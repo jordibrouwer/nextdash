@@ -61,6 +61,9 @@ class ListViewShell {
             throw new Error('ListViewShell.mount needs a container');
         }
         const id = String(config.id || 'view');
+        const t = typeof config.t === 'function'
+            ? config.t
+            : (key, fallback) => fallback;
 
         const root = document.createElement('div');
         root.className = 'lvs';
@@ -114,6 +117,10 @@ class ListViewShell {
             filterClass: config.filterClass,
             filterCountClass: config.filterCountClass,
         };
+        const filterTitle = document.createElement('div');
+        filterTitle.className = 'lvs-group-title';
+        filterTitle.textContent = t('dashboard.listFilterHeading', 'Filter');
+        filterGroup.appendChild(filterTitle);
         (config.filters || []).forEach((entry) => {
             filterGroup.appendChild(
                 buildFilter(entry, String(entry.key) === activeKey, filterClasses));
@@ -123,6 +130,10 @@ class ListViewShell {
         if ((config.sections || []).length) {
             const sectionGroup = document.createElement('div');
             sectionGroup.className = 'lvs-group lvs-group--sections';
+            const sectionTitle = document.createElement('div');
+            sectionTitle.className = 'lvs-group-title';
+            sectionTitle.textContent = t('dashboard.listSectionHeading', 'Sections');
+            sectionGroup.appendChild(sectionTitle);
             (config.sections || []).forEach((entry) => {
                 const item = document.createElement('button');
                 item.type = 'button';
@@ -195,6 +206,7 @@ class ListViewShell {
             const group = document.createElement('div');
             group.className = 'lvs-density';
             group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', t('dashboard.listDensityGroup', 'Row density'));
             const current = () => window.ListDensity.get();
             const buttons = ['compact', 'comfortable'].map((value) => {
                 const btn = document.createElement('button');
@@ -202,6 +214,9 @@ class ListViewShell {
                 btn.className = 'lvs-density-btn';
                 btn.setAttribute('data-lvs-density', value);
                 btn.setAttribute('aria-pressed', String(current() === value));
+                btn.setAttribute('aria-label', value === 'compact'
+                    ? t('dashboard.listDensityCompact', 'Compact rows')
+                    : t('dashboard.listDensityComfortable', 'Comfortable rows'));
                 btn.textContent = value === 'compact' ? '≡' : '☰';
                 btn.addEventListener('click', () => {
                     window.ListDensity.set(value);

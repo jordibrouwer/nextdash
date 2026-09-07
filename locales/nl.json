@@ -1925,7 +1925,12 @@
     "widgetDockerImages": "images",
     "widgetDockerUnhealthyList": "faalt",
     "widgetDockerRestartedList": "net herstart",
-    "healthFocusSnooze": "Negeer {days}d"
+    "healthFocusSnooze": "Negeer {days}d",
+    "listFilterHeading": "Filter",
+    "listSectionHeading": "Secties",
+    "listDensityCompact": "Compacte rijen",
+    "listDensityComfortable": "Ruime rijen",
+    "listDensityGroup": "Rijhoogte"
   },
   "health": {
     "reloadPage": "Pagina herladen",
