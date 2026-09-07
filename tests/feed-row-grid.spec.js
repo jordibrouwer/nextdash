@@ -53,6 +53,18 @@ test('--grid-3 adds a trailing track', async ({ page }) => {
     expect(three.split(' ').length).toBe(two.split(' ').length + 1);
 });
 
+test('--with-select and --grid-3 combine without losing the checkbox column', async ({ page }) => {
+    await openDashboard(page);
+    // Health's rows carry --with-select and will want --grid-3's trailing
+    // column for a score or status pill — the exact pairing that would
+    // otherwise repeat the collision --grid was split out to avoid.
+    const both = await columnsOf(page, 'feed-row feed-row--with-select feed-row--grid-3');
+    const tracks = both.split(' ');
+    expect(tracks.length, `expected four tracks, got "${both}"`).toBe(4);
+    expect(parseFloat(tracks[0]), `checkbox column should stay first and narrow in "${both}"`)
+        .toBeLessThan(parseFloat(tracks[1]));
+});
+
 test('--grid-2 is gone from the stylesheet', async ({ page }) => {
     await openDashboard(page);
     const present = await page.evaluate(async () => {

@@ -87,15 +87,26 @@ test('the row grid is declared in feed-row.css and nowhere else', async ({ page 
             }
             return '';
         };
+        const feedRowCss = await read('css/feed-row.css');
+        // The exact selector `.feed-row--grid {`, not `.feed-row--grid-3 {` —
+        // the `-3` between `--grid` and the brace breaks the `\s*\{` match,
+        // so this can only find --grid's own rule.
+        const gridBlock = feedRowCss.match(/\.feed-row--grid\s*\{([^}]*)\}/);
         return {
-            feedRow: /\.feed-row--grid[^}]*grid-template-columns/s.test(await read('css/feed-row.css')),
+            columnsLiveInFeedRow: /grid-template-columns:\s*3rem 1fr/.test(feedRowCss),
+            // --grid must stay column-free: it and --with-select declare
+            // grid-template-columns at equal specificity, so a third
+            // declaration on --grid would win by source order and silently
+            // drop the checkbox column again (the bug this file used to miss).
+            gridModifierIsColumnFree: gridBlock ? !/grid-template-columns/.test(gridBlock[1]) : false,
             shell: /grid-template-columns:\s*3rem 1fr/.test(await read('css/list-view-shell.css')),
             inbox: /grid-template-columns:\s*3rem 1fr/.test(await read('css/dashboard-inbox.css')),
             health: /grid-template-columns:\s*3rem 1fr/.test(await read('css/health-view.css')),
         };
     });
 
-    expect(where.feedRow, 'the grid must live in feed-row.css').toBe(true);
+    expect(where.columnsLiveInFeedRow, 'the grid must live in feed-row.css').toBe(true);
+    expect(where.gridModifierIsColumnFree, '.feed-row--grid must not declare its own column tracks').toBe(true);
     expect(where.shell).toBe(false);
     expect(where.inbox).toBe(false);
     expect(where.health).toBe(false);
