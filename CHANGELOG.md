@@ -204,7 +204,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Dashboard
 
-- **fix — Alt+←/→ on a category header did nothing on a page you had never dragged.** The new position is stored in the block order, which does not exist until something writes one — and dragging was the only thing that ever did. So on a page arranged by nobody, the move looked for the category in an empty list, found nothing and gave up, while the screen reader was told it had moved. It now reads the current arrangement off the grid first, so the keyboard writes the same order a drag would have.
+- **fix — Escape threw away your selection while closing a popover.** The grid's key handler stands aside for the action popovers, listed by id, and three were missing from that list: the multi-select **Tags** and **Checking** popovers and the date popover. So Escape closed the popover *and* ran the grid handler, which saw a live selection and cleared it — you pressed Escape to dismiss the tag list and lost the twenty rows you had picked to tag. One Escape closes one thing now.
+- **fix — the Checking popover would not close when you clicked away from it.** Every other action popover binds the shared outside-click close; this was the one that never did, so it stayed over the page until you found Escape, and the click meant to dismiss it went to whatever sat underneath.
 - **fix — the quick-action toolbar (add / search / commands / finders / recent / help / fold) followed you into Config, Inbox and Health.** It, its keys (`+` `>` `:` `?` `*` `.`) and the search-flow hint that advertises them are dashboard-only; they now hide and go inert the moment a full-container view opens, and come back the moment it closes. The `!` cheat-sheet shortcut, Shift-letter view switches and 1-9 page switching are unaffected. The `/` tag-cloud toggle had the same gap — it filters the bookmarks grid, so it is gone and inert outside the dashboard too.
 
 ### Health

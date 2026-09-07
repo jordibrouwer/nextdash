@@ -665,8 +665,18 @@ class DashboardMultiSelect {
             .replace('{count}', String(refs.length));
         pop.appendChild(header);
 
+        /*
+         * Escape closed this one; clicking away did not. Every other action
+         * popover binds the shared outside-click close, and this was the one
+         * that never did -- so the Checking list sat over the page until you
+         * found the key, and a click meant to dismiss it went to whatever was
+         * underneath instead.
+         */
+        let unbindOutside = null;
         const close = () => {
             pop.remove();
+            unbindOutside?.();
+            unbindOutside = null;
             document.removeEventListener('keydown', onKey, true);
         };
         const onKey = (e) => {
@@ -712,6 +722,7 @@ class DashboardMultiSelect {
 
         document.body.appendChild(pop);
         document.addEventListener('keydown', onKey, true);
+        unbindOutside = d.bookmarkRows?._bindActionPopoverOutsideClose?.(pop, close, { anchorEl });
         const rect = anchorEl.getBoundingClientRect();
         pop.style.position = 'fixed';
         pop.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8))}px`;
