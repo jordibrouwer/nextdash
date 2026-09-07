@@ -5,6 +5,13 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * Phase 0 established that `position: sticky` works inside #dashboard-layout.
  * These tests hold that result in place and cover the collapse behaviour.
+ *
+ * The shell is mounted into a standalone container appended to `document.body`
+ * rather than into the live `#dashboard-layout` node: the app's own background
+ * rendering (dashboard-render-core.js) writes into `#dashboard-layout`
+ * asynchronously and can clobber a test's mount mid-test. Sticky positions
+ * against the viewport here, so a standalone container works just as well —
+ * the page still needs a tall body so `document.scrollingElement` can scroll.
  */
 async function mountTall(page) {
     await markWhatsNewSeen(page);
@@ -15,9 +22,27 @@ async function mountTall(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.ViewStyles?.ensureViewStyles != null, null, { timeout: 15_000 });
     await page.evaluate(() => window.ViewStyles.ensureViewStyles());
+    // The dashboard boots by rendering from cache, then quietly re-fetches
+    // and re-renders once the revision poll (fires on the initial focus) has
+    // settled. That re-render calls `window.scrollTo` itself while
+    // restoring the reader's remembered offset (dashboard-data.js,
+    // `_applyLoadedPageData`) — if it lands mid-test it silently overwrites
+    // whatever scroll position the test just set. Waiting for the network
+    // to go idle here lets that one-time settle-and-restore finish before
+    // the test starts driving its own scroll.
+    await page.waitForLoadState('networkidle');
     await page.evaluate(() => {
-        const host = document.getElementById('dashboard-layout');
-        host.innerHTML = '';
+        // The live dashboard content above our mount point keeps resizing
+        // asynchronously (widgets, lazy images) while the test runs. Left
+        // alone, Chromium's scroll anchoring "helpfully" adjusts scrollY to
+        // compensate whenever that off-screen content changes size, quietly
+        // undoing a scroll the test just made. Disable it so only our own
+        // scrollTo calls move the page.
+        document.documentElement.style.overflowAnchor = 'none';
+        document.body.style.overflowAnchor = 'none';
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        window.__lvsHost = host;
         window.__lvsHandle = window.ListViewShell.mount(host, {
             id: 'scratch',
             title: 'Scratch',
@@ -33,22 +58,53 @@ async function mountTall(page) {
     });
 }
 
+/**
+ * Scroll to `y` and wait until `window.scrollY` has actually settled, then
+ * measure. A fixed `setTimeout` after `scrollTo` is a race: the scroll may
+ * not have landed yet when the timer fires.
+ *
+ * We wait for `scrollY` to stop changing rather than for it to hit `y`
+ * exactly: the document's scrollable height wobbles by a few pixels here as
+ * unrelated content settles asynchronously, so a large `y` can legitimately
+ * clamp a little short of the requested value. Waiting for stability (a
+ * handful of consecutive polls reading the same value) covers both the
+ * scroll landing and the `scroll` event's listener — which runs off a
+ * queued task, not synchronously with `scrollTo` — having fired.
+ */
+async function scrollAndSettle(page, y) {
+    await page.evaluate((target) => {
+        window.__lvsScrollStable = 0;
+        window.__lvsScrollLast = NaN;
+        window.scrollTo(0, target);
+    }, y);
+    await page.waitForFunction(() => {
+        if (window.scrollY === window.__lvsScrollLast) {
+            window.__lvsScrollStable += 1;
+        } else {
+            window.__lvsScrollStable = 0;
+            window.__lvsScrollLast = window.scrollY;
+        }
+        return window.__lvsScrollStable >= 4;
+    }, null, { timeout: 5_000, polling: 50 });
+}
+
 test('the header is sticky and stays on screen while the list scrolls', async ({ page }) => {
     await mountTall(page);
 
-    const result = await page.evaluate(async () => {
+    const position = await page.evaluate(() => getComputedStyle(document.querySelector('.lvs-header')).position);
+
+    await scrollAndSettle(page, 1200);
+
+    const result = await page.evaluate(() => {
         const header = document.querySelector('.lvs-header');
-        const position = getComputedStyle(header).position;
-        const before = header.getBoundingClientRect().top;
-        window.scrollTo(0, 1200);
-        await new Promise((r) => setTimeout(r, 400));
         const after = header.getBoundingClientRect().top;
         const scrolled = window.scrollY;
-        window.scrollTo(0, 0);
-        return { position, before, after, scrolled };
+        return { after, scrolled };
     });
 
-    expect(result.position).toBe('sticky');
+    await scrollAndSettle(page, 0);
+
+    expect(position).toBe('sticky');
     expect(result.scrolled).toBeGreaterThan(0);
     expect(result.after, 'the header scrolled away instead of sticking').toBeLessThan(40);
 });
@@ -56,28 +112,26 @@ test('the header is sticky and stays on screen while the list scrolls', async ({
 test('the header collapses on scroll and expands again at the top', async ({ page }) => {
     await mountTall(page);
 
-    const states = await page.evaluate(async () => {
-        const header = document.querySelector('.lvs-header');
-        const at = async (y) => {
-            window.scrollTo(0, y);
-            await new Promise((r) => setTimeout(r, 350));
-            return header.classList.contains('is-collapsed');
-        };
-        const top = await at(0);
-        const down = await at(1200);
-        const back = await at(0);
-        return { top, down, back };
-    });
+    const isCollapsed = () => page.evaluate(
+        () => document.querySelector('.lvs-header').classList.contains('is-collapsed'),
+    );
 
-    expect(states).toEqual({ top: false, down: true, back: false });
+    await scrollAndSettle(page, 0);
+    const top = await isCollapsed();
+    await scrollAndSettle(page, 1200);
+    const down = await isCollapsed();
+    await scrollAndSettle(page, 0);
+    const back = await isCollapsed();
+
+    expect({ top, down, back }).toEqual({ top: false, down: true, back: false });
 });
 
 test('the primary action stays reachable in the collapsed header', async ({ page }) => {
     await mountTall(page);
 
-    const visible = await page.evaluate(async () => {
-        window.scrollTo(0, 1200);
-        await new Promise((r) => setTimeout(r, 350));
+    await scrollAndSettle(page, 1200);
+
+    const visible = await page.evaluate(() => {
         const btn = document.querySelector('[data-scratch-go]');
         const box = btn.getBoundingClientRect();
         return { top: box.top, height: box.height, inView: box.top >= 0 && box.bottom <= window.innerHeight };
@@ -90,20 +144,20 @@ test('the primary action stays reachable in the collapsed header', async ({ page
 test('the breadcrumb shows the active filter only when collapsed', async ({ page }) => {
     await mountTall(page);
 
-    const seen = await page.evaluate(async () => {
-        window.__lvsHandle.setBreadcrumb('Broken · 1');
-        const crumb = document.querySelector('.lvs-crumb');
-        const at = async (y) => {
-            window.scrollTo(0, y);
-            await new Promise((r) => setTimeout(r, 350));
-            return getComputedStyle(crumb).display !== 'none';
-        };
-        return { text: crumb.textContent, top: await at(0), down: await at(1200) };
-    });
+    await page.evaluate(() => window.__lvsHandle.setBreadcrumb('Broken · 1'));
+    const text = await page.evaluate(() => document.querySelector('.lvs-crumb').textContent);
+    const crumbVisible = () => page.evaluate(
+        () => getComputedStyle(document.querySelector('.lvs-crumb')).display !== 'none',
+    );
 
-    expect(seen.text).toBe('Broken · 1');
-    expect(seen.top).toBe(false);
-    expect(seen.down).toBe(true);
+    await scrollAndSettle(page, 0);
+    const top = await crumbVisible();
+    await scrollAndSettle(page, 1200);
+    const down = await crumbVisible();
+
+    expect(text).toBe('Broken · 1');
+    expect(top).toBe(false);
+    expect(down).toBe(true);
 });
 
 test('destroy detaches the scroll listener', async ({ page }) => {
