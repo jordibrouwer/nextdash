@@ -161,28 +161,20 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
 }
 
 /*
- * The grid variant: fixed columns so a reader scans down one column instead of
- * re-parsing each row. Declared here, once, because health, inbox and
- * Config -> Bookmarks all build on .feed-row.
+ * Row anatomy: alignment and density only.
+ *
+ * Columns deliberately stay with the base rule and with --with-select. Both
+ * declare grid-template-columns at the same specificity, so a third
+ * declaration here would win by source order and silently drop the checkbox
+ * column from every health row.
  */
 .feed-row--grid {
-    display: grid;
-    grid-template-columns: 3rem 1fr auto;
-    /* Not `center`: a row is as tall as its body, and a centred icon floats to
-       the middle of a two-line description instead of sitting on the title. */
     align-items: start;
-    column-gap: var(--space-3, 0.85rem);
 }
 
-/*
- * The trailing column is health's (badge, reason, score). Inbox has nothing to
- * put there, and an empty `auto` track still takes its gutter — 0.85rem of dead
- * space on the right of every row. `--grid-2` drops the track for the views
- * whose row is icon + body, so the anatomy stays one declaration rather than a
- * per-view copy of it.
- */
-.feed-row--grid.feed-row--grid-2 {
-    grid-template-columns: 3rem 1fr;
+/* For a view that fills a trailing column, such as a score or a status pill. */
+.feed-row--grid-3 {
+    grid-template-columns: 3rem 1fr auto;
 }
 
 body[data-list-density="compact"] .feed-row--grid {

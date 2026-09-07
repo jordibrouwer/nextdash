@@ -4079,10 +4079,7 @@ class DashboardInbox {
         // feed-row is the shared card, feed-row--grid the shared column
         // anatomy (and with it the shared density setting); the unread edge is
         // the shared modifier.
-        // --grid-2 because the inbox row is icon + body: it has no badge,
-        // reason or score to hang in the trailing column, and an empty track
-        // still takes its gutter.
-        card.className = 'feed-row feed-row--grid feed-row--grid-2 inbox-item'
+        card.className = 'feed-row feed-row--grid inbox-item'
             + (item.readAt ? ' is-read' : ' is-unread feed-row--edge-accent');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';
