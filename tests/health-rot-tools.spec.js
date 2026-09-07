@@ -12,9 +12,12 @@ async function healthView(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    // Wait for the instance before dismissing: the quick-setup dialog and the
+    // health tour are only reachable once it exists, so dismissing first leaves
+    // both to open later and swallow the clicks below.
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await page.evaluate(() => window.dashboardInstance.health.openHealthView());
     await page.waitForTimeout(1200);
     await page.evaluate(() => {

@@ -132,7 +132,9 @@ test.describe('ignoring a condition', () => {
             for (const issue of issues) await health.writeIgnores(issue, { clear: true });
             health.render();
         });
-        await expect(page.locator('[data-health-filter="ignored"]')).toHaveCount(0, { timeout: 10_000 });
+        // The rail declares every filter and hides what is empty, so the pill
+        // is in the DOM from the first render -- hidden, not absent.
+        await expect(page.locator('[data-health-filter="ignored"]')).toBeHidden({ timeout: 10_000 });
 
         await page.evaluate(async () => {
             const health = window.dashboardInstance.health;

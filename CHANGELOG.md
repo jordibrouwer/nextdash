@@ -249,6 +249,10 @@ For install and security, see the [README](README.md). For how to use features, 
 - Three rules that Health and Inbox each declared for their own classes, byte-identical every time — the host's width and centering, the toolbar search input's flex sizing, and the header action buttons' `display` — now live once in `list-view-shell.css`, as `.lvs-host`, `.lvs-toolbar-slot input[type="search"]` and `.lvs-header-actions button`.
 - `ListViewShell.mount()`'s `actions` config and `handle.railScrollTop` had no caller left in either view or any test — both views build their header actions by hand instead, since health's needs a nested menu wrap and a `<kbd>` a plain label can't express. Removed rather than left beside the markup that replaced them.
 
+### Tests
+
+- **fix — two health specs that the rail migration went past.** `health-ignore` asserted the **Ignored** filter was *absent* until something is ignored, but the rail now declares every filter and hides what is empty, so the pill is in the DOM from the first render — the assertion asks for hidden instead. `health-rot-tools` dismissed the onboarding dialog and the tour before waiting for `dashboardInstance`, so on a slow run neither was there yet to dismiss: **Quick setup** and **What's new in Health** opened afterwards and swallowed the click on **Group by site**. It waits for the instance first now, the order the other health specs already use.
+
 ### Themes
 
 - **fix — a theme's dark variant no longer wears a different backdrop shape than its light one.** The backdrop's shape is picked by hashing the theme id, and a "-light"/"-dark" pair is two different ids, so 111 of the 224 built-in themes had their two variants land on two different recipes — a diagonal wireframe on one side, a glow from below on the other — while only the colours were meant to change with Quick mode. A "-dark" id is now hashed as its "-light" counterpart, so the pair always shares a recipe; the plain `light`/`dark` defaults and every custom theme are unaffected. **This changes the look of 111 dark themes**, each now drawn with the shape its light half already had.
