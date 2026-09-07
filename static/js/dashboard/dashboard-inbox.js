@@ -3393,20 +3393,11 @@ class DashboardInbox {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
-            // Ticks from a previous query would act on rows the user can no longer
-            // see, so a search change starts the selection over (same as filter).
-            this.checkedIds.clear();
-            // The anchor a Shift+click range counts from belongs to the selection
-            // it was made in. Left standing across a filter change, a later
-            // Shift+click ticked everything back to a row this view never showed.
-            this.checkAnchorId = null;
-            // The deep-link target is spent once its row has been shown; keeping it
-            // would drag focus back to that row on every later keystroke.
-            this.focusItemId = null;
-            // Debounced with the render: syncing on every keystroke would rewrite
-            // the address bar a dozen times per word.
-            this.syncUrlState();
-            this.render();
+            // searchQuery is already assigned by the input handler above; the
+            // patch carries nothing new, which is why action is passed explicitly
+            // instead of being derived from the (empty) patch's keys. persist:
+            // false keeps search out of localStorage, same as before.
+            this.applyViewChange({}, { via: 'search', action: 'search', persist: false });
         }, 80);
     }
 
@@ -3528,12 +3519,7 @@ class DashboardInbox {
     bindToolbar(host) {
         const sortSelect = host.querySelector('.inbox-sort-select');
         sortSelect?.addEventListener('change', (e) => {
-            this.sort = e.target.value || 'newest';
-            this._trackAction('sort', { sort: this.sort });
-            this.visibleLimit = 50;
-            this.persistViewState();
-            this.syncUrlState();
-            this.render();
+            this.applyViewChange({ sort: e.target.value || 'newest' }, { via: 'select' });
             // Same reason as the health view: a focused SELECT swallows every row
             // shortcut, so j/k/p/d would go dead until the user clicked away.
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
@@ -3541,20 +3527,7 @@ class DashboardInbox {
 
         const domainSelect = host.querySelector('.inbox-domain-select');
         domainSelect?.addEventListener('change', (e) => {
-            this.domainFilter = String(e.target.value || '').trim().toLowerCase();
-            this._trackAction('filter', { filter: 'domain', via: 'domain-select' });
-            this.visibleLimit = 50;
-            this.checkedIds.clear();
-            // The anchor a Shift+click range counts from belongs to the selection
-            // it was made in. Left standing across a filter change, a later
-            // Shift+click ticked everything back to a row this view never showed.
-            this.checkAnchorId = null;
-            this.focusItemId = null;
-            this.persistViewState();
-            this.syncUrlState();
-            this.render();
-            this.dash.pageNav?.updatePageTitle?.();
-            this.dash.pageNav?.updateDocumentTitle?.();
+            this.applyViewChange({ domainFilter: String(e.target.value || '').trim().toLowerCase() }, { via: 'select' });
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
@@ -3756,26 +3729,45 @@ class DashboardInbox {
         });
     }
 
-    /** What a rail filter does. A method rather than a closure so the shell can call it. */
-    applyFilter(key, via) {
-        this.filter = key || 'all';
-        // The shell calls a pointer press "click"; this view has always reported
-        // it as "pill", and the analytics stream is read against that name.
-        this._trackAction('filter', { filter: this.filter, via: via === 'click' ? 'pill' : (via || 'pill') });
+    /**
+     * One reset-and-render for every axis. The handlers used to differ on which
+     * of these steps they performed, which showed up as ticks surviving a sort
+     * but not a filter.
+     */
+    applyViewChange(patch, options = {}) {
+        const {
+            via = 'unknown',
+            action = Object.keys(patch)[0] || 'change',
+            resetSelection = true,
+            persist = true,
+        } = options;
+        Object.assign(this, patch);
+        this._trackAction(action, { ...patch, via });
         this.visibleLimit = 50;
-        // Ticks from the previous filter would act on rows the user can no
-        // longer see, so a filter change starts the selection over.
-        this.checkedIds.clear();
-        // The anchor a Shift+click range counts from belongs to the selection
-        // it was made in. Left standing across a filter change, a later
-        // Shift+click ticked everything back to a row this view never showed.
-        this.checkAnchorId = null;
-        this.focusItemId = null;
-        this.persistViewState();
+        if (resetSelection) {
+            // Ticks from the previous view would act on rows the user can no
+            // longer see, so a view change starts the selection over.
+            this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a view change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
+            this.focusItemId = null;
+        }
+        if (persist) {
+            this.persistViewState();
+        }
         this.syncUrlState();
         this.render();
         this.dash.pageNav?.updatePageTitle?.();
         this.dash.pageNav?.updateDocumentTitle?.();
+    }
+
+    /** What a rail filter does. A method rather than a closure so the shell can call it. */
+    applyFilter(key, via) {
+        // The shell calls a pointer press "click"; this view has always reported
+        // it as "pill", and the analytics stream is read against that name.
+        this.applyViewChange({ filter: key || 'all' }, { via: via === 'click' ? 'pill' : (via || 'pill') });
     }
 
     render() {
