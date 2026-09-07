@@ -2478,7 +2478,20 @@ come from its own palette, mixed down to the point where they read as
 atmosphere rather than decoration. A theme that is all greens gets a green
 backdrop; one built around a magenta accent gets a magenta one. The same id
 always lands on the same backdrop, so a theme does not change appearance
-between releases.
+between releases -- except for one deliberate case, described next.
+
+A "-light" and "-dark" pair are two colourings of one theme, not two themes,
+and a reader switching Quick mode between them should see the same shape
+change colour, not a different shape entirely. Hashing each variant's own id
+independently broke that: the two ids differ, so they landed on different
+recipes for 111 of the 224 built-in themes. Before hashing, a "-dark" id is
+therefore normalised to its "-light" counterpart, so the pair always shares a
+recipe. The light variant leads because it is the one already shipped for
+every pair; stripping the suffix instead of substituting it would have hashed
+the bare base name and moved both variants onto a third recipe, changing 222
+themes instead of 111. An id with no such suffix -- the plain "light" and
+"dark" defaults, and any custom theme -- is not part of a pair and keeps
+hashing exactly as before.
 
 The result is a CSS background-image list, referencing the custom properties
 declared in the same block. It is composed here rather than declared in the
@@ -2492,7 +2505,7 @@ only in angle -- blooms, sweeps, wireframes, rings, scanlines -- because eight
 variations on one gradient would still read as one background.
 */
 func themeBackdropImage(themeID string, tc ThemeColors) string {
-	h := fnv32(themeID)
+	h := fnv32(themeBackdropHashID(themeID))
 	pick := func(shift uint, span int) int {
 		if span <= 0 {
 			return 0
@@ -2550,6 +2563,18 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
 			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
 	}
+}
+
+// themeBackdropHashID maps a "-dark" theme id onto its "-light" counterpart so
+// themeBackdropImage hashes both to the same recipe. Anything else -- an id
+// with no such suffix, including the plain "light" and "dark" defaults and
+// every custom theme -- passes through unchanged.
+func themeBackdropHashID(themeID string) string {
+	const darkSuffix = "-dark"
+	if strings.HasSuffix(themeID, darkSuffix) {
+		return strings.TrimSuffix(themeID, darkSuffix) + "-light"
+	}
+	return themeID
 }
 
 // pct renders an integer as a CSS percentage, which the recipes above need in
