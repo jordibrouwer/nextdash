@@ -58,7 +58,7 @@ test.describe('replaying the tour also replays the tips', () => {
         // shown recently, so the next one is held back for days.
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
-            s.markTipSeen('healthTutorialV1', { persist: false });
+            s.markTipSeen('healthTutorialV2', { persist: false });
             s.markTipSeen('inboxTutorialV1', { persist: false });
             s.markTipSeen('tipSearch', { persist: false });
             s.setTipsNotBefore(Date.now() + 3 * 86400000, { persist: false });
@@ -108,7 +108,7 @@ test.describe('replaying the tour also replays the tips', () => {
     test('it survives the round trip to the server', async ({ page }) => {
         await openBehaviorGeneral(page);
         await page.evaluate(() => {
-            window.DiscoverabilityState.markTipSeen('healthTutorialV1', { persist: false });
+            window.DiscoverabilityState.markTipSeen('healthTutorialV2', { persist: false });
         });
         await resetOnboarding(page);
         await expect.poll(() => page.evaluate(

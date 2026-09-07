@@ -38,7 +38,7 @@ async function openConfig(page) {
 
 async function markHealthTipSeen(page) {
     await page.evaluate(() => {
-        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV1', { persist: false });
+        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV2', { persist: false });
     });
 }
 

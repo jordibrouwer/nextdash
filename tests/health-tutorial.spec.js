@@ -34,7 +34,7 @@ async function openHealthWithoutMarkingTutorialSeen(page) {
         const state = window.DiscoverabilityState;
         if (state?.exportState) {
             const exported = state.exportState();
-            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'healthTutorialV1');
+            exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'healthTutorialV2');
             state.init?.(exported);
         }
     });
@@ -43,13 +43,13 @@ async function openHealthWithoutMarkingTutorialSeen(page) {
 }
 
 test.describe('health tutorial', () => {
-    test('shows on first visit to Health, with six steps', async ({ page }) => {
+    test('shows on first visit to Health, with seven steps', async ({ page }) => {
         await openHealthWithoutMarkingTutorialSeen(page);
 
         const modal = page.locator('#app-modal.show .health-tutorial-modal');
         await expect(modal).toBeVisible();
-        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 1 of 6');
-        await expect(page.locator('.health-tutorial-dot')).toHaveCount(6);
+        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 1 of 7');
+        await expect(page.locator('.health-tutorial-dot')).toHaveCount(7);
         await expect(page.locator('.health-tutorial-dot.is-active')).toHaveCount(1);
     });
 
@@ -69,22 +69,23 @@ test.describe('health tutorial', () => {
         await openHealthWithoutMarkingTutorialSeen(page);
 
         const titles = [];
-        for (let i = 0; i < 6; i += 1) {
+        for (let i = 0; i < 7; i += 1) {
             titles.push((await page.locator('.health-tutorial-step-title').textContent())?.trim());
-            if (i < 5) {
+            if (i < 6) {
                 await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
                 await page.waitForTimeout(120);
             }
         }
         expect(titles).toEqual([
             'Health can do more than "is it up?"',
+            'Finding your way around',
             'Turn on Monitor',
             'Tell it what "up" actually means',
             'Watch for the page changing shape entirely',
             'Tell it about the backup window',
             'Get told when it actually breaks',
         ]);
-        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 6 of 6');
+        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 7 of 7');
 
         // The confirm button reads differently on the last step, and the
         // secondary button becomes Back instead of Skip once stepping forward.
@@ -93,19 +94,19 @@ test.describe('health tutorial', () => {
 
         await page.locator('.modal-actions .modal-button', { hasText: 'Back' }).click();
         await page.waitForTimeout(120);
-        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 5 of 6');
+        await expect(page.locator('.health-tutorial-progress')).toHaveText('Step 6 of 7');
     });
 
     test('finishing on the last step marks it seen too', async ({ page }) => {
         await openHealthWithoutMarkingTutorialSeen(page);
-        for (let i = 0; i < 5; i += 1) {
+        for (let i = 0; i < 6; i += 1) {
             await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
             await page.waitForTimeout(100);
         }
         await page.locator('.modal-actions .modal-button', { hasText: 'Got it' }).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('healthTutorialV1'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('healthTutorialV2'));
         expect(seen).toBe(true);
     });
 
@@ -115,7 +116,7 @@ test.describe('health tutorial', () => {
         await page.keyboard.press('Escape');
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
 
-        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('healthTutorialV1'));
+        const seen = await page.evaluate(() => window.DiscoverabilityState?.hasSeenTip?.('healthTutorialV2'));
         expect(seen).toBe(true);
     });
 
@@ -131,7 +132,7 @@ test.describe('health tutorial', () => {
             const state = window.DiscoverabilityState;
             if (state?.exportState) {
                 const exported = state.exportState();
-                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'healthTutorialV1');
+                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'healthTutorialV2');
                 state.init?.(exported);
             }
         });

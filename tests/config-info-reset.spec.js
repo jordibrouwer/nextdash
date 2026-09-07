@@ -26,8 +26,13 @@ test.describe('config info + reset affordances', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
         await page.locator('[data-info-field="openInNewTab"]').click();
-        // AppModal renders a dialog with the info title/message.
-        await expect(page.locator('.modal, [role="dialog"]').first()).toBeVisible();
+        // The AppModal dialog by name, not the first dialog on the page. The
+        // loose `.modal, [role="dialog"]` matched #tag-cloud-modal, which sits
+        // earlier in the document and is a dialog whether or not it is open --
+        // so this passed on the tag cloud and never once looked at the info
+        // modal it is about.
+        await expect(page.locator('#app-modal.show .modal')).toBeVisible();
+        await expect(page.locator('#modal-title')).toHaveText('Open in new tab');
     });
 
     test('reset-to-default appears only when a value differs and resets it', async ({ page }) => {

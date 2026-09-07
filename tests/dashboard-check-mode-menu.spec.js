@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, markHealthTutorialSeen } = require('./e2e-helpers');
 
 /**
  * Changing a bookmark's availability checking from the dashboard right-click
@@ -68,6 +68,9 @@ async function setup(page) {
     // seen opens the What's new modal on load, and that marks the grid inert —
     // every row then reads as "not stable" and never takes a click.
     await prepareDashboardInteraction(page);
+    // One test here walks into the health view, where the one-time tour would
+    // otherwise open over the list it is about to click.
+    await markHealthTutorialSeen(page);
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
 }
 
