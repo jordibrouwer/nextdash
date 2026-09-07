@@ -213,6 +213,7 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix — the title's Smart Why explainer opens by keyboard again.** The trigger had no way to receive focus, so the popover's `focus` handler could never fire.
 - **fix — the rail's Uptime 24h reading is no longer always "0%".** It read the fleet's `{ratio, samples}` window as a plain number, which is `NaN` no matter what the fleet was actually doing; it now reads the same figure through the formatter the fleet panel's own tiles use, and reads "no data" instead of a percentage while nothing has been sampled yet.
 - **fix — the trend sparkline is back, under the trend row in the left column.** It drew in the tile row before the tiles moved into the rail; only the button that opens the full chart came with them, so the line itself had no callers left. A compact redraw sized for the 200px column sits under the trend figure now, and the full chart is still one click away in the ⋯ menu.
+- **fix — the shared list shell's summary row no longer takes raw HTML.** It accepted a string and set it with `innerHTML`, trusting every caller to escape first; the shell now takes a built `extraNode` and appends it, so a future caller handing it a bookmark title or a URL cannot inject markup through it. The one caller, the trend sparkline, is unaffected — it draws the same line either way.
 
 ### Inbox
 

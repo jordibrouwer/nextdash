@@ -317,6 +317,45 @@ test('setSummary rewrites the figures in place', async ({ page }) => {
 });
 
 /**
+ * The contract for a summary row's `extraNode`: the shell appends whatever
+ * Node the caller hands it, and never interprets a string as markup. A node
+ * whose own text happens to look like an HTML tag must stay text — no
+ * `<img>` should ever appear in the DOM from it. This is what stops the next
+ * caller (a bookmark title, a URL) from turning this slot back into an
+ * innerHTML sink; it must fail if `extraHtml`/`innerHTML` ever comes back.
+ */
+test('a summary extraNode is appended as a node, its text never parsed as markup', async ({ page }) => {
+    await openDashboard(page);
+
+    const result = await page.evaluate(() => {
+        document.getElementById('__lvs_scratch__')?.remove();
+        const host = document.createElement('div');
+        host.id = '__lvs_scratch__';
+        document.body.appendChild(host);
+
+        const payload = '<img src=x onerror=1>';
+        const node = document.createElement('span');
+        node.textContent = payload;
+
+        window.ListViewShell.mount(host, {
+            id: 'scratch',
+            title: 'Scratch',
+            description: 'A test view',
+            summary: [{ key: 'evil', label: 'Evil', value: '1', extraNode: node }],
+        });
+
+        const extra = host.querySelector('.lvs-summary-extra');
+        return {
+            text: extra ? extra.textContent : null,
+            imgCount: extra ? extra.querySelectorAll('img').length : -1,
+        };
+    });
+
+    expect(result.text).toBe('<img src=x onerror=1>');
+    expect(result.imgCount).toBe(0);
+});
+
+/**
  * Poll `window.scrollY` until it has stopped changing for several consecutive
  * reads. Copied from list-view-shell-sticky.spec.js rather than guessing with a
  * fixed timer: the app restores a remembered scroll offset of its own during

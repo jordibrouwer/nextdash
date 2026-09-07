@@ -3336,9 +3336,9 @@ class DashboardHealth {
                 label: this.t('dashboard.healthTileTrend', 'Trend'),
                 value: this.trendDeltaText(),
                 // The sparkline the tile row used to draw, rehoused under the
-                // trend value now that the tiles live in the rail. '' when
+                // trend value now that the tiles live in the rail. null when
                 // there isn't enough history — the row still shows the arrow.
-                extraHtml: this.renderTrendSparkline(),
+                extraNode: this.renderTrendSparklineNode(),
             },
             // Only while there is something to say. A zero here would be a
             // second copy of the Broken filter's own empty count, one row below.
@@ -4228,6 +4228,29 @@ class DashboardHealth {
         return `<svg class="health-view-trend-sparkline" viewBox="0 0 ${w} ${h}"
                      preserveAspectRatio="none" role="img"
                      aria-label="${this.escape(label)}">${paths}${endDot}</svg>`;
+    }
+
+    /**
+     * renderTrendSparkline() as a Node, for the shell's summary `extraNode` slot.
+     *
+     * The shell no longer accepts a markup string there (that was an innerHTML
+     * sink with no allowlist — fine only as long as every caller remembered to
+     * escape, which stops being true the moment a second view adopts it). This
+     * parses renderTrendSparkline()'s string once, right here, instead of
+     * rebuilding the sparkline with createElementNS: that string is entirely
+     * this function's own numeric coordinates plus one field, the aria-label,
+     * already run through this.escape(). Nothing in it is a bookmark title, a
+     * URL, or any other value a user can edit, so parsing it is not
+     * reintroducing the sink — it's the same trust boundary the old comment
+     * described, just enforced at this one call site instead of assumed by
+     * the shared shell.
+     */
+    renderTrendSparklineNode() {
+        const markup = this.renderTrendSparkline();
+        if (!markup) return null;
+        const holder = document.createElement('div');
+        holder.innerHTML = markup;
+        return holder.firstElementChild;
     }
 
     /**

@@ -38,13 +38,13 @@ function buildSummary(entries) {
         value.className = 'lvs-summary-value';
         value.textContent = String(entry.value);
         row.append(label, value);
-        // A row may carry extra markup under its label/value line — e.g.
-        // health's trend sparkline. Trusted HTML the view built and escaped
-        // itself, same as filterClass/dataAttrs below trust their callers.
-        if (entry.extraHtml) {
+        // A row may carry an extra node under its label/value line — e.g.
+        // health's trend sparkline. The caller hands us a built Node (never a
+        // markup string), so there is no HTML sink here for it to escape into.
+        if (entry.extraNode) {
             const extra = document.createElement('div');
             extra.className = 'lvs-summary-extra';
-            extra.innerHTML = entry.extraHtml;
+            extra.appendChild(entry.extraNode);
             row.appendChild(extra);
         }
         wrap.appendChild(row);
