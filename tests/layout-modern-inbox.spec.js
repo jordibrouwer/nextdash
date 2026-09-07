@@ -116,19 +116,6 @@ test.describe('modern layout — inbox', () => {
         expect(insetLayer).not.toMatch(/\/\s*0\s*\)|rgba\([^)]*,\s*0\)/);
     });
 
-    test('restyles summary tiles and the filter group', async ({ page }) => {
-        await openInbox(page);
-
-        const tile = await bothLayouts(page, '.inbox-tile', ['borderRadius', 'boxShadow']);
-        expect(tile.modern.borderRadius).not.toBe(tile.classic.borderRadius);
-        expect(tile.modern.boxShadow).not.toBe('none');
-
-        // The pill shape is already right in classic, so only depth changes.
-        const group = await bothLayouts(page, '.inbox-filter-group', ['boxShadow']);
-        expect(group.classic.boxShadow).toBe('none');
-        expect(group.modern.boxShadow).not.toBe('none');
-    });
-
     test('restyles row action buttons', async ({ page }) => {
         await openInbox(page);
         const { classic, modern } = await bothLayouts(page, '.inbox-action-btn', ['borderRadius']);

@@ -277,10 +277,14 @@ test.describe('dashboard inbox phase 1', () => {
 
         await page.locator('[data-inbox-filter="unread"]').click();
         await expect(page.locator('.title-breadcrumb')).toBeHidden();
-        await expect(page.locator('.inbox-head-breadcrumb')).toBeVisible();
-        await expect(page.locator('.inbox-head-breadcrumb')).toContainText(/unread/i);
-        await expect(page.locator('.inbox-title')).toHaveText(/inbox/i);
-        await expect(page.locator('.inbox-subtitle')).toBeVisible();
+        // The panel's own crumb (not the dashboard header's) carries the filter
+        // name. Since Task 6 it only surfaces once the shell header collapses on
+        // scroll — that mechanism is covered generically in
+        // list-view-shell-sticky.spec.js — so this checks only that the inbox
+        // feeds it real content, leaving the dashboard's own chrome untouched.
+        await expect(page.locator('.lvs-crumb')).toHaveText(/unread/i);
+        await expect(page.locator('.lvs-title')).toHaveText(/inbox/i);
+        await expect(page.locator('.lvs-description')).toBeVisible();
     });
 
     /* ── Sorting, deep links, selection and custom snooze ─────────────── */

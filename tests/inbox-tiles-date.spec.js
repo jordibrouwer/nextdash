@@ -35,26 +35,32 @@ test.describe('inbox summary tiles and added date', () => {
         await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
         await page.waitForSelector('.inbox-item', { timeout: 15_000 });
 
-        // Four tiles, in order: Active, Unread, Snoozed, This week. "Active"
-        // rather than "Total" because a sleeping link is in none of them.
-        const tiles = page.locator('.inbox-tiles .inbox-tile');
-        await expect(tiles).toHaveCount(4);
-        const labels = await page.locator('.inbox-tiles .inbox-tile-label').allTextContents();
-        expect(labels.map((l) => l.toLowerCase())).toEqual(['active', 'unread', 'snoozed', 'this week']);
+        // Three merged tile rows in the rail — All, Unread, Snoozed — plus
+        // "This week" as a summary readout with no filter behind it. The tile
+        // strip's old "Active" wording is gone with it: a merged row carries
+        // one label shared with the filter pill, and the filter reads "All".
+        const tiles = page.locator('.lvs-rail [data-inbox-tile]');
+        await expect(tiles).toHaveCount(3);
+        const labels = await page.locator('.lvs-rail [data-inbox-tile] .lvs-filter-label').allTextContents();
+        expect(labels.map((l) => l.toLowerCase())).toEqual(['all', 'unread', 'snoozed']);
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="week"] .lvs-summary-label'))
+            .toHaveText(/this week/i);
 
-        // The first three are filter buttons; "This week" is a plain readout.
-        await expect(page.locator('button.inbox-tile[data-inbox-tile="all"]')).toBeVisible();
-        await expect(page.locator('button.inbox-tile[data-inbox-tile="unread"]')).toBeVisible();
-        await expect(page.locator('button.inbox-tile[data-inbox-tile="snoozed"]')).toBeVisible();
+        // The three tiles are filter buttons. All and Unread have the one
+        // seeded item to show; Snoozed is legitimately at zero and the shell
+        // hides a zero-count row rather than showing an empty one, so it is
+        // not asserted visible here.
+        await expect(page.locator('.lvs-rail [data-inbox-tile="all"]')).toBeVisible();
+        await expect(page.locator('.lvs-rail [data-inbox-tile="unread"]')).toBeVisible();
 
-        // A freshly-seeded item counts toward Active, Unread and This week (all >= 1).
+        // A freshly-seeded item counts toward All, Unread and This week (all >= 1).
         const seededRow = page.locator('.inbox-item').filter({ hasText: 'Tiles seed' });
         await expect(seededRow).toHaveCount(1);
         await expect(seededRow.locator('.inbox-item-date')).toHaveText(/\w/);
 
         // Clicking the Unread tile activates the unread filter.
-        await page.locator('button.inbox-tile[data-inbox-tile="unread"]').click();
-        await expect(page.locator('button.inbox-tile[data-inbox-tile="unread"]')).toHaveClass(/is-active/);
+        await page.locator('.lvs-rail [data-inbox-tile="unread"]').click();
+        await expect(page.locator('.lvs-rail [data-inbox-tile="unread"]')).toHaveClass(/is-active/);
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.filter)).toBe('unread');
     });
 

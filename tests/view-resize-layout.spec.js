@@ -29,7 +29,7 @@ test.describe('view layout survives a window resize', () => {
     async function layoutState(page) {
         return await page.evaluate(() => {
             const el = document.getElementById('dashboard-layout');
-            const header = el.querySelector('.health-view-header, .inbox-header, .config-view');
+            const header = el.querySelector('.health-view-header, .lvs-header, .inbox-header, .config-view');
             return {
                 className: el.className,
                 // The inbox marks its own container as the feed; health renders

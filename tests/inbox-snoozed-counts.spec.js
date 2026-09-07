@@ -60,9 +60,9 @@ test.describe('inbox counts exclude snoozed items', () => {
     }
 
     const tileValue = (page, key) =>
-        page.locator(`button.inbox-tile[data-inbox-tile="${key}"] .inbox-tile-value`);
+        page.locator(`.lvs-rail [data-inbox-tile="${key}"] .lvs-filter-count`);
     const weekValue = (page) =>
-        page.locator('.inbox-tiles > .inbox-tile:not([data-inbox-tile]) .inbox-tile-value');
+        page.locator('.lvs-summary [data-lvs-summary-key="week"] .lvs-summary-value');
 
     /**
      * Snooze the first row the way a user does: the action strip is collapsed to
@@ -113,8 +113,8 @@ test.describe('inbox counts exclude snoozed items', () => {
         // is the case where the tile used to read 3 and open a list of 2.
         await snoozeFirstRow(page);
 
-        await page.locator('button.inbox-tile[data-inbox-tile="all"]').click();
-        await expect(page.locator('button.inbox-tile[data-inbox-tile="all"]')).toHaveClass(/is-active/);
+        await page.locator('.lvs-rail [data-inbox-tile="all"]').click();
+        await expect(page.locator('.lvs-rail [data-inbox-tile="all"]')).toHaveClass(/is-active/);
 
         await expect(tileValue(page, 'all')).toHaveText('2');
         await expect(page.locator('.inbox-item')).toHaveCount(2);
@@ -122,11 +122,11 @@ test.describe('inbox counts exclude snoozed items', () => {
 
     test('the header badge ignores snoozed items', async ({ page }) => {
         await seedAndOpen(page, 'Badge parity seed', 2);
-        await expect(page.locator('.inbox-count-badge')).toHaveText('2');
+        await expect(page.locator('.lvs-rail [data-inbox-filter="all"] .lvs-filter-count')).toHaveText('2');
 
         await snoozeFirstRow(page);
 
-        await expect(page.locator('.inbox-count-badge')).toHaveText('1');
+        await expect(page.locator('.lvs-rail [data-inbox-filter="all"] .lvs-filter-count')).toHaveText('1');
     });
 
     test('a site filter survives a reload, and is dropped once its site is gone', async ({ page }) => {

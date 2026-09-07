@@ -100,8 +100,8 @@ test.describe('the numbers answer to the rows on screen', () => {
         await expect(page.locator('.inbox-item')).toHaveCount(1);
         // "All 2" over one row is the pill counting a set the view is not showing.
         await expect(allPill).toHaveText('1');
-        await expect(page.locator('[data-inbox-tile="all"] .inbox-tile-value')).toHaveText('1');
-        await expect(page.locator('.inbox-count-badge')).toHaveText('1');
+        await expect(page.locator('.lvs-rail [data-inbox-tile="all"] .lvs-filter-count')).toHaveText('1');
+        await expect(page.locator('.lvs-rail [data-inbox-filter="all"] .lvs-filter-count')).toHaveText('1');
     });
 
     test('Mark all read stops saying all once a search narrows it', async ({ page }) => {

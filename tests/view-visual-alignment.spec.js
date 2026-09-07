@@ -158,17 +158,18 @@ test.describe('rounded is the shared shape', () => {
         await openHealth(page);
         const health = await boxOf(page, '.health-view-filter-group');
         await openInbox(page);
-        const inbox = await boxOf(page, '.inbox-filter-group');
+        // The list-view shell unified what used to differ here: Inbox no
+        // longer wraps its filters in a pill-shaped group — that markup
+        // (.inbox-filter-group) is gone, and .lvs-group--filters carries no
+        // shape of its own (0px radius, no border, no background). Each
+        // filter is now its own row, sharing the same small radius token
+        // Health's group already used.
+        const inbox = await boxOf(page, '.lvs-filter');
 
         expect(health).not.toBeNull();
         expect(inbox).not.toBeNull();
-        // Not one radius. Inbox draws a pill around its filters; Health draws a
-        // softly squared block, and that is the call — a pill around Health's
-        // row reads as far too much rounding for a strip that carries ten
-        // filters and wraps to a second line. What they do share is that both
-        // are rounded at all, and that modern layout gives them the same pill.
         expect(parseFloat(health.radius)).toBeGreaterThan(0);
-        expect(parseFloat(inbox.radius)).toBeGreaterThan(20);
+        expect(inbox.radius).toBe(health.radius);
     });
 
     test('nothing in the three views is squared off any more', async ({ page }) => {
