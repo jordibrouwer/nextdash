@@ -38,6 +38,15 @@ function buildSummary(entries) {
         value.className = 'lvs-summary-value';
         value.textContent = String(entry.value);
         row.append(label, value);
+        // A row may carry extra markup under its label/value line — e.g.
+        // health's trend sparkline. Trusted HTML the view built and escaped
+        // itself, same as filterClass/dataAttrs below trust their callers.
+        if (entry.extraHtml) {
+            const extra = document.createElement('div');
+            extra.className = 'lvs-summary-extra';
+            extra.innerHTML = entry.extraHtml;
+            row.appendChild(extra);
+        }
         wrap.appendChild(row);
     });
     return wrap;

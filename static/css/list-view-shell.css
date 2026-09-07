@@ -108,12 +108,19 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+    /* A row is normally just label + value, which never wraps at 200px.
+       `.lvs-summary-extra` is the one thing that needs a line of its own —
+       flex-wrap plus its own flex-basis:100% (below) drops it underneath
+       instead of squeezing in beside the value. */
+    flex-wrap: wrap;
     gap: var(--space-2);
     font-size: var(--text-sm);
 }
 
 .lvs-summary-label { color: var(--text-secondary); }
 .lvs-summary-value { font-weight: 500; }
+
+.lvs-summary-extra { flex-basis: 100%; }
 
 .lvs-group {
     display: flex;

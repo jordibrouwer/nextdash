@@ -3293,6 +3293,29 @@ class DashboardHealth {
     }
 
     /**
+     * The rail's uptime row, or null while there is no fleet yet.
+     *
+     * `fleet.uptime24h` is a `{ratio, samples}` window, not a number — the
+     * same shape formatUptime() already turns into the fleet panel's 24h
+     * tile (:3928, :3993). Reusing it here instead of coercing the object
+     * with Number() is what keeps this row from reading "0%" no matter what
+     * the fleet is actually doing.
+     */
+    fleetUptimeSummaryRow() {
+        const fleet = this.report?.fleet;
+        if (!fleet || !Number(fleet.monitors)) return null;
+        const uptime = this.formatUptime(fleet.uptime24h);
+        return {
+            key: 'uptime',
+            label: this.t('dashboard.healthUptime24h', 'Uptime 24h'),
+            // No samples pooled yet reads as "no data", the same empty state
+            // the fleet panel's own tiles use — not a misleading percentage.
+            value: uptime || this.t('dashboard.healthStatsNoData', 'no data'),
+            tone: uptime ? (Number(fleet.downNow) > 0 ? 'bad' : 'good') : '',
+        };
+    }
+
+    /**
      * The figures that are not filters: the score, its trend, the broken count
      * while there is one, and the report's age. This is what is left of the
      * header's meta row.
@@ -3300,7 +3323,7 @@ class DashboardHealth {
     shellSummary() {
         const pct = this.scorePercent();
         const broken = this.brokenCount();
-        const fleet = this.report?.fleet;
+        const uptimeRow = this.fleetUptimeSummaryRow();
         return [
             {
                 key: 'score',
@@ -3308,7 +3331,15 @@ class DashboardHealth {
                 value: `${pct}%`,
                 tone: pct >= 90 ? 'good' : (pct >= 70 ? 'warn' : 'bad'),
             },
-            { key: 'trend', label: this.t('dashboard.healthTileTrend', 'Trend'), value: this.trendDeltaText() },
+            {
+                key: 'trend',
+                label: this.t('dashboard.healthTileTrend', 'Trend'),
+                value: this.trendDeltaText(),
+                // The sparkline the tile row used to draw, rehoused under the
+                // trend value now that the tiles live in the rail. '' when
+                // there isn't enough history — the row still shows the arrow.
+                extraHtml: this.renderTrendSparkline(),
+            },
             // Only while there is something to say. A zero here would be a
             // second copy of the Broken filter's own empty count, one row below.
             ...(broken > 0
@@ -3319,14 +3350,7 @@ class DashboardHealth {
                     tone: 'bad',
                 }]
                 : []),
-            ...(fleet && Number(fleet.monitors) > 0
-                ? [{
-                    key: 'uptime',
-                    label: this.t('dashboard.healthUptime24h', 'Uptime 24h'),
-                    value: `${Math.round(Number(fleet.uptime24h) || 0)}%`,
-                    tone: Number(fleet.downNow) > 0 ? 'bad' : 'good',
-                }]
-                : []),
+            ...(uptimeRow ? [uptimeRow] : []),
             { key: 'age', label: this.t('dashboard.healthSummaryUpdated', 'Updated'), value: this.reportAgeText() },
         ].filter((row) => row.value !== '');
     }
@@ -4139,6 +4163,72 @@ class DashboardHealth {
                 : this.t('dashboard.healthTrendDown', 'down {points} points over {days} days', { points: Math.abs(delta), days }));
     }
 
+
+    /**
+     * The compact trend line for the rail summary.
+     *
+     * The rail is 200px wide, minus the summary block's own padding — no
+     * room for renderTrendChart's series picker, per-day hover zones, axis
+     * labels or help button, all sized for the note row (240px) or the
+     * modal. This redraws just the line and the current-reading dot from
+     * the same trendPoints()/trendPercent() data so the rail always agrees
+     * with the full chart and the trend value beside it, active series
+     * included. Kept separate from renderTrendChart rather than threading a
+     * "compact" flag through it: the two draw to different sizes with a
+     * different amount of chrome, and sharing only the few lines of
+     * polyline math isn't worth the coupling.
+     */
+    renderTrendSparkline() {
+        const points = this.trendPoints();
+        if (points.length < 3) return '';
+
+        const series = this.activeTrendSeries();
+        const values = points.map((p) => this.trendPercent(p, series));
+        if (values.filter((v) => v !== null).length < 3) return '';
+
+        const maxValue = series.mode === 'count'
+            ? Math.max(1, ...values.filter((v) => v !== null)) * 1.1
+            : 100;
+
+        const w = 160;
+        const h = 32;
+        const padY = 2;
+        const plotH = h - padY * 2;
+        const step = w / Math.max(1, values.length - 1);
+        const yFor = (v) => (h - padY - (v / maxValue) * plotH).toFixed(1);
+
+        const segments = [];
+        let current = [];
+        values.forEach((v, i) => {
+            if (v === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            current.push(`${(i * step).toFixed(1)},${yFor(v)}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+
+        const paths = segments.map((pts) =>
+            `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`
+        ).join('');
+
+        const lastIndex = values.reduce((acc, v, i) => (v === null ? acc : i), -1);
+        const endDot = lastIndex >= 0
+            ? `<circle cx="${(lastIndex * step).toFixed(1)}" cy="${yFor(values[lastIndex])}" r="2" fill="currentColor"/>`
+            : '';
+
+        const first = values.find((v) => v !== null);
+        const last = [...values].reverse().find((v) => v !== null);
+        const label = this.t('dashboard.healthTrendChartLabel',
+            'Healthy bookmarks over the last {days} days, from {first}% to {last}%',
+            { days: points.length, first, last });
+
+        return `<svg class="health-view-trend-sparkline" viewBox="0 0 ${w} ${h}"
+                     preserveAspectRatio="none" role="img"
+                     aria-label="${this.escape(label)}">${paths}${endDot}</svg>`;
+    }
 
     /**
      * The collection's healthy share over time, as a sparkline under the header.

@@ -3,6 +3,24 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
     markHealthTutorialSeen } = require('./e2e-helpers');
 
+const DAY = 24 * 60 * 60 * 1000;
+
+/** `days` daily points, healthy share rising from `from`% to `to`% — the same
+ *  shape tests/health-collection-stats.spec.js's helper of this name builds. */
+function trend(days, from, to) {
+    const points = [];
+    const midnight = Math.floor(Date.now() / DAY) * DAY;
+    for (let i = 0; i < days; i += 1) {
+        const share = from + ((to - from) * i) / Math.max(1, days - 1);
+        points.push({
+            t: midnight - (days - 1 - i) * DAY,
+            n: 100,
+            h: Math.round(share),
+        });
+    }
+    return points;
+}
+
 /**
  * buildFleetStats on the server returns nil until something is both
  * monitored and has pooled samples (see health_fleet.go) — a fresh install
@@ -11,7 +29,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
  * tests/health-collection-stats.spec.js does, rather than waiting on real
  * checks to accumulate history.
  */
-function fleetReport() {
+function fleetReport({ uptime24h, trendPoints = [] } = {}) {
     const now = Date.now();
     return {
         generatedAt: now,
@@ -27,10 +45,10 @@ function fleetReport() {
             monitor: true, checkStatus: false,
         })),
         duplicateGroups: [],
-        trend: [],
+        trend: trendPoints,
         fleet: {
             monitors: 4,
-            uptime24h: { ratio: 0.995, samples: 400 },
+            uptime24h: uptime24h || { ratio: 0.995, samples: 400 },
             uptime7d: { ratio: 0.981, samples: 2800 },
             uptime30d: { ratio: 0.977, samples: 12000 },
             downNow: 0,
@@ -39,9 +57,9 @@ function fleetReport() {
     };
 }
 
-async function mockFleetApi(page) {
+async function mockFleetApi(page, overrides = {}) {
     await page.route('**/api/bookmark-health**', async (route) => {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fleetReport()) });
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fleetReport(overrides)) });
     });
 }
 
@@ -108,4 +126,22 @@ test('the rail summary reports the fleet without opening it', async ({ page }) =
     await openHealth(page);
     const uptime = page.locator('.lvs-summary [data-lvs-summary-key="uptime"] .lvs-summary-value');
     await expect(uptime).toHaveText(/%/);
+});
+
+test('the rail uptime figure reflects the real fleet reading, not zero', async ({ page }) => {
+    // fleet.uptime24h is a {ratio, samples} window, not a number — Number()
+    // on it is NaN, and NaN || 0 is 0, so a naive read of this field always
+    // shows "0%". 0.987 * 100 rounds to "98.7%", nowhere near zero.
+    await mockFleetApi(page, { uptime24h: { ratio: 0.987, samples: 120 } });
+    await openHealth(page);
+    const uptime = page.locator('.lvs-summary [data-lvs-summary-key="uptime"] .lvs-summary-value');
+    await expect(uptime).toHaveText('98.7%');
+});
+
+test('the rail summary carries the trend sparkline when there is enough history', async ({ page }) => {
+    await mockFleetApi(page, { trendPoints: trend(30, 60, 82) });
+    await openHealth(page);
+    const chart = page.locator('.lvs-summary [data-lvs-summary-key="trend"] .health-view-trend-sparkline');
+    await expect(chart).toBeVisible();
+    await expect(chart).toHaveAttribute('role', 'img');
 });

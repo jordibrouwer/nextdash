@@ -219,6 +219,18 @@
     pointer-events: none;
 }
 
+/* The rail's compact stand-in for .health-view-trend-chart below — same
+   currentColor line, no grid, no axis labels, sized for the 200px rail
+   rather than the note row or the modal. */
+.health-view-trend-sparkline {
+    display: block;
+    color: var(--accent-success);
+    opacity: 0.85;
+    width: 100%;
+    min-width: 0;
+    height: 1.6rem;
+}
+
 .health-view-trend-chart {
     color: var(--accent-success);
     opacity: 0.85;
