@@ -62,6 +62,20 @@
     margin-bottom: var(--space-3);
 }
 
+/* A toolbar slot fills the room its neighbours (selects, buttons) do not
+   claim, rather than sizing to its own intrinsic width. */
+.lvs-toolbar-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.lvs-toolbar-slot [hidden] {
+    display: none;
+}
+
 .lvs-body {
     min-width: 0;
 }
@@ -144,6 +158,13 @@
 
 .lvs-filter:focus-visible,
 .lvs-section:focus-visible { outline: var(--layout-focus-ring); }
+
+/* A rail row for a state nothing is in. .lvs-filter is display:flex, which
+   beats the UA sheet's [hidden] rule, so the shell's own display has to be
+   answered here. */
+.lvs-filter[hidden] {
+    display: none;
+}
 
 /*
  * The repo's status colours are --accent-{success,warning,error}, generated

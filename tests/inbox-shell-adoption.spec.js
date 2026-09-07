@@ -4,6 +4,29 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
     prepareDashboardInteraction, markInboxTutorialSeen } = require('./e2e-helpers');
 
 /**
+ * Poll `window.scrollY` until it has stopped changing for several
+ * consecutive reads, then resolve. Copied from list-view-shell-sticky.spec.js
+ * rather than a fixed `setTimeout`: a timer is a guess about how long the
+ * scroll and the sticky header take to settle, and what this file cares
+ * about is the settled position, not the delay.
+ */
+async function waitForScrollSettled(page) {
+    await page.evaluate(() => {
+        window.__lvsScrollStable = 0;
+        window.__lvsScrollLast = NaN;
+    });
+    await page.waitForFunction(() => {
+        if (window.scrollY === window.__lvsScrollLast) {
+            window.__lvsScrollStable += 1;
+        } else {
+            window.__lvsScrollStable = 0;
+            window.__lvsScrollLast = window.scrollY;
+        }
+        return window.__lvsScrollStable >= 4;
+    }, null, { timeout: 5_000, polling: 50 });
+}
+
+/**
  * The inbox on the shared shell. Everything here drives the real view through
  * the controls a person would use, not through render functions.
  */
@@ -59,12 +82,44 @@ test('the tiles are gone as a separate row and folded into the filters', async (
     // No second copy of the same control.
     await expect(page.locator('.inbox-tiles')).toHaveCount(0);
 
-    // But the tile hooks still resolve, on the merged rail rows.
+    // But the tile hooks still resolve, on the merged rail rows. A row that
+    // hides at zero count stays in the DOM with the `hidden` property set
+    // rather than disappearing, so the skip below has to check that, not
+    // `count()` — `count()` is 1 either way.
     for (const key of ['all', 'unread', 'snoozed']) {
         const merged = page.locator(`.lvs-rail [data-inbox-tile="${key}"]`);
-        if (await merged.count() === 0) continue; // snoozed hides at zero, as before
+        if (await merged.isHidden()) continue; // snoozed hides at zero, as before
         await expect(merged).toHaveAttribute('data-inbox-filter', key);
     }
+});
+
+test('the snoozed rail row hides at zero and reappears once something is snoozed', async ({ page }) => {
+    await openInbox(page);
+
+    const snoozedRow = page.locator('.lvs-rail [data-inbox-filter="snoozed"]');
+    await expect(snoozedRow).toHaveCount(1);
+    // `hidden` alone would be inert if the shell's own `display: flex` beat
+    // the UA sheet's `[hidden]` rule, so check both the property and that the
+    // row actually occupies no layout space.
+    expect(await snoozedRow.evaluate((el) => el.hidden),
+        'snoozed row should carry the hidden property at zero count').toBe(true);
+    const boxAtZero = await snoozedRow.boundingBox();
+    expect(boxAtZero?.height ?? 0, 'a hidden row must not occupy layout height').toBe(0);
+
+    // Snooze the way a user does: the action strip only appears on hover.
+    const card = page.locator('.inbox-item').first();
+    await card.hover();
+    const snoozeBtn = card.locator('[data-inbox-action="snooze"]');
+    await expect(snoozeBtn).toBeVisible();
+    await snoozeBtn.click();
+    await expect(page.locator('.inbox-snooze-menu')).toBeVisible();
+    await page.locator('.inbox-snooze-option').first().click();
+    await expect(page.locator('.inbox-snooze-menu')).toHaveCount(0);
+
+    await expect(snoozedRow).toBeVisible();
+    expect(await snoozedRow.evaluate((el) => el.hidden)).toBe(false);
+    const boxAfter = await snoozedRow.boundingBox();
+    expect(boxAfter?.height ?? 0).toBeGreaterThan(0);
 });
 
 test('"this week" is a readout in the summary, not a filter', async ({ page }) => {
@@ -88,16 +143,20 @@ test('search, sort and the overflow menu keep their hooks', async ({ page }) => 
 });
 
 test('Triage sits in the header, reachable while the list is scrolled', async ({ page }) => {
-    await openInbox(page, Array.from({ length: 40 }, (_, i) => `Item ${i}`));
+    // A space in the seeded title breaks the URL the seed builds
+    // (`https://s-Item 0-<ts>.example/x`), and the API rejects it with 400 —
+    // silently, since the seeding loop doesn't check the response. Titles
+    // stay space-free so all 40 items actually land.
+    await openInbox(page, Array.from({ length: 40 }, (_, i) => `Item-${i}`));
     await expect(page.locator('.lvs-header .inbox-triage-btn')).toBeVisible();
 
-    // Polled rather than waited out: a fixed pause is a guess about how long the
-    // scroll and the sticky header take to settle, and the thing this test cares
-    // about is the settled position, not the delay.
     await page.evaluate(() => window.scrollTo(0, 1500));
-    await expect.poll(async () => page.evaluate(() => new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve(Math.round(window.scrollY))));
-    }))).toBeGreaterThan(0);
+    await waitForScrollSettled(page);
+
+    // Prove the page actually scrolled before trusting the in-view check
+    // below — otherwise this test could pass on a page that never moved.
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY, 'the page did not scroll').toBeGreaterThan(0);
 
     const inView = await page.evaluate(() => {
         const box = document.querySelector('.inbox-triage-btn').getBoundingClientRect();

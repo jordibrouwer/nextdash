@@ -11,31 +11,14 @@
     width: 100%;
 }
 
-/* The rail rows for states nothing is in. .lvs-filter is display:flex, which
-   beats the UA sheet's [hidden] rule, so the shell's own display has to be
-   answered here. */
-#dashboard-layout.inbox-layout .lvs-filter[hidden] {
-    display: none;
-}
-
 /* Search takes the room the two selects beside it do not, rather than its own
    intrinsic width — an <input> holds a track open at about 200px whatever the
-   row says. */
-.lvs-toolbar-slot {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
+   row says. The slot itself (display, gap, [hidden]) is shell chrome and
+   lives in list-view-shell.css; only the inbox's own child selector stays
+   here. */
 .lvs-toolbar-slot .inbox-search-input {
     flex: 1 1 auto;
     min-width: 0;
-}
-
-.lvs-toolbar-slot [hidden] {
-    display: none;
 }
 
 .page-nav-btn--inbox {
