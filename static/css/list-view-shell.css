@@ -201,3 +201,27 @@
     color: var(--accent-primary);
     font-weight: 500;
 }
+
+.lvs-density {
+    display: inline-flex;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm);
+    overflow: hidden;
+    margin-left: auto;
+}
+
+.lvs-density-btn {
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.lvs-density-btn[aria-pressed="true"] {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+.lvs-density-btn:focus-visible { outline: var(--layout-focus-ring); }

@@ -189,6 +189,31 @@ class ListViewShell {
         body.className = 'lvs-body';
         main.append(toolbar, body);
 
+        // Appended to the row, not the slot: a view clears its slot with
+        // innerHTML and must not be able to wipe a shell-owned control.
+        if (config.density && window.ListDensity) {
+            const group = document.createElement('div');
+            group.className = 'lvs-density';
+            group.setAttribute('role', 'group');
+            const current = () => window.ListDensity.get();
+            const buttons = ['compact', 'comfortable'].map((value) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'lvs-density-btn';
+                btn.setAttribute('data-lvs-density', value);
+                btn.setAttribute('aria-pressed', String(current() === value));
+                btn.textContent = value === 'compact' ? '≡' : '☰';
+                btn.addEventListener('click', () => {
+                    window.ListDensity.set(value);
+                    buttons.forEach((b) => b.setAttribute(
+                        'aria-pressed', String(b.getAttribute('data-lvs-density') === value)));
+                });
+                group.appendChild(btn);
+                return btn;
+            });
+            toolbar.appendChild(group);
+        }
+
         root.append(header, rail, main);
         container.appendChild(root);
         container.classList.add('lvs-host');

@@ -159,3 +159,23 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
         opacity: 1;
     }
 }
+
+/*
+ * The grid variant: fixed columns so a reader scans down one column instead of
+ * re-parsing each row. Declared here, once, because health, inbox and
+ * Config -> Bookmarks all build on .feed-row.
+ */
+.feed-row--grid {
+    display: grid;
+    grid-template-columns: 3rem 1fr auto;
+    align-items: center;
+    column-gap: var(--space-3);
+}
+
+body[data-list-density="compact"] .feed-row--grid {
+    padding-block: var(--space-1);
+}
+
+body[data-list-density="comfortable"] .feed-row--grid {
+    padding-block: var(--space-3);
+}
