@@ -928,6 +928,8 @@
     "healthBulkIgnored": "„{flag}“ für {count} Lesezeichen ausgeblendet.",
     "healthBulkUnignored": "{count} Lesezeichen werden wieder gemeldet.",
     "healthKeyIgnore": "ignorieren · schlummern",
+    "healthMonitors": "Monitore",
+    "healthUptime24h": "Verfügbarkeit 24 h",
     "healthGroupDown": "Ausgefallen",
     "healthGroupCert": "Zertifikatswarnung",
     "healthHeartbeatLabel": "Uptime-Verlauf",

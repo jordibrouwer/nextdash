@@ -1,7 +1,9 @@
 /* ─── Health view (dashboard) ───────────────────────────────────────────────
-   Sibling of dashboard-inbox.css: same container width, same card grammar,
-   same keyboard-selection treatment. Read that file alongside this one — where
-   the two differ, the difference is deliberate and commented.
+   Sibling of dashboard-inbox.css: the two mount on the same shared shell
+   (list-view-shell.css) and share the row grammar (feed-row.css), so what is
+   left here is what genuinely differs for health — the row's own layout,
+   monitoring, filters and explainers. Read those files alongside this one;
+   where health still diverges from inbox, the difference is commented here.
    ------------------------------------------------------------------------- */
 
 /*
@@ -44,17 +46,16 @@
 }
 
 /* The way from a symptom on this screen to the setting behind it. A real
-   button rather than the text link it used to be: it sits on the same line as
-   the score now, where an underlined word read as part of the sentence beside
-   it instead of something to press. Quiet styling still — it is a signpost,
-   not an action, and must not compete with the toolbar below. */
+   button rather than the text link it used to be, where an underlined word
+   read as part of the sentence beside it instead of something to press.
+   Quiet styling still — it is a signpost, not an action. It now lives inside
+   the header's overflow menu (syncHeaderMenu()) rather than beside the score,
+   so this base rule only has to hold its own against the menu's item styling,
+   not match a neighbour's line height any more. */
 .health-view-settings-link {
     flex-shrink: 0;
     /* An outline, not a border: it paints outside the box, so the button reads
-       as a button without adding the 2px that a border would. Together with the
-       matched line-height and no vertical padding, this keeps the button the
-       same height as the subtitle text beside it — which is what keeps this
-       header level with .inbox-header. */
+       as a button without adding the 2px that a border would. */
     border: none;
     outline: 1px solid var(--border-primary);
     background: var(--background-secondary);

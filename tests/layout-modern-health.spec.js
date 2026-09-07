@@ -174,10 +174,24 @@ test.describe('modern layout — health view', () => {
         expect(insetLayer).not.toMatch(/\/\s*0\s*\)|rgba\([^)]*,\s*0\)/);
     });
 
+    // This test could not be repointed to pass: 1d3e2dfe ("put health on the
+    // shared shell") deleted body[data-layout-version="modern"] .health-view-tile
+    // and body[data-layout-version="modern"] .health-view-filter-group (border
+    // radius, background, box-shadow, the hover lift, the active-state inset
+    // ring) along with the old markup, and nothing in the shared shell
+    // (list-view-shell.css) replaced them -- every .lvs-* element the rail and
+    // its merged filter/tile rows are built from renders byte-for-byte
+    // identical in modern and classic layout (verified live: box-shadow
+    // "none" and border-radius unchanged for .lvs-rail, .lvs-group--filters,
+    // .lvs-filter and .lvs-summary in both modes). That is a real gap the
+    // redesign left, not a stale selector, so the selectors below point at
+    // the current elements rather than the deleted classes, and the test is
+    // left red on purpose -- flagged in task-4-report.md rather than patched
+    // here, since fixing it means writing new production CSS.
     test('restyles summary tiles and the filter group', async ({ page }) => {
         await openHealthView(page);
 
-        const tile = await bothLayouts(page, '.health-view-tile', ['borderRadius', 'boxShadow']);
+        const tile = await bothLayouts(page, '[data-health-tile="broken"]', ['borderRadius', 'boxShadow']);
         expect(tile.modern.borderRadius).not.toBe(tile.classic.borderRadius);
         expect(tile.modern.boxShadow).not.toBe('none');
 

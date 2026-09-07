@@ -45,7 +45,7 @@ async function openHealth(page) {
     }));
     await markWhatsNewSeen(page);
     await page.goto('/#health');
-    await page.waitForSelector('.health-view-tiles', { timeout: 20_000 });
+    await page.waitForSelector('.lvs-rail', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
 }
@@ -54,10 +54,15 @@ test.describe('the certificates tile', () => {
     test('is a button, and filters to the bookmarks on that host', async ({ page }) => {
         await openHealth(page);
 
-        const tile = page.locator('.health-view-tile', { hasText: 'Certificates' }).first();
+        const tile = page.locator('.lvs-rail [data-health-tile]', { hasText: 'Certificates' }).first();
         // A static span was the bug: it looked exactly like the tiles that filter.
         await expect(tile).toHaveAttribute('data-health-tile', 'certificates');
 
+        // The rail's taller vertical column can put a lower filter row where
+        // the quickstart card still sits if it mounted after openHealth()'s
+        // own dismiss ran; dismissing again right before the click that
+        // matters is cheaper than making that race disappear for good.
+        await dismissOnboardingIfPresent(page);
         await tile.click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.health.filter)).toBe('certificates');
         // The count is hosts; the list is the bookmarks on them.
@@ -90,6 +95,7 @@ test.describe('the filter-specific buttons', () => {
         // menu, where .health-view-menu draws them as menu items. So the row
         // they have to match is the menu's own, and Export — a plain member of
         // that set — is the yardstick, where Rot report used to be.
+        await dismissOnboardingIfPresent(page);
         await page.click('[data-health-filter="missing-preview"]');
         await openHealthToolbarMenu(page);
         const reference = await shapeOf('.health-view-export-btn');
@@ -108,6 +114,7 @@ test.describe('the missing-preview filter', () => {
             return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
         await openHealth(page);
+        await dismissOnboardingIfPresent(page);
 
         // Not on every filter: it is an answer to this question only.
         await page.click('[data-health-filter="healthy"]');

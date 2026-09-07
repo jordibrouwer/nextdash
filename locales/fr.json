@@ -928,6 +928,8 @@
     "healthBulkIgnored": "« {flag} » masqué pour {count} signet(s).",
     "healthBulkUnignored": "{count} signet(s) de nouveau signalés.",
     "healthKeyIgnore": "ignorer · reporter",
+    "healthMonitors": "Moniteurs",
+    "healthUptime24h": "Disponibilité 24 h",
     "healthGroupDown": "En panne",
     "healthGroupCert": "Alerte certificat",
     "healthHeartbeatLabel": "Historique de disponibilité",

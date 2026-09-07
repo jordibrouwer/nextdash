@@ -1,5 +1,6 @@
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
+    openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * Where the 90-day trend lives.
@@ -7,9 +8,13 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
  * It began at the end of the toolbar's button row, where it got whatever sliver
  * the buttons left over — too narrow to read a trend off. It then moved into
  * the filter-note row, which on a narrow screen took the full width and pushed
- * the actual work below the fold. Since 3ea26f11 it is a sparkline in the tile
- * row — the space the tiles already occupy — and the full chart opens from that
- * tile, or from the delta in the header, into a dialog.
+ * the actual work below the fold. Since 3ea26f11 it was a sparkline in the tile
+ * row — the space the tiles already occupied. Health's shell adoption merged
+ * the tiles into the rail's filters, so the sparkline moved again, onto the
+ * "trend" row of the rail summary (.lvs-summary), beside the score and the
+ * report's age. The full chart still opens into the same dialog, now from the
+ * overflow menu's "Healthy over time" entry rather than a tile you could click
+ * directly.
  *
  * This file asserted the note-row placement long after that move, which is why
  * the whole file was failing rather than telling anyone anything.
@@ -17,7 +22,7 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
 async function openHealthWithTrend(page) {
     await markWhatsNewSeen(page);
     await page.goto('/#health');
-    await page.waitForSelector('.health-view-toolbar', { timeout: 15_000 });
+    await page.waitForSelector('.lvs-header', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     // The toolbar can be on screen before the view object is assigned, so
@@ -39,28 +44,36 @@ async function openHealthWithTrend(page) {
         h.report = { ...(h.report || {}), trend: days };
         h.render();
     });
-    await page.waitForSelector('.health-view-tile--trend', { timeout: 10_000 });
+    await page.waitForSelector('.lvs-summary [data-lvs-summary-key="trend"]', { timeout: 10_000 });
 }
 
-/** The tile is the way in; the chart itself only exists inside the dialog. */
+/**
+ * The tile is the way in; the chart itself only exists inside the dialog.
+ *
+ * The button that opens it now lives behind the overflow menu (⋯) in the
+ * shell's header actions, alongside Export and Retest, rather than being a
+ * tile you could click directly — so the menu has to be opened first.
+ */
 async function openTrendChart(page) {
+    await openHealthToolbarMenu(page);
     await page.locator('[data-health-trend-open]').first().click();
     await page.waitForSelector('.health-trend-modal .health-view-trend', { timeout: 10_000 });
 }
 
 test.describe('health trend placement', () => {
-    test('the trend is a tile, not a row of its own', async ({ page }) => {
+    test('the trend is a summary row, not a row of its own', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
 
-        // In the tile row, beside the counts.
-        await expect(page.locator('.health-view-tiles .health-view-tile--trend')).toBeVisible();
-        await expect(page.locator('.health-view-tile--trend .health-view-tile-spark')).toBeVisible();
+        // In the rail summary, beside the score and the report's age.
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="trend"]')).toBeVisible();
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="trend"] .health-view-trend-sparkline'))
+            .toBeVisible();
 
-        // Neither of its two former homes, both of which cost a row before the
-        // list — the point of the move.
+        // Neither of its former homes, both of which cost a row before the
+        // list — the point of the move. (The toolbar's own button row is gone
+        // entirely now, so there is nothing left to exclude it from there.)
         await expect(page.locator('.health-view-note-row .health-view-trend')).toHaveCount(0);
-        await expect(page.locator('.health-view-toolbar-actions .health-view-trend')).toHaveCount(0);
     });
 
     test('the tile opens the full chart', async ({ page }) => {
@@ -135,12 +148,14 @@ test.describe('health trend placement', () => {
     });
 
     // The reason it left the row above the list: on a narrow screen that row
-    // took the full width and pushed the work off the screen.
-    test('a narrow screen still shows the tiles, not a chart above the list', async ({ page }) => {
+    // took the full width and pushed the work off the screen. Below 720px the
+    // shell folds the whole summary block (score, trend, age) into the
+    // header instead — still not a row of its own above the list.
+    test('a narrow screen still shows the summary, not a chart above the list', async ({ page }) => {
         await page.setViewportSize({ width: 700, height: 1000 });
         await openHealthWithTrend(page);
 
-        await expect(page.locator('.health-view-tile--trend')).toBeVisible();
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="trend"]')).toBeVisible();
         await expect(page.locator('.health-view-note-row .health-view-trend')).toHaveCount(0);
     });
 });

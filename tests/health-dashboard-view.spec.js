@@ -176,9 +176,14 @@ test.describe('health dashboard view', () => {
     test('the header shows the healthy percentage badge', async ({ page }) => {
         await openHealthView(page);
 
-        // Fixture: 1 healthy of 4 total → 25%.
-        await expect(page.locator('.health-view-score-badge')).toHaveText('25%');
-        await expect(page.locator('.health-view-score-badge')).toHaveAttribute('aria-label', /25%.*healthy/i);
+        // Fixture: 1 healthy of 4 total → 25%. The row's own value is the
+        // percentage; its aria-label is headerMetaHint()'s combined sentence,
+        // which prefers "N of M healthy" over a bare percentage once the
+        // total is known -- folding what used to be four separate tooltips
+        // (percentage, trend, broken count, report age) into one.
+        const scoreRow = page.locator('.lvs-summary [data-lvs-summary-key="score"]');
+        await expect(scoreRow.locator('.lvs-summary-value')).toHaveText('25%');
+        await expect(scoreRow).toHaveAttribute('aria-label', /1 of 4 healthy/i);
     });
 
     test('filter breadcrumb sits in the panel head, not the dashboard header', async ({ page }) => {
@@ -189,10 +194,16 @@ test.describe('health dashboard view', () => {
 
         await page.locator('[data-health-filter="monitored"]').click();
         await expect(page.locator('.title-breadcrumb')).toBeHidden();
-        await expect(page.locator('.health-view-head-breadcrumb')).toBeVisible();
-        await expect(page.locator('.health-view-head-breadcrumb')).toContainText(/monitored/i);
-        await expect(page.locator('.health-view-title')).toHaveText(/health/i);
-        await expect(page.locator('.health-view-subtitle')).toBeVisible();
+        await expect(page.locator('.lvs-title')).toHaveText(/health/i);
+        await expect(page.locator('.lvs-description')).toBeVisible();
+
+        // The shell's own crumb (.lvs-crumb) carries the active filter -- a
+        // sibling of .lvs-title in the panel head, not the dashboard's global
+        // .title-breadcrumb. It only shows on screen once the header
+        // collapses on scroll (list-view-shell.css), which this fixture's
+        // short, filtered-to-Monitored list cannot always reach, so this
+        // checks the shell set the right text rather than requiring a scroll.
+        expect(((await page.locator('.lvs-crumb').textContent()) || '')).toMatch(/monitored/i);
     });
 
     test('hv_id deep link highlights and selects the target row', async ({ page }) => {
@@ -246,12 +257,15 @@ test.describe('health dashboard view', () => {
     test('summary tiles appear above the list and filter it', async ({ page }) => {
         await openHealthView(page);
 
-        const tiles = page.locator('.health-view-tile');
-        // Total, Healthy, Monitored, Broken, Unchecked, Stale, Unused. Content
-        // has no rows in this fixture, and a backlog tile with nothing behind it
-        // is not drawn — the same rule Drift and Certificates have always
-        // followed.
-        await expect(tiles).toHaveCount(7);
+        const tiles = page.locator('.lvs-rail [data-health-tile]:not([hidden])');
+        // Total, Healthy, Monitored, Broken, Content, Unchecked, Stale, Unused.
+        // Content has no rows in this fixture, but it is one of the five
+        // filters the rail always shows regardless of count (broken, content,
+        // duplicate, unchecked, all) -- now that its filter and its tile are
+        // the same merged control, that always-shown rule carries the tile
+        // along with it. Drift and Certificates still follow the old rule and
+        // stay hidden at zero.
+        await expect(tiles).toHaveCount(8);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
@@ -332,8 +346,11 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-legend--bottom')).toBeVisible();
         await expect(page.locator('.health-view-legend--top')).toHaveCount(0);
 
-        // It sits after the feed, not between toolbar and first row.
-        const order = await page.locator('#dashboard-layout > *').evaluateAll(
+        // It sits after the feed, not between toolbar and first row. The shell
+        // owns everything above the body now, so this reads the body's own
+        // children (.lvs-body) rather than #dashboard-layout's, which holds
+        // just the one shell root.
+        const order = await page.locator('.lvs-body > *').evaluateAll(
             (els) => els.map((el) => el.className)
         );
         const legendIndex = order.findIndex((c) => c.includes('legend--bottom'));
@@ -525,7 +542,7 @@ test.describe('health dashboard view', () => {
         await page.keyboard.press('m');
         await expect(page.locator('.health-view-menu:not([hidden])')).toBeVisible();
 
-        await page.locator('.health-view-title').click();
+        await page.locator('.lvs-title').click();
         await expect(page.locator('.health-view-menu:not([hidden])')).toHaveCount(0);
     });
 
@@ -1088,20 +1105,23 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(retestHits).toBe(0);
     });
 
-    test('every filter is a pill in one scrolling row', async ({ page }) => {
+    test('every filter is its own row in the rail, not behind a menu', async ({ page }) => {
         await openHealthView(page);
         // They used to live behind a "More" menu, because the row wrapped onto a
         // second line once Stale, Unused, Missing preview and Healthy were pills
-        // too. The row scrolls sideways now, so the menu is gone and nothing is
-        // a click away that could be in view.
+        // too. The list-view shell put every filter in the rail as its own
+        // full-width row instead, so the menu is gone and nothing is a click
+        // away that could be in view.
         await expect(page.locator('.health-view-filter-more-btn')).toHaveCount(0);
         await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"]')).toBeVisible();
         await expect(page.locator('.health-view-filter-group > [data-health-filter="unused"]')).toBeVisible();
 
-        // One line, whatever the width: the strip scrolls rather than wrapping.
-        const rows = await page.locator('.health-view-filter-btn').evaluateAll(
-            (els) => [...new Set(els.map((el) => Math.round(el.getBoundingClientRect().top)))]);
-        expect(rows).toHaveLength(1);
+        // A column, not a scrolling strip: every visible filter is its own
+        // row, so there are as many distinct row positions as visible filters.
+        const rows = await page.locator('.health-view-filter-btn:not([hidden])').evaluateAll(
+            (els) => new Set(els.map((el) => Math.round(el.getBoundingClientRect().top))).size);
+        const visibleCount = await page.locator('.health-view-filter-btn:not([hidden])').count();
+        expect(rows).toBe(visibleCount);
 
         await page.locator('.health-view-filter-group > [data-health-filter="stale"]').click();
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('stale');
@@ -1111,13 +1131,17 @@ test.describe('health view — export, persistence and monitor discoverability',
 
     test('a pill carries its count only when there is one', async ({ page }) => {
         await openHealthView(page);
-        const counted = await page.locator('.health-view-filter-btn').evaluateAll((els) => els.map((el) => ({
+        const counted = await page.locator('.health-view-filter-btn:not([hidden])').evaluateAll((els) => els.map((el) => ({
             label: el.textContent.replace(/\s+/g, ' ').trim(),
             badge: el.querySelector('.health-view-filter-count')?.textContent || '',
         })));
         // "Content 0" is three characters wider than "Content" and says the same
-        // thing the missing number says.
-        expect(counted.every((c) => c.badge === '' || Number(c.badge) > 0)).toBe(true);
+        // thing the missing number says -- except Content itself, which the
+        // rail always shows (it is one of the five filters -- Broken,
+        // Content, Duplicates, Unchecked, All -- that describe the work
+        // rather than a state of it), so it can genuinely carry a zero.
+        expect(counted.every((c) => c.badge === '' || Number(c.badge) > 0
+            || c.label.startsWith('Content'))).toBe(true);
         expect(counted.some((c) => c.badge !== '')).toBe(true);
     });
 
@@ -1274,64 +1298,43 @@ test.describe('health view — monitored tile', () => {
         // only render when that list has rows.
         await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
         await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
     }
 
-    test('sits directly after Healthy', async ({ page }) => {
+    test('sits among the primary filters, in the rail\'s own order', async ({ page }) => {
         await withMonitorState(page, { down: false });
 
-        // Monitored answers the same question as Healthy — is anything wrong
-        // now — where Broken/Unchecked are backlogs to work through.
-        const labels = await page.locator('.health-view-tile-label').allTextContents();
-        // Content sits beside Broken: both are live failures, and it answers the
-        // narrower "the host replied, but wrongly".
-        // Content is absent because this fixture has no content failures, not
-        // because it moved: a backlog tile is drawn only when it has rows.
+        // The old tile row curated its own order (Monitored placed right after
+        // Healthy, both answering "is anything wrong now"), separate from the
+        // filter pills' order. Now that a tile and its filter are the same
+        // merged row, there is only one order left: shellFilterRows()'s own —
+        // the primary filters (Broken, Content, Duplicates, Unchecked,
+        // Monitored, All), then the secondary ones. Content is included
+        // because it is always shown regardless of count; Drift and
+        // Certificates are not, because this fixture has no rows for them.
+        const labels = await page.locator('.lvs-rail [data-health-filter]:not([hidden]) .lvs-filter-label')
+            .allTextContents();
         expect(labels.map((t) => t.trim())).toEqual(
-            ['Total', 'Healthy', 'Monitored', 'Broken', 'Unchecked', 'Stale', 'Unused']
+            ['Broken', 'Content', 'Duplicates', 'Unchecked', 'Monitored', 'All', 'Stale', 'Unused', 'Healthy']
         );
     });
 
-    test('reads green while every monitor answers', async ({ page }) => {
-        await withMonitorState(page, { down: false });
-
-        const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile).toHaveClass(/health-view-tile--good/);
-        await expect(tile).not.toHaveClass(/health-view-tile--bad/);
-        await expect(tile).toHaveAttribute('title', /responding/i);
-    });
-
-    test('turns red while a monitor is unreachable', async ({ page }) => {
-        await withMonitorState(page, { down: true });
-
-        const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile).toHaveClass(/health-view-tile--bad/);
-        await expect(tile).not.toHaveClass(/health-view-tile--good/);
-        await expect(tile).toHaveAttribute('title', /not responding/i);
-    });
-
-    test('says "not responding" without printing it across the row', async ({ page }) => {
-        // The sentence was on the tile face for a while, so the down count did
-        // not need a hover. It cost too much for where it sat: four times the
-        // width of every other tile's label, on a row of seven, pushing the
-        // whole set sideways to hold it — 227px against the 89px it takes now.
-        // The count turning red carries "something is down here" on its own,
-        // and the fact itself is on the title and the aria-label. aria-label
-        // replaces title rather than supplementing it, so it has to be there.
-        await withMonitorState(page, { down: true });
-
-        const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile.locator('.health-view-tile-sub')).toHaveCount(0);
-        await expect(tile).toHaveAttribute('title', /not responding/i);
-        await expect(tile).toHaveAttribute('aria-label', /not responding/i);
-    });
-
-    test('an all-green monitored tile has no sub line at all', async ({ page }) => {
-        await withMonitorState(page, { down: false });
-
-        const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile.locator('.health-view-tile-sub')).toHaveCount(0);
-    });
+    // Four tests used to live here, checking that the "Monitored" tile turned
+    // red/green with a title and aria-label, and carried no visible sub-line,
+    // reflecting whether any monitor was down (health-view-tile--good/--bad,
+    // health-view-tile-sub). That coloured, titled tile is gone: 1d3e2dfe's
+    // shell adoption deleted its CSS (body[data-layout-version="modern"]
+    // .health-view-tile--monitored.health-view-tile--bad, etc.) along with the
+    // markup, and nothing replaced it on the merged filter/tile row itself —
+    // it is now a plain count, like every other filter. The same signal is
+    // still visible, just relocated: the rail's "uptime" summary row carries
+    // tone (good/bad) once a fleet exists (fleetUptimeSummaryRow(), keyed off
+    // fleet.downNow), and the fleet panel's own headline spells out "N of M
+    // not responding" in the Monitors section. tests/health-collection-stats.spec.js:109,
+    // :137 and :166-169 already cover that headline turning red/green and
+    // naming the down count, so this describe block does not need its own
+    // copy of the same claim under a name ("monitored tile") nothing answers
+    // to any more.
 
     test('clicking it goes straight to the monitored list, and is remembered', async ({ page }) => {
         await withMonitorState(page, { down: true });
@@ -1345,17 +1348,17 @@ test.describe('health view — monitored tile', () => {
 
     test('a monitor awaiting its first check is not counted as down', async ({ page }) => {
         // "Monitored pending" carries monitor: true and no monitorStats at all.
-        // Unknown is not failing, and reddening the tile for it cries wolf on
-        // every freshly-enabled monitor.
+        // Unknown is not failing, and monitorsDownCount() (still the method the
+        // rail's tone-bearing rows read down state from indirectly, through the
+        // fleet) must not count it.
         await withMonitorState(page, { down: false });
 
         expect(await page.evaluate(() => window.dashboardInstance.health.monitorsDownCount())).toBe(0);
-        await expect(page.locator('.health-view-tile--monitored')).toHaveClass(/health-view-tile--good/);
     });
 
     test('the Broken tile counts what the Broken filter shows', async ({ page }) => {
         await openHealthView(page);
-        const tile = Number(await page.locator('[data-health-tile="broken"] .health-view-tile-value').textContent());
+        const tile = Number(await page.locator('[data-health-tile="broken"] .lvs-filter-count').textContent());
         const pill = await page.evaluate(() =>
             (window.dashboardInstance.health._module || window.dashboardInstance.health).filterCount('broken'));
         const rows = await page.evaluate(() => {
@@ -1372,18 +1375,23 @@ test.describe('health view — monitored tile', () => {
 
     test('a problem with no rows behind it gets no tile at all', async ({ page }) => {
         await openHealthView(page);
-        const tiles = await page.locator('.health-view-tile').evaluateAll((els) => els.map((el) => ({
-            label: el.querySelector('.health-view-tile-label')?.textContent?.trim() || '',
-            value: el.querySelector('.health-view-tile-value')?.textContent?.trim() || '',
+        const tiles = await page.locator('.lvs-rail [data-health-tile]:not([hidden])').evaluateAll((els) => els.map((el) => ({
+            label: el.querySelector('.lvs-filter-label')?.textContent?.trim() || '',
+            value: el.querySelector('.lvs-filter-count')?.textContent?.trim() || '',
         })));
         // Drift and Certificates have always worked this way; the rest kept
         // showing a zero, which spent a quarter of the row saying "nothing here".
+        // Content is the one exception now: it is one of the five filters the
+        // rail always shows regardless of count, so its merged tile can read
+        // zero even though it is a backlog like Broken or Unchecked. The old
+        // "Total" tile is the merged "All" filter now -- one control, one
+        // label -- rather than a summary card with its own separate name.
         const backlogZeros = tiles.filter((t) => t.value === '0'
-            && !['Total', 'Healthy', 'Monitored', 'Trend'].includes(t.label));
+            && !['All', 'Healthy', 'Monitored', 'Content'].includes(t.label));
         expect(backlogZeros).toEqual([]);
-        // Total, Healthy and Monitored describe the collection rather than a
+        // All, Healthy and Monitored describe the collection rather than a
         // backlog, so they stay whatever their number is.
-        expect(tiles.map((t) => t.label)).toContain('Total');
+        expect(tiles.map((t) => t.label)).toContain('All');
         expect(tiles.map((t) => t.label)).toContain('Healthy');
     });
 
@@ -1398,12 +1406,14 @@ test.describe('health view — monitored tile', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
         await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
 
-        const tile = page.locator('.health-view-tile--monitored');
-        await expect(tile).toHaveClass(/health-view-tile--zero/);
-        // No tooltip either: there is nothing to report on zero monitors. The
-        // attribute is omitted entirely rather than set to an empty string.
+        // There is no health-view-tile--zero tone any more -- the merged
+        // filter/tile row never carries a tone class at all (that lived on
+        // the fleet's own rows, per the note above this describe block) --
+        // so "neutral" now means literally that: no tone class, no tooltip.
+        const tile = page.locator('[data-health-tile="monitored"]');
+        await expect(tile).not.toHaveClass(/lvs-tone-/);
         expect(await tile.getAttribute('title')).toBeNull();
     });
 });
@@ -1529,7 +1539,7 @@ test.describe('status grouping on the Monitored filter', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
         await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
         await page.click('[data-health-filter="monitored"]');
         await page.selectOption('.health-view-sort-select', 'status');
         await page.waitForTimeout(150);
@@ -1568,7 +1578,7 @@ test.describe('status grouping on the Monitored filter', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
         await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
         await page.click('[data-health-filter="monitored"]');
         await page.selectOption('.health-view-sort-select', 'status');
         await page.waitForTimeout(150);

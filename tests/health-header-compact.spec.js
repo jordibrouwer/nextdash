@@ -61,7 +61,7 @@ async function openHealth(page) {
     await markWhatsNewSeen(page);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/#health');
-    await page.waitForSelector('.health-view-tiles', { timeout: 20_000 });
+    await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
 }
@@ -69,34 +69,30 @@ async function openHealth(page) {
 test('the tiles read as one line, not a wall of cards', async ({ page }) => {
     await openHealth(page);
 
-    const tiles = page.locator('.health-view-tiles');
-    await expect(tiles).toBeVisible();
+    // The tile row and the filter pills merged into one control in the rail
+    // (.lvs-group--filters); there is no longer a single horizontal "line" to
+    // measure. What "not a wall of cards" still means: each merged row reads
+    // as one compact line rather than the old multi-line summary card.
+    const group = page.locator('.lvs-group--filters');
+    await expect(group).toBeVisible();
 
-    const height = await tiles.evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(height, `tile strip is ${height}px tall`).toBeLessThan(48);
-
+    const rowHeights = await page.locator('.lvs-rail [data-health-tile]:not([hidden])')
+        .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)));
     // Still a way in: every figure that carried a filter keeps it.
-    expect(await page.locator('[data-health-tile]').count()).toBeGreaterThan(3);
+    expect(rowHeights.length).toBeGreaterThan(3);
+    for (const rowHeight of rowHeights) {
+        expect(rowHeight, `a tile row is ${rowHeight}px tall`).toBeLessThan(48);
+    }
 });
 
-test('every filter pill is on screen without scrolling sideways', async ({ page }) => {
-    await openHealth(page);
-
-    const overflow = await page.evaluate(() => {
-        const strip = document.querySelector('.health-view-filter-strip');
-        if (!strip) return { error: 'no pill strip' };
-        const box = strip.getBoundingClientRect();
-        const cut = [...strip.querySelectorAll('[data-health-filter]')]
-            .filter((pill) => pill.getBoundingClientRect().right > box.right + 1)
-            .map((pill) => pill.textContent.trim());
-        return { cut, total: strip.querySelectorAll('[data-health-filter]').length };
-    });
-
-    expect(overflow.error).toBeUndefined();
-    expect(overflow.total).toBeGreaterThan(8);
-    // A pill past the right edge is a filter the reader cannot see exists.
-    expect(overflow.cut, JSON.stringify(overflow)).toEqual([]);
-});
+// There used to be a test here ("every filter pill is on screen without
+// scrolling sideways") guarding a horizontal filter strip that could clip a
+// pill past its right edge. That strip is gone: filters are a vertical rail
+// column now (.lvs-group-list is flex-direction: column), one full-width row
+// each, so there is nothing left to clip sideways. Below 720px the rail folds
+// into a horizontal strip that scrolls on purpose (list-view-shell.css's own
+// comment: "the scroll lives on the list, never on the body") — the opposite
+// of what this test asserted. The premise is gone, not just the selector.
 
 test('the rare actions are one click away, not eight buttons wide', async ({ page }) => {
     await openHealth(page);
@@ -121,9 +117,11 @@ test('the rare actions are one click away, not eight buttons wide', async ({ pag
 
 test('the header no longer carries a settings button of its own', async ({ page }) => {
     await openHealth(page);
-    // It moved into the menu; on the header it was one more thing between the
-    // heading and the rows.
-    await expect(page.locator('.health-view-header .health-view-settings-link')).toHaveCount(0);
+    // It moved into the overflow menu; the header's action row (.lvs-header
+    // is the whole sticky bar, so the menu it holds counts as a descendant
+    // too) must not carry it as a standalone action beside Work through, Rot
+    // report and the help button.
+    await expect(page.locator('.lvs-header-actions > .health-view-settings-link')).toHaveCount(0);
 });
 
 test('the filter sentence appears where it tells you something', async ({ page }) => {

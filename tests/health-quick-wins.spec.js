@@ -151,7 +151,7 @@ test.describe('health view quick wins', () => {
     test('the header says how old the report is', async ({ page }) => {
         await openHealthView(page, report({ generatedAt: Date.now() - 25 * 60 * 1000 }));
 
-        const age = page.locator('.health-view-report-age');
+        const age = page.locator('.lvs-summary [data-lvs-summary-key="age"] .lvs-summary-value');
         await expect(age).toBeVisible();
         await expect(age).toHaveText(/25m/);
     });
@@ -159,7 +159,8 @@ test.describe('health view quick wins', () => {
     test('a report generated moments ago reads "just now", not 0m', async ({ page }) => {
         await openHealthView(page, report({ generatedAt: Date.now() - 5000 }));
 
-        await expect(page.locator('.health-view-report-age')).toHaveText(/just now/i);
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="age"] .lvs-summary-value'))
+            .toHaveText(/just now/i);
     });
 
     test('the CSV export carries the monitoring columns', async ({ page }) => {

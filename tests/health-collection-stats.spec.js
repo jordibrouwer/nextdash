@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHealthToolbarMenu } = require('./e2e-helpers');
 
 /**
  * The collection layer: how the whole set is doing over time, and what the
@@ -81,56 +81,78 @@ async function open(page, body = report(), filter = 'monitored') {
     await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
 }
 
+/**
+ * Monitors moved: it is a rail section (#health/monitors) now, not a
+ * consequence of picking the Monitored filter, so the fleet panel only
+ * appears once the section itself is open.
+ */
+async function openMonitors(page, body = report()) {
+    await page.route('**/api/bookmark-health**', async (route) => {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.goto('/#health/monitors');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await prepareDashboardInteraction(page);
+    await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
+}
+
 test.describe('collection health trend', () => {
-    test('the tile row carries the trend and the header names the change', async ({ page }) => {
+    test('the rail summary carries the trend and names the change', async ({ page }) => {
         await open(page);
 
-        // The chart lives in its dialog now; the row shows the shape of it in the
-        // space the tiles already take, so nothing is pushed below the fold.
-        await expect(page.locator('.health-view-tile--trend')).toBeVisible();
-        await expect(page.locator('.health-view-tile-spark')).toBeVisible();
+        // The chart lives in its dialog now; the rail's trend row shows the
+        // shape of it in the space the summary already takes, so nothing is
+        // pushed below the fold.
+        const trendRow = page.locator('.lvs-summary [data-lvs-summary-key="trend"]');
+        await expect(trendRow).toBeVisible();
+        await expect(trendRow.locator('.health-view-trend-sparkline')).toBeVisible();
         await expect(page.locator('.health-view-trend-chart')).toHaveCount(0);
 
-        // Either way in opens the same chart, with its series picker.
-        await page.locator('.health-view-tile--trend').click();
+        // The overflow menu's "Healthy over time" entry opens the same chart,
+        // with its series picker.
+        await openHealthToolbarMenu(page);
+        await page.locator('[data-health-trend-open]').first().click();
         await expect(page.locator('.health-trend-modal .health-view-trend-chart')).toBeVisible({ timeout: 10_000 });
         await page.keyboard.press('Escape');
 
-        const delta = page.locator('.health-view-trend-delta');
-        await expect(delta).toHaveClass(/is-up/);
-        // 60% → 82% across the window.
-        await expect(delta).toHaveAttribute('aria-label', /up 22 points over 30 days/i);
+        // 60% → 82% across the window. The rail row itself stays compact (an
+        // arrow and a size, trendDeltaText()); the verbose sentence
+        // (trendDeltaLabel()) is what the score row's aria-label names it
+        // with, folded together with the healthy count and report age.
+        await expect(trendRow.locator('.lvs-summary-value')).toHaveText('▲22');
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="score"]'))
+            .toHaveAttribute('aria-label', /up 22 points over 30 days/i);
     });
 
     test('a falling collection is marked as down, not up', async ({ page }) => {
         await open(page, report({ trendPoints: trend(14, 90, 70) }));
 
-        const delta = page.locator('.health-view-trend-delta');
-        await expect(delta).toHaveClass(/is-down/);
-        await expect(delta).toHaveAttribute('aria-label', /down 20 points over 14 days/i);
+        const trendRow = page.locator('.lvs-summary [data-lvs-summary-key="trend"]');
+        await expect(trendRow.locator('.lvs-summary-value')).toHaveText('▼20');
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="score"]'))
+            .toHaveAttribute('aria-label', /down 20 points over 14 days/i);
     });
 
     test('a single recorded day shows no trend at all', async ({ page }) => {
         // One point is a reading, not a trend — there is nothing to compare to.
         await open(page, report({ trendPoints: trend(1, 80, 80) }));
 
-        await expect(page.locator('.health-view-trend-delta')).toHaveCount(0);
         await expect(page.locator('.health-view-trend-chart')).toHaveCount(0);
-        // Nor the tile: one reading draws nothing, in either place.
-        await expect(page.locator('.health-view-tile--trend')).toHaveCount(0);
+        // Nor the rail row: one reading draws nothing, in either place.
+        await expect(page.locator('.lvs-summary [data-lvs-summary-key="trend"]')).toHaveCount(0);
     });
 
     test('a report with no recorded history renders the header without a chart', async ({ page }) => {
         await open(page, report({ trendPoints: [] }));
 
-        await expect(page.locator('.health-view-header')).toBeVisible();
+        await expect(page.locator('.lvs-header')).toBeVisible();
         await expect(page.locator('.health-view-trend')).toHaveCount(0);
     });
 });
 
 test.describe('collection-wide monitoring', () => {
     test('the fleet panel summarises every monitor', async ({ page }) => {
-        await open(page);
+        await openMonitors(page);
 
         const panel = page.locator('.health-fleet');
         await expect(panel).toBeVisible();
@@ -145,7 +167,7 @@ test.describe('collection-wide monitoring', () => {
         // tooltip that would otherwise reveal the truncated name never fires
         // on touch — so the name must wrap instead of hiding text.
         await page.setViewportSize({ width: 480, height: 900 });
-        await open(page, report({
+        await openMonitors(page, report({
             fleetStats: fleet({
                 worst: [{ name: 'A very long monitor name that would normally be clipped by ellipsis', url: 'https://long-name.test', ratio: 0.5, samples: 100 }],
             }),
@@ -156,7 +178,7 @@ test.describe('collection-wide monitoring', () => {
     });
 
     test('a live outage is called out rather than folded into the average', async ({ page }) => {
-        await open(page, report({
+        await openMonitors(page, report({
             fleetStats: fleet({
                 downNow: 1,
                 worst: [{ name: 'Down service', url: 'https://down.test', ratio: 0.5, samples: 100, down: true }],
@@ -170,7 +192,7 @@ test.describe('collection-wide monitoring', () => {
     });
 
     test('the worst monitors, slowdowns and outages are each listed', async ({ page }) => {
-        await open(page);
+        await openMonitors(page);
         const panel = page.locator('.health-fleet');
 
         await expect(panel).toContainText('Flaky service');
@@ -186,7 +208,7 @@ test.describe('collection-wide monitoring', () => {
     });
 
     test('a capped outage list says how many there really were', async ({ page }) => {
-        await open(page, report({ fleetStats: fleet({ totalIncidents: 40 }) }));
+        await openMonitors(page, report({ fleetStats: fleet({ totalIncidents: 40 }) }));
 
         // Otherwise two rows would read as the month's complete tally.
         await expect(page.locator('.health-fleet-more')).toHaveText(/2.*40/);
@@ -195,8 +217,9 @@ test.describe('collection-wide monitoring', () => {
     test('the panel stays off filters that are about fixing bookmarks', async ({ page }) => {
         await open(page, report(), 'healthy');
 
-        // Same report, different filter: the work list must not be pushed down by
-        // a panel about uptime.
+        // Monitors is a rail section now, not a consequence of the filter, so
+        // no filter -- Healthy included -- ever shows the fleet panel; the
+        // work list must not be pushed down by a panel about uptime.
         await expect(page.locator('.health-view-item').first()).toBeVisible();
         await expect(page.locator('.health-fleet')).toHaveCount(0);
     });
@@ -206,13 +229,13 @@ test.describe('collection-wide monitoring', () => {
         // arrives as absent rather than as an empty object.
         const body = report();
         delete body.fleet;
-        await open(page, body);
+        await openMonitors(page, body);
 
         await expect(page.locator('.health-fleet')).toHaveCount(0);
     });
 
     test('a fleet that reports no monitors gets no panel either', async ({ page }) => {
-        await open(page, report({ fleetStats: { monitors: 0 } }));
+        await openMonitors(page, report({ fleetStats: { monitors: 0 } }));
 
         await expect(page.locator('.health-fleet')).toHaveCount(0);
     });
@@ -220,7 +243,7 @@ test.describe('collection-wide monitoring', () => {
 
 test.describe('collapsing the fleet panel', () => {
     test('hiding details leaves just the three uptime tiles', async ({ page }) => {
-        await open(page);
+        await openMonitors(page);
 
         await expect(page.locator('.health-fleet-details')).toBeVisible();
         await expect(page.locator('.health-monitor-stat')).toHaveCount(3);
@@ -241,13 +264,13 @@ test.describe('collapsing the fleet panel', () => {
     });
 
     test('the collapsed state survives a reload', async ({ page }) => {
-        await open(page);
+        await openMonitors(page);
 
         await page.locator('.health-fleet-collapse-btn').click();
         await expect(page.locator('.health-fleet-details')).toBeHidden();
 
         await page.reload();
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+        await page.waitForSelector('#dashboard-layout.health-layout .lvs', { timeout: 15_000 });
 
         await expect(page.locator('.health-fleet-details')).toBeHidden();
         await expect(page.locator('.health-fleet-collapse-btn')).toHaveText(/show details/i);
@@ -257,7 +280,7 @@ test.describe('collapsing the fleet panel', () => {
         // Outages renders "No outages recorded." even with an empty list, so
         // there is always at least one detail block to collapse whenever the
         // fleet panel itself is shown.
-        await open(page, report({ fleetStats: fleet({ worst: [], slower: [], incidents: [] }) }));
+        await openMonitors(page, report({ fleetStats: fleet({ worst: [], slower: [], incidents: [] }) }));
 
         await expect(page.locator('.health-fleet')).toBeVisible();
         await expect(page.locator('.health-fleet-collapse-btn')).toHaveCount(1);

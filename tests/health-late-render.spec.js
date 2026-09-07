@@ -49,7 +49,7 @@ test('a report landing after you leave does not repaint over the grid', async ({
     const after = await page.evaluate(() => ({
         view: window.dashboardInstance.activeView,
         layout: document.getElementById('dashboard-layout').className,
-        health: !!document.querySelector('.health-view-feed, .health-view-header'),
+        health: !!document.querySelector('.health-view-feed, .lvs-header'),
     }));
     expect(after.view).toBe('bookmarks');
     expect(after.health, 'the health view painted itself back over the grid').toBe(false);
@@ -76,8 +76,12 @@ test('the sixty-second refresh keeps your place in the list', async ({ page }) =
         document.documentElement.scrollHeight > window.innerHeight + 200);
     test.skip(!scrollable, 'needs a list long enough to scroll');
 
-    await page.evaluate(() => window.scrollTo({ top: 400, behavior: 'instant' }));
-    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeGreaterThan(300);
+    // The removed chrome (the old tile row and filter strip above the list)
+    // was itself most of the page's scroll room, so the shell's shorter
+    // header leaves a much smaller maximum to scroll to now -- 400 overshot
+    // it entirely. 200 stays reachable while still proving the reader moved.
+    await page.evaluate(() => window.scrollTo({ top: 200, behavior: 'instant' }));
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeGreaterThan(150);
 
     // The refresh the timer performs, through the same entry point.
     await page.evaluate(() => window.dashboardInstance.health.refreshKeepingPlace());
@@ -85,7 +89,7 @@ test('the sixty-second refresh keeps your place in the list', async ({ page }) =
         { timeout: 15_000 }).toBe(false);
 
     const landed = await page.evaluate(() => Math.round(window.scrollY));
-    expect(landed, `the refresh moved the reader to ${landed}`).toBeGreaterThan(300);
+    expect(landed, `the refresh moved the reader to ${landed}`).toBeGreaterThan(150);
 });
 
 test('a duplicate-group menu removed by a re-render does not leak or hang', async ({ page }) => {
@@ -105,7 +109,11 @@ test('a duplicate-group menu removed by a re-render does not leak or hang', asyn
         wrap.className = 'health-view-menu-wrap';
         const anchor = document.createElement('button');
         wrap.appendChild(anchor);
-        document.getElementById('dashboard-layout').appendChild(wrap);
+        // render() no longer empties #dashboard-layout on every repaint (that
+        // happens once, at mount) -- it only clears shell.body (.lvs-body)
+        // now, so the wrap has to live there to be removed by the re-render
+        // this test is about.
+        h.shell.body.appendChild(wrap);
 
         // The menu only appears when the report holds more than one group, and
         // chooseDuplicateGroup reads them off the report itself.

@@ -130,7 +130,7 @@ test.describe('the three views share one tile', () => {
             document.querySelector('.config-tiles--bookmarks .config-tile'), '::before').content);
 
         await openHealth(page);
-        const health = await boxOf(page, '.health-view-tile:not(.is-active)');
+        const health = await boxOf(page, '.lvs-rail [data-health-tile]:not(.is-active)');
 
         expect(config).not.toBeNull();
         expect(health).not.toBeNull();
@@ -156,14 +156,17 @@ test.describe('rounded is the shared shape', () => {
         await openDashboard(page);
 
         await openHealth(page);
-        const health = await boxOf(page, '.health-view-filter-group');
-        await openInbox(page);
         // The list-view shell unified what used to differ here: Inbox no
         // longer wraps its filters in a pill-shaped group — that markup
         // (.inbox-filter-group) is gone, and .lvs-group--filters carries no
         // shape of its own (0px radius, no border, no background). Each
         // filter is now its own row, sharing the same small radius token
-        // Health's group already used.
+        // Health's group already used. .health-view-filter-group is kept as
+        // an alias on the shell's filter *list* container (0px radius, the
+        // group's own box) — comparing shape means comparing individual rows
+        // on both sides, so this reads .lvs-filter here too.
+        const health = await boxOf(page, '.lvs-filter');
+        await openInbox(page);
         const inbox = await boxOf(page, '.lvs-filter');
 
         expect(health).not.toBeNull();

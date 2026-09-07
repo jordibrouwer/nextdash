@@ -928,6 +928,8 @@
     "healthBulkIgnored": "已在 {count} 个书签上隐藏「{flag}」。",
     "healthBulkUnignored": "重新报告 {count} 个书签。",
     "healthKeyIgnore": "忽略 · 暂缓",
+    "healthMonitors": "监控",
+    "healthUptime24h": "24 小时可用率",
     "healthGroupDown": "离线",
     "healthGroupCert": "证书警告",
     "healthHeartbeatLabel": "在线率历史",

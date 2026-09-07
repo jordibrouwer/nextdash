@@ -928,6 +928,8 @@
     "healthBulkIgnored": "“{flag}” verborgen voor {count} bookmark(s).",
     "healthBulkUnignored": "{count} bookmark(s) worden weer gerapporteerd.",
     "healthKeyIgnore": "negeren · snoozen",
+    "healthMonitors": "Monitors",
+    "healthUptime24h": "Uptime 24u",
     "healthGroupDown": "Uitgevallen",
     "healthGroupCert": "Certificaatwaarschuwing",
     "healthHeartbeatLabel": "Uptime-geschiedenis",

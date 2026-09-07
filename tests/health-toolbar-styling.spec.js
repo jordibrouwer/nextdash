@@ -27,7 +27,7 @@ async function openHealth(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await page.evaluate(() => window.dashboardInstance.health.openHealthView());
-    await page.waitForSelector('.health-view-toolbar-actions', { timeout: 20_000 });
+    await page.waitForSelector('.lvs-header-actions', { timeout: 20_000 });
 }
 
 const boxOf = (locator) => locator.evaluate((el) => {
@@ -43,8 +43,8 @@ const boxOf = (locator) => locator.evaluate((el) => {
 test('the secondary toolbar buttons are shaped alike', async ({ page }) => {
     await openHealth(page);
 
-    const rotBtn = page.locator('.health-view-toolbar-actions .health-view-rot-btn');
-    const moreBtn = page.locator('.health-view-toolbar-actions [data-health-toolbar-more]');
+    const rotBtn = page.locator('.lvs-header-actions .health-view-rot-btn');
+    const moreBtn = page.locator('.lvs-header-actions [data-health-toolbar-more]');
     await expect(rotBtn).toBeVisible();
     await expect(moreBtn).toBeVisible();
 
@@ -96,11 +96,11 @@ test('the secondary toolbar buttons are shaped alike', async ({ page }) => {
 test('opening the health view leaves the page at the top', async ({ page }) => {
     await openHealth(page);
 
-    await expect(page.locator('.health-view-title')).toBeVisible();
+    await expect(page.locator('.lvs-title')).toBeVisible();
 
     const placement = await page.evaluate(() => ({
         pageY: Math.round(window.scrollY),
-        titleTop: Math.round(document.querySelector('.health-view-title').getBoundingClientRect().top),
+        titleTop: Math.round(document.querySelector('.lvs-title').getBoundingClientRect().top),
     }));
 
     expect(placement.pageY).toBe(0);
@@ -112,14 +112,19 @@ test('picking a filter does not move the page either', async ({ page }) => {
     await openHealth(page);
 
     // A filter towards the right-hand end, which is the one the old code
-    // scrolled the whole page to reach.
-    const pill = page.locator('.health-view-filter-btn').last();
+    // scrolled the whole page to reach. Hidden rows (zero count) are still in
+    // the DOM, so this picks the last one actually on screen. The rail's
+    // vertical column now puts that row where the quickstart card can still
+    // be showing, so it is dismissed again right before the click rather
+    // than only once, back when openHealth() first opened the dashboard.
+    await dismissOnboardingIfPresent(page);
+    const pill = page.locator('.health-view-filter-btn:not([hidden])').last();
     await pill.click();
     await expect(pill).toHaveClass(/is-active/);
 
     const after = await page.evaluate(() => ({
         pageY: Math.round(window.scrollY),
-        titleTop: Math.round(document.querySelector('.health-view-title').getBoundingClientRect().top),
+        titleTop: Math.round(document.querySelector('.lvs-title').getBoundingClientRect().top),
         // And the pill it selected is still readable, which is what the
         // scrolling was for in the first place.
         pillInView: (() => {
@@ -132,7 +137,13 @@ test('picking a filter does not move the page either', async ({ page }) => {
         })(),
     }));
 
-    expect(after.pageY).toBe(0);
+    // The rail is its own scroll container now (.lvs-rail, overflow-y: auto),
+    // stacked below a sticky header; bringing a row near the bottom of it into
+    // view can nudge the outer page by a rounding pixel even though the rail
+    // itself did the scrolling. That is not the bug this guards: the
+    // scrollIntoView regression moved the page by hundreds of pixels to
+    // recentre a pill, which this still catches.
+    expect(after.pageY).toBeLessThanOrEqual(1);
     expect(after.titleTop).toBeGreaterThan(0);
     expect(after.pillInView).toBe(true);
 });
