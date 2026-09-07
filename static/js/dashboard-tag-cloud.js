@@ -439,18 +439,30 @@
             return countTagsFromBookmarks(this.getBookmarkPool()).length > 0;
         },
 
+        /**
+         * Can this library use the tag cloud at all?
+         *
+         * Deliberately view-blind. Turning the setting off, having no tags
+         * left, or a phone-sized window means the filter itself has nowhere to
+         * live, so an active one is dropped. Standing in another view is not
+         * that: the filter is still on the bookmarks grid you came from and is
+         * still on the grid you go back to.
+         */
+        isFeatureAvailable() {
+            return (
+                this.isFeatureAllowedInSettings() &&
+                this.libraryHasTags() &&
+                !isMobileLayout()
+            );
+        },
+
         isEligible() {
             // The / FAB filters the bookmarks grid, so it has nothing to do
             // outside the dashboard -- gated here, at the source, rather than
             // at each caller (the toggle button's own CSS, handleSlashKey, and
             // the tag-filter-indicator chip all read this one answer).
             const dash = window.dashboardInstance;
-            return (
-                this.isFeatureAllowedInSettings() &&
-                this.libraryHasTags() &&
-                !isMobileLayout() &&
-                (!dash || dash.isBookmarksView())
-            );
+            return this.isFeatureAvailable() && (!dash || dash.isBookmarksView());
         },
 
         syncFromSettings() {
@@ -466,7 +478,17 @@
 
             if (!eligible) {
                 this.closeModal({ animate: false });
-                this.clearDashboardFilter({ animate: false });
+                /*
+                 * Only when the feature is gone, not when a view is merely on
+                 * top of it. This runs on every view transition, so clearing on
+                 * plain ineligibility threw the tag filter away the moment you
+                 * opened config, inbox or health -- and the header chip that
+                 * exists to show the filter in exactly those views had nothing
+                 * left to show.
+                 */
+                if (!this.isFeatureAvailable()) {
+                    this.clearDashboardFilter({ animate: false });
+                }
                 return;
             }
 

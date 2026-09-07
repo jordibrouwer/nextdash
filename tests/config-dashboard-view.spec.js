@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markHealthTutorialSeen } = require('./e2e-helpers');
 
 /**
  * Config as a dashboard view — Phase 1 scaffold.
@@ -16,6 +16,9 @@ async function loadDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // Shift+H lands in the health view, where the one-time tour would open a
+    // modal over it and swallow the next shortcut.
+    await markHealthTutorialSeen(page);
 }
 
 /**

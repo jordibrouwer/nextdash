@@ -1,6 +1,8 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const {
+    markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, markHealthTutorialSeen,
+} = require('./e2e-helpers');
 
 /**
  * One Escape must do exactly one thing.
@@ -20,6 +22,9 @@ async function openDashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
+    // The health case opens the view for the first time, and the one-time tour
+    // would take the Escape this test is about.
+    await markHealthTutorialSeen(page);
 }
 
 /** Apply a tag filter through the same API the tag cloud itself calls. */
