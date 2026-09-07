@@ -206,6 +206,14 @@ For install and security, see the [README](README.md). For how to use features, 
 
 - **new — a review session can put a link aside for a month.** The card offered Re-check, Open, Delete and Skip, so a link that is broken on purpose — a service off for the winter, a host that only answers from another network — had no honest answer: Skip brings it back tomorrow, Delete is not what you meant. **Ignore 30d** (`z`) is that answer, and it makes the same write the row menu's `z` makes, so a link silenced here is silenced everywhere and returns on the same day. The row leaves the session afterwards, for the reason Delete's does: it is answered, and a session that keeps showing what you have dealt with is not counting honestly.
 
+### Inbox
+
+- **new — the inbox has a left column.** The filters moved there as a list with their counts, and **This week** sits above them as a plain readout — it was the one figure that never had a filter behind it. The row of tiles above the list is gone, since it showed the same counts a second time; **Snoozed** and **With note** now appear in the filter list only when there is something in them, and drop out again once there isn't.
+- **new — the header stays put while you scroll.** It shrinks to a single bar as it sticks, so Triage stays reachable from anywhere in a long list.
+- **new — rows can be compact or comfortable.** The setting follows you between views instead of being remembered per view.
+- **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
+- **fix — the site filter no longer sends the hostname you picked to analytics.** It reports a fixed marker instead, under the same event name as before.
+
 ---
 
 ## v1.5.0 — 6 September 2026
