@@ -3396,8 +3396,10 @@ class DashboardInbox {
             // searchQuery is already assigned by the input handler above; the
             // patch carries nothing new, which is why action is passed explicitly
             // instead of being derived from the (empty) patch's keys. persist:
-            // false keeps search out of localStorage, same as before.
-            this.applyViewChange({}, { via: 'search', action: 'search', persist: false });
+            // false keeps search out of localStorage, same as before. track:
+            // false keeps this path silent for analytics, same as before —
+            // search never fired an event pre-consolidation.
+            this.applyViewChange({}, { via: 'search', action: 'search', persist: false, track: false });
         }, 80);
     }
 
@@ -3527,7 +3529,14 @@ class DashboardInbox {
 
         const domainSelect = host.querySelector('.inbox-domain-select');
         domainSelect?.addEventListener('change', (e) => {
-            this.applyViewChange({ domainFilter: String(e.target.value || '').trim().toLowerCase() }, { via: 'select' });
+            // The patch carries the real hostname the user picked, which must
+            // never reach analytics (umami-analytics.js's no-PII contract).
+            // action/props restore the historical 'inbox:filter' event name
+            // and the static 'domain' marker the rail's filter click reports.
+            this.applyViewChange(
+                { domainFilter: String(e.target.value || '').trim().toLowerCase() },
+                { via: 'select', action: 'filter', props: { filter: 'domain' } },
+            );
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
@@ -3740,9 +3749,18 @@ class DashboardInbox {
             action = Object.keys(patch)[0] || 'change',
             resetSelection = true,
             persist = true,
+            // What analytics sees. Defaults to the patch itself, but a caller
+            // whose patch carries a raw value that must never reach analytics
+            // (e.g. a real hostname) can pass a small redacted stand-in here
+            // instead of letting the patch leak straight into _trackAction.
+            props = patch,
+            // Some axes (search) fire no analytics event at all, by design.
+            track = true,
         } = options;
         Object.assign(this, patch);
-        this._trackAction(action, { ...patch, via });
+        if (track) {
+            this._trackAction(action, { ...props, via });
+        }
         this.visibleLimit = 50;
         if (resetSelection) {
             // Ticks from the previous view would act on rows the user can no

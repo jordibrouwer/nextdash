@@ -35,6 +35,16 @@ async function openInboxWithItems(page) {
         () => (window.dashboardInstance.inbox.items || []).length)).toBeGreaterThan(0);
 }
 
+/** Capture nextdashTrack calls, same approach as tests/analytics-view-events.spec.js. */
+async function captureTracks(page) {
+    await page.evaluate(() => {
+        window.__tracks = [];
+        window.nextdashTrack = (name, props) => window.__tracks.push({ name, props });
+    });
+}
+
+const tracks = (page) => page.evaluate(() => window.__tracks || []);
+
 test('changing the sort clears the selection, like every other axis', async ({ page }) => {
     await openInboxWithItems(page);
 
@@ -93,4 +103,39 @@ test('the search box keeps its caret while the list repaints', async ({ page }) 
     // 'C 1' is 3 characters; the caret belongs at the end of it, not reset to
     // 0 by a repaint mid-keystroke.
     expect(caret.start, 'the caret jumped').toBe(3);
+});
+
+test('the domain filter never sends the picked hostname to analytics', async ({ page }) => {
+    await openInboxWithItems(page);
+
+    const domainSelect = page.locator('.inbox-domain-select');
+    await expect(domainSelect).toBeVisible();
+    const host = await domainSelect.locator('option:not([value=""])').first().getAttribute('value');
+    expect(host, 'seeded items should offer at least one site').toBeTruthy();
+
+    await captureTracks(page);
+    await domainSelect.selectOption(host);
+
+    const seen = await tracks(page);
+    // Historical event name and marker, restored: applyViewChange's patch
+    // (the real hostname) must never reach _trackAction unredacted.
+    const filterEvent = seen.find((t) => t.name === 'inbox:filter' && t.props?.filter === 'domain');
+    expect(filterEvent, 'no inbox:filter event with the domain marker was seen').toBeTruthy();
+    expect(JSON.stringify(filterEvent.props)).not.toContain(host);
+    expect(filterEvent.props.domainFilter).toBeUndefined();
+    // The old, silently-renamed event must not appear either.
+    expect(seen.some((t) => t.name === 'inbox:domainFilter')).toBe(false);
+});
+
+test('typing in the search box fires no analytics event', async ({ page }) => {
+    await openInboxWithItems(page);
+
+    await captureTracks(page);
+    const search = page.locator('[data-inbox-search]');
+    await search.click();
+    await search.type('C 1', { delay: 60 });
+    await page.waitForTimeout(300);
+
+    const seen = await tracks(page);
+    expect(seen.filter((t) => t.name.startsWith('inbox:'))).toEqual([]);
 });
