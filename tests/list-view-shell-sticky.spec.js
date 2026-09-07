@@ -3,6 +3,30 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
+ * Poll `window.scrollY` until it has stopped changing for several
+ * consecutive reads, then resolve. Shared by `mountTall` (waiting out the
+ * app's own boot-time scroll restore before the test drives anything) and
+ * `scrollAndSettle` (waiting out a scroll the test itself just issued) so
+ * there is exactly one settle-polling implementation, not two copies of the
+ * same loop.
+ */
+async function waitForScrollSettled(page) {
+    await page.evaluate(() => {
+        window.__lvsScrollStable = 0;
+        window.__lvsScrollLast = NaN;
+    });
+    await page.waitForFunction(() => {
+        if (window.scrollY === window.__lvsScrollLast) {
+            window.__lvsScrollStable += 1;
+        } else {
+            window.__lvsScrollStable = 0;
+            window.__lvsScrollLast = window.scrollY;
+        }
+        return window.__lvsScrollStable >= 4;
+    }, null, { timeout: 5_000, polling: 50 });
+}
+
+/**
  * Phase 0 established that `position: sticky` works inside #dashboard-layout.
  * These tests hold that result in place and cover the collapse behaviour.
  *
@@ -27,19 +51,13 @@ async function mountTall(page) {
     // settled. That re-render calls `window.scrollTo` itself while
     // restoring the reader's remembered offset (dashboard-data.js,
     // `_applyLoadedPageData`) — if it lands mid-test it silently overwrites
-    // whatever scroll position the test just set. Waiting for the network
-    // to go idle here lets that one-time settle-and-restore finish before
+    // whatever scroll position the test just set. This is a scroll-timing
+    // race, not a network one: `networkidle` observes socket quiescence and
+    // knows nothing about the rAF chain that restore runs on, so wait on the
+    // condition that actually matters — scrollY has stopped moving — before
     // the test starts driving its own scroll.
-    await page.waitForLoadState('networkidle');
+    await waitForScrollSettled(page);
     await page.evaluate(() => {
-        // The live dashboard content above our mount point keeps resizing
-        // asynchronously (widgets, lazy images) while the test runs. Left
-        // alone, Chromium's scroll anchoring "helpfully" adjusts scrollY to
-        // compensate whenever that off-screen content changes size, quietly
-        // undoing a scroll the test just made. Disable it so only our own
-        // scrollTo calls move the page.
-        document.documentElement.style.overflowAnchor = 'none';
-        document.body.style.overflowAnchor = 'none';
         const host = document.createElement('div');
         document.body.appendChild(host);
         window.__lvsHost = host;
@@ -72,20 +90,8 @@ async function mountTall(page) {
  * queued task, not synchronously with `scrollTo` — having fired.
  */
 async function scrollAndSettle(page, y) {
-    await page.evaluate((target) => {
-        window.__lvsScrollStable = 0;
-        window.__lvsScrollLast = NaN;
-        window.scrollTo(0, target);
-    }, y);
-    await page.waitForFunction(() => {
-        if (window.scrollY === window.__lvsScrollLast) {
-            window.__lvsScrollStable += 1;
-        } else {
-            window.__lvsScrollStable = 0;
-            window.__lvsScrollLast = window.scrollY;
-        }
-        return window.__lvsScrollStable >= 4;
-    }, null, { timeout: 5_000, polling: 50 });
+    await page.evaluate((target) => window.scrollTo(0, target), y);
+    await waitForScrollSettled(page);
 }
 
 test('the header is sticky and stays on screen while the list scrolls', async ({ page }) => {
