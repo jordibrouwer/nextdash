@@ -3376,8 +3376,17 @@ class DashboardHealth {
         this.buildHeaderActions(this.shell.headerActions);
         // The title block's explanation never changes with the data, so it is
         // attached once to an element the shell owns for the whole mount.
-        window.DashboardSmartWhyPopover?.attach?.(
-            this.shell.header.querySelector('.lvs-header-text'), this.headerTitleHint());
+        // tabIndex/role/aria-label make the trigger focusable and readable —
+        // without them the popover's `focus` trigger can never fire, matching
+        // the fix syncSummaryHint() already applies to the score row.
+        const headerTitleText = this.shell.header.querySelector('.lvs-header-text');
+        if (headerTitleText) {
+            const titleHint = this.headerTitleHint();
+            headerTitleText.tabIndex = 0;
+            headerTitleText.setAttribute('role', 'group');
+            headerTitleText.setAttribute('aria-label', titleHint);
+            window.DashboardSmartWhyPopover?.attach?.(headerTitleText, titleHint);
+        }
         return this.shell;
     }
 

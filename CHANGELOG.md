@@ -209,6 +209,8 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — the header stays put while you scroll.** **Work through**, **Rot report**, the ⋯ menu and the ℹ explainer live there now, so they are reachable from anywhere in a long list instead of only from the top. The trend chart moved into the ⋯ menu, as **Healthy over time**.
 - **new — Health rows can be compact or comfortable**, using the setting the Inbox already reads.
 - **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
+- **fix — arrow keys can step past the first filter neighbour again.** A second `→` used to land back on the same row the first one reached, because focus never actually moved there; fixed in the shared shell, so it also applies to the Inbox.
+- **fix — the title's Smart Why explainer opens by keyboard again.** The trigger had no way to receive focus, so the popover's `focus` handler could never fire.
 
 ### Inbox
 

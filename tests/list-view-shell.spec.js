@@ -202,6 +202,61 @@ test('clicking and arrowing a filter reports through onFilter', async ({ page })
         .toEqual([['stale', 'click'], ['all', 'keyboard']]);
 });
 
+/**
+ * A previous version of the keydown handler computed the next filter and
+ * reported it through onFilter, but never moved focus to it. That leaves
+ * focus stuck on the button the user started on, so a second ArrowRight
+ * recomputes "current" from that same stale node and lands on the same
+ * neighbour again instead of advancing. Driving real key presses (not
+ * calling the handler directly) is what catches that: pressing a second time
+ * only reaches the third filter if the browser's own focus actually moved.
+ */
+test('ArrowRight twice from the first filter reaches the third, not the second twice', async ({ page }) => {
+    await openDashboard(page);
+    // A real view's onFilter handler re-renders and calls setActive(key), the
+    // way dashboard-health.js and dashboard-inbox.js both do. Wiring that up
+    // here (instead of the bare recorder mountRail's default config uses) is
+    // what makes "is the newly active button focused" a meaningful check.
+    await page.evaluate((cfg) => {
+        document.getElementById('__lvs_scratch__')?.remove();
+        const host = document.createElement('div');
+        host.id = '__lvs_scratch__';
+        document.body.appendChild(host);
+        window.__lvsCalls = [];
+        const handle = window.ListViewShell.mount(host, {
+            ...cfg,
+            onFilter: (key, via) => {
+                window.__lvsCalls.push([key, via]);
+                handle.setActive(key);
+            },
+        });
+        window.__lvsHandle = handle;
+    }, RAIL_CONFIG);
+
+    await page.locator('[data-scratch-filter="all"]').focus();
+    await page.locator('[data-scratch-filter="all"]').press('ArrowRight');
+
+    let state = await page.evaluate(() => ({
+        key: document.activeElement?.getAttribute('data-scratch-filter'),
+        isActive: document.activeElement?.classList.contains('is-active'),
+    }));
+    expect(state.key, 'first ArrowRight did not move focus to the active button').toBe('broken');
+    expect(state.isActive).toBe(true);
+
+    // Pressed on whatever the browser now has focused, not on a re-fetched
+    // locator — the point is that the previous press already moved focus.
+    await page.keyboard.press('ArrowRight');
+
+    state = await page.evaluate(() => ({
+        key: document.activeElement?.getAttribute('data-scratch-filter'),
+        isActive: document.activeElement?.classList.contains('is-active'),
+    }));
+    expect(state.key, 'second ArrowRight landed on the same neighbour again').toBe('stale');
+    expect(state.isActive).toBe(true);
+    expect(await page.evaluate(() => window.__lvsCalls))
+        .toEqual([['broken', 'keyboard'], ['stale', 'keyboard']]);
+});
+
 test('setCounts and setActive update the rail without rebuilding it', async ({ page }) => {
     await openDashboard(page);
     await mountRail(page);

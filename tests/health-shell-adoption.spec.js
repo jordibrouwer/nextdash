@@ -92,6 +92,21 @@ test('rows keep their checkbox column under the shared grid', async ({ page }) =
     expect(tracks, 'the checkbox column was lost').toBe(3);
 });
 
+/**
+ * The Smart Why popover on the title attaches with a `focus` trigger, which
+ * can never fire on an element that is not in the tab order. Without
+ * tabIndex/role/aria-label a keyboard user can never open it — matching the
+ * fix already applied to the score row's popover (syncSummaryHint).
+ */
+test('the header title is focusable and carries a role and aria-label for its popover', async ({ page }) => {
+    await openHealth(page);
+    const title = page.locator('.lvs-header-text');
+    await expect(title).toHaveAttribute('tabindex', '0');
+    await expect(title).toHaveAttribute('role', 'group');
+    const label = await title.getAttribute('aria-label');
+    expect(label, 'the title has no aria-label to read by keyboard/screen reader').toBeTruthy();
+});
+
 test('typing in the search box does not move the caret', async ({ page }) => {
     await openHealth(page);
     const search = page.locator('.health-view-search-input');

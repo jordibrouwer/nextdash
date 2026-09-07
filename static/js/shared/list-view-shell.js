@@ -220,7 +220,18 @@ class ListViewShell {
             if (event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
             if (event.key === 'Home') next = 0;
             if (event.key === 'End') next = buttons.length - 1;
-            report(buttons[next].dataset.lvsFilterKey, 'keyboard');
+            const targetKey = buttons[next].dataset.lvsFilterKey;
+            report(targetKey, 'keyboard');
+            // setActive() and setCounts() mutate the existing filter buttons in
+            // place rather than replacing them, so the node picked above is
+            // still the right one after the view's onFilter handler re-renders.
+            // Re-query by key anyway in case that ever stops being true — a
+            // stale, disconnected node must never eat the focus.
+            let target = buttons[next];
+            if (!target.isConnected) {
+                target = filterButtons().find((btn) => btn.dataset.lvsFilterKey === targetKey);
+            }
+            target?.focus();
         });
 
         const main = document.createElement('div');
