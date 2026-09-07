@@ -1,153 +1,41 @@
 /* ─── Inbox page (feed) ─────────────────────────────────────────────────── */
 
+/*
+ * The inbox is a shell host now: the header, the rail and the toolbar are
+ * .lvs chrome, and this element only frames them. Wider than the old 52rem
+ * because the rail takes 200px off the left before the rows start.
+ */
 #dashboard-layout.inbox-layout {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4, 1rem);
-    max-width: min(100%, 52rem);
+    max-width: min(100%, 68rem);
     margin: 0 auto;
     width: 100%;
 }
 
-.inbox-header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.25rem);
-    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border-primary);
-}
-
-/* Subtitle left, count and unread right, on one baseline — the twin of
-   .health-view-header-second-row, so the two views line up when switched
-   between. */
-.inbox-header-second-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
-}
-
-.inbox-title {
-    margin: 0;
-    font-size: var(--text-lg, 1.15rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-}
-
-/* Full-width under the heading, above the section intro — same placement as
-   health-view-head-breadcrumb and config-view-head-breadcrumb. */
-.inbox-head-breadcrumb {
-    margin: var(--space-hairline, 0.15rem) 0 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.inbox-head-breadcrumb[hidden] {
+/* The rail rows for states nothing is in. .lvs-filter is display:flex, which
+   beats the UA sheet's [hidden] rule, so the shell's own display has to be
+   answered here. */
+#dashboard-layout.inbox-layout .lvs-filter[hidden] {
     display: none;
 }
 
-.inbox-subtitle {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.inbox-header-meta {
+/* Search takes the room the two selects beside it do not, rather than its own
+   intrinsic width — an <input> holds a track open at about 200px whatever the
+   row says. */
+.lvs-toolbar-slot {
     display: flex;
     align-items: center;
-    gap: var(--space-2, 0.45rem);
-    flex-shrink: 0;
+    gap: var(--space-2, 0.55rem);
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.inbox-count-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.35rem;
-    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
-    border-radius: var(--radius-pill, 999px);
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: var(--font-weight-semibold);
-    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-    color: var(--accent-primary);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+.lvs-toolbar-slot .inbox-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.inbox-unread-badge {
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-secondary);
-}
-
-/* ─── Summary tiles ─────────────────────────────────────────────────────────
-   Same grammar as the health view's tiles (.health-view-tiles) so the two feeds
-   read as one system: auto-fit so the row reflows instead of overflowing when a
-   sidebar or narrow window squeezes the container. Tiles that filter are real
-   <button>s; the rest are plain readouts. */
-/*
- * The summary, as a line rather than a wall — matching the health view.
- *
- * The two views are siblings: same pills, same j/k, same shape of list. Health
- * lost its row of cards because they are read and rarely clicked, and a readout
- * does not need a card each; the inbox reads the same way and so does this.
- * They are still buttons, and clicking one still filters.
- */
-.inbox-tiles {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-hairline, 0.15rem) var(--space-4, 0.9rem);
-    padding: 0 var(--space-1-5, 0.35rem);
-}
-
-.inbox-tile {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: baseline;
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-hairline, 0.1rem) var(--space-hairline, 0.15rem);
-    border: 1px solid transparent;
-    border-radius: var(--layout-radius-sm, 8px);
-    background: none;
-    font-family: inherit;
-    text-align: left;
-    transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-button.inbox-tile {
-    cursor: pointer;
-}
-
-/* Without a card to tint, hover and the active filter show on the text. */
-button.inbox-tile:hover .inbox-tile-label,
-button.inbox-tile:hover .inbox-tile-value {
-    color: var(--accent-primary);
-}
-
-.inbox-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-}
-
-.inbox-tile-label {
-    font-size: var(--text-sm, 0.78rem);
-    letter-spacing: 0.01em;
-    color: var(--text-tertiary);
-    order: 2;
-}
-
-.inbox-tile-value {
-    font-size: var(--text-base, 0.92rem);
-    font-weight: var(--font-weight-semibold);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-primary);
-    order: 1;
-}
-
-/* Unread is the number the inbox exists to drive down: tint it toward the accent
-   when there is something to read, plain when the inbox is clear. */
-.inbox-tile--unread:not(.inbox-tile--zero) .inbox-tile-value {
-    color: var(--accent-primary);
+.lvs-toolbar-slot [hidden] {
+    display: none;
 }
 
 .page-nav-btn--inbox {
@@ -621,84 +509,12 @@ body.no-animations .inbox-item-actions {
     background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
-@media (max-width: 520px) {
+/* ─── Inbox date groups ─────────────────────────────────────────────────── */
 
-
-    .inbox-toolbar {
-        flex-wrap: wrap;
-    }
-
-}
-
-/* The pills own a full-width row, and search, site and sort own the one under
-   it -- the same two-row shape the health view's toolbar uses. Trailing the
-   pills on whatever space was left meant the search box landed in a different
-   place depending on how many pills there were, and the two views are read in
-   succession from the same header bar. */
-.inbox-filter-strip {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex-basis: 100%;
-    min-width: 0;
-}
-
-.inbox-toolbar-search-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex-basis: 100%;
-    min-width: 0;
-}
-
-/* The search box takes the room the two selects beside it do not, rather than
-   its own intrinsic width -- an <input> holds a track open at about 200px
-   whatever the row says. */
-.inbox-toolbar-search-row .inbox-search-input {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-/* ─── Inbox toolbar & date groups (phase 2) ───────────────────────────── */
-
-.inbox-toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex-wrap: wrap;
-    padding: 0 var(--space-1-5, 0.35rem) var(--space-1-5, 0.35rem);
-}
-
-/* The same frame the health view's filter group wears: a rounded rectangle
-   rather than a full pill, and wrapping rather than one unbreakable line, so
-   the two rows read as the same control in two views. */
-.inbox-filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.2rem);
-    padding: var(--space-hairline, 0.15rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-}
-
-.inbox-filter-btn {
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--text-sm, 0.78rem);
-    padding: var(--space-1, 0.25rem) var(--space-3, 0.65rem);
-    border-radius: var(--radius-pill, 999px);
-    cursor: pointer;
-}
-
-.inbox-filter-btn.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
-    color: var(--accent-primary);
-}
-
+/* Carried through to the shell's rail rows by `filterCountClass`, which is why
+   the old `[data-inbox-filter="all"] .inbox-filter-count` selector still
+   resolves. */
 .inbox-filter-count {
-    margin-left: var(--space-1, 0.3rem);
     opacity: 0.7;
 }
 
@@ -1123,9 +939,6 @@ body.inbox-triage-active {
 
    Tokens come from layout-modern-tokens.css.
    ------------------------------------------------------------------------- */
-
-body[data-layout-version="modern"] .inbox-tile:focus-visible,
-body[data-layout-version="modern"] .inbox-filter-btn:focus-visible,
 body[data-layout-version="modern"] .inbox-action-btn:focus-visible,
 body[data-layout-version="modern"] .inbox-bulk-btn:focus-visible,
 body[data-layout-version="modern"] .inbox-triage-btn:focus-visible,
@@ -1134,59 +947,6 @@ body[data-layout-version="modern"] .inbox-sort-select:focus-visible,
 body[data-layout-version="modern"] .inbox-item:focus-visible {
     outline: var(--layout-focus-ring);
     outline-offset: 2px;
-}
-
-/* ─── Header ────────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .inbox-header {
-    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
-    padding-bottom: var(--space-3, 0.7rem);
-}
-
-/* ─── Summary tiles ─────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .inbox-tile {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-    transition:
-        border-color var(--layout-transition),
-        background-color var(--layout-transition),
-        box-shadow var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-body[data-layout-version="modern"] button.inbox-tile:hover {
-    box-shadow: var(--layout-shadow-md);
-    transform: translateY(-1px);
-}
-
-body[data-layout-version="modern"] .inbox-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    box-shadow:
-        var(--layout-shadow-sm),
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-}
-
-/* ─── Toolbar & filters ─────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .inbox-filter-group {
-    border-radius: var(--layout-radius-pill);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .inbox-filter-btn {
-    border-radius: var(--layout-radius-pill);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .inbox-filter-btn.is-active {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
 body[data-layout-version="modern"] .inbox-search-input,
@@ -1325,9 +1085,7 @@ body[data-layout-version="modern"] .inbox-empty {
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .inbox-tile,
     body[data-layout-version="modern"] .inbox-item,
-    body[data-layout-version="modern"] button.inbox-tile:hover,
     body[data-layout-version="modern"] .inbox-item:hover {
         transition: none;
         transform: none;
@@ -1558,22 +1316,6 @@ body[data-layout-version="modern"] .inbox-empty {
     display: inline-flex;
 }
 
-/* Triage, the ⋯ menu and the help button on their own full-width row, the
-   twin of .health-view-toolbar-actions. On the filter row Triage sat past the
-   search box and the sort select, so the button that matters most and the one
-   that hides the rest landed in a different place in each view; here they line
-   up with health's. The group wraps as one rather than each button wrapping
-   alone. */
-.inbox-toolbar-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.55rem);
-    flex-basis: 100%;
-    /* The anchor for the ⋯ menu, which is absolutely placed. */
-    position: relative;
-}
-
 .inbox-toolbar-more {
     display: inline-flex;
     align-items: center;
@@ -1603,7 +1345,9 @@ body[data-layout-version="modern"] .inbox-empty {
 .inbox-menu {
     position: absolute;
     top: calc(100% + 0.3rem);
-    left: 0;
+    /* Anchored to the right edge now the ⋯ lives in the shell header, where a
+       13rem menu hung off the right of the window opening leftwards from 0. */
+    right: 0;
     z-index: 20;
     min-width: 13rem;
     padding: var(--space-1-5, 0.35rem) 0 var(--space-2, 0.45rem);
@@ -1648,4 +1392,28 @@ body[data-layout-version="modern"] .inbox-empty {
 
 .inbox-triage-btn--primary:hover {
     background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
+}
+
+/* ─── Row density ────────────────────────────────────────────────────────────
+   The shell's toggle is a reading preference for every list, so the inbox rows
+   answer to it the way the shared grid rows in feed-row.css do. Only the block
+   padding moves: the thumbnail column sets the floor, and squeezing that is
+   what turns "compact" into "unreadable".
+   ------------------------------------------------------------------------- */
+body[data-list-density="compact"] .inbox-item {
+    padding-block: var(--space-1, 0.3rem);
+}
+
+body[data-list-density="comfortable"] .inbox-item {
+    padding-block: var(--space-3, 0.75rem);
+}
+
+/* Triage, ⋯ and ℹ sit in the shell header now; they keep their own colours but
+   take the header's height so the three line up with each other. */
+.lvs-header-actions .inbox-triage-btn,
+.lvs-header-actions .inbox-toolbar-more,
+.lvs-header-actions .inbox-help-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
 }
