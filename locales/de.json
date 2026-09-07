@@ -1930,7 +1930,9 @@
     "listSectionHeading": "Bereiche",
     "listDensityCompact": "Kompakte Zeilen",
     "listDensityComfortable": "Weite Zeilen",
-    "listDensityGroup": "Zeilenhöhe"
+    "listDensityGroup": "Zeilenhöhe",
+    "healthSummaryUpdated": "Aktualisiert",
+    "healthSummaryJustNow": "gerade eben"
   },
   "health": {
     "reloadPage": "Seite neu laden",

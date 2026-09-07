@@ -1930,7 +1930,9 @@
     "listSectionHeading": "Sections",
     "listDensityCompact": "Lignes compactes",
     "listDensityComfortable": "Lignes aérées",
-    "listDensityGroup": "Hauteur des lignes"
+    "listDensityGroup": "Hauteur des lignes",
+    "healthSummaryUpdated": "Mis à jour",
+    "healthSummaryJustNow": "à l'instant"
   },
   "health": {
     "reloadPage": "Recharger la page",

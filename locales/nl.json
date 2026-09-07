@@ -1930,7 +1930,9 @@
     "listSectionHeading": "Secties",
     "listDensityCompact": "Compacte rijen",
     "listDensityComfortable": "Ruime rijen",
-    "listDensityGroup": "Rijhoogte"
+    "listDensityGroup": "Rijhoogte",
+    "healthSummaryUpdated": "Bijgewerkt",
+    "healthSummaryJustNow": "zojuist"
   },
   "health": {
     "reloadPage": "Pagina herladen",

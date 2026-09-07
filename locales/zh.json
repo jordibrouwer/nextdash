@@ -1930,7 +1930,9 @@
     "listSectionHeading": "分区",
     "listDensityCompact": "紧凑行距",
     "listDensityComfortable": "宽松行距",
-    "listDensityGroup": "行距"
+    "listDensityGroup": "行距",
+    "healthSummaryUpdated": "已更新",
+    "healthSummaryJustNow": "刚刚"
   },
   "health": {
     "reloadPage": "重新加载页面",

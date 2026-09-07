@@ -105,8 +105,6 @@ html[data-theme] body[data-depth="glass"] :is(
     .lvs-summary,
     .lvs-group,
     .lvs-filter,
-    .health-view-tile,
-    .health-view-filter-group,
     .health-view-item,
     .health-monitor-stat,
     .modal
@@ -231,8 +229,6 @@ body[data-layout-version="modern"]:not([data-depth="flat"]) {
     .lvs-summary,
     .lvs-group,
     .lvs-filter,
-    .health-view-tile,
-    .health-view-filter-group,
     .health-view-item,
     .health-monitor-stat,
     .modal

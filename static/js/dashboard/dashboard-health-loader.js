@@ -40,6 +40,13 @@ class DashboardHealthLoader {
             await load('js/shared/last-opened-format.js', 'dashboardLastOpened',
                 () => typeof window.formatLastOpened === 'function');
         }
+        // The chrome the view now renders into. Loaded before the module so a
+        // first render can never find the shell missing and fall back to
+        // nothing; the inbox loads it the same way.
+        if (typeof window.ListViewShell === 'undefined') {
+            await load('js/shared/list-view-shell.js', 'listViewShell',
+                () => typeof window.ListViewShell !== 'undefined');
+        }
         if (typeof window.DashboardHealth !== 'function') {
             await load('js/dashboard/dashboard-health.js', 'dashboardHealthModule',
                 () => typeof window.DashboardHealth === 'function');

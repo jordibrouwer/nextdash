@@ -205,6 +205,10 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Health
 
 - **new — a review session can put a link aside for a month.** The card offered Re-check, Open, Delete and Skip, so a link that is broken on purpose — a service off for the winter, a host that only answers from another network — had no honest answer: Skip brings it back tomorrow, Delete is not what you meant. **Ignore 30d** (`z`) is that answer, and it makes the same write the row menu's `z` makes, so a link silenced here is silenced everywhere and returns on the same day. The row leaves the session afterwards, for the reason Delete's does: it is answered, and a session that keeps showing what you have dealt with is not counting honestly.
+- **new — Health has the same left column as the Inbox.** Every filter is a row there with its count, and the tiles that repeated those counts above the list are gone. **Score**, the trend, the broken count and the report's age sit above the filters as plain readouts. A filter with nothing in it drops out of the list and comes back when it fills; Broken, Content, Duplicates, Unchecked and All always stay, and Monitored appears as soon as there is anything that could be monitored.
+- **new — the header stays put while you scroll.** **Work through**, **Rot report**, the ⋯ menu and the ℹ explainer live there now, so they are reachable from anywhere in a long list instead of only from the top. The trend chart moved into the ⋯ menu, as **Healthy over time**.
+- **new — Health rows can be compact or comfortable**, using the setting the Inbox already reads.
+- **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
 
 ### Inbox
 

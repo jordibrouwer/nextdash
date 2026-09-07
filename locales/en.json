@@ -1930,7 +1930,9 @@
     "listSectionHeading": "Sections",
     "listDensityCompact": "Compact rows",
     "listDensityComfortable": "Comfortable rows",
-    "listDensityGroup": "Row density"
+    "listDensityGroup": "Row density",
+    "healthSummaryUpdated": "Updated",
+    "healthSummaryJustNow": "just now"
   },
   "health": {
     "reloadPage": "Reload page",
