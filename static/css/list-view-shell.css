@@ -174,8 +174,19 @@
     font-weight: 500;
 }
 
+/* --layout-focus-ring is only ever defined under body[data-layout-version=
+   "modern"] (layout-modern-tokens.css). Without a fallback, `var()` resolving
+   to nothing makes the whole declaration invalid at computed-value time --
+   which does NOT fall through to the browser's native ring, it resolves
+   `outline-style` to its initial `none`, so classic silently lost its focus
+   ring the moment this rule started covering these rows. The fallback keeps
+   classic's own solid ring and still lets modern's richer value win when the
+   token exists, without a second, layout-scoped copy of the selector list. */
 .lvs-filter:focus-visible,
-.lvs-section:focus-visible { outline: var(--layout-focus-ring); }
+.lvs-section:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
 
 /* A rail row for a state nothing is in. .lvs-filter is display:flex, which
    beats the UA sheet's [hidden] rule, so the shell's own display has to be
@@ -264,6 +275,81 @@
 }
 
 .lvs-density-btn:focus-visible { outline: var(--layout-focus-ring); }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+ * health-view.css used to draw two separate things in modern: `.health-view-
+ * tile` (the Total/Healthy/Broken/... readout, each its own surfaced card)
+ * and `.health-view-filter-group` (the pill strip of filter buttons below
+ * it, wrapped in one surfaced strip of its own). `1d3e2dfe` merged both
+ * concepts into one row -- a `.lvs-filter` now carries `data-health-tile` /
+ * `data-inbox-tile` beside `data-health-filter` / `data-inbox-filter`, so it
+ * is the tile and the filter -- and deleted both modern rules along with the
+ * markup they targeted, without anything in this shared shell taking over.
+ * Health and inbox both mount this shell, so the fix belongs here once
+ * rather than in each view.
+ *
+ * Shape call: the deleted rules drew a horizontal strip of pill-shaped
+ * tiles/buttons (`--layout-radius-pill`, 999px). The rail is a vertical
+ * column of full-width rows now -- a 999px radius on a row that wide reads as
+ * a stretched capsule, not a chip. Rows keep the corner `.health-view-tile`
+ * itself used (`--layout-radius-md`) instead of the pill, and the list they
+ * sit in takes the same radius so the two nest cleanly.
+ */
+
+/* The strip that used to be `.health-view-filter-group` (still aliased onto
+   this element for health, health-view.js:3413), now wrapping a column
+   instead of a row. Kept a shade lighter than the rows inside it -- a filled
+   background here as well as on every row read as a card inside a card. */
+body[data-layout-version="modern"] .lvs-filter-list {
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--layout-shadow-sm);
+    padding: var(--space-1, 0.3rem);
+    gap: var(--space-1, 0.25rem);
+}
+
+/* Each row is the merged tile + filter button, so it takes the tile's card
+   treatment: surfaced, shadowed at rest, lifted on hover, ringed when active. */
+body[data-layout-version="modern"] .lvs-filter {
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+/* Modern reads hover as a lift; classic only recolours the background. */
+body[data-layout-version="modern"] .lvs-filter:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+body[data-layout-version="modern"] .lvs-filter.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+/* The summary block reads as a card in modern too, matching `.health-monitor-
+   stat` (health-view.css) and the config rail's section cards. */
+body[data-layout-version="modern"] .lvs-summary {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .lvs-filter,
+    body[data-layout-version="modern"] .lvs-filter:hover {
+        transition: none;
+        transform: none;
+    }
+}
 
 /*
  * Narrow screens, following what config already does (config-view.css:83): the

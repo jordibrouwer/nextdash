@@ -275,7 +275,20 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-filter-btn.is-active')).toContainText('Duplicates');
     });
 
-    test('tiles are hidden when the list is empty', async ({ page }) => {
+    // This used to assert ".health-view-tile" had count 0, which passed no
+    // matter what the empty state actually rendered -- 1d3e2dfe deleted that
+    // class along with the old markup, so the selector always matches zero
+    // elements. Checked live (see task-45-report.md): with an empty report
+    // the rail still shows Broken/Content/Duplicates/Unchecked/All at "0",
+    // and that is the current, deliberate design, not a leftover bug --
+    // syncRailFilters() (dashboard-health.js) documents the same five as
+    // "always" shown "because they describe the work rather than a state of
+    // it", and a tile row is now the same element as its filter row, so
+    // hiding it at zero would also hide the filter a keyboard/reader user
+    // needs to get back to "All". This rewrite asserts that on purpose:
+    // the always-shown rows stay, at zero, and the count-gated ones
+    // (Monitored here, since the report has no bookmarks to monitor) hide.
+    test('the always-shown rail rows read zero rather than disappearing when the list is empty', async ({ page }) => {
         await page.route('**/api/bookmark-health**', async (route) => {
             await route.fulfill({
                 status: 200,
@@ -292,8 +305,16 @@ test.describe('health dashboard view', () => {
         await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
         await expect(page.locator('.health-view-empty-state')).toBeVisible();
 
-        // A wall of zeroes above "nothing to fix" is noise, not information.
-        await expect(page.locator('.health-view-tile')).toHaveCount(0);
+        const always = ['broken', 'content', 'duplicate', 'unchecked', 'all'];
+        for (const key of always) {
+            const row = page.locator(`[data-health-filter="${key}"]`);
+            await expect(row, `${key} should stay visible at zero`).toBeVisible();
+            await expect(row).toContainText('0');
+        }
+
+        // Monitored is the one row that is gated on there being anything to
+        // monitor at all, not on its own count -- an empty report has neither.
+        await expect(page.locator('[data-health-filter="monitored"]')).toBeHidden();
     });
 
     test('a failed load shows a retry button that refetches the report', async ({ page }) => {

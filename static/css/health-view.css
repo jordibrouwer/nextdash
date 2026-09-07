@@ -2011,8 +2011,10 @@ body.no-animations .health-view-item-score-caret {
    where the display/[hidden] interaction it depends on is documented.
    ------------------------------------------------------------------------- */
 
-/* Focus ring: matches the dashboard's, replacing each control's default. */
-
+/* Focus ring: matches the dashboard's, replacing each control's default.
+   The tile/filter-button ring that used to open this list moved with the
+   rest of that merged row's styling to list-view-shell.css
+   (.lvs-filter:focus-visible). */
 body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
@@ -2189,10 +2191,12 @@ body[data-layout-version="modern"] .health-view-empty {
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
+/* .health-view-tile and button.health-view-tile:hover named here used to
+   carry the tile's own lift/transition reset; that markup is gone (1d3e2dfe
+   merged the tile into `.lvs-filter`), and its reduced-motion counterpart now
+   lives beside the rule it reduces, in list-view-shell.css. */
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .health-view-tile,
     body[data-layout-version="modern"] .health-view-item,
-    body[data-layout-version="modern"] button.health-view-tile:hover,
     body[data-layout-version="modern"] .health-view-item:hover {
         transition: none;
         transform: none;
