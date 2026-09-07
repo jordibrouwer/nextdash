@@ -67,11 +67,15 @@ async function mountTall(page) {
             description: 'A test view',
             filters: [{ key: 'all', label: 'All', count: 1, dataAttrs: { 'data-scratch-filter': 'all' } }],
             activeFilter: 'all',
-            actions: [
-                { key: 'go', label: 'Work through', kind: 'primary', dataAttrs: { 'data-scratch-go': '' } },
-                { key: 'more', label: '⋯', dataAttrs: { 'data-scratch-more': '' } },
-            ],
         });
+        // Health and inbox both fill headerActions by hand (innerHTML, not
+        // mount()'s actions config — neither view's markup, with its nested
+        // menu wrap and <kbd>, fits that builder), so this scratch view does
+        // the same rather than exercising a config path production never uses.
+        window.__lvsHandle.headerActions.innerHTML = `
+            <button type="button" class="lvs-action lvs-action--primary" data-scratch-go>Work through</button>
+            <button type="button" class="lvs-action" data-scratch-more>&#8942;</button>
+        `;
         window.__lvsHandle.body.innerHTML = '<div style="height:4000px">tall</div>';
     });
 }

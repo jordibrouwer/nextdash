@@ -11,33 +11,14 @@
  * toolbar row are .lvs chrome, and this element only frames them. Wider than
  * the old 52rem because the rail takes 200px off the left before the rows
  * start — the same width the inbox took for the same reason.
+ *
+ * The width/centering, the search input's flex sizing and the header
+ * action buttons' display used to each get an identical rule here and in
+ * dashboard-inbox.css. All three now live once in list-view-shell.css, as
+ * .lvs-host, .lvs-toolbar-slot input[type="search"] and
+ * .lvs-header-actions button — mount() already stamps .lvs-host on this
+ * element and both views' search inputs are type="search".
  */
-#dashboard-layout.health-layout {
-    max-width: min(100%, 68rem);
-    margin: 0 auto;
-    width: 100%;
-}
-
-/* Search takes the room the sort select and the grouping button do not, rather
-   than its own intrinsic width — an <input> holds a track open at about 200px
-   whatever the row says. The slot itself is shell chrome and lives in
-   list-view-shell.css; only health's own child selector belongs here. */
-.lvs-toolbar-slot .health-view-search-input {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-/* Work through, Rot report, the ⋯ and the ℹ sit in the shell header now. They
-   keep their own colours but take the header's height, so the four line up
-   with each other. */
-.lvs-header-actions .health-view-focus-btn,
-.lvs-header-actions .health-view-rot-btn,
-.lvs-header-actions .health-view-toolbar-more,
-.lvs-header-actions .health-view-help-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-}
 
 /* The wrap is the menu's anchor, and in the header it must not stretch the row. */
 .lvs-header-actions .health-view-menu-wrap {

@@ -1,4 +1,18 @@
 /*
+ * mount() adds this class to whatever container it is given (list-view-
+ * shell.js). Health and inbox each declared an identical rule under their
+ * own layout class (#dashboard-layout.health-layout / .inbox-layout) — same
+ * width, same centering, byte-for-byte. One shell-level rule on the class
+ * mount() already stamps on every host replaces both; a future host (config)
+ * gets it for free the moment it mounts this shell.
+ */
+.lvs-host {
+    max-width: min(100%, 68rem);
+    margin: 0 auto;
+    width: 100%;
+}
+
+/*
  * The shared list-view shell. Header spans both columns; the rail is the same
  * 200px as config's section rail so the views line up on one vertical.
  */
@@ -39,6 +53,23 @@
     align-items: center;
     gap: var(--space-2);
     flex-shrink: 0;
+}
+
+/*
+ * Health and inbox each declared this same rule for their own button classes
+ * (.health-view-focus-btn, .inbox-triage-btn, etc): the header actions keep
+ * their view's own colours but take the header's height, so they line up
+ * with each other. Byte-identical in both views, so it belongs on the class
+ * every action button already carries instead of being named twice.
+ *
+ * A descendant selector, not a child one: health's overflow button sits one
+ * level deeper, inside a `.health-view-menu-wrap` span that anchors its
+ * menu (health-view.js buildHeaderActions), so `> button` would miss it.
+ */
+.lvs-header-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
 }
 
 /*
@@ -89,6 +120,20 @@
 
 .lvs-toolbar-slot [hidden] {
     display: none;
+}
+
+/*
+ * Health and inbox both fill this slot's search input via innerHTML, each
+ * declaring an identical rule for their own class (.health-view-search-input,
+ * .inbox-search-input): the input takes the room the sort/group controls
+ * beside it do not claim, rather than its own intrinsic width, since an
+ * <input> otherwise holds a track open at about 200px whatever the row says.
+ * Both inputs are type="search" (dashboard-health.js, dashboard-inbox.js), so
+ * the type selector covers both without naming either view's class here.
+ */
+.lvs-toolbar-slot input[type="search"] {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .lvs-body {
@@ -244,7 +289,10 @@
 }
 
 .lvs-action:hover { background: var(--background-secondary); }
-.lvs-action:focus-visible { outline: var(--layout-focus-ring); }
+/* See the --layout-focus-ring note above .lvs-filter:focus-visible: no
+   fallback here makes the whole declaration invalid, not just unstyled, so
+   classic loses the ring entirely instead of falling back to the UA default. */
+.lvs-action:focus-visible { outline: var(--layout-focus-ring, 2px solid var(--accent-primary)); }
 
 .lvs-action--primary {
     border-color: var(--accent-primary);
@@ -274,7 +322,8 @@
     color: var(--text-primary);
 }
 
-.lvs-density-btn:focus-visible { outline: var(--layout-focus-ring); }
+/* Same fallback, same reason: see the note above .lvs-filter:focus-visible. */
+.lvs-density-btn:focus-visible { outline: var(--layout-focus-ring, 2px solid var(--accent-primary)); }
 
 /* ─── Modern layout ─────────────────────────────────────────────────────────
  * health-view.css used to draw two separate things in modern: `.health-view-

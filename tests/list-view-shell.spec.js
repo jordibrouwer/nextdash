@@ -457,3 +457,59 @@ test('the filter tablist holds tabs only, and is named by its heading', async ({
     expect(aria.headingText, 'the tablist is not named by a heading').toBeTruthy();
     expect(aria.headingIsOutside).toBe(true);
 });
+
+/**
+ * `--layout-focus-ring` is only ever defined under
+ * body[data-layout-version="modern"] (layout-modern-tokens.css). A `var()`
+ * with no fallback that resolves to nothing makes the whole declaration
+ * invalid at computed-value time -- which does not fall through to the
+ * browser's native ring, it resolves `outline-style` to `none`. `.lvs-filter`
+ * already carries the fallback (list-view-shell.css:187); `.lvs-action` and
+ * `.lvs-density-btn` did not, so classic lost its focus ring on every header
+ * action and both density buttons the moment those rules shipped.
+ *
+ * Driving real Tab presses, not `locator.focus()`: a script-triggered focus
+ * does not reliably earn Chromium's `:focus-visible` match, and the whole
+ * bug is specifically about what `:focus-visible` computes to.
+ */
+test('classic layout keeps a focus ring on header actions and the density buttons', async ({ page }) => {
+    await openDashboard(page);
+    await mountRail(page, { density: true });
+
+    expect(await page.evaluate(() => document.body.getAttribute('data-layout-version')))
+        .not.toBe('modern');
+
+    // A dedicated header action, built the way health/inbox build theirs --
+    // by hand, not through mount()'s (unused) actions config -- so the CSS
+    // under test is exercised through the same class the real views apply.
+    await page.evaluate(() => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'lvs-action';
+        btn.textContent = 'Scratch action';
+        btn.dataset.scratchAction = '';
+        window.__lvsHandle.headerActions.appendChild(btn);
+    });
+
+    const focusVisibleOutline = async (selector) => {
+        await page.locator(selector).focus();
+        // Real keyboard input, not the .focus() call above: Tab away and back
+        // so the focus that lands is keyboard-driven, which is what Chromium's
+        // :focus-visible heuristic actually keys off.
+        await page.keyboard.press('Tab');
+        await page.keyboard.press('Shift+Tab');
+        return page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            const cs = getComputedStyle(el);
+            return { matches: el.matches(':focus-visible'), outlineStyle: cs.outlineStyle };
+        }, selector);
+    };
+
+    const action = await focusVisibleOutline('[data-scratch-action]');
+    const density = await focusVisibleOutline('[data-lvs-density="compact"]');
+
+    expect(action.matches, 'the action button never became :focus-visible').toBe(true);
+    expect(action.outlineStyle, 'classic lost .lvs-action\'s focus ring').toBe('solid');
+    expect(density.matches, 'the compact density button never became :focus-visible').toBe(true);
+    expect(density.outlineStyle, 'classic lost .lvs-density-btn\'s focus ring').toBe('solid');
+});

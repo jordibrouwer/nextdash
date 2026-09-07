@@ -103,26 +103,14 @@ class ListViewShell {
         crumb.textContent = '';
         headerText.appendChild(crumb);
 
+        // Both current views (health, inbox) fill this by hand with innerHTML
+        // rather than through a config path here: their actions need a nested
+        // `[data-menu-for]` menu wrap and a `<kbd>` hint, which a
+        // label-and-dataAttrs builder cannot express. So the shell hands over
+        // an empty host rather than an unused builder that duplicates the
+        // views' own markup at a lower fidelity.
         const headerActions = document.createElement('div');
         headerActions.className = 'lvs-header-actions';
-        (config.actions || []).forEach((action) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            // `overflow` marks the ⋯ trigger. It is not a secondary action —
-            // it is where the secondary actions go when the header narrows, so
-            // it is the one thing besides the primary that must stay put.
-            const kindClass = { primary: 'lvs-action--primary', overflow: 'lvs-action--overflow' };
-            btn.className = ['lvs-action', kindClass[action.kind] || ''].filter(Boolean).join(' ');
-            btn.dataset.lvsActionKey = String(action.key);
-            btn.textContent = String(action.label);
-            Object.entries(action.dataAttrs || {}).forEach(([name, value]) => {
-                btn.setAttribute(name, String(value));
-            });
-            if (typeof action.onClick === 'function') {
-                btn.addEventListener('click', action.onClick);
-            }
-            headerActions.appendChild(btn);
-        });
         header.append(headerText, headerActions);
 
         const rail = document.createElement('div');
@@ -378,7 +366,6 @@ class ListViewShell {
             setActive,
             setActiveSection,
             setBreadcrumb(text) { crumb.textContent = String(text || ''); },
-            get railScrollTop() { return rail.scrollTop; },
             destroy() {
                 window.removeEventListener('scroll', syncCollapse);
                 narrow.removeEventListener('change', placeSummary);

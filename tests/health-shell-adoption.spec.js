@@ -66,6 +66,25 @@ test('the old filter and count classes still resolve', async ({ page }) => {
     await expect(page.locator('[data-health-filter="all"] .health-view-filter-count')).toHaveCount(1);
 });
 
+/**
+ * The Filter row's "Monitored" and the Sections row's "Monitors" used to
+ * carry the exact same count and near-identical labels, one above the other
+ * in a 200px column — reading as the same control drawn twice even though
+ * one narrows the list and the other swaps in the fleet panel (the fault the
+ * design spec opens by naming). The section now reads "All monitors",
+ * matching the fleet panel's own heading, so the two rows are readable
+ * without depending on where they lead.
+ */
+test('the filter and section rail rows for monitors read as different things', async ({ page }) => {
+    await openHealth(page);
+    const filterLabel = await page.locator('.lvs-rail [data-health-filter="monitored"] .lvs-filter-label').textContent();
+    const sectionText = await page.locator('.lvs-rail .lvs-section').first().textContent();
+
+    expect(filterLabel?.trim()).toBe('Monitored');
+    expect(sectionText).toContain('All monitors');
+    expect(sectionText?.trim()).not.toBe(filterLabel?.trim());
+});
+
 test('the summary carries the score, not the header', async ({ page }) => {
     await openHealth(page);
     await expect(page.locator('.lvs-rail .lvs-summary')).toBeVisible();

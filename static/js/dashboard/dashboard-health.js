@@ -3378,7 +3378,13 @@ class DashboardHealth {
             })),
             summary: this.shellSummary(),
             onFilter: (key, via) => this.applyFilter(key, via),
-            sections: [{ key: 'monitors', label: this.t('dashboard.healthMonitors', 'Monitors'),
+            // "All monitors" rather than "Monitors": the Filter row above already
+            // reads "Monitored" for the same count, and in a 200px column two
+            // near-identical labels with the same number read as a duplicate
+            // even though they lead somewhere different (this narrows the list,
+            // that one swaps in the fleet panel). Reusing the fleet panel's own
+            // heading (healthFleetTitle) ties the rail entry to what it opens.
+            sections: [{ key: 'monitors', label: this.t('dashboard.healthMonitors', 'All monitors'),
                          count: this.filterCount('monitored') }],
             activeSection: this.section,
             onSection: (key) => this.showMonitorsSection(key === 'monitors'),
