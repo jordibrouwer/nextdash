@@ -76,8 +76,28 @@ class ListViewShell {
         description.className = 'lvs-description';
         description.textContent = String(config.description || '');
         headerText.append(title, description);
+        const crumb = document.createElement('span');
+        crumb.className = 'lvs-crumb';
+        crumb.textContent = '';
+        headerText.appendChild(crumb);
+
         const headerActions = document.createElement('div');
         headerActions.className = 'lvs-header-actions';
+        (config.actions || []).forEach((action) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = ['lvs-action', action.kind === 'primary' ? 'lvs-action--primary' : '']
+                .filter(Boolean).join(' ');
+            btn.dataset.lvsActionKey = String(action.key);
+            btn.textContent = String(action.label);
+            Object.entries(action.dataAttrs || {}).forEach(([name, value]) => {
+                btn.setAttribute(name, String(value));
+            });
+            if (typeof action.onClick === 'function') {
+                btn.addEventListener('click', action.onClick);
+            }
+            headerActions.appendChild(btn);
+        });
         header.append(headerText, headerActions);
 
         const rail = document.createElement('div');
@@ -174,6 +194,16 @@ class ListViewShell {
         container.classList.add('lvs-host');
         container.setAttribute('data-lvs-id', id);
 
+        let collapsed = false;
+        const syncCollapse = () => {
+            const should = window.scrollY > header.offsetHeight;
+            if (should === collapsed) return;
+            collapsed = should;
+            header.classList.toggle('is-collapsed', collapsed);
+        };
+        window.addEventListener('scroll', syncCollapse, { passive: true });
+        syncCollapse();
+
         return {
             id,
             root,
@@ -195,8 +225,10 @@ class ListViewShell {
                 });
             },
             setActive,
+            setBreadcrumb(text) { crumb.textContent = String(text || ''); },
             get railScrollTop() { return rail.scrollTop; },
             destroy() {
+                window.removeEventListener('scroll', syncCollapse);
                 root.remove();
                 container.classList.remove('lvs-host');
                 container.removeAttribute('data-lvs-id');
