@@ -227,3 +227,90 @@ test.describe('the review card', () => {
         await expect(card.locator('.health-focus-preview-title')).toHaveText('A fetched preview title');
     });
 });
+
+/**
+ * "Not this one, not now" — the answer the session was missing.
+ *
+ * A link can be broken on purpose: a service that is off for the winter, a host
+ * that only answers from another network. Skip brings it back tomorrow and
+ * Delete is not what you meant, so the session had no way to say the true
+ * thing. Ignoring for thirty days is that answer, and it is deliberately the
+ * same write the row menu's z makes rather than a second mechanism: a link
+ * silenced here is silenced everywhere, and comes back on the same day.
+ */
+test.describe('putting one aside for a month', () => {
+    test('the card offers it, keyed the same as the row menu', async ({ page }) => {
+        await openHealthView(page);
+        await openCard(page);
+
+        const snooze = page.locator('.health-focus-card [data-focus="snooze"]');
+        await expect(snooze).toBeVisible();
+        // The figure comes from the one constant, so the label cannot drift
+        // from what the write actually does.
+        const days = await page.evaluate(() => {
+            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
+            return health.constructor.SNOOZE_DAYS;
+        });
+        await expect(snooze).toContainText(String(days));
+        await expect(snooze.locator('kbd')).toHaveText('z');
+    });
+
+    test('it writes the ignore and takes the row out of the session', async ({ page }) => {
+        await openHealthView(page);
+        await openCard(page);
+
+        const asked = [];
+        await page.route('**/api/health/ignore**', async (route) => {
+            asked.push(route.request().postData() || '');
+            await route.fulfill({
+                status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }),
+            });
+        });
+
+        const before = await page.evaluate(() => {
+            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
+            return health.focus.queue.length;
+        });
+
+        await page.locator('.health-focus-card [data-focus="snooze"]').click();
+        await page.waitForTimeout(1200);
+
+        // The write went out, carrying an expiry rather than a permanent mute.
+        expect(asked.length).toBeGreaterThan(0);
+        expect(asked.join(' ')).toContain('until');
+
+        // And the session moved on: a card that keeps showing what you have
+        // just dealt with is not counting honestly.
+        const after = await page.evaluate(() => {
+            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
+            return health.focus.queue.length;
+        });
+        expect(after).toBeLessThan(before);
+    });
+
+    /*
+     * A row with nothing to silence is not offered the button. The whole
+     * gesture needs a condition to act on, and an always-present control that
+     * usually refuses is the thing this codebase keeps deciding against.
+     */
+    test('a row with no condition to hide is not offered it', async ({ page }) => {
+        await openHealthView(page);
+        await openCard(page);
+
+        const offered = await page.evaluate(() => {
+            const health = window.dashboardInstance.health._module || window.dashboardInstance.health;
+            const focus = health.focus;
+            // The queue holds keys; currentIssue resolves one against the live
+            // report, which is what run() hands every action.
+            const issue = focus.currentIssue();
+            return {
+                // The card's own answer, which reads this row's status rather
+                // than the list's filter -- the session runs across filters.
+                hasFlag: Boolean(focus.snoozeFlagFor(issue)),
+                button: Boolean(document.querySelector('.health-focus-card [data-focus="snooze"]')),
+            };
+        });
+        // Whatever this fixture's first row is, the two answers agree.
+        expect(offered.button).toBe(offered.hasFlag);
+    });
+});

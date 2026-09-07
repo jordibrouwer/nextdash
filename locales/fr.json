@@ -1924,7 +1924,8 @@
     "widgetDockerTotal": "total",
     "widgetDockerImages": "images",
     "widgetDockerUnhealthyList": "en échec",
-    "widgetDockerRestartedList": "redémarré"
+    "widgetDockerRestartedList": "redémarré",
+    "healthFocusSnooze": "Ignorer {days} j"
   },
   "health": {
     "reloadPage": "Recharger la page",

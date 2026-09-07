@@ -1924,7 +1924,8 @@
     "widgetDockerTotal": "总计",
     "widgetDockerImages": "镜像",
     "widgetDockerUnhealthyList": "故障",
-    "widgetDockerRestartedList": "刚重启"
+    "widgetDockerRestartedList": "刚重启",
+    "healthFocusSnooze": "忽略 {days} 天"
   },
   "health": {
     "reloadPage": "重新加载页面",

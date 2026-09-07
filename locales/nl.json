@@ -1924,7 +1924,8 @@
     "widgetDockerTotal": "totaal",
     "widgetDockerImages": "images",
     "widgetDockerUnhealthyList": "faalt",
-    "widgetDockerRestartedList": "net herstart"
+    "widgetDockerRestartedList": "net herstart",
+    "healthFocusSnooze": "Negeer {days}d"
   },
   "health": {
     "reloadPage": "Pagina herladen",
