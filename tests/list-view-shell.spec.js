@@ -322,12 +322,16 @@ test('the rail stays on screen while the list scrolls', async ({ page }) => {
 
     await page.evaluate(() => window.scrollTo(0, 0));
 
-    expect(position).toBe('sticky');
+    // Geometry first: whether the filters are still on screen is the question,
+    // and `position: sticky` is only the means. Asserting the property first
+    // would let a change that sticks the rail somewhere useless still pass here
+    // and fail on the property, which reads as a different bug.
     expect(seen.scrolled, 'the page did not scroll').toBeGreaterThan(0);
     expect(seen.railTop, 'the rail scrolled off the top of the viewport').toBeGreaterThanOrEqual(0);
     expect(seen.railBottom).toBeGreaterThan(0);
     expect(seen.filterTop >= 0 && seen.filterBottom <= seen.viewport,
         'the filters left the viewport when the page scrolled').toBe(true);
+    expect(position).toBe('sticky');
 });
 
 /**

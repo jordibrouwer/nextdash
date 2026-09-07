@@ -289,6 +289,19 @@ test('below 720px the rail is a strip and the summary folds into the header', as
     expect(narrow.railHeight, 'the strip is more than one row tall').toBeLessThan(60);
     // The strip scrolls, never the page.
     expect(narrow.pageScrollWidth).toBeLessThanOrEqual(narrow.viewport);
+
+    // And on a phone, which arrives narrow rather than being resized into it:
+    // the shell has to place the summary when it mounts, not only when the
+    // breakpoint is crossed.
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+    await page.locator('#page-nav-inbox-btn').click();
+    await expect(page.locator('.inbox-layout .lvs')).toHaveCount(1);
+    await expect.poll(() => page.evaluate(
+        () => !!document.querySelector('.lvs-header .lvs-summary')),
+    { message: 'a shell mounted below the breakpoint left the summary in the strip' }).toBe(true);
 });
 
 test('below 720px the secondary actions fold into the overflow menu', async ({ page }) => {
