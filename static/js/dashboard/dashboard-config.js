@@ -15761,7 +15761,7 @@ class DashboardConfig {
     static GUIDED_TOURS = [
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'Welcome tour',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
-        { id: 'healthTutorialV1', labelKey: 'config.tourHealth', label: 'Health',
+        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
           whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
         { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox',
           whereKey: 'config.tourWhereInbox', where: 'the next time you open the inbox' },

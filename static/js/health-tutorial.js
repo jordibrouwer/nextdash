@@ -14,7 +14,13 @@
 (function (global) {
     'use strict';
 
-    const TIP_ID = 'healthTutorialV1';
+    /*
+     * V2: the view was rebuilt around a left column, and Monitors became a
+     * place of its own rather than a filter. Anyone who saw the V1 tour learnt
+     * a layout that no longer exists, so the id moves and they are shown the
+     * tour once more.
+     */
+    const TIP_ID = 'healthTutorialV2';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -51,6 +57,21 @@
                     'A few checks in this release: watching for a page that quietly changed underneath a link, expected downtime that should not page anyone, and alerts that land in Slack, Discord, Telegram, Pushover or ntfy instead of a raw webhook nobody reads.'))}</p>
                 <p>${esc(t('healthTutorialStep1Body2',
                     'This walks through all of it on one example — a status page you host yourself. Six short steps, then you are done. Config → Help → Health has the same walkthrough if you want it again later.'))}</p>`,
+            },
+            {
+                title: t('healthTutorialStepLayoutTitle', 'Finding your way around'),
+                visual: `<div class="health-tutorial-visual health-tutorial-visual--layout">
+                    <span class="health-tutorial-visual-rail">
+                        <span class="health-tutorial-visual-readout">${esc(t('healthTutorialStepLayoutScore', 'Score'))}</span>
+                        <span class="health-tutorial-visual-row is-active">${esc(t('healthFilterBroken', 'Broken'))}</span>
+                        <span class="health-tutorial-visual-row">${esc(t('healthFilterAll', 'All'))}</span>
+                        <span class="health-tutorial-visual-row is-section">${esc(t('healthMonitors', 'All monitors'))}</span>
+                    </span>
+                </div>`,
+                body: `<p>${esc(t('healthTutorialStepLayoutBody1',
+                    'Every filter is a row in the left column with its own count, and the figures above them — Score, the trend, broken, uptime over 24 hours — are readouts rather than filters. A filter with nothing in it drops out of the list and comes back when it fills.'))}</p>
+                <p>${esc(t('healthTutorialStepLayoutBody2',
+                    'Monitors sits under Sections, not among the filters, because it is a different question: it swaps the list for pooled uptime, the slowest responders and recent outages. The header stays put as you scroll, so Work through and Rot report are always in reach.'))}</p>`,
             },
             {
                 title: t('healthTutorialStep2Title', 'Turn on Monitor'),

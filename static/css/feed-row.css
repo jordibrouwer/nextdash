@@ -159,3 +159,41 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
         opacity: 1;
     }
 }
+
+/*
+ * Row anatomy: alignment and density only.
+ *
+ * Columns deliberately stay with the base rule and with --with-select. Both
+ * declare grid-template-columns at the same specificity, so a third
+ * declaration here would win by source order and silently drop the checkbox
+ * column from every health row.
+ */
+.feed-row--grid {
+    align-items: start;
+}
+
+/* For a view that fills a trailing column, such as a score or a status pill. */
+.feed-row--grid-3 {
+    grid-template-columns: 3rem 1fr auto;
+}
+
+/* Forward scaffolding: no view emits --grid-3 yet (only
+ * tests/feed-row-grid.spec.js synthesises it), but a future row that carries
+ * --with-select and wants a trailing column (a score, a status pill) would
+ * hit exactly this pair. Both rules sit at equal specificity and --grid-3
+ * comes later in the file, so without a rule for the combination, --grid-3
+ * would win by source order and silently drop the checkbox track — the same
+ * collision --grid was split out above to avoid for the --grid/--with-select
+ * pair.
+ */
+.feed-row--with-select.feed-row--grid-3 {
+    grid-template-columns: 1.1rem 3rem 1fr auto;
+}
+
+body[data-list-density="compact"] .feed-row--grid {
+    padding-block: var(--space-1);
+}
+
+body[data-list-density="comfortable"] .feed-row--grid {
+    padding-block: var(--space-3);
+}

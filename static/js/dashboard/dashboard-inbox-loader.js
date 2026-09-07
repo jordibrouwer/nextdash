@@ -30,6 +30,13 @@ class DashboardInboxLoader {
 
     async _loadDependencies() {
         const load = window.LazyScript.loadScriptOnce;
+        // The view mounts onto the shared shell, so the shell has to exist
+        // before the module constructs. It normally rides in with the page, but
+        // a stripped or slow boot must not leave the inbox with no chrome.
+        if (typeof window.ListViewShell === 'undefined') {
+            await load('js/shared/list-view-shell.js', 'listViewShell',
+                () => typeof window.ListViewShell !== 'undefined');
+        }
         // Tested as bare globals rather than window properties, which is how
         // these two classes are declared.
         if (typeof DashboardInboxTriage === 'undefined') {

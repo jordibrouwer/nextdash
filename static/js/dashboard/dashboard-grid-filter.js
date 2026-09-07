@@ -153,7 +153,14 @@
                 if (hit) shown += 1;
             });
 
-            container.querySelectorAll('.category').forEach((block) => {
+            /*
+             * Categories only. A widget block carries the `category` class --
+             * the masonry layout measures blocks by it and DragReorder selects
+             * by it -- and holds no `.bookmark-link` at all, so it counted as
+             * empty the moment anything was typed and every widget vanished
+             * while the reader was filtering their links.
+             */
+            container.querySelectorAll('.category:not([data-widget-id])').forEach((block) => {
                 const visible = [...block.querySelectorAll('.bookmark-link')]
                     .some((row) => !row.classList.contains(ROW_HIDDEN));
                 block.classList.toggle(BLOCK_HIDDEN, Boolean(query) && !visible);

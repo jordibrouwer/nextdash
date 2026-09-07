@@ -144,10 +144,19 @@ class KeyboardNavigation {
             }
 
             // Action popovers manage their own keyboard — never let the grid intercept arrows/Enter
+            //
+            // The multi-select pair and the date popover were missing here, and
+            // Escape is where that showed: they close themselves, but this
+            // handler ran too and, finding a live selection, cleared it. Closing
+            // the Tags popover threw away the rows you had picked to tag -- the
+            // selection you opened it for. One Escape closes one thing.
             if (
                 document.getElementById('tag-popover')
                 || document.getElementById('move-popover')
                 || document.getElementById('delete-popover')
+                || document.getElementById('date-popover')
+                || document.getElementById('multi-select-tags-popover')
+                || document.getElementById('multi-select-check-popover')
                 || document.getElementById('bookmark-context-menu')
                 || document.getElementById('bookmark-check-mode-menu')
             ) {

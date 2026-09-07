@@ -40,7 +40,8 @@ class DashboardInbox {
         this._statsFailed = false;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
-        this._searchFocusPending = false;
+        /** The mounted ListViewShell handle, or null before the first render. */
+        this.shell = null;
         this._fetchPromise = null;
         /** True after the first successful `/api/inbox` fetch this session. */
         this._itemsLoaded = false;
@@ -191,7 +192,10 @@ class DashboardInbox {
                     this.keepOnlyVisibleChecked();
                 }
             });
-            container.querySelector('.inbox-toolbar')?.after(bar);
+            // Between the toolbar row and the body, which is where it sat when
+            // the toolbar was the view's own. Outside the body deliberately: a
+            // render must not throw away the bar and its listener.
+            (this.shell?.toolbarRow || container.querySelector('.inbox-toolbar'))?.after(bar);
         }
         const hidden = this.offscreenCheckedCount();
         const offscreen = hidden
@@ -796,6 +800,22 @@ class DashboardInbox {
         }
         const label = this.filterLabel().toLowerCase();
         return label ? `${root} › ${label}` : root;
+    }
+
+    /**
+     * The same trail without its root, for the collapsed shell header.
+     *
+     * headerBreadcrumb() still prefixes "inbox" because the browser tab title
+     * is built from it (dashboard-page-nav.js:120) and a tab reading just
+     * "Unread" says nothing. In the header the crumb sits beside a .lvs-title
+     * that already says Inbox, so the prefix read "Inbox inbox". Default state
+     * is empty: nothing to say rather than the title twice.
+     */
+    shellBreadcrumb() {
+        const domain = String(this.domainFilter || '').trim();
+        if (domain) return domain.toLowerCase();
+        if (this.filter === 'all') return '';
+        return this.filterLabel().toLowerCase();
     }
 
     /**
@@ -1604,6 +1624,7 @@ class DashboardInbox {
     async leaveInboxView(pageId) {
         const d = this.dash;
         this._teardownLoadMoreObserver();
+        this._destroyShell();
         this.clearKeyboardSelection();
         d.setActiveView('bookmarks');
         return d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
@@ -1616,6 +1637,7 @@ class DashboardInbox {
             return false;
         }
         this._teardownLoadMoreObserver();
+        this._destroyShell();
         this.clearKeyboardSelection();
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
@@ -2013,108 +2035,33 @@ class DashboardInbox {
     }
 
     /**
-     * Sync summary tiles, header badges, and toolbar bulk buttons with this.items
-     * after a lightweight mutation (mark read, open) rather than rebuilding the feed.
+     * Sync the shell's counts, its summary and the ⋯ menu with this.items after
+     * a lightweight mutation (mark read, open) rather than rebuilding the feed.
      */
     refreshInboxSummary() {
         const container = document.getElementById('dashboard-layout');
         if (!container?.classList.contains('inbox-layout') || !this.isActiveView()) {
             return;
         }
-
-        // Same definitions render() uses, or a mark-read would quietly restate the
-        // counts under a different rule than the ones drawn a moment ago.
-        const count = this.filterCount('all');
-        const unread = this.unreadCount();
-        const readCount = this.activeItems().filter((entry) => entry.readAt).length;
-        const snoozedCount = this.snoozedCount();
-        const weekCount = this.weekAddedCount();
-
-        const countBadge = container.querySelector('.inbox-count-badge');
-        if (countBadge) {
-            countBadge.textContent = String(count);
-        }
-
-        const headerMeta = container.querySelector('.inbox-header-meta');
-        if (headerMeta) {
-            let unreadBadge = headerMeta.querySelector('.inbox-unread-badge');
-            if (unread > 0) {
-                if (!unreadBadge) {
-                    unreadBadge = document.createElement('span');
-                    unreadBadge.className = 'inbox-unread-badge';
-                    headerMeta.appendChild(unreadBadge);
-                }
-                unreadBadge.textContent = `${unread} ${this.t('dashboard.inboxUnread', 'unread')}`;
-            } else {
-                unreadBadge?.remove();
-            }
-        }
-
-        const tileValues = { all: count, unread, snoozed: snoozedCount };
-        container.querySelectorAll('[data-inbox-tile]').forEach((btn) => {
-            const key = btn.getAttribute('data-inbox-tile');
-            const value = tileValues[key];
-            if (value === undefined) {
-                return;
-            }
-            const valueEl = btn.querySelector('.inbox-tile-value');
-            if (valueEl) {
-                valueEl.textContent = String(value);
-            }
-            btn.classList.toggle('inbox-tile--zero', value === 0);
-        });
-        const weekValueEl = container.querySelector('.inbox-tiles > .inbox-tile:not([data-inbox-tile]) .inbox-tile-value');
-        if (weekValueEl) {
-            weekValueEl.textContent = String(weekCount);
-            weekValueEl.closest('.inbox-tile')?.classList.toggle('inbox-tile--zero', weekCount === 0);
-        }
-
-        const toolbar = container.querySelector('.inbox-toolbar');
-        if (!toolbar) {
+        const shell = this.shell;
+        if (!shell) {
             return;
         }
 
-        // The pills carry counts too, and this path skips the toolbar rebuild.
-        toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
-            const countEl = btn.querySelector('.inbox-filter-count');
-            if (countEl) {
-                countEl.textContent = String(this.filterCount(btn.getAttribute('data-inbox-filter')));
-            }
+        // Same definitions render() uses, or a mark-read would quietly restate the
+        // counts under a different rule than the ones drawn a moment ago.
+        shell.setCounts({
+            all: this.filterCount('all'),
+            unread: this.filterCount('unread'),
+            snoozed: this.filterCount('snoozed'),
+            noted: this.filterCount('noted'),
         });
-
-        let markAllBtn = toolbar.querySelector('[data-inbox-bulk="read"]');
-        if (unread > 0) {
-            if (!markAllBtn) {
-                markAllBtn = document.createElement('button');
-                markAllBtn.type = 'button';
-                markAllBtn.className = 'inbox-bulk-btn';
-                markAllBtn.dataset.inboxBulk = 'read';
-                markAllBtn.textContent = this.t('dashboard.inboxMarkAllRead', 'Mark all read');
-                markAllBtn.addEventListener('click', () => {
-                    void this.markAllRead();
-                });
-                toolbar.querySelector('.inbox-triage-btn')?.before(markAllBtn);
-            }
-        } else {
-            markAllBtn?.remove();
-        }
-
-        let clearReadBtn = toolbar.querySelector('[data-inbox-bulk="clear-read"]');
-        if (readCount > 0) {
-            if (!clearReadBtn) {
-                clearReadBtn = document.createElement('button');
-                clearReadBtn.type = 'button';
-                clearReadBtn.className = 'inbox-bulk-btn';
-                clearReadBtn.dataset.inboxBulk = 'clear-read';
-                clearReadBtn.textContent = this.t('dashboard.inboxClearRead', 'Clear read');
-                clearReadBtn.addEventListener('click', () => {
-                    void this.clearReadItems();
-                });
-                toolbar.querySelector('.inbox-triage-btn')?.before(clearReadBtn);
-            }
-        } else {
-            clearReadBtn?.remove();
-        }
+        shell.setSummary(this.shellSummary());
+        this.syncRailFilters();
+        // Mark all read and Clear read appear and disappear with what is left to
+        // do, and both live in the menu now — rebuilt whole rather than patched
+        // button by button, which is what the two branches here used to be.
+        this.renderToolbarMenu(this.getFilteredItems());
     }
 
     /* ── Snooze ────────────────────────────────────────────────────────────── */
@@ -3462,335 +3409,157 @@ class DashboardInbox {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
-            // Ticks from a previous query would act on rows the user can no longer
-            // see, so a search change starts the selection over (same as filter).
-            this.checkedIds.clear();
-            // The anchor a Shift+click range counts from belongs to the selection
-            // it was made in. Left standing across a filter change, a later
-            // Shift+click ticked everything back to a row this view never showed.
-            this.checkAnchorId = null;
-            // The deep-link target is spent once its row has been shown; keeping it
-            // would drag focus back to that row on every later keystroke.
-            this.focusItemId = null;
-            // Debounced with the render: syncing on every keystroke would rewrite
-            // the address bar a dozen times per word.
-            this.syncUrlState();
-            this.render();
+            // searchQuery is already assigned by the input handler above; the
+            // patch carries nothing new, which is why action is passed explicitly
+            // instead of being derived from the (empty) patch's keys. persist:
+            // false keeps search out of localStorage, same as before. track:
+            // false keeps this path silent for analytics, same as before —
+            // search never fired an event pre-consolidation.
+            this.applyViewChange({}, { via: 'search', action: 'search', persist: false, track: false });
         }, 80);
     }
 
-    finishInboxRenderFocus(container, preserveSearch, searchCaret) {
-        if (preserveSearch) {
-            const input = container.querySelector('.inbox-search-input');
-            if (input) {
-                input.focus({ preventScroll: true });
-                const caret = searchCaret ?? this.searchQuery.length;
-                input.setSelectionRange(caret, caret);
-            }
-            return;
-        }
-        this.syncKeyboardSelectionAfterRender();
-        container.tabIndex = -1;
-        // The triage overlay is modal and holds its own focus; a feed render
-        // underneath it must not pull focus out to the container behind it.
-        if (this.triage?.isOpen?.()) {
-            return;
-        }
-        const active = document.activeElement;
-        const focusInToolbar = active?.closest?.('.inbox-toolbar, .page-nav-btn');
-        if (!active || active === document.body || focusInToolbar) {
-            container.focus({ preventScroll: true });
-        }
+    /* ── The shared list-view shell ────────────────────────────────────── */
+
+    /**
+     * The rail rows: the old filter pills and the old summary tiles, merged.
+     *
+     * Every row is declared, always. Which ones are worth showing changes with
+     * the data and with the search box, and a rail whose rows come and go would
+     * have to be rebuilt mid-keystroke — the exact rebuild this whole change
+     * exists to stop. syncRailFilters() hides them instead.
+     */
+    shellFilterRows() {
+        return [
+            { key: 'all', label: this.t('dashboard.inboxFilterAll', 'All'), tile: true },
+            { key: 'unread', label: this.t('dashboard.inboxFilterUnread', 'Unread'), tile: true },
+            { key: 'snoozed', label: this.t('dashboard.inboxFilterSnoozed', 'Snoozed'), tile: true },
+            { key: 'noted', label: this.t('dashboard.inboxFilterNoted', 'With note') },
+        ];
     }
 
-    render() {
-        const d = this.dash;
+    /**
+     * "This week" as a readout rather than a filter.
+     *
+     * It is the one old tile with no filter behind it, so it keeps no
+     * data-inbox-tile: a hook that promises a filter it cannot deliver is worse
+     * than no hook.
+     */
+    shellSummary() {
+        return [{
+            key: 'week',
+            label: this.t('dashboard.inboxTileThisWeek', 'This week'),
+            value: this.weekAddedCount(),
+        }];
+    }
+
+    shellConfig() {
+        return {
+            id: 'inbox',
+            title: this.t('dashboard.inboxPageTitle', 'Inbox'),
+            description: this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later'),
+            density: true,
+            t: (key, fallback) => this.t(key, fallback),
+            activeFilter: this.filter,
+            // Specs select `[data-inbox-filter="all"] .inbox-filter-count`, so
+            // the old class names ride along with the shell's own.
+            filterClass: 'inbox-filter-btn',
+            filterCountClass: 'inbox-filter-count',
+            filters: this.shellFilterRows().map((row) => ({
+                key: row.key,
+                label: row.label,
+                count: this.filterCount(row.key),
+                dataAttrs: row.tile
+                    ? { 'data-inbox-filter': row.key, 'data-inbox-tile': row.key }
+                    : { 'data-inbox-filter': row.key },
+            })),
+            summary: this.shellSummary(),
+            onFilter: (key, via) => this.applyFilter(key, via),
+        };
+    }
+
+    /** Mounts the shell once; later renders reuse it and repaint only the body. */
+    mountShell() {
         const container = document.getElementById('dashboard-layout');
-        if (!container) {
-            return;
+        if (!container || typeof window.ListViewShell === 'undefined') return null;
+        if (this.shell && container.contains(this.shell.root)) {
+            return this.shell;
         }
-
-        d._abortInlineEditForRender?.();
-        d.updateTagFilterIndicator?.();
-
-        const activeEl = document.activeElement;
-        const preserveSearch = this._searchFocusPending
-            || activeEl?.classList?.contains('inbox-search-input');
-        const searchCaret = preserveSearch
-            ? (activeEl?.classList?.contains('inbox-search-input') ? activeEl.selectionStart : this.searchQuery.length)
-            : null;
-        this._searchFocusPending = false;
-
-        // The sentinel from the previous render is about to be thrown away with
-        // the container's contents; an observer still watching it would keep the
-        // detached node alive and never fire again.
-        this._teardownLoadMoreObserver();
-
-        // Before anything reads the filter state: a site filter left pointing at a
-        // host that is no longer here would silently empty the feed, and the
-        // breadcrumb below would still name the vanished site.
-        if (this.pruneDomainFilter()) {
-            this.syncUrlState();
-        }
-
+        // A handle whose root is no longer here belongs to a view that replaced
+        // the layout without going through closeInboxView — health opened from
+        // the module, say. Its scroll listener is still on window, so it has to
+        // be let go rather than simply overwritten.
+        this._destroyShell();
         container.innerHTML = '';
         container.className = 'inbox-layout';
-        container.removeAttribute('aria-colcount');
-        container.removeAttribute('aria-rowcount');
-        // Not a feed: this element holds the heading, the tiles, the toolbar and
+        // Not a feed: this element holds the header, the rail, the toolbar and
         // the legend as well as the rows, and a feed whose children are anything
         // but articles is read out as one. The role goes on the list itself.
-        container.removeAttribute('role');
-        container.removeAttribute('aria-label');
-        container.removeAttribute('data-i18n-aria');
+        ['aria-colcount', 'aria-rowcount', 'role', 'aria-label', 'data-i18n-aria']
+            .forEach((name) => container.removeAttribute(name));
+        // The sort and site selects hand focus back here so the row shortcuts
+        // stop being swallowed; without a tabindex that focus() does nothing.
+        container.tabIndex = -1;
+        this.shell = window.ListViewShell.mount(container, this.shellConfig());
+        this.buildToolbar(this.shell.toolbar);
+        this.buildHeaderActions(this.shell.headerActions);
+        return this.shell;
+    }
 
-        const title = this.t('dashboard.inboxPageTitle', 'Inbox');
-        const subtitle = this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
-        const trail = this.headerBreadcrumb();
-        const showTrail = trail.includes(' › ');
-        const filtered = this.getFilteredItems();
-        // The badge counts the rows the reader is looking at, which under a search
-        // or a site filter is not the same as everything the "all" pill holds.
-        const count = filtered.length;
-        const unread = filtered.filter((item) => !item.readAt).length;
+    _destroyShell() {
+        this.shell?.destroy?.();
+        this.shell = null;
+    }
 
-        const header = document.createElement('div');
-        header.className = 'inbox-header';
-        // Two rows, the same shape as the health view's header: the heading owns
-        // the first line, and the count drops to the second to sit level with
-        // the subtitle. Beside the heading it rode a line higher than health's
-        // score badge, which is the one place the two views are seen in
-        // succession and the difference reads as a misalignment.
-        header.innerHTML = `
-            <div class="inbox-header-text">
-                <h2 class="inbox-title">${this.escape(title)}</h2>
-                <p class="inbox-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
-            </div>
-            <div class="inbox-header-second-row">
-                <p class="inbox-subtitle">${this.escape(subtitle)}</p>
-                <div class="inbox-header-meta">
-                    <span class="inbox-count-badge">${count}</span>
-                    ${unread > 0 ? `<span class="inbox-unread-badge">${unread} ${this.escape(this.t('dashboard.inboxUnread', 'unread'))}</span>` : ''}
-                </div>
-            </div>
+    /**
+     * The toolbar, built once.
+     *
+     * This is what retires the caret workaround: the search box is created here
+     * and never touched by render(), so there is no rebuilt input to put the
+     * caret back into. Only the two selects' contents are refreshed, by
+     * syncToolbar().
+     */
+    buildToolbar(host) {
+        const searchLabel = this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'));
+        host.innerHTML = `
+            <select class="inbox-domain-select" data-inbox-domain-filter hidden
+                    aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}"></select>
+            <input type="search" class="inbox-search-input" data-inbox-search
+                   value="${this.escape(this.searchQuery)}" placeholder="${searchLabel}"
+                   autocomplete="off" spellcheck="false" aria-label="${searchLabel}">
+            <select class="inbox-sort-select" data-inbox-sort
+                    aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}"></select>
         `;
-        container.appendChild(header);
+        this.bindToolbar(host);
+        this.syncToolbar();
+    }
 
-        // "Clear read" only ever removes awake rows, so a snoozed read item must
-        // not be what makes the button appear. Counted over the rows on screen,
-        // which is the set the button acts on.
-        const readCount = filtered.filter((entry) => entry.readAt).length;
-        const snoozedCount = this.snoozedCount();
-
-        // Summary tiles, mirroring the health view. The first three double as
-        // filters (Active → all, Unread → unread, Snoozed → snoozed); "This week"
-        // is a plain readout with no matching filter, so it renders as a <div>.
-        //
-        // "Active", not "Total": what this counts is everything the list can show
-        // right now, and a sleeping link is deliberately not part of that. Under
-        // the old label the tile read 4 with five links in the inbox.
-        const weekCount = this.weekAddedCount();
-        const tiles = document.createElement('div');
-        tiles.className = 'inbox-tiles';
-        const tile = (label, value, opts = {}) => {
-            const zero = value === 0 ? ' inbox-tile--zero' : '';
-            const active = opts.filter && this.filter === opts.filter ? ' is-active' : '';
-            const mod = opts.mod ? ` inbox-tile--${opts.mod}` : '';
-            const body = `<span class="inbox-tile-label">${this.escape(label)}</span><span class="inbox-tile-value">${value}</span>`;
-            if (opts.filter) {
-                return `<button type="button" class="inbox-tile${mod}${zero}${active}" data-inbox-tile="${opts.filter}">${body}</button>`;
-            }
-            return `<div class="inbox-tile${mod}${zero}">${body}</div>`;
-        };
-        tiles.innerHTML = [
-            tile(this.t('dashboard.inboxTileActive', 'Active'), this.filterCount('all'), { filter: 'all' }),
-            tile(this.t('dashboard.inboxTileUnread', 'Unread'), this.filterCount('unread'), { filter: 'unread', mod: 'unread' }),
-            tile(this.t('dashboard.inboxTileSnoozed', 'Snoozed'), this.filterCount('snoozed'), { filter: 'snoozed' }),
-            tile(this.t('dashboard.inboxTileThisWeek', 'This week'), weekCount),
-        ].join('');
-        tiles.querySelectorAll('[data-inbox-tile]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.filter = btn.getAttribute('data-inbox-tile') || 'all';
-                this._trackAction('filter', { filter: this.filter, via: 'tile' });
-                this.visibleLimit = 50;
-                this.checkedIds.clear();
-                // The anchor a Shift+click range counts from belongs to the selection
-                // it was made in. Left standing across a filter change, a later
-                // Shift+click ticked everything back to a row this view never showed.
-                this.checkAnchorId = null;
-                this.focusItemId = null;
-                this.persistViewState();
-                this.syncUrlState();
-                this.render();
-            });
-        });
-        container.appendChild(tiles);
-        const toolbar = document.createElement('div');
-        toolbar.className = 'inbox-toolbar';
-        // The Snoozed pill only appears when something is asleep (or is the active
-        // filter, so it does not vanish under the user when the last item wakes).
-        const showSnoozePill = snoozedCount > 0 || this.filter === 'snoozed';
-        const notedCount = this.filterCount('noted');
-        const showNotedPill = notedCount > 0 || this.filter === 'noted';
-        const domainEntries = this.domainOptions();
-        const showDomainSelect = domainEntries.length > 0;
-
-        const sortOptions = [
-            ['newest', this.t('dashboard.inboxSortNewest', 'newest first')],
-            ['oldest', this.t('dashboard.inboxSortOldest', 'oldest first')],
-            ['title', this.t('dashboard.inboxSortTitle', 'title')],
-            ['domain', this.t('dashboard.inboxSortDomain', 'site')],
-        ].map(([value, label]) =>
-            `<option value="${value}"${this.sort === value ? ' selected' : ''}>${this.escape(label)}</option>`
-        ).join('');
-
-        // Each option says how many rows it would leave, so the choice is made
-        // before the click rather than found out after it.
-        const domainOptions = [
-            `<option value="">${this.escape(this.t('dashboard.inboxDomainAll', 'All sites'))}</option>`,
-            ...domainEntries.map(({ host, count }) =>
-                `<option value="${this.escape(host)}"${this.domainFilter === host ? ' selected' : ''}>${this.escape(`${host} (${count})`)}</option>`
-            ),
-        ].join('');
-
-        // Every pill carries its own count, so the row says how much work is under
-        // each one without having to click through them. Built from a list rather
-        // than four near-identical lines of inline HTML, which is what let the
-        // first two go without a count in the first place.
-        const pills = [
-            ['all', this.t('dashboard.inboxFilterAll', 'All'), true],
-            ['unread', this.t('dashboard.inboxFilterUnread', 'Unread'), true],
-            ['snoozed', this.t('dashboard.inboxFilterSnoozed', 'Snoozed'), showSnoozePill],
-            ['noted', this.t('dashboard.inboxFilterNoted', 'With note'), showNotedPill],
-        ].filter(([, , show]) => show).map(([key, label]) => {
-            const active = this.filter === key;
-            return `<button type="button" class="inbox-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-inbox-filter="${key}">${this.escape(label)}<span class="inbox-filter-count">${this.filterCount(key)}</span></button>`;
-        }).join('');
-
-        // "Mark all read" acts on the rows the filters leave, which under a search
-        // or a site filter is not all of them — so the label stops saying "all".
-        const narrowed = this.isNarrowed();
-        const markReadLabel = narrowed
-            ? this.t('dashboard.inboxMarkShownRead', 'Mark shown read')
-            : this.t('dashboard.inboxMarkAllRead', 'Mark all read');
-        const markReadHint = narrowed
-            ? this.t('dashboard.inboxMarkShownReadHint', 'Marks the {count} links this view shows, not the whole inbox', { count: unread })
-            : this.t('dashboard.inboxMarkAllReadHint', 'Marks every unread link in the inbox');
-
-        toolbar.innerHTML = `
-            <div class="inbox-filter-strip">
-                <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">${pills}</div>
-            </div>
-            <div class="inbox-toolbar-search-row">
-                ${showDomainSelect ? `<select class="inbox-domain-select" data-inbox-domain-filter aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
-                <input type="search" class="inbox-search-input" data-inbox-search value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
-                ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" data-inbox-sort aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
-            </div>
-            <div class="inbox-toolbar-actions">
-                <button type="button" class="inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
-                <span class="inbox-menu-wrap">
-                    <button type="button" class="inbox-toolbar-more" data-inbox-toolbar-more
-                            aria-haspopup="menu" aria-expanded="false"
-                            title="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}"
-                            aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">⋯</button>
-                    <div class="inbox-menu" role="menu" hidden data-inbox-menu
-                         aria-label="${this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'))}">
-                ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
-                ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
-                <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
-                <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
-                <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
-                <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
-                    </div>
-                </span>
-                <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
-                        aria-haspopup="dialog"
-                        title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
-                        aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
-            </div>
-        `;
-        const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
-        const applyFilter = (key, via) => {
-            this.filter = key || 'all';
-            this._trackAction('filter', { filter: this.filter, via });
-            this.visibleLimit = 50;
-            // Ticks from the previous filter would act on rows the user can no
-            // longer see, so a filter change starts the selection over.
-            this.checkedIds.clear();
-            // The anchor a Shift+click range counts from belongs to the selection
-            // it was made in. Left standing across a filter change, a later
-            // Shift+click ticked everything back to a row this view never showed.
-            this.checkAnchorId = null;
-            this.focusItemId = null;
-            this.persistViewState();
-            this.syncUrlState();
-            this.render();
-            this.dash.pageNav?.updatePageTitle?.();
-            this.dash.pageNav?.updateDocumentTitle?.();
-        };
-        filterBtns.forEach((btn, i) => {
-            btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-inbox-filter'), 'pill'));
-            // The group announces itself as a tablist, so the keys that role
-            // promises have to work: arrows wrap, Home/End jump to the ends.
-            btn.addEventListener('keydown', (e) => {
-                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
-                if (!keys.includes(e.key)) return;
-                e.preventDefault();
-                const last = filterBtns.length - 1;
-                const next = e.key === 'Home' ? 0
-                    : e.key === 'End' ? last
-                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
-                            : (i === 0 ? last : i - 1);
-                const target = filterBtns[next];
-                if (!target) return;
-                const key = target.getAttribute('data-inbox-filter');
-                target.focus();
-                applyFilter(key, 'keyboard');
-                // render() rebuilds the toolbar wholesale and drops the focus set
-                // above, so re-focus the replacement to keep arrowing usable.
-                if (!target.isConnected) {
-                    document.querySelector(`[data-inbox-filter="${CSS.escape(key)}"]`)?.focus();
-                }
-            });
-        });
-
-        const sortSelect = toolbar.querySelector('.inbox-sort-select');
+    bindToolbar(host) {
+        const sortSelect = host.querySelector('.inbox-sort-select');
         sortSelect?.addEventListener('change', (e) => {
-            this.sort = e.target.value || 'newest';
-            this._trackAction('sort', { sort: this.sort });
-            this.visibleLimit = 50;
-            this.persistViewState();
-            this.syncUrlState();
-            this.render();
+            this.applyViewChange({ sort: e.target.value || 'newest' }, { via: 'select' });
             // Same reason as the health view: a focused SELECT swallows every row
             // shortcut, so j/k/p/d would go dead until the user clicked away.
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        const domainSelect = toolbar.querySelector('.inbox-domain-select');
+        const domainSelect = host.querySelector('.inbox-domain-select');
         domainSelect?.addEventListener('change', (e) => {
-            this.domainFilter = String(e.target.value || '').trim().toLowerCase();
-            this._trackAction('filter', { filter: 'domain', via: 'domain-select' });
-            this.visibleLimit = 50;
-            this.checkedIds.clear();
-            // The anchor a Shift+click range counts from belongs to the selection
-            // it was made in. Left standing across a filter change, a later
-            // Shift+click ticked everything back to a row this view never showed.
-            this.checkAnchorId = null;
-            this.focusItemId = null;
-            this.persistViewState();
-            this.syncUrlState();
-            this.render();
-            this.dash.pageNav?.updatePageTitle?.();
-            this.dash.pageNav?.updateDocumentTitle?.();
+            // The patch carries the real hostname the user picked, which must
+            // never reach analytics (umami-analytics.js's no-PII contract).
+            // action/props restore the historical 'inbox:filter' event name
+            // and the static 'domain' marker the rail's filter click reports.
+            this.applyViewChange(
+                { domainFilter: String(e.target.value || '').trim().toLowerCase() },
+                { via: 'select', action: 'filter', props: { filter: 'domain' } },
+            );
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        const searchInput = toolbar.querySelector('.inbox-search-input');
+        const searchInput = host.querySelector('.inbox-search-input');
         searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
             this.visibleLimit = 50;
-            this._searchFocusPending = true;
             this.scheduleSearchRender();
         });
         searchInput?.addEventListener('keydown', (e) => {
@@ -3802,86 +3571,298 @@ class DashboardInbox {
             }
             e.stopPropagation();
         });
-        toolbar.querySelector('[data-inbox-bulk="read"]')?.addEventListener('click', () => {
-            void this.markAllRead();
-        });
-        toolbar.querySelector('[data-inbox-bulk="clear-read"]')?.addEventListener('click', () => {
-            void this.clearReadItems();
-        });
-        toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
-            void this.startTriage();
-        });
-        toolbar.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
-            this.toggleStats();
-        });
+    }
 
-        /*
-         * The hamburger, and the six buttons behind it.
-         *
-         * Nine controls stood between the filters and the first link, of which
-         * Triage is the one anyone comes here for -- so it keeps the first slot
-         * and its own styling, the way Work through does in the health view,
-         * and the ℹ stays because it explains the view rather than acting on
-         * it. Export, import and the counts wait behind the ⋯.
-         *
-         * The wrap around button and menu is what anchors it: positioned
-         * against the toolbar instead, a menu lands at the far edge of the
-         * window, which is exactly what went wrong in health.
-         */
-        const moreBtn = toolbar.querySelector('[data-inbox-toolbar-more]');
-        const moreMenu = toolbar.querySelector('[data-inbox-menu]');
-        if (moreBtn && moreMenu) {
-            const closeMore = () => {
-                moreMenu.hidden = true;
-                moreBtn.setAttribute('aria-expanded', 'false');
-            };
-            moreBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const open = moreMenu.hidden;
-                moreMenu.hidden = !open;
-                moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-                if (!open) return;
-                const onOutside = (event) => {
-                    if (moreMenu.contains(event.target) || event.target === moreBtn) return;
-                    closeMore();
-                    document.removeEventListener('click', onOutside, true);
-                };
-                setTimeout(() => document.addEventListener('click', onOutside, true), 0);
-            });
-            // Escape closes it, and an action inside it closes it too: the menu
-            // is a way to reach a button, not a place to stay.
-            moreMenu.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    e.stopPropagation();
-                    closeMore();
-                    moreBtn.focus({ preventScroll: true });
-                }
-            });
-            moreMenu.addEventListener('click', (e) => {
-                if (e.target.closest('button')) closeMore();
-            });
+    /** Refresh what the two selects offer, without replacing the controls. */
+    syncToolbar() {
+        const host = this.shell?.toolbar;
+        if (!host) return;
+
+        const domainSelect = host.querySelector('.inbox-domain-select');
+        if (domainSelect) {
+            const entries = this.domainOptions();
+            domainSelect.hidden = entries.length === 0;
+            // Each option says how many rows it would leave, so the choice is
+            // made before the click rather than found out after it.
+            domainSelect.innerHTML = [
+                `<option value="">${this.escape(this.t('dashboard.inboxDomainAll', 'All sites'))}</option>`,
+                ...entries.map(({ host: name, count }) =>
+                    `<option value="${this.escape(name)}">${this.escape(`${name} (${count})`)}</option>`),
+            ].join('');
+            domainSelect.value = String(this.domainFilter || '');
         }
 
-        toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
+        const sortSelect = host.querySelector('.inbox-sort-select');
+        if (sortSelect) {
+            // Snoozed keeps its own soonest-to-wake order, so there is nothing
+            // left to sort by — the control goes rather than lying.
+            sortSelect.hidden = this.filter === 'snoozed';
+            sortSelect.innerHTML = [
+                ['newest', this.t('dashboard.inboxSortNewest', 'newest first')],
+                ['oldest', this.t('dashboard.inboxSortOldest', 'oldest first')],
+                ['title', this.t('dashboard.inboxSortTitle', 'title')],
+                ['domain', this.t('dashboard.inboxSortDomain', 'site')],
+            ].map(([value, label]) =>
+                `<option value="${value}">${this.escape(label)}</option>`).join('');
+            sortSelect.value = this.sort;
+        }
+    }
+
+    /**
+     * Triage, the ⋯ menu and the ℹ, in the shell's header.
+     *
+     * Nine controls stood between the filters and the first link, of which
+     * Triage is the one anyone comes here for — so it keeps the first slot and
+     * its own styling, the way Work through does in the health view, and the ℹ
+     * stays because it explains the view rather than acting on it. Export,
+     * import and the counts wait behind the ⋯.
+     *
+     * The wrap around button and menu is what anchors it: positioned against
+     * the header instead, a menu lands at the far edge of the window.
+     */
+    buildHeaderActions(host) {
+        const moreLabel = this.escape(this.t('dashboard.inboxToolbarMore', 'More actions'));
+        const helpLabel = this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'));
+        host.innerHTML = `
+            <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+            <span class="inbox-menu-wrap">
+                <button type="button" class="lvs-action lvs-action--overflow inbox-toolbar-more" data-inbox-toolbar-more
+                        aria-haspopup="menu" aria-expanded="false"
+                        title="${moreLabel}" aria-label="${moreLabel}">⋯</button>
+                <div class="inbox-menu" role="menu" hidden data-inbox-menu aria-label="${moreLabel}"></div>
+            </span>
+            <button type="button" class="lvs-action view-help-btn inbox-help-btn" data-inbox-help
+                    aria-haspopup="dialog" title="${helpLabel}" aria-label="${helpLabel}">ℹ</button>
+        `;
+        this.bindHeaderActions(host);
+    }
+
+    bindHeaderActions(host) {
+        host.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
+            void this.startTriage();
+        });
+        host.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
         });
-        toolbar.querySelector('[data-inbox-export="csv"]')?.addEventListener('click', () => {
+
+        const moreBtn = host.querySelector('[data-inbox-toolbar-more]');
+        const moreMenu = host.querySelector('[data-inbox-menu]');
+        if (!moreBtn || !moreMenu) return;
+        const closeMore = () => {
+            moreMenu.hidden = true;
+            moreBtn.setAttribute('aria-expanded', 'false');
+        };
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = moreMenu.hidden;
+            moreMenu.hidden = !open;
+            moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (!open) return;
+            const onOutside = (event) => {
+                if (moreMenu.contains(event.target) || event.target === moreBtn) return;
+                closeMore();
+                document.removeEventListener('click', onOutside, true);
+            };
+            setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        });
+        // Escape closes it, and an action inside it closes it too: the menu is a
+        // way to reach a button, not a place to stay.
+        moreMenu.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                closeMore();
+                moreBtn.focus({ preventScroll: true });
+            }
+        });
+        moreMenu.addEventListener('click', (e) => {
+            if (e.target.closest('button')) closeMore();
+        });
+    }
+
+    /**
+     * Fill the ⋯ menu. Its contents depend on the rows on screen — "Mark all
+     * read" is pointless with nothing unread — so this runs per render, while
+     * the menu element itself (and its open/closed state) is left alone.
+     */
+    renderToolbarMenu(filtered) {
+        const menu = this.shell?.headerActions?.querySelector('[data-inbox-menu]');
+        if (!menu) return;
+        const rows = filtered || [];
+        const unread = rows.filter((item) => !item.readAt).length;
+        // "Clear read" only ever removes awake rows, so a snoozed read item must
+        // not be what makes the button appear.
+        const readCount = rows.filter((item) => item.readAt).length;
+
+        // "Mark all read" acts on the rows the filters leave, which under a
+        // search or a site filter is not all of them — so the label stops
+        // saying "all".
+        const narrowed = this.isNarrowed();
+        const markReadLabel = narrowed
+            ? this.t('dashboard.inboxMarkShownRead', 'Mark shown read')
+            : this.t('dashboard.inboxMarkAllRead', 'Mark all read');
+        const markReadHint = narrowed
+            ? this.t('dashboard.inboxMarkShownReadHint', 'Marks the {count} links this view shows, not the whole inbox', { count: unread })
+            : this.t('dashboard.inboxMarkAllReadHint', 'Marks every unread link in the inbox');
+
+        menu.innerHTML = `
+            ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
+            ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
+            <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
+            <button type="button" class="inbox-bulk-btn inbox-menu-narrow-only" data-inbox-menu-help>${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}</button>
+        `;
+        menu.querySelector('[data-inbox-bulk="read"]')?.addEventListener('click', () => {
+            void this.markAllRead();
+        });
+        menu.querySelector('[data-inbox-bulk="clear-read"]')?.addEventListener('click', () => {
+            void this.clearReadItems();
+        });
+        menu.querySelector('[data-inbox-export="csv"]')?.addEventListener('click', () => {
             this.exportFilteredCsv();
         });
-        toolbar.querySelector('[data-inbox-export="json"]')?.addEventListener('click', () => {
+        menu.querySelector('[data-inbox-export="json"]')?.addEventListener('click', () => {
             this.exportFilteredJson();
         });
-        toolbar.querySelector('[data-inbox-import]')?.addEventListener('click', () => {
+        menu.querySelector('[data-inbox-import]')?.addEventListener('click', () => {
             this.openImportPicker();
         });
-        container.appendChild(toolbar);
+        menu.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
+            this.toggleStats();
+        });
+        // Only rendered below 720px, where the ℹ button folds away — see
+        // .inbox-menu-narrow-only in dashboard-inbox.css.
+        menu.querySelector('[data-inbox-menu-help]')?.addEventListener('click', () => {
+            this.showInboxExplainer();
+        });
+    }
+
+    /**
+     * Hide the rail rows nothing is under.
+     *
+     * Snoozed and With note only appear when something is in that state, or
+     * while one of them is the active filter — so the row the reader is
+     * standing on cannot vanish from under them.
+     */
+    syncRailFilters() {
+        const rail = this.shell?.rail;
+        if (!rail) return;
+        const show = {
+            all: true,
+            unread: true,
+            snoozed: this.snoozedCount() > 0 || this.filter === 'snoozed',
+            noted: this.filterCount('noted') > 0 || this.filter === 'noted',
+        };
+        Object.entries(show).forEach(([key, on]) => {
+            const btn = rail.querySelector(`[data-inbox-filter="${key}"]`);
+            if (btn) btn.hidden = !on;
+        });
+    }
+
+    /**
+     * One reset-and-render for every axis. The handlers used to differ on which
+     * of these steps they performed, which showed up as ticks surviving a sort
+     * but not a filter.
+     */
+    applyViewChange(patch, options = {}) {
+        const {
+            via = 'unknown',
+            action = Object.keys(patch)[0] || 'change',
+            resetSelection = true,
+            persist = true,
+            // What analytics sees. Defaults to the patch itself, but a caller
+            // whose patch carries a raw value that must never reach analytics
+            // (e.g. a real hostname) can pass a small redacted stand-in here
+            // instead of letting the patch leak straight into _trackAction.
+            props = patch,
+            // Some axes (search) fire no analytics event at all, by design.
+            track = true,
+        } = options;
+        Object.assign(this, patch);
+        if (track) {
+            this._trackAction(action, { ...props, via });
+        }
+        this.visibleLimit = 50;
+        if (resetSelection) {
+            // Ticks from the previous view would act on rows the user can no
+            // longer see, so a view change starts the selection over.
+            this.checkedIds.clear();
+            // The anchor a Shift+click range counts from belongs to the selection
+            // it was made in. Left standing across a view change, a later
+            // Shift+click ticked everything back to a row this view never showed.
+            this.checkAnchorId = null;
+            this.focusItemId = null;
+        }
+        if (persist) {
+            this.persistViewState();
+        }
+        this.syncUrlState();
+        this.render();
+        this.dash.pageNav?.updatePageTitle?.();
+        this.dash.pageNav?.updateDocumentTitle?.();
+    }
+
+    /** What a rail filter does. A method rather than a closure so the shell can call it. */
+    applyFilter(key, via) {
+        // The shell calls a pointer press "click"; this view has always reported
+        // it as "pill", and the analytics stream is read against that name.
+        this.applyViewChange({ filter: key || 'all' }, { via: via === 'click' ? 'pill' : (via || 'pill') });
+    }
+
+    render() {
+        const d = this.dash;
+        const shell = this.mountShell();
+        if (!shell) {
+            return;
+        }
+        const container = document.getElementById('dashboard-layout');
+
+        d._abortInlineEditForRender?.();
+        d.updateTagFilterIndicator?.();
+
+        // The sentinel from the previous render is about to be thrown away with
+        // the body's contents; an observer still watching it would keep the
+        // detached node alive and never fire again.
+        this._teardownLoadMoreObserver();
+
+        // Before anything reads the filter state: a site filter left pointing at a
+        // host that is no longer here would silently empty the feed, and the
+        // breadcrumb below would still name the vanished site.
+        if (this.pruneDomainFilter()) {
+            this.syncUrlState();
+        }
+
+        const filtered = this.getFilteredItems();
+
+        // The chrome is updated in place. Nothing above the body is rebuilt, so
+        // the search box keeps its value, its focus and its caret through a
+        // render triggered by a keystroke.
+        shell.setActive(this.filter);
+        shell.setCounts({
+            all: this.filterCount('all'),
+            unread: this.filterCount('unread'),
+            snoozed: this.filterCount('snoozed'),
+            noted: this.filterCount('noted'),
+        });
+        shell.setSummary(this.shellSummary());
+        shell.setBreadcrumb(this.shellBreadcrumb());
+        this.syncRailFilters();
+        this.syncToolbar();
+        this.renderToolbarMenu(filtered);
+        // Above the early exits: the bar sits outside the body, so a render that
+        // returns early would otherwise leave a stale one behind.
+        this.renderBulkBar();
+
+        const body = shell.body;
+        body.innerHTML = '';
 
         // What the active filter selects, in a sentence. Rendered before the
         // loading and empty branches below so the explanation is there while the
         // list is still arriving, and on a filter that turned up nothing — where
         // "what was being looked for" is the only useful thing left to say.
         const note = this.renderFilterNote();
-        if (note) container.appendChild(note);
+        if (note) body.appendChild(note);
 
         // Above the loading and empty branches below: the lifetime figures are
         // about the inbox as a whole, so they stay readable while the feed is
@@ -3889,15 +3870,15 @@ class DashboardInbox {
         const stats = this.renderStatsPanel();
         if (stats) {
             stats.id = 'inbox-stats-panel';
-            container.appendChild(stats);
+            body.appendChild(stats);
         }
 
         if (this.loading) {
             const loading = document.createElement('p');
             loading.className = 'inbox-empty';
             loading.textContent = this.t('dashboard.inboxLoading', 'Loading…');
-            container.appendChild(loading);
-            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+            body.appendChild(loading);
+            this.syncKeyboardSelectionAfterRender();
             return;
         }
 
@@ -3916,8 +3897,8 @@ class DashboardInbox {
             failed.querySelector('.inbox-retry-btn')?.addEventListener('click', () => {
                 void this.loadAndRender({ refresh: true });
             });
-            container.appendChild(failed);
-            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+            body.appendChild(failed);
+            this.syncKeyboardSelectionAfterRender();
             return;
         }
 
@@ -3928,23 +3909,23 @@ class DashboardInbox {
                 <p class="inbox-empty-title">${this.escape(this.t('dashboard.inboxEmpty', 'No links yet'))}</p>
                 <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxEmptyHint', 'Paste a URL with Ctrl+V to add a link'))}</p>
             `;
-            container.appendChild(empty);
+            body.appendChild(empty);
+            this.syncKeyboardSelectionAfterRender();
             this.announceListState(0);
-            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
 
         if (!filtered.length) {
-            container.appendChild(this.renderEmptyState());
+            body.appendChild(this.renderEmptyState());
             // The empty view is where a sleeping link is most confusing: the row
             // the reader is looking for exists, and nothing here says where.
             const sleepingHere = this.renderSnoozedFooter();
-            if (sleepingHere) container.appendChild(sleepingHere);
+            if (sleepingHere) body.appendChild(sleepingHere);
+            this.syncKeyboardSelectionAfterRender();
             // Announced here as well as at the end: a filter or search that
             // matches nothing returns early, and "no results" is precisely the
             // outcome a screen-reader user most needs told.
             this.announceListState(0);
-            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
 
@@ -3982,36 +3963,36 @@ class DashboardInbox {
             section.appendChild(groupList);
             list.appendChild(section);
         });
-        container.appendChild(list);
+        body.appendChild(list);
 
         if (filtered.length > this.visibleLimit) {
             const sentinel = document.createElement('div');
             sentinel.className = 'inbox-load-sentinel';
             sentinel.setAttribute('aria-hidden', 'true');
-            container.appendChild(sentinel);
+            body.appendChild(sentinel);
             this._bindLoadMoreObserver(sentinel, filtered.length);
             // No IntersectionObserver: the button is the way to reach the rest.
             if (!this._loadMoreObserver) {
-                this._appendLoadMoreFallback(container, filtered.length);
+                this._appendLoadMoreFallback(body, filtered.length);
             }
         }
 
         const sleeping = this.renderSnoozedFooter();
-        if (sleeping) container.appendChild(sleeping);
+        if (sleeping) body.appendChild(sleeping);
 
-        container.appendChild(this.renderLegend());
-        this.renderBulkBar();
+        body.appendChild(this.renderLegend());
 
-        if (container.querySelector('.inbox-feed')) {
+        if (body.querySelector('.inbox-feed')) {
             this.bindPointerNavigation(container);
         }
 
+        this.syncKeyboardSelectionAfterRender();
         this.schedulePreviewRefresh();
         this.scheduleWakeRefresh();
         this.applyPendingItemFocus();
         this.announceListState(filtered.length);
-        this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
     }
+
 
     /**
      * A line under the list for the links that are asleep.
@@ -4095,8 +4076,10 @@ class DashboardInbox {
     createItemElement(item) {
         const d = this.dash;
         const card = document.createElement('article');
-        // feed-row is the shared card; the unread edge is the shared modifier.
-        card.className = 'feed-row inbox-item'
+        // feed-row is the shared card, feed-row--grid the shared column
+        // anatomy (and with it the shared density setting); the unread edge is
+        // the shared modifier.
+        card.className = 'feed-row feed-row--grid inbox-item'
             + (item.readAt ? ' is-read' : ' is-unread feed-row--edge-accent');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';

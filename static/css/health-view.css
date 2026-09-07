@@ -1,54 +1,42 @@
 /* ─── Health view (dashboard) ───────────────────────────────────────────────
-   Sibling of dashboard-inbox.css: same container width, same card grammar,
-   same keyboard-selection treatment. Read that file alongside this one — where
-   the two differ, the difference is deliberate and commented.
+   Sibling of dashboard-inbox.css: the two mount on the same shared shell
+   (list-view-shell.css) and share the row grammar (feed-row.css), so what is
+   left here is what genuinely differs for health — the row's own layout,
+   monitoring, filters and explainers. Read those files alongside this one;
+   where health still diverges from inbox, the difference is commented here.
    ------------------------------------------------------------------------- */
 
-#dashboard-layout.health-layout {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4, 1rem);
-    max-width: min(100%, 52rem);
-    margin: 0 auto;
-    width: 100%;
-}
+/*
+ * Health is a shell host now: the header, the rail, the summary and the
+ * toolbar row are .lvs chrome, and this element only frames them. Wider than
+ * the old 52rem because the rail takes 200px off the left before the rows
+ * start — the same width the inbox took for the same reason.
+ *
+ * The width/centering, the search input's flex sizing and the header
+ * action buttons' display used to each get an identical rule here and in
+ * dashboard-inbox.css. All three now live once in list-view-shell.css, as
+ * .lvs-host, .lvs-toolbar-slot input[type="search"] and
+ * .lvs-header-actions button — mount() already stamps .lvs-host on this
+ * element and both views' search inputs are type="search".
+ */
 
-/* ─── Header ────────────────────────────────────────────────────────────── */
-
-/* Two rows, matching .inbox-header's height: the title (with its breadcrumb)
-   on the first, and the subtitle, score meta and settings button sharing the
-   second. The score used to sit beside the title, which put it a line above
-   the text it summarises. */
-.health-view-header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.25rem);
-    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border-primary);
-}
-
-/* Subtitle left, score meta and the settings button right, all on one
-   baseline. */
-.health-view-header-second-row {
-    display: flex;
+/* The wrap is the menu's anchor, and in the header it must not stretch the row. */
+.lvs-header-actions .health-view-menu-wrap {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
 }
 
 /* The way from a symptom on this screen to the setting behind it. A real
-   button rather than the text link it used to be: it sits on the same line as
-   the score now, where an underlined word read as part of the sentence beside
-   it instead of something to press. Quiet styling still — it is a signpost,
-   not an action, and must not compete with the toolbar below. */
+   button rather than the text link it used to be, where an underlined word
+   read as part of the sentence beside it instead of something to press.
+   Quiet styling still — it is a signpost, not an action. It now lives inside
+   the header's overflow menu (syncHeaderMenu()) rather than beside the score,
+   so this base rule only has to hold its own against the menu's item styling,
+   not match a neighbour's line height any more. */
 .health-view-settings-link {
     flex-shrink: 0;
     /* An outline, not a border: it paints outside the box, so the button reads
-       as a button without adding the 2px that a border would. Together with the
-       matched line-height and no vertical padding, this keeps the button the
-       same height as the subtitle text beside it — which is what keeps this
-       header level with .inbox-header. */
+       as a button without adding the 2px that a border would. */
     border: none;
     outline: 1px solid var(--border-primary);
     background: var(--background-secondary);
@@ -213,6 +201,18 @@
     pointer-events: none;
 }
 
+/* The rail's compact stand-in for .health-view-trend-chart below — same
+   currentColor line, no grid, no axis labels, sized for the 200px rail
+   rather than the note row or the modal. */
+.health-view-trend-sparkline {
+    display: block;
+    color: var(--accent-success);
+    opacity: 0.85;
+    width: 100%;
+    min-width: 0;
+    height: 1.6rem;
+}
+
 .health-view-trend-chart {
     color: var(--accent-success);
     opacity: 0.85;
@@ -263,48 +263,6 @@
     }
 
 }
-
-/* Direction of travel beside the healthy badge. Green for up, red for down —
-   more healthy bookmarks is unambiguously the good direction here. */
-.health-view-trend-delta {
-    font-size: var(--text-xs, 0.7rem);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    /* A button now — it opens the chart — but it must still read as the small
-       piece of type it has always been beside the percentage. */
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.health-view-trend-delta:hover {
-    text-decoration: underline;
-}
-
-/* The trend as a tile: the same cell as the counts, with the shape of the last
-   ninety days under the reading instead of a sub-label. Costs no row of its own,
-   which is the whole point — the chart used to sit above the list and pushed the
-   work below the fold, worst on a narrow screen where it took the full width. */
-.health-view-tile--trend {
-    cursor: pointer;
-}
-
-.health-view-tile-spark {
-    display: block;
-    width: 100%;
-    height: 1.1rem;
-    margin-top: var(--space-hairline, 0.1rem);
-    color: var(--accent-primary);
-    opacity: 0.85;
-}
-
-.health-view-tile--trend:hover .health-view-tile-spark {
-    opacity: 1;
-}
-
 /* The chart in its dialog keeps the size it had in the note row rather than
    stretching to the modal's width, where the line would flatten out. */
 .health-trend-modal .health-view-trend {
@@ -330,11 +288,6 @@
         height: 11rem;
     }
 }
-
-.health-view-trend-delta.is-up { color: var(--accent-success); }
-.health-view-trend-delta.is-down { color: var(--accent-error); }
-.health-view-trend-delta.is-flat { color: var(--text-secondary); opacity: 0.8; }
-
 /* The explainer is four separate points; without this they run together into
    one wall of text, because the modal body has no paragraph spacing of its own. */
 .health-trend-explainer-modal p + p {
@@ -488,360 +441,12 @@
     color: var(--text-secondary);
     opacity: 0.8;
 }
-
-/* Title and breadcrumb share one line, so this header is two rows like
-   .inbox-header rather than three. Health is the only one of the three views
-   with a breadcrumb, and putting it on its own line made this header taller
-   than the inbox's for a reason the user cannot see. */
-.health-view-title-row {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.4rem);
-}
-
-.health-view-title {
-    margin: 0;
-    font-size: var(--text-lg, 1.15rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-}
-
-.health-view-head-breadcrumb {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.health-view-head-breadcrumb[hidden] {
-    display: none;
-}
-
-.health-view-subtitle {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-}
-
-.health-view-header-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.45rem);
-    flex-shrink: 0;
-}
-
-/* Overall score badge. Tinted by band rather than accent-primary: a green
-   "healthy" reading must not depend on the user's accent colour. */
-.health-view-score-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.25rem;
-    /* No vertical padding: this badge shares its line with the subtitle text,
-       and any extra height here sets the row's — which is what keeps this
-       header level with .inbox-header. The pill shape comes from the
-       horizontal padding and the radius, not from height. */
-    padding: 0 var(--space-2, 0.45rem);
-    border-radius: var(--radius-pill, 999px);
-    font-size: var(--text-xs, 0.72rem);
-    font-weight: var(--font-weight-semibold);
-    background: color-mix(in srgb, var(--health-view-band) 18%, transparent);
-    color: var(--health-view-band);
-    border: 1px solid color-mix(in srgb, var(--health-view-band) 35%, transparent);
-}
-
-.health-view-issue-count {
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-secondary);
-}
-
-/* The report's age. Quieter than the broken count beside it: it qualifies the
-   numbers rather than being one of them. */
-.health-view-report-age {
-    font-size: var(--text-xs, 0.7rem);
-    color: var(--text-secondary);
-    opacity: 0.75;
-    white-space: nowrap;
-}
-
 /* Score bands. Thresholds mirror scoreClass() in health.js: >=90 good,
    >=70 warn, else bad. Set as a variable so badge, row accent and the
    breakdown total all tint from one place. */
 .health-view-band-good { --health-view-band: var(--accent-success); }
 .health-view-band-warn { --health-view-band: var(--accent-warning); }
 .health-view-band-bad { --health-view-band: var(--accent-error); }
-
-/* ─── Summary tiles ─────────────────────────────────────────────────────── */
-
-/* One row: equal-width tiles that scroll horizontally on narrow viewports. */
-/*
- * The summary, as a line rather than a wall.
- *
- * Ten cards stood between the heading and the first bookmark, and six of them
- * repeated a filter pill sitting directly below. Asked which he used, Jordi
- * reads these and rarely clicks them -- so they are a readout, and a readout
- * does not need a card each. They are still buttons, and clicking one still
- * filters; what went is the box around it.
- *
- * Wrapping rather than scrolling: at one line's height a wrap almost never
- * fires, where the scroll it replaces hid tiles off the right edge with nothing
- * to say they were there.
- */
-.health-view-tiles {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-hairline, 0.15rem) var(--space-4, 0.9rem);
-    min-width: 0;
-    max-width: 100%;
-    padding: 0 var(--space-1-5, 0.35rem);
-}
-
-.health-view-tile {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: baseline;
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-hairline, 0.1rem) var(--space-hairline, 0.15rem);
-    border: 1px solid transparent;
-    border-radius: var(--layout-radius-sm, 8px);
-    background: none;
-    font-family: inherit;
-    text-align: left;
-    transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-button.health-view-tile {
-    cursor: pointer;
-}
-
-/* Without a card to tint, hover and the active filter show on the text. */
-button.health-view-tile:hover .health-view-tile-label,
-button.health-view-tile:hover .health-view-tile-value {
-    color: var(--accent-primary);
-}
-
-.health-view-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-}
-
-.health-view-tile-label {
-    font-size: var(--text-sm, 0.78rem);
-    letter-spacing: 0.01em;
-    color: var(--text-tertiary);
-    order: 2;
-}
-
-.health-view-tile-value {
-    font-size: var(--text-base, 0.92rem);
-    font-weight: var(--font-weight-semibold);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-primary);
-    order: 1;
-}
-
-/* Only the Monitored tile ever sets this: the one tile whose title tooltip
-   hides a fact worth acting on ("2 of 7 not responding") rather than mere
-   detail, so it gets a visible line instead of requiring a hover to learn
-   something is actually down. */
-.health-view-tile-sub {
-    font-size: var(--text-2xs, 0.66rem);
-    color: var(--accent-error);
-    font-variant-numeric: tabular-nums;
-}
-
-/* A count of zero is good news for a problem tile, so it reads as plain text;
-   only a non-zero count earns the severity colour. */
-.health-view-tile--good:not(.health-view-tile--zero) .health-view-tile-value {
-    color: var(--accent-success);
-}
-
-/* Monitored is the one tile whose tone is a live reading rather than a fixed
-   category, so it carries the state on its whole face instead of just the
-   number: a red count alone is easy to miss in a row of five tiles, and this
-   one is reporting that something is unreachable right now. */
-.health-view-tile--monitored.health-view-tile--bad:not(.health-view-tile--zero) {
-    border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-error) 10%, var(--background-secondary));
-}
-
-.health-view-tile--monitored.health-view-tile--bad:not(.health-view-tile--zero) .health-view-tile-label {
-    color: var(--accent-error);
-    opacity: 0.9;
-}
-
-.health-view-tile--monitored.health-view-tile--good:not(.health-view-tile--zero) {
-    border-color: color-mix(in srgb, var(--accent-success) 40%, transparent);
-}
-
-.health-view-tile--bad:not(.health-view-tile--zero) .health-view-tile-value {
-    color: var(--accent-error);
-}
-
-.health-view-tile--warn:not(.health-view-tile--zero) .health-view-tile-value {
-    color: var(--accent-warning);
-}
-
-/* ─── Toolbar ───────────────────────────────────────────────────────────── */
-
-.health-view-toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex-wrap: wrap;
-    padding: 0 var(--space-1-5, 0.35rem) var(--space-1-5, 0.35rem);
-}
-
-/* Search and sort always share their own full-width row under the filter
-   pills, rather than trailing the pills on whatever space happens to be left
-   on that line — the row a button group wraps onto must be predictable, not
-   dependent on how many filter pills fit first. */
-.health-view-toolbar-search-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.55rem);
-    flex-basis: 100%;
-}
-
-/* Export/Retest/Checking-off/Periodic etc. sit on their own full-width row
-   too, left-aligned like every other row in this toolbar, and wrap as one
-   group rather than each button wrapping individually — otherwise whichever
-   button ran out of room dropped alone onto its own line, visually stranded
-   instead of reading as a continuation of the row above it. */
-.health-view-toolbar-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.55rem);
-    flex-basis: 100%;
-    /* The anchor for the ⋯ menu, which is absolutely placed like the row
-       menus it borrows its markup from. */
-    position: relative;
-}
-
-/* One row, always. It used to wrap, which turned the strip into a block and
-   pushed the list down — and the filters that did not fit lived behind a "More"
-   menu, hidden even on windows wide enough to show them. Now every filter is a
-   pill and the row scrolls sideways when it runs out of width, with a fade at
-   each end saying there is more. */
-.health-view-filter-strip {
-    position: relative;
-    flex-basis: 100%;
-    min-width: 0;
-}
-
-/*
- * Every filter on screen, wrapped rather than scrolled.
- *
- * A "More" menu held the overflow once and was removed for hiding half the
- * filters behind a click on every window size, wide ones included -- the
- * comment recording that sits in dashboard-health.js. The sideways scroll that
- * replaced it does the same thing by another mechanism: at 1280px the strip cut
- * off Missing category, Missing preview, Certificates and Healthy, with nothing
- * to say they existed.
- *
- * Wrapping costs a second line when there are fifteen of them and nothing at
- * all when there are six. A filter you cannot see is a filter you do not have.
- */
-.health-view-filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.2rem);
-    padding: var(--space-hairline, 0.15rem);
-    border-radius: var(--layout-radius-sm, 12px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-}
-
-.health-view-filter-group::-webkit-scrollbar {
-    display: none;
-}
-
-.health-view-filter-strip::before,
-.health-view-filter-strip::after {
-    content: '';
-    position: absolute;
-    top: 1px;
-    bottom: 1px;
-    width: 1.6rem;
-    pointer-events: none;
-    border-radius: var(--radius-pill, 999px);
-    z-index: 1;
-}
-
-.health-view-filter-strip::before {
-    left: 1px;
-    background: linear-gradient(to right, var(--background-secondary), transparent);
-}
-
-.health-view-filter-strip::after {
-    right: 1px;
-    background: linear-gradient(to left, var(--background-secondary), transparent);
-}
-
-.health-view-filter-btn {
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    /* Tighter than it was (0.78rem/0.65rem): with every filter in the row, the
-       width each pill costs decides whether the row fits at all. */
-    font-size: var(--text-xs, 0.72rem);
-    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
-    border-radius: var(--radius-pill, 999px);
-    cursor: pointer;
-    white-space: nowrap;
-    flex: 0 0 auto;
-}
-
-.health-view-filter-btn.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
-    color: var(--accent-primary);
-}
-
-.health-view-filter-count {
-    margin-left: var(--space-1, 0.3rem);
-    opacity: 0.7;
-}
-
-/* The overflow trigger sits inside the same tablist strip as the pills, sized
-   to match .health-view-filter-btn so the row reads as one continuous group
-   rather than a button bolted onto the end of it. */
-.health-view-filter-more-wrap {
-    display: inline-flex;
-}
-
-.health-view-filter-more-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.2rem);
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--text-sm, 0.78rem);
-    padding: var(--space-1, 0.25rem) var(--space-3, 0.65rem);
-    border-radius: var(--radius-pill, 999px);
-    cursor: pointer;
-}
-
-.health-view-filter-more-btn:hover,
-.health-view-filter-more-btn[aria-expanded="true"] {
-    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-    color: var(--text-primary);
-}
-
-.health-view-filter-more-caret {
-    font-size: var(--text-2xs, 0.65rem);
-    opacity: 0.7;
-}
-
-/* Reuses .health-view-menu's look exactly; only the layout differs from a
-   right-click row menu (a vertical list of filters rather than actions), and
-   even that is the same markup .health-view-menu-item already provides. */
-.health-view-filter-overflow-menu {
-    min-width: 12rem;
-}
-
 /* Inside the menu the count is doing a different job than on an inline pill.
    On a pill it trails a label you can already read, so 70% opacity is enough
    to keep it subordinate. In a closed menu it is the only thing saying that
@@ -854,21 +459,6 @@ button.health-view-tile:hover .health-view-tile-value {
     justify-content: space-between;
     gap: var(--space-3, 0.75rem);
 }
-
-.health-view-filter-overflow-menu .health-view-filter-count {
-    margin-left: 0;
-    opacity: 1;
-    flex: 0 0 auto;
-    min-width: 1.5rem;
-    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.35rem);
-    border-radius: var(--radius-6, 0.6rem);
-    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
-    color: var(--text-secondary);
-    font-size: var(--text-xs, 0.72rem);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
-}
-
 .health-view-search-input {
     flex: 1 1 12rem;
     min-width: 8rem;
@@ -981,6 +571,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-export-btn,
 .health-view-history-export-btn,
 .health-view-rot-btn,
+.health-view-trend-open-btn,
 .health-view-open-broken-btn,
 .health-view-merge-duplicates-btn,
 .health-view-fetch-previews-btn,
@@ -997,6 +588,7 @@ button.health-view-tile:hover .health-view-tile-value {
 .health-view-export-btn:hover,
 .health-view-history-export-btn:hover,
 .health-view-rot-btn:hover,
+.health-view-trend-open-btn:hover,
 .health-view-open-broken-btn:hover:not([disabled]),
 .health-view-merge-duplicates-btn:hover,
 .health-view-fetch-previews-btn:hover:not([disabled]) {
@@ -1589,13 +1181,6 @@ button.health-view-tile:hover .health-view-tile-value {
     opacity: 0.75;
     color: var(--text-tertiary, var(--text-secondary));
 }
-
-/* A tile reporting something the list cannot be filtered by. Matches the others
-   so the row reads as one strip, without the affordances of a button. */
-.health-view-tile--static {
-    cursor: default;
-}
-
 .health-check-interval-label {
     display: block;
     font-size: var(--text-2xs, 0.68rem);
@@ -2377,17 +1962,6 @@ body.no-animations .health-view-item-score-caret {
 }
 
 @media (max-width: 520px) {
-    /* No grid-template-columns override here on purpose: the previous 1fr
-       collapse also hid the favicon column outright (via a display:none rule
-       removed below), unlike Inbox's identical breakpoint, which keeps its
-       thumbnail. Health's row keeps the same three tracks — select, icon,
-       content — as the default grid at every width, so the two feeds read as
-       one system on a phone too. */
-
-    .health-view-toolbar {
-        flex-wrap: wrap;
-    }
-
     /* The row name is the only way to tell fleet-panel rows apart, and the
        title tooltip that would otherwise reveal the full name/URL never fires
        on touch — so below the width where ellipsis is most likely to bite,
@@ -2402,10 +1976,6 @@ body.no-animations .health-view-item-score-caret {
         grid-template-rows: 1fr;
         margin-top: var(--space-2, 0.55rem);
         opacity: 1;
-    }
-
-    .health-view-tiles {
-        flex-wrap: nowrap;
     }
 }
 
@@ -2422,9 +1992,10 @@ body.no-animations .health-view-item-score-caret {
    where the display/[hidden] interaction it depends on is documented.
    ------------------------------------------------------------------------- */
 
-/* Focus ring: matches the dashboard's, replacing each control's default. */
-body[data-layout-version="modern"] .health-view-tile:focus-visible,
-body[data-layout-version="modern"] .health-view-filter-btn:focus-visible,
+/* Focus ring: matches the dashboard's, replacing each control's default.
+   The tile/filter-button ring that used to open this list moved with the
+   rest of that merged row's styling to list-view-shell.css
+   (.lvs-filter:focus-visible). */
 body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
@@ -2447,63 +2018,6 @@ body[data-layout-version="modern"] .health-view-item:focus-visible {
     outline: var(--layout-focus-ring);
     outline-offset: 2px;
 }
-
-/* ─── Header ────────────────────────────────────────────────────────────── */
-
-/* Softened to match the dashboard header's divider, which is a tinted hairline
-   rather than a full-strength border. */
-body[data-layout-version="modern"] .health-view-header {
-    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
-    padding-bottom: var(--space-3, 0.7rem);
-}
-
-/* ─── Summary tiles ─────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .health-view-tile {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-    transition:
-        border-color var(--layout-transition),
-        background-color var(--layout-transition),
-        box-shadow var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-/* Modern reads hover as a lift; classic only recolours the border. */
-body[data-layout-version="modern"] button.health-view-tile:hover {
-    box-shadow: var(--layout-shadow-md);
-    transform: translateY(-1px);
-}
-
-body[data-layout-version="modern"] .health-view-tile.is-active {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
-    box-shadow:
-        var(--layout-shadow-sm),
-        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-}
-
-/* ─── Toolbar & filters ─────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .health-view-filter-group {
-    border-radius: var(--layout-radius-pill);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .health-view-filter-btn {
-    border-radius: var(--layout-radius-pill);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .health-view-filter-btn.is-active {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
-}
-
 /* The toolbar buttons share one shape in classic (0.4rem); keep them sharing
    one shape here rather than pinning each to its own radius. */
 body[data-layout-version="modern"] .health-view-export-btn,
@@ -2658,10 +2172,12 @@ body[data-layout-version="modern"] .health-view-empty {
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
+/* .health-view-tile and button.health-view-tile:hover named here used to
+   carry the tile's own lift/transition reset; that markup is gone (1d3e2dfe
+   merged the tile into `.lvs-filter`), and its reduced-motion counterpart now
+   lives beside the rule it reduces, in list-view-shell.css. */
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .health-view-tile,
     body[data-layout-version="modern"] .health-view-item,
-    body[data-layout-version="modern"] button.health-view-tile:hover,
     body[data-layout-version="modern"] .health-view-item:hover {
         transition: none;
         transform: none;

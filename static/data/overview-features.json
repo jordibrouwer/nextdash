@@ -2,6 +2,54 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureHealthRailTitle",
+      "titleFallback": "Health reads like the Inbox now",
+      "whatKey": "config.overviewNewFeatureHealthRailWhat",
+      "whatFallback": "A row of tiles sat above the list with the same counts the filter pills carried underneath them, so the same numbers were on screen twice and the list started halfway down the page.",
+      "howKey": "config.overviewNewFeatureHealthRailHow",
+      "howFallback": "Every filter is a row in a left column with its count beside it, and Score, the trend, the broken count and the report's age sit above them as plain readouts. A filter with nothing in it drops out and comes back when it fills. The header stays with you as you scroll, so Work through and the Rot report are reachable from anywhere in a long list.",
+      "enableKey": "config.overviewNewFeatureHealthRailEnable",
+      "enableFallback": "Nothing to switch on. Rows follow the compact or comfortable setting the Inbox already reads.",
+      "ctaKey": "config.overviewNewFeatureHealthRailCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.6.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMonitorsPlaceTitle",
+      "titleFallback": "All monitors is a place, not a filter",
+      "whatKey": "config.overviewNewFeatureMonitorsPlaceWhat",
+      "whatFallback": "Monitored narrowed the list to the bookmarks you watch, while the fleet readouts — pooled uptime, the worst performers, recent outages — were a panel you had to find.",
+      "howKey": "config.overviewNewFeatureMonitorsPlaceHow",
+      "howFallback": "All monitors is its own row in the left column and swaps the list for the fleet panel. It has its own address, so you can bookmark it and come back to the same screen; picking a filter leaves it and goes back to the list.",
+      "enableKey": "config.overviewNewFeatureMonitorsPlaceEnable",
+      "enableFallback": "It appears as soon as there is anything to monitor.",
+      "ctaKey": "config.overviewNewFeatureMonitorsPlaceCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.6.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureInboxRailTitle",
+      "titleFallback": "The inbox has a left column",
+      "whatKey": "config.overviewNewFeatureInboxRailWhat",
+      "whatFallback": "Four tiles above the list repeated the counts already on the filters below them, and the header scrolled away with Triage on it.",
+      "howKey": "config.overviewNewFeatureInboxRailHow",
+      "howFallback": "The filters moved into a left column with their counts, This week sits above them as a plain readout, and Snoozed and With note appear only when there is something in them. The header stays put and shrinks to a single bar. On a phone the column becomes one scrolling line, so a narrow screen gets the list instead of rows of controls.",
+      "enableKey": "config.overviewNewFeatureInboxRailEnable",
+      "enableFallback": "Nothing to switch on. Rows can be compact or comfortable, one setting for the whole app.",
+      "ctaKey": "config.overviewNewFeatureInboxRailCta",
+      "ctaFallback": "Open the Inbox →",
+      "go": {
+        "view": "inbox"
+      },
+      "since": "v1.6.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureThemeCharacterTitle",
       "titleFallback": "A theme can be more than a palette",
       "whatKey": "config.overviewNewFeatureThemeCharacterWhat",

@@ -565,6 +565,15 @@ class SearchComponent {
             return;
         }
 
+        // Search, commands, finders and quick-add are bookmarks-dashboard
+        // buttons; their keys go inert in a full-container view instead of
+        // popping dashboard chrome over inbox/health/config. isBookmarksView()
+        // per its own docstring, rather than naming the views this is NOT.
+        if (!this.searchActive && window.dashboardInstance && !window.dashboardInstance.isBookmarksView()
+                && (key === '>' || key === ':' || key === '?' || e.key === '+')) {
+            return;
+        }
+
         if (!this.searchActive && this._isDashboardViewActive() && !this._isInboxLauncherKey(e, key)) {
             if (e.key.length === 1 && /^[A-Za-z0-9]$/.test(e.key)) {
                 return;
@@ -700,6 +709,15 @@ class SearchComponent {
         // / toggles dashboard tag cloud when enabled; config Tags tab uses / for its filter
         if (key === '/') {
             const dash = window.dashboardInstance;
+            // Outside the bookmarks dashboard, / has nothing to filter -- and
+            // without this the ineligible-tag-cloud fallback below would still
+            // fall through to opening the search overlay from inside inbox or
+            // health. Config keeps its own Tags-tab meaning for / on its own
+            // input, unreached by this document-level listener, and the check
+            // right after this one still covers it explicitly.
+            if (!this.searchActive && dash && !dash.isBookmarksView()) {
+                return;
+            }
             if (!this.searchActive && dash?.config?.isActiveView?.()) {
                 return;
             }
@@ -735,9 +753,20 @@ class SearchComponent {
         }
 
         // Handle ? key to start finders
+        //
+        // Only to *start* them. Pressed again while the finder line is already
+        // open it appended a second "?", and from there everything went wrong
+        // at once: the guard that swallows a lone space reads what follows the
+        // first "?", which was now "?" rather than empty, so spaces started
+        // landing in the query -- and the whole thing, stray "?" included, was
+        // searched for literally. Typing "jordibrw.nl" looked for
+        // "??JORDIBRW.NL". You are already in finders; the key has nothing left
+        // to do, so it does nothing.
         if (key === '?') {
             e.preventDefault();
-            this.addToQuery('?');
+            if (!this.currentQuery.startsWith('?')) {
+                this.addToQuery('?');
+            }
             return;
         }
 
@@ -2376,6 +2405,58 @@ class SearchComponent {
         this.selectableMatches = [];
 
         if (this.searchMatches.length === 0) {
+            /*
+             * Finders with none set up.
+             *
+             * The generic branch below reads an empty result as "nothing
+             * matched what you typed" and offers to save it as a bookmark --
+             * but on a bare "?" nothing was typed, and there is nothing to
+             * match against because no finder exists yet. Saying so, with the
+             * way to fix it, beats "No matches found ?".
+             */
+            if (this.currentQuery.startsWith('?')
+                && !this.findersComponent?.finders?.length) {
+                const t = (key, fallback) => (this.language ? (this.language.t(key) || fallback) : fallback);
+
+                const none = document.createElement('div');
+                none.className = 'search-match search-no-match-header';
+                none.innerHTML = `
+                    <span class="search-match-name">
+                        <span class="search-no-match-label">${t('dashboard.findersNoneTitle', 'No finders set up yet')}</span>
+                        <span class="search-no-match-query">${this._escHtml(t('dashboard.findersNoneBody', 'A finder searches another site straight from here.'))}</span>
+                    </span>
+                `;
+                matchesContainer.appendChild(none);
+
+                const add = document.createElement('div');
+                add.className = 'search-match search-hint-entry';
+                add.innerHTML = `
+                    <span class="search-match-shortcut search-hint-shortcut">${this._escHtml(t('dashboard.findersNoneCta', 'Add'))}</span>
+                    <span class="search-match-name search-hint-name">${this._escHtml(t('dashboard.findersNoneAction', 'Add a finder in Config → Pages & tags → Finders'))}</span>
+                `;
+                // The tab is set after the section has rendered: openConfigView
+                // draws Pages & tags on its own default (Categories), so setting
+                // the field first is simply overwritten.
+                const openFinderConfig = async () => {
+                    const cfg = window.dashboardInstance?.config;
+                    this.closeSearch();
+                    await cfg?.openConfigView?.('pages-tags');
+                    const mod = cfg?._module;
+                    if (mod && mod.ptTab !== 'finders') {
+                        mod.ptTab = 'finders';
+                        mod.repaintPtBody?.();
+                        mod.restoreConfigHash?.();
+                    }
+                };
+                add.addEventListener('click', openFinderConfig);
+                this.matchElements.push(add);
+                this.selectableMatches.push({ action: openFinderConfig, type: 'hint' });
+                matchesContainer.appendChild(add);
+                this.selectedIndex = 0;
+                this.updateSelectedMatch?.();
+                return;
+            }
+
             // Show empty container when no matches (no message when opened from button)
             if (this.currentQuery.length > 0) {
                 const t = (key, fallback) => this.language ? (this.language.t(key) || fallback) : fallback;

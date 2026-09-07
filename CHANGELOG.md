@@ -8,8 +8,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.6.0 — 8 September 2026](#v160--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
-- [v1.4.8 — 9 September 2026](#v148--9-september-2026)
+- [v1.4.8 — 5 September 2026](#v148--5-september-2026)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
@@ -199,6 +200,74 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.6.0 — 8 September 2026
+
+### Dashboard
+
+- **fix — pressing `?` while the finder line was already open broke the search you then typed.** `?` opens finders; pressing it again added a second one, and from there everything went wrong at once. The guard that swallows a lone space looks at what follows the first `?` — now a `?` rather than nothing — so spaces began landing in the query, and the whole thing was searched for literally: typing `jordibrw.nl` looked for `??JORDIBRW.NL`. Once you are in finders the key has nothing left to do, so it now does nothing.
+- **new — the finder line says when no finders exist yet.** An empty list fell through to the ordinary "No matches found" with an offer to save what you typed as a bookmark — but on a bare `?` nothing was typed, and there was nothing to match against. It now says so and offers the way to fix it, which opens **Config → Pages & tags → Finders**.
+- **fix — Escape threw away your selection while closing a popover.** The grid's key handler stands aside for the action popovers, listed by id, and three were missing from that list: the multi-select **Tags** and **Checking** popovers and the date popover. So Escape closed the popover *and* ran the grid handler, which saw a live selection and cleared it — you pressed Escape to dismiss the tag list and lost the twenty rows you had picked to tag. One Escape closes one thing now.
+- **fix — the Checking popover would not close when you clicked away from it.** Every other action popover binds the shared outside-click close; this was the one that never did, so it stayed over the page until you found Escape, and the click meant to dismiss it went to whatever sat underneath.
+- **fix — typing in the filter box made every widget disappear.** The filter hides a block once nothing in it matches, and it counts matches by the bookmark links inside. Widgets carry the same `category` class the grid measures and drags by, but hold no links at all — so every widget counted as empty the moment a first letter was typed, and the clock, the weather and the rest vanished while you were filtering your bookmarks. The filter now walks categories only and leaves the widgets where they are.
+- **fix — long category titles never shrank to fit.** The title fitter measures the smallest allowed size by asking the page what the `xs` font setting works out to, then steps the title down toward it. It asked using a loose element, but the size is set on `body` — so the answer came back as the size the title already was, the floor met the ceiling, and the loop that shrinks the text exited before its first pass. Measured against `body` now, which is where the setting lives, so a title that does not fit shrinks the way it was meant to.
+- **fix — a page with nothing on it kept the previous page's masonry columns.** The empty-state path cleared the other layout classes but not `packed-masonry`, so the "nothing here yet" panel was laid out as a column in a grid built for blocks that were no longer there.
+- **fix — custom widgets redrew from a stale copy after a refresh.** Clearing the widget caches cleared every kind except the custom one, so a manual refresh handed back whatever was last fetched instead of going out again.
+- **fix — Alt+←/→ on a category header did nothing on a page you had never dragged.** The new position is stored in the block order, which does not exist until something writes one — and dragging was the only thing that ever did. So on a page arranged by nobody, the move looked for the category in an empty list, found nothing and gave up, while the screen reader was told it had moved. It now reads the current arrangement off the grid first, so the keyboard writes the same order a drag would have.
+- **fix — the quick-action toolbar (add / search / commands / finders / recent / help / fold) followed you into Config, Inbox and Health.** It, its keys (`+` `>` `:` `?` `*` `.`) and the search-flow hint that advertises them are dashboard-only; they now hide and go inert the moment a full-container view opens, and come back the moment it closes. The `!` cheat-sheet shortcut, Shift-letter view switches and 1-9 page switching are unaffected. The `/` tag-cloud toggle had the same gap — it filters the bookmarks grid, so it is gone and inert outside the dashboard too.
+- **fix — opening Config, the Inbox or Health threw away an active tag filter.** Making the `/` toggle dashboard-only folded two different questions into one answer: whether the tag cloud can be used at all, and whether it belongs on the screen you are looking at. The tag cloud drops an active filter when the first goes false — the setting turned off, no tags left, a phone-sized window — and that check now ran on every view transition, so stepping into another view read as "the feature is gone" and cleared the filter on the way. The two are asked separately now: the button still hides outside the dashboard, and the filter is still there when you come back. The header chip that exists to show an active filter in exactly those views has something to show again.
+
+### Health
+
+- **fix — Config → Advanced's replay button for the Health tour did nothing.** The tour's id moved to V2 when the view was rebuilt, so anyone who saw the old one is shown the new one once; the list of tours the replay panel is generated from kept naming V1. Clearing it therefore cleared an id nothing reads any more, and the tour it promised to bring back never appeared.
+- **new — the documentation follows the rebuilt Health view.** **Config → Help** describes the left column, its readouts and Monitors as a section of its own rather than the tiles and toolbar that are gone; the **Health tutorial** gains a step on finding your way around, and is shown once more to anyone who saw the old one, since it taught a layout that no longer exists. The manual's Health and Inbox sections follow the same change.
+- **new — a review session can put a link aside for a month.** The card offered Re-check, Open, Delete and Skip, so a link that is broken on purpose — a service off for the winter, a host that only answers from another network — had no honest answer: Skip brings it back tomorrow, Delete is not what you meant. **Ignore 30d** (`z`) is that answer, and it makes the same write the row menu's `z` makes, so a link silenced here is silenced everywhere and returns on the same day. The row leaves the session afterwards, for the reason Delete's does: it is answered, and a session that keeps showing what you have dealt with is not counting honestly.
+- **new — Health has the same left column as the Inbox.** Every filter is a row there with its count, and the tiles that repeated those counts above the list are gone. **Score**, the trend, the broken count and the report's age sit above the filters as plain readouts. A filter with nothing in it drops out of the list and comes back when it fills; Broken, Content, Duplicates, Unchecked and All always stay, and Monitored appears as soon as there is anything that could be monitored.
+- **new — Monitors is a place of its own in the rail now, not a filter.** Opening it swaps the list for the fleet panel — pooled uptime, the worst performers, recent outages — rather than narrowing the list the way Monitored still does. It has its own address, `#health/monitors`, so it is bookmarkable and returns you to the same view on reload; picking a filter leaves it and goes back to the list.
+- **fix — the Sections row read as the same thing as the Filter row above it.** Filter → **Monitored** and Sections → **Monitors** sat one above the other with the same count and near-identical labels — the exact fault the shell's design spec opens by naming, "the tiles and the filters are the same control, drawn twice" — even though they lead somewhere different: one narrows the list, the other swaps in the fleet panel. The section now reads **All monitors**, matching the fleet panel's own heading, so the two rows are readable without clicking either.
+- **new — the header stays put while you scroll.** **Work through**, **Rot report**, the ⋯ menu and the ℹ explainer live there now, so they are reachable from anywhere in a long list instead of only from the top. The trend chart moved into the ⋯ menu, as **Healthy over time**.
+- **new — Health rows can be compact or comfortable**, using the setting the Inbox already reads.
+- **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
+- **fix — arrow keys can step past the first filter neighbour again.** A second `→` used to land back on the same row the first one reached, because focus never actually moved there; fixed in the shared shell, so it also applies to the Inbox.
+- **fix — the title's Smart Why explainer opens by keyboard again.** The trigger had no way to receive focus, so the popover's `focus` handler could never fire.
+- **fix — the rail's Uptime 24h reading is no longer always "0%".** It read the fleet's `{ratio, samples}` window as a plain number, which is `NaN` no matter what the fleet was actually doing; it now reads the same figure through the formatter the fleet panel's own tiles use, and reads "no data" instead of a percentage while nothing has been sampled yet.
+- **fix — the trend sparkline is back, under the trend row in the left column.** It drew in the tile row before the tiles moved into the rail; only the button that opens the full chart came with them, so the line itself had no callers left. A compact redraw sized for the 200px column sits under the trend figure now, and the full chart is still one click away in the ⋯ menu.
+- **fix — the shared list shell's summary row no longer takes raw HTML.** It accepted a string and set it with `innerHTML`, trusting every caller to escape first; the shell now takes a built `extraNode` and appends it, so a future caller handing it a bookmark title or a URL cannot inject markup through it. The one caller, the trend sparkline, is unaffected — it draws the same line either way.
+- **fix — the rail's filter rows, filter group and summary card get their modern-layout surface back.** Moving the tiles and filter pills onto the shared shell deleted the modern layout's card treatment for them (rounded surface, shadow, hover lift, active ring) without replacing it, so both Health and Inbox rendered a flat list in the modern layout no matter which row was active. Restored in the shared shell rather than per view, shaped for the rail's vertical rows instead of the old horizontal pill strip. The same change also gives the rows back the modern focus ring that went missing with them, and fixes a second, older bug it uncovered: the ring's classic-mode fallback was missing entirely, so keyboard focus on a filter row was invisible in the classic layout too, not only modern.
+- **fix — the same missing classic-mode fallback also blanked the header actions and the density toggle.** `.lvs-filter`/`.lvs-section` got their fallback above; **Work through**, **Rot report**, the ⋯ menu, ℹ and the two density buttons carried the identical unguarded `var(--layout-focus-ring)` and lost their keyboard focus ring in the classic layout the same way, on both Health and Inbox. Same fallback, same reason: `var(--layout-focus-ring, 2px solid var(--accent-primary))`.
+
+### Inbox
+
+- **new — the inbox has a left column.** The filters moved there as a list with their counts, and **This week** sits above them as a plain readout — it was the one figure that never had a filter behind it. The row of tiles above the list is gone, since it showed the same counts a second time; **Snoozed** and **With note** now appear in the filter list only when there is something in them, and drop out again once there isn't.
+- **new — the header stays put while you scroll.** It shrinks to a single bar as it sticks, so Triage stays reachable from anywhere in a long list. The left column stays with it, so the filters are one click away wherever you are in the list rather than a strip of empty space.
+- **new — the left column becomes one scrolling line on a narrow screen.** The figures move up under the title and the ℹ explainer joins the ⋯ menu, so a phone gets the list instead of four rows of controls above it.
+- **new — rows can be compact or comfortable.** It is one setting for the whole app rather than one per view, so it is already the setting the other lists will read as they move onto the same shell.
+- **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
+- **fix — the site filter no longer sends the hostname you picked to analytics.** It reports a fixed marker instead, under the same event name as before.
+
+### Shared shell
+
+- Three rules that Health and Inbox each declared for their own classes, byte-identical every time — the host's width and centering, the toolbar search input's flex sizing, and the header action buttons' `display` — now live once in `list-view-shell.css`, as `.lvs-host`, `.lvs-toolbar-slot input[type="search"]` and `.lvs-header-actions button`.
+- `ListViewShell.mount()`'s `actions` config and `handle.railScrollTop` had no caller left in either view or any test — both views build their header actions by hand instead, since health's needs a nested menu wrap and a `<kbd>` a plain label can't express. Removed rather than left beside the markup that replaced them.
+
+### Tests
+
+- **fix — the overview's release spec assumed every spotlight leads into config.** It reads the top feature row's own `data-overview-go` so it survives the next release, but then asserted `config.section` no matter what that button said — and a spotlight can also carry `{view}`, which leaves config for Health or the Inbox. It follows whichever shape the button names now.
+- **fix — two health specs that the rail migration went past.** `health-ignore` asserted the **Ignored** filter was *absent* until something is ignored, but the rail now declares every filter and hides what is empty, so the pill is in the DOM from the first render — the assertion asks for hidden instead. `health-rot-tools` dismissed the onboarding dialog and the tour before waiting for `dashboardInstance`, so on a slow run neither was there yet to dismiss: **Quick setup** and **What's new in Health** opened afterwards and swallowed the click on **Group by site**. It waits for the instance first now, the order the other health specs already use.
+
+### Themes
+
+- **fix — a theme's dark variant no longer wears a different backdrop shape than its light one.** The backdrop's shape is picked by hashing the theme id, and a "-light"/"-dark" pair is two different ids, so 111 of the 224 built-in themes had their two variants land on two different recipes — a diagonal wireframe on one side, a glow from below on the other — while only the colours were meant to change with Quick mode. A "-dark" id is now hashed as its "-light" counterpart, so the pair always shares a recipe; the plain `light`/`dark` defaults and every custom theme are unaffected. **This changes the look of 111 dark themes**, each now drawn with the shape its light half already had.
+
+### What's new
+
+- **The modal's back catalogue now starts at v1.0.0.** The index carried 188 entries, 148 of them pre-1.0 dated releases from the `v2026.*` scheme; scrolling the window walked through a year of notes for a numbering scheme the app no longer uses. The index lists the 40 `v1.x` releases, newest first, and their JSON files are the only ones left in `static/data/whats-new/`. The fixture in `tests/whats-new-hidden-release.spec.js` stubs both of its releases now, since the tree no longer holds a `v2026.*` file to fall back on.
+
+### Docs
+
+- The release notes, the changelog, **Config → Help**, its tips, **Config → Overview** and **About → News & features** follow the rebuilt Health and Inbox views: the Help sections for both describe the left column, the sticky header and the density setting rather than the tile rows that are gone, the version panel names v1.6.0, and three spotlights carry `since: "v1.6.0"` into the news stream. `MANUAL.md` gains the same in its Health and Inbox chapters. `whats-new-stub.js` moves both tokens (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION`), `tests/whats-new-hidden-release.spec.js` pins the new pair, and `asset_hashes_gen.go` is regenerated. `README.md` gains one correction: the link to its own system-widgets heading carried a double dash GitHub does not put in the slug, so it landed at the top of the file. One data correction rides along: **v1.4.8 was dated 9 September**, four days after the day it shipped and three days after v1.5.0, so it sorted to the top of Config → Overview's news stream and pushed the newest release off the panel. It reads 5 September now, in the changelog, the index and its release file.
+
+---
+
 ## v1.5.0 — 6 September 2026
 
 ### Themes
@@ -216,7 +285,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## v1.4.8 — 9 September 2026
+## v1.4.8 — 5 September 2026
 
 ### Widgets
 

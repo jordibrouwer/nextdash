@@ -771,7 +771,9 @@ class DashboardData {
         {
             view: 'health',
             layoutClass: 'health-layout',
-            matchesHash: (hash) => hash === '#health',
+            // The Monitors section carries a hash path (#health/monitors), so
+            // match the prefix the way config's own deep links do.
+            matchesHash: (hash) => hash === '#health' || hash.startsWith('#health/'),
             isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
         },
         {

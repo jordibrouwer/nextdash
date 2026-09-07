@@ -191,7 +191,11 @@ class DashboardHealthMultiSelect {
         // Delete still reaches them, and the reach warning is the only thing
         // saying so. Falls back to the end of the view.
         const feed = document.querySelector('.health-view-feed');
-        const layout = document.getElementById('dashboard-layout');
+        // The list-view shell's body when there is one: appended to
+        // #dashboard-layout instead, the bar would land underneath the whole
+        // shell rather than inside the column it belongs to.
+        const layout = document.querySelector('#dashboard-layout .lvs-body')
+            || document.getElementById('dashboard-layout');
         const parent = feed?.parentElement || layout;
         if (!parent) return null;
         host = document.createElement('div');

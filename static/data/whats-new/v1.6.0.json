@@ -1,0 +1,108 @@
+{
+  "tag": "v1.6.0",
+  "date": "8 September 2026",
+  "releasedAt": "2026-09-08",
+  "modalLead": "Health and the Inbox now read the same way: every filter is a row in a left column with its count beside it, the header stays with you as you scroll, and the rows can be compact or comfortable. Monitors becomes a place of its own rather than a filter. On the dashboard, the quick-action toolbar and its keys stay where they belong, and a tag filter survives a trip into Config, the Inbox or Health.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health has a left column, like the Inbox.</strong> Every filter is a row there with its count beside it, so the tiles that repeated those counts above the list are gone. <em>Score</em>, the trend, the broken count and the report's age sit above the filters as plain readouts. A filter with nothing in it drops out and comes back when it fills; Broken, Content, Duplicates, Unchecked and All always stay."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>All monitors is a place of its own now, not a filter.</strong> Opening it swaps the list for the fleet panel &mdash; pooled uptime, the worst performers, recent outages &mdash; instead of narrowing the list the way <em>Monitored</em> still does. It has its own address, so you can bookmark it and come back to the same screen."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The header stays put while you scroll.</strong> <em>Work through</em>, <em>Rot report</em>, the &#8943; menu and the &#8505; explainer are reachable from anywhere in a long list rather than only from the top. The trend chart moved into the &#8943; menu, as <em>Healthy over time</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A review session can put a link aside for a month.</strong> A link that is broken on purpose &mdash; a service off for the winter, a host that only answers from home &mdash; had no honest answer: Skip brings it back tomorrow, Delete is not what you meant. <em>Ignore 30d</em> is that answer, and it silences the link everywhere, not only in the session."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health rows can be compact or comfortable</strong>, using the setting the Inbox already reads."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the search box no longer rebuilds the view behind the cursor</strong>, and the arrow keys can step past the first filter again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Uptime 24h no longer reads 0% no matter what your monitors are doing.</strong> It says <em>no data</em> while nothing has been sampled yet, and the trend line is back under the trend figure in the left column."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The replay button for the Health tour works again</strong>, and the tour it brings back is the one that matches the rebuilt view."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The inbox has a left column too.</strong> The filters moved there with their counts, and <em>This week</em> sits above them as a plain readout &mdash; it was the one figure that never had a filter behind it. <em>Snoozed</em> and <em>With note</em> appear only when there is something in them."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The header stays put while you scroll</strong>, shrinking to a single bar so <em>Triage</em> is reachable from anywhere in a long list."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>On a phone the left column becomes one scrolling line.</strong> The figures move up under the title and the &#8505; explainer joins the &#8943; menu, so a narrow screen gets the list instead of four rows of controls above it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The site filter no longer sends the site you picked to analytics.</strong> It reports a fixed marker instead."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The quick-action toolbar stays on the dashboard.</strong> Add, search, commands, finders, recent, help and fold &mdash; and the keys behind them &mdash; followed you into Config, the Inbox and Health, where they have nothing to act on. They step aside now, and come back the moment you do."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An active tag filter survives a trip into another view.</strong> Opening Config, the Inbox or Health threw it away; the header chip that exists to show a filter in exactly those views has something to show again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the filter box no longer makes every widget disappear.</strong> The clock, the weather and the rest stay where they are while you filter your bookmarks."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape stops throwing away your selection.</strong> Dismissing the tag list, the checking picker or the date popover left the twenty rows you had picked intact now &mdash; one Escape closes one thing. The checking popover also closes when you click away from it, which it never did."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Long category titles shrink to fit again</strong>, and a page with nothing on it no longer wears the previous page's column layout."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Alt+&larr;/&rarr; moves a category on a page you never dragged.</strong> The keyboard now writes the same order a drag would have, instead of telling you it moved something and leaving it where it was."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pressing <em>?</em> while the finder line is open no longer breaks what you type next</strong>, and an empty finder list says so and offers the way to make one instead of offering to save your search as a bookmark."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A theme's dark half wears the same backdrop shape as its light half.</strong> 111 of the built-in themes drew a different pattern on each side &mdash; a diagonal wireframe on one, a glow from below on the other &mdash; while only the colours were meant to change with Quick mode. <strong>This changes the look of those 111 dark themes</strong>, each now drawn with the shape its light half already had."
+        }
+      ]
+    }
+  ]
+}

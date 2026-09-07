@@ -790,6 +790,16 @@ class DashboardRenderCore {
         delete d._widgetDuplicates;
         delete d._widgetBackups;
         delete d._widgetSystem;
+        /*
+         * The custom tiles too.
+         *
+         * Their cache expires on its own ttl, which is why it was left out --
+         * and that is right while nothing changes and wrong for exactly the
+         * reason this function exists: after an edit the tile would redraw
+         * from the answer it fetched under the old address for up to an hour,
+         * and read as though the change did nothing.
+         */
+        delete d._widgetCustom;
     }
 
     refreshWidgets(type) {
@@ -954,7 +964,17 @@ class DashboardRenderCore {
         // Clear container
         container.innerHTML = '';
         d._categoryListsCache = null;
-        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view');
+        /*
+         * packed-masonry goes with them.
+         *
+         * It is added by _distributePackedColumns, which the empty-state branch
+         * below returns before ever reaching -- so a page whose last bookmark
+         * was just deleted kept the masonry grid, and the "this page is empty"
+         * panel was laid out as a single ~290px column track in a 1400px
+         * window instead of spanning the page.
+         */
+        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view',
+            'packed-masonry');
 
         if (!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) {
             const hasBookmarksOnOtherPages = Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0;
@@ -1713,6 +1733,16 @@ class DashboardRenderCore {
      * So the DOM decides the order of what it holds, and everything else keeps
      * its position relative to the block it used to follow.
      */
+    /** The blocks as the grid currently holds them, top to bottom. */
+    blockOrderFromDom() {
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid) return [];
+        return [...grid.querySelectorAll('.category[data-category-id], .dashboard-widget[data-widget-id]')]
+            .map((el) => String(el.getAttribute('data-widget-id')
+                || el.getAttribute('data-category-id') || ''))
+            .filter(Boolean);
+    }
+
     mergeBlockOrderFromDom(domIds) {
         const previous = Array.isArray(this.dash.blockOrder) ? this.dash.blockOrder : [];
         if (!domIds.length) return previous;
@@ -1754,7 +1784,21 @@ class DashboardRenderCore {
      */
     moveBlockInOrder(id, direction) {
         const d = this.dash;
-        const order = [...(d.blockOrder || [])];
+        /*
+         * A page that has never been dragged has no stored order at all --
+         * blockOrder is [] until something writes one -- so indexOf found
+         * nothing and this returned false while the caller went on to announce
+         * the move and redraw. The key was swallowed, the screen reader was
+         * told the category had moved, and nothing had.
+         *
+         * Reading the order off the grid first gives the move the list it is
+         * supposed to act on: the same list dragging would have written, in the
+         * order the reader is looking at.
+         */
+        let order = [...(d.blockOrder || [])];
+        if (!order.length) {
+            order = this.blockOrderFromDom();
+        }
         const from = order.indexOf(String(id));
         if (from < 0) return false;
         const to = from + (direction < 0 ? -1 : 1);

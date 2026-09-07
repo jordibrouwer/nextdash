@@ -429,6 +429,65 @@ class DashboardHealthFocus {
         });
     }
 
+    /*
+     * Silence this condition for a month, and move on.
+     *
+     * The session is a sequence of decisions, and "not this one, not now" was
+     * missing from it: a link that is broken on purpose -- a service that is
+     * off for the winter, a host that only answers from another network -- had
+     * only Skip, which brings it back tomorrow, or Delete, which is not what
+     * you meant.
+     *
+     * The same write the row menu's z makes, so a link silenced here is
+     * silenced everywhere and comes back on the same day. It leaves the queue
+     * afterwards for the reason Delete does: it is answered, and a session
+     * that keeps showing you what you have just dealt with is not counting
+     * honestly.
+     */
+    /*
+     * Which condition this card would silence.
+     *
+     * Deliberately not ignoreTargetFlag: that one reads the health view's
+     * current filter first, which is right for a row in a filtered list and
+     * wrong here -- the session runs across every filter, and the card would
+     * offer to hide whatever the list behind it happened to be showing rather
+     * than what this bookmark's row is actually reporting.
+     */
+    snoozeFlagFor(issue) {
+        const status = String(issue?.status || '');
+        return this.health.constructor.IGNORABLE_FLAGS.has(status) ? status : '';
+    }
+
+    async snooze() {
+        await this.run(async (issue) => {
+            const flag = this.snoozeFlagFor(issue);
+            if (!flag) return;
+            /*
+             * Whether it took is the write's own answer, not the report's.
+             *
+             * writeIgnores refreshes the report before returning, but the row
+             * this card holds is the one the session captured -- so reading the
+             * ignore back off it asks the wrong copy, and a successful snooze
+             * looked refused. The write says plainly whether it stored
+             * anything, and a refusal already puts its own message on screen.
+             */
+            const days = this.health.constructor.SNOOZE_DAYS;
+            const stored = await this.health.writeIgnores(issue, {
+                add: [flag],
+                untilMs: Date.now() + days * 24 * 60 * 60 * 1000,
+            });
+            if (!stored) {
+                this.render();
+                return;
+            }
+            this.dash.showNotification?.(
+                this.t('dashboard.healthIgnoreSnoozed', '“{flag}” hidden for {days} days.',
+                    { flag: this.health.flagLabel(flag), days }),
+                'success');
+            this.dropCurrentFromQueue();
+        });
+    }
+
     async remove() {
         await this.run(async (issue) => {
             const key = this.health.issueKey(issue);
@@ -529,6 +588,9 @@ class DashboardHealthFocus {
                 k: () => this.move(-1),
                 p: () => void this.recheck(),
                 d: () => void this.remove(),
+                // The same key the row menu uses, so the gesture is one thing
+                // wherever you meet it.
+                z: () => void this.snooze(),
                 Enter: () => this.open_(),
                 ' ': () => this.move(1),
             };
@@ -799,6 +861,9 @@ class DashboardHealthFocus {
                         this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
                     <button type="button" class="config-btn" data-focus="open">${this.esc(
                         this.t('dashboard.healthOpen', 'Open'))}<kbd>↵</kbd></button>
+                    ${this.snoozeFlagFor(issue) ? `<button type="button" class="config-btn" data-focus="snooze">${this.esc(
+                        this.t('dashboard.healthFocusSnooze', 'Ignore {days}d',
+                            { days: this.health.constructor.SNOOZE_DAYS }))}<kbd>z</kbd></button>` : ''}
                     <button type="button" class="config-btn config-btn--danger" data-focus="delete">${this.esc(
                         this.t('dashboard.healthFocusDelete', 'Delete'))}<kbd>d</kbd></button>
                     <button type="button" class="config-btn" data-focus="next">${this.esc(
@@ -815,6 +880,7 @@ class DashboardHealthFocus {
             close: () => this.close(),
             recheck: () => void this.recheck(),
             open: () => this.open_(),
+            snooze: () => void this.snooze(),
             delete: () => void this.remove(),
             next: () => this.move(1),
             'preview-toggle': () => this.togglePreview(),

@@ -1,0 +1,496 @@
+/*
+ * mount() adds this class to whatever container it is given (list-view-
+ * shell.js). Health and inbox each declared an identical rule under their
+ * own layout class (#dashboard-layout.health-layout / .inbox-layout) — same
+ * width, same centering, byte-for-byte. One shell-level rule on the class
+ * mount() already stamps on every host replaces both; a future host (config)
+ * gets it for free the moment it mounts this shell.
+ */
+.lvs-host {
+    max-width: min(100%, 68rem);
+    margin: 0 auto;
+    width: 100%;
+}
+
+/*
+ * The shared list-view shell. Header spans both columns; the rail is the same
+ * 200px as config's section rail so the views line up on one vertical.
+ */
+.lvs {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    grid-template-areas:
+        'header header'
+        'rail   main';
+    align-items: start;
+    column-gap: var(--space-4);
+}
+
+.lvs-header {
+    grid-area: header;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.lvs-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 500;
+}
+
+.lvs-description {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.lvs-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+/*
+ * Health and inbox each declared this same rule for their own button classes
+ * (.health-view-focus-btn, .inbox-triage-btn, etc): the header actions keep
+ * their view's own colours but take the header's height, so they line up
+ * with each other. Byte-identical in both views, so it belongs on the class
+ * every action button already carries instead of being named twice.
+ *
+ * A descendant selector, not a child one: health's overflow button sits one
+ * level deeper, inside a `.health-view-menu-wrap` span that anchors its
+ * menu (health-view.js buildHeaderActions), so `> button` would miss it.
+ */
+.lvs-header-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.3rem);
+}
+
+/*
+ * Sticky, the way .config-nav-column is (config-view.css:69). Without a
+ * position the rail scrolled away and left a 200px empty gutter running down
+ * the rest of the page.
+ *
+ * Config sticks at a flat 8px because config has no sticky header. This shell
+ * does, so the rail stops below it: --lvs-header-height is published by the
+ * shell (list-view-shell.js) and re-measured when the header collapses.
+ */
+.lvs-rail {
+    grid-area: rail;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-3);
+    position: sticky;
+    top: calc(var(--lvs-header-height, 0px) + var(--space-2));
+    align-self: start;
+    max-height: calc(100vh - var(--lvs-header-height, 0px) - var(--space-4));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+}
+
+.lvs-main {
+    grid-area: main;
+    min-width: 0;
+    padding-top: var(--space-3);
+}
+
+.lvs-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+/* A toolbar slot fills the room its neighbours (selects, buttons) do not
+   claim, rather than sizing to its own intrinsic width. */
+.lvs-toolbar-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.lvs-toolbar-slot [hidden] {
+    display: none;
+}
+
+/*
+ * Health and inbox both fill this slot's search input via innerHTML, each
+ * declaring an identical rule for their own class (.health-view-search-input,
+ * .inbox-search-input): the input takes the room the sort/group controls
+ * beside it do not claim, rather than its own intrinsic width, since an
+ * <input> otherwise holds a track open at about 200px whatever the row says.
+ * Both inputs are type="search" (dashboard-health.js, dashboard-inbox.js), so
+ * the type selector covers both without naming either view's class here.
+ */
+.lvs-toolbar-slot input[type="search"] {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.lvs-body {
+    min-width: 0;
+}
+
+.lvs-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background: var(--background-secondary);
+    border-radius: var(--layout-radius-md);
+}
+
+.lvs-summary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    /* A row is normally just label + value, which never wraps at 200px.
+       `.lvs-summary-extra` is the one thing that needs a line of its own —
+       flex-wrap plus its own flex-basis:100% (below) drops it underneath
+       instead of squeezing in beside the value. */
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.lvs-summary-label { color: var(--text-secondary); }
+.lvs-summary-value { font-weight: 500; }
+
+.lvs-summary-extra { flex-basis: 100%; }
+
+.lvs-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+/* The rows themselves. Split out of .lvs-group because the filter list carries
+   role="tablist", which admits no children but tabs — so the heading has to sit
+   outside it, and the two need separate boxes. */
+.lvs-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.lvs-group-title {
+    font-size: var(--text-xs);
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    padding: 0 var(--space-2) var(--space-1);
+}
+
+.lvs-filter,
+.lvs-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    border-radius: var(--layout-radius-sm);
+    cursor: pointer;
+}
+
+.lvs-filter:hover,
+.lvs-section:hover { background: var(--background-secondary); }
+
+.lvs-filter.is-active,
+.lvs-section.is-active {
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+/* --layout-focus-ring is only ever defined under body[data-layout-version=
+   "modern"] (layout-modern-tokens.css). Without a fallback, `var()` resolving
+   to nothing makes the whole declaration invalid at computed-value time --
+   which does NOT fall through to the browser's native ring, it resolves
+   `outline-style` to its initial `none`, so classic silently lost its focus
+   ring the moment this rule started covering these rows. The fallback keeps
+   classic's own solid ring and still lets modern's richer value win when the
+   token exists, without a second, layout-scoped copy of the selector list. */
+.lvs-filter:focus-visible,
+.lvs-section:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+/* A rail row for a state nothing is in. .lvs-filter is display:flex, which
+   beats the UA sheet's [hidden] rule, so the shell's own display has to be
+   answered here. */
+.lvs-filter[hidden] {
+    display: none;
+}
+
+/*
+ * The repo's status colours are --accent-{success,warning,error}, generated
+ * per theme in internal/app/handlers.go:2654 and used throughout health-view.css.
+ * There is no --text-danger / --text-warning / --text-success in this codebase.
+ */
+.lvs-tone-good { color: var(--accent-success); }
+.lvs-tone-warn { color: var(--accent-warning); }
+.lvs-tone-bad  { color: var(--accent-error); }
+
+.lvs-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--background-primary);
+}
+
+.lvs-crumb {
+    display: none;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.lvs-header.is-collapsed {
+    align-items: center;
+    padding-block: var(--space-1);
+}
+
+.lvs-header.is-collapsed .lvs-header-text {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.lvs-header.is-collapsed .lvs-title { font-size: var(--text-base); }
+.lvs-header.is-collapsed .lvs-description { display: none; }
+.lvs-header.is-collapsed .lvs-crumb { display: inline; }
+
+.lvs-action {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+}
+
+.lvs-action:hover { background: var(--background-secondary); }
+/* See the --layout-focus-ring note above .lvs-filter:focus-visible: no
+   fallback here makes the whole declaration invalid, not just unstyled, so
+   classic loses the ring entirely instead of falling back to the UA default. */
+.lvs-action:focus-visible { outline: var(--layout-focus-ring, 2px solid var(--accent-primary)); }
+
+.lvs-action--primary {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+.lvs-density {
+    display: inline-flex;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm);
+    overflow: hidden;
+    margin-left: auto;
+}
+
+.lvs-density-btn {
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.lvs-density-btn[aria-pressed="true"] {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+/* Same fallback, same reason: see the note above .lvs-filter:focus-visible. */
+.lvs-density-btn:focus-visible { outline: var(--layout-focus-ring, 2px solid var(--accent-primary)); }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+ * health-view.css used to draw two separate things in modern: `.health-view-
+ * tile` (the Total/Healthy/Broken/... readout, each its own surfaced card)
+ * and `.health-view-filter-group` (the pill strip of filter buttons below
+ * it, wrapped in one surfaced strip of its own). `1d3e2dfe` merged both
+ * concepts into one row -- a `.lvs-filter` now carries `data-health-tile` /
+ * `data-inbox-tile` beside `data-health-filter` / `data-inbox-filter`, so it
+ * is the tile and the filter -- and deleted both modern rules along with the
+ * markup they targeted, without anything in this shared shell taking over.
+ * Health and inbox both mount this shell, so the fix belongs here once
+ * rather than in each view.
+ *
+ * Shape call: the deleted rules drew a horizontal strip of pill-shaped
+ * tiles/buttons (`--layout-radius-pill`, 999px). The rail is a vertical
+ * column of full-width rows now -- a 999px radius on a row that wide reads as
+ * a stretched capsule, not a chip. Rows keep the corner `.health-view-tile`
+ * itself used (`--layout-radius-md`) instead of the pill, and the list they
+ * sit in takes the same radius so the two nest cleanly.
+ */
+
+/* The strip that used to be `.health-view-filter-group` (still aliased onto
+   this element for health, health-view.js:3413), now wrapping a column
+   instead of a row. Kept a shade lighter than the rows inside it -- a filled
+   background here as well as on every row read as a card inside a card. */
+body[data-layout-version="modern"] .lvs-filter-list {
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    box-shadow: var(--layout-shadow-sm);
+    padding: var(--space-1, 0.3rem);
+    gap: var(--space-1, 0.25rem);
+}
+
+/* Each row is the merged tile + filter button, so it takes the tile's card
+   treatment: surfaced, shadowed at rest, lifted on hover, ringed when active. */
+body[data-layout-version="modern"] .lvs-filter {
+    border-radius: var(--layout-radius-md);
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+/* Modern reads hover as a lift; classic only recolours the background. */
+body[data-layout-version="modern"] .lvs-filter:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+body[data-layout-version="modern"] .lvs-filter.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+/* The summary block reads as a card in modern too, matching `.health-monitor-
+   stat` (health-view.css) and the config rail's section cards. */
+body[data-layout-version="modern"] .lvs-summary {
+    border: 1px solid var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .lvs-filter,
+    body[data-layout-version="modern"] .lvs-filter:hover {
+        transition: none;
+        transform: none;
+    }
+}
+
+/*
+ * Narrow screens, following what config already does (config-view.css:83): the
+ * rail becomes one horizontally scrolling line above the content rather than a
+ * block of buttons three or four lines deep.
+ *
+ * Two things go with it, and they are the reason a bare `flex-direction: row`
+ * was not enough. The summary block does not fit in a strip, so the shell moves
+ * it into the header under the description (placeSummary in
+ * list-view-shell.js). And the secondary header actions fold into the ⋯ menu,
+ * leaving the primary action beside the title.
+ */
+@media (max-width: 720px) {
+    .lvs {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            'header'
+            'rail'
+            'main';
+    }
+
+    .lvs-rail {
+        /* A strip above the content, not a column beside it: nothing to stick. */
+        position: static;
+        max-height: none;
+        overflow: visible;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-3);
+        padding-top: var(--space-2);
+        min-width: 0;
+    }
+
+    .lvs-group {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    /* The scroll lives on the list, never on the body — a page that scrolls
+       sideways is the bug this avoids. */
+    .lvs-group-list {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--space-1);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        /* Room for the focus ring the scroll container would otherwise clip. */
+        padding: 3px;
+        margin: -3px;
+        scrollbar-width: none;
+    }
+
+    .lvs-group-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lvs-group-title {
+        flex: none;
+        padding: 0;
+    }
+
+    .lvs-filter,
+    .lvs-section {
+        flex: none;
+        width: auto;
+        white-space: nowrap;
+        scroll-snap-align: start;
+    }
+
+    /* Folded into the header, under the description: a row of figures rather
+       than the stacked card the rail draws. */
+    .lvs-header-text .lvs-summary {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-3);
+        margin-top: var(--space-1);
+        padding: 0;
+        background: transparent;
+    }
+
+    .lvs-header-text .lvs-summary-row {
+        gap: var(--space-1);
+    }
+
+    .lvs-header.is-collapsed .lvs-summary {
+        display: none;
+    }
+
+    /* Everything but the primary action and the ⋯ that holds the rest. */
+    .lvs-header-actions .lvs-action:not(.lvs-action--primary):not(.lvs-action--overflow) {
+        display: none;
+    }
+}
