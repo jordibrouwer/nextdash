@@ -157,3 +157,44 @@ test.describe('the sort-locked drag hint', () => {
         expect(await titleOf()).toBe('');
     });
 });
+
+/*
+ * Alt+←/→ on a category header, on a page nobody has ever dragged.
+ *
+ * The move is stored in blockOrder, which does not exist until something
+ * writes one -- and dragging is the only thing that ever had. So on a fresh
+ * page the mover looked for the category in an empty list, found nothing and
+ * gave up, while the handler went on to redraw and announce the move to the
+ * screen reader. The key was swallowed and nothing had moved.
+ */
+test.describe('moving a category with the keyboard', () => {
+    test('works on a page that has never been dragged', async ({ page }) => {
+        await openDashboard(page);
+
+        // A page in exactly the state a new reader's is: no stored arrangement.
+        const target = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.blockOrder = [];
+            const heads = [...document.querySelectorAll(
+                '.category:not([data-smart-collection="true"])[data-category-id] .category-title',
+            )];
+            // Not the last, so a rightward move has somewhere to land.
+            const el = heads[0];
+            if (!el || heads.length < 2) return null;
+            el.focus();
+            const id = el.closest('.category').getAttribute('data-category-id');
+            const next = heads[1].closest('.category').getAttribute('data-category-id');
+            return { id, next };
+        });
+        expect(target).not.toBeNull();
+
+        await page.keyboard.press('Alt+ArrowRight');
+        await page.waitForTimeout(500);
+
+        const after = await page.evaluate(() => [...(window.dashboardInstance.blockOrder || [])]);
+
+        // The move was actually recorded, and the two swapped places.
+        expect(after.length).toBeGreaterThan(0);
+        expect(after.indexOf(target.id)).toBeGreaterThan(after.indexOf(target.next));
+    });
+});
