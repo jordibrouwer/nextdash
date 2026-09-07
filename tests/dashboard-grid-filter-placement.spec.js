@@ -87,3 +87,65 @@ test('the input keeps room for its placeholder', async ({ page }) => {
     expect(width).toBeGreaterThan(300);
     await expect(input).toBeFocused();
 });
+
+/**
+ * The filter narrows bookmarks, and a widget is not one.
+ *
+ * A block with no matching row is folded away, which is right for a category
+ * and wrong for a widget: widgets deliberately carry the `category` class --
+ * the masonry layout measures blocks by it and DragReorder selects by it -- and
+ * they contain no `.bookmark-link` at all. So every widget counted as empty the
+ * moment anything was typed, and a reader filtering their links watched the
+ * processor, disks and container tiles disappear with them.
+ *
+ * The same trap `refreshAllCategorySpans` documents and guards against with
+ * `:not([data-widget-id])`.
+ */
+test('typing in the filter leaves the widgets alone', async ({ page }) => {
+    await dashboard(page);
+
+    const seeded = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        return {
+            widgets: document.querySelectorAll('.dashboard-widget').length,
+            rows: document.querySelectorAll('.bookmark-link').length,
+            hasFilter: Boolean(d.gridFilter),
+        };
+    });
+    test.skip(!seeded.hasFilter || seeded.widgets === 0 || seeded.rows === 0,
+        'needs a page with both widgets and bookmarks');
+
+    const shape = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        const filter = d.gridFilter;
+        // A term that matches at least one row, so this is a real narrowing
+        // rather than the everything-hidden case where the bug is invisible.
+        const first = document.querySelector('.bookmark-link');
+        const term = (first?.textContent || '').trim().split(/\s+/)[0].slice(0, 4).toLowerCase();
+
+        filter.open = true;
+        filter.query = term;
+        const hits = filter.apply();
+
+        const seen = (selector) => [...document.querySelectorAll(selector)]
+            .filter((el) => el.offsetParent !== null).length;
+        const out = {
+            term,
+            hits,
+            widgetsShown: seen('.dashboard-widget'),
+            widgetsTotal: document.querySelectorAll('.dashboard-widget').length,
+            categoriesShown: seen('.category:not(.dashboard-widget)'),
+        };
+
+        filter.query = '';
+        filter.apply();
+        filter.open = false;
+        return out;
+    });
+
+    // The narrowing worked on the bookmarks...
+    expect(shape.hits).toBeGreaterThan(0);
+    expect(shape.categoriesShown).toBeGreaterThan(0);
+    // ...and left every widget where it was.
+    expect(shape.widgetsShown).toBe(shape.widgetsTotal);
+});

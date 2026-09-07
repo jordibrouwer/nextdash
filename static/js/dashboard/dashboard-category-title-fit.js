@@ -36,20 +36,34 @@
         return Number.isFinite(numeric) ? numeric : null;
     }
 
+    /*
+     * The smallest a category title is ever set: the xs step's own size.
+     *
+     * Read off <body> with the class on it for one frame rather than from a
+     * detached probe. The sizes are declared as `body.font-size-xs { ... }`, a
+     * body element selector, so a <div class="font-size-xs"> never matched the
+     * rule -- it merely inherited whatever the reader's current size happened
+     * to be. Floor then equalled ceiling and the shrink loop below ran exactly
+     * one iteration, which is why a long title jumped straight to two lines
+     * instead of stepping down to fit.
+     *
+     * The class is put back in the same synchronous block, so nothing paints
+     * in between and the reader never sees the page change size.
+     */
     function getMinCategoryFontPx() {
         if (minCategoryFontPxCache != null) {
             return minCategoryFontPxCache;
         }
-        let probe = document.getElementById('nextdash-category-font-min-probe');
-        if (!probe) {
-            probe = document.createElement('div');
-            probe.id = 'nextdash-category-font-min-probe';
-            probe.className = 'font-size-xs';
-            probe.setAttribute('aria-hidden', 'true');
-            probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none;';
-            document.body.appendChild(probe);
-        }
-        const varSize = getComputedStyle(probe).getPropertyValue('--font-size-category');
+        const body = document.body;
+        if (!body) return 0.75 * getRootRemPx();
+
+        const had = body.className;
+        const sizeClasses = [...body.classList].filter((name) => name.startsWith('font-size-'));
+        sizeClasses.forEach((name) => body.classList.remove(name));
+        body.classList.add('font-size-xs');
+        const varSize = getComputedStyle(body).getPropertyValue('--font-size-category');
+        body.className = had;
+
         minCategoryFontPxCache = cssLengthToPx(varSize) || (0.75 * getRootRemPx());
         return minCategoryFontPxCache;
     }

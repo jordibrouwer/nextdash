@@ -790,6 +790,16 @@ class DashboardRenderCore {
         delete d._widgetDuplicates;
         delete d._widgetBackups;
         delete d._widgetSystem;
+        /*
+         * The custom tiles too.
+         *
+         * Their cache expires on its own ttl, which is why it was left out --
+         * and that is right while nothing changes and wrong for exactly the
+         * reason this function exists: after an edit the tile would redraw
+         * from the answer it fetched under the old address for up to an hour,
+         * and read as though the change did nothing.
+         */
+        delete d._widgetCustom;
     }
 
     refreshWidgets(type) {
@@ -954,7 +964,17 @@ class DashboardRenderCore {
         // Clear container
         container.innerHTML = '';
         d._categoryListsCache = null;
-        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view');
+        /*
+         * packed-masonry goes with them.
+         *
+         * It is added by _distributePackedColumns, which the empty-state branch
+         * below returns before ever reaching -- so a page whose last bookmark
+         * was just deleted kept the masonry grid, and the "this page is empty"
+         * panel was laid out as a single ~290px column track in a 1400px
+         * window instead of spanning the page.
+         */
+        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view',
+            'packed-masonry');
 
         if (!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) {
             const hasBookmarksOnOtherPages = Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0;
