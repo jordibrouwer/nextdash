@@ -41,12 +41,27 @@
     flex-shrink: 0;
 }
 
+/*
+ * Sticky, the way .config-nav-column is (config-view.css:69). Without a
+ * position the rail scrolled away and left a 200px empty gutter running down
+ * the rest of the page.
+ *
+ * Config sticks at a flat 8px because config has no sticky header. This shell
+ * does, so the rail stops below it: --lvs-header-height is published by the
+ * shell (list-view-shell.js) and re-measured when the header collapses.
+ */
 .lvs-rail {
     grid-area: rail;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
     padding-top: var(--space-3);
+    position: sticky;
+    top: calc(var(--lvs-header-height, 0px) + var(--space-2));
+    align-self: start;
+    max-height: calc(100vh - var(--lvs-header-height, 0px) - var(--space-4));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
 }
 
 .lvs-main {
@@ -80,22 +95,6 @@
     min-width: 0;
 }
 
-@media (max-width: 720px) {
-    .lvs {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-            'header'
-            'rail'
-            'main';
-    }
-
-    .lvs-rail {
-        flex-direction: row;
-        overflow-x: auto;
-        gap: var(--space-2);
-    }
-}
-
 .lvs-summary {
     display: flex;
     flex-direction: column;
@@ -120,6 +119,17 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
+    min-width: 0;
+}
+
+/* The rows themselves. Split out of .lvs-group because the filter list carries
+   role="tablist", which admits no children but tabs — so the heading has to sit
+   outside it, and the two need separate boxes. */
+.lvs-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
 }
 
 .lvs-group-title {
@@ -246,3 +256,98 @@
 }
 
 .lvs-density-btn:focus-visible { outline: var(--layout-focus-ring); }
+
+/*
+ * Narrow screens, following what config already does (config-view.css:83): the
+ * rail becomes one horizontally scrolling line above the content rather than a
+ * block of buttons three or four lines deep.
+ *
+ * Two things go with it, and they are the reason a bare `flex-direction: row`
+ * was not enough. The summary block does not fit in a strip, so the shell moves
+ * it into the header under the description (placeSummary in
+ * list-view-shell.js). And the secondary header actions fold into the ⋯ menu,
+ * leaving the primary action beside the title.
+ */
+@media (max-width: 720px) {
+    .lvs {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            'header'
+            'rail'
+            'main';
+    }
+
+    .lvs-rail {
+        /* A strip above the content, not a column beside it: nothing to stick. */
+        position: static;
+        max-height: none;
+        overflow: visible;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-3);
+        padding-top: var(--space-2);
+        min-width: 0;
+    }
+
+    .lvs-group {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    /* The scroll lives on the list, never on the body — a page that scrolls
+       sideways is the bug this avoids. */
+    .lvs-group-list {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--space-1);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        /* Room for the focus ring the scroll container would otherwise clip. */
+        padding: 3px;
+        margin: -3px;
+        scrollbar-width: none;
+    }
+
+    .lvs-group-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lvs-group-title {
+        flex: none;
+        padding: 0;
+    }
+
+    .lvs-filter,
+    .lvs-section {
+        flex: none;
+        width: auto;
+        white-space: nowrap;
+        scroll-snap-align: start;
+    }
+
+    /* Folded into the header, under the description: a row of figures rather
+       than the stacked card the rail draws. */
+    .lvs-header-text .lvs-summary {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-3);
+        margin-top: var(--space-1);
+        padding: 0;
+        background: transparent;
+    }
+
+    .lvs-header-text .lvs-summary-row {
+        gap: var(--space-1);
+    }
+
+    .lvs-header.is-collapsed .lvs-summary {
+        display: none;
+    }
+
+    /* Everything but the primary action and the ⋯ that holds the rest. */
+    .lvs-header-actions .lvs-action:not(.lvs-action--primary):not(.lvs-action--overflow) {
+        display: none;
+    }
+}

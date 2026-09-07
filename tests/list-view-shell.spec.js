@@ -261,25 +261,101 @@ test('setSummary rewrites the figures in place', async ({ page }) => {
     expect(values).toEqual([{ value: '87%', tone: expect.stringContaining('lvs-tone-warn') }]);
 });
 
-test('the rail keeps its scroll position across a body repaint', async ({ page }) => {
+/**
+ * Poll `window.scrollY` until it has stopped changing for several consecutive
+ * reads. Copied from list-view-shell-sticky.spec.js rather than guessing with a
+ * fixed timer: the app restores a remembered scroll offset of its own during
+ * boot, and a `setTimeout` is a bet about when that lands.
+ */
+async function waitForScrollSettled(page) {
+    await page.evaluate(() => {
+        window.__lvsScrollStable = 0;
+        window.__lvsScrollLast = NaN;
+    });
+    await page.waitForFunction(() => {
+        if (window.scrollY === window.__lvsScrollLast) {
+            window.__lvsScrollStable += 1;
+        } else {
+            window.__lvsScrollStable = 0;
+            window.__lvsScrollLast = window.scrollY;
+        }
+        return window.__lvsScrollStable >= 4;
+    }, null, { timeout: 5_000, polling: 50 });
+}
+
+/**
+ * The rail sticks.
+ *
+ * What stood here before set `maxHeight` and `overflowY` on the rail itself and
+ * then checked that its `scrollTop` survived a repaint — a configuration no view
+ * produced, so it passed while the rail had no `position` at all and scrolled
+ * away with the page, leaving a 200px empty gutter running down the rest of it.
+ * This asks the question that was meant: after scrolling, are the filters still
+ * on screen?
+ */
+test('the rail stays on screen while the list scrolls', async ({ page }) => {
     await openDashboard(page);
-    await mountRail(page, {
-        filters: Array.from({ length: 30 }, (_, i) => ({
-            key: `f${i}`, label: `Filter ${i}`, count: i,
-            dataAttrs: { 'data-scratch-filter': `f${i}` },
-        })),
-        activeFilter: 'f0',
+    await waitForScrollSettled(page);
+    await mountRail(page);
+    await page.evaluate(() => {
+        window.__lvsHandle.body.innerHTML = '<div style="height:4000px">tall</div>';
     });
 
-    const kept = await page.evaluate(() => {
-        const rail = document.querySelector('.lvs-rail');
-        rail.style.maxHeight = '120px';
-        rail.style.overflowY = 'auto';
-        rail.scrollTop = 60;
-        const before = rail.scrollTop;
-        window.__lvsHandle.body.innerHTML = '<p>repainted</p>';
-        window.__lvsHandle.setCounts({ f0: 999 });
-        return { before, after: document.querySelector('.lvs-rail').scrollTop };
+    const position = await page.evaluate(
+        () => getComputedStyle(document.querySelector('.lvs-rail')).position);
+
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    await waitForScrollSettled(page);
+
+    const seen = await page.evaluate(() => {
+        const rail = document.querySelector('.lvs-rail').getBoundingClientRect();
+        const filter = document.querySelector('[data-scratch-filter="all"]').getBoundingClientRect();
+        return {
+            scrolled: window.scrollY,
+            railTop: rail.top,
+            railBottom: rail.bottom,
+            filterTop: filter.top,
+            filterBottom: filter.bottom,
+            viewport: window.innerHeight,
+        };
     });
-    expect(kept.after, 'the rail lost its scroll position').toBe(kept.before);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    expect(position).toBe('sticky');
+    expect(seen.scrolled, 'the page did not scroll').toBeGreaterThan(0);
+    expect(seen.railTop, 'the rail scrolled off the top of the viewport').toBeGreaterThanOrEqual(0);
+    expect(seen.railBottom).toBeGreaterThan(0);
+    expect(seen.filterTop >= 0 && seen.filterBottom <= seen.viewport,
+        'the filters left the viewport when the page scrolled').toBe(true);
+});
+
+/**
+ * `role="tablist"` accepts `tab` children and nothing else. The heading used to
+ * sit inside it as a plain div, which makes the strip invalid — a screen reader
+ * counts an unknown child among the tabs. It is a sibling now, tied to the
+ * strip by aria-labelledby.
+ */
+test('the filter tablist holds tabs only, and is named by its heading', async ({ page }) => {
+    await openDashboard(page);
+    await mountRail(page);
+
+    const aria = await page.evaluate(() => {
+        const host = document.getElementById('__lvs_scratch__');
+        const list = host.querySelector('.lvs-group--filters [role=tablist]');
+        const labelledBy = list.getAttribute('aria-labelledby');
+        const heading = labelledBy ? host.querySelector(`#${CSS.escape(labelledBy)}`) : null;
+        return {
+            childRoles: [...list.children].map((el) => el.getAttribute('role')),
+            titleInsideTablist: !!list.querySelector('.lvs-group-title'),
+            headingText: heading?.textContent ?? null,
+            headingIsOutside: !!heading && !list.contains(heading),
+        };
+    });
+
+    expect(aria.titleInsideTablist, 'a non-tab child is inside the tablist').toBe(false);
+    expect(new Set(aria.childRoles), 'the tablist has children that are not tabs')
+        .toEqual(new Set(['tab']));
+    expect(aria.headingText, 'the tablist is not named by a heading').toBeTruthy();
+    expect(aria.headingIsOutside).toBe(true);
 });

@@ -803,6 +803,22 @@ class DashboardInbox {
     }
 
     /**
+     * The same trail without its root, for the collapsed shell header.
+     *
+     * headerBreadcrumb() still prefixes "inbox" because the browser tab title
+     * is built from it (dashboard-page-nav.js:120) and a tab reading just
+     * "Unread" says nothing. In the header the crumb sits beside a .lvs-title
+     * that already says Inbox, so the prefix read "Inbox inbox". Default state
+     * is empty: nothing to say rather than the title twice.
+     */
+    shellBreadcrumb() {
+        const domain = String(this.domainFilter || '').trim();
+        if (domain) return domain.toLowerCase();
+        if (this.filter === 'all') return '';
+        return this.filterLabel().toLowerCase();
+    }
+
+    /**
      * Restore filter and sort, URL first and stored state second.
      *
      * A link someone shared has to win over what this browser last did, or the
@@ -3610,7 +3626,7 @@ class DashboardInbox {
         host.innerHTML = `
             <button type="button" class="lvs-action lvs-action--primary inbox-triage-btn inbox-triage-btn--primary">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
             <span class="inbox-menu-wrap">
-                <button type="button" class="lvs-action inbox-toolbar-more" data-inbox-toolbar-more
+                <button type="button" class="lvs-action lvs-action--overflow inbox-toolbar-more" data-inbox-toolbar-more
                         aria-haspopup="menu" aria-expanded="false"
                         title="${moreLabel}" aria-label="${moreLabel}">⋯</button>
                 <div class="inbox-menu" role="menu" hidden data-inbox-menu aria-label="${moreLabel}"></div>
@@ -3695,6 +3711,7 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
+            <button type="button" class="inbox-bulk-btn inbox-menu-narrow-only" data-inbox-menu-help>${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}</button>
         `;
         menu.querySelector('[data-inbox-bulk="read"]')?.addEventListener('click', () => {
             void this.markAllRead();
@@ -3713,6 +3730,11 @@ class DashboardInbox {
         });
         menu.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
             this.toggleStats();
+        });
+        // Only rendered below 720px, where the ℹ button folds away — see
+        // .inbox-menu-narrow-only in dashboard-inbox.css.
+        menu.querySelector('[data-inbox-menu-help]')?.addEventListener('click', () => {
+            this.showInboxExplainer();
         });
     }
 
@@ -3824,7 +3846,7 @@ class DashboardInbox {
             noted: this.filterCount('noted'),
         });
         shell.setSummary(this.shellSummary());
-        shell.setBreadcrumb(this.headerBreadcrumb());
+        shell.setBreadcrumb(this.shellBreadcrumb());
         this.syncRailFilters();
         this.syncToolbar();
         this.renderToolbarMenu(filtered);
@@ -4054,8 +4076,13 @@ class DashboardInbox {
     createItemElement(item) {
         const d = this.dash;
         const card = document.createElement('article');
-        // feed-row is the shared card; the unread edge is the shared modifier.
-        card.className = 'feed-row inbox-item'
+        // feed-row is the shared card, feed-row--grid the shared column
+        // anatomy (and with it the shared density setting); the unread edge is
+        // the shared modifier.
+        // --grid-2 because the inbox row is icon + body: it has no badge,
+        // reason or score to hang in the trailing column, and an empty track
+        // still takes its gutter.
+        card.className = 'feed-row feed-row--grid feed-row--grid-2 inbox-item'
             + (item.readAt ? ' is-read' : ' is-unread feed-row--edge-accent');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';

@@ -164,3 +164,146 @@ test('Triage sits in the header, reachable while the list is scrolled', async ({
     });
     expect(inView, 'Triage scrolled out of reach').toBe(true);
 });
+
+test('the collapsed header does not say "Inbox inbox"', async ({ page }) => {
+    await openInbox(page, Array.from({ length: 40 }, (_, i) => `Item-${i}`));
+
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await waitForScrollSettled(page);
+    await expect(page.locator('.lvs-header')).toHaveClass(/is-collapsed/);
+
+    // The crumb sits beside a .lvs-title that already says Inbox, so on the
+    // default filter it has nothing to add.
+    const title = (await page.locator('.lvs-title').textContent()) || '';
+    const atRest = await page.locator('.lvs-crumb').textContent();
+    expect(atRest, 'the crumb repeats the title next to it').toBe('');
+
+    await page.locator('[data-inbox-filter="unread"]').click();
+    const filtered = ((await page.locator('.lvs-crumb').textContent()) || '').trim();
+    expect(filtered).toMatch(/unread/i);
+    expect(filtered.toLowerCase(), 'the crumb still prefixes the page title')
+        .not.toContain(title.trim().toLowerCase());
+
+    // The browser tab still names the view — it has no title beside it to lean on.
+    await expect.poll(() => page.title()).toMatch(/inbox/i);
+});
+
+test('arrow keys step past a filter the reader cannot see', async ({ page }) => {
+    await openInbox(page, ['Alpha', 'Beta', 'Gamma']);
+
+    // Which rows are hidden depends on what is in the inbox — With note is
+    // always one of them here, since nothing seeded in this file carries a
+    // note — so read the rail rather than hard-coding a key.
+    const rows = await page.evaluate(() => [...document.querySelectorAll('.lvs-rail .lvs-filter')]
+        .map((el) => ({ key: el.dataset.inboxFilter, hidden: el.hidden })));
+    const visible = rows.filter((r) => !r.hidden).map((r) => r.key);
+    const hidden = rows.filter((r) => r.hidden).map((r) => r.key);
+
+    expect(hidden.length, 'setup: no filter is hidden, so this cannot fail').toBeGreaterThan(0);
+    expect(visible.length).toBeGreaterThan(1);
+
+    const last = page.locator(`.lvs-rail [data-inbox-filter="${visible[visible.length - 1]}"]`);
+    await last.click();
+    await expect(last).toHaveClass(/is-active/);
+
+    await last.press('ArrowRight');
+
+    // From the last visible row the rotation wraps to the first visible one.
+    // Landing on a hidden row would be the keyboard selecting something the
+    // mouse cannot click — and the row would then unhide itself, which is how
+    // this went unnoticed.
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.filter),
+        { message: `arrow rotation landed outside the visible rows ${JSON.stringify(visible)}` })
+        .toBe(visible[0]);
+
+    const stillHidden = await page.evaluate((keys) => keys.every(
+        (k) => document.querySelector(`.lvs-rail [data-inbox-filter="${k}"]`)?.hidden === true,
+    ), hidden);
+    expect(stillHidden, 'a hidden filter unhid itself after an arrow key').toBe(true);
+});
+
+test('the glass depth still reaches the rail', async ({ page }) => {
+    await openInbox(page);
+
+    // Exactly what applyThemeDepth (theme-loader.js:312) writes, and what the
+    // server writes for the first paint. theme-character.css keys the
+    // backdrop-filter off these two attributes and a list of selectors; the
+    // list still named .inbox-tile and .inbox-filter-group, both deleted by
+    // this branch, so the effect stopped reaching the rail entirely.
+    const filters = await page.evaluate(() => {
+        document.documentElement.setAttribute('data-depth', 'glass');
+        document.body.setAttribute('data-depth', 'glass');
+        const read = (sel) => {
+            const el = document.querySelector(sel);
+            return el ? getComputedStyle(el).backdropFilter : 'MISSING';
+        };
+        return {
+            summary: read('.lvs-summary'),
+            group: read('.lvs-group--filters'),
+            filter: read('.lvs-rail .lvs-filter'),
+            row: read('.inbox-item'),
+        };
+    });
+
+    for (const [part, value] of Object.entries(filters)) {
+        expect(value, `${part} is left out of the glass depth`).not.toBe('none');
+        expect(value, `${part} is not in the stylesheet at all`).not.toBe('MISSING');
+    }
+});
+
+test('below 720px the rail is a strip and the summary folds into the header', async ({ page }) => {
+    await openInbox(page);
+    await page.setViewportSize({ width: 700, height: 900 });
+
+    // The move is made in JS (CSS cannot reparent), so poll for it rather than
+    // assuming the resize has been handled by the time the next line runs.
+    await expect.poll(() => page.evaluate(
+        () => !!document.querySelector('.lvs-header .lvs-summary')),
+    { message: 'the summary did not fold into the header' }).toBe(true);
+
+    const narrow = await page.evaluate(() => {
+        const rail = document.querySelector('.lvs-rail');
+        const list = document.querySelector('.lvs-filter-list');
+        const shown = [...document.querySelectorAll('.lvs-rail .lvs-filter')]
+            .filter((el) => !el.hidden)
+            .map((el) => Math.round(el.getBoundingClientRect().top));
+        return {
+            summaryInRail: !!document.querySelector('.lvs-rail .lvs-summary'),
+            railHeight: rail.getBoundingClientRect().height,
+            railDirection: getComputedStyle(rail).flexDirection,
+            listDirection: getComputedStyle(list).flexDirection,
+            listOverflowX: getComputedStyle(list).overflowX,
+            filterTops: [...new Set(shown)],
+            pageScrollWidth: document.documentElement.scrollWidth,
+            viewport: window.innerWidth,
+        };
+    });
+
+    expect(narrow.summaryInRail, 'the summary is still in the strip').toBe(false);
+    expect(narrow.railDirection).toBe('row');
+    expect(narrow.listDirection, 'the filters are still stacked inside the strip').toBe('row');
+    expect(narrow.listOverflowX, 'the strip does not scroll sideways').toBe('auto');
+    expect(narrow.filterTops.length, 'the filters are on more than one line').toBe(1);
+    // 81px was the height of the broken strip: a horizontal scroller with a
+    // column of filters and the summary block still inside it.
+    expect(narrow.railHeight, 'the strip is more than one row tall').toBeLessThan(60);
+    // The strip scrolls, never the page.
+    expect(narrow.pageScrollWidth).toBeLessThanOrEqual(narrow.viewport);
+});
+
+test('below 720px the secondary actions fold into the overflow menu', async ({ page }) => {
+    await openInbox(page);
+    await page.setViewportSize({ width: 700, height: 900 });
+
+    // Primary and the ⋯ that holds the rest stay; ℹ folds away.
+    await expect(page.locator('.lvs-header-actions .inbox-triage-btn')).toBeVisible();
+    await expect(page.locator('[data-inbox-toolbar-more]')).toBeVisible();
+    await expect(page.locator('.lvs-header-actions .inbox-help-btn')).toBeHidden();
+
+    // Folded away, not lost.
+    await page.locator('[data-inbox-toolbar-more]').click();
+    const help = page.locator('[data-inbox-menu-help]');
+    await expect(help, 'the explainer is unreachable below 720px').toBeVisible();
+    await help.click();
+    await expect(page.locator('.inbox-explain-modal')).toBeVisible();
+});

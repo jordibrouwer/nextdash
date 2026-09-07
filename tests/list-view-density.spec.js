@@ -1,7 +1,18 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
+    prepareDashboardInteraction, markInboxTutorialSeen } = require('./e2e-helpers');
 
+/**
+ * The density setting, checked on the rows a view actually builds.
+ *
+ * This file used to mount a synthetic `<article class="feed-row feed-row--grid">`
+ * of its own and measure that. It passed while `.feed-row--grid` reached no
+ * production row at all: the inbox built `feed-row inbox-item` and answered the
+ * density setting through a private copy of the rule in dashboard-inbox.css. A
+ * test that builds its own subject can only tell you the CSS parses. So the row
+ * tests below open the real inbox and measure a real row.
+ */
 async function mountWithDensity(page) {
     await markWhatsNewSeen(page);
     await page.setViewportSize({ width: 1400, height: 900 });
@@ -19,10 +30,35 @@ async function mountWithDensity(page) {
             filters: [{ key: 'all', label: 'All', count: 1, dataAttrs: { 'data-scratch-filter': 'all' } }],
             activeFilter: 'all',
         });
-        window.__lvsHandle.body.innerHTML =
-            '<div class="feed-list"><article class="feed-row feed-row--grid" id="r1">'
-            + '<span>i</span><span>title</span><span>meta</span></article></div>';
     });
+}
+
+/** The real inbox, reached the way a reader reaches it. */
+async function openInbox(page, titles = ['Alpha', 'Beta', 'Gamma']) {
+    await markWhatsNewSeen(page);
+    await markInboxTutorialSeen(page);
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await prepareDashboardInteraction(page);
+    await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+    await page.evaluate(async (list) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        for (const title of list) {
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://d-${title}-${Date.now()}.example/x`, title }),
+            });
+        }
+    }, titles);
+    await page.locator('#page-nav-inbox-btn').click();
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+    await expect.poll(() => page.evaluate(
+        () => document.querySelectorAll('.inbox-item').length)).toBeGreaterThan(0);
 }
 
 test('the row grid is declared in feed-row.css and nowhere else', async ({ page }) => {
@@ -65,24 +101,74 @@ test('the row grid is declared in feed-row.css and nowhere else', async ({ page 
     expect(where.health).toBe(false);
 });
 
-test('a grid row lays its columns out rather than stacking', async ({ page }) => {
-    await mountWithDensity(page);
-    const cols = await page.evaluate(() =>
-        getComputedStyle(document.getElementById('r1')).gridTemplateColumns);
-    expect(cols.split(' ').length, `grid resolved to "${cols}"`).toBe(3);
+test('the inbox row is built on the shared grid variant', async ({ page }) => {
+    await openInbox(page);
+
+    const row = await page.evaluate(() => {
+        const el = document.querySelector('.inbox-item');
+        const cs = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        const thumb = el.querySelector('.inbox-item-thumb').getBoundingClientRect();
+        const body = el.querySelector('.inbox-item-body').getBoundingClientRect();
+        return {
+            classes: [...el.classList],
+            cols: cs.gridTemplateColumns,
+            // The content edge the row's own padding and border leave.
+            contentRight: box.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth),
+            bodyRight: body.right,
+            thumbRight: thumb.right,
+            bodyLeft: body.left,
+        };
+    });
+
+    expect(row.classes, 'the real row must carry the shared grid variant')
+        .toContain('feed-row--grid');
+    // Icon column then body, side by side — not stacked.
+    expect(row.thumbRight).toBeLessThanOrEqual(row.bodyLeft);
+    expect(row.cols.split(' ').length, `grid resolved to "${row.cols}"`).toBe(2);
+    // And no phantom trailing track: an empty `auto` column still takes its
+    // gutter, which would leave a strip of dead space down the right of every
+    // row. `.feed-row--grid-2` is what drops it.
+    expect(Math.abs(row.contentRight - row.bodyRight),
+        'the row body stops short of its content edge — an empty grid track is taking a gutter')
+        .toBeLessThan(2);
 });
 
-test('the density toggle changes row height and survives a reload', async ({ page }) => {
-    await mountWithDensity(page);
+test('density reaches the inbox row through feed-row.css alone', async ({ page }) => {
+    await openInbox(page);
 
-    const comfortable = await page.evaluate(() =>
-        document.getElementById('r1').getBoundingClientRect().height);
+    // One mechanism, not two: the view's own copy of the density rule is gone.
+    const inboxCopy = await page.evaluate(async () => {
+        const read = async (file) => {
+            const hrefs = [...document.styleSheets].map((s) => s.href).filter(Boolean);
+            const direct = hrefs.find((h) => h.includes(file));
+            if (direct) return (await (await fetch(direct)).text());
+            for (const href of hrefs) {
+                if (!href.includes('/bundle/')) continue;
+                const text = await (await fetch(href)).text();
+                const marker = `/* ==== ${file} ==== */`;
+                const start = text.indexOf(marker);
+                if (start < 0) continue;
+                const from = start + marker.length;
+                const next = text.indexOf('/* ==== ', from);
+                return text.slice(from, next < 0 ? undefined : next);
+            }
+            return '';
+        };
+        const css = await read('css/dashboard-inbox.css');
+        return (css.match(/\[data-list-density=/g) || []).length;
+    });
+    expect(inboxCopy, 'dashboard-inbox.css declares density a second time').toBe(0);
 
+    const height = () => page.evaluate(
+        () => document.querySelector('.inbox-item').getBoundingClientRect().height);
+
+    const comfortable = await height();
     await page.locator('[data-lvs-density="compact"]').click();
-    const compact = await page.evaluate(() =>
-        document.getElementById('r1').getBoundingClientRect().height);
+    const compact = await height();
 
-    expect(compact, 'compact is not tighter than comfortable').toBeLessThan(comfortable);
+    expect(compact, 'compact is not tighter than comfortable on a real inbox row')
+        .toBeLessThan(comfortable);
 
     const stored = await page.evaluate(() => ({
         ls: localStorage.getItem('nextdash:list-density'),

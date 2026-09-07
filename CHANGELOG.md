@@ -209,8 +209,9 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Inbox
 
 - **new — the inbox has a left column.** The filters moved there as a list with their counts, and **This week** sits above them as a plain readout — it was the one figure that never had a filter behind it. The row of tiles above the list is gone, since it showed the same counts a second time; **Snoozed** and **With note** now appear in the filter list only when there is something in them, and drop out again once there isn't.
-- **new — the header stays put while you scroll.** It shrinks to a single bar as it sticks, so Triage stays reachable from anywhere in a long list.
-- **new — rows can be compact or comfortable.** The setting follows you between views instead of being remembered per view.
+- **new — the header stays put while you scroll.** It shrinks to a single bar as it sticks, so Triage stays reachable from anywhere in a long list. The left column stays with it, so the filters are one click away wherever you are in the list rather than a strip of empty space.
+- **new — the left column becomes one scrolling line on a narrow screen.** The figures move up under the title and the ℹ explainer joins the ⋯ menu, so a phone gets the list instead of four rows of controls above it.
+- **new — rows can be compact or comfortable.** It is one setting for the whole app rather than one per view, so it is already the setting the other lists will read as they move onto the same shell.
 - **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
 - **fix — the site filter no longer sends the hostname you picked to analytics.** It reports a fixed marker instead, under the same event name as before.
 

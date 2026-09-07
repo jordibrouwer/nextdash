@@ -1377,18 +1377,23 @@ body[data-layout-version="modern"] .inbox-empty {
     background: color-mix(in srgb, var(--accent-primary) 20%, var(--background-secondary));
 }
 
-/* ─── Row density ────────────────────────────────────────────────────────────
-   The shell's toggle is a reading preference for every list, so the inbox rows
-   answer to it the way the shared grid rows in feed-row.css do. Only the block
-   padding moves: the thumbnail column sets the floor, and squeezing that is
-   what turns "compact" into "unreadable".
-   ------------------------------------------------------------------------- */
-body[data-list-density="compact"] .inbox-item {
-    padding-block: var(--space-1, 0.3rem);
+/* Row density is not declared here. The inbox row carries .feed-row--grid, so
+   it inherits the one declaration in feed-row.css — the same one config's
+   bookmark list will inherit when it adopts the grid. A copy here was a second
+   mechanism doing the same job, and the two would have drifted. */
+
+/* The ℹ button folds into the ⋯ menu below 720px (list-view-shell.css hides it
+   in the header there), so this entry is the fold's destination. Above the
+   breakpoint it stays out of the menu rather than duplicating a control that is
+   already on screen. */
+.inbox-menu > .inbox-menu-narrow-only {
+    display: none;
 }
 
-body[data-list-density="comfortable"] .inbox-item {
-    padding-block: var(--space-3, 0.75rem);
+@media (max-width: 720px) {
+    .inbox-menu > .inbox-menu-narrow-only {
+        display: block;
+    }
 }
 
 /* Triage, ⋯ and ℹ sit in the shell header now; they keep their own colours but

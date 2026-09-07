@@ -10,6 +10,16 @@
  */
 const TONE_CLASS = { good: 'lvs-tone-good', warn: 'lvs-tone-warn', bad: 'lvs-tone-bad' };
 
+/**
+ * The one breakpoint every view folds at, matching config-view.css:83.
+ * Below it the rail is a horizontal strip and the summary moves into the
+ * header, so the strip carries filters only.
+ */
+const NARROW = '(max-width: 720px)';
+
+/** Group headings need ids for aria-labelledby, and two shells can coexist. */
+let groupSeq = 0;
+
 function toneClass(tone) {
     return TONE_CLASS[tone] || '';
 }
@@ -89,8 +99,11 @@ class ListViewShell {
         (config.actions || []).forEach((action) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = ['lvs-action', action.kind === 'primary' ? 'lvs-action--primary' : '']
-                .filter(Boolean).join(' ');
+            // `overflow` marks the ⋯ trigger. It is not a secondary action —
+            // it is where the secondary actions go when the header narrows, so
+            // it is the one thing besides the primary that must stay put.
+            const kindClass = { primary: 'lvs-action--primary', overflow: 'lvs-action--overflow' };
+            btn.className = ['lvs-action', kindClass[action.kind] || ''].filter(Boolean).join(' ');
             btn.dataset.lvsActionKey = String(action.key);
             btn.textContent = String(action.label);
             Object.entries(action.dataAttrs || {}).forEach(([name, value]) => {
@@ -109,9 +122,12 @@ class ListViewShell {
         const summaryHost = buildSummary(config.summary);
         rail.appendChild(summaryHost);
 
+        // The heading is a sibling of the tablist, not a child of it: a
+        // `role="tablist"` accepts only `tab` children, and a plain div in
+        // there makes the whole strip invalid to a screen reader. The heading
+        // names the strip through aria-labelledby instead.
         const filterGroup = document.createElement('div');
         filterGroup.className = 'lvs-group lvs-group--filters';
-        filterGroup.setAttribute('role', 'tablist');
         let activeKey = String(config.activeFilter || (config.filters?.[0]?.key ?? ''));
         const filterClasses = {
             filterClass: config.filterClass,
@@ -119,10 +135,15 @@ class ListViewShell {
         };
         const filterTitle = document.createElement('div');
         filterTitle.className = 'lvs-group-title';
+        filterTitle.id = `lvs-filters-title-${++groupSeq}`;
         filterTitle.textContent = t('dashboard.listFilterHeading', 'Filter');
-        filterGroup.appendChild(filterTitle);
+        const filterList = document.createElement('div');
+        filterList.className = 'lvs-group-list lvs-filter-list';
+        filterList.setAttribute('role', 'tablist');
+        filterList.setAttribute('aria-labelledby', filterTitle.id);
+        filterGroup.append(filterTitle, filterList);
         (config.filters || []).forEach((entry) => {
-            filterGroup.appendChild(
+            filterList.appendChild(
                 buildFilter(entry, String(entry.key) === activeKey, filterClasses));
         });
         rail.appendChild(filterGroup);
@@ -133,7 +154,9 @@ class ListViewShell {
             const sectionTitle = document.createElement('div');
             sectionTitle.className = 'lvs-group-title';
             sectionTitle.textContent = t('dashboard.listSectionHeading', 'Sections');
-            sectionGroup.appendChild(sectionTitle);
+            const sectionList = document.createElement('div');
+            sectionList.className = 'lvs-group-list lvs-section-list';
+            sectionGroup.append(sectionTitle, sectionList);
             (config.sections || []).forEach((entry) => {
                 const item = document.createElement('button');
                 item.type = 'button';
@@ -142,12 +165,25 @@ class ListViewShell {
                 item.textContent = entry.count == null
                     ? String(entry.label)
                     : `${entry.label} ${entry.count}`;
-                sectionGroup.appendChild(item);
+                sectionList.appendChild(item);
             });
             rail.appendChild(sectionGroup);
         }
 
         const filterButtons = () => [...filterGroup.querySelectorAll('.lvs-filter')];
+
+        /**
+         * The rows the arrow keys may land on.
+         *
+         * A view hides a filter nothing is in (inbox's Snoozed at zero count,
+         * and eleven of health's are about to work the same way). Rotating over
+         * the hidden ones let ArrowRight select a row the mouse cannot see,
+         * which then unhid itself — the keyboard reaching past the filter.
+         */
+        const visibleFilterButtons = () => {
+            const shown = filterButtons().filter((btn) => !btn.hidden);
+            return shown.length ? shown : filterButtons();
+        };
 
         const setActive = (key) => {
             activeKey = String(key);
@@ -175,7 +211,7 @@ class ListViewShell {
         filterGroup.addEventListener('keydown', (event) => {
             const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
             if (!keys.includes(event.key)) return;
-            const buttons = filterButtons();
+            const buttons = visibleFilterButtons();
             const current = buttons.indexOf(event.target.closest('.lvs-filter'));
             if (current < 0) return;
             event.preventDefault();
@@ -234,15 +270,49 @@ class ListViewShell {
         container.classList.add('lvs-host');
         container.setAttribute('data-lvs-id', id);
 
+        // The rail sticks below the header rather than under it, so the header's
+        // measured height is published as a custom property the CSS reads. It
+        // only changes when the header collapses, which is where it is refreshed.
+        const syncHeaderHeight = () => {
+            root.style.setProperty('--lvs-header-height', `${Math.round(header.offsetHeight)}px`);
+        };
+
         let collapsed = false;
         const syncCollapse = () => {
             const should = window.scrollY > header.offsetHeight;
             if (should === collapsed) return;
             collapsed = should;
             header.classList.toggle('is-collapsed', collapsed);
+            syncHeaderHeight();
         };
         window.addEventListener('scroll', syncCollapse, { passive: true });
         syncCollapse();
+        syncHeaderHeight();
+
+        /**
+         * Below 720px the rail is a horizontal strip, and a strip has no room
+         * for the summary block — so the summary folds into the header, under
+         * the description, exactly as the design describes. CSS cannot reparent,
+         * so the move is made here and undone on the way back up.
+         */
+        const narrow = window.matchMedia(NARROW);
+        const placeSummary = () => {
+            if (narrow.matches) {
+                if (summaryHost.parentNode !== headerText) headerText.appendChild(summaryHost);
+            } else if (summaryHost.parentNode !== rail) {
+                rail.insertBefore(summaryHost, rail.firstChild);
+            }
+            syncHeaderHeight();
+        };
+        narrow.addEventListener('change', placeSummary);
+        // And on resize as well: under Chromium's viewport emulation — which is
+        // what Playwright's setViewportSize and the browser devtools both use —
+        // the media query re-evaluates but its `change` event does not always
+        // fire, and the summary would then be left on the wrong side of the
+        // breakpoint. placeSummary is idempotent, so running it twice costs
+        // nothing.
+        window.addEventListener('resize', placeSummary);
+        placeSummary();
 
         return {
             id,
@@ -269,6 +339,8 @@ class ListViewShell {
             get railScrollTop() { return rail.scrollTop; },
             destroy() {
                 window.removeEventListener('scroll', syncCollapse);
+                narrow.removeEventListener('change', placeSummary);
+                window.removeEventListener('resize', placeSummary);
                 root.remove();
                 container.classList.remove('lvs-host');
                 container.removeAttribute('data-lvs-id');
