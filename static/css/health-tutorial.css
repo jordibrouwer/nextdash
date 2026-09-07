@@ -162,3 +162,47 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-t
         transition: none;
     }
 }
+
+/* The left column in miniature: a readout above, filter rows under it, and
+   the section that is not a filter set apart at the bottom -- built from the
+   same tokens as the real rail so it reads as that control, not a drawing. */
+.health-tutorial-visual--layout {
+    justify-content: flex-start;
+}
+
+.health-tutorial-visual-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-hairline, 0.15rem);
+    width: 100%;
+    max-width: 12rem;
+}
+
+.health-tutorial-visual-readout {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
+    padding: var(--space-hairline, 0.15rem) var(--space-2, 0.45rem);
+}
+
+.health-tutorial-visual-row {
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+    padding: var(--space-1, 0.2rem) var(--space-2, 0.45rem);
+    border-radius: var(--radius-4, 0.35rem);
+    border: 1px solid transparent;
+}
+
+.health-tutorial-visual-row.is-active {
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border-color: var(--border-secondary);
+}
+
+/* Set apart the way Sections is in the rail itself. */
+.health-tutorial-visual-row.is-section {
+    margin-top: var(--space-1, 0.25rem);
+    border-top: 1px solid var(--border-secondary);
+    border-radius: 0;
+    padding-top: var(--space-1-5, 0.3rem);
+    color: var(--text-tertiary);
+}
