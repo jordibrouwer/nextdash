@@ -8,6 +8,53 @@
  * on every keystroke has to put the caret back by hand; a view that repaints
  * only `handle.body` does not.
  */
+const TONE_CLASS = { good: 'lvs-tone-good', warn: 'lvs-tone-warn', bad: 'lvs-tone-bad' };
+
+function toneClass(tone) {
+    return TONE_CLASS[tone] || '';
+}
+
+function buildSummary(entries) {
+    const wrap = document.createElement('div');
+    wrap.className = 'lvs-summary';
+    (entries || []).forEach((entry) => {
+        const row = document.createElement('div');
+        row.className = ['lvs-summary-row', toneClass(entry.tone)].filter(Boolean).join(' ');
+        row.dataset.lvsSummaryKey = String(entry.key);
+        const label = document.createElement('span');
+        label.className = 'lvs-summary-label';
+        label.textContent = String(entry.label);
+        const value = document.createElement('span');
+        value.className = 'lvs-summary-value';
+        value.textContent = String(entry.value);
+        row.append(label, value);
+        wrap.appendChild(row);
+    });
+    return wrap;
+}
+
+function buildFilter(entry, isActive, classes = {}) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = ['lvs-filter', classes.filterClass, toneClass(entry.tone),
+        isActive ? 'is-active' : ''].filter(Boolean).join(' ');
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', String(isActive));
+    btn.setAttribute('tabindex', isActive ? '0' : '-1');
+    btn.dataset.lvsFilterKey = String(entry.key);
+    Object.entries(entry.dataAttrs || {}).forEach(([name, value]) => {
+        btn.setAttribute(name, String(value));
+    });
+    const label = document.createElement('span');
+    label.className = 'lvs-filter-label';
+    label.textContent = String(entry.label);
+    const count = document.createElement('span');
+    count.className = ['lvs-filter-count', classes.filterCountClass].filter(Boolean).join(' ');
+    count.textContent = String(entry.count ?? '');
+    btn.append(label, count);
+    return btn;
+}
+
 class ListViewShell {
     static mount(container, config = {}) {
         if (!container) {
@@ -36,6 +83,79 @@ class ListViewShell {
         const rail = document.createElement('div');
         rail.className = 'lvs-rail';
 
+        const summaryHost = buildSummary(config.summary);
+        rail.appendChild(summaryHost);
+
+        const filterGroup = document.createElement('div');
+        filterGroup.className = 'lvs-group lvs-group--filters';
+        filterGroup.setAttribute('role', 'tablist');
+        let activeKey = String(config.activeFilter || (config.filters?.[0]?.key ?? ''));
+        const filterClasses = {
+            filterClass: config.filterClass,
+            filterCountClass: config.filterCountClass,
+        };
+        (config.filters || []).forEach((entry) => {
+            filterGroup.appendChild(
+                buildFilter(entry, String(entry.key) === activeKey, filterClasses));
+        });
+        rail.appendChild(filterGroup);
+
+        if ((config.sections || []).length) {
+            const sectionGroup = document.createElement('div');
+            sectionGroup.className = 'lvs-group lvs-group--sections';
+            (config.sections || []).forEach((entry) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'lvs-section';
+                item.dataset.lvsSectionKey = String(entry.key);
+                item.textContent = entry.count == null
+                    ? String(entry.label)
+                    : `${entry.label} ${entry.count}`;
+                sectionGroup.appendChild(item);
+            });
+            rail.appendChild(sectionGroup);
+        }
+
+        const filterButtons = () => [...filterGroup.querySelectorAll('.lvs-filter')];
+
+        const setActive = (key) => {
+            activeKey = String(key);
+            filterButtons().forEach((btn) => {
+                const on = btn.dataset.lvsFilterKey === activeKey;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', String(on));
+                btn.setAttribute('tabindex', on ? '0' : '-1');
+            });
+        };
+
+        const report = (key, via) => {
+            if (typeof config.onFilter === 'function') {
+                config.onFilter(key, via);
+            }
+        };
+
+        filterGroup.addEventListener('click', (event) => {
+            const btn = event.target.closest('.lvs-filter');
+            if (btn && filterGroup.contains(btn)) {
+                report(btn.dataset.lvsFilterKey, 'click');
+            }
+        });
+
+        filterGroup.addEventListener('keydown', (event) => {
+            const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+            if (!keys.includes(event.key)) return;
+            const buttons = filterButtons();
+            const current = buttons.indexOf(event.target.closest('.lvs-filter'));
+            if (current < 0) return;
+            event.preventDefault();
+            let next = current;
+            if (event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+            if (event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+            if (event.key === 'Home') next = 0;
+            if (event.key === 'End') next = buttons.length - 1;
+            report(buttons[next].dataset.lvsFilterKey, 'keyboard');
+        });
+
         const main = document.createElement('div');
         main.className = 'lvs-main';
         const toolbar = document.createElement('div');
@@ -63,6 +183,19 @@ class ListViewShell {
             toolbarRow: toolbar,
             toolbar: toolbarSlot,
             body,
+            setSummary(entries) {
+                summaryHost.replaceChildren(...buildSummary(entries).childNodes);
+            },
+            setCounts(counts) {
+                filterButtons().forEach((btn) => {
+                    const key = btn.dataset.lvsFilterKey;
+                    if (Object.prototype.hasOwnProperty.call(counts || {}, key)) {
+                        btn.querySelector('.lvs-filter-count').textContent = String(counts[key]);
+                    }
+                });
+            },
+            setActive,
+            get railScrollTop() { return rail.scrollTop; },
             destroy() {
                 root.remove();
                 container.classList.remove('lvs-host');
