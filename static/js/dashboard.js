@@ -447,7 +447,8 @@ class Dashboard {
              */
             if (bootHash === 'inbox' && this.activeView !== 'inbox' && this.inbox?.isEnabled?.()) {
                 await this.inbox.openInboxView();
-            } else if (bootHash === 'health' && this.activeView !== 'health' && this.health?.isEnabled?.()) {
+            } else if ((bootHash === 'health' || bootHash.startsWith('health/'))
+                && this.activeView !== 'health' && this.health?.isEnabled?.()) {
                 await this.health.openHealthView();
             }
 
@@ -982,7 +983,7 @@ class Dashboard {
                 this.searchComponent?.openSearchWithQuery?.(query);
                 return;
             }
-            if (hash === 'health') {
+            if (hash === 'health' || hash.startsWith('health/')) {
                 if (this.activeView !== 'health') {
                     return this.health?.openHealthView?.();
                 }

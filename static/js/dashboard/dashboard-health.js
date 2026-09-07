@@ -56,6 +56,8 @@ class DashboardHealth {
         this.report = null;
         this.loading = false;
         this.filter = 'broken';
+        /** Which rail section is open, if any. `'monitors'` swaps the body for the fleet panel. */
+        this.section = null;
         this.sort = 'score';
         this.searchQuery = '';
         this.visibleLimit = 50;
@@ -510,7 +512,7 @@ class DashboardHealth {
      * while the filters that follow through syncUrlState stay replaceState.
      */
     restoreHealthHash() {
-        if (window.location.hash === '#health') return;
+        if (window.location.hash === '#health' || window.location.hash === '#health/monitors') return;
         const next = `${window.location.pathname}${window.location.search}#health`;
         if (!window.DashboardHistory?.pushLocation?.(next)) {
             history.replaceState(history.state, '', next);
@@ -3298,6 +3300,7 @@ class DashboardHealth {
     shellSummary() {
         const pct = this.scorePercent();
         const broken = this.brokenCount();
+        const fleet = this.report?.fleet;
         return [
             {
                 key: 'score',
@@ -3314,6 +3317,14 @@ class DashboardHealth {
                     label: this.t('dashboard.healthFilterBroken', 'Broken'),
                     value: String(broken),
                     tone: 'bad',
+                }]
+                : []),
+            ...(fleet && Number(fleet.monitors) > 0
+                ? [{
+                    key: 'uptime',
+                    label: this.t('dashboard.healthUptime24h', 'Uptime 24h'),
+                    value: `${Math.round(Number(fleet.uptime24h) || 0)}%`,
+                    tone: Number(fleet.downNow) > 0 ? 'bad' : 'good',
                 }]
                 : []),
             { key: 'age', label: this.t('dashboard.healthSummaryUpdated', 'Updated'), value: this.reportAgeText() },
@@ -3343,6 +3354,10 @@ class DashboardHealth {
             })),
             summary: this.shellSummary(),
             onFilter: (key, via) => this.applyFilter(key, via),
+            sections: [{ key: 'monitors', label: this.t('dashboard.healthMonitors', 'Monitors'),
+                         count: this.filterCount('monitored') }],
+            activeSection: this.section,
+            onSection: (key) => this.showMonitorsSection(key === 'monitors'),
         };
     }
 
@@ -3438,9 +3453,21 @@ class DashboardHealth {
         return this.filterLabel().toLowerCase();
     }
 
+    /**
+     * Monitors is a destination, not a filter: the fleet panel replaces the
+     * feed rather than narrowing it.
+     */
+    showMonitorsSection(on) {
+        this.section = on ? 'monitors' : null;
+        this.shell?.setActiveSection(this.section);
+        this.syncUrlState();
+        this.render();
+    }
+
     /** What a rail filter does. A method rather than a closure so the shell can call it. */
     applyFilter(key, via) {
         this.filter = key || 'broken';
+        this.section = null;
         this.focusIssueKey = null;
         // The shell calls a pointer press "click"; this view has always
         // reported it as "pill", and the analytics stream is read against that
@@ -3497,6 +3524,7 @@ class DashboardHealth {
         // the search box keeps its value, its focus and its caret through a
         // render triggered by a keystroke.
         shell.setActive(this.filter);
+        shell.setActiveSection(this.section);
         shell.setCounts(Object.fromEntries(
             this.shellFilterRows().map((row) => [row.key, this.filterCount(row.key)])));
         shell.setSummary(this.shellSummary());
@@ -3534,19 +3562,20 @@ class DashboardHealth {
             return;
         }
 
+        // Monitors is a destination: it swaps the body for the fleet panel
+        // instead of narrowing the feed, so the feed is skipped entirely here.
+        if (this.section === 'monitors') {
+            const fleet = this.renderFleetPanel();
+            if (fleet) body.appendChild(fleet);
+            this.finishRender();
+            return;
+        }
+
         const filtered = this.getFilteredIssues();
 
-        // What the active filter selects, in a sentence. Above the fleet panel so
-        // the reading order stays "what am I looking at" before "how is it doing".
+        // What the active filter selects, in a sentence.
         const note = this.renderFilterNote();
         if (note) body.appendChild(note);
-
-        // The collection-wide panel sits at the top of the body on Monitored:
-        // that filter is the one place where "how is everything doing" is the
-        // question being asked, and on Broken it would push the actual work off
-        // screen.
-        const fleet = this.renderFleetPanel();
-        if (fleet) body.appendChild(fleet);
 
         if (!filtered.length) {
             body.appendChild(this.renderEmptyState());
@@ -3875,13 +3904,13 @@ class DashboardHealth {
     /**
      * Pooled uptime, the worst monitors, outages and response shifts.
      *
-     * Only on the Monitored filter: everywhere else the list is about bookmarks
-     * to fix, and a panel about uptime would push that work below the fold. Also
-     * only once the server sends stats, which it does not until something is both
-     * monitored and has samples.
+     * Only in the Monitors section: everywhere else the list is about
+     * bookmarks to fix, and a panel about uptime would push that work below
+     * the fold. Also only once the server sends stats, which it does not
+     * until something is both monitored and has samples.
      */
     renderFleetPanel() {
-        if (this.filter !== 'monitored') return null;
+        if (this.section !== 'monitors') return null;
         const fleet = this.report?.fleet;
         if (!fleet || !Number(fleet.monitors)) return null;
 
@@ -5624,6 +5653,11 @@ class DashboardHealth {
             }
         } catch { /* a malformed URL just means no deep link */ }
 
+        // The section is a destination, not part of the query string: it lives
+        // in the hash path (`#health/monitors`) so the `hv_*` parameters above
+        // stay untouched by it.
+        this.section = window.location.hash === '#health/monitors' ? 'monitors' : null;
+
         if (!stateFromUrl) {
             try {
                 const stored = JSON.parse(localStorage.getItem(DashboardHealth.STATE_KEY) || '{}');
@@ -5672,7 +5706,8 @@ class DashboardHealth {
             setOrDelete('hv_id', String(this.focusIssueKey || this.selectedKey || '').trim(), !String(this.focusIssueKey || this.selectedKey || '').trim());
             params.delete('hv_refresh');
             const query = params.toString();
-            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#health`);
+            const hash = this.section === 'monitors' ? '#health/monitors' : '#health';
+            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}${hash}`);
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 

@@ -160,7 +160,8 @@
 .lvs-filter:hover,
 .lvs-section:hover { background: var(--background-secondary); }
 
-.lvs-filter.is-active {
+.lvs-filter.is-active,
+.lvs-section.is-active {
     background: var(--background-secondary);
     color: var(--accent-primary);
     font-weight: 500;

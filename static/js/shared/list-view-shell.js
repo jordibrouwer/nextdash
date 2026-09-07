@@ -162,6 +162,9 @@ class ListViewShell {
                 item.type = 'button';
                 item.className = 'lvs-section';
                 item.dataset.lvsSectionKey = String(entry.key);
+                Object.entries(entry.dataAttrs || {}).forEach(([name, value]) => {
+                    item.setAttribute(name, String(value));
+                });
                 item.textContent = entry.count == null
                     ? String(entry.label)
                     : `${entry.label} ${entry.count}`;
@@ -169,6 +172,24 @@ class ListViewShell {
             });
             rail.appendChild(sectionGroup);
         }
+
+        const sectionButtons = () => [...rail.querySelectorAll('.lvs-section')];
+
+        const setActiveSection = (key) => {
+            sectionButtons().forEach((btn) => {
+                btn.classList.toggle('is-active', btn.dataset.lvsSectionKey === String(key));
+            });
+        };
+
+        rail.addEventListener('click', (event) => {
+            const btn = event.target.closest('.lvs-section');
+            if (!btn || !rail.contains(btn)) return;
+            if (typeof config.onSection === 'function') {
+                config.onSection(btn.dataset.lvsSectionKey);
+            }
+        });
+
+        setActiveSection(config.activeSection ?? null);
 
         const filterButtons = () => [...filterGroup.querySelectorAll('.lvs-filter')];
 
@@ -346,6 +367,7 @@ class ListViewShell {
                 });
             },
             setActive,
+            setActiveSection,
             setBreadcrumb(text) { crumb.textContent = String(text || ''); },
             get railScrollTop() { return rail.scrollTop; },
             destroy() {
