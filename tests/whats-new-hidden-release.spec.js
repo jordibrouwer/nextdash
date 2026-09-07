@@ -119,6 +119,21 @@ test.describe('a release flagged hideFromModal', () => {
             ]),
         }));
 
+        // Both fixture releases need a file behind them: the modal renders the
+        // release it leads with, and the shipped tree carries v1.x only.
+        for (const id of ['v2026.09.9', 'v2026.09.2']) {
+            await page.route(`**/static/data/whats-new/${id}.json*`, (route) => route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    tag: id,
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                    modalLead: `Fixture notes for ${id}.`,
+                    sections: [{ title: 'Fixture', items: [{ badge: 'fix', text: 'A fixture item.' }] }],
+                }),
+            }));
+        }
+
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -152,7 +167,7 @@ test.describe('a release flagged hideFromModal', () => {
          * missing between two that are there.
          */
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
-        expect(index[0].tag).toBe('v1.5.0');
+        expect(index[0].tag).toBe('v1.6.0');
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -167,7 +182,7 @@ test.describe('a release flagged hideFromModal', () => {
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
         // The modal leads with the newest release rather than stepping over it.
-        expect(await shownTags()).toContain('v1.5.0');
+        expect(await shownTags()).toContain('v1.6.0');
 
         // And the ones that were held back are reachable rather than skipped.
         await expect.poll(async () => {
@@ -179,7 +194,7 @@ test.describe('a release flagged hideFromModal', () => {
         }, { timeout: 20_000 }).toContain('v1.2.1');
     });
 
-    test('the release constants name v1.5.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.6.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
@@ -187,9 +202,9 @@ test.describe('a release flagged hideFromModal', () => {
          * back now, so that is simply the newest entry -- and an install whose
          * stored value is older sees the notes once on its next visit.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.5.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.6.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.5.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v277'");
+        // holding its old copy would never learn v1.6.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v278'");
     });
 });

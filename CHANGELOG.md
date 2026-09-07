@@ -8,9 +8,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.6.0 — 8 September 2026](#v160--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
-- [v1.4.8 — 9 September 2026](#v148--9-september-2026)
+- [v1.4.8 — 5 September 2026](#v148--5-september-2026)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
 - [v1.4.7 — 3 September 2026](#v147--3-september-2026)
 - [v1.4.6 — 2 September 2026](#v146--2-september-2026)
@@ -200,7 +200,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.6.0 — 8 September 2026
 
 ### Dashboard
 
@@ -251,11 +251,20 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Tests
 
+- **fix — the overview's release spec assumed every spotlight leads into config.** It reads the top feature row's own `data-overview-go` so it survives the next release, but then asserted `config.section` no matter what that button said — and a spotlight can also carry `{view}`, which leaves config for Health or the Inbox. It follows whichever shape the button names now.
 - **fix — two health specs that the rail migration went past.** `health-ignore` asserted the **Ignored** filter was *absent* until something is ignored, but the rail now declares every filter and hides what is empty, so the pill is in the DOM from the first render — the assertion asks for hidden instead. `health-rot-tools` dismissed the onboarding dialog and the tour before waiting for `dashboardInstance`, so on a slow run neither was there yet to dismiss: **Quick setup** and **What's new in Health** opened afterwards and swallowed the click on **Group by site**. It waits for the instance first now, the order the other health specs already use.
 
 ### Themes
 
 - **fix — a theme's dark variant no longer wears a different backdrop shape than its light one.** The backdrop's shape is picked by hashing the theme id, and a "-light"/"-dark" pair is two different ids, so 111 of the 224 built-in themes had their two variants land on two different recipes — a diagonal wireframe on one side, a glow from below on the other — while only the colours were meant to change with Quick mode. A "-dark" id is now hashed as its "-light" counterpart, so the pair always shares a recipe; the plain `light`/`dark` defaults and every custom theme are unaffected. **This changes the look of 111 dark themes**, each now drawn with the shape its light half already had.
+
+### What's new
+
+- **The modal's back catalogue now starts at v1.0.0.** The index carried 188 entries, 148 of them pre-1.0 dated releases from the `v2026.*` scheme; scrolling the window walked through a year of notes for a numbering scheme the app no longer uses. The index lists the 40 `v1.x` releases, newest first, and their JSON files are the only ones left in `static/data/whats-new/`. The fixture in `tests/whats-new-hidden-release.spec.js` stubs both of its releases now, since the tree no longer holds a `v2026.*` file to fall back on.
+
+### Docs
+
+- The release notes, the changelog, **Config → Help**, its tips, **Config → Overview** and **About → News & features** follow the rebuilt Health and Inbox views: the Help sections for both describe the left column, the sticky header and the density setting rather than the tile rows that are gone, the version panel names v1.6.0, and three spotlights carry `since: "v1.6.0"` into the news stream. `MANUAL.md` gains the same in its Health and Inbox chapters. `whats-new-stub.js` moves both tokens (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION`), `tests/whats-new-hidden-release.spec.js` pins the new pair, and `asset_hashes_gen.go` is regenerated. `README.md` gains one correction: the link to its own system-widgets heading carried a double dash GitHub does not put in the slug, so it landed at the top of the file. One data correction rides along: **v1.4.8 was dated 9 September**, four days after the day it shipped and three days after v1.5.0, so it sorted to the top of Config → Overview's news stream and pushed the newest release off the panel. It reads 5 September now, in the changelog, the index and its release file.
 
 ---
 
@@ -276,7 +285,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## v1.4.8 — 9 September 2026
+## v1.4.8 — 5 September 2026
 
 ### Widgets
 

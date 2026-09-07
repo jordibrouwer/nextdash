@@ -27,6 +27,7 @@
                 'tipEverydayEsc',
                 'tipEverydayOverview',
                 'tipEverydayViews',
+                'tipEverydayDensity',
                 'tipEverydayGridFilter',
                 'tipEverydayScrollBack',
                 'tipEverydayCheatsheet',
@@ -79,6 +80,7 @@
             titleFallback: 'Keeping it healthy',
             tips: [
                 'tipMaintHealth',
+                'tipMaintMonitorsPlace',
                 'tipMaintReview',
                 'tipMaintRotReport',
                 'tipMaintMerge',

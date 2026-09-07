@@ -58,8 +58,17 @@ test.describe('the current release as the reader meets it', () => {
         const button = page.locator('.config-news-item[data-news-source="feature"] .config-news-go').first();
         const target = JSON.parse(await button.getAttribute('data-overview-go'));
         await button.click();
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section), { timeout: 10_000 })
-            .toBe(target.section);
+        // Two shapes lead somewhere different: a section stays inside config,
+        // while a view leaves it for health or the inbox. Which one the top
+        // feature uses is the release's business, not this spec's.
+        if (target.view) {
+            await expect.poll(() => page.evaluate(() =>
+                document.getElementById('dashboard-layout')?.className || ''), { timeout: 10_000 })
+                .toContain(`${target.view}-layout`);
+        } else {
+            await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section), { timeout: 10_000 })
+                .toBe(target.section);
+        }
     });
 
     test('the modal opens on the current release and reads as prose', async ({ page }) => {
