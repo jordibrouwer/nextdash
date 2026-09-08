@@ -151,26 +151,26 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     // The cases above prove the mechanism against a fixture. This one asserts
-    // what the shipped files do with it: v1.6.1 is deliberately hidden. It
-    // counts toward the version number and shows up everywhere except the
-    // modal -- Config -> Overview, About -> News & features, the changelog --
-    // and the modal must lead with v1.6.0, the newest release it is not
-    // holding back, rather than reopening for a release nobody meant to
+    // what the shipped files do with it: v1.6.1 and v1.6.2 are deliberately
+    // hidden. They count toward the version number and show up everywhere
+    // except the modal -- Config -> Overview, About -> News & features, the
+    // changelog -- and the modal must lead with v1.6.0, the newest release it
+    // is not holding back, rather than reopening for releases nobody meant to
     // announce twice.
-    test('v1.6.1 is held back from the modal, and v1.6.0 still leads it', async ({ page }) => {
+    test('v1.6.2 and v1.6.1 are held back from the modal, and v1.6.0 still leads it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
         /*
-         * v1.6.1 is the newest entry, and the only one carrying the flag --
-         * a reader following the notes back should not find any other
-         * version missing between two that are there.
+         * The hidden ones are the newest, and they are consecutive -- a reader
+         * following the notes back should not find a version missing between
+         * two that are there.
          */
-        expect(index[0].tag).toBe('v1.6.1');
+        expect(index[0].tag).toBe('v1.6.2');
         expect(index[0].hideFromModal).toBe(true);
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.6.1']);
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.6.2', 'v1.6.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -184,9 +184,10 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // The modal leads with v1.6.0, and never shows the hidden v1.6.1.
+        // The modal leads with v1.6.0, and never shows either hidden release.
         expect(await shownTags()).toContain('v1.6.0');
         expect(await shownTags()).not.toContain('v1.6.1');
+        expect(await shownTags()).not.toContain('v1.6.2');
 
         // And the ones before it are reachable rather than skipped.
         await expect.poll(async () => {
@@ -203,13 +204,13 @@ test.describe('a release flagged hideFromModal', () => {
         const src = await stub.text();
         /*
          * The release token names what the modal leads with -- v1.6.0, not
-         * the hidden v1.6.1 that index[0] actually names -- so an install
+         * the hidden v1.6.2 that index[0] actually names -- so an install
          * that already saw v1.6.0's notes is not reopened for a release with
          * nothing new to show it.
          */
         expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.6.0'");
         // The data token moves regardless: the index changed, and a browser
         // holding its old copy would never learn v1.6.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v278'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v279'");
     });
 });
