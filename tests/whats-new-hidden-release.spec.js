@@ -136,23 +136,25 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     // The cases above prove the mechanism against a fixture. This one asserts
-    // what the shipped files do with it, which is the part a release gets wrong:
-    // a flag left on hides a release nobody meant to hide, and a flag taken off
-    // without bumping the tokens announces it to nobody.
-    test('nothing is held back from the modal any more', async ({ page }) => {
+    // what the shipped files do with it: v1.6.1 is deliberately hidden. It
+    // counts toward the version number and shows up everywhere except the
+    // modal -- Config -> Overview, About -> News & features, the changelog --
+    // and the modal must keep leading with v1.5.0 rather than reopening for
+    // a release nobody meant to announce twice.
+    test('v1.6.1 is held back from the modal, and v1.5.0 still leads it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
         /*
-         * Nothing is held back. hideFromModal is still the mechanism -- the
-         * tests above stub an index to prove it works -- but no release uses
-         * it: a reader following the notes back should not find a version
-         * missing between two that are there.
+         * v1.6.1 is the newest entry, and the only one carrying the flag --
+         * a reader following the notes back should not find any other
+         * version missing between two that are there.
          */
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
-        expect(index[0].tag).toBe('v1.5.0');
+        expect(index[0].tag).toBe('v1.6.1');
+        expect(index[0].hideFromModal).toBe(true);
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.6.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -166,10 +168,11 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // The modal leads with the newest release rather than stepping over it.
+        // The modal leads with v1.5.0, and never shows the hidden v1.6.1.
         expect(await shownTags()).toContain('v1.5.0');
+        expect(await shownTags()).not.toContain('v1.6.1');
 
-        // And the ones that were held back are reachable rather than skipped.
+        // And the ones before it are reachable rather than skipped.
         await expect.poll(async () => {
             await modal.evaluate((m) => {
                 const body = m.querySelector('.modal-body') || m;

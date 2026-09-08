@@ -2,6 +2,54 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureHealthInboxShellTitle",
+      "titleFallback": "Health and the Inbox share one left rail",
+      "whatKey": "config.overviewNewFeatureHealthInboxShellWhat",
+      "whatFallback": "Health and the inbox each carried a row of tiles above the list, repeating the same counts the filters below already showed — the same number, twice, in two different shapes.",
+      "howKey": "config.overviewNewFeatureHealthInboxShellHow",
+      "howFallback": "Both now list every filter in a left column with its count instead. Score, the trend, the broken count and the report's age sit above Health's filters as plain readouts; This week sits the same way above the inbox's. A filter with nothing in it drops out of the list and returns once it fills, and both headers now stay put while you scroll, so the filters and the actions above the list stay reachable in a long one.",
+      "enableKey": "config.overviewNewFeatureHealthInboxShellEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureHealthInboxShellCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.6.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthMonitorsTitle",
+      "titleFallback": "Monitors is a place of its own",
+      "whatKey": "config.overviewNewFeatureHealthMonitorsWhat",
+      "whatFallback": "The Monitored filter narrows the list to what could be watched, but the pooled uptime, the worst performers and recent outages used to live under that same filter — one control asked to do two different things.",
+      "howKey": "config.overviewNewFeatureHealthMonitorsHow",
+      "howFallback": "Monitors is now its own entry in the rail. Opening it swaps the list for that fleet panel instead of narrowing it, and it has its own address, so it is bookmarkable and returns you to the same view on reload.",
+      "enableKey": "config.overviewNewFeatureHealthMonitorsEnable",
+      "enableFallback": "Appears in the rail as soon as anything on the page could be monitored.",
+      "ctaKey": "config.overviewNewFeatureHealthMonitorsCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      },
+      "since": "v1.6.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureListDensityTitle",
+      "titleFallback": "Rows can sit closer together or further apart",
+      "whatKey": "config.overviewNewFeatureListDensityWhat",
+      "whatFallback": "Health and the inbox always drew rows at the same height, whether you wanted to scan a long list quickly or read one comfortably.",
+      "howKey": "config.overviewNewFeatureListDensityHow",
+      "howFallback": "A density setting switches every list between compact and comfortable rows. It is one setting for the whole app rather than one per view, so switching it from either the inbox or Health changes both.",
+      "enableKey": "config.overviewNewFeatureListDensityEnable",
+      "enableFallback": "Two buttons in the header of Health and the inbox.",
+      "ctaKey": "config.overviewNewFeatureListDensityCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "inbox"
+      },
+      "since": "v1.6.1"
+    },
+    {
       "titleKey": "config.overviewNewFeatureThemeCharacterTitle",
       "titleFallback": "A theme can be more than a palette",
       "whatKey": "config.overviewNewFeatureThemeCharacterWhat",

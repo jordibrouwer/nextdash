@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.6.1 — 8 September 2026](#v161--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
 - [v1.4.8 — 9 September 2026](#v148--9-september-2026)
 - [v1.4.7.1 — 5 September 2026](#v1471--5-september-2026)
@@ -200,7 +200,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.6.1 — 8 September 2026
 
 ### Dashboard
 
@@ -250,6 +250,13 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Themes
 
 - **fix — a theme's dark variant no longer wears a different backdrop shape than its light one.** The backdrop's shape is picked by hashing the theme id, and a "-light"/"-dark" pair is two different ids, so 111 of the 224 built-in themes had their two variants land on two different recipes — a diagonal wireframe on one side, a glow from below on the other — while only the colours were meant to change with Quick mode. A "-dark" id is now hashed as its "-light" counterpart, so the pair always shares a recipe; the plain `light`/`dark` defaults and every custom theme are unaffected. **This changes the look of 111 dark themes**, each now drawn with the shape its light half already had.
+
+### Docs
+
+- `static/data/whats-new/v1.6.1.json` carries the release, and `index.json` gets a new first entry for it with `"hideFromModal": true`. The modal shows the first entry *without* that flag, so it keeps leading with v1.5.0; `index[0]` is still v1.6.1, so the tag on Config → Overview and everywhere else that reads the index moves to it. `static/js/whats-new-stub.js` is deliberately left untouched — `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` stay on their v1.5.0 values, since bumping either is what reopens the modal for every upgraded install.
+- `tests/whats-new-hidden-release.spec.js`'s guard against a version going missing from the modal is updated for the shape this release actually has: `index[0]` is the hidden v1.6.1 rather than an empty `hideFromModal` list, and the modal is asserted to show v1.5.0 while never showing v1.6.1.
+- `static/data/overview-features.json` gains three spotlights tagged `since: "v1.6.1"` for the shared shell, Monitors, and the row-density setting, each with `titleKey`/`whatKey`/`howKey`/`enableKey`/`ctaKey` locale strings in all five languages, to keep `validate:json`'s locale-parity check green.
+- Config → Help's Health and Inbox panels, and `helpVersionBody`, are updated for the left rail replacing the old tile rows and for Monitors moving out of the Monitored filter.
 
 ---
 

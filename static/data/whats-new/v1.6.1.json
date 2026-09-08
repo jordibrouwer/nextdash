@@ -1,0 +1,148 @@
+{
+  "tag": "v1.6.1",
+  "date": "8 September 2026",
+  "releasedAt": "2026-09-08",
+  "modalLead": "Health and the Inbox share one shell now, with a left column listing every filter and its count instead of a second row of tiles saying the same thing above the list. Monitors gets a place of its own in that rail, rows can sit closer together or further apart with one shared setting, and both headers stay put while you scroll.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A review session can put a link aside for a month.</strong> The card offered Re-check, Open, Delete and Skip, so a link that is broken on purpose &mdash; a service off for the winter, a host that only answers from another network &mdash; had no honest answer. <strong>Ignore 30d</strong> is that answer: it silences the link everywhere, and the row leaves the session because it has been dealt with."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health has the same left column as the Inbox.</strong> Every filter is a row there with its count, and the tiles that repeated those counts above the list are gone. <strong>Score</strong>, the trend, the broken count and the report's age sit above the filters as plain readouts. A filter with nothing in it drops out of the list and comes back once it fills."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Monitors is a place of its own in the rail now, not a filter.</strong> Opening it swaps the list for the fleet panel &mdash; pooled uptime, the worst performers, recent outages &mdash; rather than narrowing the list the way the <strong>Monitored</strong> filter still does. It has its own address, so it is bookmarkable and returns you to the same view on reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The rail's Monitors row no longer reads like the Monitored filter above it.</strong> They sat one above the other with the same count and near-identical labels, even though one narrows the list and the other opens the fleet panel. It now reads <strong>All monitors</strong>, matching the panel's own heading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The header stays put while you scroll.</strong> <strong>Work through</strong>, <strong>Rot report</strong>, the ⋯ menu and the ℹ explainer stay reachable from anywhere in a long list. The trend chart moved into the ⋯ menu, as <strong>Healthy over time</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health rows can be compact or comfortable</strong>, using the setting the Inbox already offered."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the search box no longer rebuilds the whole view behind your cursor.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Arrow keys can step past the first filter again.</strong> A second press used to land back on the row the first one reached."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The title's Smart Why explainer opens by keyboard again.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The rail's Uptime 24h reading is no longer stuck on \"0%\".</strong> It now reads \"no data\" while nothing has been sampled yet, instead of a number that was never real."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The trend sparkline is back</strong>, under the trend figure in the left column. The full chart is still one click away in the ⋯ menu."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The rail's filter rows and summary card have their rounded surface, shadow and hover lift back</strong> in the modern layout, and their keyboard focus ring is visible again in both layouts &mdash; along with the header actions and the density toggle, which lost the same ring the same way."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The inbox has a left column.</strong> The filters moved there as a list with their counts, and <strong>This week</strong> sits above them as a plain readout. The row of tiles above the list is gone, since it showed the same counts a second time; <strong>Snoozed</strong> and <strong>With note</strong> now appear only when there is something in them."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The header stays put while you scroll.</strong> It shrinks to a single bar as it sticks, so <strong>Triage</strong> stays reachable from anywhere in a long list, and the left column sticks with it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The left column becomes one scrolling line on a narrow screen.</strong> The figures move up under the title and the ℹ explainer joins the ⋯ menu, so a phone gets the list instead of four rows of controls above it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rows can be compact or comfortable.</strong> It is one setting for the whole app rather than one per view."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the search box no longer rebuilds the whole view behind your cursor.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The site filter no longer sends the hostname you picked to analytics.</strong> It reports a fixed marker instead, under the same event name as before."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Clicking a row's domain chip now behaves like every other filter change.</strong> It used to leave a stale selection behind and forget the site choice on reload; it now goes through the same path picking it from the list does."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Pressing ? a second time while the finder line is open no longer breaks what you type next.</strong> A second press used to add a second finder marker and search for it literally, instead of doing nothing the way a key with no job left should."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The finder line says when you have not set up any finders yet</strong>, on a bare <code>?</code>, with a way straight to <strong>Config &rarr; Pages &amp; tags &amp; Finders</strong> to add one."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape no longer throws away a selection while closing a popover.</strong> Dismissing the <strong>Tags</strong>, <strong>Checking</strong> or date popover with Escape used to clear whatever rows you had ticked underneath it too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Checking popover closes when you click away from it</strong>, like every other action popover already did."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the filter box no longer makes your widgets disappear.</strong> The clock, the weather and the rest used to vanish the moment you typed the first letter of a bookmark filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Long category titles shrink to fit again.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An empty page no longer keeps the previous page's column layout</strong> under its \"nothing here yet\" message."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Custom widgets no longer show stale figures after a manual refresh.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Alt+&larr;/&rarr; and Shift+Alt+&larr;/&rarr; move a category header again on a page you have never dragged on.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The quick-action toolbar and its keys no longer follow you into Config, Inbox and Health.</strong> Add, search, commands, finders, recent, help and fold are dashboard-only again, and hide the moment a full-container view opens. The tag-cloud toggle had the same gap and is fixed the same way."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A theme's dark half no longer wears a different backdrop shape than its light half.</strong> 111 of the 224 built-in themes had their two variants land on two different backdrop recipes &mdash; a diagonal wireframe on one side, a glow from below on the other &mdash; when only the colours were meant to change. This changes the look of those 111 dark themes, each now drawn with the shape its light half already had."
+        }
+      ]
+    }
+  ]
+}
