@@ -29,7 +29,7 @@ function trend(days, from, to) {
  * tests/health-collection-stats.spec.js does, rather than waiting on real
  * checks to accumulate history.
  */
-function fleetReport({ uptime24h, trendPoints = [] } = {}) {
+function fleetReport({ uptime24h, trendPoints = [], monitoredCount } = {}) {
     const now = Date.now();
     return {
         generatedAt: now,
@@ -37,12 +37,15 @@ function fleetReport({ uptime24h, trendPoints = [] } = {}) {
             totalBookmarks: 4, healthyCount: 4, brokenCount: 0, duplicateCount: 0,
             uncheckedCount: 0, staleCount: 0, unusedCount: 0, monitoredCount: 4,
         },
+        // Every issue is monitored by default (the original shape every other
+        // test here relies on); monitoredCount lets a test ask for a known,
+        // partial split instead so the section's count is neither 0 nor 4.
         issues: [1, 2, 3, 4].map((n) => ({
             pageId: 1, index: n - 1, pageName: 'dev', name: `Monitored ${n}`,
             url: `https://mon${n}.test`, category: 'tools',
             status: 'healthy', flags: ['healthy'], score: 100, duplicateCount: 0,
             lastChecked: now, reasons: [], reasonDetails: [],
-            monitor: true, checkStatus: false,
+            monitor: monitoredCount == null ? true : n <= monitoredCount, checkStatus: false,
         })),
         duplicateGroups: [],
         trend: trendPoints,
@@ -144,4 +147,52 @@ test('the rail summary carries the trend sparkline when there is enough history'
     const chart = page.locator('.lvs-summary [data-lvs-summary-key="trend"] .health-view-trend-sparkline');
     await expect(chart).toBeVisible();
     await expect(chart).toHaveAttribute('role', 'img');
+});
+
+// 0009ace9 fixed the section's count being permanently frozen at 0: shellConfig()
+// is only read once, inside mount(), before the first report has necessarily
+// loaded, so render() has to push a fresh number into the section afterwards
+// the same way it already does for filter rows. The two tests below cover
+// that fix: the count must reflect the real total once loaded (not 0), and it
+// must go on tracking the total by updating the existing row in place rather
+// than by rebuilding it.
+
+test('the Monitors section count reflects the real total, not zero', async ({ page }) => {
+    // 3 of 4 issues monitored -- neither 0 (the frozen-at-mount bug) nor 4
+    // (which the section would also show if it always meant "all issues").
+    await mockFleetApi(page, { monitoredCount: 3 });
+    await openHealth(page);
+    const count = page.locator('.lvs-section[data-lvs-section-key="monitors"] .lvs-section-count');
+    await expect(count).toHaveText('3');
+});
+
+test('the Monitors section count tracks changes, updating its row in place', async ({ page }) => {
+    await mockFleetApi(page, { monitoredCount: 2 });
+    await openHealth(page);
+    const count = page.locator('.lvs-section[data-lvs-section-key="monitors"] .lvs-section-count');
+    await expect(count).toHaveText('2');
+
+    const result = await page.evaluate(() => {
+        const health = window.dashboardInstance.health;
+        const before = document.querySelector('.lvs-section[data-lvs-section-key="monitors"]');
+        before.dataset.mark = 'kept';
+        // Flip one more issue to monitored and re-render the way the app
+        // does after any report refresh (see DashboardHealth.render()).
+        const flipped = health.report.issues.find((issue) => issue.monitor !== true);
+        if (flipped) flipped.monitor = true;
+        health.render();
+        const after = document.querySelector('.lvs-section[data-lvs-section-key="monitors"]');
+        return {
+            sameNode: before === after,
+            markSurvived: after?.dataset.mark === 'kept',
+            count: after?.querySelector('.lvs-section-count')?.textContent,
+        };
+    });
+
+    expect(result.count, 'the section count did not track the new monitored total').toBe('3');
+    // Mirrors the setCounts() in-place assertion in list-view-shell.spec.js:
+    // rebuilding the row instead of mutating its count span in place would
+    // lose focus and scroll position, which is the property the shell rests on.
+    expect(result.sameNode, 'setSectionCounts replaced the section node instead of updating it in place').toBe(true);
+    expect(result.markSurvived).toBe(true);
 });
