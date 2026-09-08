@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
 - [v1.6.1 — 8 September 2026](#v161--8-september-2026)
 - [v1.6.0 — 8 September 2026](#v160--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
@@ -198,6 +199,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+### Health
+
+- **fix — opening a row's `More` menu drew it behind the row below, cut in half, under a depth theme.** `.feed-row` picks up a `backdrop-filter` under `theme-character.css`'s glass depth, and the row's action bar already sat at `opacity: 0` until hovered — both make `.feed-row` its own stacking context, which traps the menu's `z-index: 20` inside that one row, so a later row in the DOM always painted over it regardless of the menu's own number. `static/css/feed-row.css` now raises the row itself while it holds an open menu and keeps its action bar painted rather than fading it out from under the pointer, both keyed on the same `.health-view-menu:not([hidden])` state Health and Config → Bookmarks already share — so the fix reaches both `.feed-row` consumers with an in-row menu without touching either view's own CSS. Covered by a new spec that asserts on containment (`menu.contains(el)`) rather than z-index, under a theme that actually applies the blur.
 
 ---
 

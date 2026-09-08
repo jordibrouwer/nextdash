@@ -25,6 +25,22 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* A row with its menu open has to win against the rows below it, and under a
+   depth theme it cannot: theme-character.css gives `.feed-row` a
+   backdrop-filter, which — like the actions bar's non-1 opacity below — makes
+   the row its own stacking context. The menu's z-index: 20 (health-view.css)
+   then only ever competes inside that context, so a later row in the DOM
+   always paints over it regardless of the number.
+   Raising the row itself, only while it holds an open menu, lets it beat the
+   later siblings' plain DOM-order stacking. Keyed on the same
+   `.health-view-menu:not([hidden])` state the overflow-escape rule below
+   already reads, so Health and Config → Bookmarks — the two `.feed-row`
+   consumers with an in-row menu — both pick it up for free. Inbox's popovers
+   are appended to <body>, never to the row, so they never needed this. */
+.feed-row:has(.health-view-menu:not([hidden])) {
+    z-index: 1;
+}
+
 /* Health keeps the checkbox in the grid rather than floating it over the icon:
    its rows are scanned in bulk, so the column is always there and only fades. */
 .feed-row--with-select {
@@ -134,11 +150,24 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
     opacity: 1;
 }
 
-/* The collapsing wrapper clips its content, which would cut off an open menu.
-   Only while a menu is open does the row let it escape — the height animation is
-   finished by then, so nothing jumps. Matches both the shared menu class and the
-   one Health names its own popovers with. */
-.feed-row-actions:has(.health-view-menu:not([hidden])),
+/* The bar collapses to nothing — grid-template-rows: 0fr, which the
+   min-height: 0/overflow: hidden above ride down to zero — the moment the
+   pointer leaves the row, which an open menu's own dropdown does immediately,
+   on the way to one of its items: the menu would vanish under the reader's
+   cursor. Holding the bar at its revealed state, matching the :hover rule
+   above, keeps it (and the menu inside it) on screen for as long as the menu
+   is open, whether or not the row is still hovered.
+   The collapsing wrapper also clips its content, which would cut off an open
+   menu even while the bar itself stays revealed; only while a menu is open
+   does the row let it escape — the height animation is finished by then, so
+   nothing jumps. Matches both the shared menu class and the one Health names
+   its own popovers with. */
+.feed-row-actions:has(.health-view-menu:not([hidden])) {
+    grid-template-rows: 1fr;
+    margin-top: var(--space-2, 0.55rem);
+    opacity: 1;
+    overflow: visible;
+}
 .feed-row-actions:has(.health-view-menu:not([hidden])) > * {
     overflow: visible;
 }
