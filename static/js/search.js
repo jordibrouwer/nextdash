@@ -2662,7 +2662,11 @@ class SearchComponent {
             const filterClass = match.type === 'filter-completion' ? ' filter-completion-entry' : '';
             const whatsNewClass = match.type === 'whats-new' ? ' whats-new-entry' : '';
             const groupChildClass = (match.groupId || match.type === 'filter-completion' || match.type === 'whats-new') ? ' command-group-child' : '';
-            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass;
+            // Set only on rows a command handler explicitly marked as the
+            // setting's present value (see _markCurrentRow / _buildOnOffRows
+            // in search-commands.js) — most match types never carry it.
+            const currentValueClass = match.current === true ? ' is-current-value' : '';
+            matchElement.className = baseClass + configClass + commandClass + finderClass + fuzzyClass + historyClass + savedClass + filterClass + whatsNewClass + groupChildClass + currentValueClass;
             matchElement.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
 
             // Get the display name based on match type
@@ -2696,6 +2700,10 @@ class SearchComponent {
                 ? `<span class="search-match-use-count">${match.useCount}</span>`
                 : '';
 
+            const currentValueBadge = match.current === true
+                ? `<span class="search-match-current-badge">${this._escHtml(this.language?.t('commands.currentBadge') || 'current')}</span>`
+                : '';
+
             const historyRemoveHtml = match.type === 'history'
                 ? `<button type="button" class="search-history-remove" aria-label="${this._escHtml(this.historyRemoveLabel())}">×</button>`
                 : '';
@@ -2706,6 +2714,7 @@ class SearchComponent {
                 ${bookmarkIconHtml}
                 <span class="search-match-name"${plainName ? ` title="${plainName}"` : ''}>${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
                 ${finderUseBadge}
+                ${currentValueBadge}
                 ${historyRemoveHtml}
             `;
 

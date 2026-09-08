@@ -217,6 +217,36 @@
     content: none;
 }
 
+/* The setting's present value, among the choices a typed command lists —
+   set on the row via match.current (see _markCurrentRow / _buildOnOffRows in
+   search-commands.js). A background tint at rest, so it reads before you even
+   reach for hover/arrow-keys; the second rule keeps hover's stronger tint on
+   top rather than being flattened by this one on source-order alone. */
+.search-match.is-current-value {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+
+.search-match.is-current-value:hover,
+.search-match.is-current-value.keyboard-selected {
+    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+}
+
+.search-match-current-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-1-5, 0.4rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--text-xs, 0.68rem);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
 .search-match.command-entry.command-just-applied {
     animation: command-palette-flash 0.55s ease;
 }
@@ -591,23 +621,24 @@ body.no-animations .search-button[data-tooltip]::after {
 .search-button {
     /* Button styling */
     padding: var(--space-2, 0.62rem) var(--space-4, 0.92rem);
-    border: 1px solid var(--border-primary);
+    border: none;
     /* --search-button-under is what the wash sits on: transparent by default,
        and the page background wherever the button floats over content with no
        plate beneath it. See the dock rule below. */
     background: color-mix(in srgb, var(--background-secondary) 74%, var(--search-button-under, transparent));
+    box-shadow: var(--action-btn-shadow);
     color: var(--text-secondary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-normal);
     cursor: pointer;
-    
+
     /* TTY terminal style */
     display: flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     border-radius: var(--layout-radius-md, 0.65rem);
-    
+
     /* Transitions */
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     
@@ -647,16 +678,14 @@ body:not([data-layout-version="modern"]):not([data-rail]) .tag-cloud-toggle-btn.
 
 .search-button:hover {
     background: var(--background-secondary);
-    border-color: var(--border-primary);
     color: var(--text-primary);
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--action-btn-shadow);
 }
 
 .search-button:active {
     transform: none;
     background: var(--background-secondary);
-    border-color: var(--border-primary);
     color: var(--text-primary);
     box-shadow: none;
 }

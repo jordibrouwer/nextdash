@@ -46,7 +46,7 @@ class SearchCommandsComponent {
                 commands: [
                     'theme', 'layoutversion', 'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
                     'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
-                    'shortcuts',
+                    'shortcuts', 'locklayout',
                 ],
             },
             {
@@ -88,6 +88,7 @@ class SearchCommandsComponent {
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
             'packed': this.handlePackedColumnsCommand.bind(this),
+            'locklayout': this.handleLockLayoutCommand.bind(this),
             'buttonbar': this.handleButtonBarCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
@@ -192,8 +193,15 @@ class SearchCommandsComponent {
             : this._t('commands.stateOff', 'off');
     }
 
-    _markCurrent(label, isCurrent) {
-        return isCurrent ? `${label} ✓` : label;
+    // Spread into a row object literal in place of a bare `name:` — sets both
+    // the text marker (kept for screen readers and quick scanning while
+    // typing) and `current`, which search.js reads to paint the row with the
+    // same visual "current value" treatment every setting command now gets.
+    _markCurrentRow(label, isCurrent) {
+        return {
+            name: isCurrent ? `${label} ✓` : label,
+            current: isCurrent,
+        };
     }
 
     _sortModeLabel(method) {
@@ -394,6 +402,20 @@ class SearchCommandsComponent {
         return this._paletteRefresh(enabled ? 'animations:on' : 'animations:off');
     }
 
+    setLockLayout(dashboard, enabled) {
+        dashboard.settings.lockLayout = enabled;
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        // Re-runs initializeCategoryReorder / initializeDashboardCategoryReorder,
+        // same as the Config checkbox's special:'render' — the toggle takes
+        // effect without a reload.
+        if (typeof dashboard.renderDashboard === 'function') {
+            dashboard.renderDashboard({ animate: false });
+        }
+        return this._paletteRefresh(enabled ? 'locklayout:on' : 'locklayout:off');
+    }
+
     /**
      * The keyboard-shortcut popovers on the header links and the button bar.
      *
@@ -526,6 +548,7 @@ class SearchCommandsComponent {
             shortcut,
             stateId: `${prefix}:on`,
             type: 'command',
+            current: enabled,
             action: () => apply(true),
         });
         rows.push({
@@ -533,6 +556,7 @@ class SearchCommandsComponent {
             shortcut,
             stateId: `${prefix}:off`,
             type: 'command',
+            current: !enabled,
             action: () => apply(false),
         });
         return rows;
@@ -545,6 +569,7 @@ class SearchCommandsComponent {
             shortcut: ':BUTTONS',
             stateId: `buttons:${name}`,
             type: 'command',
+            current: enabled,
             action: () => {
                 const target = explicitState !== null ? explicitState : !enabled;
                 return this.setButtonVisibility(dashboard, settingKey, target, name);
@@ -583,6 +608,7 @@ class SearchCommandsComponent {
         if (potentialCommand === 'cat') potentialCommand = 'category';
         if (potentialCommand === 'language') potentialCommand = 'lang';
         if (potentialCommand === 'animation') potentialCommand = 'animations';
+        if (potentialCommand === 'lock-layout') potentialCommand = 'locklayout';
         if (potentialCommand === 'collection') potentialCommand = 'collections';
 
         // :tag:humor shorthand (same as :tag humor / :tag tag:humor)
@@ -933,7 +959,7 @@ class SearchCommandsComponent {
                 const label = page.name || `Page ${index + 1}`;
                 const isCurrent = dash.samePageId(page.id, dash.currentPageId);
                 return {
-                    name: this._markCurrent(label, isCurrent),
+                    ...this._markCurrentRow(label, isCurrent),
                     shortcut: ':PAGE',
                     stateId: `page:${page.id}`,
                     meta: String(index + 1),
@@ -975,7 +1001,7 @@ class SearchCommandsComponent {
         return matches.map((page) => {
             const isCurrent = dash.samePageId(page.id, dash.currentPageId);
             return {
-                name: this._markCurrent(page.name || `Page ${page.id}`, isCurrent),
+                ...this._markCurrentRow(page.name || `Page ${page.id}`, isCurrent),
                 shortcut: ':PAGE',
                 stateId: `page:${page.id}`,
                 type: 'command',
@@ -2044,7 +2070,7 @@ class SearchCommandsComponent {
 
         if (!method) {
             return validMethods.map((sortMethod) => ({
-                name: this._markCurrent(
+                ...this._markCurrentRow(
                     this._formatSortPaletteLabel(sortMethod, categoryLabel),
                     sortMethod === current
                 ),
@@ -2062,7 +2088,7 @@ class SearchCommandsComponent {
         }
 
         return matches.map((sortMethod) => ({
-            name: this._markCurrent(
+            ...this._markCurrentRow(
                 this._formatSortPaletteLabel(sortMethod, categoryLabel),
                 sortMethod === current
             ),
@@ -2117,7 +2143,7 @@ class SearchCommandsComponent {
         const label = String(category.name || category.id || '').trim();
         const current = span.isCategorySpread(dashboard, category);
         const rows = [true, false].map((on) => ({
-            name: this._markCurrent(
+            ...this._markCurrentRow(
                 this._formatSpreadPaletteLabel(on, label),
                 on === current,
             ),
@@ -2206,7 +2232,7 @@ class SearchCommandsComponent {
 
         if (!versionQuery) {
             return versions.map((version) => ({
-                name: this._markCurrent(version, version === currentVersion),
+                ...this._markCurrentRow(version, version === currentVersion),
                 shortcut: ':LAYOUTVERSION',
                 stateId: `layoutversion:${version}`,
                 action: () => this.applyLayoutVersion(dashboard, version),
@@ -2231,7 +2257,7 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((version) => ({
-            name: this._markCurrent(version, version === currentVersion),
+            ...this._markCurrentRow(version, version === currentVersion),
             shortcut: ':LAYOUTVERSION',
             stateId: `layoutversion:${version}`,
             action: () => this.applyLayoutVersion(dashboard, version),
@@ -2250,7 +2276,7 @@ class SearchCommandsComponent {
         const currentPreset = dashboard.settings.layoutPreset || 'default';
         if (!layout) {
             return presets.map((preset) => ({
-                name: this._markCurrent(preset, preset === currentPreset),
+                ...this._markCurrentRow(preset, preset === currentPreset),
                 shortcut: ':LAYOUT',
                 stateId: `layout:${preset}`,
                 action: () => this.applyLayoutPreset(dashboard, preset),
@@ -2262,7 +2288,7 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((preset) => ({
-            name: this._markCurrent(preset, preset === currentPreset),
+            ...this._markCurrentRow(preset, preset === currentPreset),
             shortcut: ':LAYOUT',
             stateId: `layout:${preset}`,
             action: () => this.applyLayoutPreset(dashboard, preset),
@@ -2281,7 +2307,7 @@ class SearchCommandsComponent {
         const currentDensity = dashboard.settings.densityMode || 'compact';
         if (!density) {
             return densityModes.map((mode) => ({
-                name: this._markCurrent(mode, mode === currentDensity),
+                ...this._markCurrentRow(mode, mode === currentDensity),
                 shortcut: ':DENSITY',
                 stateId: `density:${mode}`,
                 action: () => this.applyDensityMode(dashboard, mode),
@@ -2293,7 +2319,7 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((mode) => ({
-            name: this._markCurrent(mode, mode === currentDensity),
+            ...this._markCurrentRow(mode, mode === currentDensity),
             shortcut: ':DENSITY',
             stateId: `density:${mode}`,
             action: () => this.applyDensityMode(dashboard, mode),
@@ -2319,7 +2345,7 @@ class SearchCommandsComponent {
 
         if (!arg) {
             return positions.map(p => ({
-                name: this._markCurrent(p.label, p.value === current),
+                ...this._markCurrentRow(p.label, p.value === current),
                 shortcut: ':BUTTONBAR',
                 stateId: `buttonbar:${p.value}`,
                 action: () => this.applyButtonBarPosition(dashboard, p.value),
@@ -2331,7 +2357,7 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map(p => ({
-            name: this._markCurrent(p.label, p.value === current),
+            ...this._markCurrentRow(p.label, p.value === current),
             shortcut: ':BUTTONBAR',
             stateId: `buttonbar:${p.value}`,
             action: () => this.applyButtonBarPosition(dashboard, p.value),
@@ -2406,6 +2432,7 @@ class SearchCommandsComponent {
                 shortcut: ':FAVICONS',
                 stateId: 'favicons:on',
                 type: 'command',
+                current: enabled,
                 action: () => apply(true),
             }];
         }
@@ -2415,6 +2442,7 @@ class SearchCommandsComponent {
                 shortcut: ':FAVICONS',
                 stateId: 'favicons:off',
                 type: 'command',
+                current: !enabled,
                 action: () => apply(false),
             }];
         }
@@ -2442,6 +2470,7 @@ class SearchCommandsComponent {
                 shortcut: ':PREVIEW',
                 stateId: 'preview:on',
                 type: 'command',
+                current: enabled,
                 action: () => apply(true),
             }];
         }
@@ -2451,6 +2480,7 @@ class SearchCommandsComponent {
                 shortcut: ':PREVIEW',
                 stateId: 'preview:off',
                 type: 'command',
+                current: !enabled,
                 action: () => apply(false),
             }];
         }
@@ -2478,6 +2508,7 @@ class SearchCommandsComponent {
                 shortcut: ':PACKED',
                 stateId: 'packed:on',
                 type: 'command',
+                current: enabled,
                 action: () => apply(true),
             }];
         }
@@ -2487,6 +2518,7 @@ class SearchCommandsComponent {
                 shortcut: ':PACKED',
                 stateId: 'packed:off',
                 type: 'command',
+                current: !enabled,
                 action: () => apply(false),
             }];
         }
@@ -3295,6 +3327,14 @@ class SearchCommandsComponent {
         return this._handleSimpleToggle(args, { shortcut: ':ANIMATIONS', prefix: 'animations', enabled, apply });
     }
 
+    handleLockLayoutCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.lockLayout === true;
+        const apply = (value) => this.setLockLayout(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':LOCKLAYOUT', prefix: 'locklayout', enabled, apply });
+    }
+
     handleShortcutTooltipsCommand(args) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
@@ -3447,6 +3487,7 @@ class SearchCommandsComponent {
                 shortcut,
                 stateId: `${prefix}:on`,
                 type: 'command',
+                current: enabled,
                 action: () => apply(true),
             }];
         }
@@ -3456,6 +3497,7 @@ class SearchCommandsComponent {
                 shortcut,
                 stateId: `${prefix}:off`,
                 type: 'command',
+                current: !enabled,
                 action: () => apply(false),
             }];
         }
@@ -3471,7 +3513,7 @@ class SearchCommandsComponent {
 
         if (!query) {
             return this._LANG_OPTIONS.map((entry) => ({
-                name: this._markCurrent(this._t(entry.labelKey, entry.fallback), entry.id === current),
+                ...this._markCurrentRow(this._t(entry.labelKey, entry.fallback), entry.id === current),
                 shortcut: ':LANG',
                 stateId: `lang:${entry.id}`,
                 completion: `:lang ${entry.id} `,
@@ -3495,7 +3537,7 @@ class SearchCommandsComponent {
         if (matches.length === 0) return [];
 
         return matches.map((entry) => ({
-            name: this._markCurrent(this._t(entry.labelKey, entry.fallback), entry.id === current),
+            ...this._markCurrentRow(this._t(entry.labelKey, entry.fallback), entry.id === current),
             shortcut: ':LANG',
             stateId: `lang:${entry.id}`,
             type: 'command',
@@ -3514,7 +3556,7 @@ class SearchCommandsComponent {
             return this._OPACITY_PRESETS.map((value) => {
                 const label = `${Math.round(value * 100)}%`;
                 return {
-                    name: this._markCurrent(label, Math.abs(value - current) < 0.001),
+                    ...this._markCurrentRow(label, Math.abs(value - current) < 0.001),
                     shortcut: ':OPACITY',
                     stateId: `opacity:${value}`,
                     completion: `:opacity ${Math.round(value * 100)} `,
@@ -3555,6 +3597,7 @@ class SearchCommandsComponent {
                     shortcut: ':COLLECTIONS',
                     stateId: `collections:${entry.id}`,
                     type: 'command',
+                    current: enabled,
                     action: () => this.setSmartCollectionVisibility(dashboard, entry, !enabled),
                 };
             });
@@ -3586,6 +3629,7 @@ class SearchCommandsComponent {
                 shortcut: ':COLLECTIONS',
                 stateId: `collections:${entry.id}:on`,
                 type: 'command',
+                current: enabled,
                 action: () => this.setSmartCollectionVisibility(dashboard, entry, true),
             }];
         }
@@ -3595,6 +3639,7 @@ class SearchCommandsComponent {
                 shortcut: ':COLLECTIONS',
                 stateId: `collections:${entry.id}:off`,
                 type: 'command',
+                current: !enabled,
                 action: () => this.setSmartCollectionVisibility(dashboard, entry, false),
             }];
         }

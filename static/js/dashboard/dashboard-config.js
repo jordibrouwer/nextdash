@@ -2463,6 +2463,7 @@ class DashboardConfig {
         weatherSource: ['weather', 'source', 'ip'],
         weatherUnit: ['weather', 'celsius', 'fahrenheit', 'temperature'],
         calendarUrl: ['calendar', 'ical', 'ics', 'agenda'],
+        calendarIcsUrl: ['calendar', 'ical', 'ics', 'agenda', 'feed', 'widget'],
         openInNewTab: ['tab', 'window', 'target'],
         globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
         enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
@@ -10461,6 +10462,7 @@ class DashboardConfig {
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
+        lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
         dateFormat: { info: ['dateFormatInfoTitle', 'dateFormatInfoMessage'], def: 'short-slash' },
         timeFormat: { info: ['timeFormatInfoTitle', 'timeFormatInfoMessage'], def: '24h' },
@@ -10564,6 +10566,7 @@ class DashboardConfig {
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
         calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'], def: '' },
+        calendarIcsUrl: { info: ['calendarIcsUrlInfoTitle', 'calendarIcsUrlInfoMessage'], def: '' },
         // Link previews
         linkPreviewMode: { info: ['linkPreviewModeInfoTitle', 'linkPreviewModeInfoMessage'], def: 'hover' },
         linkPreviewParts: { info: ['linkPreviewPartsInfoTitle', 'linkPreviewPartsInfoMessage'], def: null },
@@ -10877,7 +10880,7 @@ class DashboardConfig {
                     { ...bool('showGridKeyLegend', 'config.gridKeyLegendLabel', 'Show a key legend under the bookmarks'), special: 'render' },
                     bool('rememberScrollPosition', 'config.rememberScrollPositionLabel', 'Come back to where you were on a page'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
-                    bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                    { ...bool('lockLayout', 'config.lockLayoutLabel', 'Lock layout'), special: 'render', badge: true },
                 ],
             },
             {
@@ -10890,6 +10893,19 @@ class DashboardConfig {
                 note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
+                ],
+            },
+            {
+                // Its own section, not a General checkbox: what it does (open in
+                // a new tab, then close the PWA window) is easy to mistake for
+                // openInNewTab above it, so it gets the room to explain itself
+                // the way Onboarding does rather than a one-line label + i-icon.
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupHyprMode', 'Hypr mode'),
+                note: t('config.generalGroupHyprModeNote', 'For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.'),
+                controls: [
+                    bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
             },
             {
@@ -10917,6 +10933,8 @@ class DashboardConfig {
                     { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
                     { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
                     { field: 'calendarUrl', type: 'text', label: t('config.calendarUrlLabel', 'Calendar URL (iCal)'), special: 'datetime' },
+                    { field: 'calendarIcsUrl', type: 'text',
+                      label: t('config.calendarIcsUrlLabel', 'Calendar feed URL (.ics)'), special: 'datetime' },
                 ],
             },
             {
@@ -11578,11 +11596,14 @@ class DashboardConfig {
             // look like" without leaving the panel to find out.
             const art = c.art ? this.renderControlArt(c, val, prefix) : '';
             if (c.type === 'checkbox') {
+                const badge = c.badge
+                    ? `<span class="config-field-badge">${esc(this.t('config.newBadge', 'New'))}</span>`
+                    : '';
                 return `
                     <div class="config-field-row">
                         <label class="config-toggle">
                             <input type="checkbox" ${dataAttrs} data-${prefix}-type="checkbox" ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
-                            <span>${esc(c.label)}</span>
+                            <span>${esc(c.label)}${badge}</span>
                         </label>
                         <span class="config-field-affordances">${aff}</span>
                     </div>${art}${hint}`;
@@ -13071,6 +13092,13 @@ class DashboardConfig {
                     // redrawing left the old setInterval running at the previous
                     // cadence until a reload. Re-arm it at the new one.
                     d.scheduleWeatherRefresh?.();
+                } else if (field === 'calendarIcsUrl') {
+                    // Same reasoning as the weather fields: a calendar tile
+                    // caches its answer by widget rather than by feed, so a
+                    // changed address kept showing the old feed's events for
+                    // up to five minutes without this.
+                    delete d._widgetCalendar;
+                    d.renderCore?.refreshWidgets?.('calendar');
                 } else {
                     d.renderDateWeatherLine?.();
                 }
@@ -13491,6 +13519,7 @@ class DashboardConfig {
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker']],
+        ['ambient', ['weather', 'calendar']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -13498,6 +13527,7 @@ class DashboardConfig {
             links: ['config.widgetGroupLinks', 'Are the links still good?'],
             incoming: ['config.widgetGroupIncoming', 'What is arriving?'],
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
+            ambient: ['config.widgetGroupAmbient', "What's happening around you?"],
             // Custom widgets, and anything registered but not yet catalogued,
             // land here rather than dropping out of the list entirely.
             other: ['config.widgetGroupOther', 'Built by you'],
@@ -15776,7 +15806,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15920,6 +15950,24 @@ class DashboardConfig {
         backups: [
             { key: 'showList', kind: 'bool', label: ['config.widgetShowList', 'List the backups themselves'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        weather: [
+            { key: 'forecastRange', kind: 'choice',
+              label: ['config.widgetForecastRange', 'Forecast range'],
+              hint: ['config.widgetWeatherLocationHint',
+                     'Location, source and unit come from Behavior → Date & weather.'],
+              options: [
+                  ['3day', ['config.widgetForecastRange3Day', '3 days']],
+                  ['5day', ['config.widgetForecastRange5Day', '5 days']],
+                  ['24h', ['config.widgetForecastRange24h', '24 hours']],
+              ] },
+        ],
+        calendar: [
+            { key: 'daysAhead', kind: 'int', min: 1, max: 90,
+              label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'],
+              hint: ['config.widgetCalendarFeedHint',
+                     'Feed comes from Behavior → Date & weather → Calendar feed URL.'] },
         ],
         /*
          * The custom widget's scalars. Its fields[] is a list of objects, which
@@ -17784,6 +17832,8 @@ class DashboardConfig {
             trash: 'What is waiting in the trash, and when retention removes it for good.',
             backups: 'How old the newest automatic backup is, and whether the last run failed.',
             custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
+            weather: 'Current conditions beside a forecast, for the location the header already reads.',
+            calendar: 'What is coming up, from the ICS feed set in Behavior → Date & weather.',
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');

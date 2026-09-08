@@ -324,6 +324,25 @@
     flex-shrink: 0;
 }
 
+/* Flags a control added this release, next to its label rather than the
+   panel title — the What's New modal already says which release, so this
+   only has to say "this one is new" at the point someone would look for it. */
+.config-field-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-1-5, 0.4rem);
+    padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--text-xs, 0.68rem);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}
+
 .config-bm-header-badge {
     display: inline-flex;
     align-items: center;
@@ -961,12 +980,20 @@
     font-size: calc(var(--font-size-text) * 0.891);
 }
 
-/* A row button that carries a symbol rather than a word — square, so a row of
+/* A row button that carries a symbol rather than a word — circular, so a row of
    them reads as a strip of controls instead of a ragged line of labels. */
 .config-btn--icon {
     padding: 5px 9px;
     min-width: 2rem;
     text-align: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--action-btn-bg);
+}
+
+.config-btn--icon:hover {
+    background: var(--action-btn-bg-hover);
+    border-color: transparent;
 }
 
 .config-btn--danger {

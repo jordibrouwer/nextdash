@@ -71,6 +71,33 @@ class WeatherService {
         return (Date.now() - Number(cached.timestamp)) < safeMinutes * 60 * 1000;
     }
 
+    getForecastCacheKey(settings, mode) {
+        return `${this.getCacheKey(settings)}:forecast:${mode}`;
+    }
+
+    getCachedForecast(settings, mode) {
+        try {
+            const raw = localStorage.getItem(this.getForecastCacheKey(settings, mode));
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.timestamp || !parsed.data) return null;
+            return parsed;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    setCachedForecast(settings, mode, data) {
+        try {
+            localStorage.setItem(this.getForecastCacheKey(settings, mode), JSON.stringify({
+                timestamp: Date.now(),
+                data
+            }));
+        } catch (error) {
+            // Ignore cache write failures.
+        }
+    }
+
     async fetchWeather(settings, options = {}) {
         this.lastFetchError = null;
         const useCache = options.useCache !== false;
@@ -222,6 +249,115 @@ class WeatherService {
             temperature: Number(data.current.temperature_2m),
             weatherCode: Number(data.current.weather_code),
             unitSymbol: fahrenheit ? 'F' : 'C'
+        };
+    }
+
+    /** Current conditions plus a forecast, resolved and cached together. */
+    async fetchForecast(settings, mode, options = {}) {
+        this.lastFetchError = null;
+        const safeMode = ['3day', '5day', '24h'].includes(mode) ? mode : '3day';
+        const useCache = options.useCache !== false;
+        if (useCache) {
+            const cached = this.getCachedForecast(settings, safeMode);
+            if (this.isCacheValid(cached, settings)) {
+                return cached.data;
+            }
+        }
+
+        const locationData = settings?.weatherSource === 'browser'
+            ? await this.resolveFromBrowser()
+            : await this.resolveFromManualLocation(settings?.weatherLocation);
+        if (!locationData) {
+            if (!this.lastFetchError) {
+                this.lastFetchError = settings?.weatherSource === 'browser'
+                    ? 'geolocation_failed'
+                    : 'manual_location_missing';
+            }
+            return null;
+        }
+
+        const forecast = await this.fetchForecastAPI(
+            locationData.latitude, locationData.longitude, settings?.weatherUnit, safeMode);
+        if (!forecast) {
+            this.lastFetchError = 'weather_fetch_failed';
+            return null;
+        }
+
+        const result = {
+            locationName: locationData.locationName,
+            current: forecast.current,
+            days: forecast.days || null,
+            hours: forecast.hours || null
+        };
+        this.setCachedForecast(settings, safeMode, result);
+        return result;
+    }
+
+    /**
+     * Current conditions and the forecast in one request: Open-Meteo answers
+     * both from the same call, so this is one round trip rather than two.
+     */
+    async fetchForecastAPI(latitude, longitude, unit, mode) {
+        const fahrenheit = unit === 'fahrenheit';
+        const unitSymbol = fahrenheit ? 'F' : 'C';
+        const base = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitude)}`
+            + `&longitude=${encodeURIComponent(longitude)}&timezone=auto`
+            + `&temperature_unit=${fahrenheit ? 'fahrenheit' : 'celsius'}`
+            + `&current=temperature_2m,weather_code`;
+
+        if (mode === '24h') {
+            const url = `${base}&hourly=temperature_2m,weather_code&forecast_hours=24`;
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (!data?.current) return null;
+            const times = data?.hourly?.time;
+            if (!Array.isArray(times)) return null;
+            const temps = data.hourly.temperature_2m || [];
+            const codes = data.hourly.weather_code || [];
+            const hours = [];
+            // Every third hour: eight points across the next day rather than
+            // twenty-four, which is more than a tile has room to list.
+            for (let i = 0; i < times.length; i += 3) {
+                hours.push({
+                    time: times[i],
+                    temperature: Number(temps[i]),
+                    weatherCode: Number(codes[i])
+                });
+            }
+            return {
+                current: {
+                    temperature: Number(data.current.temperature_2m),
+                    weatherCode: Number(data.current.weather_code),
+                    unitSymbol
+                },
+                hours
+            };
+        }
+
+        const days = mode === '5day' ? 5 : 3;
+        const url = `${base}&daily=temperature_2m_max,temperature_2m_min,weather_code&forecast_days=${days}`;
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (!data?.current) return null;
+        const dates = data?.daily?.time;
+        if (!Array.isArray(dates)) return null;
+        const highs = data.daily.temperature_2m_max || [];
+        const lows = data.daily.temperature_2m_min || [];
+        const codes = data.daily.weather_code || [];
+        return {
+            current: {
+                temperature: Number(data.current.temperature_2m),
+                weatherCode: Number(data.current.weather_code),
+                unitSymbol
+            },
+            days: dates.map((date, i) => ({
+                date,
+                tempMax: Number(highs[i]),
+                tempMin: Number(lows[i]),
+                weatherCode: Number(codes[i])
+            }))
         };
     }
 

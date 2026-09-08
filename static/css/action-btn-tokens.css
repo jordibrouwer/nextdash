@@ -1,0 +1,13 @@
+/* Action-button tokens — shared look for icon-only card actions and the
+   bottom dock buttons, across every theme.
+ *
+ * Same color-mix-against-text-primary formula as --hairline/--accent-wash in
+ * theme-depth.css, so no per-theme or dark-mode override is needed: mixing
+ * against --text-primary tracks light/dark automatically.
+ */
+:root {
+    --action-btn-bg: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    --action-btn-bg-hover: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    --action-btn-color: var(--text-secondary, var(--text-primary));
+    --action-btn-shadow: 0 1px 2px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}

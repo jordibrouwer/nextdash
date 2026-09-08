@@ -205,6 +205,9 @@ func Run(files assetFS) {
 	// service said as well as what the paths made of it, so a tile can be
 	// written against the document rather than guessed at.
 	r.HandleFunc("/api/widgets/custom/test", handlers.CustomWidgetTestHandler).Methods("POST", "OPTIONS")
+	// The calendar widget's feed: one address for the whole install, read by
+	// widget id so the request never carries the address itself.
+	r.HandleFunc("/api/widgets/calendar", handlers.CalendarWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")

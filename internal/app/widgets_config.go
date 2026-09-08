@@ -187,6 +187,19 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "showList", Kind: "bool"},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	WidgetTypeWeather: {
+		// No location field: the widget reads the same WeatherSource,
+		// WeatherLocation and WeatherUnit the header's weather line already
+		// uses, rather than asking where the reader lives a second time.
+		{Key: "forecastRange", Kind: "string", Allowed: []string{"3day", "5day", "24h"}},
+	},
+	WidgetTypeCalendar: {
+		// No feed address here either: CalendarIcsUrl is one setting for the
+		// whole install, the same way the weather widget reads its location
+		// from Settings rather than from its own config.
+		{Key: "daysAhead", Kind: "int", Min: 1, Max: 90},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
 	WidgetTypeCustom: {
 		{Key: "url", Kind: "url"},
 		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
@@ -392,6 +405,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker,
+		WidgetTypeWeather, WidgetTypeCalendar,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

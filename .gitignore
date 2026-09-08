@@ -47,3 +47,4 @@ docs/
 !docs/dashboard-smoke-checklist.md
 .vscode/settings.json
 .idea/
+.superpowers/

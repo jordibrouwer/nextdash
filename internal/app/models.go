@@ -420,6 +420,7 @@ type Settings struct {
 	StatusRecheckIntervalMinutes    int    `json:"statusRecheckIntervalMinutes"`            // Background re-check interval in minutes (1-60)
 	GlobalShortcuts                 bool   `json:"globalShortcuts"`                         // Use shortcuts from all pages
 	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
+	LockLayout                      bool   `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
 	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
 	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
 	CustomTitle                     string `json:"customTitle"`                             // Custom page title
@@ -542,6 +543,7 @@ type Settings struct {
 	CategorySpreads             map[string]map[string]bool `json:"categorySpreads,omitempty"`   // Per-page switch for uncategorized/smart collections, which have no stored category
 	LauncherIconSize            string                     `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
 	CalendarUrl                 string                     `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
+	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`              // ICS feed address the Calendar widget reads (empty = widget shows nothing)
 	ButtonBarPosition           string                     `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
 	ShowDockLayoutSelector      bool                       `json:"showDockLayoutSelector"`      // Show layout selector button in side-dock
 	BackgroundOpacity           float64                    `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
@@ -1280,6 +1282,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			StatusRecheckIntervalMinutes: 5,
 			GlobalShortcuts:              true,
 			HyprMode:                     false,
+			LockLayout:                   false,
 			AnimationsEnabled:            true,
 			EnableCustomTitle:            false,
 			CustomTitle:                  "",
@@ -3283,6 +3286,7 @@ func (fs *FileStore) GetSettings() Settings {
 			StatusRecheckIntervalMinutes:   5,
 			GlobalShortcuts:                true,
 			HyprMode:                       false,
+			LockLayout:                     false,
 			AnimationsEnabled:              true,
 			EnableCustomTitle:              false,
 			CustomTitle:                    "",
