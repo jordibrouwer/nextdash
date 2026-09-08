@@ -17,18 +17,27 @@ fmt-check:
 		exit 1; \
 	fi
 
+# VERSION komt uit static/data/whats-new/index.json[0] (zie
+# scripts/version-from-index.sh) -- dat bestand is al de bron van waarheid
+# voor de uitgebrachte versie, dus elke image-build hieronder haalt VERSION
+# daar vandaan in plaats van een los, met de hand bijgehouden bestand.
+# docker-compose.yml en docker-compose.prod.yml geven het door aan de
+# build-arg via ${VERSION:-dev}-interpolatie; zonder deze variabele (een kale
+# `docker compose up --build`, of `docker build` zonder --build-arg) valt
+# alles terug op "dev".
+
 # Herbouw het image en start op de voorgrond (live logs, Ctrl-C stopt).
 build:
-	docker compose up --build
+	VERSION=$$(scripts/version-from-index.sh) docker compose up --build
 
 # Zoals `build`, maar forceert een volledige herbouw zonder layer-cache.
 build-clean:
-	docker compose build --no-cache
+	VERSION=$$(scripts/version-from-index.sh) docker compose build --no-cache
 	docker compose up
 
 # Start op de achtergrond.
 up:
-	docker compose up -d --build
+	VERSION=$$(scripts/version-from-index.sh) docker compose up -d --build
 
 # Stop en ruim de container op.
 down:
@@ -57,7 +66,7 @@ reset-data:
 	@printf 'Dit wist ./data volledig. Doorgaan? [j/N] '; read a; [ "$$a" = "j" ] || exit 1
 	docker compose down
 	rm -rf ./data
-	docker compose up -d --build
+	VERSION=$$(scripts/version-from-index.sh) docker compose up -d --build
 	@echo "Data gewist; nextDash heeft verse standaardbestanden aangemaakt."
 
 # Controleert de stille toestand waarin bovenstaande fout je achterlaat: een

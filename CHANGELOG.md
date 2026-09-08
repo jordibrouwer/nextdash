@@ -200,6 +200,14 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## Unreleased
+
+### Docker & deploy
+
+- **fix — `make up` and `docker compose up --build` could stamp a container with `version: "dev"` even though the docs already claimed a real release.** `VERSION` was only ever set by the CI Docker build's `--build-arg`; nothing in `docker-compose.yml` supplied it, so a local build silently reported "dev" from `/version` while `static/data/whats-new/index.json` said otherwise. `docker-compose.yml` and `docker-compose.prod.yml` now interpolate `VERSION` from the environment (`${VERSION:-dev}`), and the Makefile's `up`/`build`/`build-clean`/`reset-data` targets export it from the new `scripts/version-from-index.sh`, which reads `index.json[0].tag` — the same field `release_version.go`'s `readLatestReleaseTag` already treats as the source of truth. A plain `docker build` with no `--build-arg` is untouched and still falls back to `dev`.
+
+---
+
 ## v1.6.1 — 8 September 2026
 
 ### Dashboard
