@@ -1,0 +1,21 @@
+{
+  "tag": "v1.6.2",
+  "date": "8 September 2026",
+  "releasedAt": "2026-09-08",
+  "modalLead": "Two fixes for a row's More menu: it no longer opens behind the row below it, or behind the header pinned to the top of the list.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A row's <code>More</code> menu no longer opens behind the row below it.</strong> Under a theme with depth, the menu appeared cut in half — the row underneath painted straight over it. It now opens above its neighbours, and the row's actions stay visible instead of fading out from under the pointer."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An open menu now clears the header pinned to the top of the list.</strong> Near the top of a long list the menu slid underneath it; the same applies to the bar that appears when you tick rows."
+        }
+      ]
+    }
+  ]
+}

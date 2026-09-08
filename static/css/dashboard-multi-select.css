@@ -17,10 +17,12 @@
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
     /* The grid scrolls under it; the toolbar acts on a selection that may sit
-     * off-screen, so it has to stay reachable. */
+     * off-screen, so it has to stay reachable. Same sticky band as
+     * list-view-shell.css's .lvs-header (layer-tokens.css) — the two never
+     * need to out-rank each other, only the row list beneath both of them. */
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: var(--layer-sticky-band, 5);
 }
 
 .multi-select-count {

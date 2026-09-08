@@ -8,6 +8,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
+- [v1.6.2 — 8 September 2026](#v162--8-september-2026)
 - [v1.6.1 — 8 September 2026](#v161--8-september-2026)
 - [v1.6.0 — 8 September 2026](#v160--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
@@ -198,6 +200,23 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## Unreleased
+
+---
+
+## v1.6.2 — 8 September 2026
+
+### Health
+
+- **fix — opening a row's `More` menu drew it behind the row below, cut in half, under a depth theme.** `.feed-row` picks up a `backdrop-filter` under `theme-character.css`'s glass depth, and the row's action bar already sat at `opacity: 0` until hovered — both make `.feed-row` its own stacking context, which traps the menu's `z-index: 20` inside that one row, so a later row in the DOM always painted over it regardless of the menu's own number. `static/css/feed-row.css` now raises the row itself while it holds an open menu and keeps its action bar painted rather than fading it out from under the pointer, both keyed on the same `.health-view-menu:not([hidden])` state Health and Config → Bookmarks already share — so the fix reaches both `.feed-row` consumers with an in-row menu without touching either view's own CSS. Covered by a new spec that asserts on containment (`menu.contains(el)`) rather than z-index, under a theme that actually applies the blur.
+- **fix — an open row menu was painted under the sticky header, and under the bulk-select bar.** Raising the row above its neighbours (above) fixed the row-on-row case but not this one: `.lvs-header` and `.multi-select-toolbar` are both `position: sticky; top: 0` and both outranked it, so a menu opened near the top of a long list slid underneath them. The three numbers involved were `1`, `5` and `20`, written in three stylesheets with nothing tying them together, so a plain bump on the highest would have worked once and collided again. `static/css/layer-tokens.css` is a new unscoped token file — same reasoning as `spacing-tokens.css` — naming `--layer-sticky-band` for a view's own pinned chrome and `--layer-row-raised` for a row that must rise above it while transiently active. Deliberately *not* the overlay scale: modals and search sit in the 1000s–12000s on `<body>` and nothing here should compete with them.
+
+### Docs
+
+- **Release plumbing for v1.6.2.** New `static/data/whats-new/v1.6.2.json`, entry added first in `index.json` carrying `hideFromModal: true`, `NEXTDASH_WHATS_NEW_DATA_VERSION` bumped to `whats-new-v279` so a browser holding the old index learns this release exists, and `tests/whats-new-hidden-release.spec.js` updated to pin both hidden releases. `DASHBOARD_RELEASE` deliberately stays at `v1.6.0`: the modal must not reopen for a release held back from it.
 
 ---
 
