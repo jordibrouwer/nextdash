@@ -220,6 +220,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 - **new — a typed setting command now marks its current value visually, not just in the row text.** Every toggle (`:animations`, `:lock-layout`, …) and every multi-choice command (`:density`, `:columns`, `:theme`, …) paints its current-value row with a soft accent tint and a small "current" pill, on top of the existing "(current)"/"✓" text. Comes from two shared helpers — `_buildOnOffRows`/`_handleSimpleToggle` and the new `_markCurrentRow` (replacing `_markCurrent`, spread into the row instead of just naming it) in `search-commands.js` — so every command built on them picked it up in one pass rather than a per-command edit. The list already re-renders in place after a change (`_paletteRefresh` → `refreshCommandPaletteInPlace`), so the highlight moves with it live.
 
+### Docs
+
+- **new — the manual and the in-app Help cover the Weather and Calendar widgets, Lock layout, and the Calendar feed URL.** MANUAL.md gains a "What's happening around you?" table beside the other widget groups (nineteen types now, not seventeen), Lock layout notes under *Reorder bookmarks* and *Reorder categories*, a `:lock-layout` row in the command table, a "Calendar widget shows nothing" entry under troubleshooting, and a header note keeping **Calendar URL** (the outbound link) apart from **Calendar feed URL** (what the widget reads). Help's widget catalogue, Behavior tour and widget intro say the same in all five locales — `de`, `fr` and `zh` were still missing the system-widget group as well, so their kind counts were wrong before this and are right now.
+
 ---
 
 ## v1.6.2 — 8 September 2026
