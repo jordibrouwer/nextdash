@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v1.7.0 — 8 September 2026](#v170--8-september-2026)
 - [v1.6.2 — 8 September 2026](#v162--8-september-2026)
 - [v1.6.1 — 8 September 2026](#v161--8-september-2026)
 - [v1.6.0 — 8 September 2026](#v160--8-september-2026)
@@ -205,6 +206,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+---
+
+## v1.7.0 — 8 September 2026
+
 ### Dashboard
 
 - **new — icon-only action buttons (category ⋯, sort chip, config row icons, and the bottom dock's `/` `>` `:` `?` `*` `.` `!` `★` buttons) restyled for the newer themes: borderless, soft filled, circular where the content is a single glyph.** New `static/css/action-btn-tokens.css` defines `--action-btn-bg` / `-bg-hover` / `-color` / `-shadow` from the same `color-mix()`-against-`--text-primary` formula `theme-depth.css` already uses for `--hairline`, so every theme gets the new look with no per-theme override. Full-word buttons (Quickstart, page tabs, Settings/Delete rows) are untouched.
@@ -223,6 +228,8 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Docs
 
 - **new — the manual and the in-app Help cover the Weather and Calendar widgets, Lock layout, and the Calendar feed URL.** MANUAL.md gains a "What's happening around you?" table beside the other widget groups (nineteen types now, not seventeen), Lock layout notes under *Reorder bookmarks* and *Reorder categories*, a `:lock-layout` row in the command table, a "Calendar widget shows nothing" entry under troubleshooting, and a header note keeping **Calendar URL** (the outbound link) apart from **Calendar feed URL** (what the widget reads). Help's widget catalogue, Behavior tour and widget intro say the same in all five locales — `de`, `fr` and `zh` were still missing the system-widget group as well, so their kind counts were wrong before this and are right now.
+- **Release plumbing for v1.7.0.** New `static/data/whats-new/v1.7.0.json`, entry added first in `index.json`, both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE` to `2026.09-dashboard-release-v1.7.0`, `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v280`), `helpVersionBody` rewritten for this release in all five locales, three spotlight entries with `since: "v1.7.0"` in `static/data/overview-features.json` for Config → Overview and About → News & features, two new Help tips, and `tests/whats-new-hidden-release.spec.js` rewritten around the new state.
+- **`hideFromModal` cleared on v1.6.1 and v1.6.2.** They were held back so they would not displace v1.6.0 in front of readers who had already seen it. v1.7.0 leads the modal now, so both are ordinary entries again and a reader scrolling back finds no version missing between two that are there.
 
 ---
 

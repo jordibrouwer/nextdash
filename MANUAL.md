@@ -848,7 +848,7 @@ Use **`Enter`** on a highlighted row to run it (including after autocomplete exp
 | `:goto <url>` | Navigate to URL or domain |
 | `:goto config` / `stats` / `health` | Quick navigation to config, stats, or health |
 | `:dark` / `:title` / `:lang` / `:animations` / `:status` / `:opacity` | Display and theme toggles |
-| `:lock-layout` (`:locklayout`) | Lock or unlock the layout — with it on, bookmarks and categories cannot be dragged |
+| `:lock-layout` (`:locklayout`) | Lock or unlock the layout (**v1.7.0**) — with it on, bookmarks and categories cannot be dragged |
 | `:telemetry` / `:telemetry on` / `:telemetry off` | Turn [privacy-friendly analytics](#analytics-and-privacy) on or off — opt-in, off by default (reloads the page) |
 | `:collections` | Toggle smart collections (today, recent, stale, most used) |
 | `:backup` / `:export` | Open config backups or download ZIP backup |
@@ -931,7 +931,7 @@ A category you have just created **stays visible** even with *hide empty categor
 - Manual drag only works while a category is on **manual order**. If it is sorted **A–Z** or **Recent**, bookmarks there can't be dragged (the sort would undo it) — the category shows a hover tooltip, a not-allowed cursor, and a brief note when you try, reminding you to switch it back to manual order first. A plain click still opens the bookmark.
 - Reorder saves **debounce 1 second** (like category order) and show a localized success toast.
 - **Esc** undoes the last reorder if the debounced save has not completed yet.
-- **Lock layout** (**Config → Behavior → General**, or the `:lock-layout` command) turns dragging off altogether, for bookmarks and for categories, so a layout you are happy with cannot be nudged by accident. You get the same hint as a sorted category when you try. Sorting, adding, renaming and deleting are unaffected — only the drag gesture is gated.
+- **Lock layout** (**v1.7.0**, **Config → Behavior → General**, or the `:lock-layout` command) turns dragging off altogether, for bookmarks and for categories, so a layout you are happy with cannot be nudged by accident. You get the same hint as a sorted category when you try. Sorting, adding, renaming and deleting are unaffected — only the drag gesture is gated.
 
 ### Reorder categories
 
@@ -1011,7 +1011,7 @@ same list the **Categories** tab arranges.
 These four are the only widgets that read something outside nextDash, and the
 only ones that need setting up. See **[System widgets: what they need](#system-widgets-what-they-need)** below.
 
-*What's happening around you?*
+*What's happening around you?* (**v1.7.0**)
 
 | Type | What it shows |
 |---|---|
@@ -2533,7 +2533,7 @@ Keyboard hints in empty states are hidden on touch.
 
 **Add to Home Screen** uses `/manifest.webmanifest` — custom title/favicon from **branding** settings apply to the installed name/icon.
 
-In **Config → Behavior → General**, **Hypr mode** has a titled section of its own, directly under *Onboarding*, saying in full what it does: clicking a bookmark opens it in a new browser tab and then closes the PWA window, the way a traditional app launcher behaves. It used to be one more checkbox in the General list, where it was easy to mistake for *Open links in a new tab* above it. The panel there shows platform-specific install steps and an **Add to home screen** button when your browser supports it, and Hypr mode pairs well with an installed PWA.
+In **Config → Behavior → General**, **Hypr mode** has a titled section of its own since **v1.7.0**, directly under *Onboarding*, saying in full what it does: clicking a bookmark opens it in a new browser tab and then closes the PWA window, the way a traditional app launcher behaves. It used to be one more checkbox in the General list, where it was easy to mistake for *Open links in a new tab* above it. The panel there shows platform-specific install steps and an **Add to home screen** button when your browser supports it, and Hypr mode pairs well with an installed PWA.
 
 ---
 
