@@ -22,6 +22,12 @@ class DashboardRenderCore {
         memory: { configKey: 'refreshSeconds', floor: 2, fallback: 10 },
         docker: { configKey: 'refreshSeconds', floor: 2, fallback: 30 },
         disks: { configKey: 'refreshSeconds', floor: 5, fallback: 60 },
+        // No config key of its own: the cadence is the same 30 minutes the
+        // header's weather line already beats at, not a second setting.
+        weather: { configKey: '', floor: 300, fallback: 1800 },
+        // Matches the server's own 15-minute feed cache -- polling faster
+        // than that would only ever redraw the same cached answer.
+        calendar: { configKey: '', floor: 300, fallback: 900 },
     };
 
     constructor(dashboard) {
@@ -800,6 +806,11 @@ class DashboardRenderCore {
          * and read as though the change did nothing.
          */
         delete d._widgetCustom;
+        // The calendar tile's own client-side cache, keyed by widget rather
+        // than by feed -- a changed daysAhead/rows would otherwise redraw
+        // from the answer fetched under the old setting for up to five
+        // minutes, same as the custom tile above.
+        delete d._widgetCalendar;
     }
 
     refreshWidgets(type) {
@@ -1231,7 +1242,7 @@ class DashboardRenderCore {
                 return;
             }
             const categoryId = listElement.getAttribute('data-category-id') || '';
-            const sortMode = window.DashboardCategorySort?.getCategorySortMode(d, { id: categoryId }) || 'order';
+            const sortMode = d.settings?.lockLayout ? 'locked' : (window.DashboardCategorySort?.getCategorySortMode(d, { id: categoryId }) || 'order');
             if (sortMode !== 'order') {
                 // Manual drag is disabled while A–Z / Recent sorting owns the order —
                 // a dragged row would just be re-sorted away. Explain why instead of
@@ -1298,11 +1309,19 @@ class DashboardRenderCore {
             added: d.formatDashboardLabel('sortModeAdded', {}, 'Newest'),
             opens: d.formatDashboardLabel('sortModeOpens', {}, 'Most opened'),
         }[sortMode] || d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
-        const hint = d.formatDashboardLabel(
-            'reorderSortLockedHint',
-            { mode: modeLabel },
-            `Sorted by ${modeLabel} — switch this category to manual order to drag bookmarks.`
-        );
+        // 'locked' isn't a sort mode: it's the Lock layout setting, so it gets
+        // its own wording instead of "Sorted by locked — switch to manual order".
+        const hint = sortMode === 'locked'
+            ? d.formatDashboardLabel(
+                'reorderLayoutLockedHint',
+                {},
+                'Layout is locked — turn off Lock layout in Config → Behavior to drag bookmarks.'
+            )
+            : d.formatDashboardLabel(
+                'reorderSortLockedHint',
+                { mode: modeLabel },
+                `Sorted by ${modeLabel} — switch this category to manual order to drag bookmarks.`
+            );
         /*
          * A title on the list is a tooltip on every row inside it: the browser
          * walks up to the nearest ancestor that has one, so a sort-locked
@@ -1455,6 +1474,13 @@ class DashboardRenderCore {
     initializeDashboardCategoryReorder() {
         const d = this.dash;
         this.destroyDashboardCategoryReorderInstances();
+
+        // The "//" handle stays visible either way (see layout-locked in
+        // dashboard.css) so it does not sit there offering a grab cursor that
+        // no longer drags anything.
+        document.body.classList.toggle('layout-locked', Boolean(d.settings?.lockLayout));
+        if (d.settings?.lockLayout) return;
+
         if (typeof DragReorder === 'undefined') return;
 
         const grid = document.getElementById('dashboard-layout');

@@ -103,7 +103,13 @@ const (
 	// WidgetTypeDocker counts containers: how many run, how many do not, and
 	// which have a healthcheck that is failing.
 	WidgetTypeDocker WidgetType = "docker"
-	WidgetTypeCustom WidgetType = "custom"
+	// WidgetTypeWeather reports current conditions beside a forecast, for the
+	// location already set for the header's own weather line.
+	WidgetTypeWeather WidgetType = "weather"
+	// WidgetTypeCalendar lists what is coming up from the ICS feed set for it,
+	// soonest first.
+	WidgetTypeCalendar WidgetType = "calendar"
+	WidgetTypeCustom   WidgetType = "custom"
 )
 
 // knownWidgetTypes is the register. A type not in here is refused rather than
@@ -127,6 +133,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeDisks:      {},
 	WidgetTypeMemory:     {},
 	WidgetTypeDocker:     {},
+	WidgetTypeWeather:    {},
+	WidgetTypeCalendar:   {},
 	WidgetTypeCustom:     {},
 }
 

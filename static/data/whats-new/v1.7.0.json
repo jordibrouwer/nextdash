@@ -1,0 +1,47 @@
+{
+  "tag": "v1.7.0",
+  "date": "8 September 2026",
+  "releasedAt": "2026-09-08",
+  "modalLead": "Two new blocks for a page: the weather beside a forecast, and what is coming up from your own calendar. A new Lock layout switch keeps a dashboard you are happy with from being dragged out of place, Hypr mode finally says what it does, and the round buttons around the dashboard have a softer look.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Weather block you can put on a page.</strong> Current conditions beside a forecast &mdash; three days, five days, or the next 24 hours, whichever you pick. It uses the location, source and unit you already set for the weather line in the header, so there is nothing to fill in twice, and it keeps itself up to date while you have the page open."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Calendar block, beside it.</strong> What is coming up, from your own calendar: paste the sharing address your calendar app gives you under <em>Behavior &rarr; Date &amp; weather</em>, and every calendar block reads it. Each one has its own <em>Look ahead</em> in days and its own number of rows, so a page can carry today's agenda and the month ahead side by side. A repeating appointment shows the one date it names, not every repeat."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Lock layout keeps a dashboard where you put it.</strong> A tidy page could be nudged out of shape by a drag you did not mean to start. Switch it on under <em>Behavior &rarr; General</em> &mdash; or type <code>:lock-layout</code> &mdash; and bookmarks and categories stop moving; sorting, adding, renaming and deleting carry on as before."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The round buttons look softer.</strong> The category &#8943; menu, the sort chip, the row icons in Config and the dock along the bottom lost their hard outlines for a soft fill that follows whichever theme you are on."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Hypr mode says what it does.</strong> It sat in the list of checkboxes just under <em>Open links in a new tab</em>, which is easy to mistake it for. It now has a heading and a paragraph of its own: a bookmark opens in a new browser tab, and the app window closes behind it &mdash; what you want when nextDash is installed as an app."
+        }
+      ]
+    },
+    {
+      "title": "Search & commands",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A command shows you the setting you are already on.</strong> Type <code>:density</code>, <code>:theme</code>, <code>:columns</code> or any on/off command and the row you are currently using is tinted and carries a small <em>current</em> mark, instead of saying so in text you had to read for it."
+        }
+      ]
+    }
+  ]
+}

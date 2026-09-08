@@ -2288,13 +2288,14 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     left: var(--corner-fab-edge);
     z-index: 1001;
     padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
-    border: 1px solid var(--border-primary);
+    border: none;
     /* Opaque, and in both layout versions: this FAB floats over the grid with
        nothing behind it either way -- modern styles the dock and the / FAB but
        never this one -- so the page used to read straight through it. The wash
        is the same 74%, now composited over the page background instead of over
        transparent, which is the colour it already showed over empty page. */
     background: color-mix(in srgb, var(--background-secondary) 74%, var(--background-primary));
+    box-shadow: var(--action-btn-shadow);
     color: var(--accent-primary);
     font-size: var(--font-size-controls);
     font-family: var(--font-family-main);
@@ -2352,9 +2353,9 @@ body.no-animations .whats-new-btn-update-dot {
     /* 94% of the page background over the page background is the page
        background: same colour as before, minus the window. */
     background: var(--background-primary);
-    border-color: var(--accent-primary);
     transform: translateY(-1px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 .whats-new-btn:active {
     transform: translateY(0);
@@ -2536,6 +2537,13 @@ body[data-category-spacing="airy"] {
     cursor: grabbing;
 }
 
+/* Lock layout setting: the "//" handle stays put instead of disappearing
+   (removing it would shift every category title), but no longer offers a
+   grab cursor for a drag that will not happen. */
+body.layout-locked .category-reorder-handle {
+    cursor: default;
+}
+
 /* Category being dragged across the grid. */
 #dashboard-layout .category.is-draggable {
     opacity: 0.4;
@@ -2596,22 +2604,22 @@ body[data-category-spacing="airy"] {
     font-size: 0.68em;
     line-height: 1;
     min-height: 1.45em;
+    min-width: 1.45em;
     padding: 0.15em 0.4em;
-    border: 1px solid transparent;
-    border-radius: var(--radius-2, 3px);
-    background: none;
-    color: var(--text-tertiary);
+    border: none;
+    border-radius: 50%;
+    background: var(--action-btn-bg);
+    color: var(--action-btn-color);
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.85;
 }
 
 .category-sort-menu-btn:hover,
 .category-sort-menu-btn:focus-visible,
 .category-sort-menu-btn[aria-expanded="true"] {
     opacity: 1;
-    color: var(--text-secondary);
-    border-color: color-mix(in srgb, var(--text-tertiary) 28%, transparent);
-    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
+    color: var(--text-primary);
+    background: var(--action-btn-bg-hover);
 }
 
 .category-sort-menu {
@@ -2664,20 +2672,19 @@ body[data-category-spacing="airy"] {
     letter-spacing: 0.02em;
     line-height: 1.2;
     min-height: 1.45em;
-    padding: 0.15em 0.42em;
-    border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
-    border-radius: var(--radius-2, 3px);
-    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
-    color: var(--text-tertiary);
+    padding: 0.15em 0.55em;
+    border: none;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--action-btn-bg);
+    color: var(--action-btn-color);
     cursor: pointer;
     opacity: 0.9;
 }
 
 .category-sort-btn:hover {
     opacity: 1;
-    color: var(--text-secondary);
-    border-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
-    background: color-mix(in srgb, var(--hover-bg, currentColor) 35%, transparent);
+    color: var(--text-primary);
+    background: var(--action-btn-bg-hover);
 }
 
 .category-sort-btn.is-active,
@@ -2827,8 +2834,9 @@ body.no-animations .category-chevron {
     padding: 0;
     width: 1.15em;
     height: 1.15em;
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary));
     color: var(--accent-primary);
     font-size: 0.62em;
     font-weight: var(--font-weight-bold);
@@ -5958,6 +5966,84 @@ button.dashboard-widget-row--more {
     margin: 8px 0 0;
     color: var(--text-tertiary);
     font-size: calc(var(--font-size-small) * 0.92);
+}
+
+/* The weather widget: current conditions stacked above the forecast, side by
+   side once the tile is wide enough (see the panel container query below). */
+.dashboard-widget-weather {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.dashboard-widget-weather-current {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.dashboard-widget-weather-current .weather-icon-svg {
+    width: 1.8em;
+    height: 1.8em;
+}
+
+.dashboard-widget-weather-temp {
+    font-size: 2.1em;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-widget-weather-condition,
+.dashboard-widget-weather-location {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+.dashboard-widget-weather-forecast {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border-radius: var(--radius-4, 7px);
+    overflow: hidden;
+    background: var(--dashboard-widget-rule);
+}
+
+.dashboard-widget-weather-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
+    background: var(--dashboard-widget-cell);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-widget-weather-row-label {
+    flex: 1 1 auto;
+    color: var(--text-secondary);
+}
+
+.dashboard-widget-weather-row-range {
+    color: var(--text-primary);
+}
+
+@container (min-width: 22rem) {
+    .dashboard-widget-panel .dashboard-widget-weather {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .dashboard-widget-panel .dashboard-widget-weather-current {
+        flex: 0 0 auto;
+        min-width: 6rem;
+    }
+
+    .dashboard-widget-panel .dashboard-widget-weather-forecast {
+        flex: 1 1 auto;
+    }
 }
 
 /* ─── Widgets that answer to their own width ─────────────────────────────── */

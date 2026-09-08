@@ -305,7 +305,7 @@ Side rail layout (optional — **Config → Appearance → Button bar → Button
 
 ### 🧭 Header
 
-- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.
+- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when a **Calendar URL** is set under Behavior → Date & weather — a different setting from the **Calendar feed URL (.ics)** the Calendar widget reads). Optional weather line below.
 - **Page tabs** — Switch bookmark pages (`1`–`9`, `Shift + ←/→`, or click). On desktop the strip scrolls when you have many pages. A long page **remembers where you were** (**v1.3.0**): switching pages, or opening Health, Inbox or config and coming back, puts you at the offset you left, and so does a reload while the tab stays open — a page that has grown shorter clamps to its new end. Switch it off with **Come back to where you were on a page** under **Config → Behavior → General**
 - **pages** — Grid icon beside the page tabs; opens an overview of all pages with counts (`,` or click). Same stroke and spacing as inbox, health, and config (**v2026.08.08.6**).
 - **Inbox** — When enabled, an inbox icon beside **pages** opens the triage view (`Shift + I` or `0`). Unread count on the tab when something is waiting.
@@ -848,6 +848,7 @@ Use **`Enter`** on a highlighted row to run it (including after autocomplete exp
 | `:goto <url>` | Navigate to URL or domain |
 | `:goto config` / `stats` / `health` | Quick navigation to config, stats, or health |
 | `:dark` / `:title` / `:lang` / `:animations` / `:status` / `:opacity` | Display and theme toggles |
+| `:lock-layout` (`:locklayout`) | Lock or unlock the layout (**v1.7.0**) — with it on, bookmarks and categories cannot be dragged |
 | `:telemetry` / `:telemetry on` / `:telemetry off` | Turn [privacy-friendly analytics](#analytics-and-privacy) on or off — opt-in, off by default (reloads the page) |
 | `:collections` | Toggle smart collections (today, recent, stale, most used) |
 | `:backup` / `:export` | Open config backups or download ZIP backup |
@@ -930,11 +931,13 @@ A category you have just created **stays visible** even with *hide empty categor
 - Manual drag only works while a category is on **manual order**. If it is sorted **A–Z** or **Recent**, bookmarks there can't be dragged (the sort would undo it) — the category shows a hover tooltip, a not-allowed cursor, and a brief note when you try, reminding you to switch it back to manual order first. A plain click still opens the bookmark.
 - Reorder saves **debounce 1 second** (like category order) and show a localized success toast.
 - **Esc** undoes the last reorder if the debounced save has not completed yet.
+- **Lock layout** (**v1.7.0**, **Config → Behavior → General**, or the `:lock-layout` command) turns dragging off altogether, for bookmarks and for categories, so a layout you are happy with cannot be nudged by accident. You get the same hint as a sorted category when you try. Sorting, adding, renaming and deleting are unaffected — only the drag gesture is gated.
 
 ### Reorder categories
 
 - Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → pages & tags → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
 - Order in **config → pages & tags → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
+- With **Lock layout** on, the `//` handle takes a plain cursor and no longer drags; it still toggles collapse.
 
 ### Reorder pages
 
@@ -966,7 +969,7 @@ width of one or two columns, and settings of its own. The order of widgets and
 categories is one list, so there is a single answer to where any block sits — the
 same list the **Categories** tab arranges.
 
-**The seventeen types**, grouped in the picker under the question each answers.
+**The nineteen types**, grouped in the picker under the question each answers.
 
 *Are the links still good?*
 
@@ -1007,6 +1010,25 @@ same list the **Categories** tab arranges.
 
 These four are the only widgets that read something outside nextDash, and the
 only ones that need setting up. See **[System widgets: what they need](#system-widgets-what-they-need)** below.
+
+*What's happening around you?* (**v1.7.0**)
+
+| Type | What it shows |
+|---|---|
+| **Weather** | Current conditions beside a forecast — three days, five days, or the next 24 hours, your choice per widget. It reads the **location, source and unit** already set in **Config → Behavior → Date & weather** rather than asking a second time, and refreshes on the same 30-minute cadence as the header's weather line |
+| **Calendar** | What is coming up, from one ICS (iCal) feed. Set **Look ahead (days)** and the row count per widget; the feed address itself is one setting for the whole install, under **Config → Behavior → Date & weather → Calendar feed URL (.ics)** |
+
+The **Calendar** feed is fetched and parsed by the server, not by your browser:
+most providers hand out a private feed address that is not meant for
+cross-origin JavaScript, and it is not a thing to leave sitting in a script.
+Every calendar widget shares one cached copy of the feed (refreshed every 15
+minutes) and narrows it to its own look-ahead and row count. A **recurring event
+shows its own stated occurrence** — repeats are not expanded yet.
+
+The feed URL is the **private ICS/iCal address** from your calendar app's
+sharing settings, not the address of its web page. Leave it empty and the widget
+says so rather than showing an empty tile. Changing it redraws every calendar
+widget at once instead of waiting out the cache.
 
 And one more that is a capability rather than a report: the **Custom** widget, below.
 
@@ -2511,7 +2533,7 @@ Keyboard hints in empty states are hidden on touch.
 
 **Add to Home Screen** uses `/manifest.webmanifest` — custom title/favicon from **branding** settings apply to the installed name/icon.
 
-In **Config → Behavior → General**, the panel under **HyprMode** shows platform-specific install steps and an **Add to home screen** button when your browser supports it. HyprMode (launcher behaviour: open bookmark in a new tab and close the dashboard) pairs well with an installed PWA.
+In **Config → Behavior → General**, **Hypr mode** has a titled section of its own since **v1.7.0**, directly under *Onboarding*, saying in full what it does: clicking a bookmark opens it in a new browser tab and then closes the PWA window, the way a traditional app launcher behaves. It used to be one more checkbox in the General list, where it was easy to mistake for *Open links in a new tab* above it. The panel there shows platform-specific install steps and an **Add to home screen** button when your browser supports it, and Hypr mode pairs well with an installed PWA.
 
 ---
 
@@ -2959,6 +2981,17 @@ A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **A
 ### Weather not showing
 
 Set manual city or browser location permission; save general settings; check refresh interval.
+
+The **Weather widget** reads the same settings; if the header line is blank, the
+widget says *Set a weather location in Config* rather than showing figures.
+
+### Calendar widget shows nothing
+
+- Set **Config → Behavior → Date & weather → Calendar feed URL (.ics)**. Empty is the common case, and the widget says so.
+- Use the **private ICS/iCal feed address** from your calendar app's sharing settings, not the address of the calendar's web page. **Calendar URL** on the same tab is the outbound link for the date popover and is a different setting.
+- The server fetches the feed, so it must be reachable from the machine nextDash runs on.
+- A feed cache lasts 15 minutes; editing the URL redraws the widget immediately.
+- A **recurring event** shows only its own stated occurrence — repeats are not expanded yet.
 
 ### Extension cannot save
 

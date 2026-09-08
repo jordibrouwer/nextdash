@@ -2,6 +2,56 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureWeatherWidgetTitle",
+      "titleFallback": "A weather block for your page",
+      "whatKey": "config.overviewNewFeatureWeatherWidgetWhat",
+      "whatFallback": "The header could show one line of weather, and that was all a dashboard knew about the sky: today's temperature, with no idea whether tomorrow is worth planning around.",
+      "howKey": "config.overviewNewFeatureWeatherWidgetHow",
+      "howFallback": "A Weather widget puts the conditions now beside a forecast — three days, five days, or the next 24 hours, whichever you pick per block. It reads the location, source and unit you already set for the header line, so there is nothing to fill in twice, and it refreshes itself while the page is open.",
+      "enableKey": "config.overviewNewFeatureWeatherWidgetEnable",
+      "enableFallback": "Config → Widgets → Add a widget → Weather. Set the location first under Behavior → Date & weather.",
+      "ctaKey": "config.overviewNewFeatureWeatherWidgetCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.7.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCalendarWidgetTitle",
+      "titleFallback": "What is coming up, on the dashboard",
+      "whatKey": "config.overviewNewFeatureCalendarWidgetWhat",
+      "whatFallback": "Your dashboard is the first page of the day, and it could point at your calendar but never show it — what was on today lived in another tab.",
+      "howKey": "config.overviewNewFeatureCalendarWidgetHow",
+      "howFallback": "A Calendar widget lists what is coming up from your own calendar. Paste the sharing address your calendar app gives you once, and every calendar block reads it, each with its own look-ahead in days and its own number of rows. A repeating appointment shows the date it names rather than every repeat.",
+      "enableKey": "config.overviewNewFeatureCalendarWidgetEnable",
+      "enableFallback": "Behavior → Date & weather → Calendar feed URL, then Config → Widgets → Add a widget → Calendar.",
+      "ctaKey": "config.overviewNewFeatureCalendarWidgetCta",
+      "ctaFallback": "Open Date & weather →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "datetime"
+      },
+      "since": "v1.7.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureLockLayoutTitle",
+      "titleFallback": "Lock a layout you are happy with",
+      "whatKey": "config.overviewNewFeatureLockLayoutWhat",
+      "whatFallback": "Bookmarks and categories move by dragging, which is what you want while you arrange a page and not what you want afterwards — one stray drag on a tidy page and something is somewhere else.",
+      "howKey": "config.overviewNewFeatureLockLayoutHow",
+      "howFallback": "Lock layout switches dragging off for both bookmarks and categories. Sorting, adding, renaming and deleting carry on exactly as before; only the drag gesture stops, and the page says so when you try.",
+      "enableKey": "config.overviewNewFeatureLockLayoutEnable",
+      "enableFallback": "Behavior → General → Lock layout, or type :lock-layout.",
+      "ctaKey": "config.overviewNewFeatureLockLayoutCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      },
+      "since": "v1.7.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureHealthInboxShellTitle",
       "titleFallback": "Health and the Inbox share one left rail",
       "whatKey": "config.overviewNewFeatureHealthInboxShellWhat",
