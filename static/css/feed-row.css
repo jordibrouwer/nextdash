@@ -36,9 +36,16 @@
    `.health-view-menu:not([hidden])` state the overflow-escape rule below
    already reads, so Health and Config → Bookmarks — the two `.feed-row`
    consumers with an in-row menu — both pick it up for free. Inbox's popovers
-   are appended to <body>, never to the row, so they never needed this. */
+   are appended to <body>, never to the row, so they never needed this.
+
+   A plain `z-index: 1` only ever beat a sibling row's default `auto`. It lost
+   to list-view-shell.css's sticky `.lvs-header` (--layer-sticky-band, 5), so
+   a menu that opens upward across a scrolled-under header still drew behind
+   it. --layer-row-raised (layer-tokens.css) is defined to sit above
+   --layer-sticky-band for exactly this: the row has to win against the
+   sticky band above it, not just the plain rows beside it. */
 .feed-row:has(.health-view-menu:not([hidden])) {
-    z-index: 1;
+    z-index: var(--layer-row-raised, 6);
 }
 
 /* Health keeps the checkbox in the grid rather than floating it over the icon:

@@ -252,7 +252,10 @@
 .lvs-header {
     position: sticky;
     top: 0;
-    z-index: 5;
+    /* layer-tokens.css: the sticky band above the row list. A row raises
+       itself above this (--layer-row-raised) while its own menu is open, so
+       a menu that opens upward across the header still draws whole. */
+    z-index: var(--layer-sticky-band, 5);
     background: var(--background-primary);
 }
 

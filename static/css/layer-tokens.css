@@ -1,0 +1,37 @@
+/* Layer tokens — the z-index scale for stacking *within* one view's own
+   scrolling column: a sticky band pinned to the top of the viewport, and row
+   content that has to rise above it while transiently active.
+
+   Unscoped, same reasoning as spacing-tokens.css and radius-tokens.css: this
+   has nothing to do with the modern-layout-only tokens in
+   layout-modern-tokens.css, and every layout needs it. Loaded ahead of every
+   stylesheet that reads a --layer-* value (feed-row.css,
+   dashboard-multi-select.css, list-view-shell.css).
+
+   This is deliberately NOT the overlay scale (the 1000s/2000s/12000s spread
+   across dashboard.css, modal.css, search.css, dashboard-inbox.css and
+   friends). Those overlays are appended to <body> and already sit far above
+   anything named here — nothing in this file needs to, or should, compete
+   with them. This scale is for elements that stack against each other
+   *inside* a view's own content column, where the numbers were 1, 5 and 20
+   with nothing tying them together: a plain bump on the highest of the three
+   would have worked once and collided again the next time something sticky
+   was added.
+
+   --layer-sticky-band: the view's own pinned chrome. list-view-shell.css's
+     .lvs-header and dashboard-multi-select.css's .multi-select-toolbar (the
+     bulk-select bar) both sit here — both `position: sticky; top: 0`, both
+     painted above the row list beneath them, never above each other.
+
+   --layer-row-raised: a row wins this only while something of its own has to
+     rise above the sticky band above — right now that is a row with its
+     overflow menu open (feed-row.css). Must beat --layer-sticky-band, not
+     just a sibling row's default z-index: auto — see feed-row.css for why a
+     depth theme's backdrop-filter makes that necessary. The menu itself
+     (health-view.css, z-index: 20) stays put: it only ever has to beat
+     content inside its own row's stacking context, which a bump here does
+     not touch. */
+:root {
+    --layer-sticky-band: 5;
+    --layer-row-raised: 6;
+}
