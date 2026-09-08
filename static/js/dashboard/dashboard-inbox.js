@@ -4227,16 +4227,14 @@ class DashboardInbox {
             if (!host) {
                 return;
             }
-            this.domainFilter = host;
-            this.filter = 'all';
-            this.visibleLimit = 50;
-            this.checkedIds.clear();
-            this.focusItemId = null;
-            this._trackAction('filter', { filter: 'domain', via: 'domain-click' });
-            this.syncUrlState();
-            this.render();
-            this.dash.pageNav?.updatePageTitle?.();
-            this.dash.pageNav?.updateDocumentTitle?.();
+            // The patch carries the real hostname the user clicked, which must
+            // never reach analytics (umami-analytics.js's no-PII contract).
+            // action/props restore the historical 'inbox:filter' event name
+            // and the static 'domain' marker, matching the domain select above.
+            this.applyViewChange(
+                { domainFilter: host, filter: 'all' },
+                { via: 'domain-click', action: 'filter', props: { filter: 'domain' } },
+            );
         });
 
         card.querySelector('[data-inbox-action="open"]')?.addEventListener('click', () => {

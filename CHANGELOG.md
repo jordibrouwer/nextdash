@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.6.1 — 8 September 2026](#v161--8-september-2026)
 - [v1.6.0 — 8 September 2026](#v160--8-september-2026)
 - [v1.5.0 — 6 September 2026](#v150--6-september-2026)
 - [v1.4.8 — 5 September 2026](#v148--5-september-2026)
@@ -197,6 +198,28 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.6.1 — 8 September 2026
+
+Hidden from the **What's new** modal — v1.6.0 already covers the shared-shell work this round was cut to announce, so there is nothing left here the modal needs to lead with. `index.json[0]` still names this release, and `/version` reports it.
+
+### Health
+
+- **fix — the Monitors row in the rail could get stuck at 0.** The rail's `sections` config is read once, when the shell mounts — usually before the health report has finished loading — and unlike the filter rows above it, which refresh their counts on every render via `setCounts()`, the Monitors row had no equivalent follow-up. A `setSectionCounts()` call alongside that existing refresh keeps it current from then on, covered by a new spec.
+
+### Inbox
+
+- **fix — clicking a row's domain chip left a stale selection anchor behind and never saved the site choice.** The chip's click handler was a hand-rolled copy of the filter reset that skipped `checkAnchorId` and the write to `localStorage`, so a later Shift+click could extend a selection through rows the narrower view never showed, and the site choice did not survive a reload the way picking it from the select does. It now goes through the same path as every other filter change.
+
+### Docker & deploy
+
+- **fix — `make up` and `docker compose up --build` could stamp a container with `version: "dev"` even though the docs already claimed a real release.** `VERSION` was only ever set by the CI Docker build's `--build-arg`; nothing in `docker-compose.yml` supplied it, so a local build silently reported "dev" from `/version` while `static/data/whats-new/index.json` said otherwise. `docker-compose.yml` and `docker-compose.prod.yml` now interpolate `VERSION` from the environment (`${VERSION:-dev}`), and the Makefile's `up`/`build`/`build-clean`/`reset-data` targets export it from the new `scripts/version-from-index.sh`, which reads `index.json[0].tag` — the same field `release_version.go`'s `readLatestReleaseTag` already treats as the source of truth. A plain `docker build` with no `--build-arg` is untouched and still falls back to `dev`.
+
+### Docs
+
+- `static/data/whats-new/v1.6.1.json` carries only what is new since v1.6.0 was cut — the Monitors count fix, the domain-chip fix and the Docker version derivation — rather than repeating v1.6.0's own announcements a second time. `index.json`'s first entry is this release, with `"hideFromModal": true`, followed by v1.6.0 and then v1.5.0; the modal shows the first entry *without* that flag, so it leads with v1.6.0. `static/js/whats-new-stub.js` stays on v1.6.0's tokens (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION`) for the same reason — there is nothing here that should reopen the modal for an upgraded install. `tests/whats-new-hidden-release.spec.js` asserts `index[0]` is the hidden v1.6.1 and that the modal leads with v1.6.0, never showing v1.6.1. `static/data/overview-features.json` keeps both rounds' spotlights side by side — three tagged `since: "v1.6.0"` and three tagged `since: "v1.6.1"` — since each names a distinct piece of the shared-shell work and neither should push the other out of Config → Overview's news stream.
 
 ---
 

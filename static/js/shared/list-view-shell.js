@@ -52,6 +52,30 @@ function buildSummary(entries) {
     return wrap;
 }
 
+/**
+ * A section row needs the same label/count split a filter row has (see
+ * buildFilter below) so a later setSectionCounts() can update the number in
+ * place, the way setCounts() already does for filters -- rebuilding the
+ * group instead would lose focus and scroll position.
+ */
+function buildSection(entry) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'lvs-section';
+    item.dataset.lvsSectionKey = String(entry.key);
+    Object.entries(entry.dataAttrs || {}).forEach(([name, value]) => {
+        item.setAttribute(name, String(value));
+    });
+    const label = document.createElement('span');
+    label.className = 'lvs-section-label';
+    label.textContent = String(entry.label);
+    const count = document.createElement('span');
+    count.className = 'lvs-section-count';
+    count.textContent = String(entry.count ?? '');
+    item.append(label, count);
+    return item;
+}
+
 function buildFilter(entry, isActive, classes = {}) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -155,17 +179,7 @@ class ListViewShell {
             sectionList.className = 'lvs-group-list lvs-section-list';
             sectionGroup.append(sectionTitle, sectionList);
             (config.sections || []).forEach((entry) => {
-                const item = document.createElement('button');
-                item.type = 'button';
-                item.className = 'lvs-section';
-                item.dataset.lvsSectionKey = String(entry.key);
-                Object.entries(entry.dataAttrs || {}).forEach(([name, value]) => {
-                    item.setAttribute(name, String(value));
-                });
-                item.textContent = entry.count == null
-                    ? String(entry.label)
-                    : `${entry.label} ${entry.count}`;
-                sectionList.appendChild(item);
+                sectionList.appendChild(buildSection(entry));
             });
             rail.appendChild(sectionGroup);
         }
@@ -360,6 +374,19 @@ class ListViewShell {
                     const key = btn.dataset.lvsFilterKey;
                     if (Object.prototype.hasOwnProperty.call(counts || {}, key)) {
                         btn.querySelector('.lvs-filter-count').textContent = String(counts[key]);
+                    }
+                });
+            },
+            // Mirrors setCounts() above: mutates the existing section button's
+            // count span in place rather than rebuilding the group, so a
+            // section row's number can be kept current after mount (the rail
+            // config is read once, inside mount(), before a view's first
+            // report has necessarily loaded).
+            setSectionCounts(counts) {
+                sectionButtons().forEach((btn) => {
+                    const key = btn.dataset.lvsSectionKey;
+                    if (Object.prototype.hasOwnProperty.call(counts || {}, key)) {
+                        btn.querySelector('.lvs-section-count').textContent = String(counts[key]);
                     }
                 });
             },

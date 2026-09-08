@@ -2,7 +2,12 @@
 # Use docker-compose.yml for local dev (live CSS/JS from ./static without rebuild).
 services:
   nextdash:
-    build: .
+    build:
+      context: .
+      args:
+        # See docker-compose.yml: derived by the Makefile from
+        # scripts/version-from-index.sh, falls back to "dev" when unset.
+        VERSION: ${VERSION:-dev}
     ports:
       - "8080:8080"
     volumes:
