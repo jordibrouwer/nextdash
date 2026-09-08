@@ -1,6 +1,6 @@
-/* Extension UI translations (en / nl / de / fr / zh) */
+/* Extension UI translations (en / nl / de / fr / zh / es) */
 
-const EXT_SUPPORTED = new Set(['en', 'nl', 'de', 'fr', 'zh']);
+const EXT_SUPPORTED = new Set(['en', 'nl', 'de', 'fr', 'zh', 'es']);
 let extStrings = {};
 let extLang = 'en';
 

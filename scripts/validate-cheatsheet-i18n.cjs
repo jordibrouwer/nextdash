@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const LOCALES = ['nl', 'de', 'fr', 'zh'];
+const LOCALES = ['nl', 'de', 'fr', 'zh', 'es'];
 
 /** Inline legend keys live flat under `dashboard.`, not under `cheatsheet.`. */
 const LEGEND_KEY_RE = /^(healthKey|inboxKey|triageKey)/;
