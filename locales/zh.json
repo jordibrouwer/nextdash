@@ -5769,7 +5769,22 @@
     "overviewNewFeatureDerivedInkWhat": "主题针对页面选定三种文字颜色后便不再调整，而表面却在其之上层层抬升。每一层都在消耗无人察觉的对比度 — 在 107 个深色内置主题中，三分之一的三级文字低于 3.0:1。",
     "overviewNewFeatureDerivedInkHow": "二级和三级文字现在从其下方的表面推导而来，因此无论落在哪里都能保持距离。每个随附主题都达到正文 4.5:1 的门槛，并有测试对整个主题库进行测量。",
     "overviewNewFeatureDerivedInkEnable": "无需开启。墨色与表面之间的间距可在“外观”中自行调整。",
-    "overviewNewFeatureDerivedInkCta": "打开外观 →"
+    "overviewNewFeatureDerivedInkCta": "打开外观 →",
+    "overviewNewFeatureHealthInboxShellTitle": "健康与收件箱共用一个左栏",
+    "overviewNewFeatureHealthInboxShellWhat": "健康和收件箱此前各有一排位于列表上方的方块，重复着下方筛选项已经显示的同样数字 — 同一个数字，出现两次，两种不同的形式。",
+    "overviewNewFeatureHealthInboxShellHow": "现在两者都改为在左栏中列出每个筛选项及其数量。健康的评分、趋势、损坏数量和报告的时间放在筛选项上方，作为纯粹的读数；收件箱的本周也以同样方式放在其筛选项上方。空的筛选项会从列表中消失，一旦重新有内容便会返回，两个视图的标题栏现在滚动时也会保持固定，让上方的筛选项和操作在长列表中始终可以点到。",
+    "overviewNewFeatureHealthInboxShellEnable": "无需开启任何设置。",
+    "overviewNewFeatureHealthInboxShellCta": "打开健康 →",
+    "overviewNewFeatureHealthMonitorsTitle": "监控现在有了自己的位置",
+    "overviewNewFeatureHealthMonitorsWhat": "已监控筛选项只是把列表缩小到可监控的内容，但汇总在线率、表现最差的监控项和最近的故障此前都挤在同一个筛选项下 — 一个控件被要求做两件不同的事。",
+    "overviewNewFeatureHealthMonitorsHow": "监控现在是左栏中独立的一项。打开它会把列表替换成那个监控面板，而不是缩小列表，它还有自己的地址，因此可以收藏，重新加载后会回到同一个视图。",
+    "overviewNewFeatureHealthMonitorsEnable": "只要页面上有可监控的内容，它就会出现在左栏中。",
+    "overviewNewFeatureHealthMonitorsCta": "打开健康 →",
+    "overviewNewFeatureListDensityTitle": "行距可以更紧凑或更宽松",
+    "overviewNewFeatureListDensityWhat": "无论你是想快速浏览一份长列表，还是想舒适地阅读它，健康和收件箱此前的行高始终一样。",
+    "overviewNewFeatureListDensityHow": "一个密度设置可以在紧凑和舒适之间切换每个列表。这是整个应用的单一设置，而不是每个视图各自一份，因此在收件箱或健康中切换都会同时改变两者。",
+    "overviewNewFeatureListDensityEnable": "健康和收件箱的标题栏中各有两个按钮。",
+    "overviewNewFeatureListDensityCta": "打开收件箱 →"
   },
   "colors": {
     "title": "主题自定义",

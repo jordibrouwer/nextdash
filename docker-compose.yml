@@ -2,7 +2,15 @@
 # For production from a checkout, use docker-compose.prod.yml (image assets only).
 services:
   nextdash:
-    build: .
+    build:
+      context: .
+      args:
+        # Set by the Makefile's up/build/build-clean targets from
+        # scripts/version-from-index.sh (static/data/whats-new/index.json[0]),
+        # so `make up` / `make build` stamp the real version with no flags to
+        # remember. A bare `docker compose up --build`, run without VERSION in
+        # the environment, falls back to "dev" -- same as a plain `docker build`.
+        VERSION: ${VERSION:-dev}
     ports:
       - "8080:8080"
     volumes:

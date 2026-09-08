@@ -1,0 +1,35 @@
+{
+  "tag": "v1.6.1",
+  "date": "8 September 2026",
+  "releasedAt": "2026-09-08",
+  "modalLead": "Three small fixes on top of v1.6.0's shared shell: the Monitors count in the rail no longer sticks at zero, clicking a row's domain chip behaves like every other filter change, and a local Docker build reports its real version instead of \"dev\".",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The Monitors row in the rail no longer sticks at 0.</strong> Its count was read once when the shell mounted, usually before the report had finished loading, and never refreshed after that the way the filter rows above it already were. It now updates the same way they do."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Clicking a row's domain chip now behaves like every other filter change.</strong> It used to leave a stale selection behind and forget the site choice on reload; it now goes through the same path picking it from the list does."
+        }
+      ]
+    },
+    {
+      "title": "Docker & deploy",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A local Docker build no longer reports its version as \"dev\".</strong> <code>make up</code> and <code>docker compose up --build</code> now pick up the running release from <code>index.json</code>, the same field <code>/version</code> already treats as the source of truth."
+        }
+      ]
+    }
+  ]
+}

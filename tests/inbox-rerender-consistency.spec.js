@@ -127,6 +127,48 @@ test('the domain filter never sends the picked hostname to analytics', async ({ 
     expect(seen.some((t) => t.name === 'inbox:domainFilter')).toBe(false);
 });
 
+test('clicking a row domain button clears the selection anchor, persists the site, and keeps analytics redacted', async ({ page }) => {
+    await openInboxWithItems(page);
+
+    const domainBtn = page.locator('.inbox-item-domain-btn').first();
+    await expect(domainBtn).toBeVisible();
+    const host = await domainBtn.getAttribute('data-inbox-domain');
+    expect(host, 'seeded items should render a domain button').toBeTruthy();
+
+    // Set an anchor the way a prior Shift+click selection would leave one. It
+    // must not survive a domain-button click, or a later Shift+click could
+    // extend a selection through rows this narrower view never showed.
+    await page.evaluate(() => {
+        const inbox = window.dashboardInstance.inbox;
+        inbox.checkedIds.add(inbox.items[0].id);
+        inbox.checkAnchorId = inbox.items[0].id;
+    });
+
+    await captureTracks(page);
+    await domainBtn.click();
+
+    const state = await page.evaluate(() => ({
+        anchor: window.dashboardInstance.inbox.checkAnchorId,
+        domainFilter: window.dashboardInstance.inbox.domainFilter,
+        // `inbox` itself is a lazy-load wrapper (DashboardInboxLoader); the
+        // real class with STATE_KEY is the global DashboardInbox.
+        stored: JSON.parse(localStorage.getItem(DashboardInbox.STATE_KEY) || '{}'),
+    }));
+    expect(state.anchor, 'checkAnchorId should not survive a domain-button click').toBeNull();
+    expect(state.domainFilter).toBe(host);
+    // Same persistence the domain select gets; a domain-button click is not
+    // a second-class way of choosing a site.
+    expect(state.stored.domain).toBe(host);
+
+    const seen = await tracks(page);
+    // Same historical event name and marker as the domain select: the real
+    // hostname in the patch must never reach _trackAction unredacted.
+    const filterEvent = seen.find((t) => t.name === 'inbox:filter' && t.props?.filter === 'domain');
+    expect(filterEvent, 'no inbox:filter event with the domain marker was seen').toBeTruthy();
+    expect(JSON.stringify(filterEvent.props)).not.toContain(host);
+    expect(filterEvent.props.domainFilter).toBeUndefined();
+});
+
 test('typing in the search box fires no analytics event', async ({ page }) => {
     await openInboxWithItems(page);
 

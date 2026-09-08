@@ -3557,6 +3557,12 @@ class DashboardHealth {
         shell.setActiveSection(this.section);
         shell.setCounts(Object.fromEntries(
             this.shellFilterRows().map((row) => [row.key, this.filterCount(row.key)])));
+        // shellConfig()'s sections array is read once, inside mountShell(),
+        // before the first report has necessarily loaded -- so the section's
+        // own count needs the same after-the-fact refresh setCounts() gives
+        // the filter rows above, or it stays frozen at whatever it read at
+        // mount (usually 0).
+        shell.setSectionCounts({ monitors: this.filterCount('monitored') });
         shell.setSummary(this.shellSummary());
         shell.setBreadcrumb(this.shellBreadcrumb());
         this.syncRailFilters();
