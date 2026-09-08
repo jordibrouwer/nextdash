@@ -206,6 +206,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Languages
+
+- **new — Spanish (Español) as a sixth full language, in parity with the other five.** `locales/es.json` carries all 6136 strings — the dashboard and its cheat sheet, the command palette, the onboarding and quick-start wizards, every config tab, the statistics, the health and inbox views, and all of Help's prose bodies — plus `extension/locales/es.json` for the browser extension. Wiring a language up touches more than the three places the old note named: `availableLanguages` and `nameKeys` in `static/js/shared/config-language.js`, the pickers in `dashboard-config.js`, `search-commands.js` and `dashboard-quickstart.js`, the `noscript` branch in `templates/dashboard.html`, `EXT_SUPPORTED` in `extension/i18n.js`, and the language lists in `validate-locale-parity.cjs`, `validate-help-i18n.cjs` and `validate-cheatsheet-i18n.cjs`. Verified against a running server: `/locales/es.json` serves, the page renders `lang="es"`, and the grid comes up in Spanish.
+
 ---
 
 ## v1.7.0 — 8 September 2026
