@@ -240,6 +240,7 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new — rows can be compact or comfortable.** It is one setting for the whole app rather than one per view, so it is already the setting the other lists will read as they move onto the same shell.
 - **fix — typing in the search box no longer rebuilds the whole view behind the cursor.**
 - **fix — the site filter no longer sends the hostname you picked to analytics.** It reports a fixed marker instead, under the same event name as before.
+- **fix — clicking a row's domain chip left a stale selection anchor behind and never saved the site choice.** The chip's click handler was a hand-rolled copy of the filter reset that skipped `checkAnchorId` and the write to `localStorage`, so a later Shift+click could extend a selection through rows the narrower view never showed, and the site choice did not survive a reload the way picking it from the select does. It now goes through the same path as every other filter change.
 
 ### Shared shell
 
