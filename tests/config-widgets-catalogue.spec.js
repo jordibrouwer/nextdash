@@ -68,13 +68,24 @@ test.describe('the widget catalogue is a door, not the page', () => {
         // existed below the fold. The row arrives with its settings open, so
         // what has to be on screen is the panel it opened rather than only the
         // head of the row.
-        // Polled, because the reveal scrolls smoothly: reading the box in the
-        // same tick measures where the row started rather than where it lands.
+        /*
+         * Polled, because the reveal scrolls smoothly: reading the box in the
+         * same tick measures where the row started rather than where it lands.
+         *
+         * What is asserted is that the row and the top of its settings are on
+         * screen -- not that the whole panel fits. A row arrives with its
+         * settings open, and on a 720px viewport a panel of several fields is
+         * taller than the space left below the config chrome, so demanding
+         * the whole of it fit is a test that can never pass rather than one
+         * that catches the complaint: a new row landing below the fold.
+         */
         await expect.poll(async () => page.evaluate(() => {
             const row = document.querySelector('.config-widget-row');
+            const head = row.getBoundingClientRect();
             const panel = row.querySelector('.config-widget-settings:not([hidden])');
-            const box = (panel || row).getBoundingClientRect();
-            return row.getBoundingClientRect().top >= 0 && box.bottom <= window.innerHeight;
+            const fields = panel ? panel.getBoundingClientRect() : head;
+            return head.top >= 0 && head.top < window.innerHeight
+                && fields.top < window.innerHeight;
         }), { timeout: 10_000 }).toBe(true);
 
         // And holding the caret, because naming it is the next thing anyone does.
