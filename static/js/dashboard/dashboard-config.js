@@ -18550,20 +18550,55 @@ class DashboardConfig {
         this.widgetsTab = 'widgets';
         this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
         await this.loadWidgetsEditor();
+        /*
+         * Open the new widget's settings straight away.
+         *
+         * Adding one is almost always followed by filling it in, and the fields
+         * were a second click away behind a Settings button. Only one panel is
+         * open at a time, so on a page that already carries a widget of the
+         * same kind that click also closed the panel someone was reading --
+         * which is what made a second RSS block feel like it could not be
+         * given its own feeds.
+         */
+        const added = this.lastWidgetIndex();
+        if (added >= 0) this._widgetSettingsOpen = added;
         // After the dashboard redraw, not before: a full render replaces the
         // elements this is about to mark and focus, so revealing first left the
         // caret back on <body> and the mark gone within the same tick.
         await this.refreshDashboardBlocks();
-        this.revealNewWidget();
+        this.revealNewWidget(added);
     }
 
-    /** Bring the last row into view, mark it, and put the caret in its title. */
-    revealNewWidget() {
+    /** Where the widget the server just appended sits in the block list. */
+    lastWidgetIndex() {
+        const blocks = this._widgetBlocks || [];
+        for (let index = blocks.length - 1; index >= 0; index -= 1) {
+            if (blocks[index]?.isWidget) return index;
+        }
+        return -1;
+    }
+
+    /** Bring the new row into view, mark it, and put the caret in its title. */
+    revealNewWidget(index = -1) {
+        // By index rather than by position: the list is grouped by default, so
+        // the row that was just added is only the last one on screen when the
+        // reader happens to be sorting by page order.
         const rows = document.querySelectorAll('#config-widgets-body .config-widget-row');
-        const row = rows[rows.length - 1];
+        const row = (index >= 0
+            && document.querySelector(`#config-widgets-body .config-widget-row[data-widget-row="${index}"]`))
+            || rows[rows.length - 1];
         if (!row) return;
         row.classList.add('is-new');
         row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        /*
+         * The fields, not just the row's head.
+         *
+         * The row arrives with its settings open and is now taller than it
+         * was; scrolling to its top can leave every field it just opened below
+         * the fold, which is the same complaint this reveal was written for.
+         */
+        const panel = row.querySelector('.config-widget-settings:not([hidden])');
+        if (panel) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         const title = row.querySelector('[data-widget="title"]');
         if (title) title.focus({ preventScroll: true });
         // Removed rather than left on: it marks an arrival, not a state, and a

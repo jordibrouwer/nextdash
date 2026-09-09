@@ -207,6 +207,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Config
+
+- **new — a widget arrives with its settings already open, and the reveal scrolls to the fields rather than to the row's head.** Adding one is almost always followed by filling it in, and the fields sat behind a second click on *Settings*. Only one settings panel is open at a time, so on a page that already carried a widget of the same kind that click also closed the panel being read — which is what made a second RSS block feel like it could not be given feeds of its own. `addWidget` now records the new block's index in `_widgetSettingsOpen` (via a new `lastWidgetIndex`, since the list is grouped by default and the new row is only last when sorting by page order), and `revealNewWidget` takes that index rather than picking the last row on screen. The caret still lands in the title box, so renaming first is unchanged.
+
 ---
 
 ## v1.7.1 — 9 September 2026

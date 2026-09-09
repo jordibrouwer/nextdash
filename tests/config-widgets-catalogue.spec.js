@@ -65,14 +65,17 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await expect(page.locator('.config-widget-row')).toHaveCount(1);
 
         // In view, not merely present: the whole complaint was a row that
-        // existed below the fold.
-        const placement = await page.evaluate(() => {
+        // existed below the fold. The row arrives with its settings open, so
+        // what has to be on screen is the panel it opened rather than only the
+        // head of the row.
+        // Polled, because the reveal scrolls smoothly: reading the box in the
+        // same tick measures where the row started rather than where it lands.
+        await expect.poll(async () => page.evaluate(() => {
             const row = document.querySelector('.config-widget-row');
-            const box = row.getBoundingClientRect();
-            return { top: box.top, bottom: box.bottom, viewport: window.innerHeight };
-        });
-        expect(placement.top).toBeGreaterThanOrEqual(0);
-        expect(placement.bottom).toBeLessThanOrEqual(placement.viewport);
+            const panel = row.querySelector('.config-widget-settings:not([hidden])');
+            const box = (panel || row).getBoundingClientRect();
+            return row.getBoundingClientRect().top >= 0 && box.bottom <= window.innerHeight;
+        }), { timeout: 10_000 }).toBe(true);
 
         // And holding the caret, because naming it is the next thing anyone does.
         await expect(page.locator('.config-widget-row [data-widget="title"]')).toBeFocused();
@@ -87,6 +90,39 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await expect(page.locator('[data-widgets-tab="widgets"]')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('.config-widget-row')).toHaveCount(1);
         await expect(page.locator('.config-widget-row [data-widget="title"]')).toBeFocused();
+    });
+
+    /*
+     * Adding one is almost always followed by filling it in, and the fields sat
+     * behind a Settings button. Only one panel is open at a time, so on a page
+     * that already carries a widget of the same kind that second click closed
+     * the panel the reader was reading -- which is what made a second RSS block
+     * feel like it could not be given feeds of its own.
+     */
+    test('the new widget arrives with its settings already open', async ({ page }) => {
+        await openWidgets(page);
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();
+
+        const row = page.locator('.config-widget-row').filter({ hasText: 'RSS' });
+        await expect(row).toHaveCount(1);
+        await expect(row.locator('[data-widget-settings]')).toHaveAttribute('aria-expanded', 'true');
+        // The fields themselves, not just an expanded button.
+        await expect(row.locator('textarea[data-widget-setting="feedUrls"]')).toBeVisible();
+
+        // A second one of the same kind opens its own panel rather than
+        // reopening the first, and each carries its own fields.
+        await page.locator('[data-widget-catalogue]').click();
+        await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();
+        await expect(page.locator('.config-widget-row').filter({ hasText: 'RSS' })).toHaveCount(2);
+
+        const open = page.locator('.config-widget-row [data-widget-settings][aria-expanded="true"]');
+        await expect(open).toHaveCount(1);
+        const areas = page.locator('textarea[data-widget-setting="feedUrls"]');
+        await expect(areas).toHaveCount(1);
+        // And it is the second widget's panel, not the first one reopened.
+        const openIndex = await open.getAttribute('data-widget-settings');
+        await expect(areas).toHaveAttribute('data-widget-index', openIndex);
     });
 
     test('every kind on Types is addable from where it is described', async ({ page }) => {
