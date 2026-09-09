@@ -18,6 +18,23 @@
       "since": "v1.7.1"
     },
     {
+      "titleKey": "config.overviewNewFeatureSpanishTitle",
+      "titleFallback": "nextDash speaks Spanish",
+      "whatKey": "config.overviewNewFeatureSpanishWhat",
+      "whatFallback": "Five languages covered a lot of Europe and none of the Spanish-speaking world, and a half-translated app is worse than an English one — you never know which screen switches back.",
+      "howKey": "config.overviewNewFeatureSpanishHow",
+      "howFallback": "Español is complete: the dashboard and its cheat sheet, the command palette, the wizards, every tab in Config, the statistics, Health and the Inbox, and every page of Help — the same lines the other five carry. The browser extension speaks it too.",
+      "enableKey": "config.overviewNewFeatureSpanishEnable",
+      "enableFallback": "Behavior → General → Language → Español.",
+      "ctaKey": "config.overviewNewFeatureSpanishCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      },
+      "since": "v1.7.1"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWeatherWidgetTitle",
       "titleFallback": "A weather block for your page",
       "whatKey": "config.overviewNewFeatureWeatherWidgetWhat",

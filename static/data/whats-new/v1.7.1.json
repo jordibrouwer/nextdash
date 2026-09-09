@@ -2,7 +2,7 @@
   "tag": "v1.7.1",
   "date": "9 September 2026",
   "releasedAt": "2026-09-09",
-  "modalLead": "A third block for the outside world: your feeds, as headlines you can click. Give one block a handful of feed addresses and it lists the newest articles across all of them, with the rest a click away.",
+  "modalLead": "A third block for the outside world: your feeds, as headlines you can click. Give one block a handful of feed addresses and it lists the newest articles across all of them, with the rest a click away. And nextDash speaks a sixth language: Spanish, in full.",
   "sections": [
     {
       "title": "Dashboard",
@@ -18,6 +18,15 @@
         {
           "badge": "new",
           "text": "<strong>Show more, without leaving the page.</strong> You choose how many rows the block shows; anything past that folds into a <em>more</em> row. Open it and the rest unfold in place, and the block remembers you opened it. Headlines can be walked with the arrow keys like every other row, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd> opens one in a new tab."
+        }
+      ]
+    },
+    {
+      "title": "Languages",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Espa&ntilde;ol &mdash; nextDash is now fully in Spanish.</strong> Not a partial translation: the dashboard and its cheat sheet, the command palette, the onboarding and quick-start wizards, every tab in Config, the statistics, Health and the Inbox, and every page of this Help &mdash; the same six thousand lines the other five languages carry. Pick it under <em>Behavior &rarr; General &rarr; Language</em>. The browser extension speaks it too."
         }
       ]
     }
