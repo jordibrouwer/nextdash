@@ -596,7 +596,7 @@ test.describe('the category menu shows its keys', () => {
         await openDashboard(page);
         const id = await categoryWith(page, 1);
 
-        for (const lang of ['en', 'nl', 'de', 'fr', 'zh']) {
+        for (const lang of ['en', 'nl', 'de', 'fr', 'zh', 'es']) {
             await page.evaluate(async (code) => {
                 const d = window.dashboardInstance;
                 await d.language.loadTranslations(code);

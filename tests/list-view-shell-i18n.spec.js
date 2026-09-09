@@ -11,10 +11,22 @@ const KEYS = [
     'listDensityGroup',
 ];
 
+/*
+ * Named rather than counted.
+ *
+ * This asserted "five locales" against a number, so adding Spanish failed it
+ * with nothing wrong: the point is that every locale that exists carries the
+ * shell strings, and the list guards the other half -- a locale file quietly
+ * disappearing. The other language lists in the tree (validate-locale-parity
+ * and its neighbours) are spelled out the same way, so a seventh language
+ * trips all of them together and on purpose.
+ */
+const LOCALES = ['de.json', 'en.json', 'es.json', 'fr.json', 'nl.json', 'zh.json'];
+
 test('every locale carries the shell strings', () => {
     const dir = path.join(__dirname, '..', 'locales');
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
-    expect(files.length, `expected five locales, found ${files.join(', ')}`).toBe(5);
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+    expect(files, `locales/ holds ${files.join(', ')}`).toEqual(LOCALES);
 
     const missing = {};
     for (const file of files) {
