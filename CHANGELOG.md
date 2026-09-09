@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v1.7.1 — 9 September 2026](#v171--9-september-2026)
 - [v1.7.0 — 8 September 2026](#v170--8-september-2026)
 - [v1.6.2 — 8 September 2026](#v162--8-september-2026)
 - [v1.6.1 — 8 September 2026](#v161--8-september-2026)
@@ -205,6 +206,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ---
 
 ## Unreleased
+
+### Fixes
+
+- **fix — the catalogue's "in view" check demanded that a whole settings panel fit on screen.** Rewritten with the auto-open change, it asserted the row's top and the panel's bottom were both inside the viewport — which on CI's 720px-tall window a panel of several fields cannot satisfy, so it failed there three retries running while passing locally. It now checks what the test was written for: the new row's head is on screen and its fields start above the fold, rather than the whole panel fitting.
+- **fix — the widget specs opened a panel that was already open, and sat out a timeout each time.** Four helpers added a widget and then clicked *Settings* to reach its fields. Since a new widget arrives with its settings open that click is a toggle: it closed the panel, and the wait for a field that had just been hidden ran to its full 30 seconds. Seven tests failed that way in `config-widget-panel`, `widget-secret-reveal`, `widget-preset-address` and `widget-cpu` — the specs that sit in CI shards 3 and 6, which is why those two ran for double the time of the other four rather than failing outright. Each now clicks only when `aria-expanded` says the panel is closed, which is also what the four call sites that open a seeded widget's panel have always been doing. The affected files run in 2.2 minutes rather than 3.6.
+- **fix — CI failed on the Spanish locale over a test that counted languages rather than naming them.** `tests/list-view-shell-i18n.spec.js` asserted `files.length === 5` against `locales/`, so the sixth language broke a check that was not about it: the test exists to prove every locale carries the list-shell strings, which the loop under it already does for whatever files are there. It now compares the directory against a named list, the way `validate-locale-parity.cjs` and its neighbours spell theirs out — a missing locale still fails, and a seventh language trips every list at once and on purpose. `tests/dashboard-category-width.spec.js` was stale in the other direction: its "nothing is cut off, in any language" loop never switched to Spanish, so the longest labels in the category menu went unchecked. It covers `es` now.
+
+### Config
+
+- **new — a widget arrives with its settings already open, and the reveal scrolls to the fields rather than to the row's head.** Adding one is almost always followed by filling it in, and the fields sat behind a second click on *Settings*. Only one settings panel is open at a time, so on a page that already carried a widget of the same kind that click also closed the panel being read — which is what made a second RSS block feel like it could not be given feeds of its own. `addWidget` now records the new block's index in `_widgetSettingsOpen` (via a new `lastWidgetIndex`, since the list is grouped by default and the new row is only last when sorting by page order), and `revealNewWidget` takes that index rather than picking the last row on screen. The caret still lands in the title box, so renaming first is unchanged.
+
+---
+
+## v1.7.1 — 9 September 2026
+
+### Dashboard
+
+- **new — an RSS widget beside Weather and Calendar in "What's happening around you?": the latest articles from the feeds a tile is given, one headline per row.** Not the Feeds widget, which reports *on* feeds — Fresh (`feeds.go`) is a checker and deliberately keeps no titles — this one reads *from* them. Server-side (`internal/app/widgets_rss.go`), because a feed served without CORS headers cannot be read from the page at all; the RSS and Atom parsing is the shape `sources_feeds.go` already carries, so only the reading half is new (no import cursor, no bookmark rows). Feeds are named per widget rather than per install — two tiles following different subjects is the ordinary arrangement — through a new `urlList` settings kind: a textarea, one address per line, up to ten. It is its own kind because the tags box is one comma-separated line capped at 400 characters, and a comma is legal inside a URL. Each feed is cached per address for 15 minutes and shared by every tile that names it; the merged list is newest first, undated entries last. Rows are buttons carrying `data-widget-href` rather than anchors, which is what keyboard navigation stops on — arrow keys walk them, Ctrl/Cmd+Enter opens a new tab, and the row menu offers the same. A headline truncates to one line via the shared `.dashboard-widget-row-name`, with the whole entry — title, the feed's own summary, source and age — in the existing hover/focus popover (`DashboardSmartWhyPopover`), gone again on mouse-leave. What is past the row count folds into a "more" row that expands in place and remembers it, the way an expanded category does.
+
+### Languages
+
+- **new — Spanish (Español) as a sixth full language, in parity with the other five.** `locales/es.json` carries all 6136 strings — the dashboard and its cheat sheet, the command palette, the onboarding and quick-start wizards, every config tab, the statistics, the health and inbox views, and all of Help's prose bodies — plus `extension/locales/es.json` for the browser extension. Wiring a language up touches more than the three places the old note named: `availableLanguages` and `nameKeys` in `static/js/shared/config-language.js`, the pickers in `dashboard-config.js`, `search-commands.js` and `dashboard-quickstart.js`, the `noscript` branch in `templates/dashboard.html`, `EXT_SUPPORTED` in `extension/i18n.js`, and the language lists in `validate-locale-parity.cjs`, `validate-help-i18n.cjs` and `validate-cheatsheet-i18n.cjs`. Verified against a running server: `/locales/es.json` serves, the page renders `lang="es"`, and the grid comes up in Spanish.
+
+### Docs
+
+- **new — the manual, Help and the tips cover the RSS widget.** MANUAL.md gains it in the "What's happening around you?" table (twenty types now, not nineteen), a paragraph on giving one tile several feed addresses, and a troubleshooting entry for an address that answers a web page rather than a feed. Help's widget catalogue and widget intro say the same in all six locales, and `helpVersionBody` names this release. A new tip points at the block from Config → Help → tips.
+- **new — the Custom widget's own reference is no longer English in German and French.** The seventeen paragraphs under Config → Widgets → Types that explain what the Custom widget reads, stores and refuses had never been translated; a further eleven single strings in Dutch ("Open bookmark", "Tight columns", "Open Widgets →") were the same. `npm run validate:locale-parity` passes as it did before — parity was never the gap, English text sitting in a translated file was.
+- **Release plumbing for v1.7.1.** New `static/data/whats-new/v1.7.1.json` with a Dashboard and a Languages section, entry added first in `index.json`, both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE` to `2026.09-dashboard-release-v1.7.1`, `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v281`), two spotlight entries with `since: "v1.7.1"` in `static/data/overview-features.json` — the RSS widget and Spanish — for Config → Overview and About → News & features, and `tests/whats-new-hidden-release.spec.js` moved onto the new constants.
 
 ---
 

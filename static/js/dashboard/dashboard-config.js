@@ -10869,7 +10869,7 @@ class DashboardConfig {
                 note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
-                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'),
+                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'), opt('es', 'Español'),
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
@@ -13519,7 +13519,7 @@ class DashboardConfig {
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker']],
-        ['ambient', ['weather', 'calendar']],
+        ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -15806,7 +15806,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15961,6 +15961,16 @@ class DashboardConfig {
                   ['5day', ['config.widgetForecastRange5Day', '5 days']],
                   ['24h', ['config.widgetForecastRange24h', '24 hours']],
               ] },
+        ],
+        rss: [
+            { key: 'feedUrls', kind: 'urlList',
+              label: ['config.widgetFeedUrls', 'Feed addresses'],
+              hint: ['config.widgetFeedUrlsHint',
+                     'One RSS or Atom address per line, up to ten.'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20,
+              label: ['config.widgetRows', 'Rows to show'],
+              hint: ['config.widgetRssRowsHint',
+                     'What is past this count folds into a “more” row that opens in place.'] },
         ],
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
@@ -17431,6 +17441,28 @@ class DashboardConfig {
                             value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
                     </div>`;
             }
+            /*
+             * A list of addresses, one per line.
+             *
+             * Not the tags box: that is one comma-separated line capped at 400
+             * characters, which is a sentence's worth of tags and nowhere near
+             * a handful of feed addresses -- and a comma is legal inside a URL,
+             * so splitting on it would quietly cut one in half.
+             */
+            if (field.kind === 'urlList') {
+                const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
+                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                        <textarea id="${id}" class="config-text config-widget-urls" rows="4"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="urlList"
+                            placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
+                                'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
+                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                    </div>`;
+            }
             if (field.kind === 'tags') {
                 const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
                 // A field whose values are discoverable offers them: the disks
@@ -17834,6 +17866,7 @@ class DashboardConfig {
             custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Behavior → Date & weather.',
+            rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
@@ -18517,20 +18550,55 @@ class DashboardConfig {
         this.widgetsTab = 'widgets';
         this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
         await this.loadWidgetsEditor();
+        /*
+         * Open the new widget's settings straight away.
+         *
+         * Adding one is almost always followed by filling it in, and the fields
+         * were a second click away behind a Settings button. Only one panel is
+         * open at a time, so on a page that already carries a widget of the
+         * same kind that click also closed the panel someone was reading --
+         * which is what made a second RSS block feel like it could not be
+         * given its own feeds.
+         */
+        const added = this.lastWidgetIndex();
+        if (added >= 0) this._widgetSettingsOpen = added;
         // After the dashboard redraw, not before: a full render replaces the
         // elements this is about to mark and focus, so revealing first left the
         // caret back on <body> and the mark gone within the same tick.
         await this.refreshDashboardBlocks();
-        this.revealNewWidget();
+        this.revealNewWidget(added);
     }
 
-    /** Bring the last row into view, mark it, and put the caret in its title. */
-    revealNewWidget() {
+    /** Where the widget the server just appended sits in the block list. */
+    lastWidgetIndex() {
+        const blocks = this._widgetBlocks || [];
+        for (let index = blocks.length - 1; index >= 0; index -= 1) {
+            if (blocks[index]?.isWidget) return index;
+        }
+        return -1;
+    }
+
+    /** Bring the new row into view, mark it, and put the caret in its title. */
+    revealNewWidget(index = -1) {
+        // By index rather than by position: the list is grouped by default, so
+        // the row that was just added is only the last one on screen when the
+        // reader happens to be sorting by page order.
         const rows = document.querySelectorAll('#config-widgets-body .config-widget-row');
-        const row = rows[rows.length - 1];
+        const row = (index >= 0
+            && document.querySelector(`#config-widgets-body .config-widget-row[data-widget-row="${index}"]`))
+            || rows[rows.length - 1];
         if (!row) return;
         row.classList.add('is-new');
         row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        /*
+         * The fields, not just the row's head.
+         *
+         * The row arrives with its settings open and is now taller than it
+         * was; scrolling to its top can leave every field it just opened below
+         * the fold, which is the same complaint this reveal was written for.
+         */
+        const panel = row.querySelector('.config-widget-settings:not([hidden])');
+        if (panel) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         const title = row.querySelector('[data-widget="title"]');
         if (title) title.focus({ preventScroll: true });
         // Removed rather than left on: it marks an arrival, not a state, and a
@@ -18594,6 +18662,12 @@ class DashboardConfig {
         } else if (kind === 'tags') {
             const list = String(input.value || '').split(',')
                 .map((tag) => tag.trim()).filter(Boolean);
+            value = list.length ? list : undefined;
+        } else if (kind === 'urlList') {
+            // One address per line. Blank lines are how a list is edited, not
+            // an entry, so they are dropped rather than stored as empties.
+            const list = String(input.value || '').split('\n')
+                .map((line) => line.trim()).filter(Boolean);
             value = list.length ? list : undefined;
         } else if (kind === 'text') {
             const text = String(input.value || '').trim();

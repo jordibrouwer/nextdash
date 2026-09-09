@@ -48,6 +48,11 @@ const (
 	widgetMaxURLLen = 2000
 	// widgetMaxPathLen bounds a dotted path into a response.
 	widgetMaxPathLen = 200
+	// widgetMaxFeedsPerWidget bounds how many addresses one reading tile
+	// fetches. A tile shows a dozen headlines; a reader following more
+	// sources than this is asking for a feed reader, and every address here
+	// is a request the server makes on every cache miss.
+	widgetMaxFeedsPerWidget = 10
 )
 
 /*
@@ -61,7 +66,7 @@ widget's own `show`.
 */
 type widgetField struct {
 	Key string
-	// Kind is bool, int, string or list.
+	// Kind is bool, int, string, url, list or urlList.
 	Kind string
 	// Min and Max bound an int. Ignored for other kinds.
 	Min, Max int
@@ -200,6 +205,18 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "daysAhead", Kind: "int", Min: 1, Max: 90},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
+	WidgetTypeRSS: {
+		/*
+		 * The feeds this tile reads, per widget rather than per install.
+		 *
+		 * The other outward-looking tiles read one setting the whole install
+		 * shares -- one location, one calendar. Reading is not like that: two
+		 * tiles side by side following different subjects is the ordinary
+		 * arrangement, so the addresses belong to the widget.
+		 */
+		{Key: "feedUrls", Kind: "urlList", Max: widgetMaxFeedsPerWidget},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
 	WidgetTypeCustom: {
 		{Key: "url", Kind: "url"},
 		{Key: "method", Kind: "string", Allowed: []string{"GET", "POST"}},
@@ -324,6 +341,14 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			if list := widgetConfigList(raw, field.Allowed); len(list) > 0 {
 				clean[field.Key] = list
 			}
+		case "urlList":
+			// Its own kind rather than a list of strings: a list entry is
+			// capped at widgetMaxIDLen, which is an identifier's length and
+			// half of a real feed address -- silently trimming one produces a
+			// URL that looks configured and fetches nothing.
+			if list := widgetConfigURLList(raw, field.Max); len(list) > 0 {
+				clean[field.Key] = list
+			}
 		}
 	}
 	return clean
@@ -382,6 +407,61 @@ func widgetConfigList(raw any, allowed []string) []string {
 	return list
 }
 
+/*
+widgetConfigURLList reads a bounded list of addresses.
+
+Each entry goes through the same check a custom widget's address does, so an
+entry that could never be fetched is dropped here rather than stored as a
+setting that reads as configured and never works. Duplicates go too: the same
+feed listed twice is one feed and two requests.
+*/
+func widgetConfigURLList(raw any, maxCount int) []string {
+	/*
+	 * Both shapes, because this is read twice.
+	 *
+	 * On the way in the value has just come off the wire, where a JSON array
+	 * is []any. On the way out it is read back from a widget the store has
+	 * already sanitised, and that copy is []string -- so a reader that only
+	 * knew the first shape found no feeds on a widget that plainly had some.
+	 */
+	var items []any
+	switch value := raw.(type) {
+	case []any:
+		items = value
+	case []string:
+		items = make([]any, 0, len(value))
+		for _, entry := range value {
+			items = append(items, entry)
+		}
+	default:
+		return nil
+	}
+	if maxCount <= 0 {
+		maxCount = widgetMaxListLen
+	}
+	seen := map[string]struct{}{}
+	list := make([]string, 0, len(items))
+	for _, item := range items {
+		if len(list) >= maxCount {
+			break
+		}
+		text, isString := item.(string)
+		if !isString {
+			continue
+		}
+		address := sanitizeWidgetURL(text)
+		if address == "" {
+			continue
+		}
+		if _, duplicate := seen[address]; duplicate {
+			continue
+		}
+		seen[address] = struct{}{}
+		list = append(list, address)
+	}
+	return list
+}
+
 // widgetValueAllowed reports whether a value is in the allowed set. An empty
 // set means the field takes free-form short strings -- a tag, a page id.
 func widgetValueAllowed(value string, allowed []string) bool {
@@ -405,7 +485,7 @@ func widgetTypeNames() []string {
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker,
-		WidgetTypeWeather, WidgetTypeCalendar,
+		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

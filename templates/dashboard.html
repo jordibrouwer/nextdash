@@ -159,6 +159,9 @@
             {{else if eq .Language "zh"}}
             <h1>需要 JavaScript</h1>
             <p>此仪表板需要 JavaScript 才能加载你的书签。请启用 JavaScript 后重新加载页面。</p>
+            {{else if eq .Language "es"}}
+            <h1>Se necesita JavaScript</h1>
+            <p>Este panel necesita JavaScript para cargar tus marcadores. Activa JavaScript y vuelve a cargar la página.</p>
             {{else}}
             <h1>JavaScript required</h1>
             <p>This dashboard needs JavaScript to load your bookmarks. Please enable JavaScript and reload the page.</p>
@@ -473,6 +476,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-docker.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-weather.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-calendar.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-rss.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>

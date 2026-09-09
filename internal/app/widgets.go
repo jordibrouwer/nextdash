@@ -109,7 +109,15 @@ const (
 	// WidgetTypeCalendar lists what is coming up from the ICS feed set for it,
 	// soonest first.
 	WidgetTypeCalendar WidgetType = "calendar"
-	WidgetTypeCustom   WidgetType = "custom"
+	/*
+	 * WidgetTypeRSS lists the latest articles from the feeds it is given.
+	 *
+	 * Not the feeds widget, which reports on feeds rather than from them:
+	 * that one counts what is new per feed and deliberately keeps no titles,
+	 * because Fresh is a checker and not a reader. This is the reader.
+	 */
+	WidgetTypeRSS    WidgetType = "rss"
+	WidgetTypeCustom WidgetType = "custom"
 )
 
 // knownWidgetTypes is the register. A type not in here is refused rather than
@@ -135,6 +143,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeDocker:     {},
 	WidgetTypeWeather:    {},
 	WidgetTypeCalendar:   {},
+	WidgetTypeRSS:        {},
 	WidgetTypeCustom:     {},
 }
 

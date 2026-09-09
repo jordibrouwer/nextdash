@@ -14,6 +14,7 @@ class ConfigLanguage {
             'de': 'German',
             'fr': 'French',
             'zh': 'Chinese',
+            'es': 'Spanish',
         };
     }
 
@@ -278,6 +279,7 @@ class ConfigLanguage {
             de: 'config.languageNameDe',
             fr: 'config.languageNameFr',
             zh: 'config.languageNameZh',
+            es: 'config.languageNameEs',
         };
         Object.keys(this.availableLanguages).forEach(lang => {
             const option = document.createElement('option');

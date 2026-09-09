@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureRssWidgetTitle",
+      "titleFallback": "Your feeds, as headlines you can click",
+      "whatKey": "config.overviewNewFeatureRssWidgetWhat",
+      "whatFallback": "The Feeds block could tell you a feed had something new, but not what it was — the headline itself was always one tab away.",
+      "howKey": "config.overviewNewFeatureRssWidgetHow",
+      "howFallback": "An RSS block lists the newest articles across the feed addresses you give it, newest first. A headline opens the article; hovering one shows the feed's own summary, where it came from and how old it is. Past the row count you set, the rest fold into a more row that opens in place.",
+      "enableKey": "config.overviewNewFeatureRssWidgetEnable",
+      "enableFallback": "Config → Widgets → Add a widget → RSS, then paste your feed addresses, one per line.",
+      "ctaKey": "config.overviewNewFeatureRssWidgetCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.7.1"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSpanishTitle",
+      "titleFallback": "nextDash speaks Spanish",
+      "whatKey": "config.overviewNewFeatureSpanishWhat",
+      "whatFallback": "Five languages covered a lot of Europe and none of the Spanish-speaking world, and a half-translated app is worse than an English one — you never know which screen switches back.",
+      "howKey": "config.overviewNewFeatureSpanishHow",
+      "howFallback": "Español is complete: the dashboard and its cheat sheet, the command palette, the wizards, every tab in Config, the statistics, Health and the Inbox, and every page of Help — the same lines the other five carry. The browser extension speaks it too.",
+      "enableKey": "config.overviewNewFeatureSpanishEnable",
+      "enableFallback": "Behavior → General → Language → Español.",
+      "ctaKey": "config.overviewNewFeatureSpanishCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      },
+      "since": "v1.7.1"
+    },
+    {
       "titleKey": "config.overviewNewFeatureWeatherWidgetTitle",
       "titleFallback": "A weather block for your page",
       "whatKey": "config.overviewNewFeatureWeatherWidgetWhat",

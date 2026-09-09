@@ -111,6 +111,7 @@
                 'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
+                'tipTuneRssWidget',
                 'tipTuneCommands',
             ],
         },
