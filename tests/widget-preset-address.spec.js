@@ -56,7 +56,15 @@ async function addCustom(page) {
 
     const toggle = page.locator('[data-widget-settings]').last();
     const index = await toggle.getAttribute('data-widget-settings');
-    await toggle.click();
+    /*
+     * Opened only when it is not already open.
+     *
+     * A widget arrives with its settings open since v1.7.1, and this button is
+     * a toggle -- clicking it here closed the panel the helper is about to use,
+     * and every test that followed sat out its timeout waiting for a field that
+     * had just been hidden.
+     */
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
     await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`))
         .toBeVisible();
     return index;

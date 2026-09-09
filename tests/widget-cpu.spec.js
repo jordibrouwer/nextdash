@@ -239,7 +239,11 @@ test.describe('the processor widget in config', () => {
         });
         test.skip(idx === null, 'no processor row could be opened here');
 
-        await page.locator(`[data-widget-settings="${idx}"]`).click();
+        // Clicked only when the panel is closed: a widget added here arrives
+        // with its settings open, and this button is a toggle -- clicking it
+        // would hide the note this test is about to measure.
+        const toggle = page.locator(`[data-widget-settings="${idx}"]`);
+        if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
         await page.waitForTimeout(900);
 
         const shape = await page.evaluate((i) => {

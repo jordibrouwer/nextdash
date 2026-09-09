@@ -64,8 +64,17 @@ async function addWidget(page, type) {
     // caret landing is the last of it, so it is the signal to act on.
     await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))
         .toBeFocused({ timeout: 10_000 });
-    const index = await page.locator('[data-widget-settings]').last().getAttribute('data-widget-settings');
-    await page.locator(`[data-widget-settings="${index}"]`).click();
+    const toggle = page.locator('[data-widget-settings]').last();
+    const index = await toggle.getAttribute('data-widget-settings');
+    /*
+     * Opened only when it is not already open.
+     *
+     * A widget arrives with its settings open since v1.7.1, and this button is
+     * a toggle -- clicking it here closed the panel the helper is about to use,
+     * and every test that followed sat out its timeout waiting for a field that
+     * had just been hidden.
+     */
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
     await expect(page.locator(`[data-widget-row="${index}"] .config-widget-settings`)).toBeVisible();
     return index;
 }
