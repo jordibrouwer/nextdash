@@ -13519,7 +13519,7 @@ class DashboardConfig {
         ['incoming', ['inbox', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker']],
-        ['ambient', ['weather', 'calendar']],
+        ['ambient', ['weather', 'calendar', 'rss']],
     ];
 
     widgetTypeGroupLabel(group) {
@@ -15806,7 +15806,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'custom'];
+        'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -15961,6 +15961,16 @@ class DashboardConfig {
                   ['5day', ['config.widgetForecastRange5Day', '5 days']],
                   ['24h', ['config.widgetForecastRange24h', '24 hours']],
               ] },
+        ],
+        rss: [
+            { key: 'feedUrls', kind: 'urlList',
+              label: ['config.widgetFeedUrls', 'Feed addresses'],
+              hint: ['config.widgetFeedUrlsHint',
+                     'One RSS or Atom address per line, up to ten.'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20,
+              label: ['config.widgetRows', 'Rows to show'],
+              hint: ['config.widgetRssRowsHint',
+                     'What is past this count folds into a “more” row that opens in place.'] },
         ],
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
@@ -17431,6 +17441,28 @@ class DashboardConfig {
                             value="${esc(config[field.key] ?? '')}" placeholder="${esc(placeholder)}">
                     </div>`;
             }
+            /*
+             * A list of addresses, one per line.
+             *
+             * Not the tags box: that is one comma-separated line capped at 400
+             * characters, which is a sentence's worth of tags and nowhere near
+             * a handful of feed addresses -- and a comma is legal inside a URL,
+             * so splitting on it would quietly cut one in half.
+             */
+            if (field.kind === 'urlList') {
+                const lines = Array.isArray(config[field.key]) ? config[field.key].join('\n') : '';
+                const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}${this.widgetFieldInfoButton(field, index)}</label>
+                        <textarea id="${id}" class="config-text config-widget-urls" rows="4"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="urlList"
+                            placeholder="${esc(this.t('config.widgetFeedUrlsPlaceholder',
+                                'https://example.com/feed.xml'))}">${esc(lines)}</textarea>
+                        ${hint ? `<p class="config-widget-field-hint">${esc(hint)}</p>` : ''}
+                    </div>`;
+            }
             if (field.kind === 'tags') {
                 const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
                 // A field whose values are discoverable offers them: the disks
@@ -17834,6 +17866,7 @@ class DashboardConfig {
             custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
             calendar: 'What is coming up, from the ICS feed set in Behavior → Date & weather.',
+            rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
         };
         const label = this.dash.language?.t?.(key);
         return label && label !== key ? label : (fallbacks[type] || '');
@@ -18594,6 +18627,12 @@ class DashboardConfig {
         } else if (kind === 'tags') {
             const list = String(input.value || '').split(',')
                 .map((tag) => tag.trim()).filter(Boolean);
+            value = list.length ? list : undefined;
+        } else if (kind === 'urlList') {
+            // One address per line. Blank lines are how a list is edited, not
+            // an entry, so they are dropped rather than stored as empties.
+            const list = String(input.value || '').split('\n')
+                .map((line) => line.trim()).filter(Boolean);
             value = list.length ? list : undefined;
         } else if (kind === 'text') {
             const text = String(input.value || '').trim();

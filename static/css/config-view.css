@@ -5987,6 +5987,18 @@ button.config-bm-shortcut-pill {
     max-width: 7rem;
 }
 
+/* A list of addresses, one per line: tall enough to see a few at once, and
+   resizable downward rather than sideways so a long URL wraps instead of
+   pushing the panel wide. */
+.config-widget-urls {
+    width: 100%;
+    resize: vertical;
+    min-height: 4.5rem;
+    line-height: 1.45;
+    white-space: pre;
+    overflow-x: auto;
+}
+
 .config-widget-checkset {
     display: flex;
     flex-wrap: wrap;

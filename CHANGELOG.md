@@ -206,6 +206,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Dashboard
+
+- **new — an RSS widget beside Weather and Calendar in "What's happening around you?": the latest articles from the feeds a tile is given, one headline per row.** Not the Feeds widget, which reports *on* feeds — Fresh (`feeds.go`) is a checker and deliberately keeps no titles — this one reads *from* them. Server-side (`internal/app/widgets_rss.go`), because a feed served without CORS headers cannot be read from the page at all; the RSS and Atom parsing is the shape `sources_feeds.go` already carries, so only the reading half is new (no import cursor, no bookmark rows). Feeds are named per widget rather than per install — two tiles following different subjects is the ordinary arrangement — through a new `urlList` settings kind: a textarea, one address per line, up to ten. It is its own kind because the tags box is one comma-separated line capped at 400 characters, and a comma is legal inside a URL. Each feed is cached per address for 15 minutes and shared by every tile that names it; the merged list is newest first, undated entries last. Rows are buttons carrying `data-widget-href` rather than anchors, which is what keyboard navigation stops on — arrow keys walk them, Ctrl/Cmd+Enter opens a new tab, and the row menu offers the same. A headline truncates to one line via the shared `.dashboard-widget-row-name`, with the whole entry — title, the feed's own summary, source and age — in the existing hover/focus popover (`DashboardSmartWhyPopover`), gone again on mouse-leave. What is past the row count folds into a "more" row that expands in place and remembers it, the way an expanded category does.
+
 ---
 
 ## v1.7.0 — 8 September 2026

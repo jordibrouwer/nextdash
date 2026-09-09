@@ -28,6 +28,7 @@ class DashboardRenderCore {
         // Matches the server's own 15-minute feed cache -- polling faster
         // than that would only ever redraw the same cached answer.
         calendar: { configKey: '', floor: 300, fallback: 900 },
+        rss: { configKey: '', floor: 300, fallback: 900 },
     };
 
     constructor(dashboard) {
@@ -811,6 +812,9 @@ class DashboardRenderCore {
         // from the answer fetched under the old setting for up to five
         // minutes, same as the custom tile above.
         delete d._widgetCalendar;
+        // And the RSS tile's, for the same reason: an edited feed list has to
+        // be read again rather than drawn from the old one's articles.
+        delete d._widgetRss;
     }
 
     refreshWidgets(type) {
