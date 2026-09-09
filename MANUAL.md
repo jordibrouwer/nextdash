@@ -969,7 +969,7 @@ width of one or two columns, and settings of its own. The order of widgets and
 categories is one list, so there is a single answer to where any block sits — the
 same list the **Categories** tab arranges.
 
-**The nineteen types**, grouped in the picker under the question each answers.
+**The twenty types**, grouped in the picker under the question each answers.
 
 *Are the links still good?*
 
@@ -1011,12 +1011,13 @@ same list the **Categories** tab arranges.
 These four are the only widgets that read something outside nextDash, and the
 only ones that need setting up. See **[System widgets: what they need](#system-widgets-what-they-need)** below.
 
-*What's happening around you?* (**v1.7.0**)
+*What's happening around you?* (**v1.7.0**, RSS **v1.7.1**)
 
 | Type | What it shows |
 |---|---|
 | **Weather** | Current conditions beside a forecast — three days, five days, or the next 24 hours, your choice per widget. It reads the **location, source and unit** already set in **Config → Behavior → Date & weather** rather than asking a second time, and refreshes on the same 30-minute cadence as the header's weather line |
 | **Calendar** | What is coming up, from one ICS (iCal) feed. Set **Look ahead (days)** and the row count per widget; the feed address itself is one setting for the whole install, under **Config → Behavior → Date & weather → Calendar feed URL (.ics)** |
+| **RSS** | The newest articles from the feeds this widget is given — one headline per row, merged newest first across all of them. **Feed addresses** and the row count are set per widget, up to ten addresses, one per line |
 
 The **Calendar** feed is fetched and parsed by the server, not by your browser:
 most providers hand out a private feed address that is not meant for
@@ -1024,6 +1025,18 @@ cross-origin JavaScript, and it is not a thing to leave sitting in a script.
 Every calendar widget shares one cached copy of the feed (refreshed every 15
 minutes) and narrows it to its own look-ahead and row count. A **recurring event
 shows its own stated occurrence** — repeats are not expanded yet.
+
+The **RSS** widget is the reading half of what **Feeds** reports on: Feeds says a
+feed has something new, RSS says what it is. Its addresses live on the widget
+rather than in Settings — two tiles following different subjects is the ordinary
+arrangement — as a textarea taking **one address per line, up to ten**. Each
+feed is fetched and parsed by the server and cached per address for 15 minutes,
+shared by every widget that names it; the merged list is newest first, with
+undated entries last. A headline is cut to one line, and hovering it (or
+reaching it with the arrow keys) shows the feed's own summary, its source and
+its age. Anything past the row count folds into a **more** row that expands in
+place and is remembered. Rows are buttons rather than links so the arrow keys
+stop on them; **Ctrl/Cmd+Enter** opens one in a new tab.
 
 The feed URL is the **private ICS/iCal address** from your calendar app's
 sharing settings, not the address of its web page. Leave it empty and the widget
@@ -2992,6 +3005,14 @@ widget says *Set a weather location in Config* rather than showing figures.
 - The server fetches the feed, so it must be reachable from the machine nextDash runs on.
 - A feed cache lasts 15 minutes; editing the URL redraws the widget immediately.
 - A **recurring event** shows only its own stated occurrence — repeats are not expanded yet.
+
+### RSS widget shows nothing
+
+- Give the widget at least one address under **Config → Widgets → Settings → Feed addresses**, one per line. Empty is the common case, and the widget says so.
+- Use the **feed** address (RSS or Atom), not the site's home page. A page that answers HTML rather than a feed is reported as *that address did not answer with a feed* rather than as an empty list.
+- The server fetches the feeds, so they must be reachable from the machine nextDash runs on.
+- Each feed is cached for 15 minutes; saving the widget's settings redraws it immediately.
+- A feed that fails does not empty the tile — the other feeds still show, and the error is reported only when nothing came back at all.
 
 ### Extension cannot save
 

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v1.7.1 — 9 September 2026](#v171--9-september-2026)
 - [v1.7.0 — 8 September 2026](#v170--8-september-2026)
 - [v1.6.2 — 8 September 2026](#v162--8-september-2026)
 - [v1.6.1 — 8 September 2026](#v161--8-september-2026)
@@ -206,6 +207,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+---
+
+## v1.7.1 — 9 September 2026
+
 ### Dashboard
 
 - **new — an RSS widget beside Weather and Calendar in "What's happening around you?": the latest articles from the feeds a tile is given, one headline per row.** Not the Feeds widget, which reports *on* feeds — Fresh (`feeds.go`) is a checker and deliberately keeps no titles — this one reads *from* them. Server-side (`internal/app/widgets_rss.go`), because a feed served without CORS headers cannot be read from the page at all; the RSS and Atom parsing is the shape `sources_feeds.go` already carries, so only the reading half is new (no import cursor, no bookmark rows). Feeds are named per widget rather than per install — two tiles following different subjects is the ordinary arrangement — through a new `urlList` settings kind: a textarea, one address per line, up to ten. It is its own kind because the tags box is one comma-separated line capped at 400 characters, and a comma is legal inside a URL. Each feed is cached per address for 15 minutes and shared by every tile that names it; the merged list is newest first, undated entries last. Rows are buttons carrying `data-widget-href` rather than anchors, which is what keyboard navigation stops on — arrow keys walk them, Ctrl/Cmd+Enter opens a new tab, and the row menu offers the same. A headline truncates to one line via the shared `.dashboard-widget-row-name`, with the whole entry — title, the feed's own summary, source and age — in the existing hover/focus popover (`DashboardSmartWhyPopover`), gone again on mouse-leave. What is past the row count folds into a "more" row that expands in place and remembers it, the way an expanded category does.
@@ -213,6 +218,12 @@ For install and security, see the [README](README.md). For how to use features, 
 ### Languages
 
 - **new — Spanish (Español) as a sixth full language, in parity with the other five.** `locales/es.json` carries all 6136 strings — the dashboard and its cheat sheet, the command palette, the onboarding and quick-start wizards, every config tab, the statistics, the health and inbox views, and all of Help's prose bodies — plus `extension/locales/es.json` for the browser extension. Wiring a language up touches more than the three places the old note named: `availableLanguages` and `nameKeys` in `static/js/shared/config-language.js`, the pickers in `dashboard-config.js`, `search-commands.js` and `dashboard-quickstart.js`, the `noscript` branch in `templates/dashboard.html`, `EXT_SUPPORTED` in `extension/i18n.js`, and the language lists in `validate-locale-parity.cjs`, `validate-help-i18n.cjs` and `validate-cheatsheet-i18n.cjs`. Verified against a running server: `/locales/es.json` serves, the page renders `lang="es"`, and the grid comes up in Spanish.
+
+### Docs
+
+- **new — the manual, Help and the tips cover the RSS widget.** MANUAL.md gains it in the "What's happening around you?" table (twenty types now, not nineteen), a paragraph on giving one tile several feed addresses, and a troubleshooting entry for an address that answers a web page rather than a feed. Help's widget catalogue and widget intro say the same in all six locales, and `helpVersionBody` names this release. A new tip points at the block from Config → Help → tips.
+- **new — the Custom widget's own reference is no longer English in German and French.** The seventeen paragraphs under Config → Widgets → Types that explain what the Custom widget reads, stores and refuses had never been translated; a further eleven single strings in Dutch ("Open bookmark", "Tight columns", "Open Widgets →") were the same. `npm run validate:locale-parity` passes as it did before — parity was never the gap, English text sitting in a translated file was.
+- **Release plumbing for v1.7.1.** New `static/data/whats-new/v1.7.1.json`, entry added first in `index.json`, both tokens in `whats-new-stub.js` moved (`DASHBOARD_RELEASE` to `2026.09-dashboard-release-v1.7.1`, `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v281`), one spotlight entry with `since: "v1.7.1"` in `static/data/overview-features.json` for Config → Overview and About → News & features, and `tests/whats-new-hidden-release.spec.js` moved onto the new constants.
 
 ---
 
