@@ -23044,10 +23044,15 @@ class DashboardConfig {
         const wanted = new Set(group.keys);
         const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;
+        // mutateSelected clears the selection, which is right for the bulk bar
+        // -- that is what it was acting on. This panel acts on a group of its
+        // own, so ticks the reader made in the list are none of its business.
+        const ticked = new Set(this.bmSelected);
         const snapshots = await this.mutateSelected(picked, (b) => {
             const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
             return { ...b, tags: [...new Set([...current, group.tag])] };
         });
+        ticked.forEach((key) => this.bmSelected.add(key));
         this.notify(this.t('config.tagSuggestionApplied', 'Tags added.'), 'success', {
             undoCallback: this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
                 'config.bulkUndoFailed', 'Could not undo that.'),

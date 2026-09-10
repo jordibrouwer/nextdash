@@ -60,12 +60,18 @@
     /*
      * The tag a group agrees on, or nothing.
      *
-     * Counted over the *tagged* members rather than all of them: a host where
-     * three of thirty carry #code still says something about the three, and
-     * demanding a majority of thirty would silence every group that has only
-     * begun to be tagged.
+     * The share is counted over the *tagged* members rather than all of them:
+     * a host where three of thirty carry #code still says something about the
+     * three, and demanding a majority of thirty would silence every group that
+     * has only begun to be tagged.
+     *
+     * But the share alone let the thinnest evidence produce the widest row:
+     * two bookmarks of thirty carrying #todo agreed unanimously, and offered
+     * #todo to the other twenty-eight. So the tag has to appear on at least
+     * minEvidence bookmarks before it counts as something the group agreed on
+     * -- the same three the empty panel asks the reader for.
      */
-    function dominantTag(members, minShare) {
+    function dominantTag(members, minShare, minEvidence) {
         const counts = new Map();
         let tagged = 0;
         members.forEach((item) => {
@@ -79,7 +85,8 @@
         counts.forEach((count, tag) => {
             if (!best || count > best.have) best = { tag, have: count };
         });
-        if (!best || best.have / tagged < minShare) return null;
+        if (!best || best.have < minEvidence) return null;
+        if (best.have / tagged < minShare) return null;
         return { tag: best.tag, have: best.have, of: tagged };
     }
 
@@ -114,13 +121,13 @@
                 .filter((item) => (patternsOf.get(item) || []).includes(pattern) && !tagsOf(item).includes(tag))
                 .map((item) => item.key);
             if (keys.length) {
-                proposals.push({ tag, pattern, source: 'rule', reason: { kind: 'rule' }, keys, rank: 0 });
+                proposals.push({ tag, pattern, reason: { kind: 'rule' }, keys, rank: 0 });
             }
         });
 
         groupByPattern(rows, patternsOf).forEach((members, pattern) => {
             if (members.length < settings.minGroup) return;
-            const found = dominantTag(members, settings.minShare);
+            const found = dominantTag(members, settings.minShare, settings.minGroup);
             if (!found) return;
             const keys = members
                 .filter((item) => !tagsOf(item).includes(found.tag))
@@ -129,7 +136,6 @@
             proposals.push({
                 tag: found.tag,
                 pattern,
-                source: 'derived',
                 reason: { kind: 'derived', have: found.have, of: found.of },
                 keys,
                 rank: pattern.includes('/') ? 1 : 2,

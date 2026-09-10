@@ -44,7 +44,7 @@ test.describe('the tag suggestion engine', () => {
         ]));
         expect(groups).toHaveLength(1);
         expect(groups[0]).toMatchObject({
-            tag: 'code', pattern: 'github.com', source: 'derived', keys: ['d'],
+            tag: 'code', pattern: 'github.com', keys: ['d'],
         });
         expect(groups[0].reason).toEqual({ kind: 'derived', have: 3, of: 3 });
     });
@@ -78,9 +78,31 @@ test.describe('the tag suggestion engine', () => {
             ['d', 'https://github.com/four', []],
         ]));
         const byTag = Object.fromEntries(groups.map((g) => [g.tag, g]));
-        expect(byTag.work.source).toBe('rule');
+        expect(byTag.work.reason).toEqual({ kind: 'rule' });
         expect(byTag.work.keys.sort()).toEqual(['a', 'b', 'c', 'd']);
         expect(byTag.code.keys).toEqual(['d']);
+    });
+
+    test('two tagged bookmarks are not enough evidence for a group of thirty', async ({ page }) => {
+        await open(page);
+        const rows = [];
+        for (let i = 0; i < 30; i += 1) {
+            rows.push([`k${i}`, `https://thin.example/page${i}`, i < 2 ? ['todo'] : []]);
+        }
+        const got = await page.evaluate((sets) => ({
+            thin: window.TagSuggestions.suggest(sets.thin),
+            enough: window.TagSuggestions.suggest(sets.enough),
+        }), {
+            thin: items(rows),
+            // The same shape with a third tagged bookmark: three is what the
+            // empty panel asks the reader for, so three is what it takes.
+            enough: items(rows.map(([k, url, tags], i) => [k, url, i < 3 ? ['todo'] : tags])),
+        });
+        // Two of two agree unanimously, which used to be enough to offer
+        // #todo to the other twenty-eight.
+        expect(got.thin).toEqual([]);
+        expect(got.enough).toHaveLength(1);
+        expect(got.enough[0].keys).toHaveLength(27);
     });
 
     test('a rule that only restates a group the app already noticed is one row, not two', async ({ page }) => {
@@ -97,7 +119,8 @@ test.describe('the tag suggestion engine', () => {
         // bookmark, so the reader is offered it once -- and the rule wins,
         // because it is the reason they would recognise.
         expect(groups).toHaveLength(1);
-        expect(groups[0]).toMatchObject({ tag: 'code', pattern: 'github.com', source: 'rule', keys: ['d'] });
+        expect(groups[0]).toMatchObject({ tag: 'code', pattern: 'github.com', keys: ['d'] });
+        expect(groups[0].reason).toEqual({ kind: 'rule' });
     });
 
     test('the biggest group is offered first, however specific the others are', async ({ page }) => {
@@ -114,8 +137,9 @@ test.describe('the tag suggestion engine', () => {
             ['m8', 'https://many.example/eight/a', []],
             ['s1', 'https://small.example/r/one', ['wiki']],
             ['s2', 'https://small.example/r/two', ['wiki']],
-            ['s3', 'https://small.example/r/three', []],
+            ['s3', 'https://small.example/r/three', ['wiki']],
             ['s4', 'https://small.example/r/four', []],
+            ['s5', 'https://small.example/r/five', []],
         ]));
         // The narrower small.example/r group still outranks the bare host for
         // resolving a conflict, but five bookmarks are worth reading before
@@ -229,6 +253,85 @@ test.describe('the suggestions panel', () => {
         expect(drawn.rows).toBe(25);
         expect(drawn.notice).toContain('25');
         expect(drawn.notice).toContain('30');
+    });
+
+    test('with nothing to propose it still offers the rules editor', async ({ page }) => {
+        await open(page);
+        await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
+        const drawn = await page.evaluate(() => {
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            // One bookmark, no rules: the engine has nothing to say, and the
+            // panel still has to let the reader write the rule that would
+            // change that.
+            const groups = window.ConfigTagSuggestions.render(host, {
+                items: [{ key: 'a', url: 'https://alone.example/x', tags: [] }],
+                rules: [],
+                t: (key, fallback) => fallback,
+            });
+            const result = {
+                groups: groups.length,
+                rows: host.querySelectorAll('[data-tag-suggestion]').length,
+                rules: !!host.querySelector('#config-tag-rules-details'),
+                addButton: !!host.querySelector('[data-tag-rule-add]'),
+                text: host.textContent,
+            };
+            host.remove();
+            return result;
+        });
+        expect(drawn.groups).toBe(0);
+        expect(drawn.rows).toBe(0);
+        expect(drawn.rules).toBe(true);
+        expect(drawn.addButton).toBe(true);
+        expect(drawn.text).toContain('Nothing to propose yet');
+    });
+
+    test('applying a suggestion leaves the rows you ticked ticked', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://keep.example/one', tags: ['code'] },
+                { name: 'Two', url: 'https://keep.example/two', tags: ['code'] },
+                { name: 'Three', url: 'https://keep.example/three', tags: ['code'] },
+                { name: 'Four', url: 'https://keep.example/four', tags: [] },
+                { name: 'Other', url: 'https://elsewhere.example/x', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        // A tick on a bookmark the suggestion does not touch: the panel is
+        // acting on its own group, not on the reader's selection.
+        const ticked = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            const other = (window.dashboardInstance.allBookmarks || [])
+                .find((b) => b.url.includes('elsewhere.example'));
+            const key = cfg.bookmarkKey(other);
+            cfg.bmSelected.add(key);
+            return key;
+        });
+
+        await openSuggestionsTab(page);
+        const row = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'keep.example' }).first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.locator('[data-tag-suggestion-apply]').click();
+
+        await expect.poll(() => page.evaluate(() =>
+            (window.dashboardInstance.allBookmarks || [])
+                .filter((b) => b.url.includes('keep.example') && (b.tags || []).includes('code')).length),
+        { timeout: 15_000 }).toBe(4);
+
+        expect(await page.evaluate((key) => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg.bmSelected.has(key);
+        }, ticked)).toBe(true);
     });
 
     test('the rules editor folds away, and is still folded after a reload', async ({ page }) => {
