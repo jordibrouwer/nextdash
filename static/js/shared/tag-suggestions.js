@@ -91,6 +91,47 @@
     }
 
     /*
+     * host -> {tag, aliases}, built once per call.
+     *
+     * The catalogue ships as a list of subjects, each naming the sites that
+     * belong to it; matching goes the other way, so it is turned inside out
+     * here rather than scanned per bookmark.
+     */
+    function catalogueByHost(catalogue) {
+        const byHost = new Map();
+        (Array.isArray(catalogue) ? catalogue : []).forEach((entry) => {
+            const tag = String(entry?.tag || '').trim().toLowerCase();
+            if (!tag) return;
+            const aliases = (Array.isArray(entry?.aliases) ? entry.aliases : [])
+                .map((alias) => String(alias).trim().toLowerCase())
+                .filter(Boolean);
+            (Array.isArray(entry?.hosts) ? entry.hosts : []).forEach((host) => {
+                const key = String(host).trim().toLowerCase().replace(/^www\./, '');
+                // First entry wins: a host named twice in a shipped file is a
+                // mistake in the file, and picking one quietly beats proposing
+                // two subjects for one site.
+                if (key && !byHost.has(key)) byHost.set(key, { tag, aliases });
+            });
+        });
+        return byHost;
+    }
+
+    /*
+     * Your word for the catalogue's subject, if you have one.
+     *
+     * The catalogue supplies the subject; the reader's own tags supply the
+     * name. If it says `dev` and every GitHub link here is already tagged
+     * #code, the suggestion is #code -- otherwise a shipped vocabulary splits
+     * a tidy collection into two tags for one thing. The tag itself wins over
+     * an alias when the reader uses both.
+     */
+    function inTheirWords(entry, vocabulary) {
+        if (vocabulary.has(entry.tag)) return entry.tag;
+        const known = entry.aliases.find((alias) => vocabulary.has(alias));
+        return known || entry.tag;
+    }
+
+    /*
      * Proposals, most specific first.
      *
      * A rule is something you wrote down, so it outranks a pattern the app
@@ -142,7 +183,64 @@
             });
         });
 
-        proposals.sort((a, b) => a.rank - b.rank || b.keys.length - a.keys.length);
+        /*
+         * The catalogue, by host.
+         *
+         * No minimum group here: the evidence is the shipped file, not the
+         * collection, so a single bookmark on a known site is as good a match
+         * as forty. Grouping still happens by host, so the reader gets one row
+         * covering a site rather than one row per bookmark. Only bare hosts
+         * are looked up -- the catalogue names sites, not sections.
+         *
+         * And it says nothing about a host the collection has already settled.
+         * Renaming through the aliases only helps when the two words are
+         * related: a reader who files every github.com link under #work would
+         * otherwise be offered #dev on all of them, which is the shipped
+         * vocabulary splitting a tidy collection in two -- the exact thing the
+         * aliases exist to prevent.
+         */
+        const byHost = catalogueByHost(settings.catalogue);
+        if (byHost.size) {
+            const settled = new Set(proposals
+                .filter((proposal) => proposal.reason.kind === 'derived')
+                .map((proposal) => proposal.pattern));
+            const vocabulary = new Set();
+            rows.forEach((item) => tagsOf(item).forEach((tag) => vocabulary.add(tag)));
+            groupByPattern(rows, patternsOf).forEach((members, pattern) => {
+                if (pattern.includes('/')) return;
+                if (settled.has(pattern)) return;
+                const entry = byHost.get(pattern);
+                if (!entry) return;
+                const tag = inTheirWords(entry, vocabulary);
+                const keys = members
+                    .filter((item) => !tagsOf(item).includes(tag))
+                    .map((item) => item.key);
+                if (!keys.length) return;
+                proposals.push({
+                    tag,
+                    pattern,
+                    reason: { kind: 'catalogue', subject: entry.tag },
+                    keys,
+                    rank: 3,
+                });
+            });
+        }
+
+        /*
+         * What the reader turned down stays down.
+         *
+         * Dropped before the per-bookmark ceiling rather than after: a
+         * dismissed proposal that still consumed one of a bookmark's two slots
+         * would hide the proposal the reader might have wanted, which is the
+         * opposite of what refusing one is for.
+         */
+        const refused = new Set((settings.dismissed || [])
+            .map((entry) => String(entry).trim().toLowerCase())
+            .filter(Boolean));
+        const kept = refused.size
+            ? proposals.filter((proposal) => !refused.has(`${proposal.pattern}|${proposal.tag}`))
+            : proposals;
+        kept.sort((a, b) => a.rank - b.rank || b.keys.length - a.keys.length);
 
         // The ceiling is per bookmark, not per group: three plausible tags on
         // one link is a review panel nobody finishes reading.
@@ -157,7 +255,7 @@
         const used = new Map();
         const taken = new Map();
         const groups = [];
-        proposals.forEach((proposal) => {
+        kept.forEach((proposal) => {
             const keys = proposal.keys.filter((key) => !(taken.get(key) || EMPTY).has(proposal.tag)
                 && (used.get(key) || 0) < settings.maxPerBookmark);
             if (!keys.length) return;

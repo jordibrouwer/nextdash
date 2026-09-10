@@ -70,3 +70,34 @@ func TestSanitizeTagRulesIsBounded(t *testing.T) {
 		t.Errorf("kept %d rules, want exactly %d", got, tagRulesMax)
 	}
 }
+
+func TestSanitizeDismissedTagSuggestionsNarrowsAndBounds(t *testing.T) {
+	got := sanitizeDismissedTagSuggestions([]string{
+		"GitHub.com|Dev",                  // lowercased
+		"www.reddit.com/|forum",           // www. and the trailing slash stripped
+		"github.com|dev",                  // the duplicate of the first, after narrowing
+		"reddit.com/r/selfhosted|homelab", // deeper than patternsFor can emit
+		"https://github.com|dev",          // carries a scheme
+		"nohalf",                          // no tag half at all
+		"github.com|",                     // empty tag
+	})
+	want := []string{"github.com|dev", "reddit.com|forum"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i, entry := range want {
+		if got[i] != entry {
+			t.Errorf("entry %d = %q, want %q", i, got[i], entry)
+		}
+	}
+}
+
+func TestSanitizeDismissedTagSuggestionsIsBounded(t *testing.T) {
+	raw := make([]string, 0, dismissedTagSuggestionsMax+50)
+	for i := 0; i < dismissedTagSuggestionsMax+50; i++ {
+		raw = append(raw, "site"+strconv.Itoa(i)+".example|tag"+strconv.Itoa(i))
+	}
+	if got := len(sanitizeDismissedTagSuggestions(raw)); got != dismissedTagSuggestionsMax {
+		t.Errorf("kept %d, want the cap of %d", got, dismissedTagSuggestionsMax)
+	}
+}

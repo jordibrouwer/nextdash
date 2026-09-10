@@ -1490,6 +1490,11 @@ func normalizeTags(tags []string) []string {
 // than this is describing a taxonomy rather than correcting a few guesses.
 const tagRulesMax = 100
 
+// dismissedTagSuggestionsMax bounds the turned-down list. The shipped
+// catalogue is 465 subjects, so a reader who refuses more than this has
+// refused the whole idea.
+const dismissedTagSuggestionsMax = 500
+
 /*
 sanitizeTagRules keeps the rules that could ever match, and drops the rest.
 
@@ -1531,6 +1536,51 @@ func sanitizeTagRules(rules []TagRule) []TagRule {
 		}
 		seen[key] = struct{}{}
 		clean = append(clean, TagRule{Pattern: pattern, Tag: tags[0]})
+	}
+	return clean
+}
+
+/*
+sanitizeDismissedTagSuggestions narrows the proposals the reader turned down.
+
+Each is "pattern|tag": the pattern the row matched and the tag it offered, the
+pair that identifies a proposal across sessions -- the bookmarks under it come
+and go, so a list of bookmark keys would stop matching the moment one is added.
+Both halves are lowercased and the pattern is narrowed exactly the way a rule's
+is, so a dismissal keeps matching what patternsFor() emits.
+
+Bounded like the rules are. A reader who turns down more than this has a
+catalogue problem rather than a settings problem, and an unbounded list in
+settings is an unbounded write on every save.
+*/
+func sanitizeDismissedTagSuggestions(raw []string) []string {
+	clean := make([]string, 0, len(raw))
+	seen := map[string]struct{}{}
+	for _, entry := range raw {
+		if len(clean) >= dismissedTagSuggestionsMax {
+			break
+		}
+		parts := strings.SplitN(strings.ToLower(strings.TrimSpace(entry)), "|", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		pattern := strings.TrimRight(strings.TrimPrefix(strings.TrimSpace(parts[0]), "www."), "/")
+		tags := normalizeTags([]string{parts[1]})
+		if pattern == "" || len(tags) == 0 {
+			continue
+		}
+		if strings.Contains(pattern, "://") || strings.ContainsAny(pattern, " ?#") {
+			continue
+		}
+		if strings.Count(pattern, "/") > 1 {
+			continue
+		}
+		key := pattern + "|" + tags[0]
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		clean = append(clean, key)
 	}
 	return clean
 }
@@ -2172,6 +2222,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	settings.Collections = sanitized
 	settings.TagRules = sanitizeTagRules(settings.TagRules)
+	settings.DismissedTagSuggestions = sanitizeDismissedTagSuggestions(settings.DismissedTagSuggestions)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	clampBookmarkSettings(&settings)
 	clampCategoryLayoutSettings(&settings)

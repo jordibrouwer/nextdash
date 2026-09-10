@@ -547,50 +547,51 @@ type Settings struct {
 	 * shortlist. Bounded, because this arrives from a browser.
 	 */
 	FavoriteThemes              []string                   `json:"favoriteThemes,omitempty"`
-	DensityMode                 string                     `json:"densityMode"`                 // Dashboard density mode: comfortable, compact, dense
-	CategorySpacing             string                     `json:"categorySpacing"`             // Vertical space between category rows: snug, balanced, airy
-	SideMargin                  string                     `json:"sideMargin"`                  // Left/right page margin on the dashboard: snug, balanced, airy
-	PackedColumns               bool                       `json:"packedColumns"`               // Stack categories in vertical columns (round-robin) to reduce empty space
-	DefaultCategorySpread       bool                       `json:"defaultCategorySpread"`       // New categories may run across columns
-	CategorySpreadResetScope    string                     `json:"categorySpreadResetScope"`    // What "turn spreading off everywhere" covers: page, all
-	CategorySpreads             map[string]map[string]bool `json:"categorySpreads,omitempty"`   // Per-page switch for uncategorized/smart collections, which have no stored category
-	LauncherIconSize            string                     `json:"launcherIconSize"`            // Launcher tile icon size: small, normal, large
-	CalendarUrl                 string                     `json:"calendarUrl"`                 // URL for calendar link in date popover (empty = hidden)
-	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`              // ICS feed address the Calendar widget reads (empty = widget shows nothing)
-	ButtonBarPosition           string                     `json:"buttonBarPosition"`           // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
-	ShowDockLayoutSelector      bool                       `json:"showDockLayoutSelector"`      // Show layout selector button in side-dock
-	BackgroundOpacity           float64                    `json:"backgroundOpacity"`           // Background opacity (0.0-1.0)
-	FontWeight                  string                     `json:"fontWeight"`                  // Font weight: normal, 600, bold
-	FontPreset                  string                     `json:"fontPreset"`                  // UI font preset: source-code-pro, jetbrains-mono, etc.
-	AutoDarkMode                bool                       `json:"autoDarkMode"`                // Auto-detect dark mode from system
-	RandomThemeOnRefresh        bool                       `json:"randomThemeOnRefresh"`        // Legacy: migrated to randomThemeMode
-	RandomThemeMode             string                     `json:"randomThemeMode"`             // off, refresh, or view
-	ShowSmartRecentCollection   bool                       `json:"showSmartRecentCollection"`   // Show smart recently opened collection
-	ShowSmartTodayCollection    bool                       `json:"showSmartTodayCollection"`    // Show smart start "today" collection
-	ShowSmartStaleCollection    bool                       `json:"showSmartStaleCollection"`    // Show smart stale bookmarks collection
-	ShowSmartMostUsedCollection bool                       `json:"showSmartMostUsedCollection"` // Show smart most used bookmarks collection
-	SmartTodayLimit             int                        `json:"smartTodayLimit"`             // Max items in smart today (0 = unlimited)
-	SmartRecentLimit            int                        `json:"smartRecentLimit"`            // Max items in smart recently opened (0 = unlimited)
-	SmartStaleLimit             int                        `json:"smartStaleLimit"`             // Max items in smart stale bookmarks (0 = unlimited)
-	SmartMostUsedLimit          int                        `json:"smartMostUsedLimit"`          // Max items in smart most used (0 = unlimited)
-	ShowSmartAddedCollection    bool                       `json:"showSmartAddedCollection"`    // Show smart recently added collection
-	SmartAddedLimit             int                        `json:"smartAddedLimit"`             // Max items in smart recently added (0 = unlimited)
-	SmartAddedPageIds           []int                      `json:"smartAddedPageIds"`           // Page IDs where smart recently added is enabled (empty = all)
-	ShowRowTags                 bool                       `json:"showRowTags"`                 // Show tag chips on dashboard bookmark rows
-	RowTagsMax                  int                        `json:"rowTagsMax"`                  // Chips shown before a "+N" (rest collapse)
-	CategoryItemLimit           int                        `json:"categoryItemLimit"`           // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
-	SmartTodayWorkKeywords      string                     `json:"smartTodayWorkKeywords"`      // Comma-separated work-hour keyword boosts
-	SmartTodayEveningKeywords   string                     `json:"smartTodayEveningKeywords"`   // Comma-separated evening keyword boosts
-	SmartTodayWeekendKeywords   string                     `json:"smartTodayWeekendKeywords"`   // Comma-separated weekend keyword boosts
-	SmartTodayPageIds           []int                      `json:"smartTodayPageIds"`           // Page IDs where smart today is enabled (empty = all)
-	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`          // Page IDs where smart recent is enabled (empty = all)
-	SmartStalePageIds           []int                      `json:"smartStalePageIds"`           // Page IDs where smart stale is enabled (empty = all)
-	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`        // Page IDs where smart most used is enabled (empty = all)
-	Collections                 []Collection               `json:"collections,omitempty"`       // User-defined dynamic collections
-	TagRules                    []TagRule                  `json:"tagRules,omitempty"`          // Patterns you wrote that propose a tag
-	ShowTagCollections          bool                       `json:"showTagCollections"`          // Auto-generate a collection per tag
-	TagCollectionsMinCount      int                        `json:"tagCollectionsMinCount"`      // Minimum bookmarks per tag to show collection (0 = all)
-	FaviconRefreshPolicy        string                     `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save
+	DensityMode                 string                     `json:"densityMode"`                       // Dashboard density mode: comfortable, compact, dense
+	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: snug, balanced, airy
+	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: snug, balanced, airy
+	PackedColumns               bool                       `json:"packedColumns"`                     // Stack categories in vertical columns (round-robin) to reduce empty space
+	DefaultCategorySpread       bool                       `json:"defaultCategorySpread"`             // New categories may run across columns
+	CategorySpreadResetScope    string                     `json:"categorySpreadResetScope"`          // What "turn spreading off everywhere" covers: page, all
+	CategorySpreads             map[string]map[string]bool `json:"categorySpreads,omitempty"`         // Per-page switch for uncategorized/smart collections, which have no stored category
+	LauncherIconSize            string                     `json:"launcherIconSize"`                  // Launcher tile icon size: small, normal, large
+	CalendarUrl                 string                     `json:"calendarUrl"`                       // URL for calendar link in date popover (empty = hidden)
+	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`                    // ICS feed address the Calendar widget reads (empty = widget shows nothing)
+	ButtonBarPosition           string                     `json:"buttonBarPosition"`                 // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
+	ShowDockLayoutSelector      bool                       `json:"showDockLayoutSelector"`            // Show layout selector button in side-dock
+	BackgroundOpacity           float64                    `json:"backgroundOpacity"`                 // Background opacity (0.0-1.0)
+	FontWeight                  string                     `json:"fontWeight"`                        // Font weight: normal, 600, bold
+	FontPreset                  string                     `json:"fontPreset"`                        // UI font preset: source-code-pro, jetbrains-mono, etc.
+	AutoDarkMode                bool                       `json:"autoDarkMode"`                      // Auto-detect dark mode from system
+	RandomThemeOnRefresh        bool                       `json:"randomThemeOnRefresh"`              // Legacy: migrated to randomThemeMode
+	RandomThemeMode             string                     `json:"randomThemeMode"`                   // off, refresh, or view
+	ShowSmartRecentCollection   bool                       `json:"showSmartRecentCollection"`         // Show smart recently opened collection
+	ShowSmartTodayCollection    bool                       `json:"showSmartTodayCollection"`          // Show smart start "today" collection
+	ShowSmartStaleCollection    bool                       `json:"showSmartStaleCollection"`          // Show smart stale bookmarks collection
+	ShowSmartMostUsedCollection bool                       `json:"showSmartMostUsedCollection"`       // Show smart most used bookmarks collection
+	SmartTodayLimit             int                        `json:"smartTodayLimit"`                   // Max items in smart today (0 = unlimited)
+	SmartRecentLimit            int                        `json:"smartRecentLimit"`                  // Max items in smart recently opened (0 = unlimited)
+	SmartStaleLimit             int                        `json:"smartStaleLimit"`                   // Max items in smart stale bookmarks (0 = unlimited)
+	SmartMostUsedLimit          int                        `json:"smartMostUsedLimit"`                // Max items in smart most used (0 = unlimited)
+	ShowSmartAddedCollection    bool                       `json:"showSmartAddedCollection"`          // Show smart recently added collection
+	SmartAddedLimit             int                        `json:"smartAddedLimit"`                   // Max items in smart recently added (0 = unlimited)
+	SmartAddedPageIds           []int                      `json:"smartAddedPageIds"`                 // Page IDs where smart recently added is enabled (empty = all)
+	ShowRowTags                 bool                       `json:"showRowTags"`                       // Show tag chips on dashboard bookmark rows
+	RowTagsMax                  int                        `json:"rowTagsMax"`                        // Chips shown before a "+N" (rest collapse)
+	CategoryItemLimit           int                        `json:"categoryItemLimit"`                 // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
+	SmartTodayWorkKeywords      string                     `json:"smartTodayWorkKeywords"`            // Comma-separated work-hour keyword boosts
+	SmartTodayEveningKeywords   string                     `json:"smartTodayEveningKeywords"`         // Comma-separated evening keyword boosts
+	SmartTodayWeekendKeywords   string                     `json:"smartTodayWeekendKeywords"`         // Comma-separated weekend keyword boosts
+	SmartTodayPageIds           []int                      `json:"smartTodayPageIds"`                 // Page IDs where smart today is enabled (empty = all)
+	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`                // Page IDs where smart recent is enabled (empty = all)
+	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
+	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
+	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
+	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
+	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"
+	ShowTagCollections          bool                       `json:"showTagCollections"`                // Auto-generate a collection per tag
+	TagCollectionsMinCount      int                        `json:"tagCollectionsMinCount"`            // Minimum bookmarks per tag to show collection (0 = all)
+	FaviconRefreshPolicy        string                     `json:"faviconRefreshPolicy"`              // Favicon policy: manual, on-save
 	OnboardingCompleted         bool                       `json:"onboardingCompleted"`
 	AnalyticsOptIn              bool                       `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips           bool                       `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)

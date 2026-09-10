@@ -1,0 +1,7002 @@
+{
+  "version": 1,
+  "tags": [
+    {
+      "tag": "academic-jobs",
+      "aliases": [
+        "faculty-positions",
+        "academic-careers",
+        "university-jobs"
+      ],
+      "hosts": [
+        "academicpositions.com",
+        "higheredjobs.com",
+        "jobs.ac.uk"
+      ]
+    },
+    {
+      "tag": "accessibility",
+      "aliases": [
+        "a11y",
+        "inclusive-design",
+        "wcag",
+        "usability-for-all"
+      ],
+      "hosts": [
+        "a11yproject.com",
+        "deque.com",
+        "webaim.org"
+      ]
+    },
+    {
+      "tag": "accounting",
+      "aliases": [
+        "audit",
+        "bookkeeping",
+        "ledger",
+        "cpa"
+      ],
+      "hosts": [
+        "accountingtoday.com",
+        "accountingweb.com",
+        "cpajournal.com",
+        "ifac.org",
+        "journalofaccountancy.com"
+      ]
+    },
+    {
+      "tag": "achievements",
+      "aliases": [
+        "trophies",
+        "gamerscore",
+        "completionist",
+        "unlocks"
+      ],
+      "hosts": [
+        "exophase.com",
+        "trueachievements.com",
+        "truetrophies.com"
+      ]
+    },
+    {
+      "tag": "actuarial",
+      "aliases": [
+        "actuary",
+        "riskanalysis",
+        "mortality",
+        "pensions"
+      ],
+      "hosts": [
+        "actuarialpost.co.uk",
+        "casact.org",
+        "soa.org"
+      ]
+    },
+    {
+      "tag": "advertising",
+      "aliases": [
+        "ads",
+        "campaigns",
+        "adtech",
+        "sponsorship"
+      ],
+      "hosts": [
+        "adage.com",
+        "adexchanger.com",
+        "adweek.com",
+        "campaignlive.com",
+        "digiday.com",
+        "thedrum.com"
+      ]
+    },
+    {
+      "tag": "algorithms",
+      "aliases": [
+        "data-structures",
+        "leetcode",
+        "competitive-programming",
+        "coding-challenges"
+      ],
+      "hosts": [
+        "codeforces.com",
+        "geeksforgeeks.org",
+        "hackerrank.com",
+        "leetcode.com",
+        "topcoder.com"
+      ]
+    },
+    {
+      "tag": "ambient-sound",
+      "aliases": [
+        "whitenoise",
+        "relaxingsounds",
+        "focussounds",
+        "backgroundnoise"
+      ],
+      "hosts": [
+        "mynoise.net",
+        "noisli.com",
+        "rainymood.com"
+      ]
+    },
+    {
+      "tag": "analytics",
+      "aliases": [
+        "web-analytics",
+        "tracking",
+        "metrics",
+        "pageviews"
+      ],
+      "hosts": [
+        "matomo.org",
+        "plausible.io",
+        "umami.is",
+        "usefathom.com"
+      ]
+    },
+    {
+      "tag": "android",
+      "aliases": [
+        "mobile",
+        "apk",
+        "android-dev",
+        "play-store"
+      ],
+      "hosts": [
+        "android.com",
+        "androidauthority.com",
+        "androidpolice.com",
+        "apkmirror.com",
+        "xda-developers.com"
+      ]
+    },
+    {
+      "tag": "anime",
+      "aliases": [
+        "otaku",
+        "animeshows",
+        "japananimation",
+        "animeseries"
+      ],
+      "hosts": [
+        "anilist.co",
+        "animenewsnetwork.com",
+        "crunchyroll.com",
+        "hidive.com",
+        "kitsu.app",
+        "myanimelist.net"
+      ]
+    },
+    {
+      "tag": "anthropology",
+      "aliases": [
+        "ethnography",
+        "human-origins",
+        "cultural-studies"
+      ],
+      "hosts": [
+        "humanorigins.si.edu",
+        "leakeyfoundation.org",
+        "sapiens.org"
+      ]
+    },
+    {
+      "tag": "antiques",
+      "aliases": [
+        "vintage",
+        "collectibles",
+        "heirlooms",
+        "retro"
+      ],
+      "hosts": [
+        "1stdibs.com",
+        "chairish.com",
+        "rubylane.com"
+      ]
+    },
+    {
+      "tag": "antitrust",
+      "aliases": [
+        "competition",
+        "monopoly",
+        "cartels",
+        "mergerreview"
+      ],
+      "hosts": [
+        "competitionpolicyinternational.com",
+        "globalcompetitionreview.com",
+        "mlex.com"
+      ]
+    },
+    {
+      "tag": "api",
+      "aliases": [
+        "rest",
+        "api-testing",
+        "endpoints",
+        "webservices"
+      ],
+      "hosts": [
+        "insomnia.rest",
+        "postman.com",
+        "rapidapi.com",
+        "swagger.io"
+      ]
+    },
+    {
+      "tag": "archaeology",
+      "aliases": [
+        "excavation",
+        "ancient-sites",
+        "digs"
+      ],
+      "hosts": [
+        "archaeology.co.uk",
+        "archaeology.org",
+        "heritagedaily.com"
+      ]
+    },
+    {
+      "tag": "archive",
+      "aliases": [
+        "preservation",
+        "digitalarchive",
+        "webarchive"
+      ],
+      "hosts": [
+        "archive.org",
+        "archive.today",
+        "openculture.com",
+        "ubu.com"
+      ]
+    },
+    {
+      "tag": "art",
+      "aliases": [
+        "artwork",
+        "drawings",
+        "fanart",
+        "painting",
+        "drawing",
+        "artsupplies",
+        "mood-board",
+        "idea-board",
+        "design-inspiration",
+        "visual-bookmarks"
+      ],
+      "hosts": [
+        "artstation.com",
+        "behance.net",
+        "blickart.com",
+        "deviantart.com",
+        "dribbble.com",
+        "newgrounds.com",
+        "pinterest.com",
+        "pixiv.net",
+        "saatchiart.com"
+      ]
+    },
+    {
+      "tag": "art-tutorial",
+      "aliases": [
+        "drawinglessons",
+        "arttutorials",
+        "learntodraw",
+        "drawingguide"
+      ],
+      "hosts": [
+        "ctrlpaint.com",
+        "drawabox.com",
+        "proko.com"
+      ]
+    },
+    {
+      "tag": "async-video",
+      "aliases": [
+        "video-messaging",
+        "screen-recording",
+        "loom-style",
+        "async-updates"
+      ],
+      "hosts": [
+        "bombbomb.com",
+        "loom.com",
+        "vidyard.com"
+      ]
+    },
+    {
+      "tag": "auctions",
+      "aliases": [
+        "bidding",
+        "bids",
+        "estatesale",
+        "onlineauction"
+      ],
+      "hosts": [
+        "heritageauctions.com",
+        "invaluable.com",
+        "liveauctioneers.com"
+      ]
+    },
+    {
+      "tag": "audiobooks",
+      "aliases": [
+        "narration",
+        "spokenword",
+        "talkingbooks",
+        "listenbooks"
+      ],
+      "hosts": [
+        "audible.com",
+        "chirpbooks.com",
+        "librivox.org",
+        "scribd.com"
+      ]
+    },
+    {
+      "tag": "auth",
+      "aliases": [
+        "authentication",
+        "oauth",
+        "sso",
+        "identity"
+      ],
+      "hosts": [
+        "auth0.com",
+        "authelia.com",
+        "keycloak.org",
+        "okta.com"
+      ]
+    },
+    {
+      "tag": "auto-parts",
+      "aliases": [
+        "carparts",
+        "mechanic",
+        "repair",
+        "spares"
+      ],
+      "hosts": [
+        "autozone.com",
+        "napaonline.com",
+        "oreillyauto.com",
+        "rockauto.com"
+      ]
+    },
+    {
+      "tag": "automation",
+      "aliases": [
+        "workflow-automation",
+        "no-code",
+        "integrations",
+        "bots",
+        "workflow",
+        "triggers"
+      ],
+      "hosts": [
+        "ifttt.com",
+        "make.com",
+        "n8n.io",
+        "zapier.com"
+      ]
+    },
+    {
+      "tag": "automotive",
+      "aliases": [
+        "vehicles",
+        "autos",
+        "transportation"
+      ],
+      "hosts": [
+        "autonews.com",
+        "just-auto.com",
+        "wardsauto.com"
+      ]
+    },
+    {
+      "tag": "aviation",
+      "aliases": [
+        "airlines",
+        "aerospace",
+        "airtravel"
+      ],
+      "hosts": [
+        "ainonline.com",
+        "aviationweek.com",
+        "flightglobal.com",
+        "simpleflying.com"
+      ]
+    },
+    {
+      "tag": "baby",
+      "aliases": [
+        "infant",
+        "newborn",
+        "babygear",
+        "registry"
+      ],
+      "hosts": [
+        "babylist.com",
+        "carters.com",
+        "potterybarnkids.com"
+      ]
+    },
+    {
+      "tag": "backup",
+      "aliases": [
+        "backups",
+        "disaster-recovery",
+        "snapshots",
+        "cloud-backup",
+        "data-backup",
+        "archiving"
+      ],
+      "hosts": [
+        "carbonite.com",
+        "crashplan.com",
+        "duplicati.com",
+        "idrive.com",
+        "rclone.org",
+        "restic.net"
+      ]
+    },
+    {
+      "tag": "baking",
+      "aliases": [
+        "bake",
+        "pastry",
+        "desserts",
+        "breadmaking"
+      ],
+      "hosts": [
+        "food52.com",
+        "kingarthurbaking.com",
+        "sallysbakingaddiction.com"
+      ]
+    },
+    {
+      "tag": "banking",
+      "aliases": [
+        "banks",
+        "lending",
+        "deposits",
+        "financialinstitutions"
+      ],
+      "hosts": [
+        "americanbanker.com",
+        "bankingdive.com",
+        "bankrate.com",
+        "globalbankingandfinance.com",
+        "thebanker.com"
+      ]
+    },
+    {
+      "tag": "bankruptcy",
+      "aliases": [
+        "insolvency",
+        "restructuring",
+        "default",
+        "chapter11"
+      ],
+      "hosts": [
+        "abi.org",
+        "reorg.com",
+        "turnaround.org"
+      ]
+    },
+    {
+      "tag": "baseball",
+      "aliases": [
+        "mlb",
+        "hardball",
+        "homerun",
+        "innings"
+      ],
+      "hosts": [
+        "baseball-reference.com",
+        "fangraphs.com",
+        "mlb.com"
+      ]
+    },
+    {
+      "tag": "basketball",
+      "aliases": [
+        "hoops",
+        "nba",
+        "courts",
+        "bball"
+      ],
+      "hosts": [
+        "basketball-reference.com",
+        "hoopshype.com",
+        "nba.com"
+      ]
+    },
+    {
+      "tag": "beauty",
+      "aliases": [
+        "makeup",
+        "cosmetics",
+        "skincare",
+        "grooming"
+      ],
+      "hosts": [
+        "beautylish.com",
+        "birchbox.com",
+        "sephora.com",
+        "ulta.com"
+      ]
+    },
+    {
+      "tag": "beer",
+      "aliases": [
+        "brewery",
+        "ale",
+        "craftbeer",
+        "brewing"
+      ],
+      "hosts": [
+        "beeradvocate.com",
+        "ratebeer.com",
+        "untappd.com"
+      ]
+    },
+    {
+      "tag": "bibliometrics",
+      "aliases": [
+        "citation-index",
+        "impact-factor",
+        "research-metrics"
+      ],
+      "hosts": [
+        "dimensions.ai",
+        "scopus.com",
+        "semanticscholar.org",
+        "webofscience.com"
+      ]
+    },
+    {
+      "tag": "big-data",
+      "aliases": [
+        "data-engineering",
+        "etl",
+        "distributed-computing",
+        "data-pipeline"
+      ],
+      "hosts": [
+        "airflow.apache.org",
+        "getdbt.com",
+        "hadoop.apache.org",
+        "spark.apache.org"
+      ]
+    },
+    {
+      "tag": "biology",
+      "aliases": [
+        "life-sciences",
+        "biological-sciences",
+        "biosciences"
+      ],
+      "hosts": [
+        "addgene.org",
+        "ebi.ac.uk",
+        "jax.org",
+        "ncbi.nlm.nih.gov"
+      ]
+    },
+    {
+      "tag": "birdwatching",
+      "aliases": [
+        "birding",
+        "ornithology",
+        "birds",
+        "wildlife"
+      ],
+      "hosts": [
+        "allaboutbirds.org",
+        "audubon.org",
+        "ebird.org"
+      ]
+    },
+    {
+      "tag": "blog",
+      "aliases": [
+        "blogging",
+        "posts",
+        "articles"
+      ],
+      "hosts": [
+        "blogger.com",
+        "tumblr.com",
+        "typepad.com",
+        "wordpress.com"
+      ]
+    },
+    {
+      "tag": "boardgames",
+      "aliases": [
+        "tabletop",
+        "tabletopgames",
+        "cardgames",
+        "dicegames"
+      ],
+      "hosts": [
+        "boardgamearena.com",
+        "boardgamegeek.com",
+        "tabletopia.com"
+      ]
+    },
+    {
+      "tag": "boating",
+      "aliases": [
+        "sailing",
+        "yachting",
+        "watersports",
+        "boat"
+      ],
+      "hosts": [
+        "boats.com",
+        "boattrader.com",
+        "discoverboating.com"
+      ]
+    },
+    {
+      "tag": "bonds",
+      "aliases": [
+        "fixedincome",
+        "treasuries",
+        "debtmarkets",
+        "yields"
+      ],
+      "hosts": [
+        "bondbuyer.com",
+        "marketaxess.com",
+        "tradeweb.com"
+      ]
+    },
+    {
+      "tag": "book-summaries",
+      "aliases": [
+        "summaries",
+        "keyideas",
+        "condensedbooks",
+        "cliffnotes"
+      ],
+      "hosts": [
+        "blinkist.com",
+        "getabstract.com",
+        "shortform.com"
+      ]
+    },
+    {
+      "tag": "bookmarks",
+      "aliases": [
+        "bookmark-manager",
+        "saved-links",
+        "favorites",
+        "link-organizer"
+      ],
+      "hosts": [
+        "diigo.com",
+        "pinboard.in",
+        "symbaloo.com"
+      ]
+    },
+    {
+      "tag": "books",
+      "aliases": [
+        "novels",
+        "literature",
+        "bookclub",
+        "book-reviews",
+        "literary-criticism"
+      ],
+      "hosts": [
+        "bookbub.com",
+        "goodreads.com",
+        "kirkusreviews.com",
+        "librarything.com",
+        "thestorygraph.com"
+      ]
+    },
+    {
+      "tag": "bookstore",
+      "aliases": [
+        "buybooks",
+        "bookshop",
+        "usedbooks",
+        "rarebooks",
+        "literature",
+        "novels",
+        "bookclub"
+      ],
+      "hosts": [
+        "abebooks.com",
+        "barnesandnoble.com",
+        "betterworldbooks.com",
+        "bookshop.org",
+        "thriftbooks.com"
+      ]
+    },
+    {
+      "tag": "botany",
+      "aliases": [
+        "plants",
+        "flora",
+        "plant-science"
+      ],
+      "hosts": [
+        "kew.org",
+        "tropicos.org",
+        "worldfloraonline.org"
+      ]
+    },
+    {
+      "tag": "broadcasting",
+      "aliases": [
+        "tv",
+        "airwaves"
+      ],
+      "hosts": [
+        "broadcastingcable.com",
+        "rapidtvnews.com",
+        "tvnewscheck.com"
+      ]
+    },
+    {
+      "tag": "broker",
+      "aliases": [
+        "brokerage",
+        "trading",
+        "stockbroker",
+        "platform"
+      ],
+      "hosts": [
+        "etrade.com",
+        "fidelity.com",
+        "interactivebrokers.com",
+        "robinhood.com",
+        "schwab.com"
+      ]
+    },
+    {
+      "tag": "browser",
+      "aliases": [
+        "web-browser",
+        "chrome",
+        "firefox",
+        "browser-engine"
+      ],
+      "hosts": [
+        "arc.net",
+        "brave.com",
+        "chromium.org",
+        "mozilla.org"
+      ]
+    },
+    {
+      "tag": "business",
+      "aliases": [
+        "corporate",
+        "enterprise",
+        "commerce",
+        "industry"
+      ],
+      "hosts": [
+        "bloomberg.com",
+        "businessinsider.com",
+        "fastcompany.com",
+        "forbes.com",
+        "fortune.com",
+        "hbr.org",
+        "inc.com"
+      ]
+    },
+    {
+      "tag": "caching",
+      "aliases": [
+        "cache",
+        "cdn",
+        "in-memory-cache",
+        "edge-cache"
+      ],
+      "hosts": [
+        "fastly.com",
+        "keycdn.com",
+        "memcached.org",
+        "varnish-cache.org"
+      ]
+    },
+    {
+      "tag": "calculator",
+      "aliases": [
+        "unit-converter",
+        "conversion-tool",
+        "math-tool",
+        "calculation"
+      ],
+      "hosts": [
+        "calculator.net",
+        "rapidtables.com",
+        "unitconverters.net"
+      ]
+    },
+    {
+      "tag": "calendar",
+      "aliases": [
+        "appointments",
+        "agenda"
+      ],
+      "hosts": [
+        "cal.com",
+        "calendar.google.com",
+        "calendly.com",
+        "when2meet.com"
+      ]
+    },
+    {
+      "tag": "camera-gear",
+      "aliases": [
+        "camerareviews",
+        "gear",
+        "equipment",
+        "lenses"
+      ],
+      "hosts": [
+        "dpreview.com",
+        "dxomark.com",
+        "photographylife.com"
+      ]
+    },
+    {
+      "tag": "camping",
+      "aliases": [
+        "campsite",
+        "campground",
+        "tent",
+        "glamping"
+      ],
+      "hosts": [
+        "campendium.com",
+        "koa.com",
+        "rei.com",
+        "thedyrt.com"
+      ]
+    },
+    {
+      "tag": "car-rental",
+      "aliases": [
+        "rentacar",
+        "carhire",
+        "rental",
+        "hire"
+      ],
+      "hosts": [
+        "avis.com",
+        "budget.com",
+        "enterprise.com",
+        "hertz.com"
+      ]
+    },
+    {
+      "tag": "cars",
+      "aliases": [
+        "motoring",
+        "vehicles",
+        "driving"
+      ],
+      "hosts": [
+        "autotrader.com",
+        "carfax.com",
+        "cars.com",
+        "edmunds.com",
+        "kbb.com"
+      ]
+    },
+    {
+      "tag": "cartoons",
+      "aliases": [
+        "animation",
+        "animated",
+        "toons",
+        "westernanimation"
+      ],
+      "hosts": [
+        "adultswim.com",
+        "cartoonnetwork.com",
+        "nick.com"
+      ]
+    },
+    {
+      "tag": "central-bank",
+      "aliases": [
+        "fed",
+        "reserve",
+        "monetarypolicy",
+        "interestrates"
+      ],
+      "hosts": [
+        "bankofengland.co.uk",
+        "bis.org",
+        "ecb.europa.eu",
+        "federalreserve.gov"
+      ]
+    },
+    {
+      "tag": "certifications",
+      "aliases": [
+        "credentials",
+        "badges",
+        "exams",
+        "accreditation"
+      ],
+      "hosts": [
+        "certiport.com",
+        "credly.com",
+        "pearsonvue.com"
+      ]
+    },
+    {
+      "tag": "charities",
+      "aliases": [
+        "nonprofit",
+        "ngo",
+        "philanthropy"
+      ],
+      "hosts": [
+        "charitynavigator.org",
+        "globalgiving.org",
+        "guidestar.org",
+        "oxfam.org"
+      ]
+    },
+    {
+      "tag": "chat",
+      "aliases": [
+        "messaging-app",
+        "collaboration",
+        "irc",
+        "texting",
+        "instant-messaging",
+        "dm",
+        "team-messaging",
+        "workplace-chat",
+        "group-chat",
+        "chat-app"
+      ],
+      "hosts": [
+        "discord.com",
+        "matrix.org",
+        "mattermost.com",
+        "messenger.com",
+        "rocket.chat",
+        "slack.com",
+        "teams.microsoft.com",
+        "telegram.org",
+        "viber.com",
+        "whatsapp.com"
+      ]
+    },
+    {
+      "tag": "cheats",
+      "aliases": [
+        "cheatcodes",
+        "trainers",
+        "hacks",
+        "gamehacks"
+      ],
+      "hosts": [
+        "cheatengine.org",
+        "pcgamingwiki.com",
+        "wemod.com"
+      ]
+    },
+    {
+      "tag": "chemistry",
+      "aliases": [
+        "chem",
+        "chemical-science"
+      ],
+      "hosts": [
+        "chemistryworld.com",
+        "chemspider.com",
+        "ptable.com",
+        "pubchem.ncbi.nlm.nih.gov"
+      ]
+    },
+    {
+      "tag": "chess",
+      "aliases": [
+        "chessboard",
+        "chesspuzzles",
+        "chessclub",
+        "strategy"
+      ],
+      "hosts": [
+        "chess.com",
+        "chess24.com",
+        "lichess.org"
+      ]
+    },
+    {
+      "tag": "ci-cd",
+      "aliases": [
+        "continuous-integration",
+        "continuous-deployment",
+        "pipelines",
+        "build-automation"
+      ],
+      "hosts": [
+        "buildkite.com",
+        "circleci.com",
+        "drone.io",
+        "jenkins.io",
+        "travis-ci.com"
+      ]
+    },
+    {
+      "tag": "citations",
+      "aliases": [
+        "citation-manager",
+        "bibliography",
+        "reference-manager",
+        "academic-citations"
+      ],
+      "hosts": [
+        "citationmachine.net",
+        "easybib.com",
+        "endnote.com",
+        "mendeley.com",
+        "zotero.org"
+      ]
+    },
+    {
+      "tag": "classical-music",
+      "aliases": [
+        "classical",
+        "orchestra",
+        "symphony",
+        "opera"
+      ],
+      "hosts": [
+        "allofbach.com",
+        "idagio.com",
+        "naxos.com"
+      ]
+    },
+    {
+      "tag": "classifieds",
+      "aliases": [
+        "listings",
+        "marketplace",
+        "local-ads",
+        "buy-and-sell"
+      ],
+      "hosts": [
+        "craigslist.org",
+        "gumtree.com",
+        "nextdoor.com",
+        "offerup.com"
+      ]
+    },
+    {
+      "tag": "cleaning",
+      "aliases": [
+        "housecleaning",
+        "maidservice",
+        "tidying",
+        "chores"
+      ],
+      "hosts": [
+        "handy.com",
+        "merrymaids.com",
+        "mollymaid.com",
+        "thumbtack.com"
+      ]
+    },
+    {
+      "tag": "climate",
+      "aliases": [
+        "climate-change",
+        "global-warming"
+      ],
+      "hosts": [
+        "carbonbrief.org",
+        "climate.nasa.gov",
+        "ipcc.ch",
+        "unfccc.int"
+      ]
+    },
+    {
+      "tag": "climbing",
+      "aliases": [
+        "rockclimbing",
+        "bouldering",
+        "mountaineering",
+        "climb"
+      ],
+      "hosts": [
+        "8a.nu",
+        "climbing.com",
+        "ukclimbing.com"
+      ]
+    },
+    {
+      "tag": "cloud",
+      "aliases": [
+        "cloud-computing",
+        "iaas",
+        "vps",
+        "hosting-provider"
+      ],
+      "hosts": [
+        "aws.amazon.com",
+        "azure.microsoft.com",
+        "cloud.google.com",
+        "digitalocean.com",
+        "hetzner.com",
+        "linode.com",
+        "oracle.com",
+        "vultr.com"
+      ]
+    },
+    {
+      "tag": "cloud-storage",
+      "aliases": [
+        "object-storage",
+        "file-sync",
+        "online-storage",
+        "s3",
+        "photo-storage",
+        "photo-sync",
+        "cloud-photos",
+        "photo-library",
+        "files",
+        "sync",
+        "drive"
+      ],
+      "hosts": [
+        "backblaze.com",
+        "box.com",
+        "drive.google.com",
+        "dropbox.com",
+        "icloud.com",
+        "mega.nz",
+        "onedrive.live.com",
+        "pcloud.com",
+        "photos.google.com"
+      ]
+    },
+    {
+      "tag": "cms",
+      "aliases": [
+        "content-management",
+        "blogging-platform",
+        "headless-cms"
+      ],
+      "hosts": [
+        "drupal.org",
+        "ghost.org",
+        "joomla.org",
+        "strapi.io",
+        "wordpress.org"
+      ]
+    },
+    {
+      "tag": "cocktails",
+      "aliases": [
+        "mixology",
+        "bartending",
+        "spirits",
+        "drinks"
+      ],
+      "hosts": [
+        "diffordsguide.com",
+        "liquor.com",
+        "punchdrink.com"
+      ]
+    },
+    {
+      "tag": "code-review",
+      "aliases": [
+        "pull-requests",
+        "pr-review",
+        "diffs"
+      ],
+      "hosts": [
+        "gerritcodereview.com",
+        "graphite.dev",
+        "reviewable.io"
+      ]
+    },
+    {
+      "tag": "coding",
+      "aliases": [
+        "programming-courses",
+        "dev-education",
+        "coding-bootcamp",
+        "tech-skills"
+      ],
+      "hosts": [
+        "codecademy.com",
+        "egghead.io",
+        "pluralsight.com"
+      ]
+    },
+    {
+      "tag": "coffee",
+      "aliases": [
+        "espresso",
+        "cafe",
+        "beans",
+        "brew"
+      ],
+      "hosts": [
+        "illy.com",
+        "lavazza.com",
+        "peets.com",
+        "starbucks.com"
+      ]
+    },
+    {
+      "tag": "color",
+      "aliases": [
+        "colour",
+        "palettes",
+        "color-schemes"
+      ],
+      "hosts": [
+        "color.adobe.com",
+        "colorhunt.co",
+        "coolors.co",
+        "paletton.com"
+      ]
+    },
+    {
+      "tag": "comedy",
+      "aliases": [
+        "standup",
+        "comedyspecials",
+        "funnyvideos",
+        "jokes"
+      ],
+      "hosts": [
+        "comedycentral.com",
+        "drybarcomedy.com",
+        "funnyordie.com"
+      ]
+    },
+    {
+      "tag": "comics",
+      "aliases": [
+        "comicbooks",
+        "graphicnovels",
+        "cartoonbooks",
+        "superheroes"
+      ],
+      "hosts": [
+        "comixology.com",
+        "darkhorse.com",
+        "dc.com",
+        "imagecomics.com",
+        "marvel.com"
+      ]
+    },
+    {
+      "tag": "comicstore",
+      "aliases": [
+        "buycomics",
+        "comicshop",
+        "comicsubscription",
+        "comicsale"
+      ],
+      "hosts": [
+        "dcbservice.com",
+        "midtowncomics.com",
+        "mycomicshop.com"
+      ]
+    },
+    {
+      "tag": "commodities",
+      "aliases": [
+        "metals",
+        "gold",
+        "mining",
+        "agriculture"
+      ],
+      "hosts": [
+        "agweb.com",
+        "kitco.com",
+        "mining.com"
+      ]
+    },
+    {
+      "tag": "community",
+      "aliases": [
+        "forums",
+        "discussion",
+        "dev-community",
+        "authorship",
+        "manuscripts",
+        "storytelling",
+        "fiction-writing"
+      ],
+      "hosts": [
+        "dev.to",
+        "hashnode.com",
+        "indiehackers.com",
+        "lobste.rs",
+        "news.ycombinator.com",
+        "scribophile.com"
+      ]
+    },
+    {
+      "tag": "compensation",
+      "aliases": [
+        "salaries",
+        "wages",
+        "earnings",
+        "paychecks",
+        "salary-comparison",
+        "pay-data",
+        "salary-info"
+      ],
+      "hosts": [
+        "glassdoor.com",
+        "levels.fyi",
+        "payscale.com",
+        "salary.com"
+      ]
+    },
+    {
+      "tag": "compilers",
+      "aliases": [
+        "compiler",
+        "llvm",
+        "transpiler",
+        "compiler-explorer"
+      ],
+      "hosts": [
+        "godbolt.org",
+        "llvm.org",
+        "mingw-w64.org"
+      ]
+    },
+    {
+      "tag": "compliance",
+      "aliases": [
+        "regulation",
+        "regulatory",
+        "oversight"
+      ],
+      "hosts": [
+        "complianceweek.com",
+        "corporatecomplianceinsights.com",
+        "regulationasia.com"
+      ]
+    },
+    {
+      "tag": "construction",
+      "aliases": [
+        "building",
+        "infrastructure",
+        "contractors",
+        "development"
+      ],
+      "hosts": [
+        "bdcnetwork.com",
+        "constructiondive.com",
+        "enr.com"
+      ]
+    },
+    {
+      "tag": "consumer",
+      "aliases": [
+        "shopper",
+        "spending",
+        "behavior",
+        "sentiment"
+      ],
+      "hosts": [
+        "consumerreports.org",
+        "morningconsult.com",
+        "numerator.com"
+      ]
+    },
+    {
+      "tag": "containers",
+      "aliases": [
+        "docker",
+        "containerization",
+        "oci",
+        "lxc"
+      ],
+      "hosts": [
+        "containerd.io",
+        "docker.com",
+        "linuxcontainers.org",
+        "podman.io"
+      ]
+    },
+    {
+      "tag": "courses",
+      "aliases": [
+        "learning",
+        "mooc",
+        "classes",
+        "online-courses",
+        "elearning"
+      ],
+      "hosts": [
+        "coursera.org",
+        "edx.org",
+        "futurelearn.com",
+        "skillshare.com",
+        "udacity.com",
+        "udemy.com"
+      ]
+    },
+    {
+      "tag": "coworking",
+      "aliases": [
+        "shared-office",
+        "workspace",
+        "hot-desk",
+        "office-space"
+      ],
+      "hosts": [
+        "industriousoffice.com",
+        "liquidspace.com",
+        "regus.com",
+        "wework.com"
+      ]
+    },
+    {
+      "tag": "cpp",
+      "aliases": [
+        "c",
+        "cplusplus",
+        "systems-programming",
+        "stl"
+      ],
+      "hosts": [
+        "cplusplus.com",
+        "cppreference.com",
+        "isocpp.org"
+      ]
+    },
+    {
+      "tag": "crafts",
+      "aliases": [
+        "handmade",
+        "crafting",
+        "artsandcrafts",
+        "homemade"
+      ],
+      "hosts": [
+        "etsy.com",
+        "hobbylobby.com",
+        "joann.com",
+        "michaels.com"
+      ]
+    },
+    {
+      "tag": "credit-card",
+      "aliases": [
+        "rewards",
+        "cashback",
+        "cards",
+        "financing"
+      ],
+      "hosts": [
+        "cardrates.com",
+        "creditcards.com",
+        "doctorofcredit.com",
+        "thepointsguy.com"
+      ]
+    },
+    {
+      "tag": "credit-rating",
+      "aliases": [
+        "ratings",
+        "creditworthiness",
+        "debtrating",
+        "scoring"
+      ],
+      "hosts": [
+        "dbrsmorningstar.com",
+        "fitchratings.com",
+        "moodys.com",
+        "spglobal.com"
+      ]
+    },
+    {
+      "tag": "credit-score",
+      "aliases": [
+        "creditreport",
+        "creditfile",
+        "fico",
+        "scorecard"
+      ],
+      "hosts": [
+        "equifax.com",
+        "experian.com",
+        "transunion.com"
+      ]
+    },
+    {
+      "tag": "crm",
+      "aliases": [
+        "sales-pipeline",
+        "contacts",
+        "leads",
+        "customer-management"
+      ],
+      "hosts": [
+        "copper.com",
+        "hubspot.com",
+        "pipedrive.com",
+        "salesforce.com"
+      ]
+    },
+    {
+      "tag": "crowdfunding",
+      "aliases": [
+        "fundraising",
+        "donations",
+        "crowdfunded"
+      ],
+      "hosts": [
+        "gofundme.com",
+        "indiegogo.com",
+        "justgiving.com",
+        "kickstarter.com"
+      ]
+    },
+    {
+      "tag": "cruises",
+      "aliases": [
+        "cruiseship",
+        "voyage",
+        "cruiseline",
+        "liner"
+      ],
+      "hosts": [
+        "carnival.com",
+        "ncl.com",
+        "princess.com",
+        "royalcaribbean.com"
+      ]
+    },
+    {
+      "tag": "crypto",
+      "aliases": [
+        "cryptocurrency",
+        "bitcoin",
+        "blockchain",
+        "digitalcurrency"
+      ],
+      "hosts": [
+        "bitcoinmagazine.com",
+        "coinbase.com",
+        "coindesk.com",
+        "coinmarketcap.com",
+        "cointelegraph.com",
+        "cryptoslate.com",
+        "decrypt.co",
+        "kraken.com",
+        "theblock.co"
+      ]
+    },
+    {
+      "tag": "cycling",
+      "aliases": [
+        "biking",
+        "bike",
+        "bicycling",
+        "velo"
+      ],
+      "hosts": [
+        "bikeradar.com",
+        "cyclingweekly.com",
+        "strava.com",
+        "zwift.com"
+      ]
+    },
+    {
+      "tag": "data-science",
+      "aliases": [
+        "data-analysis",
+        "notebooks",
+        "pandas",
+        "scientific-computing"
+      ],
+      "hosts": [
+        "anaconda.com",
+        "jupyter.org",
+        "kaggle.com",
+        "numpy.org",
+        "pandas.pydata.org"
+      ]
+    },
+    {
+      "tag": "data-visualization",
+      "aliases": [
+        "bi",
+        "charts",
+        "dashboards",
+        "business-intelligence"
+      ],
+      "hosts": [
+        "metabase.com",
+        "redash.io",
+        "superset.apache.org",
+        "tableau.com"
+      ]
+    },
+    {
+      "tag": "data-viz",
+      "aliases": [
+        "dataviz",
+        "infographics",
+        "charting"
+      ],
+      "hosts": [
+        "d3js.org",
+        "datawrapper.de",
+        "flourish.studio",
+        "observablehq.com"
+      ]
+    },
+    {
+      "tag": "database",
+      "aliases": [
+        "db",
+        "sql",
+        "nosql",
+        "rdbms"
+      ],
+      "hosts": [
+        "mariadb.org",
+        "mongodb.com",
+        "mysql.com",
+        "postgresql.org",
+        "redis.io",
+        "sqlite.org"
+      ]
+    },
+    {
+      "tag": "deals",
+      "aliases": [
+        "discounts",
+        "bargains",
+        "coupons",
+        "sales"
+      ],
+      "hosts": [
+        "groupon.com",
+        "honey.com",
+        "rakuten.com",
+        "retailmenot.com",
+        "slickdeals.net"
+      ]
+    },
+    {
+      "tag": "debugging",
+      "aliases": [
+        "debugger",
+        "error-tracking",
+        "profiling",
+        "troubleshooting"
+      ],
+      "hosts": [
+        "bugsnag.com",
+        "raygun.com",
+        "rollbar.com",
+        "sentry.io"
+      ]
+    },
+    {
+      "tag": "defense",
+      "aliases": [
+        "military",
+        "warfare",
+        "pentagon"
+      ],
+      "hosts": [
+        "breakingdefense.com",
+        "defensenews.com",
+        "janes.com",
+        "militarytimes.com"
+      ]
+    },
+    {
+      "tag": "delivery",
+      "aliases": [
+        "takeout",
+        "courier",
+        "mealdelivery",
+        "ordering"
+      ],
+      "hosts": [
+        "deliveroo.com",
+        "doordash.com",
+        "grubhub.com",
+        "ubereats.com"
+      ]
+    },
+    {
+      "tag": "derivatives",
+      "aliases": [
+        "options",
+        "futures",
+        "hedging",
+        "contracts"
+      ],
+      "hosts": [
+        "barchart.com",
+        "cboe.com",
+        "cmegroup.com",
+        "theice.com"
+      ]
+    },
+    {
+      "tag": "design-tools",
+      "aliases": [
+        "ui-design",
+        "wireframing",
+        "mockups",
+        "brand-identity",
+        "logos",
+        "visual-identity",
+        "ux",
+        "graphic-design",
+        "ui-prototyping"
+      ],
+      "hosts": [
+        "awwwards.com",
+        "balsamiq.com",
+        "brandingmag.com",
+        "figma.com",
+        "invisionapp.com",
+        "logodesignlove.com",
+        "penpot.app",
+        "sketch.com",
+        "smashingmagazine.com"
+      ]
+    },
+    {
+      "tag": "desktop-apps",
+      "aliases": [
+        "electron",
+        "cross-platform",
+        "native-apps",
+        "gui"
+      ],
+      "hosts": [
+        "electronjs.org",
+        "qt.io",
+        "tauri.app"
+      ]
+    },
+    {
+      "tag": "dev",
+      "aliases": [
+        "code",
+        "programming",
+        "development"
+      ],
+      "hosts": [
+        "github.com",
+        "gitlab.com",
+        "stackoverflow.com"
+      ]
+    },
+    {
+      "tag": "diagramming",
+      "aliases": [
+        "flowcharts",
+        "uml",
+        "architecture-diagrams",
+        "sketching",
+        "charts"
+      ],
+      "hosts": [
+        "creately.com",
+        "diagrams.net",
+        "excalidraw.com",
+        "gliffy.com",
+        "lucidchart.com",
+        "mermaid.js.org",
+        "plantuml.com"
+      ]
+    },
+    {
+      "tag": "dictionary",
+      "aliases": [
+        "definitions",
+        "thesaurus",
+        "words",
+        "spelling"
+      ],
+      "hosts": [
+        "collinsdictionary.com",
+        "dictionary.com",
+        "merriam-webster.com",
+        "thesaurus.com",
+        "wordreference.com"
+      ]
+    },
+    {
+      "tag": "digital-humanities",
+      "aliases": [
+        "text-analysis",
+        "humanities-computing"
+      ],
+      "hosts": [
+        "adho.org",
+        "perseus.tufts.edu",
+        "voyant-tools.org"
+      ]
+    },
+    {
+      "tag": "diplomacy",
+      "aliases": [
+        "foreignpolicy",
+        "un",
+        "statecraft",
+        "negotiations"
+      ],
+      "hosts": [
+        "state.gov",
+        "un.org",
+        "usip.org"
+      ]
+    },
+    {
+      "tag": "dividend",
+      "aliases": [
+        "payout",
+        "incomeinvesting",
+        "yield",
+        "distributions"
+      ],
+      "hosts": [
+        "dividend.com",
+        "simplysafedividends.com",
+        "suredividend.com"
+      ]
+    },
+    {
+      "tag": "diving",
+      "aliases": [
+        "scuba",
+        "snorkeling",
+        "underwater",
+        "freediving"
+      ],
+      "hosts": [
+        "divessi.com",
+        "padi.com",
+        "scubadiving.com"
+      ]
+    },
+    {
+      "tag": "diy",
+      "aliases": [
+        "doityourself",
+        "handyman",
+        "renovation",
+        "homeimprovement"
+      ],
+      "hosts": [
+        "diynetwork.com",
+        "familyhandyman.com",
+        "instructables.com",
+        "thisoldhouse.com"
+      ]
+    },
+    {
+      "tag": "djmixes",
+      "aliases": [
+        "mixes",
+        "sets",
+        "electronicmusic",
+        "remixes"
+      ],
+      "hosts": [
+        "1001tracklists.com",
+        "beatport.com",
+        "mixcloud.com",
+        "ra.co"
+      ]
+    },
+    {
+      "tag": "docs",
+      "aliases": [
+        "documentation",
+        "wiki",
+        "manuals"
+      ],
+      "hosts": [
+        "antora.org",
+        "docusaurus.io",
+        "gitbook.com",
+        "mkdocs.org",
+        "readthedocs.org"
+      ]
+    },
+    {
+      "tag": "documentary",
+      "aliases": [
+        "nonfiction",
+        "documentaries"
+      ],
+      "hosts": [
+        "curiositystream.com",
+        "magellantv.com",
+        "topdocumentaryfilms.com"
+      ]
+    },
+    {
+      "tag": "documents",
+      "aliases": [
+        "word-processor",
+        "office-suite"
+      ],
+      "hosts": [
+        "docs.google.com",
+        "docs.zoho.com",
+        "office.com",
+        "onlyoffice.com"
+      ]
+    },
+    {
+      "tag": "domains",
+      "aliases": [
+        "dns-registrar",
+        "domain-name",
+        "whois",
+        "registrar"
+      ],
+      "hosts": [
+        "godaddy.com",
+        "hover.com",
+        "name.com",
+        "namecheap.com",
+        "porkbun.com"
+      ]
+    },
+    {
+      "tag": "dotnet",
+      "aliases": [
+        "csharp",
+        "aspnet",
+        "netcore",
+        "dotnetcore"
+      ],
+      "hosts": [
+        "dotnet.microsoft.com",
+        "mono-project.com",
+        "nuget.org"
+      ]
+    },
+    {
+      "tag": "e-signature",
+      "aliases": [
+        "esign",
+        "digital-signature",
+        "sign-documents",
+        "contracts"
+      ],
+      "hosts": [
+        "docusign.com",
+        "hellosign.com",
+        "pandadoc.com",
+        "signnow.com"
+      ]
+    },
+    {
+      "tag": "ebooks",
+      "aliases": [
+        "digitalbooks",
+        "kindlebooks",
+        "epub",
+        "ereading"
+      ],
+      "hosts": [
+        "books.google.com",
+        "gutenberg.org",
+        "kobo.com",
+        "overdrive.com"
+      ]
+    },
+    {
+      "tag": "ecology",
+      "aliases": [
+        "ecosystems",
+        "biodiversity",
+        "conservation-biology"
+      ],
+      "hosts": [
+        "biodiversitylibrary.org",
+        "eol.org",
+        "gbif.org",
+        "iucnredlist.org"
+      ]
+    },
+    {
+      "tag": "ecommerce",
+      "aliases": [
+        "onlineretail",
+        "webshop",
+        "digitalcommerce",
+        "onlinestore"
+      ],
+      "hosts": [
+        "digitalcommerce360.com",
+        "ecommercebytes.com",
+        "practicalecommerce.com"
+      ]
+    },
+    {
+      "tag": "economics",
+      "aliases": [
+        "economy",
+        "macroeconomics",
+        "gdp",
+        "inflation",
+        "economic-data"
+      ],
+      "hosts": [
+        "economist.com",
+        "imf.org",
+        "nber.org",
+        "project-syndicate.org",
+        "voxeu.org",
+        "worldbank.org"
+      ]
+    },
+    {
+      "tag": "editor",
+      "aliases": [
+        "ide",
+        "code-editor",
+        "text-editor",
+        "vscode"
+      ],
+      "hosts": [
+        "code.visualstudio.com",
+        "jetbrains.com",
+        "neovim.io",
+        "sublimetext.com",
+        "vim.org"
+      ]
+    },
+    {
+      "tag": "elections",
+      "aliases": [
+        "voting",
+        "ballots",
+        "campaign",
+        "polls",
+        "democracy",
+        "electoral"
+      ],
+      "hosts": [
+        "ballotpedia.org",
+        "cookpolitical.com",
+        "electoral-vote.com",
+        "fivethirtyeight.com",
+        "freedomhouse.org",
+        "idea.int",
+        "ifes.org"
+      ]
+    },
+    {
+      "tag": "electronics",
+      "aliases": [
+        "hardware",
+        "circuits",
+        "embedded"
+      ],
+      "hosts": [
+        "adafruit.com",
+        "arduino.cc",
+        "digikey.com",
+        "mouser.com",
+        "sparkfun.com"
+      ]
+    },
+    {
+      "tag": "email",
+      "aliases": [
+        "mail-server",
+        "smtp",
+        "webmail",
+        "self-hosted-mail",
+        "mail",
+        "inbox",
+        "messages"
+      ],
+      "hosts": [
+        "fastmail.com",
+        "gmail.com",
+        "mailcow.email",
+        "mailgun.com",
+        "outlook.com",
+        "proton.me",
+        "protonmail.com",
+        "sendgrid.com",
+        "tutanota.com"
+      ]
+    },
+    {
+      "tag": "email-marketing",
+      "aliases": [
+        "mailing-list",
+        "campaigns",
+        "autoresponder",
+        "bulk-email"
+      ],
+      "hosts": [
+        "aweber.com",
+        "brevo.com",
+        "campaignmonitor.com",
+        "constantcontact.com"
+      ]
+    },
+    {
+      "tag": "emerging-markets",
+      "aliases": [
+        "developingmarkets",
+        "frontier",
+        "globalsouth",
+        "brics"
+      ],
+      "hosts": [
+        "africanbusinessmagazine.com",
+        "asia.nikkei.com",
+        "caixinglobal.com",
+        "mercopress.com",
+        "theafricareport.com"
+      ]
+    },
+    {
+      "tag": "emulation",
+      "aliases": [
+        "emulator",
+        "retrogaming",
+        "retroconsole",
+        "romplaying"
+      ],
+      "hosts": [
+        "dolphin-emu.org",
+        "openemu.org",
+        "pcsx2.net",
+        "retroarch.com"
+      ]
+    },
+    {
+      "tag": "encryption",
+      "aliases": [
+        "cryptography",
+        "gpg",
+        "pgp",
+        "ciphers"
+      ],
+      "hosts": [
+        "gnupg.org",
+        "keybase.io",
+        "openssl.org",
+        "veracrypt.fr"
+      ]
+    },
+    {
+      "tag": "energy",
+      "aliases": [
+        "renewable-energy",
+        "power",
+        "nuclear-power"
+      ],
+      "hosts": [
+        "enerdata.net",
+        "iaea.org",
+        "iea.org",
+        "irena.org",
+        "world-nuclear.org",
+        "worldenergy.org"
+      ]
+    },
+    {
+      "tag": "entertainment-news",
+      "aliases": [
+        "showbiz",
+        "celebritynews",
+        "industrynews",
+        "hollywoodnews"
+      ],
+      "hosts": [
+        "deadline.com",
+        "ew.com",
+        "hollywoodreporter.com",
+        "indiewire.com",
+        "thewrap.com",
+        "tvline.com",
+        "variety.com"
+      ]
+    },
+    {
+      "tag": "environment",
+      "aliases": [
+        "conservation",
+        "nature",
+        "wildlife-protection"
+      ],
+      "hosts": [
+        "iucn.org",
+        "rainforest-alliance.org",
+        "unep.org",
+        "worldwildlife.org"
+      ]
+    },
+    {
+      "tag": "esg",
+      "aliases": [
+        "sustainable",
+        "responsibleinvesting",
+        "impact"
+      ],
+      "hosts": [
+        "esgtoday.com",
+        "greenbiz.com",
+        "responsible-investor.com"
+      ]
+    },
+    {
+      "tag": "esports",
+      "aliases": [
+        "competitivegaming",
+        "tournaments",
+        "leagues",
+        "proplayers"
+      ],
+      "hosts": [
+        "dotesports.com",
+        "esportsearnings.com",
+        "hltv.org",
+        "liquipedia.net"
+      ]
+    },
+    {
+      "tag": "events",
+      "aliases": [
+        "party",
+        "celebration",
+        "gathering",
+        "rsvp"
+      ],
+      "hosts": [
+        "bizzabo.com",
+        "eventbrite.com",
+        "evite.com",
+        "partyslate.com"
+      ]
+    },
+    {
+      "tag": "expenses",
+      "aliases": [
+        "expense-tracking",
+        "receipts",
+        "reimbursement",
+        "expense-reports"
+      ],
+      "hosts": [
+        "concur.com",
+        "expense.zoho.com",
+        "expensify.com"
+      ]
+    },
+    {
+      "tag": "expert-advice",
+      "aliases": [
+        "ask-an-expert",
+        "consultation",
+        "professional-advice",
+        "expert-answers"
+      ],
+      "hosts": [
+        "avvo.com",
+        "experts-exchange.com",
+        "justanswer.com"
+      ]
+    },
+    {
+      "tag": "factcheck",
+      "aliases": [
+        "verification",
+        "debunking",
+        "misinformation",
+        "truth"
+      ],
+      "hosts": [
+        "factcheck.org",
+        "fullfact.org",
+        "politifact.com",
+        "snopes.com"
+      ]
+    },
+    {
+      "tag": "fanfiction",
+      "aliases": [
+        "fanfic",
+        "fiction",
+        "fanstories",
+        "fandomwriting"
+      ],
+      "hosts": [
+        "archiveofourown.org",
+        "fanfiction.net",
+        "wattpad.com"
+      ]
+    },
+    {
+      "tag": "fashion",
+      "aliases": [
+        "clothing",
+        "style",
+        "apparel",
+        "outfits"
+      ],
+      "hosts": [
+        "asos.com",
+        "hm.com",
+        "net-a-porter.com",
+        "nordstrom.com",
+        "zara.com"
+      ]
+    },
+    {
+      "tag": "feature-flags",
+      "aliases": [
+        "ab-testing",
+        "rollout",
+        "toggles",
+        "experimentation"
+      ],
+      "hosts": [
+        "flagsmith.com",
+        "getunleash.io",
+        "launchdarkly.com",
+        "split.io"
+      ]
+    },
+    {
+      "tag": "file-conversion",
+      "aliases": [
+        "converter",
+        "format-conversion",
+        "convert-files",
+        "online-converter"
+      ],
+      "hosts": [
+        "cloudconvert.com",
+        "convertio.co",
+        "zamzar.com"
+      ]
+    },
+    {
+      "tag": "file-transfer",
+      "aliases": [
+        "ftp",
+        "sftp",
+        "sync",
+        "send-files",
+        "large-files",
+        "transfer",
+        "share-files"
+      ],
+      "hosts": [
+        "filemail.com",
+        "filezilla-project.org",
+        "sendspace.com",
+        "syncthing.net",
+        "wetransfer.com"
+      ]
+    },
+    {
+      "tag": "film",
+      "aliases": [
+        "movies",
+        "cinema",
+        "movienight",
+        "motionpictures"
+      ],
+      "hosts": [
+        "letterboxd.com",
+        "metacritic.com",
+        "mubi.com",
+        "rottentomatoes.com"
+      ]
+    },
+    {
+      "tag": "filmfestival",
+      "aliases": [
+        "festival",
+        "festivals",
+        "indiefilm",
+        "filmfest"
+      ],
+      "hosts": [
+        "festival-cannes.com",
+        "filmfreeway.com",
+        "sundance.org",
+        "tiff.net"
+      ]
+    },
+    {
+      "tag": "finance",
+      "aliases": [
+        "money",
+        "personalfinance",
+        "budgeting",
+        "savings"
+      ],
+      "hosts": [
+        "investopedia.com",
+        "kiplinger.com",
+        "money.com",
+        "morningstar.com",
+        "nerdwallet.com",
+        "thebalancemoney.com"
+      ]
+    },
+    {
+      "tag": "fintech",
+      "aliases": [
+        "financialtechnology",
+        "techfinance",
+        "digitalbanking",
+        "neobank"
+      ],
+      "hosts": [
+        "fintechfutures.com",
+        "fintechweekly.com",
+        "thefintechtimes.com"
+      ]
+    },
+    {
+      "tag": "fishing",
+      "aliases": [
+        "angling",
+        "tackle",
+        "fisherman",
+        "fish"
+      ],
+      "hosts": [
+        "fishbrain.com",
+        "in-fisherman.com",
+        "takemefishing.org"
+      ]
+    },
+    {
+      "tag": "fitness",
+      "aliases": [
+        "exercise",
+        "workout",
+        "gym",
+        "training"
+      ],
+      "hosts": [
+        "bodybuilding.com",
+        "fitbit.com",
+        "fitnessblender.com",
+        "myfitnesspal.com"
+      ]
+    },
+    {
+      "tag": "flights",
+      "aliases": [
+        "airfare",
+        "airlines",
+        "planetickets",
+        "flying"
+      ],
+      "hosts": [
+        "cheapflights.com",
+        "expedia.com",
+        "kayak.com",
+        "momondo.com",
+        "skyscanner.com"
+      ]
+    },
+    {
+      "tag": "flowers",
+      "aliases": [
+        "floral",
+        "bouquet",
+        "florist",
+        "flowershop"
+      ],
+      "hosts": [
+        "1800flowers.com",
+        "ftd.com",
+        "proflowers.com"
+      ]
+    },
+    {
+      "tag": "focus",
+      "aliases": [
+        "pomodoro",
+        "concentration",
+        "distraction-blocking",
+        "deep-work"
+      ],
+      "hosts": [
+        "focusmate.com",
+        "freedom.to",
+        "pomofocus.io"
+      ]
+    },
+    {
+      "tag": "football",
+      "aliases": [
+        "nfl",
+        "gridiron",
+        "americanfootball",
+        "touchdown"
+      ],
+      "hosts": [
+        "nfl.com",
+        "pro-football-reference.com",
+        "profootballtalk.nbcsports.com"
+      ]
+    },
+    {
+      "tag": "forex",
+      "aliases": [
+        "currency",
+        "fx",
+        "exchangerate",
+        "currencies"
+      ],
+      "hosts": [
+        "dailyfx.com",
+        "forexlive.com",
+        "fxstreet.com"
+      ]
+    },
+    {
+      "tag": "forum",
+      "aliases": [
+        "message-board",
+        "discussion",
+        "board"
+      ],
+      "hosts": [
+        "lemmy.world",
+        "metafilter.com",
+        "reddit.com"
+      ]
+    },
+    {
+      "tag": "franchise",
+      "aliases": [
+        "licensing",
+        "chains",
+        "multiunit",
+        "businessownership"
+      ],
+      "hosts": [
+        "franchisedirect.com",
+        "franchisetimes.com",
+        "franchising.com"
+      ]
+    },
+    {
+      "tag": "fraud",
+      "aliases": [
+        "scam",
+        "identitytheft",
+        "financialcrime",
+        "embezzlement"
+      ],
+      "hosts": [
+        "acfe.com",
+        "ftc.gov",
+        "identitytheft.gov"
+      ]
+    },
+    {
+      "tag": "freelance",
+      "aliases": [
+        "freelancing",
+        "gigs",
+        "contract-work",
+        "hire"
+      ],
+      "hosts": [
+        "fiverr.com",
+        "freelancer.com",
+        "peopleperhour.com",
+        "toptal.com",
+        "upwork.com"
+      ]
+    },
+    {
+      "tag": "game-database",
+      "aliases": [
+        "gamewiki",
+        "gameinfo",
+        "gamedata",
+        "gamestats"
+      ],
+      "hosts": [
+        "esrb.org",
+        "giantbomb.com",
+        "igdb.com",
+        "mobygames.com"
+      ]
+    },
+    {
+      "tag": "game-deals",
+      "aliases": [
+        "pricetracking",
+        "gamesales",
+        "discounts",
+        "gamebargains"
+      ],
+      "hosts": [
+        "cheapshark.com",
+        "gg.deals",
+        "isthereanydeal.com"
+      ]
+    },
+    {
+      "tag": "game-soundtrack",
+      "aliases": [
+        "gamemusic",
+        "vgm",
+        "videogamemusic",
+        "ost"
+      ],
+      "hosts": [
+        "khinsider.com",
+        "materiacollective.com",
+        "ocremix.org"
+      ]
+    },
+    {
+      "tag": "game-tracking",
+      "aliases": [
+        "gamejournal",
+        "playlist",
+        "backlog",
+        "gamelog"
+      ],
+      "hosts": [
+        "backloggd.com",
+        "grouvee.com",
+        "howlongtobeat.com"
+      ]
+    },
+    {
+      "tag": "games",
+      "aliases": [
+        "videogames",
+        "consoles",
+        "pcgaming"
+      ],
+      "hosts": [
+        "epicgames.com",
+        "gog.com",
+        "humblebundle.com",
+        "nintendo.com",
+        "playstation.com",
+        "steampowered.com",
+        "xbox.com"
+      ]
+    },
+    {
+      "tag": "gaming-news",
+      "aliases": [
+        "reviews",
+        "gamingpress",
+        "previews",
+        "gamejournalism"
+      ],
+      "hosts": [
+        "eurogamer.net",
+        "gamefaqs.com",
+        "gamespot.com",
+        "ign.com",
+        "kotaku.com",
+        "pcgamer.com",
+        "polygon.com",
+        "rockpapershotgun.com"
+      ]
+    },
+    {
+      "tag": "gardening",
+      "aliases": [
+        "garden",
+        "plants",
+        "landscaping",
+        "horticulture"
+      ],
+      "hosts": [
+        "almanac.com",
+        "gardenersworld.com",
+        "gardeningknowhow.com",
+        "rhs.org.uk"
+      ]
+    },
+    {
+      "tag": "genealogy",
+      "aliases": [
+        "family-history",
+        "ancestry",
+        "family-tree"
+      ],
+      "hosts": [
+        "ancestry.com",
+        "familysearch.org",
+        "findmypast.com",
+        "myheritage.com"
+      ]
+    },
+    {
+      "tag": "genetics",
+      "aliases": [
+        "genomics",
+        "dna",
+        "heredity",
+        "genome"
+      ],
+      "hosts": [
+        "ensembl.org",
+        "genome.gov",
+        "internationalgenome.org",
+        "omim.org",
+        "uniprot.org"
+      ]
+    },
+    {
+      "tag": "geography",
+      "aliases": [
+        "cartography",
+        "geospatial"
+      ],
+      "hosts": [
+        "geonames.org",
+        "nationalgeographic.com",
+        "worldatlas.com"
+      ]
+    },
+    {
+      "tag": "geology",
+      "aliases": [
+        "earth-science",
+        "geoscience",
+        "rocks"
+      ],
+      "hosts": [
+        "iugs.org",
+        "mindat.org",
+        "minerals.net",
+        "volcanodiscovery.com"
+      ]
+    },
+    {
+      "tag": "geopolitics",
+      "aliases": [
+        "geostrategy",
+        "globalaffairs",
+        "intelligence",
+        "risk"
+      ],
+      "hosts": [
+        "geopoliticalfutures.com",
+        "stratfor.com",
+        "thecipherbrief.com",
+        "warontherocks.com"
+      ]
+    },
+    {
+      "tag": "gifts",
+      "aliases": [
+        "presents",
+        "giftideas",
+        "giftguide",
+        "giftwrap"
+      ],
+      "hosts": [
+        "redbubble.com",
+        "uncommongoods.com",
+        "zazzle.com"
+      ]
+    },
+    {
+      "tag": "gis",
+      "aliases": [
+        "geospatial-analysis",
+        "mapping-software",
+        "geo-mapping"
+      ],
+      "hosts": [
+        "arcgis.com",
+        "carto.com",
+        "mapbox.com",
+        "qgis.org"
+      ]
+    },
+    {
+      "tag": "git",
+      "aliases": [
+        "version-control",
+        "vcs",
+        "source-control",
+        "commits"
+      ],
+      "hosts": [
+        "bitbucket.org",
+        "codeberg.org",
+        "git-scm.com",
+        "gitea.io",
+        "sourcehut.org"
+      ]
+    },
+    {
+      "tag": "golang",
+      "aliases": [
+        "go",
+        "gopher",
+        "google-go",
+        "goroutines"
+      ],
+      "hosts": [
+        "gin-gonic.com",
+        "go.dev",
+        "gofiber.io",
+        "golang.org"
+      ]
+    },
+    {
+      "tag": "golf",
+      "aliases": [
+        "golfing",
+        "pga",
+        "clubs",
+        "fairway"
+      ],
+      "hosts": [
+        "golf.com",
+        "golfdigest.com",
+        "pga.com"
+      ]
+    },
+    {
+      "tag": "governance",
+      "aliases": [
+        "boardroom",
+        "shareholders",
+        "oversight",
+        "stewardship"
+      ],
+      "hosts": [
+        "cii.org",
+        "corpgov.law.harvard.edu",
+        "ecgi.org"
+      ]
+    },
+    {
+      "tag": "government",
+      "aliases": [
+        "intergovernmental",
+        "public-sector",
+        "international-bodies"
+      ],
+      "hosts": [
+        "europa.eu",
+        "oecd.org",
+        "unesco.org"
+      ]
+    },
+    {
+      "tag": "gpu",
+      "aliases": [
+        "graphics-card",
+        "cuda",
+        "nvidia",
+        "gpu-computing"
+      ],
+      "hosts": [
+        "amd.com",
+        "intel.com",
+        "nvidia.com"
+      ]
+    },
+    {
+      "tag": "grammar",
+      "aliases": [
+        "proofreading",
+        "editing",
+        "copyediting"
+      ],
+      "hosts": [
+        "grammarly.com",
+        "hemingwayapp.com",
+        "prowritingaid.com"
+      ]
+    },
+    {
+      "tag": "grants",
+      "aliases": [
+        "funding",
+        "research-funding",
+        "fellowships"
+      ],
+      "hosts": [
+        "erc.europa.eu",
+        "hhmi.org",
+        "wellcome.org"
+      ]
+    },
+    {
+      "tag": "graphql",
+      "aliases": [
+        "query-language",
+        "apollo",
+        "schema-api",
+        "hasura"
+      ],
+      "hosts": [
+        "apollographql.com",
+        "graphql.org",
+        "hasura.io"
+      ]
+    },
+    {
+      "tag": "grocery",
+      "aliases": [
+        "groceries",
+        "supermarket",
+        "foodshopping",
+        "produce"
+      ],
+      "hosts": [
+        "freshdirect.com",
+        "instacart.com",
+        "kroger.com",
+        "wholefoodsmarket.com"
+      ]
+    },
+    {
+      "tag": "guitar-tabs",
+      "aliases": [
+        "tabs",
+        "chords",
+        "guitarmusic",
+        "fretboard"
+      ],
+      "hosts": [
+        "e-chords.com",
+        "songsterr.com",
+        "ultimate-guitar.com"
+      ]
+    },
+    {
+      "tag": "health",
+      "aliases": [
+        "wellness",
+        "medical",
+        "symptoms"
+      ],
+      "hosts": [
+        "healthline.com",
+        "mayoclinic.org",
+        "medlineplus.gov",
+        "webmd.com"
+      ]
+    },
+    {
+      "tag": "hedge-fund",
+      "aliases": [
+        "alternativeinvestments",
+        "activist",
+        "shortselling",
+        "fundmanager"
+      ],
+      "hosts": [
+        "hedgeweek.com",
+        "institutionalinvestor.com",
+        "opalesque.com"
+      ]
+    },
+    {
+      "tag": "helpdesk",
+      "aliases": [
+        "customer-support",
+        "support-chat",
+        "ticketing",
+        "live-chat"
+      ],
+      "hosts": [
+        "freshdesk.com",
+        "helpscout.com",
+        "intercom.com",
+        "zendesk.com"
+      ]
+    },
+    {
+      "tag": "history",
+      "aliases": [
+        "historical",
+        "heritage"
+      ],
+      "hosts": [
+        "history.com",
+        "historyextra.com",
+        "historytoday.com",
+        "worldhistory.org"
+      ]
+    },
+    {
+      "tag": "home",
+      "aliases": [
+        "interior",
+        "decor",
+        "furniture",
+        "homedesign"
+      ],
+      "hosts": [
+        "cb2.com",
+        "ikea.com",
+        "potterybarn.com",
+        "wayfair.com",
+        "westelm.com"
+      ]
+    },
+    {
+      "tag": "horror",
+      "aliases": [
+        "scarymovies",
+        "horrorfilms",
+        "frightflicks",
+        "slasher"
+      ],
+      "hosts": [
+        "bloody-disgusting.com",
+        "dreadcentral.com",
+        "rue-morgue.com"
+      ]
+    },
+    {
+      "tag": "hosting",
+      "aliases": [
+        "web-hosting",
+        "static-hosting",
+        "paas",
+        "deployment"
+      ],
+      "hosts": [
+        "fly.io",
+        "heroku.com",
+        "netlify.com",
+        "railway.app",
+        "render.com",
+        "vercel.com"
+      ]
+    },
+    {
+      "tag": "hotels",
+      "aliases": [
+        "lodging",
+        "accommodation",
+        "rooms",
+        "stays"
+      ],
+      "hosts": [
+        "agoda.com",
+        "booking.com",
+        "hilton.com",
+        "hotels.com",
+        "marriott.com"
+      ]
+    },
+    {
+      "tag": "humanitarian",
+      "aliases": [
+        "humanitarian-aid",
+        "disaster-relief",
+        "refugee-aid"
+      ],
+      "hosts": [
+        "icrc.org",
+        "msf.org",
+        "unhcr.org",
+        "unicef.org"
+      ]
+    },
+    {
+      "tag": "hunting",
+      "aliases": [
+        "hunt",
+        "deer",
+        "huntinggear",
+        "outdoorsman"
+      ],
+      "hosts": [
+        "cabelas.com",
+        "gohunt.com",
+        "realtree.com"
+      ]
+    },
+    {
+      "tag": "iac",
+      "aliases": [
+        "infrastructure-as-code",
+        "provisioning",
+        "configuration-management",
+        "terraform"
+      ],
+      "hosts": [
+        "ansible.com",
+        "chef.io",
+        "pulumi.com",
+        "puppet.com",
+        "terraform.io"
+      ]
+    },
+    {
+      "tag": "icons",
+      "aliases": [
+        "icon-sets",
+        "iconography",
+        "symbols"
+      ],
+      "hosts": [
+        "flaticon.com",
+        "iconfinder.com",
+        "thenounproject.com"
+      ]
+    },
+    {
+      "tag": "illustration",
+      "aliases": [
+        "vector-art",
+        "clipart",
+        "graphics"
+      ],
+      "hosts": [
+        "freepik.com",
+        "svgrepo.com",
+        "undraw.co",
+        "vecteezy.com"
+      ]
+    },
+    {
+      "tag": "immigration",
+      "aliases": [
+        "migration",
+        "refugees",
+        "borders",
+        "visas"
+      ],
+      "hosts": [
+        "migrationpolicy.org",
+        "refugeesinternational.org",
+        "uscis.gov"
+      ]
+    },
+    {
+      "tag": "immunology",
+      "aliases": [
+        "immune-system",
+        "vaccines",
+        "antibodies"
+      ],
+      "hosts": [
+        "immunology.org",
+        "jimmunol.org",
+        "niaid.nih.gov"
+      ]
+    },
+    {
+      "tag": "indiegames",
+      "aliases": [
+        "indie",
+        "gamejam",
+        "smallstudio",
+        "indiedev"
+      ],
+      "hosts": [
+        "gamejolt.com",
+        "itch.io",
+        "kongregate.com"
+      ]
+    },
+    {
+      "tag": "influencer",
+      "aliases": [
+        "socialmedia",
+        "creators",
+        "sponsorship",
+        "brandpartnership"
+      ],
+      "hosts": [
+        "hypeauditor.com",
+        "influencermarketinghub.com",
+        "socialmediatoday.com"
+      ]
+    },
+    {
+      "tag": "insurance",
+      "aliases": [
+        "insurer",
+        "coverage",
+        "policyholder",
+        "underwriting"
+      ],
+      "hosts": [
+        "carriermanagement.com",
+        "insurancebusinessmag.com",
+        "insurancejournal.com",
+        "insurancetimes.co.uk",
+        "propertycasualty360.com"
+      ]
+    },
+    {
+      "tag": "insurtech",
+      "aliases": [
+        "digitalinsurance",
+        "insuretech",
+        "claims",
+        "underwriting"
+      ],
+      "hosts": [
+        "coverager.com",
+        "insurancethoughtleadership.com",
+        "insurtechinsights.com"
+      ]
+    },
+    {
+      "tag": "internships",
+      "aliases": [
+        "entry-level",
+        "campus-recruiting",
+        "student-jobs",
+        "early-career"
+      ],
+      "hosts": [
+        "internships.com",
+        "joinhandshake.com",
+        "wayup.com"
+      ]
+    },
+    {
+      "tag": "investing",
+      "aliases": [
+        "investor",
+        "stocks",
+        "portfolio",
+        "equities"
+      ],
+      "hosts": [
+        "benzinga.com",
+        "fool.com",
+        "gurufocus.com",
+        "seekingalpha.com",
+        "simplywall.st",
+        "zacks.com"
+      ]
+    },
+    {
+      "tag": "invoicing",
+      "aliases": [
+        "billing",
+        "invoices"
+      ],
+      "hosts": [
+        "bill.com",
+        "freshbooks.com",
+        "invoice2go.com",
+        "waveapps.com"
+      ]
+    },
+    {
+      "tag": "ios",
+      "aliases": [
+        "iphone",
+        "ipad",
+        "apple-mobile",
+        "app-store"
+      ],
+      "hosts": [
+        "cocoapods.org",
+        "developer.apple.com",
+        "testflight.apple.com"
+      ]
+    },
+    {
+      "tag": "ipo",
+      "aliases": [
+        "offering",
+        "listing",
+        "flotation",
+        "publicoffering"
+      ],
+      "hosts": [
+        "iposcoop.com",
+        "nasdaq.com",
+        "renaissancecapital.com"
+      ]
+    },
+    {
+      "tag": "java",
+      "aliases": [
+        "jvm",
+        "spring",
+        "maven",
+        "gradle"
+      ],
+      "hosts": [
+        "gradle.org",
+        "java.com",
+        "maven.apache.org",
+        "openjdk.org",
+        "spring.io"
+      ]
+    },
+    {
+      "tag": "javascript",
+      "aliases": [
+        "js",
+        "node",
+        "typescript",
+        "ecmascript"
+      ],
+      "hosts": [
+        "bun.sh",
+        "deno.land",
+        "nodejs.org",
+        "npmjs.com",
+        "typescriptlang.org"
+      ]
+    },
+    {
+      "tag": "jewelry",
+      "aliases": [
+        "jewellery",
+        "rings",
+        "accessories",
+        "gemstones"
+      ],
+      "hosts": [
+        "bluenile.com",
+        "jamesallen.com",
+        "kay.com",
+        "pandora.net"
+      ]
+    },
+    {
+      "tag": "jobs",
+      "aliases": [
+        "careers",
+        "hiring",
+        "employment"
+      ],
+      "hosts": [
+        "indeed.com",
+        "linkedin.com",
+        "monster.com",
+        "ziprecruiter.com"
+      ]
+    },
+    {
+      "tag": "journal",
+      "aliases": [
+        "journaling",
+        "diary",
+        "daily-notes",
+        "reflection"
+      ],
+      "hosts": [
+        "750words.com",
+        "dayoneapp.com",
+        "penzu.com"
+      ]
+    },
+    {
+      "tag": "journalism",
+      "aliases": [
+        "press",
+        "reporting",
+        "investigative",
+        "watchdog"
+      ],
+      "hosts": [
+        "cjr.org",
+        "icij.org",
+        "poynter.org",
+        "propublica.org",
+        "revealnews.org",
+        "themarshallproject.org"
+      ]
+    },
+    {
+      "tag": "journals",
+      "aliases": [
+        "papers",
+        "publications",
+        "academic-journals"
+      ],
+      "hosts": [
+        "nature.com",
+        "springer.com",
+        "tandfonline.com",
+        "wiley.com"
+      ]
+    },
+    {
+      "tag": "karaoke",
+      "aliases": [
+        "singing",
+        "singalong",
+        "singingapp",
+        "voicetrack"
+      ],
+      "hosts": [
+        "karafun.com",
+        "singsnap.com",
+        "smule.com"
+      ]
+    },
+    {
+      "tag": "kdrama",
+      "aliases": [
+        "koreandrama",
+        "asiandrama",
+        "drama",
+        "koreanshows"
+      ],
+      "hosts": [
+        "kocowa.com",
+        "mydramalist.com",
+        "viki.com"
+      ]
+    },
+    {
+      "tag": "kids-coding",
+      "aliases": [
+        "coding-for-kids",
+        "scratch-programming",
+        "youth-coding",
+        "stem-education"
+      ],
+      "hosts": [
+        "code.org",
+        "scratch.mit.edu",
+        "tynker.com"
+      ]
+    },
+    {
+      "tag": "knowledge-base",
+      "aliases": [
+        "wiki",
+        "internal-wiki",
+        "documentation",
+        "team-wiki"
+      ],
+      "hosts": [
+        "coda.io",
+        "confluence.atlassian.com",
+        "slite.com"
+      ]
+    },
+    {
+      "tag": "kubernetes",
+      "aliases": [
+        "k8s",
+        "container-orchestration",
+        "helm",
+        "orchestration"
+      ],
+      "hosts": [
+        "helm.sh",
+        "k3s.io",
+        "kubernetes.io",
+        "longhorn.io",
+        "rancher.com"
+      ]
+    },
+    {
+      "tag": "labor",
+      "aliases": [
+        "employment",
+        "workforce",
+        "labour"
+      ],
+      "hosts": [
+        "bls.gov",
+        "shrm.org",
+        "workforce.com"
+      ]
+    },
+    {
+      "tag": "language",
+      "aliases": [
+        "vocabulary",
+        "fluency",
+        "foreign-language",
+        "languages"
+      ],
+      "hosts": [
+        "babbel.com",
+        "busuu.com",
+        "duolingo.com",
+        "memrise.com",
+        "rosettastone.com"
+      ]
+    },
+    {
+      "tag": "language-exchange",
+      "aliases": [
+        "conversation-partner",
+        "tandem-learning",
+        "penpals",
+        "speaking-practice"
+      ],
+      "hosts": [
+        "hellotalk.com",
+        "italki.com",
+        "tandem.net"
+      ]
+    },
+    {
+      "tag": "latex",
+      "aliases": [
+        "typesetting",
+        "tex",
+        "overleaf",
+        "document-preparation"
+      ],
+      "hosts": [
+        "ctan.org",
+        "latex-project.org",
+        "overleaf.com"
+      ]
+    },
+    {
+      "tag": "law",
+      "aliases": [
+        "human-rights",
+        "legislation",
+        "court-records",
+        "legal-cases",
+        "court-decisions"
+      ],
+      "hosts": [
+        "amnesty.org",
+        "courtlistener.com",
+        "eur-lex.europa.eu",
+        "hrw.org",
+        "icj-cij.org",
+        "law.cornell.edu"
+      ]
+    },
+    {
+      "tag": "leadership",
+      "aliases": [
+        "management",
+        "executives",
+        "ceo",
+        "strategy"
+      ],
+      "hosts": [
+        "chiefexecutive.net",
+        "conference-board.org",
+        "strategy-business.com"
+      ]
+    },
+    {
+      "tag": "legal",
+      "aliases": [
+        "attorneys",
+        "lawyers",
+        "jurisprudence"
+      ],
+      "hosts": [
+        "abovethelaw.com",
+        "jdsupra.com",
+        "law.com",
+        "law360.com"
+      ]
+    },
+    {
+      "tag": "library",
+      "aliases": [
+        "lending",
+        "digitallibrary",
+        "booklending",
+        "digital-library"
+      ],
+      "hosts": [
+        "hathitrust.org",
+        "libbyapp.com",
+        "openlibrary.org",
+        "worldcat.org"
+      ]
+    },
+    {
+      "tag": "linguistics",
+      "aliases": [
+        "language-science",
+        "etymology",
+        "philology"
+      ],
+      "hosts": [
+        "ethnologue.com",
+        "etymonline.com",
+        "glottolog.org"
+      ]
+    },
+    {
+      "tag": "linting",
+      "aliases": [
+        "code-quality",
+        "static-analysis",
+        "formatting",
+        "code-style"
+      ],
+      "hosts": [
+        "eslint.org",
+        "prettier.io",
+        "sonarsource.com",
+        "stylelint.io"
+      ]
+    },
+    {
+      "tag": "linux",
+      "aliases": [
+        "gnu-linux",
+        "distro",
+        "open-source-os",
+        "unix"
+      ],
+      "hosts": [
+        "archlinux.org",
+        "debian.org",
+        "fedoraproject.org",
+        "kernel.org",
+        "opensuse.org",
+        "ubuntu.com"
+      ]
+    },
+    {
+      "tag": "litigation",
+      "aliases": [
+        "lawsuits",
+        "courtroom",
+        "judicial",
+        "trial"
+      ],
+      "hosts": [
+        "courthousenews.com",
+        "findlaw.com",
+        "justia.com",
+        "scotusblog.com"
+      ]
+    },
+    {
+      "tag": "live-concerts",
+      "aliases": [
+        "concerts",
+        "livemusic",
+        "gigs",
+        "tapes"
+      ],
+      "hosts": [
+        "nugs.net",
+        "relisten.net",
+        "setlist.fm"
+      ]
+    },
+    {
+      "tag": "livestream",
+      "aliases": [
+        "live",
+        "broadcast",
+        "streamer",
+        "webcast"
+      ],
+      "hosts": [
+        "dlive.tv",
+        "kick.com",
+        "twitch.tv"
+      ]
+    },
+    {
+      "tag": "load-testing",
+      "aliases": [
+        "performance-testing",
+        "stress-test",
+        "benchmarking",
+        "throughput"
+      ],
+      "hosts": [
+        "gatling.io",
+        "jmeter.apache.org",
+        "k6.io",
+        "locust.io"
+      ]
+    },
+    {
+      "tag": "localization",
+      "aliases": [
+        "i18n",
+        "l10n",
+        "internationalization"
+      ],
+      "hosts": [
+        "crowdin.com",
+        "lokalise.com",
+        "transifex.com",
+        "weblate.org"
+      ]
+    },
+    {
+      "tag": "logging",
+      "aliases": [
+        "log-management",
+        "log-aggregation",
+        "syslog",
+        "log-analysis"
+      ],
+      "hosts": [
+        "graylog.org",
+        "loggly.com",
+        "papertrailapp.com",
+        "splunk.com"
+      ]
+    },
+    {
+      "tag": "longform",
+      "aliases": [
+        "essays",
+        "narrative",
+        "features",
+        "longreads"
+      ],
+      "hosts": [
+        "aeon.co",
+        "longform.org",
+        "longreads.com",
+        "narrative.ly",
+        "nautil.us"
+      ]
+    },
+    {
+      "tag": "luggage",
+      "aliases": [
+        "baggage",
+        "suitcase",
+        "travelgear",
+        "packing"
+      ],
+      "hosts": [
+        "away.com",
+        "monos.com",
+        "samsonite.com",
+        "tumi.com"
+      ]
+    },
+    {
+      "tag": "lyrics",
+      "aliases": [
+        "songtext",
+        "songwords",
+        "wordstosongs",
+        "lyricsheet"
+      ],
+      "hosts": [
+        "azlyrics.com",
+        "genius.com",
+        "lyrics.com",
+        "musixmatch.com"
+      ]
+    },
+    {
+      "tag": "macos",
+      "aliases": [
+        "mac",
+        "osx",
+        "homebrew",
+        "apple"
+      ],
+      "hosts": [
+        "apple.com",
+        "brew.sh",
+        "macports.org",
+        "support.apple.com"
+      ]
+    },
+    {
+      "tag": "magazine",
+      "aliases": [
+        "magazines",
+        "periodicals",
+        "glossy",
+        "editorial"
+      ],
+      "hosts": [
+        "esquire.com",
+        "harpers.org",
+        "newrepublic.com",
+        "newyorker.com",
+        "theatlantic.com",
+        "time.com",
+        "vanityfair.com"
+      ]
+    },
+    {
+      "tag": "manga",
+      "aliases": [
+        "japanesecomics",
+        "otakucomics",
+        "animecomics"
+      ],
+      "hosts": [
+        "kodansha.us",
+        "mangadex.org",
+        "mangaupdates.com",
+        "viz.com"
+      ]
+    },
+    {
+      "tag": "manufacturing",
+      "aliases": [
+        "factory",
+        "production",
+        "industrial",
+        "plants"
+      ],
+      "hosts": [
+        "assemblymag.com",
+        "industryweek.com",
+        "mmsonline.com",
+        "thomasnet.com"
+      ]
+    },
+    {
+      "tag": "maps",
+      "aliases": [
+        "navigation",
+        "directions",
+        "gps",
+        "routes"
+      ],
+      "hosts": [
+        "here.com",
+        "mapquest.com",
+        "maps.google.com",
+        "openstreetmap.org",
+        "waze.com"
+      ]
+    },
+    {
+      "tag": "marketing",
+      "aliases": [
+        "brandmarketing",
+        "promotion",
+        "digitalmarketing",
+        "campaigns"
+      ],
+      "hosts": [
+        "cmswire.com",
+        "marketingdive.com",
+        "marketingprofs.com",
+        "marketingweek.com",
+        "martech.org"
+      ]
+    },
+    {
+      "tag": "markets",
+      "aliases": [
+        "stockmarket",
+        "trading",
+        "wallstreet",
+        "exchanges"
+      ],
+      "hosts": [
+        "barrons.com",
+        "cnbc.com",
+        "ft.com",
+        "investing.com",
+        "marketwatch.com",
+        "wsj.com"
+      ]
+    },
+    {
+      "tag": "math",
+      "aliases": [
+        "mathematics",
+        "maths"
+      ],
+      "hosts": [
+        "artofproblemsolving.com",
+        "desmos.com",
+        "mathworld.wolfram.com",
+        "oeis.org"
+      ]
+    },
+    {
+      "tag": "meal-kits",
+      "aliases": [
+        "readymeals",
+        "mealprep",
+        "subscriptionfood",
+        "mealboxes"
+      ],
+      "hosts": [
+        "blueapron.com",
+        "hellofresh.com",
+        "homechef.com",
+        "sunbasket.com"
+      ]
+    },
+    {
+      "tag": "media",
+      "aliases": [
+        "outlets",
+        "broadcast",
+        "newsroom",
+        "pressindustry"
+      ],
+      "hosts": [
+        "editorandpublisher.com",
+        "mediaite.com",
+        "niemanlab.org",
+        "pressgazette.co.uk"
+      ]
+    },
+    {
+      "tag": "media-player",
+      "aliases": [
+        "player",
+        "playback",
+        "videoplayer",
+        "musicplayer"
+      ],
+      "hosts": [
+        "foobar2000.org",
+        "mpv.io",
+        "videolan.org"
+      ]
+    },
+    {
+      "tag": "media-server",
+      "aliases": [
+        "plex",
+        "jellyfin",
+        "streaming-server",
+        "home-media",
+        "mediacenter",
+        "homemedia",
+        "selfhosted",
+        "homestreaming"
+      ],
+      "hosts": [
+        "emby.media",
+        "jellyfin.org",
+        "kodi.tv",
+        "plex.tv"
+      ]
+    },
+    {
+      "tag": "media-wiki",
+      "aliases": [
+        "wiki",
+        "tvtropes",
+        "fandomwiki",
+        "showwiki"
+      ],
+      "hosts": [
+        "behindthevoiceactors.com",
+        "fandom.com",
+        "tvtropes.org"
+      ]
+    },
+    {
+      "tag": "medicine",
+      "aliases": [
+        "medical-research",
+        "clinical",
+        "public-health",
+        "pharmaceuticals",
+        "medications",
+        "drug-information"
+      ],
+      "hosts": [
+        "bmj.com",
+        "clinicaltrials.gov",
+        "drugs.com",
+        "ema.europa.eu",
+        "nejm.org",
+        "pubmed.ncbi.nlm.nih.gov",
+        "thelancet.com",
+        "who.int"
+      ]
+    },
+    {
+      "tag": "mental-health",
+      "aliases": [
+        "therapy",
+        "counseling",
+        "mindfulness"
+      ],
+      "hosts": [
+        "betterhelp.com",
+        "calm.com",
+        "psychologytoday.com",
+        "talkspace.com"
+      ]
+    },
+    {
+      "tag": "messaging",
+      "aliases": [
+        "message-queue",
+        "pubsub",
+        "event-streaming",
+        "mq"
+      ],
+      "hosts": [
+        "activemq.apache.org",
+        "kafka.apache.org",
+        "nats.io",
+        "rabbitmq.com"
+      ]
+    },
+    {
+      "tag": "microblogging",
+      "aliases": [
+        "tweets",
+        "short-posts",
+        "status-updates",
+        "feed"
+      ],
+      "hosts": [
+        "gab.com",
+        "threads.net",
+        "truthsocial.com",
+        "x.com"
+      ]
+    },
+    {
+      "tag": "mindmap",
+      "aliases": [
+        "mind-mapping",
+        "brainstorming",
+        "concept-map",
+        "visual-notes"
+      ],
+      "hosts": [
+        "coggle.it",
+        "mindmeister.com",
+        "miro.com",
+        "xmind.net"
+      ]
+    },
+    {
+      "tag": "modding",
+      "aliases": [
+        "mods",
+        "mod",
+        "customcontent",
+        "usermods"
+      ],
+      "hosts": [
+        "curseforge.com",
+        "moddb.com",
+        "nexusmods.com"
+      ]
+    },
+    {
+      "tag": "modeling",
+      "aliases": [
+        "models",
+        "meshes",
+        "cgmodels",
+        "sculpts"
+      ],
+      "hosts": [
+        "cgtrader.com",
+        "sketchfab.com",
+        "turbosquid.com"
+      ]
+    },
+    {
+      "tag": "monitoring",
+      "aliases": [
+        "observability",
+        "metrics",
+        "alerting",
+        "uptime"
+      ],
+      "hosts": [
+        "datadoghq.com",
+        "grafana.com",
+        "newrelic.com",
+        "prometheus.io",
+        "statuspage.io",
+        "uptimerobot.com"
+      ]
+    },
+    {
+      "tag": "mortgage",
+      "aliases": [
+        "homeloan",
+        "refinancing",
+        "lending",
+        "housingfinance"
+      ],
+      "hosts": [
+        "housingwire.com",
+        "mortgagenewsdaily.com",
+        "nationalmortgagenews.com"
+      ]
+    },
+    {
+      "tag": "motorcycles",
+      "aliases": [
+        "motorbike",
+        "riding",
+        "scooter",
+        "moto"
+      ],
+      "hosts": [
+        "cycletrader.com",
+        "motorcycle.com",
+        "revzilla.com"
+      ]
+    },
+    {
+      "tag": "moviedatabase",
+      "aliases": [
+        "imdb",
+        "filmdatabase",
+        "castandcrew",
+        "boxoffice"
+      ],
+      "hosts": [
+        "allmovie.com",
+        "boxofficemojo.com",
+        "imdb.com",
+        "the-numbers.com",
+        "themoviedb.org",
+        "trakt.tv"
+      ]
+    },
+    {
+      "tag": "moving",
+      "aliases": [
+        "relocation",
+        "movers",
+        "moveout"
+      ],
+      "hosts": [
+        "pods.com",
+        "publicstorage.com",
+        "twomenandatruck.com",
+        "uhaul.com"
+      ]
+    },
+    {
+      "tag": "museums",
+      "aliases": [
+        "museum",
+        "exhibits",
+        "galleries",
+        "digital-archive",
+        "records",
+        "archival"
+      ],
+      "hosts": [
+        "britishmuseum.org",
+        "europeana.eu",
+        "fold3.com",
+        "louvre.fr",
+        "metmuseum.org",
+        "si.edu"
+      ]
+    },
+    {
+      "tag": "music",
+      "aliases": [
+        "songs",
+        "tunes",
+        "listen",
+        "audio",
+        "instruments",
+        "guitars",
+        "musicgear",
+        "playing"
+      ],
+      "hosts": [
+        "bandcamp.com",
+        "deezer.com",
+        "guitarcenter.com",
+        "music.apple.com",
+        "musiciansfriend.com",
+        "pandora.com",
+        "reverb.com",
+        "soundcloud.com",
+        "spotify.com",
+        "sweetwater.com",
+        "tidal.com"
+      ]
+    },
+    {
+      "tag": "music-blogs",
+      "aliases": [
+        "musicblog",
+        "indiemusic",
+        "blogs",
+        "musicwriting"
+      ],
+      "hosts": [
+        "brooklynvegan.com",
+        "hypem.com",
+        "thelineofbestfit.com"
+      ]
+    },
+    {
+      "tag": "music-discovery",
+      "aliases": [
+        "recommendations",
+        "newmusic",
+        "musicratings",
+        "charts"
+      ],
+      "hosts": [
+        "allmusic.com",
+        "last.fm",
+        "rateyourmusic.com"
+      ]
+    },
+    {
+      "tag": "music-festival",
+      "aliases": [
+        "festivalmusic",
+        "musicfest",
+        "festivalseason",
+        "livefestival"
+      ],
+      "hosts": [
+        "coachella.com",
+        "lollapalooza.com",
+        "tomorrowland.com"
+      ]
+    },
+    {
+      "tag": "music-news",
+      "aliases": [
+        "reviews",
+        "musicpress",
+        "criticism",
+        "musicjournalism"
+      ],
+      "hosts": [
+        "billboard.com",
+        "nme.com",
+        "pitchfork.com",
+        "rollingstone.com",
+        "stereogum.com"
+      ]
+    },
+    {
+      "tag": "musicvideos",
+      "aliases": [
+        "mv",
+        "musicclips",
+        "videosongs",
+        "songvideos"
+      ],
+      "hosts": [
+        "colorsxstudios.com",
+        "mtv.com",
+        "vevo.com"
+      ]
+    },
+    {
+      "tag": "mythology",
+      "aliases": [
+        "myths",
+        "legends",
+        "folklore"
+      ],
+      "hosts": [
+        "godchecker.com",
+        "mythopedia.com",
+        "theoi.com"
+      ]
+    },
+    {
+      "tag": "networking",
+      "aliases": [
+        "dns",
+        "network-tools",
+        "routing",
+        "firewall"
+      ],
+      "hosts": [
+        "cloudflare.com",
+        "nmap.org",
+        "opnsense.org",
+        "pfsense.org",
+        "pi-hole.net"
+      ]
+    },
+    {
+      "tag": "neuroscience",
+      "aliases": [
+        "brain-science",
+        "neurology",
+        "cognitive-science"
+      ],
+      "hosts": [
+        "alleninstitute.org",
+        "brainfacts.org",
+        "humanbrainproject.eu"
+      ]
+    },
+    {
+      "tag": "news",
+      "aliases": [
+        "headlines",
+        "breaking",
+        "wire",
+        "bulletin"
+      ],
+      "hosts": [
+        "abcnews.go.com",
+        "apnews.com",
+        "bbc.com",
+        "cbsnews.com",
+        "cnn.com",
+        "nbcnews.com",
+        "npr.org",
+        "reuters.com",
+        "theguardian.com"
+      ]
+    },
+    {
+      "tag": "newsletter",
+      "aliases": [
+        "bulletin",
+        "digest",
+        "briefing",
+        "roundup",
+        "mailing-list",
+        "subscribers",
+        "email-newsletter"
+      ],
+      "hosts": [
+        "1440.com",
+        "buttondown.email",
+        "convertkit.com",
+        "mailchimp.com",
+        "morningbrew.com",
+        "punchbowl.news",
+        "substack.com",
+        "thehustle.co"
+      ]
+    },
+    {
+      "tag": "newspaper-archives",
+      "aliases": [
+        "old-newspapers",
+        "newspaper-archive",
+        "historical-news"
+      ],
+      "hosts": [
+        "britishnewspaperarchive.co.uk",
+        "chroniclingamerica.loc.gov",
+        "newspapers.com"
+      ]
+    },
+    {
+      "tag": "notes",
+      "aliases": [
+        "note-taking",
+        "memos",
+        "jotting",
+        "notebook"
+      ],
+      "hosts": [
+        "bear.app",
+        "evernote.com",
+        "notion.so",
+        "obsidian.md",
+        "simplenote.com"
+      ]
+    },
+    {
+      "tag": "notifications",
+      "aliases": [
+        "push-notifications",
+        "alerts",
+        "webhooks",
+        "messaging-alerts"
+      ],
+      "hosts": [
+        "ntfy.sh",
+        "onesignal.com",
+        "pusher.com"
+      ]
+    },
+    {
+      "tag": "nutrition",
+      "aliases": [
+        "diet",
+        "dietitian",
+        "calories",
+        "healthyeating",
+        "food-science",
+        "dietetics"
+      ],
+      "hosts": [
+        "cronometer.com",
+        "eatright.org",
+        "eufic.org",
+        "fao.org",
+        "nutritionix.com",
+        "wfp.org"
+      ]
+    },
+    {
+      "tag": "oceanography",
+      "aliases": [
+        "marine-science",
+        "ocean-science"
+      ],
+      "hosts": [
+        "marinebio.org",
+        "mbari.org",
+        "whoi.edu"
+      ]
+    },
+    {
+      "tag": "online-community",
+      "aliases": [
+        "community-platform",
+        "membership-site",
+        "forum-software",
+        "discussion-group"
+      ],
+      "hosts": [
+        "circle.so",
+        "discourse.org",
+        "mightynetworks.com",
+        "tribe.so"
+      ]
+    },
+    {
+      "tag": "open-access",
+      "aliases": [
+        "free-access",
+        "open-journals"
+      ],
+      "hosts": [
+        "biomedcentral.com",
+        "core.ac.uk",
+        "doaj.org",
+        "frontiersin.org",
+        "plos.org"
+      ]
+    },
+    {
+      "tag": "open-data",
+      "aliases": [
+        "public-data",
+        "datasets",
+        "government-data"
+      ],
+      "hosts": [
+        "data.europa.eu",
+        "data.un.org",
+        "data.worldbank.org",
+        "ourworldindata.org"
+      ]
+    },
+    {
+      "tag": "open-source",
+      "aliases": [
+        "foss",
+        "oss",
+        "free-software",
+        "community-driven"
+      ],
+      "hosts": [
+        "freecodecamp.org",
+        "fsf.org",
+        "gnu.org",
+        "opensource.org",
+        "sourceforge.net"
+      ]
+    },
+    {
+      "tag": "opinion",
+      "aliases": [
+        "commentary",
+        "editorial",
+        "punditry",
+        "viewpoint"
+      ],
+      "hosts": [
+        "nationalreview.com",
+        "quillette.com",
+        "spectator.co.uk",
+        "spiked-online.com",
+        "thecritic.co.uk",
+        "thenation.com"
+      ]
+    },
+    {
+      "tag": "outdoors",
+      "aliases": [
+        "hiking",
+        "trails",
+        "wilderness",
+        "trekking"
+      ],
+      "hosts": [
+        "alltrails.com",
+        "backpacker.com",
+        "hikingproject.com",
+        "wta.org"
+      ]
+    },
+    {
+      "tag": "package-manager",
+      "aliases": [
+        "dependencies",
+        "packages",
+        "registry",
+        "apt"
+      ],
+      "hosts": [
+        "chocolatey.org",
+        "flatpak.org",
+        "scoop.sh",
+        "snapcraft.io"
+      ]
+    },
+    {
+      "tag": "paleontology",
+      "aliases": [
+        "fossils",
+        "dinosaurs",
+        "paleo"
+      ],
+      "hosts": [
+        "amnh.org",
+        "nhm.ac.uk",
+        "paleobiodb.org"
+      ]
+    },
+    {
+      "tag": "parental-guide",
+      "aliases": [
+        "contentwarnings",
+        "familyreviews",
+        "ageratings",
+        "parentalratings"
+      ],
+      "hosts": [
+        "commonsensemedia.org",
+        "doesthedogdie.com",
+        "kids-in-mind.com"
+      ]
+    },
+    {
+      "tag": "parenting",
+      "aliases": [
+        "family",
+        "kids",
+        "children",
+        "upbringing"
+      ],
+      "hosts": [
+        "babycenter.com",
+        "familyeducation.com",
+        "parents.com",
+        "whattoexpect.com"
+      ]
+    },
+    {
+      "tag": "passwords",
+      "aliases": [
+        "password-manager",
+        "vault",
+        "credentials",
+        "secrets-manager",
+        "logins"
+      ],
+      "hosts": [
+        "1password.com",
+        "bitwarden.com",
+        "dashlane.com",
+        "keepassxc.org",
+        "keepersecurity.com",
+        "lastpass.com"
+      ]
+    },
+    {
+      "tag": "patents",
+      "aliases": [
+        "trademarks",
+        "copyright",
+        "licensing",
+        "innovation",
+        "intellectual-property",
+        "ip"
+      ],
+      "hosts": [
+        "epo.org",
+        "freepatentsonline.com",
+        "iam-media.com",
+        "ipwatchdog.com",
+        "managingip.com",
+        "patents.google.com",
+        "wipo.int",
+        "worldipreview.com"
+      ]
+    },
+    {
+      "tag": "payments",
+      "aliases": [
+        "paymentprocessing",
+        "transactions",
+        "checkout",
+        "remittance"
+      ],
+      "hosts": [
+        "finextra.com",
+        "paymentsdive.com",
+        "paymentssource.com",
+        "pymnts.com",
+        "thepaypers.com"
+      ]
+    },
+    {
+      "tag": "payroll",
+      "aliases": [
+        "staffing",
+        "employer-of-record",
+        "benefits"
+      ],
+      "hosts": [
+        "deel.com",
+        "gusto.com",
+        "oysterhr.com",
+        "rippling.com"
+      ]
+    },
+    {
+      "tag": "pdf",
+      "aliases": [
+        "pdf-editor",
+        "pdf-converter",
+        "document-tools",
+        "pdf-tools"
+      ],
+      "hosts": [
+        "acrobat.adobe.com",
+        "ilovepdf.com",
+        "pdf2go.com",
+        "smallpdf.com"
+      ]
+    },
+    {
+      "tag": "peer-review",
+      "aliases": [
+        "review-process",
+        "referee",
+        "research-integrity"
+      ],
+      "hosts": [
+        "f1000research.com",
+        "publons.com",
+        "retractionwatch.com"
+      ]
+    },
+    {
+      "tag": "performance",
+      "aliases": [
+        "web-performance",
+        "lighthouse",
+        "core-web-vitals",
+        "page-speed"
+      ],
+      "hosts": [
+        "gtmetrix.com",
+        "web.dev",
+        "webpagetest.org"
+      ]
+    },
+    {
+      "tag": "pet-adoption",
+      "aliases": [
+        "adopt",
+        "rescue",
+        "shelter",
+        "foster"
+      ],
+      "hosts": [
+        "adoptapet.com",
+        "aspca.org",
+        "petfinder.com"
+      ]
+    },
+    {
+      "tag": "pet-insurance",
+      "aliases": [
+        "petcoverage",
+        "vetinsurance",
+        "animalinsurance",
+        "coverage"
+      ],
+      "hosts": [
+        "fetchpet.com",
+        "healthypaws.com",
+        "trupanion.com"
+      ]
+    },
+    {
+      "tag": "pets",
+      "aliases": [
+        "animals",
+        "petcare",
+        "dogs",
+        "cats"
+      ],
+      "hosts": [
+        "akc.org",
+        "chewy.com",
+        "petco.com",
+        "petsmart.com",
+        "rover.com"
+      ]
+    },
+    {
+      "tag": "pharmacy",
+      "aliases": [
+        "medication",
+        "prescriptions",
+        "drugstore",
+        "meds"
+      ],
+      "hosts": [
+        "cvs.com",
+        "goodrx.com",
+        "riteaid.com",
+        "walgreens.com"
+      ]
+    },
+    {
+      "tag": "philosophy",
+      "aliases": [
+        "philosophical",
+        "ethics",
+        "metaphysics"
+      ],
+      "hosts": [
+        "iep.utm.edu",
+        "philpapers.org",
+        "plato.stanford.edu"
+      ]
+    },
+    {
+      "tag": "photo-editing",
+      "aliases": [
+        "image-editing",
+        "photo-editor"
+      ],
+      "hosts": [
+        "gimp.org",
+        "photopea.com",
+        "pixlr.com"
+      ]
+    },
+    {
+      "tag": "photography",
+      "aliases": [
+        "photos",
+        "pictures",
+        "photo",
+        "snapshots",
+        "camera",
+        "photoshoot",
+        "stock-photos",
+        "images",
+        "stock-images"
+      ],
+      "hosts": [
+        "500px.com",
+        "astrobin.com",
+        "flickr.com",
+        "lomography.com",
+        "smugmug.com",
+        "vsco.co"
+      ]
+    },
+    {
+      "tag": "php",
+      "aliases": [
+        "laravel",
+        "symfony",
+        "composer",
+        "backend"
+      ],
+      "hosts": [
+        "getcomposer.org",
+        "laravel.com",
+        "php.net",
+        "symfony.com"
+      ]
+    },
+    {
+      "tag": "physical-media",
+      "aliases": [
+        "bluray",
+        "dvd",
+        "discs",
+        "collectorseditions"
+      ],
+      "hosts": [
+        "arrowfilms.com",
+        "criterion.com",
+        "diabolikdvd.com"
+      ]
+    },
+    {
+      "tag": "physics",
+      "aliases": [
+        "particle-physics",
+        "quantum-physics"
+      ],
+      "hosts": [
+        "home.cern",
+        "phys.org",
+        "physicsworld.com",
+        "symmetrymagazine.org"
+      ]
+    },
+    {
+      "tag": "pixelart",
+      "aliases": [
+        "pixel",
+        "retroart",
+        "8bitart",
+        "spritework"
+      ],
+      "hosts": [
+        "lospec.com",
+        "opengameart.org",
+        "pixeljoint.com"
+      ]
+    },
+    {
+      "tag": "podcast-database",
+      "aliases": [
+        "podcastcharts",
+        "podcastsearch",
+        "poddirectory",
+        "poddiscovery"
+      ],
+      "hosts": [
+        "listennotes.com",
+        "podcastindex.org",
+        "podchaser.com"
+      ]
+    },
+    {
+      "tag": "podcast-hosting",
+      "aliases": [
+        "podcastcreation",
+        "podcastplatform",
+        "podcastpublishing"
+      ],
+      "hosts": [
+        "anchor.fm",
+        "buzzsprout.com",
+        "libsyn.com",
+        "transistor.fm"
+      ]
+    },
+    {
+      "tag": "podcasts",
+      "aliases": [
+        "episodes",
+        "shows",
+        "audioshows",
+        "listen"
+      ],
+      "hosts": [
+        "castbox.fm",
+        "overcast.fm",
+        "pocketcasts.com",
+        "podbean.com",
+        "podcasts.apple.com"
+      ]
+    },
+    {
+      "tag": "poetry",
+      "aliases": [
+        "poems",
+        "verse",
+        "poets",
+        "versewriting"
+      ],
+      "hosts": [
+        "allpoetry.com",
+        "poetryfoundation.org",
+        "poets.org"
+      ]
+    },
+    {
+      "tag": "policy",
+      "aliases": [
+        "thinktank",
+        "legislation",
+        "lawmaking",
+        "publicaffairs"
+      ],
+      "hosts": [
+        "americanprogress.org",
+        "brookings.edu",
+        "cfr.org",
+        "chathamhouse.org",
+        "piie.com",
+        "rand.org"
+      ]
+    },
+    {
+      "tag": "politics",
+      "aliases": [
+        "legislature",
+        "congress",
+        "partisan"
+      ],
+      "hosts": [
+        "axios.com",
+        "politico.com",
+        "realclearpolitics.com",
+        "rollcall.com",
+        "thedispatch.com",
+        "thehill.com"
+      ]
+    },
+    {
+      "tag": "preprints",
+      "aliases": [
+        "preprint-server",
+        "working-papers"
+      ],
+      "hosts": [
+        "arxiv.org",
+        "biorxiv.org",
+        "medrxiv.org",
+        "osf.io",
+        "ssrn.com"
+      ]
+    },
+    {
+      "tag": "presentations",
+      "aliases": [
+        "slides",
+        "slideshow",
+        "decks",
+        "pitch-decks"
+      ],
+      "hosts": [
+        "beautiful.ai",
+        "prezi.com",
+        "slides.google.com"
+      ]
+    },
+    {
+      "tag": "price-comparison",
+      "aliases": [
+        "comparison",
+        "pricetracking",
+        "pricewatch",
+        "comparisonshopping"
+      ],
+      "hosts": [
+        "camelcamelcamel.com",
+        "keepa.com",
+        "pricerunner.com"
+      ]
+    },
+    {
+      "tag": "privacy",
+      "aliases": [
+        "anonymity",
+        "data-protection",
+        "private-browsing",
+        "tracking-protection"
+      ],
+      "hosts": [
+        "duckduckgo.com",
+        "eff.org",
+        "privacyguides.org",
+        "signal.org",
+        "torproject.org"
+      ]
+    },
+    {
+      "tag": "private-equity",
+      "aliases": [
+        "buyouts",
+        "leveragedbuyout",
+        "dealmaking",
+        "portfoliocompanies"
+      ],
+      "hosts": [
+        "buyoutsinsider.com",
+        "pehub.com",
+        "privateequityinternational.com"
+      ]
+    },
+    {
+      "tag": "project-management",
+      "aliases": [
+        "tickets",
+        "kanban",
+        "issue-tracking",
+        "projects",
+        "planning",
+        "sprints"
+      ],
+      "hosts": [
+        "asana.com",
+        "atlassian.com",
+        "basecamp.com",
+        "clickup.com",
+        "linear.app",
+        "monday.com",
+        "trello.com"
+      ]
+    },
+    {
+      "tag": "psychology",
+      "aliases": [
+        "psych",
+        "behavioral-science"
+      ],
+      "hosts": [
+        "psypost.org",
+        "simplypsychology.org",
+        "verywellmind.com"
+      ]
+    },
+    {
+      "tag": "public-relations",
+      "aliases": [
+        "pr",
+        "communications",
+        "mediarelations",
+        "reputation"
+      ],
+      "hosts": [
+        "odwyerpr.com",
+        "prnewsonline.com",
+        "prweek.com"
+      ]
+    },
+    {
+      "tag": "publishing",
+      "aliases": [
+        "printmedia",
+        "publishers",
+        "bookindustry",
+        "articles",
+        "essays",
+        "writing-platform",
+        "content-creation",
+        "book-publishing"
+      ],
+      "hosts": [
+        "harpercollins.com",
+        "ingramspark.com",
+        "medium.com",
+        "penguinrandomhouse.com",
+        "publishersweekly.com",
+        "publishingperspectives.com",
+        "thebookseller.com"
+      ]
+    },
+    {
+      "tag": "python",
+      "aliases": [
+        "py",
+        "django",
+        "flask",
+        "pip"
+      ],
+      "hosts": [
+        "djangoproject.com",
+        "flask.palletsprojects.com",
+        "pypi.org",
+        "python.org"
+      ]
+    },
+    {
+      "tag": "questions",
+      "aliases": [
+        "q-and-a",
+        "answers",
+        "ask",
+        "help-forum"
+      ],
+      "hosts": [
+        "answers.com",
+        "quora.com",
+        "stackexchange.com"
+      ]
+    },
+    {
+      "tag": "quotes",
+      "aliases": [
+        "quotations",
+        "sayings",
+        "aphorisms",
+        "quote-collection"
+      ],
+      "hosts": [
+        "azquotes.com",
+        "brainyquote.com",
+        "quotationspage.com"
+      ]
+    },
+    {
+      "tag": "radio",
+      "aliases": [
+        "broadcast",
+        "stations",
+        "airwaves",
+        "tuner"
+      ],
+      "hosts": [
+        "iheart.com",
+        "live365.com",
+        "radio.garden",
+        "tunein.com"
+      ]
+    },
+    {
+      "tag": "rankings",
+      "aliases": [
+        "college-rankings",
+        "university-rankings"
+      ],
+      "hosts": [
+        "shanghairanking.com",
+        "timeshighereducation.com",
+        "topuniversities.com"
+      ]
+    },
+    {
+      "tag": "raspberrypi",
+      "aliases": [
+        "sbc",
+        "raspberry-pi",
+        "pi",
+        "single-board-computer"
+      ],
+      "hosts": [
+        "balena.io",
+        "hackaday.com",
+        "raspberrypi.com"
+      ]
+    },
+    {
+      "tag": "read-later",
+      "aliases": [
+        "save-for-later",
+        "reading-list",
+        "clippings",
+        "later-reading"
+      ],
+      "hosts": [
+        "instapaper.com",
+        "pocket.com",
+        "raindrop.io",
+        "readwise.io"
+      ]
+    },
+    {
+      "tag": "real-estate",
+      "aliases": [
+        "property",
+        "housing",
+        "homes",
+        "realty",
+        "homebuying",
+        "listings"
+      ],
+      "hosts": [
+        "curbed.com",
+        "inman.com",
+        "realtor.com",
+        "redfin.com",
+        "therealdeal.com",
+        "trulia.com",
+        "zillow.com"
+      ]
+    },
+    {
+      "tag": "recipes",
+      "aliases": [
+        "cooking",
+        "food",
+        "kitchen",
+        "mealplanning"
+      ],
+      "hosts": [
+        "allrecipes.com",
+        "bonappetit.com",
+        "epicurious.com",
+        "foodnetwork.com",
+        "seriouseats.com"
+      ]
+    },
+    {
+      "tag": "recruiting",
+      "aliases": [
+        "applicant-tracking",
+        "hiring-software",
+        "talent-acquisition",
+        "staffing"
+      ],
+      "hosts": [
+        "bamboohr.com",
+        "greenhouse.io",
+        "lever.co",
+        "workday.com"
+      ]
+    },
+    {
+      "tag": "reference",
+      "aliases": [
+        "encyclopedia",
+        "wiki",
+        "lookup",
+        "facts"
+      ],
+      "hosts": [
+        "britannica.com",
+        "wikihow.com",
+        "wikipedia.org",
+        "wolframalpha.com"
+      ]
+    },
+    {
+      "tag": "reinsurance",
+      "aliases": [
+        "riskpooling",
+        "catbonds",
+        "retrocession",
+        "treaty"
+      ],
+      "hosts": [
+        "artemis.bm",
+        "intelligentinsurer.com",
+        "reinsurancene.ws"
+      ]
+    },
+    {
+      "tag": "religion",
+      "aliases": [
+        "faith",
+        "spirituality",
+        "theology"
+      ],
+      "hosts": [
+        "patheos.com",
+        "religionnews.com",
+        "sacred-texts.com",
+        "vatican.va"
+      ]
+    },
+    {
+      "tag": "remote-access",
+      "aliases": [
+        "ssh",
+        "remote-desktop",
+        "vnc",
+        "remote-control",
+        "desktop-sharing"
+      ],
+      "hosts": [
+        "anydesk.com",
+        "join.me",
+        "openssh.com",
+        "rustdesk.com",
+        "splashtop.com",
+        "teamviewer.com"
+      ]
+    },
+    {
+      "tag": "remote-work",
+      "aliases": [
+        "distributed",
+        "wfh",
+        "virtual-office",
+        "telecommute"
+      ],
+      "hosts": [
+        "remote.com",
+        "remotive.com",
+        "weworkremotely.com"
+      ]
+    },
+    {
+      "tag": "research",
+      "aliases": [
+        "academic",
+        "papers",
+        "scholarly"
+      ],
+      "hosts": [
+        "jstor.org",
+        "researchgate.net",
+        "scholar.google.com",
+        "sciencedirect.com"
+      ]
+    },
+    {
+      "tag": "research-data",
+      "aliases": [
+        "data-repository",
+        "datasets",
+        "scientific-data"
+      ],
+      "hosts": [
+        "datadryad.org",
+        "figshare.org",
+        "pangaea.de",
+        "zenodo.org"
+      ]
+    },
+    {
+      "tag": "restaurants",
+      "aliases": [
+        "dining",
+        "eatingout",
+        "reservations",
+        "foodguide"
+      ],
+      "hosts": [
+        "opentable.com",
+        "resy.com",
+        "thefork.com",
+        "yelp.com",
+        "zomato.com"
+      ]
+    },
+    {
+      "tag": "resume",
+      "aliases": [
+        "cv",
+        "resume-builder",
+        "cover-letter",
+        "job-application"
+      ],
+      "hosts": [
+        "canva.com",
+        "novoresume.com",
+        "resume.com",
+        "zety.com"
+      ]
+    },
+    {
+      "tag": "retail",
+      "aliases": [
+        "stores",
+        "consumergoods",
+        "chains"
+      ],
+      "hosts": [
+        "chainstoreage.com",
+        "nrf.com",
+        "retaildive.com",
+        "retailwire.com"
+      ]
+    },
+    {
+      "tag": "retirement",
+      "aliases": [
+        "pension",
+        "annuity",
+        "savings",
+        "nestegg"
+      ],
+      "hosts": [
+        "401kspecialistmag.com",
+        "planadviser.com",
+        "plansponsor.com"
+      ]
+    },
+    {
+      "tag": "rideshare",
+      "aliases": [
+        "taxi",
+        "carpool",
+        "ridehailing",
+        "taxiapp"
+      ],
+      "hosts": [
+        "lyft.com",
+        "uber.com",
+        "via.com"
+      ]
+    },
+    {
+      "tag": "rss",
+      "aliases": [
+        "feed-reader",
+        "news-feed",
+        "feeds",
+        "syndication"
+      ],
+      "hosts": [
+        "feedly.com",
+        "inoreader.com",
+        "newsblur.com",
+        "theoldreader.com"
+      ]
+    },
+    {
+      "tag": "ruby",
+      "aliases": [
+        "rails",
+        "gems",
+        "rubyonrails",
+        "ror"
+      ],
+      "hosts": [
+        "bundler.io",
+        "ruby-lang.org",
+        "rubygems.org",
+        "rubyonrails.org"
+      ]
+    },
+    {
+      "tag": "running",
+      "aliases": [
+        "jogging",
+        "marathon",
+        "jog",
+        "trackrunning"
+      ],
+      "hosts": [
+        "mapmyrun.com",
+        "marathonguide.com",
+        "runkeeper.com",
+        "runnersworld.com"
+      ]
+    },
+    {
+      "tag": "rust",
+      "aliases": [
+        "rustlang",
+        "cargo",
+        "systems-language",
+        "memory-safety"
+      ],
+      "hosts": [
+        "crates.io",
+        "docs.rs",
+        "rust-lang.org",
+        "rustup.rs"
+      ]
+    },
+    {
+      "tag": "rv",
+      "aliases": [
+        "rvcamping",
+        "motorhome",
+        "campervan",
+        "roadtrip"
+      ],
+      "hosts": [
+        "outdoorsy.com",
+        "rvshare.com",
+        "rvtrader.com"
+      ]
+    },
+    {
+      "tag": "satire",
+      "aliases": [
+        "parody",
+        "humor",
+        "spoof"
+      ],
+      "hosts": [
+        "babylonbee.com",
+        "private-eye.co.uk",
+        "reductress.com",
+        "theonion.com"
+      ]
+    },
+    {
+      "tag": "scheduling",
+      "aliases": [
+        "cron",
+        "task-scheduler",
+        "job-scheduler",
+        "appointments",
+        "booking",
+        "meetings",
+        "calendar-booking"
+      ],
+      "hosts": [
+        "acuityscheduling.com",
+        "cron-job.org",
+        "cronitor.io",
+        "doodle.com",
+        "healthchecks.io",
+        "setmore.com",
+        "youcanbook.me"
+      ]
+    },
+    {
+      "tag": "school",
+      "aliases": [
+        "k12",
+        "homework",
+        "study-help",
+        "elementary"
+      ],
+      "hosts": [
+        "brainpop.com",
+        "ixl.com",
+        "khanacademy.org"
+      ]
+    },
+    {
+      "tag": "science",
+      "aliases": [
+        "stem",
+        "scientific",
+        "crowdsourced-science",
+        "volunteer-research"
+      ],
+      "hosts": [
+        "inaturalist.org",
+        "livescience.com",
+        "newscientist.com",
+        "popsci.com",
+        "science.org",
+        "scientificamerican.com",
+        "zooniverse.org"
+      ]
+    },
+    {
+      "tag": "scifi",
+      "aliases": [
+        "sciencefiction",
+        "fantasy",
+        "speculativefiction",
+        "spacefiction"
+      ],
+      "hosts": [
+        "io9.com",
+        "syfy.com",
+        "tor.com"
+      ]
+    },
+    {
+      "tag": "screenplays",
+      "aliases": [
+        "scripts",
+        "screenplay",
+        "moviescripts",
+        "shootingscript"
+      ],
+      "hosts": [
+        "imsdb.com",
+        "scriptslug.com",
+        "simplyscripts.com"
+      ]
+    },
+    {
+      "tag": "search",
+      "aliases": [
+        "search-engine",
+        "full-text-search",
+        "indexing",
+        "elasticsearch"
+      ],
+      "hosts": [
+        "algolia.com",
+        "elastic.co",
+        "meilisearch.com",
+        "typesense.org"
+      ]
+    },
+    {
+      "tag": "secondhand",
+      "aliases": [
+        "thrift",
+        "resale",
+        "used",
+        "consignment"
+      ],
+      "hosts": [
+        "depop.com",
+        "poshmark.com",
+        "therealreal.com",
+        "thredup.com",
+        "vinted.com"
+      ]
+    },
+    {
+      "tag": "security",
+      "aliases": [
+        "infosec",
+        "cybersecurity",
+        "pentesting",
+        "vulnerability"
+      ],
+      "hosts": [
+        "hackerone.com",
+        "kali.org",
+        "metasploit.com",
+        "owasp.org",
+        "snyk.io"
+      ]
+    },
+    {
+      "tag": "self-hosted",
+      "aliases": [
+        "selfhosting",
+        "homelab",
+        "self-managed",
+        "on-prem"
+      ],
+      "hosts": [
+        "casaos.io",
+        "nextcloud.com",
+        "portainer.io",
+        "truenas.com",
+        "unraid.net"
+      ]
+    },
+    {
+      "tag": "self-publishing",
+      "aliases": [
+        "selfpublish",
+        "indiepublishing",
+        "kdp",
+        "independentpublishing"
+      ],
+      "hosts": [
+        "draft2digital.com",
+        "kdp.amazon.com",
+        "smashwords.com"
+      ]
+    },
+    {
+      "tag": "sewing",
+      "aliases": [
+        "knitting",
+        "needlework",
+        "yarn",
+        "stitching"
+      ],
+      "hosts": [
+        "mccallpattern.com",
+        "ravelry.com",
+        "simplicity.com",
+        "spoonflower.com"
+      ]
+    },
+    {
+      "tag": "sheetmusic",
+      "aliases": [
+        "scores",
+        "notation",
+        "musicnotation",
+        "sheets"
+      ],
+      "hosts": [
+        "8notes.com",
+        "imslp.org",
+        "musescore.com",
+        "sheetmusicplus.com"
+      ]
+    },
+    {
+      "tag": "shipping",
+      "aliases": [
+        "maritime",
+        "freight",
+        "cargo",
+        "vessels"
+      ],
+      "hosts": [
+        "lloydslist.com",
+        "seatrade-maritime.com",
+        "tradewindsnews.com"
+      ]
+    },
+    {
+      "tag": "shoes",
+      "aliases": [
+        "footwear",
+        "sneakers",
+        "boots",
+        "heels"
+      ],
+      "hosts": [
+        "allbirds.com",
+        "dsw.com",
+        "footlocker.com",
+        "zappos.com"
+      ]
+    },
+    {
+      "tag": "shopping",
+      "aliases": [
+        "shop",
+        "store",
+        "marketplace"
+      ],
+      "hosts": [
+        "alibaba.com",
+        "amazon.com",
+        "ebay.com",
+        "target.com",
+        "walmart.com"
+      ]
+    },
+    {
+      "tag": "skiing",
+      "aliases": [
+        "snowboarding",
+        "slopes",
+        "wintersports",
+        "snow"
+      ],
+      "hosts": [
+        "epicpass.com",
+        "ikonpass.com",
+        "onthesnow.com"
+      ]
+    },
+    {
+      "tag": "small-business",
+      "aliases": [
+        "entrepreneur",
+        "smb",
+        "mainstreet",
+        "independentbusiness"
+      ],
+      "hosts": [
+        "nfib.com",
+        "sba.gov",
+        "score.org"
+      ]
+    },
+    {
+      "tag": "smart-home",
+      "aliases": [
+        "home-automation",
+        "iot",
+        "domotics",
+        "connected-home"
+      ],
+      "hosts": [
+        "home-assistant.io",
+        "homebridge.io",
+        "hubitat.com",
+        "openhab.org"
+      ]
+    },
+    {
+      "tag": "soccer",
+      "aliases": [
+        "futbol",
+        "worldcup",
+        "mls",
+        "pitch"
+      ],
+      "hosts": [
+        "fifa.com",
+        "goal.com",
+        "mlssoccer.com",
+        "premierleague.com"
+      ]
+    },
+    {
+      "tag": "social",
+      "aliases": [
+        "network",
+        "feeds",
+        "friends",
+        "profiles"
+      ],
+      "hosts": [
+        "bsky.app",
+        "facebook.com",
+        "instagram.com",
+        "mastodon.social",
+        "mewe.com"
+      ]
+    },
+    {
+      "tag": "soundeffects",
+      "aliases": [
+        "sfx",
+        "audioclips",
+        "foley",
+        "soundclips"
+      ],
+      "hosts": [
+        "freesound.org",
+        "soundbible.com",
+        "zapsplat.com"
+      ]
+    },
+    {
+      "tag": "spa",
+      "aliases": [
+        "massage",
+        "wellness",
+        "relaxation",
+        "spatreatment"
+      ],
+      "hosts": [
+        "booksy.com",
+        "mindbodyonline.com",
+        "vagaro.com"
+      ]
+    },
+    {
+      "tag": "space",
+      "aliases": [
+        "astronomy",
+        "cosmos",
+        "spaceflight",
+        "universe"
+      ],
+      "hosts": [
+        "esa.int",
+        "nasa.gov",
+        "skyandtelescope.org",
+        "space.com",
+        "spacex.com"
+      ]
+    },
+    {
+      "tag": "speedrun",
+      "aliases": [
+        "speedrunning",
+        "runs",
+        "tas",
+        "fastcompletion"
+      ],
+      "hosts": [
+        "speeddemosarchive.com",
+        "speedrun.com",
+        "tasvideos.org"
+      ]
+    },
+    {
+      "tag": "sports",
+      "aliases": [
+        "athletics",
+        "leagues",
+        "scores",
+        "sportsnews"
+      ],
+      "hosts": [
+        "bleacherreport.com",
+        "cbssports.com",
+        "espn.com",
+        "skysports.com"
+      ]
+    },
+    {
+      "tag": "spreadsheets",
+      "aliases": [
+        "sheets",
+        "tables",
+        "spreadsheet-app",
+        "data-tables"
+      ],
+      "hosts": [
+        "airtable.com",
+        "rows.com",
+        "sheets.google.com",
+        "smartsheet.com"
+      ]
+    },
+    {
+      "tag": "ssl",
+      "aliases": [
+        "tls",
+        "certificates",
+        "https",
+        "cert-authority"
+      ],
+      "hosts": [
+        "digicert.com",
+        "letsencrypt.org",
+        "ssllabs.com"
+      ]
+    },
+    {
+      "tag": "standards",
+      "aliases": [
+        "specifications",
+        "standardization",
+        "protocols"
+      ],
+      "hosts": [
+        "iec.ch",
+        "ietf.org",
+        "iso.org"
+      ]
+    },
+    {
+      "tag": "startup",
+      "aliases": [
+        "venture",
+        "vc",
+        "funding",
+        "founders"
+      ],
+      "hosts": [
+        "cbinsights.com",
+        "crunchbase.com",
+        "eu-startups.com",
+        "pitchbook.com",
+        "producthunt.com",
+        "sifted.eu",
+        "techcrunch.com"
+      ]
+    },
+    {
+      "tag": "static-site",
+      "aliases": [
+        "jamstack",
+        "site-generator",
+        "ssg",
+        "hugo"
+      ],
+      "hosts": [
+        "11ty.dev",
+        "astro.build",
+        "gatsbyjs.com",
+        "gohugo.io",
+        "jekyllrb.com"
+      ]
+    },
+    {
+      "tag": "statistics",
+      "aliases": [
+        "data",
+        "figures",
+        "metrics",
+        "indicators",
+        "stats",
+        "data-analysis",
+        "statistical-methods"
+      ],
+      "hosts": [
+        "ceicdata.com",
+        "fred.stlouisfed.org",
+        "gapminder.org",
+        "r-project.org",
+        "statcounter.com",
+        "statista.com",
+        "tradingeconomics.com"
+      ]
+    },
+    {
+      "tag": "stockfootage",
+      "aliases": [
+        "stockvideo",
+        "footage",
+        "broll",
+        "videoclips"
+      ],
+      "hosts": [
+        "coverr.co",
+        "mixkit.co",
+        "videvo.net"
+      ]
+    },
+    {
+      "tag": "stockphotos",
+      "aliases": [
+        "freephotos",
+        "stockimages",
+        "royaltyfree",
+        "imagelibrary",
+        "stock-footage",
+        "video-clips"
+      ],
+      "hosts": [
+        "gettyimages.com",
+        "istockphoto.com",
+        "pexels.com",
+        "pixabay.com",
+        "shutterstock.com",
+        "storyblocks.com",
+        "unsplash.com"
+      ]
+    },
+    {
+      "tag": "streaming",
+      "aliases": [
+        "subscription",
+        "ondemand",
+        "binge",
+        "watchonline"
+      ],
+      "hosts": [
+        "disneyplus.com",
+        "hulu.com",
+        "max.com",
+        "netflix.com",
+        "paramountplus.com",
+        "peacocktv.com",
+        "pluto.tv",
+        "primevideo.com",
+        "tubitv.com",
+        "tv.apple.com"
+      ]
+    },
+    {
+      "tag": "streaming-tools",
+      "aliases": [
+        "obs",
+        "broadcastsoftware",
+        "streamsetup",
+        "streamingsoftware"
+      ],
+      "hosts": [
+        "obsproject.com",
+        "restream.io",
+        "streamlabs.com"
+      ]
+    },
+    {
+      "tag": "student-loan",
+      "aliases": [
+        "tuition",
+        "studentdebt",
+        "financialaid",
+        "loans"
+      ],
+      "hosts": [
+        "credible.com",
+        "savingforcollege.com",
+        "studentaid.gov"
+      ]
+    },
+    {
+      "tag": "subtitles",
+      "aliases": [
+        "captions",
+        "subs",
+        "srt",
+        "closedcaptions",
+        "transcription",
+        "meeting-notes",
+        "transcripts",
+        "speech-to-text"
+      ],
+      "hosts": [
+        "addic7ed.com",
+        "opensubtitles.org",
+        "rev.com",
+        "subscene.com"
+      ]
+    },
+    {
+      "tag": "supply-chain",
+      "aliases": [
+        "logistics",
+        "procurement",
+        "distribution",
+        "sourcing"
+      ],
+      "hosts": [
+        "freightwaves.com",
+        "joc.com",
+        "logisticsmgmt.com",
+        "supplychaindive.com"
+      ]
+    },
+    {
+      "tag": "surveys",
+      "aliases": [
+        "polls",
+        "forms",
+        "feedback",
+        "questionnaires"
+      ],
+      "hosts": [
+        "jotform.com",
+        "qualtrics.com",
+        "surveymonkey.com",
+        "typeform.com"
+      ]
+    },
+    {
+      "tag": "sustainability",
+      "aliases": [
+        "sustainable-development",
+        "green-living",
+        "eco-friendly"
+      ],
+      "hosts": [
+        "earthday.org",
+        "greenpeace.org",
+        "sdgs.un.org"
+      ]
+    },
+    {
+      "tag": "swift",
+      "aliases": [
+        "ios-language",
+        "apple-language",
+        "spm",
+        "swiftui"
+      ],
+      "hosts": [
+        "hackingwithswift.com",
+        "swift.org",
+        "swiftpackageindex.com"
+      ]
+    },
+    {
+      "tag": "tabloid",
+      "aliases": [
+        "gossip",
+        "celebrity",
+        "scandal",
+        "sensational"
+      ],
+      "hosts": [
+        "dailymail.co.uk",
+        "mirror.co.uk",
+        "nypost.com",
+        "thesun.co.uk",
+        "tmz.com"
+      ]
+    },
+    {
+      "tag": "tariff",
+      "aliases": [
+        "trade",
+        "imports",
+        "exports",
+        "customs"
+      ],
+      "hosts": [
+        "globaltrademag.com",
+        "trade.gov",
+        "wto.org"
+      ]
+    },
+    {
+      "tag": "tasks",
+      "aliases": [
+        "todo",
+        "to-do-list",
+        "checklist",
+        "reminders"
+      ],
+      "hosts": [
+        "any.do",
+        "rememberthemilk.com",
+        "ticktick.com",
+        "todoist.com"
+      ]
+    },
+    {
+      "tag": "tax",
+      "aliases": [
+        "taxes",
+        "irs",
+        "levy",
+        "duty"
+      ],
+      "hosts": [
+        "taxfoundation.org",
+        "taxnotes.com",
+        "taxpolicycenter.org"
+      ]
+    },
+    {
+      "tag": "tea",
+      "aliases": [
+        "chai",
+        "herbaltea",
+        "teahouse",
+        "steeping"
+      ],
+      "hosts": [
+        "adagio.com",
+        "davidstea.com",
+        "harney.com"
+      ]
+    },
+    {
+      "tag": "telehealth",
+      "aliases": [
+        "telemedicine",
+        "virtualcare",
+        "onlinedoctor",
+        "videovisit"
+      ],
+      "hosts": [
+        "amwell.com",
+        "mdlive.com",
+        "teladoc.com"
+      ]
+    },
+    {
+      "tag": "television",
+      "aliases": [
+        "tv",
+        "shows",
+        "series",
+        "tvshows"
+      ],
+      "hosts": [
+        "epguides.com",
+        "metv.com",
+        "thetvdb.com",
+        "tv.com",
+        "tvguide.com"
+      ]
+    },
+    {
+      "tag": "temp-email",
+      "aliases": [
+        "disposable-email",
+        "burner-email",
+        "anonymous-email",
+        "throwaway-email"
+      ],
+      "hosts": [
+        "10minutemail.com",
+        "guerrillamail.com",
+        "mailinator.com",
+        "temp-mail.org"
+      ]
+    },
+    {
+      "tag": "tennis",
+      "aliases": [
+        "atp",
+        "wta",
+        "racquet",
+        "grandslam"
+      ],
+      "hosts": [
+        "atptour.com",
+        "tennis.com",
+        "wtatennis.com"
+      ]
+    },
+    {
+      "tag": "terminal",
+      "aliases": [
+        "shell",
+        "cli",
+        "command-line",
+        "bash"
+      ],
+      "hosts": [
+        "iterm2.com",
+        "starship.rs",
+        "warp.dev"
+      ]
+    },
+    {
+      "tag": "test-prep",
+      "aliases": [
+        "exam-prep",
+        "college-prep",
+        "standardized-tests",
+        "exam-practice"
+      ],
+      "hosts": [
+        "kaplan.com",
+        "magoosh.com",
+        "prepscholar.com",
+        "princetonreview.com"
+      ]
+    },
+    {
+      "tag": "testing",
+      "aliases": [
+        "qa",
+        "test-automation",
+        "unit-testing",
+        "e2e-testing"
+      ],
+      "hosts": [
+        "cypress.io",
+        "jestjs.io",
+        "playwright.dev",
+        "pytest.org",
+        "selenium.dev"
+      ]
+    },
+    {
+      "tag": "textbooks",
+      "aliases": [
+        "open-textbooks",
+        "free-textbooks",
+        "course-materials"
+      ],
+      "hosts": [
+        "merlot.org",
+        "oercommons.org",
+        "openstax.org"
+      ]
+    },
+    {
+      "tag": "thesis",
+      "aliases": [
+        "dissertation",
+        "theses",
+        "dissertations"
+      ],
+      "hosts": [
+        "ethos.bl.uk",
+        "ndltd.org",
+        "proquest.com"
+      ]
+    },
+    {
+      "tag": "time-blocking",
+      "aliases": [
+        "calendar-blocking",
+        "schedule-optimization",
+        "focus-time",
+        "auto-scheduling"
+      ],
+      "hosts": [
+        "clockwise.com",
+        "reclaim.ai",
+        "usemotion.com"
+      ]
+    },
+    {
+      "tag": "time-tracking",
+      "aliases": [
+        "timesheets",
+        "timer",
+        "hours-tracking",
+        "productivity-tracking"
+      ],
+      "hosts": [
+        "clockify.me",
+        "rescuetime.com",
+        "timedoctor.com",
+        "toggl.com"
+      ]
+    },
+    {
+      "tag": "timezone",
+      "aliases": [
+        "time-zone",
+        "world-clock",
+        "time-converter",
+        "time-difference"
+      ],
+      "hosts": [
+        "everytimezone.com",
+        "timeanddate.com",
+        "worldtimebuddy.com"
+      ]
+    },
+    {
+      "tag": "torrent",
+      "aliases": [
+        "bittorrent",
+        "p2p",
+        "seedbox",
+        "magnet-links",
+        "bittorrentclient",
+        "downloadmanager",
+        "p2pclient",
+        "torrentapp"
+      ],
+      "hosts": [
+        "deluge-torrent.org",
+        "qbittorrent.org",
+        "transmissionbt.com",
+        "utorrent.com"
+      ]
+    },
+    {
+      "tag": "torrents",
+      "aliases": [
+        "p2p",
+        "filesharing",
+        "seeding",
+        "downloading"
+      ],
+      "hosts": [
+        "1337x.to",
+        "thepiratebay.org",
+        "yts.mx"
+      ]
+    },
+    {
+      "tag": "trains",
+      "aliases": [
+        "railway",
+        "rail",
+        "traintickets",
+        "railpass"
+      ],
+      "hosts": [
+        "amtrak.com",
+        "eurail.com",
+        "raileurope.com",
+        "trainline.com"
+      ]
+    },
+    {
+      "tag": "transit",
+      "aliases": [
+        "publictransport",
+        "subway",
+        "busroutes",
+        "commute"
+      ],
+      "hosts": [
+        "citymapper.com",
+        "moovitapp.com",
+        "transit.app"
+      ]
+    },
+    {
+      "tag": "translation",
+      "aliases": [
+        "translate",
+        "interpreter",
+        "multilingual",
+        "interpreters",
+        "language-translation"
+      ],
+      "hosts": [
+        "deepl.com",
+        "linguee.com",
+        "proz.com",
+        "reverso.net",
+        "translate.google.com"
+      ]
+    },
+    {
+      "tag": "travel",
+      "aliases": [
+        "trip",
+        "vacation",
+        "journey",
+        "tourism"
+      ],
+      "hosts": [
+        "atlasobscura.com",
+        "lonelyplanet.com",
+        "tripadvisor.com",
+        "viator.com"
+      ]
+    },
+    {
+      "tag": "trucking",
+      "aliases": [
+        "hauling",
+        "trucks",
+        "motorcarrier",
+        "drayage"
+      ],
+      "hosts": [
+        "ccjdigital.com",
+        "overdriveonline.com",
+        "ttnews.com"
+      ]
+    },
+    {
+      "tag": "tutoring",
+      "aliases": [
+        "online-tutoring",
+        "homework-help",
+        "private-lessons",
+        "tutors"
+      ],
+      "hosts": [
+        "chegg.com",
+        "tutor.com",
+        "varsitytutors.com",
+        "wyzant.com"
+      ]
+    },
+    {
+      "tag": "tv-tracking",
+      "aliases": [
+        "episodetracker",
+        "watchlist",
+        "showtracker",
+        "episodeguide"
+      ],
+      "hosts": [
+        "episodate.com",
+        "next-episode.net",
+        "tvtime.com"
+      ]
+    },
+    {
+      "tag": "typography",
+      "aliases": [
+        "fonts",
+        "type-design",
+        "typefaces"
+      ],
+      "hosts": [
+        "fonts.google.com",
+        "fontsquirrel.com",
+        "myfonts.com",
+        "typewolf.com"
+      ]
+    },
+    {
+      "tag": "university",
+      "aliases": [
+        "college",
+        "higher-education",
+        "campus",
+        "researchers",
+        "scholars",
+        "scholarly-network",
+        "academic-profile"
+      ],
+      "hosts": [
+        "academia.edu",
+        "cam.ac.uk",
+        "harvard.edu",
+        "mit.edu",
+        "orcid.org",
+        "ox.ac.uk",
+        "stanford.edu"
+      ]
+    },
+    {
+      "tag": "usenet",
+      "aliases": [
+        "newsgroups",
+        "nzb",
+        "newsservers",
+        "binaries"
+      ],
+      "hosts": [
+        "easynews.com",
+        "newshosting.com",
+        "sabnzbd.org",
+        "usenetserver.com"
+      ]
+    },
+    {
+      "tag": "user-testing",
+      "aliases": [
+        "usability-testing",
+        "user-research"
+      ],
+      "hosts": [
+        "hotjar.com",
+        "maze.co",
+        "usertesting.com"
+      ]
+    },
+    {
+      "tag": "vacation-rentals",
+      "aliases": [
+        "rentals",
+        "holidayhomes",
+        "shortterm",
+        "homeswap"
+      ],
+      "hosts": [
+        "airbnb.com",
+        "homeexchange.com",
+        "vrbo.com"
+      ]
+    },
+    {
+      "tag": "vegan",
+      "aliases": [
+        "vegetarian",
+        "plantbased",
+        "meatfree",
+        "veggie"
+      ],
+      "hosts": [
+        "forksoverknives.com",
+        "minimalistbaker.com",
+        "ohsheglows.com"
+      ]
+    },
+    {
+      "tag": "veterinary",
+      "aliases": [
+        "vet",
+        "animalhealth",
+        "veterinarian",
+        "petmedicine"
+      ],
+      "hosts": [
+        "banfield.com",
+        "petmd.com",
+        "vcahospitals.com"
+      ]
+    },
+    {
+      "tag": "video",
+      "aliases": [
+        "watch",
+        "clips",
+        "footage",
+        "stream",
+        "short-form-video",
+        "reels",
+        "stories",
+        "video-clips"
+      ],
+      "hosts": [
+        "bitchute.com",
+        "dailymotion.com",
+        "kwai.com",
+        "odysee.com",
+        "rumble.com",
+        "snapchat.com",
+        "tiktok.com",
+        "vimeo.com",
+        "youtube.com"
+      ]
+    },
+    {
+      "tag": "video-call",
+      "aliases": [
+        "video-chat",
+        "conferencing",
+        "meetings",
+        "webcam"
+      ],
+      "hosts": [
+        "meet.google.com",
+        "webex.com",
+        "whereby.com",
+        "zoom.us"
+      ]
+    },
+    {
+      "tag": "vinyl",
+      "aliases": [
+        "records",
+        "lp",
+        "vinylrecords",
+        "turntable"
+      ],
+      "hosts": [
+        "discogs.com",
+        "recordstoreday.com",
+        "vinylmeplease.com"
+      ]
+    },
+    {
+      "tag": "virtualization",
+      "aliases": [
+        "vm",
+        "hypervisor",
+        "virtual-machine",
+        "vagrant"
+      ],
+      "hosts": [
+        "proxmox.com",
+        "qemu.org",
+        "virtualbox.org",
+        "vmware.com",
+        "xenproject.org"
+      ]
+    },
+    {
+      "tag": "voip",
+      "aliases": [
+        "internet-calling",
+        "phone-calls",
+        "voice-calls",
+        "calling"
+      ],
+      "hosts": [
+        "ooma.com",
+        "skype.com",
+        "voice.google.com",
+        "vonage.com"
+      ]
+    },
+    {
+      "tag": "volunteering",
+      "aliases": [
+        "volunteer",
+        "volunteer-work",
+        "service"
+      ],
+      "hosts": [
+        "idealist.org",
+        "unv.org",
+        "volunteermatch.org"
+      ]
+    },
+    {
+      "tag": "vpn",
+      "aliases": [
+        "tunnel",
+        "encrypted-tunnel",
+        "privacy-network",
+        "secure-connection"
+      ],
+      "hosts": [
+        "expressvpn.com",
+        "mullvad.net",
+        "nordvpn.com",
+        "protonvpn.com",
+        "tailscale.com",
+        "wireguard.com"
+      ]
+    },
+    {
+      "tag": "watch-guide",
+      "aliases": [
+        "wheretowatch",
+        "streamingguide",
+        "availability",
+        "findstreaming"
+      ],
+      "hosts": [
+        "canistream.it",
+        "justwatch.com",
+        "reelgood.com"
+      ]
+    },
+    {
+      "tag": "wealth",
+      "aliases": [
+        "assets",
+        "affluence",
+        "richness",
+        "networth"
+      ],
+      "hosts": [
+        "citywire.com",
+        "financial-planning.com",
+        "thinkadvisor.com",
+        "wealthmanagement.com"
+      ]
+    },
+    {
+      "tag": "weather",
+      "aliases": [
+        "forecast",
+        "storms",
+        "climatology",
+        "forecasting"
+      ],
+      "hosts": [
+        "accuweather.com",
+        "metoffice.gov.uk",
+        "noaa.gov",
+        "weather.com",
+        "weather.gov",
+        "weatherunderground.com",
+        "windy.com",
+        "wmo.int",
+        "wunderground.com"
+      ]
+    },
+    {
+      "tag": "webassembly",
+      "aliases": [
+        "wasm",
+        "wasi",
+        "bytecode",
+        "near-native"
+      ],
+      "hosts": [
+        "wasmer.io",
+        "wasmtime.dev",
+        "webassembly.org"
+      ]
+    },
+    {
+      "tag": "webcomics",
+      "aliases": [
+        "webtoon",
+        "onlinecomics",
+        "digitalcomics",
+        "strips"
+      ],
+      "hosts": [
+        "gocomics.com",
+        "tapas.io",
+        "webtoons.com"
+      ]
+    },
+    {
+      "tag": "webdev",
+      "aliases": [
+        "frontend",
+        "html",
+        "css",
+        "web-development"
+      ],
+      "hosts": [
+        "caniuse.com",
+        "css-tricks.com",
+        "developer.mozilla.org",
+        "tailwindcss.com",
+        "w3.org"
+      ]
+    },
+    {
+      "tag": "webinar",
+      "aliases": [
+        "online-events",
+        "virtual-events",
+        "live-events",
+        "broadcast"
+      ],
+      "hosts": [
+        "crowdcast.io",
+        "gotowebinar.com",
+        "livestorm.co"
+      ]
+    },
+    {
+      "tag": "webnovel",
+      "aliases": [
+        "onlinenovel",
+        "webfiction",
+        "serialfiction",
+        "litnovel"
+      ],
+      "hosts": [
+        "novelupdates.com",
+        "royalroad.com",
+        "scribblehub.com",
+        "webnovel.com"
+      ]
+    },
+    {
+      "tag": "webserver",
+      "aliases": [
+        "nginx",
+        "apache",
+        "reverse-proxy",
+        "load-balancer"
+      ],
+      "hosts": [
+        "apache.org",
+        "caddyserver.com",
+        "haproxy.org",
+        "nginx.org",
+        "traefik.io"
+      ]
+    },
+    {
+      "tag": "website-builder",
+      "aliases": [
+        "site-builder",
+        "landing-page",
+        "portfolio-site",
+        "web-design"
+      ],
+      "hosts": [
+        "carrd.co",
+        "squarespace.com",
+        "webflow.com",
+        "wix.com"
+      ]
+    },
+    {
+      "tag": "weddings",
+      "aliases": [
+        "bridal",
+        "marriage",
+        "engagement",
+        "ceremony"
+      ],
+      "hosts": [
+        "brides.com",
+        "theknot.com",
+        "weddingwire.com",
+        "zola.com"
+      ]
+    },
+    {
+      "tag": "windows",
+      "aliases": [
+        "win",
+        "microsoft-os",
+        "pc",
+        "win11"
+      ],
+      "hosts": [
+        "microsoft.com",
+        "neowin.net",
+        "windowscentral.com"
+      ]
+    },
+    {
+      "tag": "wine",
+      "aliases": [
+        "vino",
+        "winery",
+        "vineyard",
+        "tasting"
+      ],
+      "hosts": [
+        "decanter.com",
+        "vivino.com",
+        "wine.com",
+        "winespectator.com"
+      ]
+    },
+    {
+      "tag": "woodworking",
+      "aliases": [
+        "carpentry",
+        "woodwork",
+        "workshop",
+        "sawing"
+      ],
+      "hosts": [
+        "finewoodworking.com",
+        "popularwoodworking.com",
+        "rockler.com"
+      ]
+    },
+    {
+      "tag": "world",
+      "aliases": [
+        "international",
+        "global",
+        "foreign",
+        "overseas"
+      ],
+      "hosts": [
+        "aljazeera.com",
+        "dw.com",
+        "foreignaffairs.com",
+        "foreignpolicy.com",
+        "france24.com",
+        "globalvoices.org",
+        "news.sky.com",
+        "worldpoliticsreview.com"
+      ]
+    }
+  ]
+}

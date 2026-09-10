@@ -105,6 +105,88 @@ test.describe('the tag suggestion engine', () => {
         expect(got.enough[0].keys).toHaveLength(27);
     });
 
+    test('the catalogue names a subject for a site the collection says nothing about', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((rows) => window.TagSuggestions.suggest(rows, {
+            catalogue: [{ tag: 'dev', aliases: ['code', 'programming'], hosts: ['github.com'] }],
+        }), items([
+            ['a', 'https://github.com/one', []],
+            ['b', 'https://github.com/two', []],
+        ]));
+        // No group agrees on anything here and no rule was written: the
+        // evidence is the shipped file, so two bookmarks are enough and the
+        // three-bookmark floor does not apply.
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toMatchObject({ tag: 'dev', pattern: 'github.com' });
+        expect(groups[0].reason).toEqual({ kind: 'catalogue', subject: 'dev' });
+        expect(groups[0].keys.sort()).toEqual(['a', 'b']);
+    });
+
+    test('the catalogue speaks in the words you already use', async ({ page }) => {
+        await open(page);
+        const got = await page.evaluate((sets) => ({
+            yours: window.TagSuggestions.suggest(sets.yours, { catalogue: sets.catalogue }),
+            theirs: window.TagSuggestions.suggest(sets.theirs, { catalogue: sets.catalogue }),
+        }), {
+            catalogue: [{ tag: 'dev', aliases: ['code', 'programming'], hosts: ['github.com'] }],
+            // #code is an alias of the catalogue's `dev`, and it is a word this
+            // collection already uses -- on an unrelated site, so nothing about
+            // github.com itself says it.
+            yours: items([
+                ['a', 'https://github.com/one', []],
+                ['b', 'https://github.com/two', []],
+                ['c', 'https://unrelated.example/x', ['code']],
+            ]),
+            theirs: items([
+                ['a', 'https://github.com/one', []],
+                ['b', 'https://github.com/two', []],
+            ]),
+        });
+        expect(got.yours[0].tag).toBe('code');
+        // Still accountable: the row says which subject it renamed.
+        expect(got.yours[0].reason).toEqual({ kind: 'catalogue', subject: 'dev' });
+        // Without that word in the collection, the catalogue's own stands.
+        expect(got.theirs[0].tag).toBe('dev');
+    });
+
+    test('what you did yourself outranks the catalogue', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((rows) => window.TagSuggestions.suggest(rows, {
+            catalogue: [{ tag: 'dev', aliases: [], hosts: ['github.com'] }],
+        }), items([
+            ['a', 'https://github.com/one', ['work']],
+            ['b', 'https://github.com/two', ['work']],
+            ['c', 'https://github.com/three', ['work']],
+            ['d', 'https://github.com/four', []],
+        ]));
+        // The collection has settled github.com on #work, so the catalogue
+        // says nothing about it -- offering #dev to all four would be the
+        // shipped vocabulary splitting a tidy collection in two.
+        expect(groups).toHaveLength(1);
+        expect(groups[0].reason.kind).toBe('derived');
+        expect(groups[0].tag).toBe('work');
+    });
+
+    test('a broken catalogue costs its own rows and nothing else', async ({ page }) => {
+        await open(page);
+        const got = await page.evaluate((rows) => ({
+            missing: window.TagSuggestions.suggest(rows).length,
+            rubbish: window.TagSuggestions.suggest(rows, { catalogue: 'not a list' }).length,
+            halfBuilt: window.TagSuggestions.suggest(rows, {
+                catalogue: [{ hosts: ['github.com'] }, { tag: 'dev' }, null],
+            }).length,
+        }), items([
+            ['a', 'https://github.com/one', ['code']],
+            ['b', 'https://github.com/two', ['code']],
+            ['c', 'https://github.com/three', ['code']],
+            ['d', 'https://github.com/four', []],
+        ]));
+        // The reader's own tags still produce their row in all three.
+        expect(got.missing).toBe(1);
+        expect(got.rubbish).toBe(1);
+        expect(got.halfBuilt).toBe(1);
+    });
+
     test('a rule that only restates a group the app already noticed is one row, not two', async ({ page }) => {
         await open(page);
         const groups = await page.evaluate((rows) => window.TagSuggestions.suggest(rows, {
@@ -253,6 +335,82 @@ test.describe('the suggestions panel', () => {
         expect(drawn.rows).toBe(25);
         expect(drawn.notice).toContain('25');
         expect(drawn.notice).toContain('30');
+    });
+
+    test('the shipped catalogue is served, and the panel reads it', async ({ page }) => {
+        await open(page);
+        const doc = await page.evaluate(async () => {
+            const response = await fetch('/static/data/tag-patterns.json');
+            return response.ok ? response.json() : null;
+        });
+        expect(doc?.version).toBe(1);
+        expect(Array.isArray(doc.tags)).toBe(true);
+        // Big enough to be worth shipping, and every entry usable: a subject
+        // with no hosts can never match, and a host under two subjects would
+        // propose whichever was read first.
+        expect(doc.tags.length).toBeGreaterThan(300);
+        const hosts = new Set();
+        const twice = [];
+        doc.tags.forEach((entry) => {
+            expect(entry.hosts.length).toBeGreaterThan(0);
+            expect(entry.aliases).not.toContain(entry.tag);
+            entry.hosts.forEach((host) => {
+                if (hosts.has(host)) twice.push(host);
+                hosts.add(host);
+            });
+        });
+        expect(twice).toEqual([]);
+
+        // And it reaches the engine: a bookmark on a site the catalogue knows
+        // is offered that site's subject.
+        const proposed = await page.evaluate((catalogue) => window.TagSuggestions.suggest([
+            { key: 'a', url: 'https://github.com/trending', tags: [] },
+        ], { catalogue }).map((group) => group.tag), doc.tags);
+        expect(proposed.length).toBe(1);
+    });
+
+    test('a proposal you turn down stays down, and comes back on request', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://refused.example/one', tags: ['code'] },
+                { name: 'Two', url: 'https://refused.example/two', tags: ['code'] },
+                { name: 'Three', url: 'https://refused.example/three', tags: ['code'] },
+                { name: 'Four', url: 'https://refused.example/four', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+
+        await openSuggestionsTab(page);
+        const offered = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'refused.example' });
+        await expect(offered).toHaveCount(1, { timeout: 15_000 });
+        await offered.first().locator('[data-tag-suggestion-dismiss]').click();
+        await expect(offered).toHaveCount(0, { timeout: 15_000 });
+
+        // Recorded as pattern|tag, so it survives a reload and does not depend
+        // on which bookmarks happened to be under it.
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.settings.dismissedTagSuggestions || []),
+        { timeout: 15_000 }).toContain('refused.example|code');
+        await page.reload({ waitUntil: 'networkidle' });
+        await waitForConfigReady(page);
+        await openSuggestionsTab(page);
+        await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'refused.example' })).toHaveCount(0, { timeout: 15_000 });
+
+        // And the line under the list takes it back.
+        await page.locator('[data-tag-suggestions-restore]').click();
+        await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'refused.example' })).toHaveCount(1, { timeout: 15_000 });
     });
 
     test('with nothing to propose it still offers the rules editor', async ({ page }) => {

@@ -20389,8 +20389,36 @@ class DashboardConfig {
         this._tagSuggestionGroups = window.ConfigTagSuggestions.render(container, {
             items: this.tagSuggestionItems(),
             rules: this.dash.settings?.tagRules || [],
+            catalogue: this._tagCatalogue || [],
+            dismissed: this.dash.settings?.dismissedTagSuggestions || [],
             t: (key, fallback) => this.t(key, fallback),
         });
+    }
+
+    /*
+     * The shipped catalogue of subjects, fetched once per page load.
+     *
+     * Data rather than code, so it is served the way overview-features.json
+     * is and read the same way. A missing or malformed file costs the
+     * catalogue rows and nothing else: the rules and the reader's own tags
+     * are worked out here and need no file at all.
+     */
+    ensureTagCatalogue() {
+        if (this._tagCataloguePromise) return this._tagCataloguePromise;
+        this._tagCataloguePromise = fetch('/static/data/tag-patterns.json', { cache: 'no-cache' })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                const tags = Array.isArray(data?.tags) ? data.tags : [];
+                this._tagCatalogue = tags;
+                return tags;
+            })
+            .catch(() => {
+                console.warn('nextDash: the tag catalogue could not be read; '
+                    + 'suggestions fall back to your own tags and rules');
+                this._tagCatalogue = [];
+                return [];
+            });
+        return this._tagCataloguePromise;
     }
 
     /*
@@ -20406,6 +20434,17 @@ class DashboardConfig {
             || (container.id === 'config-bm-suggestions' ? container : null);
         if (!host) return;
         this.renderTagSuggestionsSafe();
+        // Drawn twice on a cold load: once from what is already known, and
+        // again when the catalogue arrives, rather than leaving the tab blank
+        // behind a fetch.
+        if (!this._tagCatalogue) {
+            void this.ensureTagCatalogue().then(() => {
+                if (document.getElementById('config-bm-suggestions')) {
+                    this.renderTagSuggestionsSafe();
+                    this.syncTagSuggestionCount();
+                }
+            });
+        }
         host.addEventListener('click', (event) => {
             if (event.target.closest('[data-tag-suggestions-info]')) {
                 this.openTagSuggestionsInfo();
@@ -20415,6 +20454,16 @@ class DashboardConfig {
             if (button) {
                 const index = Number(button.getAttribute('data-tag-suggestion-apply'));
                 void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            const refuse = event.target.closest('[data-tag-suggestion-dismiss]');
+            if (refuse) {
+                const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
+                void this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            if (event.target.closest('[data-tag-suggestions-restore]')) {
+                void this.restoreTagSuggestions();
                 return;
             }
             const removeRule = event.target.closest('[data-tag-rule-remove]');
@@ -20457,10 +20506,30 @@ class DashboardConfig {
         try {
             return window.TagSuggestions.suggest(this.tagSuggestionItems(), {
                 rules: this.dash.settings?.tagRules || [],
+                catalogue: this._tagCatalogue || [],
+                dismissed: this.dash.settings?.dismissedTagSuggestions || [],
             }).length;
         } catch (err) {
             return 0;
         }
+    }
+
+    /** Move the tab's own number without repainting the whole section. */
+    syncTagSuggestionCount() {
+        const button = document.querySelector('[data-bm-tab="tag-suggestions"]');
+        if (!button) return;
+        const waiting = this.tagSuggestionGroupCount();
+        let chip = button.querySelector('.config-subtab-count');
+        if (!waiting) {
+            chip?.remove();
+            return;
+        }
+        if (!chip) {
+            chip = document.createElement('span');
+            chip.className = 'config-subtab-count';
+            button.appendChild(chip);
+        }
+        chip.textContent = String(waiting);
     }
 
     /*
@@ -20480,7 +20549,7 @@ class DashboardConfig {
             '',
             'Your rules: a site you name, and the tag it should get. A rule always wins, and it proposes from the moment you add it.',
             '',
-            'A pattern is a site, optionally with one path segment — github.com, or github.com/anthropics. Not a whole address.',
+            'A pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address.',
             '',
             'Nothing is applied on its own. Apply tags a whole group at once, and the undo in the toast puts it straight back.',
         ].join('\n'));
@@ -23103,11 +23172,11 @@ class DashboardConfig {
         }
         if (pattern.includes('://') || /[ ?#]/.test(pattern)) {
             return ['config.tagRuleErrorAddress',
-                'Use a site rather than a whole address — github.com, not https://github.com/anthropics?tab=repositories.'];
+                'Use a site rather than a whole address — github.com, not https://github.com/trending?since=weekly.'];
         }
         if ((pattern.match(/\//g) || []).length > 1) {
             return ['config.tagRuleErrorDepth',
-                'One path segment at most: github.com/anthropics, not github.com/anthropics/claude.'];
+                'One path segment at most: github.com/trending, not github.com/trending/go.'];
         }
         const rules = this.dash.settings?.tagRules || [];
         if (rules.some((rule) => rule.pattern === pattern && rule.tag === tag)) {
@@ -23124,6 +23193,50 @@ class DashboardConfig {
         if (!slot) return;
         slot.textContent = this.t(key, fallback);
         slot.hidden = false;
+    }
+
+    /*
+     * A proposal the reader does not want, kept refused.
+     *
+     * Stored as "pattern|tag" rather than as the bookmarks under it: the
+     * bookmarks change as the collection grows, and a refusal recorded against
+     * them would come back the moment one more link on that site was added.
+     * Reversible from the line under the list, and undoable from the toast --
+     * the button sits beside Apply, so a slip is as likely in one direction as
+     * the other.
+     */
+    async dismissTagSuggestion(group) {
+        if (!group?.tag || !group?.pattern) return;
+        const key = `${group.pattern}|${group.tag}`.toLowerCase();
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (before.includes(key)) return;
+        await this.setBehavior('dismissedTagSuggestions', [...before, key]);
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
+        this.notify(this.t('config.tagSuggestionDismissed', 'Suggestion turned down.'), 'success', {
+            undoCallback: async () => {
+                await this.setBehavior('dismissedTagSuggestions', before);
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
+            },
+            duration: 8000,
+        });
+    }
+
+    async restoreTagSuggestions() {
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (!before.length) return;
+        await this.setBehavior('dismissedTagSuggestions', []);
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
+        this.notify(this.t('config.tagSuggestionsRestored', 'Turned-down suggestions are back.'), 'success', {
+            undoCallback: async () => {
+                await this.setBehavior('dismissedTagSuggestions', before);
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
+            },
+            duration: 8000,
+        });
     }
 
     async removeTagRule(index) {

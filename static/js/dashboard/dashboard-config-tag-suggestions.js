@@ -51,6 +51,14 @@
 
     function reasonText(t, group) {
         if (group.reason.kind === 'rule') return t('config.tagSuggestionReasonRule', 'your rule');
+        if (group.reason.kind === 'catalogue') {
+            // The subject is named as well as the source, because the tag on
+            // the row may be the reader's own word for it rather than the
+            // catalogue's -- and a row you cannot account for is one you
+            // cannot judge.
+            return t('config.tagSuggestionReasonCatalogue', 'the catalogue ({subject})')
+                .replace('{subject}', String(group.reason.subject || ''));
+        }
         return t('config.tagSuggestionReasonDerived', 'your own tags ({have} of {of})')
             .replace('{have}', String(group.reason.have))
             .replace('{of}', String(group.reason.of));
@@ -96,13 +104,14 @@
         const hint = document.createElement('p');
         hint.className = 'config-widget-field-hint';
         hint.textContent = t('config.tagRulesHint',
-            'github.com → #code tags every GitHub bookmark. A rule always beats what nextDash worked out on its own. One path segment at most: github.com/anthropics, not github.com/anthropics/claude.');
+            'github.com → #code tags every GitHub bookmark. A rule always beats what nextDash worked out on its own. One path segment at most: github.com/trending, not github.com/trending/go.');
         wrap.appendChild(hint);
 
         rules.forEach((rule, index) => {
             const row = document.createElement('div');
-            row.className = 'config-suggestion-row';
+            row.className = 'config-suggestion-row config-suggestion-row--rule';
             const text = document.createElement('span');
+            text.className = 'config-suggestion-rule-text';
             text.textContent = `${rule.pattern} → #${rule.tag}`;
             const remove = document.createElement('button');
             remove.type = 'button';
@@ -152,7 +161,7 @@
         list.className = 'config-suggestions-list';
         groups.slice(0, MAX_ROWS).forEach((group, index) => {
             const row = document.createElement('li');
-            row.className = 'config-suggestion-row';
+            row.className = 'config-suggestion-row config-suggestion-row--proposal';
             row.setAttribute('data-tag-suggestion', String(index));
 
             const tag = document.createElement('span');
@@ -165,8 +174,9 @@
 
             const count = document.createElement('span');
             count.className = 'config-suggestion-count';
-            count.textContent = t('config.tagSuggestionCount', '{n} bookmarks')
-                .replace('{n}', String(group.keys.length));
+            count.textContent = group.keys.length === 1
+                ? t('config.tagSuggestionCountOne', '1 bookmark')
+                : t('config.tagSuggestionCount', '{n} bookmarks').replace('{n}', String(group.keys.length));
 
             const why = document.createElement('span');
             why.className = 'config-suggestion-reason';
@@ -178,7 +188,17 @@
             apply.setAttribute('data-tag-suggestion-apply', String(index));
             apply.textContent = t('config.tagSuggestionApply', 'Apply');
 
-            row.append(tag, pattern, count, why, apply);
+            const dismiss = document.createElement('button');
+            dismiss.type = 'button';
+            dismiss.className = 'config-btn config-btn--small';
+            dismiss.setAttribute('data-tag-suggestion-dismiss', String(index));
+            dismiss.textContent = t('config.tagSuggestionDismiss', 'No thanks');
+
+            const actions = document.createElement('span');
+            actions.className = 'config-suggestion-actions';
+            actions.append(apply, dismiss);
+
+            row.append(tag, pattern, count, why, actions);
             list.appendChild(row);
         });
         return list;
@@ -187,7 +207,11 @@
     function render(container, ctx) {
         if (!container) return [];
         const t = ctx.t;
-        const groups = global.TagSuggestions.suggest(ctx.items, { rules: ctx.rules });
+        const groups = global.TagSuggestions.suggest(ctx.items, {
+            rules: ctx.rules,
+            catalogue: ctx.catalogue,
+            dismissed: ctx.dismissed,
+        });
         container.replaceChildren();
         container.hidden = false;
 
@@ -234,6 +258,22 @@
             empty.textContent = t('config.tagSuggestionsEmpty',
                 'Nothing to propose yet. Give three bookmarks from the same site the same tag and the rest of that site is offered it — or write a rule below and it proposes at once.');
             container.appendChild(empty);
+        }
+
+        const refused = (ctx.dismissed || []).length;
+        if (refused) {
+            const note = document.createElement('p');
+            note.className = 'config-widget-field-hint';
+            note.setAttribute('data-tag-suggestions-dismissed', '');
+            note.textContent = `${t('config.tagSuggestionsDismissedCount', '{n} turned down.')
+                .replace('{n}', String(refused))} `;
+            const restore = document.createElement('button');
+            restore.type = 'button';
+            restore.className = 'config-link-button';
+            restore.setAttribute('data-tag-suggestions-restore', '');
+            restore.textContent = t('config.tagSuggestionsRestore', 'Offer them again');
+            note.appendChild(restore);
+            container.appendChild(note);
         }
 
         renderRules(container, ctx, groups.length > 0);

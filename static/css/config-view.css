@@ -3367,6 +3367,147 @@ body.no-animations .config-new-features-panel-star {
  * Left-aligned and wrapping instead, so the domain always starts at the same x
  * and a long tag list breaks to the next line rather than overflowing the card.
  */
+/*
+ * Config -> Bookmarks reads as a table.
+ *
+ * The row is the same bordered card Health and Inbox use -- this only lays its
+ * body out in fixed columns, so fifty bookmarks are scanned down a column
+ * rather than read as fifty little paragraphs of differing height. Scoped to
+ * .config-bm-item on purpose: Health and Inbox rows carry different fields and
+ * are left alone.
+ *
+ * Every column is placed by name rather than by document order, because tags,
+ * the category crumb and the note are each conditional -- with auto-placement
+ * a bookmark without tags would slide its category into the tag column and the
+ * alignment the table exists for would be gone.
+ *
+ * What does not fit the line keeps the behaviour the actions bar already had:
+ * it appears on hover, on focus, on the keyboard cursor, and while the row's
+ * menu is open.
+ */
+.config-bm-item .health-view-item-body {
+    display: grid;
+    grid-template-columns:
+        minmax(8rem, 1.7fr)
+        minmax(7rem, 1.2fr)
+        minmax(0, 0.9fr)
+        minmax(4rem, 0.9fr);
+    align-items: center;
+    column-gap: var(--space-3, 0.85rem);
+    row-gap: 0;
+    min-width: 0;
+}
+
+.config-bm-item .health-view-item-head {
+    grid-area: 1 / 1;
+    min-width: 0;
+}
+
+.config-bm-item .config-bm-meta-primary {
+    grid-area: 1 / 2;
+    margin: 0;
+    /* Left wrapping: with two tags or fewer the chips ride along in this
+       column, and forcing the pair onto one line cut the domain to three
+       characters without making the row any shorter. */
+}
+
+.config-bm-item .config-bm-tag-row {
+    grid-area: 1 / 3;
+    margin: 0;
+}
+
+.config-bm-item .config-bm-meta-category {
+    grid-area: 1 / 4;
+    margin: 0;
+}
+
+/* The actions bar arrives under two names -- the shared feed-row one and the
+   config's own fallback -- and both belong on the row below the columns. */
+.config-bm-item .config-bm-actions,
+.config-bm-item .feed-row-actions {
+    grid-area: 2 / 1 / auto / -1;
+}
+
+/* A bookmark with two tags or fewer carries them inline in the meta column and
+   renders its tag row as an empty <p>. Left in the flow it takes a column of
+   the table and pushes the category out of line. */
+.config-bm-item .health-view-item-body > p:empty {
+    display: none;
+}
+
+.config-bm-item .inbox-item-note,
+.config-bm-item .config-bm-meta-footer {
+    grid-area: auto / 1 / auto / -1;
+    display: none;
+}
+
+.config-bm-item:hover .inbox-item-note,
+.config-bm-item:focus-within .inbox-item-note,
+.config-bm-item.keyboard-selected .inbox-item-note,
+.config-bm-item.is-open .inbox-item-note,
+.config-bm-item:hover .config-bm-meta-footer,
+.config-bm-item:focus-within .config-bm-meta-footer,
+.config-bm-item.keyboard-selected .config-bm-meta-footer,
+.config-bm-item.is-open .config-bm-meta-footer {
+    display: flex;
+}
+
+/* One line each, cut with an ellipsis: a long title must not widen its column
+   and push the ones after it out of line.
+   The crumb itself is not in this list -- it wraps two buttons, and clipping
+   the wrapper laid it over its own children, so the page and category halves
+   stopped taking clicks. The halves are truncated instead. */
+.config-bm-item .config-bm-title,
+.config-bm-item .config-bm-meta-primary > span:first-child {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.config-bm-item .config-bm-crumb {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+}
+
+.config-bm-item .config-bm-crumb-part {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The tag column keeps to its line too -- what does not fit is still on the
+   bookmark, and the row opens for the rest. */
+.config-bm-item .config-bm-tag-row {
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    /* Below this the four columns are narrower than the words in them, so the
+       body goes back to stacking. */
+    .config-bm-item .health-view-item-body {
+        display: block;
+    }
+
+    .config-bm-item .config-bm-title,
+    .config-bm-item .config-bm-meta-primary > span:first-child,
+    .config-bm-item .config-bm-crumb-part {
+        white-space: normal;
+    }
+
+    .config-bm-item .config-bm-tag-row {
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    .config-bm-item .inbox-item-note,
+    .config-bm-item .config-bm-meta-footer {
+        display: flex;
+    }
+}
+
 .config-bm-meta-primary {
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -5996,7 +6137,7 @@ button.config-bm-shortcut-pill {
 .config-suggestions-list {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: var(--space-1, 0.35rem);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -6009,6 +6150,39 @@ button.config-bm-shortcut-pill {
     padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
 }
 
+/* A proposal reads as a row of a table: five columns in the same places on
+   every line, in the bordered card the bookmark list already uses, so the
+   panel is scanned down a column rather than read sentence by sentence. */
+.config-suggestion-row--proposal,
+.config-suggestion-row--rule {
+    align-items: center;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary, transparent);
+}
+
+.config-suggestion-row--proposal {
+    display: grid;
+    grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) minmax(6rem, 8rem) auto auto;
+    gap: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+}
+
+.config-suggestion-row--rule {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-3, 0.85rem);
+}
+
+.config-suggestion-rule-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.config-suggestion-tag {
+    font-weight: var(--font-weight-semibold);
+}
+
 .config-suggestion-pattern,
 .config-suggestion-count,
 .config-suggestion-reason {
@@ -6016,8 +6190,36 @@ button.config-bm-shortcut-pill {
     font-size: calc(var(--font-size-text) * 0.86);
 }
 
+/* Long hosts wrap inside their own column rather than widening the table. */
+.config-suggestion-pattern {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .config-suggestion-reason {
-    margin-left: auto;
+    text-align: right;
+}
+
+/* Apply and its refusal sit together at the end of the row: the pair is one
+   decision, and a reader who reaches for the wrong one is as likely either
+   way -- both are undoable from the toast. */
+.config-suggestion-actions {
+    display: flex;
+    gap: var(--space-1, 0.35rem);
+    justify-self: end;
+}
+
+/* Below the width where five columns fit, the row becomes two lines rather
+   than a horizontal scroll: tag and host, then the rest. */
+@media (max-width: 720px) {
+    .config-suggestion-row--proposal {
+        grid-template-columns: minmax(5rem, 8rem) 1fr auto;
+    }
+
+    .config-suggestion-reason {
+        grid-column: 1 / -2;
+        text-align: left;
+    }
 }
 
 /* The panel fills its own tab, so the intro and the ℹ share one line at the
