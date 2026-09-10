@@ -208,19 +208,61 @@ test.describe('bulk tagging from the multi-select toolbar', () => {
         await expect(page.locator('.multi-select-toolbar')).toBeVisible();
     });
 
+    /*
+     * The card counts the three sources that need no round trip, and not the
+     * fourth.
+     *
+     * Page text is the source a scan round has to be asked for, so a card that
+     * counted it would be asking for one sideways -- and the count is what
+     * decides whether the card appears at all. Proved by handing the engine
+     * the same bookmarks *with* keywords: the two answers have to differ.
+     */
     test('the corner card counts only what needs no scan round', async ({ page }) => {
         await openDashboard(page);
         const seen = await page.evaluate(async () => {
             const N = window.TagSuggestionsNotice;
-            if (!N) return null;
-            await N.ensureCatalogue();
-            return { count: N.proposalCount(), min: N.MIN_TO_OFFER };
+            const d = window.dashboardInstance;
+            const catalogue = await N.ensureCatalogue();
+            const items = (d.allBookmarks || []).map((b, index) => ({
+                key: `${b.pageId}::${b.url}::${index}`,
+                url: b.url,
+                tags: Array.isArray(b.tags) ? b.tags : [],
+            }));
+            const options = {
+                rules: d.settings?.tagRules || [],
+                catalogue,
+                dismissed: d.settings?.dismissedTagSuggestions || [],
+            };
+            const base = window.TagSuggestions.suggest(items, options);
+            // Three bookmarks nothing else reaches, so the group the keywords
+            // produce is a group that was not there before rather than one
+            // taking a slot from a stronger source.
+            const spoken = new Set(base.flatMap((group) => group.keys));
+            const free = items.filter((item) => !spoken.has(item.key)).slice(0, 3);
+            const keywords = {};
+            // Two words of one subject each, which is the floor the page-text
+            // source asks for.
+            free.forEach((item) => { keywords[item.key] = ['peer-reviewed', 'doi']; });
+            const withText = window.TagSuggestions.suggest(items, { ...options, keywords });
+            return {
+                free: free.length,
+                card: N.proposalCount(),
+                base: base.length,
+                withText: withText.length,
+                textGroups: withText.filter((group) => group.pattern === 'page-text').length,
+                min: N.MIN_TO_OFFER,
+            };
         });
-        test.skip(seen === null, 'notice card not loaded');
-        // Ten is the floor for asking; the count itself depends on the
-        // collection, so what is pinned here is that it is a number and that
-        // the threshold is the one the design named.
-        expect(Number.isFinite(seen.count)).toBe(true);
+
+        expect(seen.free).toBe(3);
+        // The keywords produce a group; the card's own count does not have it.
+        // That difference is the whole claim — page text is the source a scan
+        // round has to be asked for, and a card counting it would be asking
+        // for one sideways.
+        expect(seen.textGroups).toBe(1);
+        expect(seen.withText).toBe(seen.base + 1);
+        expect(seen.card).toBe(seen.base);
+        // Ten is the floor the design named for saying anything at all.
         expect(seen.min).toBe(10);
     });
 });

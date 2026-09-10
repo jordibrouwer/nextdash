@@ -20622,27 +20622,20 @@ class DashboardConfig {
     }
 
     /*
-     * The shipped catalogue of subjects, fetched once per page load.
+     * The shipped catalogue of subjects.
      *
-     * Data rather than code, so it is served the way overview-features.json
-     * is and read the same way. A missing or malformed file costs the
-     * catalogue rows and nothing else: the rules and the reader's own tags
-     * are worked out here and need no file at all.
+     * Asked for through TagCatalogue, which holds the one copy: the corner
+     * card wants the same 177 KB file, and each fetching it for itself meant a
+     * reader who saw the card and then opened this panel paid for it twice.
+     * The panel keeps its own reference because it draws synchronously.
      */
     ensureTagCatalogue() {
         if (this._tagCataloguePromise) return this._tagCataloguePromise;
-        this._tagCataloguePromise = fetch('/static/data/tag-patterns.json', { cache: 'no-cache' })
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                const tags = Array.isArray(data?.tags) ? data.tags : [];
-                this._tagCatalogue = tags;
-                return tags;
-            })
-            .catch(() => {
-                console.warn('nextDash: the tag catalogue could not be read; '
-                    + 'suggestions fall back to your own tags and rules');
-                this._tagCatalogue = [];
-                return [];
+        const load = window.TagCatalogue?.load;
+        this._tagCataloguePromise = (load ? load() : Promise.resolve([]))
+            .then((tags) => {
+                this._tagCatalogue = Array.isArray(tags) ? tags : [];
+                return this._tagCatalogue;
             });
         return this._tagCataloguePromise;
     }
@@ -23641,7 +23634,6 @@ class DashboardConfig {
                 'Nothing is ticked in that group, so there is nothing to apply.'), 'error');
             return;
         }
-
         const wanted = new Set(keys);
         const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;

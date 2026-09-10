@@ -118,9 +118,6 @@
         return Number.isFinite(seen) && seen > 0 ? seen : 0;
     }
 
-    let catalogue = null;
-    let cataloguePromise = null;
-
     /*
      * The shipped catalogue, fetched once, and not before it is needed.
      *
@@ -130,27 +127,12 @@
      * never learn the feature exists. It is one cached file, asked for nine
      * seconds after load, when the dashboard has long since drawn.
      *
-     * The config panel keeps its own copy; whichever has one is used, so a
-     * reader who has opened the tab pays nothing here.
+     * TagCatalogue holds the single copy, so a reader who has opened the
+     * config panel pays nothing here, and one who sees this card first has
+     * already paid for the panel.
      */
     function ensureCatalogue() {
-        const config = dash()?.config?.instance || dash()?.config;
-        if (config?._tagCatalogue?.length) return Promise.resolve(config._tagCatalogue);
-        if (catalogue?.length) return Promise.resolve(catalogue);
-        if (cataloguePromise) return cataloguePromise;
-        cataloguePromise = fetch('/static/data/tag-patterns.json', { cache: 'no-cache' })
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                catalogue = Array.isArray(data?.tags) ? data.tags : [];
-                return catalogue;
-            })
-            .catch(() => {
-                // A missing file costs the catalogue's own proposals and
-                // nothing else, the same as it does in the panel.
-                catalogue = [];
-                return catalogue;
-            });
-        return cataloguePromise;
+        return global.TagCatalogue?.load?.() || Promise.resolve([]);
     }
 
     /*
@@ -166,15 +148,14 @@
             url: b.url,
             tags: Array.isArray(b.tags) ? b.tags : [],
         }));
-        const config = d.config?.instance || d.config;
         try {
             return global.TagSuggestions.suggest(items, {
                 rules: d.settings?.tagRules || [],
-                // Whichever actually holds something: config sets its own copy
-                // to [] when the fetch fails or has not run, and an empty
-                // array is truthy -- so `||` handed the count a catalogue of
-                // nothing and the card never reached its threshold.
-                catalogue: (config?._tagCatalogue?.length ? config._tagCatalogue : catalogue) || [],
+                // Whatever has landed. The card asks for the catalogue before
+                // it counts, so this is empty only when the file could not be
+                // read at all -- in which case the two local sources are what
+                // there is, and the count is honest about that.
+                catalogue: global.TagCatalogue?.now?.() || [],
                 dismissed: d.settings?.dismissedTagSuggestions || [],
                 // No keywords on purpose: page text is the source a scan round
                 // has to be asked for, and a card that needed one would be
@@ -279,9 +260,6 @@
         open,
         proposalCount,
         ensureCatalogue,
-        // What has been fetched so far, for the dashboard's own tag popover:
-        // it draws synchronously and cannot wait for a file.
-        catalogueNow: () => catalogue || [],
         MIN_TO_OFFER,
     };
 })(window);

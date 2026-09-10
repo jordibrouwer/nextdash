@@ -1491,7 +1491,7 @@ func normalizeTags(tags []string) []string {
 const tagRulesMax = 100
 
 // dismissedTagSuggestionsMax bounds the turned-down list. The shipped
-// catalogue is 465 subjects, so a reader who refuses more than this has
+// catalogue is 463 subjects, so a reader who refuses more than this has
 // refused the whole idea.
 const dismissedTagSuggestionsMax = 500
 
