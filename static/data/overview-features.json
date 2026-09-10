@@ -2,6 +2,57 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureTagSuggestionsTitle",
+      "titleFallback": "A tag for a whole group of bookmarks",
+      "whatKey": "config.overviewNewFeatureTagSuggestionsWhat",
+      "whatFallback": "Tagging is the thing everyone means to do and nobody finishes: the bookmarks that would benefit most are the ones there are too many of to tag by hand.",
+      "howKey": "config.overviewNewFeatureTagSuggestionsHow",
+      "howFallback": "The Tag suggestions tab proposes a tag for whole groups at once — from the tags you already use, and from a shipped list of 463 subjects and the sites that belong to them. Each row says why it is offered, the count opens the group so you can leave one bookmark out, and No thanks stops a proposal coming back. Nothing is tagged until you press Apply, and the toast puts it back.",
+      "enableKey": "config.overviewNewFeatureTagSuggestionsEnable",
+      "enableFallback": "Config → Bookmarks → Tag suggestions.",
+      "ctaKey": "config.overviewNewFeatureTagSuggestionsCta",
+      "ctaFallback": "Open Tag suggestions →",
+      "go": {
+        "section": "bookmarks",
+        "bmTab": "tag-suggestions"
+      },
+      "since": "v1.8.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTagRulesTitle",
+      "titleFallback": "Your own rules for tagging",
+      "whatKey": "config.overviewNewFeatureTagRulesWhat",
+      "whatFallback": "Some things only you know: that everything under one domain is work, or that a particular section of a site is the only part you care about.",
+      "howKey": "config.overviewNewFeatureTagRulesHow",
+      "howFallback": "Write a rule — github.com → #code — and every bookmark on that site is offered the tag from the moment you add it. A rule can name a section as well as a site, and always beats what nextDash worked out on its own.",
+      "enableKey": "config.overviewNewFeatureTagRulesEnable",
+      "enableFallback": "Config → Bookmarks → Your rules.",
+      "ctaKey": "config.overviewNewFeatureTagRulesCta",
+      "ctaFallback": "Open Your rules →",
+      "go": {
+        "section": "bookmarks",
+        "bmTab": "tag-rules"
+      },
+      "since": "v1.8.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureReviewOffersTitle",
+      "titleFallback": "Two offers you can switch off",
+      "whatKey": "config.overviewNewFeatureReviewOffersWhat",
+      "whatFallback": "A card that appears unasked is welcome once and tiresome the fourth time, and the link review card could only be silenced by giving up link checking altogether.",
+      "howKey": "config.overviewNewFeatureReviewOffersHow",
+      "howFallback": "The tag review card offers a round when there is a pile worth accepting, with Not today and Remind me in 30 days beside Start. Both it and the link review card have their own switch now, beside the session tips.",
+      "enableKey": "config.overviewNewFeatureReviewOffersEnable",
+      "enableFallback": "Behavior → General → Onboarding.",
+      "ctaKey": "config.overviewNewFeatureReviewOffersCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      },
+      "since": "v1.8.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureRssWidgetTitle",
       "titleFallback": "Your feeds, as headlines you can click",
       "whatKey": "config.overviewNewFeatureRssWidgetWhat",
