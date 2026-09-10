@@ -106,7 +106,19 @@ class SearchComponent {
         });
         this.commandsComponent.getRecentCommands = () => this.recentCommands;
 
-        this.findersComponent = new window.SearchFindersComponent(this.language, [], this.settings);
+        /*
+         * Built with the finders it was handed, not with an empty list.
+         *
+         * updateData() sets them, and on a fresh load nothing calls it: the
+         * search stack is fetched by the key that opens it, so the component is
+         * constructed after the dashboard's last render rather than before it.
+         * The overlay therefore opened on a collection of finders it had never
+         * been told about -- "No finders set up yet" with several configured,
+         * and no shortcut to complete, so `?` plus a shortcut never gained its
+         * space either. Both went away on the next render, which is why it
+         * looked like it only happened straight after a reload.
+         */
+        this.findersComponent = new window.SearchFindersComponent(this.language, this.finders || [], this.settings);
 
         this.fuzzySearchComponent = new window.FuzzySearchComponent(this.bookmarks, (bookmark) => this.openBookmark(bookmark));
         this.fuzzySearchComponent.updatePicks(this.searchPicks);

@@ -1480,6 +1480,25 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - **Tags on the rows themselves** — off by default, switched on under **Config → Appearance → Display**. A bookmark then carries its tags as small chips on its dashboard row: the first two show and the rest collapse into a count, so a heavily tagged bookmark does not grow taller than its neighbours. Click a chip to filter the grid to that tag, which is the same filter the cloud and `tag:` apply, reached from the row you were already looking at.
 - **Tag collections**: optional dashboard group per tag (general settings).
 
+### Tag suggestions (**v1.8.0**)
+
+**Config → Bookmarks → Tag suggestions** proposes a tag for whole groups of bookmarks at once, which is the only practical way to tag a collection that grew faster than it was sorted. Four sources feed it, three of which need no network at all:
+
+- **A rule of your own**, written on the **Your rules** tab — `github.com → #code`. A rule names a site, or a site and one section (`github.com/trending`, never `github.com/trending/go`), and outranks everything else.
+- **The tags you already gave a site's other bookmarks.** Eleven of forty-seven GitHub links carry `#code`, so the other thirty-six are offered it. A tag has to appear on at least three bookmarks and to be what most of the tagged ones agree on before it counts.
+- **A shipped list of 463 subjects** and the 1,904 sites that belong to them, so a collection nobody has tagged yet still has something to propose from. Your own vocabulary wins: a subject the list calls `dev` is proposed as `#code` if that is the word you already use, and the row names the subject it renamed. It stays quiet about a site you have already settled — everything on github.com filed under `#work` is not offered `#dev` on top.
+- **What the pages themselves say**, which is a choice rather than a default. See *Read their pages* below.
+
+Every row names its source and how many bookmarks it covers. **The count is a button**: it opens the group, names each bookmark and gives each a tick, so one that does not belong can be left out before you accept the rest. **Apply** tags what is still ticked and offers an undo in the toast for eight seconds. **No thanks** turns the proposal down for good — refusals are recorded as the pattern and the tag rather than as the bookmarks under them, so adding one more link to that site does not bring it back — and each refusal is listed below the proposals with its own way back.
+
+The list shows at most 25 rows, largest group first, with a line saying how many are waiting; they surface as the ones above them are accepted or refused.
+
+**Read their pages.** A page on a site the shipped list has never heard of can still say what it is about. This button reads those pages — one request per bookmark, to every site involved — and files them by subject rather than by host, so a row can read *#networking · across sites · 3 bookmarks · the page text (dns, routing)*. It states the cost before it starts (*85 bookmarks have no keywords yet*), runs only when you press it, shows the same progress bar every other long job in config uses, and can be stopped from there. What is kept is a dozen derived words per page — the keywords and section a publisher wrote, the first heading, the title and the description — never the page itself. Two words have to land on the same subject before a row appears, because one shared word is coincidence often enough to be worthless. A page that cannot be read is skipped and not asked again.
+
+**Forget the scanned keywords** clears those words, in the tab itself and under **Data & backups → Icons & previews**; it leaves the titles, descriptions and pictures the preview cards use, which were fetched for another reason. **Read them again** re-reads every page after a site redesign, keeping what it has until it is replaced.
+
+**A card in the corner** offers a round of this when there are ten proposals worth accepting, with *Not today* and *Remind me in 30 days* beside *Start*. It counts only the three sources that need no scan round, waits for ten new proposals before asking again, and can be switched off — along with the link review card — under **Behavior → General → Onboarding**.
+
 ### Notes
 
 - Plain text; visible in row badge, hover preview, search.  
@@ -2085,7 +2104,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | Section | Sub-tabs |
 |---------|----------|
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
-| **Bookmarks** | List · Settings (**v1.1.0**) |
+| **Bookmarks** | List · Tag suggestions · Your rules (**v1.8.0**) · Settings (**v1.1.0**) · Local copies |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Custom themes |
 
 **Branding** — page title and favicon — is the tail of **Display** rather than a tab of its own; `/#config/appearance/branding` still lands on it. Each tab has a **filter** beside *Only changed*, and `Escape` clears it. The theme list answers to **typing**: open it and type the first letters of a name to jump to it among a hundred and fifty. Pointing at a **type size** shows it on the dashboard behind config and moving away puts it back — the same idea as browsing the theme list, which previews its colours. A custom theme has **⤓ Export** on its row and **Import theme…** beside *Add custom theme*, so one palette can move between installs without a whole backup.
@@ -2125,6 +2144,8 @@ Its **settings** — what a quick-added bookmark starts with, the sort the list 
 **A filtered list is a link.** What you searched for, the page, the category, the tag and the sort all ride in the address, so *the 41 untagged bookmarks on Work* survives a reload and can be sent to someone else as a link rather than a set of instructions. A list a filter has emptied says which filter emptied it, instead of reading as an empty library. A selection **survives a filter change** — the bar names how many of the ticked rows the new filter is hiding — and bulk tags, pins and availability changes can all be undone from the same toast a bulk delete uses.
 
 **A long list stays quick.** Only the rows near the viewport are drawn; everything above and below them is held as two spacers of the right height. A library of two thousand bookmarks therefore costs about a thousand elements on the page rather than sixty-seven thousand, and nothing about the list gives it away — the scrollbar is the length it should be, the page scrolls in one continuous motion, and jumping to the bottom lands at the bottom.
+
+**The list answers the keyboard.** The arrow keys walk the rows the way `j` and `k` do, from the moment the section opens rather than only once a row has been clicked. `m` opens the row's **More** menu, which offers exactly what right-clicking the row does — open in a new tab, edit, pin, checking, the three filters, select — and the arrows walk it, `Home` and `End` jump to its ends, and `Escape` closes it and leaves you on the row you were on. The search box keeps its own letters, so `github`, `json` and `jira` can be typed into it.
 
 **+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, **refresh favicons**, **export CSV**, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 
@@ -2969,6 +2990,10 @@ All URLs already exist on the chosen page, or the HTML had no http(s) links. Try
 ### Health deep link does not scroll
 
 Bookmark index may have changed after reorder/delete. Link still opens the right page; use search or `?url=` fallback if added manually.
+
+### Colours look wrong after the system switched to dark
+
+**Follow system dark mode** repaints the page the moment macOS or Windows switches, including while the tab sits in the background. Up to v1.7.1 a switch that happened in a hidden tab could leave the previous background pinned to the page under the new theme's text — dark text on a dark page, or the reverse — until you reloaded. Fixed: the repaint now releases that background whether or not the tab is being drawn. If you still see it, hard-refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) once to drop cached JavaScript from before the fix.
 
 ### Settings not applying
 

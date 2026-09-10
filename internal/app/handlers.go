@@ -1486,6 +1486,105 @@ func normalizeTags(tags []string) []string {
 	return result
 }
 
+// tagRulesMax bounds how many rules one install may keep. A reader with more
+// than this is describing a taxonomy rather than correcting a few guesses.
+const tagRulesMax = 100
+
+// dismissedTagSuggestionsMax bounds the turned-down list. The shipped
+// catalogue is 463 subjects, so a reader who refuses more than this has
+// refused the whole idea.
+const dismissedTagSuggestionsMax = 500
+
+/*
+sanitizeTagRules keeps the rules that could ever match, and drops the rest.
+
+A pattern is a host, optionally with its first path segment -- never a whole
+address. A rule carrying a scheme looks configured and matches nothing, since
+what it is compared against is already reduced to host and segment.
+
+The one-segment limit and the two normalisations below are not taste: they are
+the exact shape patternsFor() in static/js/shared/tag-suggestions.js emits for a
+URL, and a rule is only ever compared against that list. patternsFor stops at
+the first path segment and strips a leading "www.", so "reddit.com/r/selfhosted"
+and "www.github.com" and "github.com/" would all be stored as rules that can
+never fire -- configured-looking and silently dead. Reject what cannot be
+rescued, normalise what can.
+*/
+func sanitizeTagRules(rules []TagRule) []TagRule {
+	clean := make([]TagRule, 0, len(rules))
+	seen := map[string]struct{}{}
+	for _, rule := range rules {
+		if len(clean) >= tagRulesMax {
+			break
+		}
+		pattern := strings.ToLower(strings.TrimSpace(rule.Pattern))
+		tags := normalizeTags([]string{rule.Tag})
+		if pattern == "" || len(tags) == 0 {
+			continue
+		}
+		if strings.Contains(pattern, "://") || strings.ContainsAny(pattern, " ?#") {
+			continue
+		}
+		pattern = strings.TrimPrefix(pattern, "www.")
+		pattern = strings.TrimRight(pattern, "/")
+		if pattern == "" || strings.Count(pattern, "/") > 1 {
+			continue
+		}
+		key := pattern + "\x00" + tags[0]
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		clean = append(clean, TagRule{Pattern: pattern, Tag: tags[0]})
+	}
+	return clean
+}
+
+/*
+sanitizeDismissedTagSuggestions narrows the proposals the reader turned down.
+
+Each is "pattern|tag": the pattern the row matched and the tag it offered, the
+pair that identifies a proposal across sessions -- the bookmarks under it come
+and go, so a list of bookmark keys would stop matching the moment one is added.
+Both halves are lowercased and the pattern is narrowed exactly the way a rule's
+is, so a dismissal keeps matching what patternsFor() emits.
+
+Bounded like the rules are. A reader who turns down more than this has a
+catalogue problem rather than a settings problem, and an unbounded list in
+settings is an unbounded write on every save.
+*/
+func sanitizeDismissedTagSuggestions(raw []string) []string {
+	clean := make([]string, 0, len(raw))
+	seen := map[string]struct{}{}
+	for _, entry := range raw {
+		if len(clean) >= dismissedTagSuggestionsMax {
+			break
+		}
+		parts := strings.SplitN(strings.ToLower(strings.TrimSpace(entry)), "|", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		pattern := strings.TrimRight(strings.TrimPrefix(strings.TrimSpace(parts[0]), "www."), "/")
+		tags := normalizeTags([]string{parts[1]})
+		if pattern == "" || len(tags) == 0 {
+			continue
+		}
+		if strings.Contains(pattern, "://") || strings.ContainsAny(pattern, " ?#") {
+			continue
+		}
+		if strings.Count(pattern, "/") > 1 {
+			continue
+		}
+		key := pattern + "|" + tags[0]
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		clean = append(clean, key)
+	}
+	return clean
+}
+
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	var result strings.Builder
@@ -2122,6 +2221,8 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.TagRules = sanitizeTagRules(settings.TagRules)
+	settings.DismissedTagSuggestions = sanitizeDismissedTagSuggestions(settings.DismissedTagSuggestions)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	clampBookmarkSettings(&settings)
 	clampCategoryLayoutSettings(&settings)
@@ -2882,7 +2983,7 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * pages -- see readDocumentHead. A further previewBodySample is taken for
 	 * ContentLength, which measures prose rather than tags.
 	 */
-	headBytes, err := readDocumentHead(resp.Body, previewMaxHead)
+	headBytes, overRead, err := readDocumentHeadAndRest(resp.Body, previewMaxHead)
 	if err != nil {
 		return preview
 	}
@@ -2958,6 +3059,18 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	preview.Author = extractAuthor(htmlBody)
 	preview.PublishedAt = extractPublishedAt(htmlBody)
 	preview.ContentLength = readableTextLength(string(bodySample))
+	/*
+	 * The head for the meta tags, the start of the body for the h1.
+	 *
+	 * overRead is what the chunked head read had already taken off the wire
+	 * past </head> -- usually the first stretch of the body, which is where an
+	 * h1 lives. bodySample starts after that, so the two together are the
+	 * page's opening. ContentLength deliberately still measures bodySample
+	 * alone: it is the soft-404 signal, and widening what it counts would
+	 * change a threshold that has nothing to do with keywords.
+	 */
+	preview.Keywords = extractKeywords(htmlBody, string(overRead)+string(bodySample))
+	preview.KeywordsAt = preview.FetchedAt
 
 	/*
 	 * oEmbed, when the page advertises it.

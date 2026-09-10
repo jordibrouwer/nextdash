@@ -600,10 +600,13 @@ class DashboardHealth {
             isOpen: () => Boolean(this._focus?.isActive?.()),
             handleEscape: () => this._focus?.close?.(),
         });
+        // Scoped for the same reason closeAllMenus is: config's bookmark rows
+        // carry menus with these class names, and claiming Escape for one of
+        // them would answer a key this view was never shown.
         window.EscapeOwner?.registerOwner?.('health-view-menu', {
-            isOpen: () => Boolean(document.querySelector('.health-view-menu:not([hidden])')),
+            isOpen: () => Boolean(this.menuScope()?.querySelector('.health-view-menu:not([hidden])')),
             handleEscape: () => {
-                const openMenu = document.querySelector('.health-view-menu:not([hidden])');
+                const openMenu = this.menuScope()?.querySelector('.health-view-menu:not([hidden])');
                 this.closeAllMenus();
                 if (openMenu) this.focusMenuOwner(openMenu);
             },
@@ -2104,6 +2107,22 @@ class DashboardHealth {
 
     /* ── More actions ──────────────────────────────────────────────────── */
 
+    /*
+     * Where this view's menus live.
+     *
+     * The row menu markup is shared with the bookmarks editor in config, class
+     * names and all, and both views draw into #dashboard-layout -- so a sweep
+     * over the document reaches menus that belong to the other one. It did:
+     * openConfigView calls health.clearKeyboardSelection(), health is lazy, and
+     * the proxy replays that call whenever the module finally loads, which
+     * closed a row menu the reader had opened in config seconds earlier.
+     *
+     * No shell means this view has never been drawn, so it owns no menus.
+     */
+    menuScope() {
+        return this.shell?.root || null;
+    }
+
     closeAllMenus() {
         // Drop a placement frame that has not run yet, so it cannot write the old
         // cursor position back onto a menu that is being closed right now.
@@ -2115,7 +2134,9 @@ class DashboardHealth {
             clearTimeout(this._menuPlacementSettle);
             this._menuPlacementSettle = 0;
         }
-        document.querySelectorAll('.health-view-menu').forEach((menu) => {
+        const scope = this.menuScope();
+        if (!scope) return;
+        scope.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
             // Drop any placement written onto the menu, so the next open lands
             // where its own path puts it rather than where the last one left
@@ -2130,7 +2151,7 @@ class DashboardHealth {
             menu.style.top = '';
             menu.style.bottom = '';
         });
-        document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
+        scope.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
         });
     }

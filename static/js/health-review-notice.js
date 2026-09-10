@@ -177,6 +177,15 @@
         dismissLabel: () => t('dashboard.healthReviewNoticeDismiss', 'Not today'),
         dismissName: 'later',
         canShow: async () => {
+            /*
+             * A switch of its own, in Behavior → General.
+             *
+             * Until now the only way to stop this card was to switch off link
+             * checking, which is a far heavier thing to give up than the
+             * offer: the checking is the feature, the card is the reminder.
+             * Default on, so an install that never answered keeps what it has.
+             */
+            if (dash()?.settings?.enableHealthReviewNotice === false) return false;
             if (isDoneToday()) return false;
             if (isSnoozed()) return false;
             if (dash()?.health?.isEnabled?.() === false) return false;

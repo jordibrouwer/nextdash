@@ -31,6 +31,7 @@
                     <div class="progress-overlay-fill progress-overlay-fill--indeterminate" data-progress-fill></div>
                 </div>
                 <p class="progress-overlay-status" data-progress-status></p>
+                <button type="button" class="progress-overlay-cancel" data-progress-cancel hidden></button>
             </div>`;
         document.body.appendChild(overlay);
         return overlay;
@@ -44,7 +45,7 @@
      * sitting at zero until it jumps to a hundred reads as frozen, which is the
      * problem this is here to solve rather than restate.
      */
-    function show(title, status) {
+    function show(title, status, options) {
         const overlay = ensureOverlay();
         const fill = overlay.querySelector('[data-progress-fill]');
         if (fill) {
@@ -58,6 +59,36 @@
         overlay.querySelector('[role="progressbar"]')?.removeAttribute('aria-valuenow');
         overlay.querySelector('[data-progress-title]').textContent = title || '';
         overlay.querySelector('[data-progress-status]').textContent = status || '';
+
+        /*
+         * A way out, for the work that has one.
+         *
+         * The overlay blocks the page, which is right for a request whose
+         * length nobody knows and which nobody could usefully interrupt. It is
+         * wrong for a walk over a whole collection: that is minutes long, and
+         * a reader who started it by mistake would have nothing to do but wait
+         * or reload. Callers that can stop halfway pass onCancel; the rest are
+         * unchanged and get no button.
+         */
+        const cancel = overlay.querySelector('[data-progress-cancel]');
+        if (cancel) {
+            const onCancel = options && typeof options.onCancel === 'function' ? options.onCancel : null;
+            cancel.hidden = !onCancel;
+            cancel.textContent = (options && options.cancelLabel) || 'Stop';
+            cancel.onclick = onCancel
+                ? () => {
+                    // Said before the work notices: the round finishes the
+                    // slice it is already fetching, and a button that looks
+                    // dead for those few seconds reads as a button that did
+                    // not work.
+                    cancel.disabled = true;
+                    cancel.textContent = (options && options.cancellingLabel) || cancel.textContent;
+                    onCancel();
+                }
+                : null;
+            cancel.disabled = false;
+        }
+
         overlay.hidden = false;
         return overlay;
     }
