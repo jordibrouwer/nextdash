@@ -21,6 +21,14 @@ async function openSuggestionsTab(page) {
     await expect(page.locator('#config-bm-suggestions')).toBeVisible({ timeout: 15_000 });
 }
 
+/** Config -> Bookmarks -> Your rules, through the strip. */
+async function openRulesTab(page) {
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    const tab = page.locator('[data-bm-tab="tag-rules"]');
+    await tab.click({ timeout: 15_000 });
+    await expect(page.locator('#config-bm-tag-rules')).toBeVisible({ timeout: 15_000 });
+}
+
 test.describe('the tag suggestion engine', () => {
     test('reads a pattern from a URL, host first and host plus segment after', async ({ page }) => {
         await open(page);
@@ -366,6 +374,56 @@ test.describe('the suggestions panel', () => {
         await expect(offered).toHaveCount(1, { timeout: 15_000 });
     });
 
+    test('every row shares one set of columns', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            // Hosts of deliberately different lengths: when each row was its
+            // own grid, the long one moved that row's count and reason and
+            // nothing else, so the column had as many left edges as it had
+            // rows.
+            const hosts = ['a.example', 'a-considerably-longer-hostname.example', 'mid.example'];
+            for (const host of hosts) {
+                for (let i = 0; i < 4; i += 1) {
+                    await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            page: 1,
+                            bookmark: { name: `${host} ${i}`, url: `https://${host}/p${i}`, tags: i < 3 ? ['wide'] : [] },
+                        }),
+                    });
+                }
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+            // One row from a rule and the rest from your own tags, so the
+            // reason column's own text is a different length per row too --
+            // with a per-row grid that alone moves the columns around it.
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            await cfg.addTagRule('mid.example', 'ruled');
+        });
+        await openSuggestionsTab(page);
+        await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]').first())
+            .toBeVisible({ timeout: 15_000 });
+
+        const edges = await page.evaluate(() => {
+            const rows = [...document.querySelectorAll('[data-tag-suggestion]')];
+            const lefts = (sel) => [...new Set(rows
+                .map((row) => Math.round(row.querySelector(sel).getBoundingClientRect().left)))];
+            return {
+                rows: rows.length,
+                tag: lefts('.config-suggestion-tag').length,
+                count: lefts('.config-suggestion-count').length,
+                actions: lefts('.config-suggestion-actions').length,
+            };
+        });
+        expect(edges.rows).toBeGreaterThan(2);
+        // One distinct edge per column, however long the host in that row is.
+        expect(edges.tag).toBe(1);
+        expect(edges.count).toBe(1);
+        expect(edges.actions).toBe(1);
+    });
+
     test('caps how many rows it draws, and says how many are waiting', async ({ page }) => {
         await open(page);
         await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
@@ -478,35 +536,45 @@ test.describe('the suggestions panel', () => {
             .filter({ hasText: 'refused.example' })).toHaveCount(1, { timeout: 15_000 });
     });
 
-    test('with nothing to propose it still offers the rules editor', async ({ page }) => {
+    test('with nothing to propose it says so, and the rules tab stands on its own', async ({ page }) => {
         await open(page);
         await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
         const drawn = await page.evaluate(() => {
-            const host = document.createElement('div');
-            document.body.appendChild(host);
-            // One bookmark, no rules: the engine has nothing to say, and the
-            // panel still has to let the reader write the rule that would
-            // change that.
-            const groups = window.ConfigTagSuggestions.render(host, {
+            const panel = document.createElement('div');
+            const rules = document.createElement('div');
+            document.body.append(panel, rules);
+            // One bookmark, no rules: the engine has nothing to say. The
+            // editor is a tab of its own now, so the empty panel points at it
+            // rather than carrying it.
+            const groups = window.ConfigTagSuggestions.render(panel, {
                 items: [{ key: 'a', url: 'https://alone.example/x', tags: [] }],
+                rules: [],
+                t: (key, fallback) => fallback,
+            });
+            window.ConfigTagSuggestions.renderRules(rules, {
                 rules: [],
                 t: (key, fallback) => fallback,
             });
             const result = {
                 groups: groups.length,
-                rows: host.querySelectorAll('[data-tag-suggestion]').length,
-                rules: !!host.querySelector('#config-tag-rules-details'),
-                addButton: !!host.querySelector('[data-tag-rule-add]'),
-                text: host.textContent,
+                rows: panel.querySelectorAll('[data-tag-suggestion]').length,
+                panelText: panel.textContent,
+                editorInPanel: !!panel.querySelector('[data-tag-rule-add]'),
+                addButton: !!rules.querySelector('[data-tag-rule-add]'),
+                emptyNote: !!rules.querySelector('[data-tag-rules-empty]'),
+                info: !!rules.querySelector('[data-tag-rules-info]'),
             };
-            host.remove();
+            panel.remove();
+            rules.remove();
             return result;
         });
         expect(drawn.groups).toBe(0);
         expect(drawn.rows).toBe(0);
-        expect(drawn.rules).toBe(true);
+        expect(drawn.panelText).toContain('Nothing to propose yet');
+        expect(drawn.editorInPanel).toBe(false);
         expect(drawn.addButton).toBe(true);
-        expect(drawn.text).toContain('Nothing to propose yet');
+        expect(drawn.emptyNote).toBe(true);
+        expect(drawn.info).toBe(true);
     });
 
     test('applying a suggestion leaves the rows you ticked ticked', async ({ page }) => {
@@ -557,58 +625,57 @@ test.describe('the suggestions panel', () => {
         }, ticked)).toBe(true);
     });
 
-    test('the rules editor folds away, and is still folded after a reload', async ({ page }) => {
+    test('a rule you write lands under the form that wrote it', async ({ page }) => {
         await open(page);
         await waitForConfigReady(page);
-        await openSuggestionsTab(page);
-        const details = page.locator('#config-tag-rules-details');
-        await expect(details).toBeVisible({ timeout: 15_000 });
+        await openRulesTab(page);
+        const panel = page.locator('#config-bm-tag-rules');
+        // Counted rather than assumed empty: the tests share one collection,
+        // and an earlier one may have written a rule of its own.
+        const before = await panel.locator('[data-tag-rule]').count();
 
-        // Whatever it started as, the reader's click is what has to survive.
-        const wasOpen = await details.evaluate((el) => el.open);
-        await details.locator('summary').click();
-        await expect.poll(() => details.evaluate((el) => el.open), { timeout: 5_000 }).toBe(!wasOpen);
+        await panel.locator('[data-tag-rule-pattern]').fill('written.example');
+        await panel.locator('[data-tag-rule-tag]').fill('reading');
+        await panel.locator('[data-tag-rule-add]').click();
 
-        await page.reload({ waitUntil: 'networkidle' });
-        await waitForConfigReady(page);
-        await openSuggestionsTab(page);
-        const after = page.locator('#config-tag-rules-details');
-        await expect(after).toBeVisible({ timeout: 15_000 });
-        await expect.poll(() => after.evaluate((el) => el.open), { timeout: 5_000 }).toBe(!wasOpen);
+        const row = panel.locator('[data-tag-rule]').filter({ hasText: 'written.example' });
+        await expect(row).toHaveCount(1, { timeout: 15_000 });
+        await expect(panel.locator('[data-tag-rule]')).toHaveCount(before + 1, { timeout: 15_000 });
+
+        // The form stays above what it produced: a reader with forty rules
+        // should not scroll past forty to write the forty-first.
+        const order = await panel.evaluate((el) => {
+            const form = el.querySelector('.config-suggestion-row--form');
+            const first = el.querySelector('[data-tag-rule]');
+            if (!first) return 'form first';
+            return form.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING ? 'form first' : 'list first';
+        });
+        expect(order).toBe('form first');
+
+        await row.first().locator('[data-tag-rule-remove]').click();
+        await expect(panel.locator('[data-tag-rule]')).toHaveCount(before, { timeout: 15_000 });
     });
 
     test('the info button explains the panel', async ({ page }) => {
         await open(page);
         await waitForConfigReady(page);
         await openSuggestionsTab(page);
-        const details = page.locator('#config-tag-rules-details');
-        await expect(details).toBeVisible({ timeout: 15_000 });
-        const before = await details.evaluate((el) => el.open);
-
         await page.locator('#config-bm-suggestions [data-tag-suggestions-info]').click();
         // The same AppModal every other config info button opens.
         await expect(page.locator('.app-modal, .modal-overlay').first()).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('body')).toContainText('Apply', { timeout: 15_000 });
-        // And it left the rules editor as it found it: the button sits in the
-        // head of the tab now, not in that <summary>.
-        expect(await details.evaluate((el) => el.open)).toBe(before);
+
     });
 
     test('a pattern the server would drop is refused with a reason', async ({ page }) => {
         await open(page);
         await waitForConfigReady(page);
-        await openSuggestionsTab(page);
-        const panel = page.locator('#config-bm-suggestions');
+        await openRulesTab(page);
+        const panel = page.locator('#config-bm-tag-rules');
 
         const before = await page.evaluate(() =>
             (window.dashboardInstance.settings.tagRules || []).length);
 
-        // The editor folds, and an earlier test may have left it shut in this
-        // browser's storage -- open it the way the reader would.
-        const rules = page.locator('#config-tag-rules-details');
-        if (!await rules.evaluate((el) => el.open)) {
-            await rules.locator('summary').click();
-        }
         await panel.locator('[data-tag-rule-pattern]').fill('reddit.com/r/selfhosted');
         await panel.locator('[data-tag-rule-tag]').fill('homelab');
         await panel.locator('[data-tag-rule-add]').click();

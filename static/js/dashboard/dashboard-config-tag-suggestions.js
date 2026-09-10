@@ -26,29 +26,6 @@
      */
     const MAX_ROWS = 25;
 
-    /*
-     * Whether the rules editor is open, remembered per browser.
-     *
-     * The panel is redrawn after every write -- applying a group, adding a
-     * rule, any bulk undo -- so a <details> whose state is derived from the
-     * content could not be kept shut: it would spring open again on the next
-     * repaint. The reader's own choice outranks the content, so it is stored;
-     * only the first visit falls back to the content, which opens the editor
-     * when there is nothing to review and there is nothing else to do here.
-     */
-    const OPEN_KEY = 'configTagRulesOpen';
-
-    function storedOpen() {
-        try {
-            const raw = global.localStorage?.getItem(OPEN_KEY);
-            if (raw === 'true') return true;
-            if (raw === 'false') return false;
-        } catch (err) {
-            // A private window, or site data switched off. The content decides.
-        }
-        return null;
-    }
-
     function reasonText(t, group) {
         if (group.reason.kind === 'rule') return t('config.tagSuggestionReasonRule', 'your rule');
         if (group.reason.kind === 'catalogue') {
@@ -83,48 +60,35 @@
         return field;
     }
 
-    function renderRules(container, ctx, hasGroups) {
+    /*
+     * The rules editor, on a tab of its own.
+     *
+     * The form sits above the list rather than under it: writing a rule is why
+     * a reader opens this, and a reader with forty rules would otherwise have
+     * to scroll past all forty to write the forty-first. The list below is a
+     * record, and a record belongs under the thing that adds to it.
+     */
+    function renderRules(container, ctx) {
         const t = ctx.t;
         const rules = ctx.rules || [];
-        const wrap = document.createElement('details');
-        wrap.className = 'config-suggestion-rules';
-        wrap.id = 'config-tag-rules-details';
-        const remembered = storedOpen();
-        wrap.open = remembered === null ? !hasGroups : remembered;
+        container.replaceChildren();
+        container.hidden = false;
 
-        const heading = document.createElement('summary');
-        heading.className = 'config-suggestions-summary';
-        const headingName = document.createElement('span');
-        headingName.className = 'config-suggestions-summary-title';
-        headingName.textContent = t('config.tagRulesTitle', 'Your rules');
-        const headingNote = document.createElement('span');
-        headingNote.className = 'config-suggestions-summary-note';
-        headingNote.textContent = rules.length
-            ? t('config.tagRulesSummaryCount', '{n} in use').replace('{n}', String(rules.length))
-            : t('config.tagRulesSummaryNone', 'none yet');
-        heading.append(headingName, headingNote);
-        wrap.appendChild(heading);
-
-        const hint = document.createElement('p');
-        hint.className = 'config-widget-field-hint';
-        hint.textContent = t('config.tagRulesHint',
-            'github.com → #code tags every GitHub bookmark. A rule always beats what nextDash worked out on its own. One path segment at most: github.com/trending, not github.com/trending/go.');
-        wrap.appendChild(hint);
-
-        rules.forEach((rule, index) => {
-            const row = document.createElement('div');
-            row.className = 'config-suggestion-row config-suggestion-row--rule';
-            const text = document.createElement('span');
-            text.className = 'config-suggestion-rule-text';
-            text.textContent = `${rule.pattern} → #${rule.tag}`;
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'config-btn config-btn--small config-btn--danger';
-            remove.setAttribute('data-tag-rule-remove', String(index));
-            remove.textContent = t('config.tagRuleRemove', 'Remove');
-            row.append(text, remove);
-            wrap.appendChild(row);
-        });
+        const head = document.createElement('div');
+        head.className = 'config-suggestions-head';
+        const intro = document.createElement('p');
+        intro.className = 'config-widget-field-hint';
+        intro.textContent = t('config.tagRulesIntro',
+            'A rule you write always beats what nextDash worked out on its own, and it proposes from the moment you add it.');
+        const info = document.createElement('button');
+        info.type = 'button';
+        info.className = 'config-info-btn';
+        info.setAttribute('data-tag-rules-info', '');
+        info.setAttribute('aria-label', t('config.settingInfoAria', 'More info'));
+        info.title = t('config.settingInfoAria', 'More info');
+        info.textContent = 'ℹ';
+        head.append(intro, info);
+        container.appendChild(head);
 
         const form = document.createElement('div');
         form.className = 'config-suggestion-row config-suggestion-row--form';
@@ -146,23 +110,56 @@
         add.setAttribute('data-tag-rule-add', '');
         add.textContent = t('config.tagRuleAdd', 'Add rule');
         form.appendChild(add);
-        wrap.appendChild(form);
+        container.appendChild(form);
 
         // Written into by addTagRule when the server would have dropped the
-        // rule. Kept in the DOM so the row does not jump when it fills.
+        // rule. Kept in the DOM so nothing jumps when it fills.
         const error = document.createElement('p');
         error.className = 'config-suggestion-error';
         error.setAttribute('data-tag-rule-error', '');
         error.setAttribute('role', 'status');
         error.hidden = true;
-        wrap.appendChild(error);
+        container.appendChild(error);
 
-        container.appendChild(wrap);
+        const hint = document.createElement('p');
+        hint.className = 'config-widget-field-hint';
+        hint.textContent = t('config.tagRulesHint',
+            'github.com → #code tags every GitHub bookmark. One path segment at most: github.com/trending, not github.com/trending/go.');
+        container.appendChild(hint);
+
+        if (!rules.length) {
+            const empty = document.createElement('p');
+            empty.className = 'config-widget-field-hint';
+            empty.setAttribute('data-tag-rules-empty', '');
+            empty.textContent = t('config.tagRulesEmpty',
+                'No rules yet. Everything on the Tag suggestions tab is worked out from your own tags and the catalogue.');
+            container.appendChild(empty);
+            return;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'config-suggestions-list config-suggestion-rules-list';
+        rules.forEach((rule, index) => {
+            const row = document.createElement('div');
+            row.className = 'config-suggestion-row config-suggestion-row--rule';
+            row.setAttribute('data-tag-rule', String(index));
+            const text = document.createElement('span');
+            text.className = 'config-suggestion-rule-text';
+            text.textContent = `${rule.pattern} → #${rule.tag}`;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'config-btn config-btn--small config-btn--danger';
+            remove.setAttribute('data-tag-rule-remove', String(index));
+            remove.textContent = t('config.tagRuleRemove', 'Remove');
+            row.append(text, remove);
+            list.appendChild(row);
+        });
+        container.appendChild(list);
     }
 
     function renderList(t, groups) {
         const list = document.createElement('ul');
-        list.className = 'config-suggestions-list';
+        list.className = 'config-suggestions-list config-suggestions-list--proposals';
         groups.slice(0, MAX_ROWS).forEach((group, index) => {
             const row = document.createElement('li');
             row.className = 'config-suggestion-row config-suggestion-row--proposal';
@@ -180,11 +177,21 @@
                 ? t('config.tagSuggestionAcrossSites', 'across sites')
                 : group.pattern;
 
+            /*
+             * The number alone, in a chip.
+             *
+             * Fifteen rows each ending in the word "bookmark" is fifteen
+             * copies of a word the column already means. The full phrase stays
+             * as the accessible name, because a bare "3" read aloud is not a
+             * count of anything.
+             */
             const count = document.createElement('span');
             count.className = 'config-suggestion-count';
-            count.textContent = group.keys.length === 1
+            count.textContent = String(group.keys.length);
+            count.setAttribute('aria-label', group.keys.length === 1
                 ? t('config.tagSuggestionCountOne', '1 bookmark')
-                : t('config.tagSuggestionCount', '{n} bookmarks').replace('{n}', String(group.keys.length));
+                : t('config.tagSuggestionCount', '{n} bookmarks').replace('{n}', String(group.keys.length)));
+            count.title = count.getAttribute('aria-label');
 
             const why = document.createElement('span');
             why.className = 'config-suggestion-reason';
@@ -307,9 +314,8 @@
             container.appendChild(note);
         }
 
-        renderRules(container, ctx, groups.length > 0);
         return groups;
     }
 
-    global.ConfigTagSuggestions = { render, OPEN_KEY, MAX_ROWS };
+    global.ConfigTagSuggestions = { render, renderRules, MAX_ROWS };
 })(window);

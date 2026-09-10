@@ -4892,6 +4892,7 @@ class DashboardConfig {
         const map = {
             list: ['config.bmTabList', 'List'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
+            'tag-rules': ['config.bmTabTagRules', 'Your rules'],
             settings: ['config.bmTabSettings', 'Settings'],
             'local-copies': ['config.bmTabLocalCopies', 'Local copies'],
         };
@@ -13453,7 +13454,7 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'tag-suggestions', 'settings', 'local-copies'];
+    static BM_TABS = ['list', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -19978,6 +19979,9 @@ class DashboardConfig {
         if (this.bmTab === 'tag-suggestions') {
             return '<div id="config-bm-suggestions" class="config-suggestions"></div>';
         }
+        if (this.bmTab === 'tag-rules') {
+            return '<div id="config-bm-tag-rules" class="config-suggestions"></div>';
+        }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
@@ -20493,6 +20497,35 @@ class DashboardConfig {
                 void this.restoreTagSuggestions();
                 return;
             }
+        });
+    }
+
+    renderTagRulesSafe() {
+        const container = document.getElementById('config-bm-tag-rules');
+        if (!container || !window.ConfigTagSuggestions?.renderRules) return;
+        window.ConfigTagSuggestions.renderRules(container, {
+            rules: this.dash.settings?.tagRules || [],
+            t: (key, fallback) => this.t(key, fallback),
+        });
+    }
+
+    /*
+     * The rules tab: one container, one delegated listener.
+     *
+     * Delegated for the same reason the suggestions tab is -- the editor is
+     * redrawn whole after every add and every remove, so a listener bound to a
+     * button would go with it.
+     */
+    bindTagRulesTab(container) {
+        const host = container.querySelector('#config-bm-tag-rules')
+            || (container.id === 'config-bm-tag-rules' ? container : null);
+        if (!host) return;
+        this.renderTagRulesSafe();
+        host.addEventListener('click', (event) => {
+            if (event.target.closest('[data-tag-rules-info]')) {
+                this.openTagRulesInfo();
+                return;
+            }
             const removeRule = event.target.closest('[data-tag-rule-remove]');
             if (removeRule) {
                 void this.removeTagRule(Number(removeRule.getAttribute('data-tag-rule-remove')));
@@ -20504,20 +20537,25 @@ class DashboardConfig {
                 void this.addTagRule(pattern, label);
             }
         });
-        // The <details> around the rules is replaced on every redraw, so the
-        // listener sits on the container and catches the toggle as it bubbles.
-        host.addEventListener('toggle', (event) => {
-            const details = event.target.closest?.('#config-tag-rules-details');
-            if (!details) return;
-            try {
-                window.localStorage?.setItem(
-                    window.ConfigTagSuggestions?.OPEN_KEY || 'configTagRulesOpen',
-                    details.open ? 'true' : 'false');
-            } catch (err) {
-                // Site data switched off: the editor still opens and shuts, it
-                // just starts from the content again next time.
-            }
-        }, true);
+    }
+
+    /** What a rule is, and what it is not. */
+    openTagRulesInfo() {
+        if (!window.AppModal?.alert) return;
+        const body = this.t('config.tagRulesInfoBody', [
+            'A rule is a site and the tag it should get.',
+            '',
+            'Write github.com → #code and every GitHub bookmark is offered #code, whatever the rest of your collection says. A rule always wins: it beats the tags nextDash noticed you using, and it beats the shipped catalogue.',
+            '',
+            'A pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address, and not two segments deep.',
+            '',
+            'Rules propose; they never tag anything on their own. What they produce appears on the Tag suggestions tab, one row per rule, with an Apply beside it.',
+        ].join('\n'));
+        window.AppModal.alert({
+            title: this.t('config.tagRulesInfoTitle', 'How your rules work'),
+            htmlMessage: this.dash.escapeHtml(body).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
     }
 
     /*
@@ -22108,6 +22146,8 @@ class DashboardConfig {
             // a second listener on every tab button.
             if (tab === 'tag-suggestions') {
                 this.bindTagSuggestionsTab(body);
+            } else if (tab === 'tag-rules') {
+                this.bindTagRulesTab(body);
             } else if (tab === 'settings') {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
@@ -22121,6 +22161,10 @@ class DashboardConfig {
         });
         if (this.bmTab === 'tag-suggestions') {
             this.bindTagSuggestionsTab(container);
+            return;
+        }
+        if (this.bmTab === 'tag-rules') {
+            this.bindTagRulesTab(container);
             return;
         }
         if (this.bmTab === 'settings') {
@@ -23308,6 +23352,8 @@ class DashboardConfig {
         const rules = [...(this.dash.settings?.tagRules || []), { pattern: cleanPattern, tag: cleanTag }];
         await this.setBehavior('tagRules', rules);
         this.renderTagSuggestionsSafe();
+        this.renderTagRulesSafe();
+        this.syncTagSuggestionCount();
     }
 
     /*
@@ -23405,6 +23451,8 @@ class DashboardConfig {
         rules.splice(index, 1);
         await this.setBehavior('tagRules', rules);
         this.renderTagSuggestionsSafe();
+        this.renderTagRulesSafe();
+        this.syncTagSuggestionCount();
     }
 
     async bulkDelete(picked) {

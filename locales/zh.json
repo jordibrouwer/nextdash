@@ -5878,7 +5878,7 @@
     "tagSuggestionsInfoBody": "两样东西会提出标签。\n\n你已经做过的事：同一站点上有三个或更多书签，其中已打标签的大多带着同一个标签 — 其余的就会被建议这个标签。该行会说明有多少个一致。\n\n你的规则：你指定的站点，以及它该得到的标签。规则总是优先，并且从你添加的那一刻起就开始提出建议。\n\n模式是一个站点，可以带一个路径段 — github.com，或 github.com/trending。不是整个地址。\n\n没有任何东西会自动应用。Apply 一次给整组打上标签，提示条里的撤销会立刻还原。",
     "tagRulePatternLabel": "站点，或站点与栏目",
     "tagRuleTagLabel": "要建议的标签",
-    "tagRulesHint": "github.com → #code 会给你所有 GitHub 书签打标签。规则总是胜过 nextDash 自己得出的结论。最多一个路径段：github.com/trending，而不是 github.com/trending/go。",
+    "tagRulesHint": "github.com → #code 会给你所有 GitHub 书签打标签。最多一个路径段：github.com/trending，而不是 github.com/trending/go。",
     "tagRuleErrorEmpty": "站点和标签都要填。",
     "tagRuleErrorAddress": "请填站点而不是整个地址 — github.com，而不是 https://github.com/trending?since=weekly。",
     "tagRuleErrorDepth": "最多一个路径段：github.com/trending，而不是 github.com/trending/go。",
@@ -5903,7 +5903,12 @@
     "tagScanTitle": "正在读取页面…",
     "tagScanStopping": "正在停止…",
     "tagScanDone": "已读取 {n} 个页面。",
-    "tagScanStopped": "在 {n} / {total} 处停止。"
+    "tagScanStopped": "在 {n} / {total} 处停止。",
+    "bmTabTagRules": "你的规则",
+    "tagRulesIntro": "你写的规则总是胜过 nextDash 自己得出的结论，并且从你添加的那一刻起就开始提出建议。",
+    "tagRulesEmpty": "还没有规则。标签建议标签页里的内容都来自你自己的标签和目录。",
+    "tagRulesInfoTitle": "你的规则如何运作",
+    "tagRulesInfoBody": "一条规则就是一个站点，加上它该得到的标签。\n\n写下 github.com → #code，那么每个 GitHub 书签都会被建议 #code，无论你其余的收藏怎么说。规则总是优先：胜过 nextDash 看到你在用的标签，也胜过随附的目录。\n\n模式是一个站点，可以带一个路径段 — github.com，或 github.com/trending。不是整个地址，也不能深到两段。\n\n规则只是建议；它们从不自行打标签。它们产生的结果出现在标签建议标签页里，每条规则一行，旁边有 Apply。"
   },
   "colors": {
     "title": "主题自定义",

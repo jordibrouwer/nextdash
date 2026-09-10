@@ -108,7 +108,9 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         await page.locator('[data-bm-tab="settings"]').focus();
         await page.keyboard.press('ArrowLeft');
 
-        // Tag suggestions sits between List and Settings.
+        // List · Tag suggestions · Your rules · Settings · Local copies.
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-rules');
+        await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
         await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('list');

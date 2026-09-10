@@ -5878,7 +5878,7 @@
     "tagSuggestionsInfoBody": "Dos cosas proponen una etiqueta.\n\nLo que ya hiciste: tres marcadores o más de un mismo sitio, y la mayoría de los etiquetados llevan la misma etiqueta; al resto se le ofrece. La fila dice cuántos coincidían.\n\nTus reglas: un sitio que nombras y la etiqueta que debe recibir. Una regla siempre gana, y propone desde el momento en que la añades.\n\nUn patrón es un sitio, opcionalmente con un segmento de ruta: github.com, o github.com/trending. No una dirección entera.\n\nNada se aplica solo. Apply etiqueta todo un grupo de una vez, y deshacer en el aviso lo devuelve al instante.",
     "tagRulePatternLabel": "Sitio, o sitio y sección",
     "tagRuleTagLabel": "Etiqueta a proponer",
-    "tagRulesHint": "github.com → #code etiqueta todos tus marcadores de GitHub. Una regla siempre gana a lo que nextDash dedujo por su cuenta. Un segmento de ruta como máximo: github.com/trending, no github.com/trending/go.",
+    "tagRulesHint": "github.com → #code etiqueta todos tus marcadores de GitHub. Un segmento de ruta como máximo: github.com/trending, no github.com/trending/go.",
     "tagRuleErrorEmpty": "Rellena tanto un sitio como una etiqueta.",
     "tagRuleErrorAddress": "Usa un sitio en lugar de una dirección entera: github.com, no https://github.com/trending?since=weekly.",
     "tagRuleErrorDepth": "Un segmento de ruta como máximo: github.com/trending, no github.com/trending/go.",
@@ -5903,7 +5903,12 @@
     "tagScanTitle": "Leyendo páginas…",
     "tagScanStopping": "Deteniendo…",
     "tagScanDone": "{n} páginas leídas.",
-    "tagScanStopped": "Detenido tras {n} de {total}."
+    "tagScanStopped": "Detenido tras {n} de {total}.",
+    "bmTabTagRules": "Tus reglas",
+    "tagRulesIntro": "Una regla que escribes siempre gana a lo que nextDash dedujo por su cuenta, y propone desde el momento en que la añades.",
+    "tagRulesEmpty": "Aún no hay reglas. Todo lo que ves en la pestaña Sugerencias de etiquetas sale de tus propias etiquetas y del catálogo.",
+    "tagRulesInfoTitle": "Cómo funcionan tus reglas",
+    "tagRulesInfoBody": "Una regla es un sitio y la etiqueta que debe recibir.\n\nEscribe github.com → #code y a cada marcador de GitHub se le ofrecerá #code, diga lo que diga el resto de tu colección. Una regla siempre gana: a las etiquetas que nextDash te vio usar y al catálogo incluido.\n\nUn patrón es un sitio, opcionalmente con un segmento de ruta: github.com, o github.com/trending. No una dirección entera, ni dos segmentos de profundidad.\n\nLas reglas proponen; nunca etiquetan solas. Lo que producen aparece en la pestaña Sugerencias de etiquetas, una fila por regla, con Apply al lado."
   },
   "colors": {
     "title": "personalización del tema",

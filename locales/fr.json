@@ -5878,7 +5878,7 @@
     "tagSuggestionsInfoBody": "Deux choses proposent une étiquette.\n\nCe que vous avez déjà fait : trois marque-pages ou plus sur un même site, dont la plupart de ceux qui sont étiquetés portent la même étiquette — elle est proposée aux autres. La ligne indique combien étaient d’accord.\n\nVos règles : un site que vous nommez, et l’étiquette qu’il doit recevoir. Une règle l’emporte toujours, et elle propose dès que vous l’ajoutez.\n\nUn motif est un site, éventuellement avec un segment de chemin — github.com, ou github.com/trending. Pas une adresse entière.\n\nRien ne s’applique tout seul. Apply étiquette tout un groupe d’un coup, et l’annulation dans la notification le remet aussitôt.",
     "tagRulePatternLabel": "Site, ou site et section",
     "tagRuleTagLabel": "Étiquette à proposer",
-    "tagRulesHint": "github.com → #code étiquette tous vos marque-pages GitHub. Une règle l’emporte toujours sur ce que nextDash a déduit seul. Un segment de chemin au plus : github.com/trending, pas github.com/trending/go.",
+    "tagRulesHint": "github.com → #code étiquette tous vos marque-pages GitHub. Un segment de chemin au plus : github.com/trending, pas github.com/trending/go.",
     "tagRuleErrorEmpty": "Renseignez à la fois un site et une étiquette.",
     "tagRuleErrorAddress": "Indiquez un site plutôt qu’une adresse entière — github.com, pas https://github.com/trending?since=weekly.",
     "tagRuleErrorDepth": "Un segment de chemin au plus : github.com/trending, pas github.com/trending/go.",
@@ -5903,7 +5903,12 @@
     "tagScanTitle": "Lecture des pages…",
     "tagScanStopping": "Arrêt en cours…",
     "tagScanDone": "{n} pages lues.",
-    "tagScanStopped": "Arrêté après {n} sur {total}."
+    "tagScanStopped": "Arrêté après {n} sur {total}.",
+    "bmTabTagRules": "Vos règles",
+    "tagRulesIntro": "Une règle que vous écrivez l’emporte toujours sur ce que nextDash a déduit seul, et elle propose dès que vous l’ajoutez.",
+    "tagRulesEmpty": "Aucune règle pour l’instant. Tout ce qui figure dans l’onglet Suggestions d’étiquettes vient de vos propres étiquettes et du catalogue.",
+    "tagRulesInfoTitle": "Comment fonctionnent vos règles",
+    "tagRulesInfoBody": "Une règle est un site et l’étiquette qu’il doit recevoir.\n\nÉcrivez github.com → #code et chaque marque-page GitHub se voit proposer #code, quoi que dise le reste de votre collection. Une règle l’emporte toujours : sur les étiquettes que nextDash vous a vu employer, et sur le catalogue fourni.\n\nUn motif est un site, éventuellement avec un segment de chemin — github.com, ou github.com/trending. Pas une adresse entière, et pas deux segments de profondeur.\n\nLes règles proposent ; elles n’étiquettent jamais d’elles-mêmes. Ce qu’elles produisent apparaît dans l’onglet Suggestions d’étiquettes, une ligne par règle, avec un Apply à côté."
   },
   "colors": {
     "title": "personnalisation du thème",

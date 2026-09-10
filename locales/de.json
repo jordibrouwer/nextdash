@@ -5878,7 +5878,7 @@
     "tagSuggestionsInfoBody": "Zwei Dinge schlagen ein Tag vor.\n\nWas Sie schon getan haben: drei oder mehr Lesezeichen einer Website, von denen die meisten getaggten dasselbe Tag tragen — den übrigen wird es angeboten. Die Zeile nennt, wie viele übereinstimmten.\n\nIhre Regeln: eine Website, die Sie nennen, und das Tag, das sie bekommen soll. Eine Regel gewinnt immer und schlägt vor, sobald Sie sie anlegen.\n\nEin Muster ist eine Website, wahlweise mit einem Pfadsegment — github.com oder github.com/trending. Keine ganze Adresse.\n\nNichts wird von selbst angewendet. Apply taggt eine ganze Gruppe auf einmal, und das Rückgängig in der Meldung stellt es sofort zurück.",
     "tagRulePatternLabel": "Website oder Website und Bereich",
     "tagRuleTagLabel": "Vorzuschlagendes Tag",
-    "tagRulesHint": "github.com → #code taggt jedes GitHub-Lesezeichen. Eine Regel schlägt immer das, was nextDash selbst ermittelt hat. Höchstens ein Pfadsegment: github.com/trending, nicht github.com/trending/go.",
+    "tagRulesHint": "github.com → #code taggt jedes GitHub-Lesezeichen. Höchstens ein Pfadsegment: github.com/trending, nicht github.com/trending/go.",
     "tagRuleErrorEmpty": "Tragen Sie sowohl eine Website als auch ein Tag ein.",
     "tagRuleErrorAddress": "Nehmen Sie eine Website statt einer ganzen Adresse — github.com, nicht https://github.com/trending?since=weekly.",
     "tagRuleErrorDepth": "Höchstens ein Pfadsegment: github.com/trending, nicht github.com/trending/go.",
@@ -5903,7 +5903,12 @@
     "tagScanTitle": "Seiten werden gelesen…",
     "tagScanStopping": "Wird angehalten…",
     "tagScanDone": "{n} Seiten gelesen.",
-    "tagScanStopped": "Nach {n} von {total} angehalten."
+    "tagScanStopped": "Nach {n} von {total} angehalten.",
+    "bmTabTagRules": "Ihre Regeln",
+    "tagRulesIntro": "Eine Regel, die Sie schreiben, schlägt immer das, was nextDash selbst ermittelt hat, und schlägt vor, sobald Sie sie anlegen.",
+    "tagRulesEmpty": "Noch keine Regeln. Alles im Tab Tag-Vorschläge stammt aus Ihren eigenen Tags und dem Katalog.",
+    "tagRulesInfoTitle": "So funktionieren Ihre Regeln",
+    "tagRulesInfoBody": "Eine Regel ist eine Website und das Tag, das sie bekommen soll.\n\nSchreiben Sie github.com → #code, und jedem GitHub-Lesezeichen wird #code angeboten, was der Rest Ihrer Sammlung auch sagt. Eine Regel gewinnt immer: gegen die Tags, die nextDash Sie verwenden sah, und gegen den mitgelieferten Katalog.\n\nEin Muster ist eine Website, wahlweise mit einem Pfadsegment — github.com oder github.com/trending. Keine ganze Adresse und nicht zwei Segmente tief.\n\nRegeln schlagen vor; sie taggen nie von selbst. Was sie ergeben, steht im Tab Tag-Vorschläge, eine Zeile je Regel, mit Apply daneben."
   },
   "colors": {
     "title": "themenanpassung",
