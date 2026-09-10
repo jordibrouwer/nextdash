@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen } = require('./e2e-helpers');
+const { markWhatsNewSeen, waitForConfigReady } = require('./e2e-helpers');
 
 async function open(page) {
     await markWhatsNewSeen(page);
@@ -87,5 +87,45 @@ test.describe('the tag suggestion engine', () => {
             return counts;
         }, items([['a', 'https://github.com/one', []]]));
         expect(perKey.a).toBe(2);
+    });
+});
+
+test.describe('the suggestions panel', () => {
+    test('offers a group, and applying it tags exactly those bookmarks', async ({ page }) => {
+        await open(page);
+        // dashboardInstance.config is a lazy-loading stub until the app has
+        // finished wiring itself up; window.TagSuggestions loads eagerly and
+        // much earlier, so open()'s wait alone is not enough here.
+        await waitForConfigReady(page);
+        // Four bookmarks on one host, three already tagged: the fourth is the
+        // one the panel should offer to catch up.
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://plan.example/one', tags: ['code'] },
+                { name: 'Two', url: 'https://plan.example/two', tags: ['code'] },
+                { name: 'Three', url: 'https://plan.example/three', tags: ['code'] },
+                { name: 'Four', url: 'https://plan.example/four', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        const panel = page.locator('#config-bm-suggestions');
+        await expect(panel).toBeVisible({ timeout: 15_000 });
+
+        const row = panel.locator('[data-tag-suggestion]').filter({ hasText: 'code' }).first();
+        await expect(row).toContainText('plan.example');
+        await row.locator('[data-tag-suggestion-apply]').click();
+
+        await expect.poll(async () => page.evaluate(() =>
+            (window.dashboardInstance.allBookmarks || [])
+                .filter((b) => b.url.includes('plan.example') && (b.tags || []).includes('code')).length),
+        { timeout: 15_000 }).toBe(4);
     });
 });

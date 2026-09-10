@@ -20364,6 +20364,25 @@ class DashboardConfig {
         return typeof this.renderBookmarkTagCloud === 'function' ? this.renderBookmarkTagCloud() : '';
     }
 
+    /** What the engine needs: a key, an address and the tags it already has. */
+    tagSuggestionItems() {
+        return (this.dash.allBookmarks || []).map((b) => ({
+            key: this.bookmarkKey(b),
+            url: b.url,
+            tags: Array.isArray(b.tags) ? b.tags : [],
+        }));
+    }
+
+    renderTagSuggestionsSafe() {
+        const container = document.getElementById('config-bm-suggestions');
+        if (!container || !window.ConfigTagSuggestions) return;
+        this._tagSuggestionGroups = window.ConfigTagSuggestions.render(container, {
+            items: this.tagSuggestionItems(),
+            rules: this.dash.settings?.tagRules || [],
+            t: (key, fallback) => this.t(key, fallback),
+        });
+    }
+
     renderBookmarkFilterChipsSafe() {
         return typeof this.renderBookmarkFilterChips === 'function' ? this.renderBookmarkFilterChips() : '';
     }
@@ -20467,6 +20486,7 @@ class DashboardConfig {
                     <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                 </div>
                 ${this.renderCleanupFilterBannerSafe()}
+                <div id="config-bm-suggestions" class="config-suggestions" hidden></div>
                 <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>
                 <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
             </div>
@@ -21801,6 +21821,13 @@ class DashboardConfig {
         });
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
         this.bindBookmarkTagCloud(container);
+        this.renderTagSuggestionsSafe();
+        container.querySelector('#config-bm-suggestions')?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-tag-suggestion-apply]');
+            if (!button) return;
+            const index = Number(button.getAttribute('data-tag-suggestion-apply'));
+            void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+        });
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -22886,6 +22913,31 @@ class DashboardConfig {
                 'config.bulkUndoFailed', 'Could not undo that.'),
             duration: 8000,
         });
+    }
+
+    /*
+     * Apply one accepted group.
+     *
+     * Through mutateSelected rather than through bulkTags: bulkTags reads the
+     * tag and the mode out of the bulk bar's own inputs, which this panel does
+     * not fill in. The undo, the snapshots and the page-by-page write are the
+     * same either way.
+     */
+    async applyTagSuggestion(group) {
+        if (!group?.tag || !Array.isArray(group.keys) || !group.keys.length) return;
+        const wanted = new Set(group.keys);
+        const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
+        if (!picked.length) return;
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, group.tag])] };
+        });
+        this.notify(this.t('config.tagSuggestionApplied', 'Tags added.'), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 8000,
+        });
+        this.renderTagSuggestionsSafe();
     }
 
     async bulkDelete(picked) {

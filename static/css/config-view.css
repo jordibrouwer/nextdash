@@ -5987,6 +5987,52 @@ button.config-bm-shortcut-pill {
     max-width: 7rem;
 }
 
+.config-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    margin: var(--space-2, 0.5rem) 0;
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: var(--radius-md, 6px);
+}
+
+.config-suggestions-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted, #888);
+}
+
+/* One line per proposal: the tag, what it matched, how many, and why. The
+   reason is what makes a suggestion judgeable rather than merely offered. */
+.config-suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-suggestion-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
+}
+
+.config-suggestion-pattern,
+.config-suggestion-count,
+.config-suggestion-reason {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.config-suggestion-reason {
+    margin-left: auto;
+}
+
 /* A list of addresses, one per line: tall enough to see a few at once, and
    resizable downward rather than sideways so a long URL wraps instead of
    pushing the panel wide. */
