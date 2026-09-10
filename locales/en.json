@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "Finding your way around",
     "healthTutorialStepLayoutScore": "Score",
     "healthTutorialStepLayoutBody1": "Every filter is a row in the left column with its own count, and the figures above them — Score, the trend, broken, uptime over 24 hours — are readouts rather than filters. A filter with nothing in it drops out of the list and comes back when it fills.",
-    "healthTutorialStepLayoutBody2": "Monitors sits under Sections, not among the filters, because it is a different question: it swaps the list for pooled uptime, the slowest responders and recent outages. The header stays put as you scroll, so Work through and Rot report are always in reach."
+    "healthTutorialStepLayoutBody2": "Monitors sits under Sections, not among the filters, because it is a different question: it swaps the list for pooled uptime, the slowest responders and recent outages. The header stays put as you scroll, so Work through and Rot report are always in reach.",
+    "tagSuggestionsNoticeTitle": "{count} bookmarks could take a tag",
+    "tagSuggestionsNoticeBody": "Worked out from the tags you already use and the sites nextDash knows. Nothing is tagged until you say so.",
+    "tagSuggestionsNoticeStart": "Start",
+    "tagSuggestionsNoticeLater": "Not today",
+    "tagSuggestionsNoticeRemindLater": "Remind me in 30 days"
   },
   "health": {
     "reloadPage": "Reload page",

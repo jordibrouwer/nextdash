@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "Orientarse por aquí",
     "healthTutorialStepLayoutScore": "Puntuación",
     "healthTutorialStepLayoutBody1": "Cada filtro es una fila de la columna izquierda con su propio recuento, y las cifras de encima —Puntuación, la tendencia, rotos, disponibilidad en 24 horas— son lecturas, no filtros. Un filtro sin nada dentro desaparece de la lista y vuelve cuando se llena.",
-    "healthTutorialStepLayoutBody2": "Vigilados está bajo Secciones y no entre los filtros, porque es otra pregunta: cambia la lista por la disponibilidad conjunta, los que responden más lento y las caídas recientes. La cabecera se queda fija al desplazarte, así que Recorrer y el Informe de deterioro están siempre a mano."
+    "healthTutorialStepLayoutBody2": "Vigilados está bajo Secciones y no entre los filtros, porque es otra pregunta: cambia la lista por la disponibilidad conjunta, los que responden más lento y las caídas recientes. La cabecera se queda fija al desplazarte, así que Recorrer y el Informe de deterioro están siempre a mano.",
+    "tagSuggestionsNoticeTitle": "{count} marcadores podrían llevar una etiqueta",
+    "tagSuggestionsNoticeBody": "Deducido de las etiquetas que ya usas y de los sitios que nextDash conoce. Nada se etiqueta hasta que tú lo digas.",
+    "tagSuggestionsNoticeStart": "Empezar",
+    "tagSuggestionsNoticeLater": "Hoy no",
+    "tagSuggestionsNoticeRemindLater": "Recordármelo en 30 días"
   },
   "health": {
     "reloadPage": "Recargar la página",

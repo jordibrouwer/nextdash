@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "S'orienter",
     "healthTutorialStepLayoutScore": "Score",
     "healthTutorialStepLayoutBody1": "Chaque filtre est une ligne de la colonne de gauche avec son propre compte, et les chiffres au-dessus — score, tendance, liens cassés, disponibilité sur 24 heures — sont des relevés et non des filtres. Un filtre vide sort de la liste et revient dès qu'il se remplit.",
-    "healthTutorialStepLayoutBody2": "Moniteurs figure sous Sections et non parmi les filtres, car c'est une autre question : il remplace la liste par la disponibilité cumulée, les réponses les plus lentes et les pannes récentes. L'en-tête reste en place pendant le défilement, Traiter et Rapport de dégradation restent donc à portée."
+    "healthTutorialStepLayoutBody2": "Moniteurs figure sous Sections et non parmi les filtres, car c'est une autre question : il remplace la liste par la disponibilité cumulée, les réponses les plus lentes et les pannes récentes. L'en-tête reste en place pendant le défilement, Traiter et Rapport de dégradation restent donc à portée.",
+    "tagSuggestionsNoticeTitle": "{count} marque-pages pourraient recevoir une étiquette",
+    "tagSuggestionsNoticeBody": "Déduit des étiquettes que vous employez déjà et des sites que nextDash connaît. Rien n’est étiqueté avant que vous ne le disiez.",
+    "tagSuggestionsNoticeStart": "Commencer",
+    "tagSuggestionsNoticeLater": "Pas aujourd’hui",
+    "tagSuggestionsNoticeRemindLater": "Me le rappeler dans 30 jours"
   },
   "health": {
     "reloadPage": "Recharger la page",

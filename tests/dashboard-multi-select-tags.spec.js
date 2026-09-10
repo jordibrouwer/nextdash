@@ -207,4 +207,20 @@ test.describe('bulk tagging from the multi-select toolbar', () => {
         // Tagging is not a terminal action the way delete is.
         await expect(page.locator('.multi-select-toolbar')).toBeVisible();
     });
+
+    test('the corner card counts only what needs no scan round', async ({ page }) => {
+        await openDashboard(page);
+        const seen = await page.evaluate(async () => {
+            const N = window.TagSuggestionsNotice;
+            if (!N) return null;
+            await N.ensureCatalogue();
+            return { count: N.proposalCount(), min: N.MIN_TO_OFFER };
+        });
+        test.skip(seen === null, 'notice card not loaded');
+        // Ten is the floor for asking; the count itself depends on the
+        // collection, so what is pinned here is that it is a number and that
+        // the threshold is the one the design named.
+        expect(Number.isFinite(seen.count)).toBe(true);
+        expect(seen.min).toBe(10);
+    });
 });

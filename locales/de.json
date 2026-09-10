@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "Sich zurechtfinden",
     "healthTutorialStepLayoutScore": "Punktzahl",
     "healthTutorialStepLayoutBody1": "Jeder Filter ist eine Zeile in der linken Spalte mit eigener Zahl, und die Werte darüber — Punktzahl, Trend, defekt, Uptime über 24 Stunden — sind Anzeigen und keine Filter. Ein Filter ohne Inhalt fällt aus der Liste und kehrt zurück, sobald er sich füllt.",
-    "healthTutorialStepLayoutBody2": "Monitore stehen unter Abschnitte und nicht bei den Filtern, denn es ist eine andere Frage: Sie ersetzen die Liste durch gebündelte Uptime, die langsamsten Antworten und jüngste Ausfälle. Die Kopfzeile bleibt beim Scrollen stehen, Durcharbeiten und Verfallsbericht sind also immer erreichbar."
+    "healthTutorialStepLayoutBody2": "Monitore stehen unter Abschnitte und nicht bei den Filtern, denn es ist eine andere Frage: Sie ersetzen die Liste durch gebündelte Uptime, die langsamsten Antworten und jüngste Ausfälle. Die Kopfzeile bleibt beim Scrollen stehen, Durcharbeiten und Verfallsbericht sind also immer erreichbar.",
+    "tagSuggestionsNoticeTitle": "{count} Lesezeichen könnten ein Tag vertragen",
+    "tagSuggestionsNoticeBody": "Ermittelt aus den Tags, die Sie schon verwenden, und den Websites, die nextDash kennt. Getaggt wird nichts, bis Sie es sagen.",
+    "tagSuggestionsNoticeStart": "Loslegen",
+    "tagSuggestionsNoticeLater": "Nicht heute",
+    "tagSuggestionsNoticeRemindLater": "In 30 Tagen erinnern"
   },
   "health": {
     "reloadPage": "Seite neu laden",

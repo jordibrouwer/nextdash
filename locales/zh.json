@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "先认认路",
     "healthTutorialStepLayoutScore": "评分",
     "healthTutorialStepLayoutBody1": "每个过滤条件都是左栏里的一行，各自带着数量；它们上方的数字——评分、趋势、损坏、24 小时可用率——是读数而不是过滤条件。空的过滤条件会从列表中消失，一有内容就回来。",
-    "healthTutorialStepLayoutBody2": "监控列在“分区”下而不是混在过滤条件里，因为那是另一个问题：它把列表换成汇总可用率、最慢的响应和近期故障。滚动时顶部保持不动，所以逐条处理和腐化报告始终触手可及。"
+    "healthTutorialStepLayoutBody2": "监控列在“分区”下而不是混在过滤条件里，因为那是另一个问题：它把列表换成汇总可用率、最慢的响应和近期故障。滚动时顶部保持不动，所以逐条处理和腐化报告始终触手可及。",
+    "tagSuggestionsNoticeTitle": "{count} 个书签可以打标签",
+    "tagSuggestionsNoticeBody": "根据你已经在用的标签和 nextDash 认识的站点得出。在你同意之前不会打上任何标签。",
+    "tagSuggestionsNoticeStart": "开始",
+    "tagSuggestionsNoticeLater": "今天不用",
+    "tagSuggestionsNoticeRemindLater": "30 天后提醒我"
   },
   "health": {
     "reloadPage": "重新加载页面",

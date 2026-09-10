@@ -1963,7 +1963,12 @@
     "healthTutorialStepLayoutTitle": "De weg vinden",
     "healthTutorialStepLayoutScore": "Score",
     "healthTutorialStepLayoutBody1": "Elk filter is een rij in de linkerkolom met zijn eigen aantal, en de cijfers erboven — score, de trend, kapot, uptime over 24 uur — zijn uitlezingen en geen filters. Een filter zonder inhoud valt uit de lijst en komt terug zodra het vult.",
-    "healthTutorialStepLayoutBody2": "Monitors staat onder Secties en niet tussen de filters, want het is een andere vraag: het vervangt de lijst door gebundelde uptime, de traagste antwoorden en recente storingen. De kop blijft staan tijdens het scrollen, dus Werk door en Rot-rapport zijn altijd bij de hand."
+    "healthTutorialStepLayoutBody2": "Monitors staat onder Secties en niet tussen de filters, want het is een andere vraag: het vervangt de lijst door gebundelde uptime, de traagste antwoorden en recente storingen. De kop blijft staan tijdens het scrollen, dus Werk door en Rot-rapport zijn altijd bij de hand.",
+    "tagSuggestionsNoticeTitle": "{count} bookmarks kunnen een tag krijgen",
+    "tagSuggestionsNoticeBody": "Afgeleid uit de tags die je al gebruikt en de sites die nextDash kent. Er wordt niets getagd tot jij het zegt.",
+    "tagSuggestionsNoticeStart": "Beginnen",
+    "tagSuggestionsNoticeLater": "Niet vandaag",
+    "tagSuggestionsNoticeRemindLater": "Herinner me over 30 dagen"
   },
   "health": {
     "reloadPage": "Pagina herladen",
