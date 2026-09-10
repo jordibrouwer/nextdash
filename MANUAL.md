@@ -2970,6 +2970,10 @@ All URLs already exist on the chosen page, or the HTML had no http(s) links. Try
 
 Bookmark index may have changed after reorder/delete. Link still opens the right page; use search or `?url=` fallback if added manually.
 
+### Colours look wrong after the system switched to dark
+
+**Follow system dark mode** repaints the page the moment macOS or Windows switches, including while the tab sits in the background. Up to v1.7.1 a switch that happened in a hidden tab could leave the previous background pinned to the page under the new theme's text — dark text on a dark page, or the reverse — until you reloaded. Fixed: the repaint now releases that background whether or not the tab is being drawn. If you still see it, hard-refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) once to drop cached JavaScript from before the fix.
+
 ### Settings not applying
 
 Most settings save the moment you change them, and confirm with a short *Saved* message. The bookmark editor is the exception: press **Save** there to write your edits.
