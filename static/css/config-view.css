@@ -5386,18 +5386,6 @@ button.config-bm-shortcut-pill {
     font-size: var(--text-sm, 0.78rem);
 }
 
-/* The keys the list answers to, said once under the toolbar rather than left
-   to be discovered. */
-.config-bm-keys-hint {
-    margin: 0 0 var(--space-2, 0.6rem);
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-muted, #777);
-}
-
-.config-bm-keys-hint kbd {
-    font-size: 0.9em;
-}
-
 /* The rows above and below the drawn window: height only, so the scrollbar
    describes the whole list while the DOM holds a screenful. */
 .config-bm-spacer {
@@ -5488,13 +5476,25 @@ button.config-bm-shortcut-pill {
     margin-top: 12px;
 }
 
+/*
+ * A stored copy reads as a card, the way a tag rule and a suggestion do.
+ *
+ * It used to be a line separated from the next by a hairline, which made a
+ * group of captures look like ruled paper rather than like a list of things
+ * each of which can be downloaded or deleted. Same border, padding and radius
+ * as the rows in the tag tabs, so the three lists in this section are visibly
+ * the same kind of list.
+ */
 .config-local-archive-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 12px;
-    padding: 6px 0;
-    border-top: 1px solid var(--border-primary);
+    margin-top: var(--space-1, 0.35rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary, transparent);
 }
 
 /*
@@ -5985,6 +5985,313 @@ button.config-bm-shortcut-pill {
    twenty invites a value that will be refused. */
 .config-text--number {
     max-width: 7rem;
+}
+
+/* The whole body of the Tag suggestions tab: no border of its own, since the
+   tab panel around it is already the box. */
+.config-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.config-suggestions-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted, #888);
+}
+
+/* One line per proposal: the tag, what it matched, how many, and why. The
+   reason is what makes a suggestion judgeable rather than merely offered. */
+.config-suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-suggestion-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
+}
+
+/* A proposal reads as a row of a table: five columns in the same places on
+   every line, in the bordered card the bookmark list already uses, so the
+   panel is scanned down a column rather than read sentence by sentence. */
+.config-suggestion-row--proposal,
+.config-suggestion-row--rule {
+    align-items: center;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary, transparent);
+}
+
+.config-suggestion-row--proposal {
+    display: grid;
+    grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) auto minmax(6rem, max-content) auto;
+    gap: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+}
+
+/*
+ * One set of columns for the whole list, not one per row.
+ *
+ * Each row used to be its own grid, so `1fr` and every `minmax` were resolved
+ * against that row's own content: a long hostname moved the count and the
+ * reason in that row only, and a column of fifteen rows had fifteen different
+ * left edges. Subgrid hands every row the list's columns instead, which is the
+ * only way they line up without giving each column a fixed width and
+ * truncating the hosts.
+ *
+ * The per-row rule above stays as the fallback: without subgrid the rows are
+ * exactly what they were before, which is untidy rather than broken.
+ */
+@supports (grid-template-columns: subgrid) {
+    .config-suggestions-list--proposals {
+        display: grid;
+        grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) auto minmax(6rem, max-content) auto;
+    }
+
+    .config-suggestions-list--proposals > .config-suggestion-row--proposal {
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+    }
+}
+
+.config-suggestion-row--rule {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-3, 0.85rem);
+}
+
+.config-suggestion-rule-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.config-suggestion-tag {
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-suggestion-pattern,
+.config-suggestion-count,
+.config-suggestion-reason {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+/* Long hosts wrap inside their own column rather than widening the table. */
+.config-suggestion-pattern {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/*
+ * The count: a number in a chip, not a sentence.
+ *
+ * Right-aligned on tabular figures so 1, 9 and 112 sit on the same digit --
+ * proportional numerals in a column are the other half of why this looked
+ * ragged.
+ */
+/* The members of a group, once the count is opened. */
+.config-suggestion-members {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 var(--space-1, 0.35rem);
+    padding: var(--space-1, 0.35rem) var(--space-3, 0.85rem) var(--space-2, 0.55rem);
+    list-style: none;
+}
+
+.config-suggestion-member {
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 1fr) minmax(6rem, 1.4fr);
+    align-items: baseline;
+    gap: var(--space-2, 0.55rem);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.config-suggestion-member-url {
+    color: var(--text-muted, #888);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-suggestion-count {
+    cursor: pointer;
+    justify-self: end;
+    min-width: 1.75rem;
+    padding: 0 0.45em;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--text-secondary) 15%, transparent);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-suggestion-reason {
+    text-align: right;
+}
+
+/* Apply and its refusal sit together at the end of the row: the pair is one
+   decision, and a reader who reaches for the wrong one is as likely either
+   way -- both are undoable from the toast. */
+.config-suggestion-actions {
+    display: flex;
+    gap: var(--space-1, 0.35rem);
+    justify-self: end;
+}
+
+/* Below the width where five columns fit, the row becomes two lines rather
+   than a horizontal scroll: tag and host, then the rest. */
+@media (max-width: 720px) {
+    .config-suggestion-row--proposal {
+        grid-template-columns: minmax(5rem, 8rem) 1fr auto;
+    }
+
+    .config-suggestion-reason {
+        grid-column: 1 / -2;
+        text-align: left;
+    }
+}
+
+/* The panel fills its own tab, so the intro and the ℹ share one line at the
+   top rather than a header bar of their own. */
+.config-subtab-count {
+    margin-left: var(--space-1, 0.35rem);
+    padding: 0 0.35em;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: calc(var(--font-size-text) * 0.8);
+}
+
+.config-suggestions-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-suggestions-head > .config-widget-field-hint {
+    flex: 1;
+    margin: 0;
+}
+
+/*
+ * The scan offer: same card as the proposals above it, so the panel is one
+ * column of rows rather than a list with a sentence stuck under it. What it
+ * says is on the left, what it does is on the right -- the reading order of
+ * every other row here.
+ */
+.config-suggestion-row--scan {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 0.85rem);
+    margin-top: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--accent-color, var(--border-primary, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 7%, transparent);
+}
+
+.config-suggestion-scan-text {
+    text-align: left;
+}
+
+.config-suggestions-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+    list-style: none;
+}
+
+.config-suggestions-summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-suggestions-summary::before {
+    content: '\25B8';
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+    transition: transform 0.15s ease;
+}
+
+.config-suggestion-rules[open] > .config-suggestions-summary::before {
+    transform: rotate(90deg);
+}
+
+.config-suggestions-summary-title {
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-suggestions-summary-note {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+/* Pushed to the end of the summary so the note stays beside the name. */
+.config-suggestions-summary .config-info-btn {
+    margin-left: auto;
+}
+
+.config-suggestions-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+/*
+ * The add-rule form, carded like the rules it produces.
+ *
+ * Same border, same padding, same width as a row in the list below it, because
+ * a form that is a different shape from its own output reads as a different
+ * kind of thing. A label above each box rather than a placeholder inside it: a
+ * placeholder is gone the moment there is something to check it against.
+ */
+.config-suggestion-row--form {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary, transparent);
+}
+
+/* The list of written rules, under the form that writes them. */
+.config-suggestion-rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-suggestion-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 12rem;
+}
+
+.config-suggestion-field-label {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+}
+
+.config-suggestion-error {
+    margin: 0;
+    padding: 0 var(--space-2, 0.55rem);
+    color: var(--accent-error, var(--status-error, var(--text-primary)));
+    font-size: calc(var(--font-size-text) * 0.86);
 }
 
 /* A list of addresses, one per line: tall enough to see a few at once, and

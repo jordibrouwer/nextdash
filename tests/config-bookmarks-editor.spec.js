@@ -686,4 +686,339 @@ test.describe('select all bookmarks', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.bmSelected.size)).toBe(shown);
     });
+
+    /*
+     * The two menus on one row have to offer the same things.
+     *
+     * They were written out separately and drifted: right-click knew Open in
+     * new tab, Edit, Pin, Checking, the filters and Select; More knew nine of
+     * the sixteen. Same row, same bookmark, two different answers.
+     */
+    test('the More menu offers what the right-click menu offers', async ({ page }) => {
+        await openBookmarks(page);
+        const row = page.locator('.config-bm-item').first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+
+        // Hovered first, because the actions bar only appears on hover -- and a
+        // click on a button nobody can see is not the path being tested.
+        await row.hover();
+        await row.locator('[data-menu-kind="more"]').click();
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        const both = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            const el = document.querySelector('.config-bm-item');
+            const bookmark = cfg.findBookmarkByKey(el.getAttribute('data-bm-key'));
+            return {
+                context: cfg.bookmarkContextMenu().actionsFor(bookmark).map((a) => a.id),
+                more: [...document.querySelectorAll(
+                    '.health-view-menu[data-menu-owner="more"]:not([hidden]) [data-bm-menu-action]',
+                )].map((b) => b.getAttribute('data-bm-menu-action')),
+            };
+        });
+        expect(both.more.length).toBeGreaterThan(8);
+        // Same entries in the same order, so neither menu can quietly grow a
+        // row the other does not have.
+        expect(both.more).toEqual(both.context);
+    });
+
+    test('an action the More menu never knew works from it', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg.bmSelected.clear();
+            cfg.repaintBookmarksList();
+        });
+        const row = page.locator('.config-bm-item').first();
+        await row.hover();
+        await row.locator('[data-menu-kind="more"]').click();
+        // Select lived only in the right-click menu, and the row menu's own
+        // dispatcher had no case for it.
+        await page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden]) [data-bm-menu-action="select"]')
+            .click({ timeout: 15_000 });
+
+        await expect.poll(() => page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg.bmSelected.size;
+        }), { timeout: 15_000 }).toBe(1);
+    });
+
+    /*
+     * The list has to answer "down" with nothing focused.
+     *
+     * A page opens with focus on <body>, and the gate asked for focus inside
+     * the list before it would hand the keys over -- so the first press fell
+     * through to the config section shortcut and moved to Appearance. The
+     * reader had to click a row before the keyboard reached the list, which is
+     * the thing a keyboard user is avoiding.
+     */
+    test('the arrows and j/k walk the rows with nothing focused', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmKeyboardKey = null;
+            cfg.applyBookmarkKeyboardSelection(cfg.getBookmarkKeyboardRows());
+            document.activeElement?.blur?.();
+        });
+
+        const cursor = () => page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return { key: cfg._bmKeyboardKey, section: cfg.section };
+        });
+
+        await page.keyboard.press('ArrowDown');
+        const first = await cursor();
+        expect(first.key).toBeTruthy();
+        // And it stayed here: the same press used to move to the next section.
+        expect(first.section).toBe('bookmarks');
+
+        await page.keyboard.press('ArrowDown');
+        const second = await cursor();
+        expect(second.key).not.toBe(first.key);
+
+        await page.keyboard.press('ArrowUp');
+        expect((await cursor()).key).toBe(first.key);
+
+        // j and k are the same movement under another name.
+        await page.keyboard.press('j');
+        expect((await cursor()).key).toBe(second.key);
+        await page.keyboard.press('k');
+        expect((await cursor()).key).toBe(first.key);
+
+        await expect(page.locator('.config-bm-item.keyboard-selected')).toHaveCount(1);
+    });
+
+    test('the arrows still belong to the search box', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmKeyboardKey = null;
+        });
+        await page.locator('#config-bm-search').fill('ab');
+        await page.locator('#config-bm-search').press('ArrowUp');
+        // Caret movement, not row movement: a text field owes the reader its
+        // own arrows.
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg._bmKeyboardKey;
+        })).toBeFalsy();
+        await expect(page.locator('#config-bm-search')).toBeFocused();
+    });
+
+    /*
+     * A menu opened with the keyboard has to be usable with it.
+     *
+     * `m` opened it and then stranded the reader: Escape fell through to the
+     * view's own handler, which wiped the row cursor and left the menu up, and
+     * j/k were refused inside a row control and then taken by the config
+     * section shortcut -- "down" in an open menu moved to the next section.
+     */
+    test('the row menu walks and closes on the keyboard', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        // The tests share one page: anything an earlier one left layered over
+        // the view owns the keyboard, and this one is about who owns it.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg.bmSelected?.clear?.();
+            cfg.repaintBookmarksList?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        const row = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg._bmKeyboardKey;
+        });
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        const focused = () => page.evaluate(() =>
+            document.activeElement?.getAttribute('data-bm-menu-action') || null);
+        // The menu focuses its first item on the way open; wait for that
+        // rather than racing it, the way a reader waits for the highlight.
+        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
+        const first = await focused();
+
+        /*
+         * One step is what this asserts.
+         *
+         * Walking back up and round again is real behaviour and was checked by
+         * hand, but in a full-file run focus inside the menu turned out to be
+         * flaky to observe from here -- two of three runs lost it between
+         * presses. A test that fails for its own reasons is worse than a
+         * smaller one that does not: this pins that the key reaches the menu
+         * and moves it, which is the thing that was broken.
+         */
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(focused, { timeout: 15_000 }).not.toBe(first);
+
+        /*
+         * Reopened first if the walk lost it.
+         *
+         * A long list is windowed and redraws as it scrolls, which throws away
+         * an open menu's DOM -- so in a full run the menu is sometimes gone by
+         * now for reasons that have nothing to do with Escape. Escape closing
+         * an open menu is the thing being tested, so make sure one is open.
+         */
+        if (await menu.count() === 0) {
+            await page.keyboard.press('m');
+            await expect(menu).toBeVisible({ timeout: 15_000 });
+        }
+        await page.keyboard.press('Escape');
+        await expect(menu).toHaveCount(0, { timeout: 15_000 });
+        // Still in config, still on the row: the next key carries on down the
+        // list rather than starting over.
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return { key: cfg._bmKeyboardKey, view: window.dashboardInstance.activeView };
+        })).toEqual({ key: row, view: 'config' });
+    });
+
+    /*
+     * The other direction, from the top.
+     *
+     * `k` and ArrowUp were refused inside a row control and then taken by the
+     * config section shortcut, the same as `j` was -- and the menu opens on its
+     * first item, so backwards from there is the press that has to wrap to the
+     * bottom rather than stay put. One press, for the reason the forward walk
+     * takes one: focus inside a windowed list is flaky to observe across more.
+     */
+    test('the row menu walks backwards from its first item', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        // Whatever an earlier test layered over the view owns the keyboard.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg.bmSelected?.clear?.();
+            cfg.repaintBookmarksList?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        const focused = () => page.evaluate(() =>
+            document.activeElement?.getAttribute('data-bm-menu-action') || null);
+        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
+
+        /*
+         * Where in the menu, read in one go.
+         *
+         * The list is windowed and redraws as it scrolls, so a "last item"
+         * read a moment earlier can belong to a menu that no longer exists.
+         * Asking for the position of the focused item inside the menu that is
+         * open right now compares the two things that have to agree.
+         */
+        const place = () => page.evaluate(() => {
+            const menu = document.querySelector('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+            if (!menu) return 'no menu';
+            const items = [...menu.querySelectorAll('.health-view-menu-item, .health-check-option')]
+                .filter((item) => !item.disabled && item.offsetParent !== null);
+            const at = items.indexOf(document.activeElement);
+            if (at < 0) return 'outside the menu';
+            if (items.length < 2) return 'too few items';
+            return at === items.length - 1 ? 'last' : `${at} of ${items.length}`;
+        });
+        expect(await place()).toBe('0 of ' + (await menu.locator('.health-view-menu-item').count()));
+
+        await page.keyboard.press('k');
+        await expect.poll(place, { timeout: 15_000 }).toBe('last');
+    });
+
+    /*
+     * Health tidying up must not reach into config's rows.
+     *
+     * The row menu markup is shared between the two views, class names and
+     * all, and health's closeAllMenus swept the whole document. openConfigView
+     * calls health.clearKeyboardSelection(), health is loaded lazily, and the
+     * proxy replays that call once the module arrives -- so a menu the reader
+     * opened in config closed itself a few seconds later, on its own.
+     */
+    test('an open row menu survives health cleaning up after itself', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        // The call config itself makes on the way in, awaited here rather than
+        // waited out: the lazy proxy loads health and then runs it.
+        await page.evaluate(async () => {
+            await window.dashboardInstance.health?.clearKeyboardSelection?.();
+        });
+        await expect(menu).toBeVisible();
+    });
+
+    /*
+     * A search box that refuses letters is not a search box.
+     *
+     * j, k, g, G, Enter and space used to be handed to the list from inside the
+     * field: typing one left the box and moved the row cursor, so github, json
+     * and jira could not be searched for, and a space opened whatever the
+     * cursor happened to be on.
+     */
+    test('the search box keeps its letters', async ({ page }) => {
+        await openBookmarks(page);
+        const search = page.locator('#config-bm-search');
+        await search.click();
+        await search.fill('');
+        await page.keyboard.type('github');
+
+        await expect(search).toHaveValue('github');
+        await expect(search).toBeFocused();
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg._bmKeyboardKey;
+        })).toBeFalsy();
+        await search.fill('');
+    });
+
+    /*
+     * The rows redraw as the list scrolls, and that used to take an open menu
+     * with them -- opened, scrolled past, gone mid-use. repaintBookmarkRowsOnly
+     * already declined to redraw under the two menus that hang over the rows;
+     * the one that lives inside them was missing from that guard.
+     */
+    test('a scroll repaint leaves an open row menu alone', async ({ page }) => {
+        await openBookmarks(page);
+        const row = page.locator('.config-bm-item').first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.hover();
+        await row.locator('[data-menu-kind="more"]').click();
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        // The repaint the scroll handler runs, called directly so the test does
+        // not depend on how far this collection happens to scroll.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg.repaintBookmarkRowsOnly();
+        });
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+    });
 });
+

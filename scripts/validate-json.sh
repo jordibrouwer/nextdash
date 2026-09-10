@@ -53,6 +53,7 @@ PY
 # these ran only when someone remembered to, and CI never did.
 echo "Validating feature catalogue and locale key sets…"
 node scripts/validate-overview-features.cjs
+node scripts/validate-tag-patterns.cjs
 node scripts/validate-locale-parity.cjs
 node scripts/validate-locale-duplicates.cjs
 node scripts/validate-locale-placeholders.cjs

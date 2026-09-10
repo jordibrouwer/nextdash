@@ -18,6 +18,7 @@
     "test:analytics-buckets": "node tests/analytics-count-buckets.test.cjs",
     "test:search-groups": "node tests/search-result-groups.test.cjs",
     "validate:overview-features": "node scripts/validate-overview-features.cjs",
+    "validate:tag-patterns": "node scripts/validate-tag-patterns.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs"
   },
   "devDependencies": {

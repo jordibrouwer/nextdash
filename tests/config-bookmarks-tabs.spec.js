@@ -108,8 +108,33 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         await page.locator('[data-bm-tab="settings"]').focus();
         await page.keyboard.press('ArrowLeft');
 
+        // List · Tag suggestions · Your rules · Settings · Local copies.
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-rules');
+        await page.keyboard.press('ArrowLeft');
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
+        await page.keyboard.press('ArrowLeft');
         await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('list');
         await page.keyboard.press('ArrowRight');
-        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('settings');
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
+    });
+
+    test('a reload on a sub-tab does not filter the list to a page named after it', async ({ page }) => {
+        await openBookmarks(page);
+        await page.locator('[data-bm-tab="tag-suggestions"]').click();
+        await expect.poll(() => activeTab(page), { timeout: 5000 }).toBe('tag-suggestions');
+
+        // The tab is written into the hash, and the same third segment is
+        // where a page filter goes. Reading it back as a page id filtered the
+        // list to a page called "tag-suggestions", which no collection has.
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForSelector('[data-bm-tab]', { timeout: 15_000 });
+
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg.bmPageFilter;
+        })).toBeFalsy();
+
+        await page.locator('[data-bm-tab="list"]').click();
+        await expect(page.locator('#config-bm-filter-chips')).not.toContainText('tag-suggestions', { timeout: 15_000 });
     });
 });

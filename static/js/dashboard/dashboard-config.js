@@ -322,7 +322,20 @@ class DashboardConfig {
         // The filters ride in a query string after the path, so the page id
         // stops at the first `?` as well as at the end.
         const match = hash.replace(/^#/, '').match(/^config\/bookmarks\/([^/?]+)/);
-        return match ? decodeURIComponent(match[1]) : null;
+        if (!match) return null;
+        const segment = decodeURIComponent(match[1]);
+        /*
+         * That third segment is two things at once: the page a filtered list
+         * is scoped to, and -- when no page filter is set -- the sub-tab.
+         * Reading a tab name back as a page id left the List tab filtered to a
+         * page called "tag-suggestions", which no collection has, so it showed
+         * nothing and offered a chip nobody had asked for.
+         *
+         * A page filter is always a page id, and those are numbers, so a
+         * segment that spells one of the tabs can only be a tab.
+         */
+        if (DashboardConfig.BM_TABS.includes(segment)) return null;
+        return segment;
     }
 
     /** Composite category filter value when scoping to a page. */
@@ -964,6 +977,16 @@ class DashboardConfig {
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;
             }
+            /*
+             * An open row menu takes Escape before the row cursor does.
+             *
+             * This handler is on document in the capture phase and registers
+             * first, so a menu opened with `m` never saw the key: Escape wiped
+             * the cursor underneath and left the menu hanging. Same shape as
+             * the right-click menu's branch above, and it calls the menu's own
+             * handler rather than repeating what closing one means.
+             */
+            if (this.handleBookmarkMenuKeys?.(e)) return;
             if (this._bmKeyboardKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1114,11 +1137,35 @@ class DashboardConfig {
      */
     shouldUseBookmarkKeyboardNav(target) {
         if (this.section !== 'bookmarks') return false;
+        // A menu is up: its keys are handled before anything else, including
+        // the Escape that would otherwise close the whole config view.
+        if (this.bookmarkListRoot()?.querySelector('.health-view-menu:not([hidden])')) return true;
         if (this._bmKeyboardKey) return true;
         const inList = target?.closest?.('#config-bm-list');
         if (inList) return this.getBookmarkKeyboardRows().length > 0;
         if (target?.id === 'config-bm-search') return this.getBookmarkKeyboardRows().length > 0;
-        return false;
+        /*
+         * Nothing focused, and a list on screen: the keys belong to the rows.
+         *
+         * A page opens with focus on <body>, so until something was clicked
+         * this said no and j fell through to the section shortcut -- pressing
+         * "down" on the bookmark list moved to Appearance instead. The reader
+         * has to click a row first for the keys to reach the list at all,
+         * which is precisely the thing a keyboard user is trying to avoid.
+         *
+         * Fields keep their keys: an input, a textarea, a select and anything
+         * contenteditable are excluded here, so typing j in a box still types
+         * a j, and the list's own handler declines a key aimed at a control
+         * inside a row.
+         */
+        const tag = target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            return false;
+        }
+        if (target && target !== document.body && target.closest?.('.config-choices, .config-sub-tabs')) {
+            return false;
+        }
+        return this.getBookmarkKeyboardRows().length > 0;
     }
 
     /**
@@ -1152,12 +1199,19 @@ class DashboardConfig {
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
-        const isBmSearch = target?.id === 'config-bm-search';
+        /*
+         * The tag filter hands the arrows to its list; the bookmark search box
+         * hands nothing to anyone.
+         *
+         * The search box used to let j, k, g, G, Enter and space through, so
+         * typing one of them there moved the row cursor instead of typing --
+         * github, json and jira could not be searched for, and a space opened
+         * whatever the cursor was on. The arrows would have been the defensible
+         * choice; letters never were.
+         */
         const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
-        const bmNavFromSearch = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))
-                && !(this.section === 'bookmarks' && isBmSearch && bmNavFromSearch.has(e.key))) {
+            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))) {
                 return false;
             }
         }
@@ -2207,18 +2261,106 @@ class DashboardConfig {
         this.syncBookmarkKeyboardSelectionAfterRender();
     }
 
+    /*
+     * An open row menu owns the keyboard while it is up.
+     *
+     * Opening one with `m` left the reader stranded: Escape fell through to
+     * the view's own handler, and j/k were refused here (the focused item is a
+     * control inside a row) and then taken by the config section shortcut --
+     * so "down" in an open menu moved to the next section with the menu still
+     * hanging over it.
+     *
+     * The same movement as the list itself, for the same reason the arrows now
+     * work there: a menu you opened with the keyboard has to be walkable with
+     * it. Enter is left alone -- focus is already on the item, so the button
+     * activates itself.
+     */
+    handleBookmarkMenuKeys(e) {
+        const root = this.bookmarkListRoot();
+        const menu = root?.querySelector('.health-view-menu:not([hidden])');
+        if (!menu) return false;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const key = menu.getAttribute('data-menu-for');
+            this.closeBookmarkMenus();
+            // Back to the row it belongs to, so the next key carries on down
+            // the list rather than starting over.
+            if (key) {
+                this._bmKeyboardKey = key;
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+                root.querySelector(`[data-menu-toggle="${CSS.escape(key)}"][data-menu-kind="more"]`)
+                    ?.focus?.({ preventScroll: true });
+            }
+            return true;
+        }
+
+        const down = e.key === 'ArrowDown' || e.key === 'j';
+        const up = e.key === 'ArrowUp' || e.key === 'k';
+        if (!down && !up && e.key !== 'Home' && e.key !== 'End') return false;
+
+        const items = [...menu.querySelectorAll('.health-view-menu-item, .health-check-option')]
+            .filter((item) => !item.disabled && item.offsetParent !== null);
+        if (!items.length) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        /*
+         * Focus outside the menu counts as the first item.
+         *
+         * toggleMenu focuses it on the way open, so "no item focused" means
+         * the focus has not landed yet rather than that the reader is
+         * somewhere else -- and treating that as "start again at the top" made
+         * the first arrow press do nothing visible, since the top is where
+         * they already were.
+         */
+        const at = items.indexOf(document.activeElement);
+        const from = at < 0 ? 0 : at;
+        let next;
+        if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = items.length - 1;
+        else next = (from + (down ? 1 : -1) + items.length) % items.length;
+        items[next].focus({ preventScroll: true });
+        return true;
+    }
+
     handleBookmarkKeyboardNavigation(e) {
         if (this.section !== 'bookmarks') return false;
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
+        if (this.handleBookmarkMenuKeys(e)) return true;
 
         const target = e.target;
         const tag = target?.tagName;
         const isBmSearch = target?.id === 'config-bm-search';
-        const bmNavKeys = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
+
+        /*
+         * The arrows do what j and k do.
+         *
+         * j/k is what the list was built for and what its legend named, but
+         * "up" and "down" on a list of rows is the arrow keys to almost
+         * everyone -- and with the legend gone there is nothing on screen
+         * saying otherwise. Mapped rather than duplicated, so the two cannot
+         * drift.
+         *
+         * Not inside the search box: there the arrows move the caret, which is
+         * what a text field owes the reader.
+         */
+        const key = e.key === 'ArrowDown' ? 'j' : e.key === 'ArrowUp' ? 'k' : e.key;
+        /*
+         * A field keeps every key, the search box included.
+         *
+         * j, k, g and G used to be let through from the search box: typing one
+         * there left the field and moved the row cursor instead of typing, so
+         * searching for github, json or jira was impossible, and a space
+         * opened whatever the cursor happened to be on. A field that refuses
+         * letters is not a field.
+         *
+         * Escape still reaches the view's own handler, which is what clears
+         * the box, and the arrows still move the caret.
+         */
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!isBmSearch || !bmNavKeys.has(e.key)) {
-                return false;
-            }
+            return false;
         }
 
         const onRowControl = Boolean(
@@ -2229,19 +2371,17 @@ class DashboardConfig {
         const rows = this.getBookmarkKeyboardRows();
         if (!rows.length) return false;
 
-        if (e.key === 'j') {
+        if (key === 'j') {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isBmSearch) target.blur();
             this.moveBookmarkKeyboardSelection(1, rows);
             return true;
         }
-        if (e.key === 'k') {
+        if (key === 'k') {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isBmSearch) target.blur();
             this.moveBookmarkKeyboardSelection(-1, rows);
             return true;
         }
@@ -4878,6 +5018,8 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             list: ['config.bmTabList', 'List'],
+            'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
+            'tag-rules': ['config.bmTabTagRules', 'Your rules'],
             settings: ['config.bmTabSettings', 'Settings'],
             'local-copies': ['config.bmTabLocalCopies', 'Local copies'],
         };
@@ -5074,6 +5216,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-backup-action="refresh-previews">${esc(this.t('config.refreshAllPreviewsBtn', 'Refresh all link previews'))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-previews">${esc(this.t('config.clearAllPreviewsBtn', 'Clear all link previews'))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-testid="clear-preview-images" data-backup-action="clear-preview-images">${esc(this.t('config.clearPreviewImagesBtn', 'Remove cached images'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-tag-keywords">${esc(this.t('config.clearTagKeywordsBtn', 'Forget the scanned keywords'))}</button>
                 </div>
             </div>
         `;
@@ -6501,6 +6644,7 @@ class DashboardConfig {
             case 'refresh-favicons': void this.refreshAllFavicons(); break;
             case 'refresh-previews': void this.refreshAllPreviews(); break;
             case 'clear-previews': void this.clearAllPreviews(); break;
+            case 'clear-tag-keywords': void this.clearTagKeywords(); break;
             case 'clear-preview-images': void this.clearPreviewImages(); break;
             case 'delete-bookmarks': void this.deleteAllBookmarks(); break;
             case 'download-all': void this.downloadAllBackups(); break;
@@ -6727,6 +6871,60 @@ class DashboardConfig {
             await this.refreshPreviewImageStats();
         } catch {
             this.notify(this.t('config.clearPreviewImagesError', 'Could not remove the cached images.'), 'error');
+        }
+    }
+
+    /*
+     * Forget what the scan round read.
+     *
+     * Only the words: the same cache entries hold the title, the description
+     * and the picture, fetched for the cards and none of this feature's to
+     * throw away. Undoing it costs a scan round, which is what it cost to have
+     * -- so it is offered plainly rather than guarded like a deletion.
+     */
+    /*
+     * Read every page again.
+     *
+     * The words that are there are kept until they are replaced, so the panel
+     * goes on proposing from what it has while the round runs rather than
+     * emptying itself first. Worth having after a site redesign, or after the
+     * catalogue has grown enough that what a page says is worth weighing
+     * again.
+     */
+    async rescanTagKeywords() {
+        try {
+            const res = await this.writeFetch('/api/tags/scan/reset', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch {
+            this.notify(this.t('config.tagScanAgainError', 'Could not start another round.'), 'error');
+            return;
+        }
+        this._tagKeywordsPromise = null;
+        this._tagScanState = null;
+        await this.ensureTagKeywords();
+        this.renderTagSuggestionsSafe();
+        await this.runTagScan();
+    }
+
+    async clearTagKeywords() {
+        if (!await this.confirmAction(
+            this.t('config.clearTagKeywordsConfirm',
+                'Forget the keywords read from your pages? Tag suggestions from your own tags, your rules and the catalogue are unaffected.'),
+            { confirmLabel: this.t('config.confirmClear', 'Clear') },
+        )) return;
+        try {
+            const res = await this.writeFetch('/api/tags/keywords/clear', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            this._tagKeywords = {};
+            this._tagKeywordsPromise = null;
+            this._tagScanState = null;
+            this.renderTagSuggestionsSafe();
+            this.syncTagSuggestionCount();
+            this.notify(this.t('config.clearTagKeywordsDone', 'Keywords forgotten for {n} bookmarks.')
+                .replace('{n}', String(Number(body.cleared) || 0)), 'success');
+        } catch {
+            this.notify(this.t('config.clearTagKeywordsError', 'Could not forget the keywords.'), 'error');
         }
     }
 
@@ -7600,8 +7798,8 @@ class DashboardConfig {
      * are almost the same is how two surfaces drift apart. These three stay as
      * the names the rest of this file already calls.
      */
-    showProgressOverlay(title, status) {
-        return window.ProgressOverlay?.show(title, status);
+    showProgressOverlay(title, status, options) {
+        return window.ProgressOverlay?.show(title, status, options);
     }
 
     finishProgressOverlay(status) {
@@ -10461,6 +10659,8 @@ class DashboardConfig {
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
+        enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
+        enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -10890,9 +11090,17 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
-                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
+                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
+                    // The two cards that offer a review on their own. Here
+                    // rather than beside the feature each belongs to, because
+                    // this group is where everything that appears unasked is
+                    // answered -- and a reader who wants one of them to stop
+                    // is not thinking about tags or health, they are thinking
+                    // about being interrupted.
+                    bool('enableTagSuggestionNotice', 'config.tagSuggestionNoticeLabel', 'Offer to review tag suggestions'),
+                    bool('enableHealthReviewNotice', 'config.healthReviewNoticeLabel', 'Offer to review links'),
                 ],
             },
             {
@@ -13439,7 +13647,7 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'settings', 'local-copies'];
+    static BM_TABS = ['list', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -19936,7 +20144,13 @@ class DashboardConfig {
         const totalAll = (this.dash.allBookmarks || []).length;
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}</button>`;
+            // Only this one carries a number: it is the tab whose whole point
+            // is that something is waiting, and a zero would be noise.
+            const waiting = tab === 'tag-suggestions' ? this.tagSuggestionGroupCount() : 0;
+            const badge = waiting
+                ? `<span class="config-subtab-count">${esc(String(waiting))}</span>`
+                : '';
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}${badge}</button>`;
         }).join('');
 
         return `
@@ -19955,6 +20169,12 @@ class DashboardConfig {
 
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
+        if (this.bmTab === 'tag-suggestions') {
+            return '<div id="config-bm-suggestions" class="config-suggestions"></div>';
+        }
+        if (this.bmTab === 'tag-rules') {
+            return '<div id="config-bm-tag-rules" class="config-suggestions"></div>';
+        }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
@@ -20319,9 +20539,18 @@ class DashboardConfig {
     repaintBookmarkRowsOnly() {
         const host = document.getElementById('config-bm-list');
         if (!host || typeof this.renderBookmarksList !== 'function') return;
-        // A menu hangs off a row; replacing the rows under it would leave the
-        // menu pointing at an element that is no longer in the document.
+        /*
+         * A menu hangs off a row; replacing the rows under it would leave the
+         * menu pointing at an element that is no longer in the document.
+         *
+         * The row's own More menu belongs in that list and was missing from
+         * it: scrolling redraws the window, so a menu opened and then scrolled
+         * past vanished mid-use. It is the same failure the two below already
+         * describe, from the one menu that lives inside the rows rather than
+         * over them.
+         */
         if (document.querySelector('.move-popover, .config-bm-context-menu')) return;
+        if (document.querySelector('#config-bm-list .health-view-menu:not([hidden])')) return;
         // Focus lives on a row, and this replaces every row. Without putting it
         // back, closing a menu or finishing an edit drops the list's j/k
         // navigation on the floor.
@@ -20362,6 +20591,422 @@ class DashboardConfig {
     /** The tag cloud, the chips and the banner, same reason. */
     renderBookmarkTagCloudSafe() {
         return typeof this.renderBookmarkTagCloud === 'function' ? this.renderBookmarkTagCloud() : '';
+    }
+
+    /** What the engine needs: a key, an address and the tags it already has. */
+    tagSuggestionItems() {
+        return (this.dash.allBookmarks || []).map((b) => ({
+            key: this.bookmarkKey(b),
+            url: b.url,
+            // Carried for the expanded row: a list of addresses is a list
+            // nobody reads, and the name is what the reader gave it.
+            name: b.name || '',
+            tags: Array.isArray(b.tags) ? b.tags : [],
+        }));
+    }
+
+    renderTagSuggestionsSafe() {
+        const container = document.getElementById('config-bm-suggestions');
+        if (!container || !window.ConfigTagSuggestions) return;
+        this._tagSuggestionGroups = window.ConfigTagSuggestions.render(container, {
+            items: this.tagSuggestionItems(),
+            rules: this.dash.settings?.tagRules || [],
+            catalogue: this._tagCatalogue || [],
+            dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+            keywords: this.tagKeywordsByItemKey(),
+            scan: this._tagScanState || null,
+            expanded: this._tagSuggestionOpen || new Set(),
+            excluded: this._tagSuggestionExcluded || new Set(),
+            t: (key, fallback) => this.t(key, fallback),
+        });
+    }
+
+    /*
+     * The shipped catalogue of subjects.
+     *
+     * Asked for through TagCatalogue, which holds the one copy: the corner
+     * card wants the same 177 KB file, and each fetching it for itself meant a
+     * reader who saw the card and then opened this panel paid for it twice.
+     * The panel keeps its own reference because it draws synchronously.
+     */
+    ensureTagCatalogue() {
+        if (this._tagCataloguePromise) return this._tagCataloguePromise;
+        const load = window.TagCatalogue?.load;
+        this._tagCataloguePromise = (load ? load() : Promise.resolve([]))
+            .then((tags) => {
+                this._tagCatalogue = Array.isArray(tags) ? tags : [];
+                return this._tagCatalogue;
+            });
+        return this._tagCataloguePromise;
+    }
+
+    /*
+     * The suggestions tab: one container the panel module draws into, and one
+     * delegated listener for everything inside it.
+     *
+     * Delegated rather than per-button because the panel is replaced whole
+     * after every write -- applying a group, adding a rule, an undo -- and a
+     * listener bound to a button would go with it.
+     */
+    bindTagSuggestionsTab(container) {
+        const host = container.querySelector('#config-bm-suggestions')
+            || (container.id === 'config-bm-suggestions' ? container : null);
+        if (!host) return;
+        this.renderTagSuggestionsSafe();
+        /*
+         * Unticking a member of an expanded group.
+         *
+         * Recorded rather than redrawn: the reader is mid-tick, and replacing
+         * the list under them would take the checkbox they are looking at with
+         * it. What is still ticked is read again when Apply runs.
+         */
+        host.addEventListener('change', (event) => {
+            const box = event.target.closest?.('[data-tag-suggestion-member]');
+            if (!box) return;
+            const id = box.getAttribute('data-tag-suggestion-member');
+            this._tagSuggestionExcluded = this._tagSuggestionExcluded || new Set();
+            if (box.checked) this._tagSuggestionExcluded.delete(id);
+            else this._tagSuggestionExcluded.add(id);
+        });
+        // Drawn twice on a cold load: once from what is already known, and
+        // again when the catalogue arrives, rather than leaving the tab blank
+        // behind a fetch.
+        if (!this._tagKeywords) {
+            void this.ensureTagKeywords().then(() => {
+                if (document.getElementById('config-bm-suggestions')) {
+                    this.renderTagSuggestionsSafe();
+                    this.syncTagSuggestionCount();
+                }
+            });
+        }
+        if (!this._tagCatalogue) {
+            void this.ensureTagCatalogue().then(() => {
+                if (document.getElementById('config-bm-suggestions')) {
+                    this.renderTagSuggestionsSafe();
+                    this.syncTagSuggestionCount();
+                }
+            });
+        }
+        /*
+         * The count chip answers the keyboard too.
+         *
+         * It is a span carrying role="button" rather than a <button>, because
+         * it sits in a subgrid column whose width is the number -- and a span
+         * with a role but no keys is a control this app's readers cannot
+         * reach: Enter and Space fire a click on a real button and on nothing
+         * else. Space is swallowed rather than scrolling the panel.
+         */
+        host.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+            const toggle = event.target.closest?.('[data-tag-suggestion-toggle]');
+            if (!toggle) return;
+            event.preventDefault();
+            const index = Number(toggle.getAttribute('data-tag-suggestion-toggle'));
+            this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
+        });
+        host.addEventListener('click', (event) => {
+            if (event.target.closest('[data-tag-suggestions-info]')) {
+                this.openTagSuggestionsInfo();
+                return;
+            }
+            const button = event.target.closest('[data-tag-suggestion-apply]');
+            if (button) {
+                const index = Number(button.getAttribute('data-tag-suggestion-apply'));
+                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            const refuse = event.target.closest('[data-tag-suggestion-dismiss]');
+            if (refuse) {
+                const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
+                void this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            if (event.target.closest('[data-tag-scan-start]')) {
+                void this.runTagScan();
+                return;
+            }
+            if (event.target.closest('[data-tag-keywords-clear]')) {
+                void this.clearTagKeywords();
+                return;
+            }
+            if (event.target.closest('[data-tag-scan-again]')) {
+                void this.rescanTagKeywords();
+                return;
+            }
+            if (event.target.closest('[data-tag-suggestions-restore]')) {
+                void this.restoreTagSuggestions();
+                return;
+            }
+            const backOne = event.target.closest('[data-tag-suggestion-restore-one]');
+            if (backOne) {
+                void this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one'));
+                return;
+            }
+            const toggle = event.target.closest('[data-tag-suggestion-toggle]');
+            if (toggle) {
+                const index = Number(toggle.getAttribute('data-tag-suggestion-toggle'));
+                this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+        });
+    }
+
+    renderTagRulesSafe() {
+        const container = document.getElementById('config-bm-tag-rules');
+        if (!container || !window.ConfigTagSuggestions?.renderRules) return;
+        window.ConfigTagSuggestions.renderRules(container, {
+            rules: this.dash.settings?.tagRules || [],
+            t: (key, fallback) => this.t(key, fallback),
+        });
+    }
+
+    /*
+     * The rules tab: one container, one delegated listener.
+     *
+     * Delegated for the same reason the suggestions tab is -- the editor is
+     * redrawn whole after every add and every remove, so a listener bound to a
+     * button would go with it.
+     */
+    bindTagRulesTab(container) {
+        const host = container.querySelector('#config-bm-tag-rules')
+            || (container.id === 'config-bm-tag-rules' ? container : null);
+        if (!host) return;
+        this.renderTagRulesSafe();
+        host.addEventListener('click', (event) => {
+            if (event.target.closest('[data-tag-rules-info]')) {
+                this.openTagRulesInfo();
+                return;
+            }
+            const removeRule = event.target.closest('[data-tag-rule-remove]');
+            if (removeRule) {
+                void this.removeTagRule(Number(removeRule.getAttribute('data-tag-rule-remove')));
+                return;
+            }
+            if (event.target.closest('[data-tag-rule-add]')) {
+                const pattern = host.querySelector('[data-tag-rule-pattern]')?.value;
+                const label = host.querySelector('[data-tag-rule-tag]')?.value;
+                void this.addTagRule(pattern, label);
+            }
+        });
+    }
+
+    /** What a rule is, and what it is not. */
+    openTagRulesInfo() {
+        if (!window.AppModal?.alert) return;
+        const body = this.t('config.tagRulesInfoBody', [
+            'A rule is a site and the tag it should get.',
+            '',
+            'Write github.com → #code and every GitHub bookmark is offered #code, whatever the rest of your collection says. A rule always wins: it beats the tags nextDash noticed you using, and it beats the shipped catalogue.',
+            '',
+            'A pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address, and not two segments deep.',
+            '',
+            'Rules propose; they never tag anything on their own. What they produce appears on the Tag suggestions tab, one row per rule, with an Apply beside it.',
+        ].join('\n'));
+        window.AppModal.alert({
+            title: this.t('config.tagRulesInfoTitle', 'How your rules work'),
+            htmlMessage: this.dash.escapeHtml(body).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /*
+     * How many groups are waiting, for the tab's own label.
+     *
+     * The strip is drawn whichever tab is showing, so this runs the engine
+     * even while the reader is in List -- which is the price of the number
+     * being on the tab rather than inside it. suggest() parses each URL once
+     * per render, so it is the same pass the panel itself would do.
+     */
+    tagSuggestionGroupCount() {
+        if (!window.TagSuggestions) return 0;
+        try {
+            return window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+                rules: this.dash.settings?.tagRules || [],
+                catalogue: this._tagCatalogue || [],
+                dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+                keywords: this.tagKeywordsByItemKey(),
+            }).length;
+        } catch (err) {
+            return 0;
+        }
+    }
+
+    /** Move the tab's own number without repainting the whole section. */
+    syncTagSuggestionCount() {
+        const button = document.querySelector('[data-bm-tab="tag-suggestions"]');
+        if (!button) return;
+        const waiting = this.tagSuggestionGroupCount();
+        let chip = button.querySelector('.config-subtab-count');
+        if (!waiting) {
+            chip?.remove();
+            return;
+        }
+        if (!chip) {
+            chip = document.createElement('span');
+            chip.className = 'config-subtab-count';
+            button.appendChild(chip);
+        }
+        chip.textContent = String(waiting);
+    }
+
+    /*
+     * The panel's own info dialog.
+     *
+     * Every other info button hangs off a settings field and reaches its text
+     * through fieldMeta; this one explains a section rather than a control, so
+     * it names its two locale keys directly and opens the same AppModal the
+     * field buttons do.
+     */
+    openTagSuggestionsInfo() {
+        if (!window.AppModal?.alert) return;
+        const body = this.t('config.tagSuggestionsInfoBody', [
+            'Two things propose a tag.',
+            '',
+            'What you already did: three or more bookmarks on one site, most of the tagged ones carrying the same tag — the rest are offered it. The row says how many agreed.',
+            '',
+            'Your rules: a site you name, and the tag it should get. A rule always wins, and it proposes from the moment you add it.',
+            '',
+            'A pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address.',
+            '',
+            'Nothing is applied on its own. Apply tags a whole group at once, and the undo in the toast puts it straight back.',
+        ].join('\n'));
+        window.AppModal.alert({
+            title: this.t('config.tagSuggestionsInfoTitle', 'How tag suggestions work'),
+            htmlMessage: this.dash.escapeHtml(body).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /*
+     * What the scan round has read, keyed the way the engine keys a bookmark.
+     *
+     * The server answers by address, because that is the one identifier both
+     * halves already agree on -- the canonicalising that turns an address into
+     * a cache key lives in Go, and a second copy of it here would be a second
+     * thing to keep in step. Two bookmarks on different pages sharing an
+     * address share its words, which is right: it is the same page.
+     */
+    tagKeywordsByItemKey() {
+        const byURL = this._tagKeywords;
+        if (!byURL) return null;
+        const byKey = {};
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const words = byURL[String(b.url || '').trim()];
+            if (words && words.length) byKey[this.bookmarkKey(b)] = words;
+        });
+        return byKey;
+    }
+
+    /*
+     * The words already read, refetched on demand.
+     *
+     * Kept apart from the scan state on purpose: a round refreshes the words
+     * after every slice, and folding both into one call meant each refresh
+     * rebuilt the state object -- including `running`, which reset to false
+     * and stopped the round after its first slice.
+     */
+    async refreshTagKeywords() {
+        try {
+            const response = await fetch('/api/tags/keywords', { cache: 'no-cache' });
+            const data = response.ok ? await response.json() : null;
+            this._tagKeywords = data?.keywords || {};
+        } catch (err) {
+            this._tagKeywords = {};
+        }
+        return this._tagKeywords;
+    }
+
+    /** The words already read, and how many pages are still unread. */
+    ensureTagKeywords() {
+        if (this._tagKeywordsPromise) return this._tagKeywordsPromise;
+        this._tagKeywordsPromise = Promise.all([
+            this.refreshTagKeywords(),
+            fetch('/api/tags/scan', { cache: 'no-cache' })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((data) => {
+                    this._tagScanState = {
+                        pending: Number(data?.pending) || 0,
+                        batch: Number(data?.batch) || 20,
+                        running: false,
+                        progress: '',
+                    };
+                })
+                .catch(() => { this._tagScanState = null; }),
+        ]);
+        return this._tagKeywordsPromise;
+    }
+
+    /*
+     * Walk the collection one slice at a time, from the browser.
+     *
+     * The loop lives here rather than on the server because that is what makes
+     * stopping free: the button flips a flag, the next slice is simply not
+     * asked for, and nothing is left half-running behind a request nobody is
+     * waiting on. Each round trip is short enough to survive a proxy, and the
+     * count on screen is the caller's own arithmetic rather than a second
+     * progress model to keep in step.
+     */
+    async runTagScan() {
+        if (!this._tagScanState || this._tagScanState.running) return;
+        this._tagScanState.running = true;
+        const total = this._tagScanState.pending;
+        let done = 0;
+        let read = 0;
+
+        const progressText = (position) => this.t('config.tagScanProgress', '{done} of {total}')
+            .replace('{done}', String(Math.min(position, total)))
+            .replace('{total}', String(total));
+
+        // The same overlay every other long walk in config uses, plus the way
+        // out this one needs: a round over a large collection is minutes of
+        // outbound requests, and a reader who started it by mistake should not
+        // have to reload the page to take it back.
+        this.showProgressOverlay(
+            this.t('config.tagScanTitle', 'Reading pages…'),
+            progressText(0),
+            {
+                onCancel: () => { if (this._tagScanState) this._tagScanState.running = false; },
+                cancelLabel: this.t('config.tagScanStop', 'Stop'),
+                cancellingLabel: this.t('config.tagScanStopping', 'Stopping…'),
+            },
+        );
+
+        try {
+            while (this._tagScanState.running && this._tagScanState.pending > 0) {
+                const response = await this.writeFetch('/api/tags/scan', { method: 'POST' });
+                if (!response || !response.ok) throw new Error(`HTTP ${response && response.status}`);
+                const data = await response.json();
+
+                read += Number(data.read) || 0;
+                done += (Number(data.read) || 0) + (Number(data.failed) || 0);
+                this._tagScanState.pending = Number(data.pending) || 0;
+                window.ProgressOverlay?.update(Math.min(done, total), total, progressText(done));
+
+                // Re-read after every slice rather than at the end: rows the
+                // reader can act on should appear while it runs.
+                await this.refreshTagKeywords();
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
+            }
+            const stopped = this._tagScanState.pending > 0;
+            this.finishProgressOverlay(stopped
+                ? this.t('config.tagScanStopped', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(Math.min(done, total))).replace('{total}', String(total))
+                : this.t('config.tagScanDone', 'Read {n} pages.').replace('{n}', String(read)));
+        } catch (err) {
+            this.hideProgressOverlay();
+            // Says how far it got: a round that stopped at 40 of 85 read 40
+            // pages for real, and starting over is not required.
+            this.notify(this.t('config.tagScanStopped', 'Stopped after {n} of {total}.')
+                .replace('{n}', String(Math.min(done, total))).replace('{total}', String(total)), 'error');
+        } finally {
+            if (this._tagScanState) {
+                this._tagScanState.running = false;
+                this._tagScanState.progress = '';
+            }
+            this.renderTagSuggestionsSafe();
+            this.syncTagSuggestionCount();
+        }
     }
 
     renderBookmarkFilterChipsSafe() {
@@ -20458,8 +21103,6 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
                 ${this.renderBookmarkQuickBarSafe()}
-                <p class="config-bm-keys-hint">${this.t('config.bookmarksKeysHint',
-                    '<kbd>j</kbd>/<kbd>k</kbd> move · <kbd>x</kbd> ticks a row · <kbd>Enter</kbd> opens the editor · <kbd>Esc</kbd> clears the selection')}</p>
                 ${this.renderBookmarkTagCloudSafe()}
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
@@ -21115,18 +21758,32 @@ class DashboardConfig {
         return `<div class="config-bm-icon config-bm-icon--placeholder" aria-hidden="true">🔗</div>`;
     }
 
+    /*
+     * The row's More menu, built from the context menu's own list.
+     *
+     * The two used to be written out separately and had drifted: right-click
+     * offered Open in new tab, Edit, Pin, Checking, the three filters and
+     * Select; More offered nine of the sixteen and nothing else. Same row,
+     * same bookmark, two different answers to "what can I do with this".
+     *
+     * actionsFor() is the one list now, so a row added to either menu appears
+     * in both, and the click goes through the context menu's run() -- which
+     * already knows the handful of actions the row dispatcher never learned.
+     */
     renderBookmarkRowMenu(b, key) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const items = [];
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="health">${esc(this.t('dashboard.healthOpenInHealth', 'Show in Health'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="copy-url">${esc(this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="share">${esc(this.shareBookmarkActionLabel())}</button>`);
-        items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${esc(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
-        items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-bm-menu-action="delete">${esc(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
+        const menu = this.bookmarkContextMenu();
+        const actions = menu?.actionsFor?.(b);
+        if (!Array.isArray(actions) || !actions.length) return '';
+        const items = actions.map((action) => {
+            const danger = action.danger ? ' health-view-menu-item--danger' : '';
+            // A submenu entry opens a second menu rather than acting, and says
+            // so the way a menu is expected to: with a trailing marker.
+            const trailer = action.submenu ? ' <span aria-hidden="true">›</span>' : '';
+            return `<button type="button" class="health-view-menu-item${danger}" role="menuitem"`
+                + `${action.submenu ? ' aria-haspopup="menu"' : ''}`
+                + ` data-bm-menu-action="${esc(action.id)}">${esc(action.label)}${trailer}</button>`;
+        });
         return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
     }
 
@@ -21743,6 +22400,22 @@ class DashboardConfig {
     }
 
     bindBookmarksSection(container) {
+        /*
+         * The tab's number needs the catalogue and the scanned keywords.
+         *
+         * They used to load when the Tag suggestions tab was opened, which is
+         * the one moment the number is no longer worth reading: arriving on
+         * Bookmarks showed "1" -- everything a rule of your own had found and
+         * nothing else -- and opening the tab turned it into 19. A count that
+         * changes when you look at it is worse than no count.
+         *
+         * Loaded once per page here instead, and the strip is corrected when
+         * they land. Both are cached, so the tab itself still costs nothing.
+         */
+        if (!this._tagCatalogue || !this._tagKeywords) {
+            void Promise.all([this.ensureTagCatalogue(), this.ensureTagKeywords()])
+                .then(() => this.syncTagSuggestionCount());
+        }
         this.bindSubTabStrip(container, 'data-bm-tab', (tab) => {
             if (tab === this.bmTab) return;
             this.bmTab = tab;
@@ -21752,7 +22425,11 @@ class DashboardConfig {
             body.innerHTML = this.renderBmTab();
             // Bind the new body only: re-binding the whole container would stack
             // a second listener on every tab button.
-            if (tab === 'settings') {
+            if (tab === 'tag-suggestions') {
+                this.bindTagSuggestionsTab(body);
+            } else if (tab === 'tag-rules') {
+                this.bindTagRulesTab(body);
+            } else if (tab === 'settings') {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
                 this.bindBookmarkCopiesTab(body);
@@ -21763,6 +22440,14 @@ class DashboardConfig {
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
         });
+        if (this.bmTab === 'tag-suggestions') {
+            this.bindTagSuggestionsTab(container);
+            return;
+        }
+        if (this.bmTab === 'tag-rules') {
+            this.bindTagRulesTab(container);
+            return;
+        }
         if (this.bmTab === 'settings') {
             return;
         }
@@ -22027,7 +22712,27 @@ class DashboardConfig {
                     e.stopPropagation();
                     const key = actionItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
                     const action = actionItem.getAttribute('data-bm-menu-action');
-                    if (key && action) this.handleBookmarkMenuAction(action, key);
+                    if (!key || !action) return;
+                    /*
+                     * Through the context menu's dispatcher, because the menu
+                     * is now built from its list: Edit, Pin, the filters and
+                     * Select are actions this one never knew, and run() falls
+                     * through to handleBookmarkMenuAction for the rest anyway.
+                     * A submenu entry is anchored to the item that opened it,
+                     * so the second menu appears where the reader clicked.
+                     */
+                    const menu = this.bookmarkContextMenu();
+                    const bookmark = this.findBookmarkByKey(key);
+                    if (menu?.run && bookmark) {
+                        if (action === 'check-mode') {
+                            const box = actionItem.getBoundingClientRect();
+                            menu._anchor = { x: Math.round(box.right), y: Math.round(box.top) };
+                        }
+                        this.closeBookmarkMenus();
+                        void menu.run(action, key, bookmark);
+                        return;
+                    }
+                    this.handleBookmarkMenuAction(action, key);
                 }
             });
         }
@@ -22776,6 +23481,18 @@ class DashboardConfig {
                     });
                 }
                 await this.refreshBookmarksAfterWrite();
+                // The suggestions panel is built from the tags an undo just put
+                // back, so it has to be redrawn or it keeps showing the
+                // collection as it was before the undo. Today the refresh above
+                // usually gets there by accident -- with Config on screen
+                // repaintBookmarkMutationSurfaces falls through to a whole
+                // config.render() -- but that path bails out early whenever an
+                // inline edit is open, and it is an accident either way. Say it
+                // here, where the undo is. Every bulk undo is raised from this
+                // same section, so this runs for pin, move and delete too --
+                // one extra suggest() pass, and render() replaces the container
+                // outright, so a second draw changes nothing.
+                this.renderTagSuggestionsSafe();
                 this.notify(this.t(doneKey, doneFallback), 'success');
             } catch {
                 this.notify(this.t(failKey, failFallback), 'error');
@@ -22886,6 +23603,202 @@ class DashboardConfig {
                 'config.bulkUndoFailed', 'Could not undo that.'),
             duration: 8000,
         });
+    }
+
+    /*
+     * Apply one accepted group.
+     *
+     * Through mutateSelected rather than through bulkTags: bulkTags reads the
+     * tag and the mode out of the bulk bar's own inputs, which this panel does
+     * not fill in. The undo, the snapshots and the page-by-page write are the
+     * same either way.
+     */
+    async applyTagSuggestion(group) {
+        if (!group?.tag || !Array.isArray(group.keys) || !group.keys.length) return;
+        /*
+         * Only the ones still ticked.
+         *
+         * An expanded row lets the reader take a bookmark out of a group
+         * before accepting the rest -- forty-six of forty-seven GitHub links
+         * are #code and one is a recipe someone linked from a gist. Without
+         * this the answer to a group with one wrong member was to refuse the
+         * whole row and tag forty-six by hand.
+         */
+        const left = new Set(this._tagSuggestionExcluded || []);
+        const keys = group.keys.filter((key) => !left.has(`${group.pattern}|${group.tag}|${key}`));
+        // Unticking every member and then pressing Apply is a reasonable thing
+        // to do by accident, and it used to do nothing at all -- no tag, no
+        // toast, no reason given.
+        if (!keys.length) {
+            this.notify(this.t('config.tagSuggestionNoneTicked',
+                'Nothing is ticked in that group, so there is nothing to apply.'), 'error');
+            return;
+        }
+        const wanted = new Set(keys);
+        const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
+        if (!picked.length) return;
+        // mutateSelected clears the selection, which is right for the bulk bar
+        // -- that is what it was acting on. This panel acts on a group of its
+        // own, so ticks the reader made in the list are none of its business.
+        const ticked = new Set(this.bmSelected);
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, group.tag])] };
+        });
+        ticked.forEach((key) => this.bmSelected.add(key));
+        this.notify(this.t('config.tagSuggestionApplied', 'Tags added.'), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 8000,
+        });
+        this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * A rule is a setting, so it is written the way every other setting is.
+     *
+     * setBehavior already writes the value, records the change and leaves the
+     * server to narrow it -- sanitizeTagRules drops a pattern carrying a
+     * scheme rather than storing one that could never match.
+     */
+    async addTagRule(pattern, tag) {
+        const cleanTag = String(tag || '').trim().toLowerCase();
+        const cleanPattern = this.normalizeTagRulePattern(pattern);
+        const problem = this.tagRuleProblem(cleanPattern, cleanTag);
+        if (problem) {
+            this.showTagRuleError(problem[0], problem[1]);
+            return;
+        }
+        const rules = [...(this.dash.settings?.tagRules || []), { pattern: cleanPattern, tag: cleanTag }];
+        await this.setBehavior('tagRules', rules);
+        this.renderTagSuggestionsSafe();
+        this.renderTagRulesSafe();
+        this.syncTagSuggestionCount();
+    }
+
+    /*
+     * The same shape patternsFor() emits, worked out before the write.
+     *
+     * sanitizeTagRules does this too, and silently: a pattern it cannot
+     * rescue is dropped on the way in, so the row simply never appeared and
+     * the reader was left to guess which of the three rules they had typed
+     * was the wrong one. Deciding it here as well costs a few lines and
+     * turns a silent drop into a sentence.
+     */
+    normalizeTagRulePattern(pattern) {
+        let clean = String(pattern || '').trim().toLowerCase();
+        if (clean.startsWith('www.')) clean = clean.slice(4);
+        return clean.replace(/\/+$/, '');
+    }
+
+    /** Null when the rule will be stored; [key, fallback] when it will not. */
+    tagRuleProblem(pattern, tag) {
+        if (!pattern || !tag) {
+            return ['config.tagRuleErrorEmpty', 'Fill in both a site and a tag.'];
+        }
+        if (pattern.includes('://') || /[ ?#]/.test(pattern)) {
+            return ['config.tagRuleErrorAddress',
+                'Use a site rather than a whole address — github.com, not https://github.com/trending?since=weekly.'];
+        }
+        if ((pattern.match(/\//g) || []).length > 1) {
+            return ['config.tagRuleErrorDepth',
+                'One path segment at most: github.com/trending, not github.com/trending/go.'];
+        }
+        const rules = this.dash.settings?.tagRules || [];
+        if (rules.some((rule) => rule.pattern === pattern && rule.tag === tag)) {
+            return ['config.tagRuleErrorDuplicate', 'That rule is already in the list.'];
+        }
+        if (rules.length >= 100) {
+            return ['config.tagRuleErrorFull', 'A hundred rules is the limit. Remove one to add another.'];
+        }
+        return null;
+    }
+
+    showTagRuleError(key, fallback) {
+        const slot = document.querySelector('[data-tag-rule-error]');
+        if (!slot) return;
+        slot.textContent = this.t(key, fallback);
+        slot.hidden = false;
+    }
+
+    /*
+     * A proposal the reader does not want, kept refused.
+     *
+     * Stored as "pattern|tag" rather than as the bookmarks under it: the
+     * bookmarks change as the collection grows, and a refusal recorded against
+     * them would come back the moment one more link on that site was added.
+     * Reversible from the line under the list, and undoable from the toast --
+     * the button sits beside Apply, so a slip is as likely in one direction as
+     * the other.
+     */
+    async dismissTagSuggestion(group) {
+        if (!group?.tag || !group?.pattern) return;
+        const key = `${group.pattern}|${group.tag}`.toLowerCase();
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (before.includes(key)) return;
+        await this.setBehavior('dismissedTagSuggestions', [...before, key]);
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
+        this.notify(this.t('config.tagSuggestionDismissed', 'Suggestion turned down.'), 'success', {
+            undoCallback: async () => {
+                await this.setBehavior('dismissedTagSuggestions', before);
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
+            },
+            duration: 8000,
+        });
+    }
+
+    /** Show or hide the bookmarks a proposal covers. */
+    toggleTagSuggestionMembers(group) {
+        if (!group?.tag || !group?.pattern) return;
+        const id = `${group.pattern}|${group.tag}`;
+        this._tagSuggestionOpen = this._tagSuggestionOpen || new Set();
+        if (this._tagSuggestionOpen.has(id)) this._tagSuggestionOpen.delete(id);
+        else this._tagSuggestionOpen.add(id);
+        this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * Take one refusal back.
+     *
+     * The list used to be a count and a single "offer them again", so wanting
+     * one proposal back meant taking every refusal back with it.
+     */
+    async restoreTagSuggestion(entry) {
+        const key = String(entry || '').trim().toLowerCase();
+        if (!key) return;
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (!before.includes(key)) return;
+        await this.setBehavior('dismissedTagSuggestions', before.filter((one) => one !== key));
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
+    }
+
+    async restoreTagSuggestions() {
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (!before.length) return;
+        await this.setBehavior('dismissedTagSuggestions', []);
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
+        this.notify(this.t('config.tagSuggestionsRestored', 'Turned-down suggestions are back.'), 'success', {
+            undoCallback: async () => {
+                await this.setBehavior('dismissedTagSuggestions', before);
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
+            },
+            duration: 8000,
+        });
+    }
+
+    async removeTagRule(index) {
+        const rules = [...(this.dash.settings?.tagRules || [])];
+        if (index < 0 || index >= rules.length) return;
+        rules.splice(index, 1);
+        await this.setBehavior('tagRules', rules);
+        this.renderTagSuggestionsSafe();
+        this.renderTagRulesSafe();
+        this.syncTagSuggestionCount();
     }
 
     async bulkDelete(picked) {
