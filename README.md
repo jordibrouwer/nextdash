@@ -12,7 +12,7 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 
 Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard.
 
-It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all; four more report on the machine itself — **processor**, **memory**, **disks** and **containers** — behind read-only mounts you opt into; and the **custom widget** points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
+It is not only links. **Widgets** sit on the page among your categories and answer *what is going on* rather than *where do I go*: uptime per monitored service, a thirty-day trend, what is waiting in the inbox, which certificate is running out, how old the newest backup is. Thirteen of them read data nextDash already collects and need no setup at all; four more report on the machine itself — **processor**, **memory**, **disks** and **containers** — behind read-only mounts you opt into; three look outside the machine altogether — **weather** beside a forecast, what is coming up from your **calendar**, and the newest articles from the **RSS** feeds you name; and the **custom widget** points at any address that answers with JSON, with **28 self-hosted services** already filled in, from Sonarr and Plex to Pi-hole, Proxmox and Home Assistant. A new install arrives with a Health widget already on the page.
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
@@ -332,14 +332,14 @@ each thing works and why it behaves the way it does.
 
 **Widgets**
 
-- Blocks that show something other than links, drawn among the categories: health, uptime, inbox, backups, certificates and more. *[Manual §11](MANUAL.md#widgets-v140)*
+- Blocks that show something other than links, drawn among the categories: health, uptime, inbox, backups, certificates, the weather, your calendar and your feeds. *[Manual §11](MANUAL.md#widgets-v140)*
 - A custom widget reads any service that answers with JSON, with 28 self-hosted services already filled in. *[Manual §11](MANUAL.md#widgets-v140)*
 
 **Appearance**
 
 - 107 theme families in light and dark, browsable as a grid with a live preview, plus an editor for your own. *[Manual §14](MANUAL.md#14-layouts-themes-and-appearance)*
 - Layout presets, column counts, density, fonts, backdrops and a button bar you can put where you want it. *[Manual §14](MANUAL.md#14-layouts-themes-and-appearance)*
-- Four languages: English, Dutch, German and French. *[Manual §16](MANUAL.md#16-config-complete-walkthrough)*
+- Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §16](MANUAL.md#16-config-complete-walkthrough)*
 
 **Import and export**
 
