@@ -10,6 +10,17 @@ async function open(page) {
 
 const items = (rows) => rows.map(([key, url, tags]) => ({ key, url, tags: tags || [] }));
 
+/**
+ * Config -> Bookmarks -> Tag suggestions, through the strip the reader clicks
+ * rather than by setting bmTab by hand.
+ */
+async function openSuggestionsTab(page) {
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    const tab = page.locator('[data-bm-tab="tag-suggestions"]');
+    await tab.click({ timeout: 15_000 });
+    await expect(page.locator('#config-bm-suggestions')).toBeVisible({ timeout: 15_000 });
+}
+
 test.describe('the tag suggestion engine', () => {
     test('reads a pattern from a URL, host first and host plus segment after', async ({ page }) => {
         await open(page);
@@ -155,9 +166,8 @@ test.describe('the suggestions panel', () => {
             }
             await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await openSuggestionsTab(page);
         const panel = page.locator('#config-bm-suggestions');
-        await expect(panel).toBeVisible({ timeout: 15_000 });
 
         const row = panel.locator('[data-tag-suggestion]').filter({ hasText: 'code' }).first();
         await expect(row).toContainText('plan.example');
@@ -221,6 +231,71 @@ test.describe('the suggestions panel', () => {
         expect(drawn.notice).toContain('30');
     });
 
+    test('the rules editor folds away, and is still folded after a reload', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await openSuggestionsTab(page);
+        const details = page.locator('#config-tag-rules-details');
+        await expect(details).toBeVisible({ timeout: 15_000 });
+
+        // Whatever it started as, the reader's click is what has to survive.
+        const wasOpen = await details.evaluate((el) => el.open);
+        await details.locator('summary').click();
+        await expect.poll(() => details.evaluate((el) => el.open), { timeout: 5_000 }).toBe(!wasOpen);
+
+        await page.reload({ waitUntil: 'networkidle' });
+        await waitForConfigReady(page);
+        await openSuggestionsTab(page);
+        const after = page.locator('#config-tag-rules-details');
+        await expect(after).toBeVisible({ timeout: 15_000 });
+        await expect.poll(() => after.evaluate((el) => el.open), { timeout: 5_000 }).toBe(!wasOpen);
+    });
+
+    test('the info button explains the panel', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await openSuggestionsTab(page);
+        const details = page.locator('#config-tag-rules-details');
+        await expect(details).toBeVisible({ timeout: 15_000 });
+        const before = await details.evaluate((el) => el.open);
+
+        await page.locator('#config-bm-suggestions [data-tag-suggestions-info]').click();
+        // The same AppModal every other config info button opens.
+        await expect(page.locator('.app-modal, .modal-overlay').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('body')).toContainText('Apply', { timeout: 15_000 });
+        // And it left the rules editor as it found it: the button sits in the
+        // head of the tab now, not in that <summary>.
+        expect(await details.evaluate((el) => el.open)).toBe(before);
+    });
+
+    test('a pattern the server would drop is refused with a reason', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await openSuggestionsTab(page);
+        const panel = page.locator('#config-bm-suggestions');
+
+        const before = await page.evaluate(() =>
+            (window.dashboardInstance.settings.tagRules || []).length);
+
+        // The editor folds, and an earlier test may have left it shut in this
+        // browser's storage -- open it the way the reader would.
+        const rules = page.locator('#config-tag-rules-details');
+        if (!await rules.evaluate((el) => el.open)) {
+            await rules.locator('summary').click();
+        }
+        await panel.locator('[data-tag-rule-pattern]').fill('reddit.com/r/selfhosted');
+        await panel.locator('[data-tag-rule-tag]').fill('homelab');
+        await panel.locator('[data-tag-rule-add]').click();
+
+        const error = panel.locator('[data-tag-rule-error]');
+        await expect(error).toBeVisible({ timeout: 15_000 });
+        await expect(error).toContainText('segment');
+        // And nothing was written: sanitizeTagRules would have dropped it in
+        // silence, which is the whole reason the message exists.
+        expect(await page.evaluate(() =>
+            (window.dashboardInstance.settings.tagRules || []).length)).toBe(before);
+    });
+
     test('a rule you write survives a reload and proposes on its own', async ({ page }) => {
         await open(page);
         await waitForConfigReady(page);
@@ -240,7 +315,7 @@ test.describe('the suggestions panel', () => {
         const stored = await page.evaluate(() => window.dashboardInstance.settings.tagRules);
         expect(stored).toContainEqual({ pattern: 'ruled.example', tag: 'work' });
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await openSuggestionsTab(page);
         const row = page.locator('#config-bm-suggestions [data-tag-suggestion]').filter({ hasText: 'work' });
         await expect(row.first()).toBeVisible({ timeout: 15_000 });
     });

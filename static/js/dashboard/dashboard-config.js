@@ -4878,6 +4878,7 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             list: ['config.bmTabList', 'List'],
+            'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             settings: ['config.bmTabSettings', 'Settings'],
             'local-copies': ['config.bmTabLocalCopies', 'Local copies'],
         };
@@ -13439,7 +13440,7 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'settings', 'local-copies'];
+    static BM_TABS = ['list', 'tag-suggestions', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -19936,7 +19937,13 @@ class DashboardConfig {
         const totalAll = (this.dash.allBookmarks || []).length;
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}</button>`;
+            // Only this one carries a number: it is the tab whose whole point
+            // is that something is waiting, and a zero would be noise.
+            const waiting = tab === 'tag-suggestions' ? this.tagSuggestionGroupCount() : 0;
+            const badge = waiting
+                ? `<span class="config-subtab-count">${esc(String(waiting))}</span>`
+                : '';
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}${badge}</button>`;
         }).join('');
 
         return `
@@ -19955,6 +19962,9 @@ class DashboardConfig {
 
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
+        if (this.bmTab === 'tag-suggestions') {
+            return '<div id="config-bm-suggestions" class="config-suggestions"></div>';
+        }
         if (this.bmTab === 'settings') {
             return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
         }
@@ -20383,6 +20393,104 @@ class DashboardConfig {
         });
     }
 
+    /*
+     * The suggestions tab: one container the panel module draws into, and one
+     * delegated listener for everything inside it.
+     *
+     * Delegated rather than per-button because the panel is replaced whole
+     * after every write -- applying a group, adding a rule, an undo -- and a
+     * listener bound to a button would go with it.
+     */
+    bindTagSuggestionsTab(container) {
+        const host = container.querySelector('#config-bm-suggestions')
+            || (container.id === 'config-bm-suggestions' ? container : null);
+        if (!host) return;
+        this.renderTagSuggestionsSafe();
+        host.addEventListener('click', (event) => {
+            if (event.target.closest('[data-tag-suggestions-info]')) {
+                this.openTagSuggestionsInfo();
+                return;
+            }
+            const button = event.target.closest('[data-tag-suggestion-apply]');
+            if (button) {
+                const index = Number(button.getAttribute('data-tag-suggestion-apply'));
+                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            const removeRule = event.target.closest('[data-tag-rule-remove]');
+            if (removeRule) {
+                void this.removeTagRule(Number(removeRule.getAttribute('data-tag-rule-remove')));
+                return;
+            }
+            if (event.target.closest('[data-tag-rule-add]')) {
+                const pattern = host.querySelector('[data-tag-rule-pattern]')?.value;
+                const label = host.querySelector('[data-tag-rule-tag]')?.value;
+                void this.addTagRule(pattern, label);
+            }
+        });
+        // The <details> around the rules is replaced on every redraw, so the
+        // listener sits on the container and catches the toggle as it bubbles.
+        host.addEventListener('toggle', (event) => {
+            const details = event.target.closest?.('#config-tag-rules-details');
+            if (!details) return;
+            try {
+                window.localStorage?.setItem(
+                    window.ConfigTagSuggestions?.OPEN_KEY || 'configTagRulesOpen',
+                    details.open ? 'true' : 'false');
+            } catch (err) {
+                // Site data switched off: the editor still opens and shuts, it
+                // just starts from the content again next time.
+            }
+        }, true);
+    }
+
+    /*
+     * How many groups are waiting, for the tab's own label.
+     *
+     * The strip is drawn whichever tab is showing, so this runs the engine
+     * even while the reader is in List -- which is the price of the number
+     * being on the tab rather than inside it. suggest() parses each URL once
+     * per render, so it is the same pass the panel itself would do.
+     */
+    tagSuggestionGroupCount() {
+        if (!window.TagSuggestions) return 0;
+        try {
+            return window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+                rules: this.dash.settings?.tagRules || [],
+            }).length;
+        } catch (err) {
+            return 0;
+        }
+    }
+
+    /*
+     * The panel's own info dialog.
+     *
+     * Every other info button hangs off a settings field and reaches its text
+     * through fieldMeta; this one explains a section rather than a control, so
+     * it names its two locale keys directly and opens the same AppModal the
+     * field buttons do.
+     */
+    openTagSuggestionsInfo() {
+        if (!window.AppModal?.alert) return;
+        const body = this.t('config.tagSuggestionsInfoBody', [
+            'Two things propose a tag.',
+            '',
+            'What you already did: three or more bookmarks on one site, most of the tagged ones carrying the same tag — the rest are offered it. The row says how many agreed.',
+            '',
+            'Your rules: a site you name, and the tag it should get. A rule always wins, and it proposes from the moment you add it.',
+            '',
+            'A pattern is a site, optionally with one path segment — github.com, or github.com/anthropics. Not a whole address.',
+            '',
+            'Nothing is applied on its own. Apply tags a whole group at once, and the undo in the toast puts it straight back.',
+        ].join('\n'));
+        window.AppModal.alert({
+            title: this.t('config.tagSuggestionsInfoTitle', 'How tag suggestions work'),
+            htmlMessage: this.dash.escapeHtml(body).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
     renderBookmarkFilterChipsSafe() {
         return typeof this.renderBookmarkFilterChips === 'function' ? this.renderBookmarkFilterChips() : '';
     }
@@ -20477,8 +20585,6 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
                 ${this.renderBookmarkQuickBarSafe()}
-                <p class="config-bm-keys-hint">${this.t('config.bookmarksKeysHint',
-                    '<kbd>j</kbd>/<kbd>k</kbd> move · <kbd>x</kbd> ticks a row · <kbd>Enter</kbd> opens the editor · <kbd>Esc</kbd> clears the selection')}</p>
                 ${this.renderBookmarkTagCloudSafe()}
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
@@ -20486,7 +20592,6 @@ class DashboardConfig {
                     <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                 </div>
                 ${this.renderCleanupFilterBannerSafe()}
-                <div id="config-bm-suggestions" class="config-suggestions" hidden></div>
                 <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>
                 <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
             </div>
@@ -21772,7 +21877,9 @@ class DashboardConfig {
             body.innerHTML = this.renderBmTab();
             // Bind the new body only: re-binding the whole container would stack
             // a second listener on every tab button.
-            if (tab === 'settings') {
+            if (tab === 'tag-suggestions') {
+                this.bindTagSuggestionsTab(body);
+            } else if (tab === 'settings') {
                 this.bindControlPanels(body, 'behavior');
             } else if (tab === 'local-copies') {
                 this.bindBookmarkCopiesTab(body);
@@ -21783,6 +21890,10 @@ class DashboardConfig {
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
         });
+        if (this.bmTab === 'tag-suggestions') {
+            this.bindTagSuggestionsTab(container);
+            return;
+        }
         if (this.bmTab === 'settings') {
             return;
         }
@@ -21821,25 +21932,6 @@ class DashboardConfig {
         });
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
         this.bindBookmarkTagCloud(container);
-        this.renderTagSuggestionsSafe();
-        container.querySelector('#config-bm-suggestions')?.addEventListener('click', (event) => {
-            const button = event.target.closest('[data-tag-suggestion-apply]');
-            if (button) {
-                const index = Number(button.getAttribute('data-tag-suggestion-apply'));
-                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
-                return;
-            }
-            const removeRule = event.target.closest('[data-tag-rule-remove]');
-            if (removeRule) {
-                void this.removeTagRule(Number(removeRule.getAttribute('data-tag-rule-remove')));
-                return;
-            }
-            if (event.target.closest('[data-tag-rule-add]')) {
-                const host = container.querySelector('[data-tag-rule-pattern]')?.value;
-                const label = container.querySelector('[data-tag-rule-tag]')?.value;
-                void this.addTagRule(host, label);
-            }
-        });
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -22972,12 +23064,61 @@ class DashboardConfig {
      * scheme rather than storing one that could never match.
      */
     async addTagRule(pattern, tag) {
-        const cleanPattern = String(pattern || '').trim().toLowerCase();
         const cleanTag = String(tag || '').trim().toLowerCase();
-        if (!cleanPattern || !cleanTag) return;
+        const cleanPattern = this.normalizeTagRulePattern(pattern);
+        const problem = this.tagRuleProblem(cleanPattern, cleanTag);
+        if (problem) {
+            this.showTagRuleError(problem[0], problem[1]);
+            return;
+        }
         const rules = [...(this.dash.settings?.tagRules || []), { pattern: cleanPattern, tag: cleanTag }];
         await this.setBehavior('tagRules', rules);
         this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * The same shape patternsFor() emits, worked out before the write.
+     *
+     * sanitizeTagRules does this too, and silently: a pattern it cannot
+     * rescue is dropped on the way in, so the row simply never appeared and
+     * the reader was left to guess which of the three rules they had typed
+     * was the wrong one. Deciding it here as well costs a few lines and
+     * turns a silent drop into a sentence.
+     */
+    normalizeTagRulePattern(pattern) {
+        let clean = String(pattern || '').trim().toLowerCase();
+        if (clean.startsWith('www.')) clean = clean.slice(4);
+        return clean.replace(/\/+$/, '');
+    }
+
+    /** Null when the rule will be stored; [key, fallback] when it will not. */
+    tagRuleProblem(pattern, tag) {
+        if (!pattern || !tag) {
+            return ['config.tagRuleErrorEmpty', 'Fill in both a site and a tag.'];
+        }
+        if (pattern.includes('://') || /[ ?#]/.test(pattern)) {
+            return ['config.tagRuleErrorAddress',
+                'Use a site rather than a whole address — github.com, not https://github.com/anthropics?tab=repositories.'];
+        }
+        if ((pattern.match(/\//g) || []).length > 1) {
+            return ['config.tagRuleErrorDepth',
+                'One path segment at most: github.com/anthropics, not github.com/anthropics/claude.'];
+        }
+        const rules = this.dash.settings?.tagRules || [];
+        if (rules.some((rule) => rule.pattern === pattern && rule.tag === tag)) {
+            return ['config.tagRuleErrorDuplicate', 'That rule is already in the list.'];
+        }
+        if (rules.length >= 100) {
+            return ['config.tagRuleErrorFull', 'A hundred rules is the limit. Remove one to add another.'];
+        }
+        return null;
+    }
+
+    showTagRuleError(key, fallback) {
+        const slot = document.querySelector('[data-tag-rule-error]');
+        if (!slot) return;
+        slot.textContent = this.t(key, fallback);
+        slot.hidden = false;
     }
 
     async removeTagRule(index) {

@@ -5386,18 +5386,6 @@ button.config-bm-shortcut-pill {
     font-size: var(--text-sm, 0.78rem);
 }
 
-/* The keys the list answers to, said once under the toolbar rather than left
-   to be discovered. */
-.config-bm-keys-hint {
-    margin: 0 0 var(--space-2, 0.6rem);
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--text-muted, #777);
-}
-
-.config-bm-keys-hint kbd {
-    font-size: 0.9em;
-}
-
 /* The rows above and below the drawn window: height only, so the scrollbar
    describes the whole list while the DOM holds a screenful. */
 .config-bm-spacer {
@@ -5987,14 +5975,13 @@ button.config-bm-shortcut-pill {
     max-width: 7rem;
 }
 
+/* The whole body of the Tag suggestions tab: no border of its own, since the
+   tab panel around it is already the box. */
 .config-suggestions {
     display: flex;
     flex-direction: column;
     gap: var(--space-1, 0.35rem);
     margin: var(--space-2, 0.5rem) 0;
-    padding: var(--space-2, 0.5rem);
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: var(--radius-md, 6px);
 }
 
 .config-suggestions-title {
@@ -6031,6 +6018,105 @@ button.config-bm-shortcut-pill {
 
 .config-suggestion-reason {
     margin-left: auto;
+}
+
+/* The panel fills its own tab, so the intro and the ℹ share one line at the
+   top rather than a header bar of their own. */
+.config-subtab-count {
+    margin-left: var(--space-1, 0.35rem);
+    padding: 0 0.35em;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: calc(var(--font-size-text) * 0.8);
+}
+
+.config-suggestions-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-suggestions-head > .config-widget-field-hint {
+    flex: 1;
+    margin: 0;
+}
+
+/* Only the rules editor folds: the tab is the disclosure for the rest. The
+   summary carries the name, so a shut editor still says what it holds. */
+.config-suggestion-rules {
+    margin-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.config-suggestions-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+    list-style: none;
+}
+
+.config-suggestions-summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-suggestions-summary::before {
+    content: '\25B8';
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+    transition: transform 0.15s ease;
+}
+
+.config-suggestion-rules[open] > .config-suggestions-summary::before {
+    transform: rotate(90deg);
+}
+
+.config-suggestions-summary-title {
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-suggestions-summary-note {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+/* Pushed to the end of the summary so the note stays beside the name. */
+.config-suggestions-summary .config-info-btn {
+    margin-left: auto;
+}
+
+.config-suggestions-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.35rem);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+/* A label above each box rather than a placeholder inside it: a placeholder
+   is gone the moment there is something to check it against. */
+.config-suggestion-row--form {
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.config-suggestion-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 12rem;
+}
+
+.config-suggestion-field-label {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+}
+
+.config-suggestion-error {
+    margin: 0;
+    padding: 0 var(--space-2, 0.55rem);
+    color: var(--accent-error, var(--status-error, var(--text-primary)));
+    font-size: calc(var(--font-size-text) * 0.86);
 }
 
 /* A list of addresses, one per line: tall enough to see a few at once, and
