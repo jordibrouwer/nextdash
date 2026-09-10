@@ -210,6 +210,6 @@ test.describe('a release flagged hideFromModal', () => {
         expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.8.0'");
         // The data token moves regardless: the index changed, and a browser
         // holding its old copy would never learn v1.8.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v282'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v283'");
     });
 });

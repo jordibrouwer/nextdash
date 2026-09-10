@@ -67,6 +67,15 @@
           "text": "<strong>Following the system dark mode no longer leaves the old background behind.</strong> If your Mac went dark while the dashboard sat in a background tab, the page came back with the previous background under the new theme's text &mdash; white on white, or the reverse &mdash; until you reloaded it."
         }
       ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The finder line knew nothing about your finders straight after a page load.</strong> Pressing <kbd>?</kbd> on a freshly opened dashboard said <em>No finders set up yet</em> even with several set up, and typing a finder’s shortcut after it did not complete into <em>?DG&nbsp;</em> the way it should &mdash; so what you typed next was read as part of the shortcut instead of as what you were searching for. Both came right on the next thing that redrew the page, which made it look like the finders came and went."
+        }
+      ]
     }
   ]
 }

@@ -208,16 +208,13 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-### Fixes
-
-- **fix — the finder line was empty straight after a page load, with finders configured.** `?` said *No finders set up yet* and offered the way to add one, and a shortcut typed after it never gained its trailing space — both symptoms of the same thing: `SearchComponent`'s constructor handed `SearchFindersComponent` an empty array and left the real list to `updateData()`. The search stack is fetched by the key that opens it, so the component is built after the dashboard's last render and nothing calls `updateData()` in between; the overlay opened on a set of finders it had never been told about, and only the next render — a page switch, a setting, anything — put them there. That is why it looked like a first-visit-only fault. The constructor passes the finders it was given.
-
 ---
 
 ## v1.8.0 — 10 September 2026
 
 ### Fixes
 
+- **fix — the finder line was empty straight after a page load, with finders configured.** `?` said *No finders set up yet* and offered the way to add one, and a shortcut typed after it never gained its trailing space — both symptoms of the same thing: `SearchComponent`'s constructor handed `SearchFindersComponent` an empty array and left the real list to `updateData()`. The search stack is fetched by the key that opens it, so the component is built after the dashboard's last render and nothing calls `updateData()` in between; the overlay opened on a set of finders it had never been told about, and only the next render — a page switch, a setting, anything — put them there. That is why it looked like a first-visit-only fault. The constructor passes the finders it was given.
 - **fix — following the system dark mode left the old background nailed to the page when the switch happened in a background tab.** A theme switch pins the outgoing background on `<body>` with `!important` so the repaint cannot flash, and released it two `requestAnimationFrame` ticks later. A hidden tab runs no animation frames, so a Mac going dark while the dashboard sat behind another tab came back with the light background stuck under the dark theme's text — white on white, or the reverse — and only a reload cleared it. The frames are the fast path now, with a 250 ms timer behind them and a `visibilitychange` for the tab that stays hidden longer than the timer; every path goes through the same idempotent release, and a switch on top of a switch lets the earlier pin go before making its own.
 - **docs — Help and the manual say that following the system happens in a background tab too.** Config → Appearance's help panel described the pairing and said nothing about when the swap happens, and the manual's troubleshooting list had no entry for a page whose colours came back wrong after the Mac went dark — the two places a reader looks when it does. Both cover it now, in all six languages, with the hard-refresh note for anyone still running the JavaScript from before the fix.
 - **fix — the catalogue's "in view" check demanded that a whole settings panel fit on screen.** Rewritten with the auto-open change, it asserted the row's top and the panel's bottom were both inside the viewport — which on CI's 720px-tall window a panel of several fields cannot satisfy, so it failed there three retries running while passing locally. It now checks what the test was written for: the new row's head is on screen and its fields start above the fold, rather than the whole panel fitting.
