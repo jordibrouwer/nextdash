@@ -12,6 +12,12 @@
         "academicpositions.com",
         "higheredjobs.com",
         "jobs.ac.uk"
+      ],
+      "keywords": [
+        "professorship",
+        "postdoc",
+        "sabbatical",
+        "adjunct"
       ]
     },
     {
@@ -26,6 +32,13 @@
         "a11yproject.com",
         "deque.com",
         "webaim.org"
+      ],
+      "keywords": [
+        "screenreader",
+        "aria",
+        "contrast",
+        "captions",
+        "keyboard-navigation"
       ]
     },
     {
@@ -42,6 +55,12 @@
         "cpajournal.com",
         "ifac.org",
         "journalofaccountancy.com"
+      ],
+      "keywords": [
+        "balance-sheet",
+        "reconciliation",
+        "depreciation",
+        "gaap"
       ]
     },
     {
@@ -56,6 +75,11 @@
         "exophase.com",
         "trueachievements.com",
         "truetrophies.com"
+      ],
+      "keywords": [
+        "platinum",
+        "speedrun",
+        "unlockable"
       ]
     },
     {
@@ -70,6 +94,11 @@
         "actuarialpost.co.uk",
         "casact.org",
         "soa.org"
+      ],
+      "keywords": [
+        "annuity",
+        "solvency",
+        "reserving"
       ]
     },
     {
@@ -87,6 +116,13 @@
         "campaignlive.com",
         "digiday.com",
         "thedrum.com"
+      ],
+      "keywords": [
+        "impressions",
+        "cpm",
+        "programmatic",
+        "brand",
+        "agency"
       ]
     },
     {
@@ -103,6 +139,14 @@
         "hackerrank.com",
         "leetcode.com",
         "topcoder.com"
+      ],
+      "keywords": [
+        "recursion",
+        "complexity",
+        "sorting",
+        "graph",
+        "big-o",
+        "dynamic-programming"
       ]
     },
     {
@@ -117,6 +161,13 @@
         "mynoise.net",
         "noisli.com",
         "rainymood.com"
+      ],
+      "keywords": [
+        "rainfall",
+        "soundscape",
+        "static",
+        "hum",
+        "drone"
       ]
     },
     {
@@ -132,6 +183,11 @@
         "plausible.io",
         "umami.is",
         "usefathom.com"
+      ],
+      "keywords": [
+        "bounce-rate",
+        "conversion",
+        "segment"
       ]
     },
     {
@@ -148,6 +204,11 @@
         "androidpolice.com",
         "apkmirror.com",
         "xda-developers.com"
+      ],
+      "keywords": [
+        "kotlin",
+        "gradle",
+        "sideload"
       ]
     },
     {
@@ -165,6 +226,12 @@
         "hidive.com",
         "kitsu.app",
         "myanimelist.net"
+      ],
+      "keywords": [
+        "subbed",
+        "dubbed",
+        "shounen",
+        "isekai"
       ]
     },
     {
@@ -178,6 +245,13 @@
         "humanorigins.si.edu",
         "leakeyfoundation.org",
         "sapiens.org"
+      ],
+      "keywords": [
+        "kinship",
+        "hominid",
+        "fieldwork",
+        "ritual",
+        "indigenous"
       ]
     },
     {
@@ -192,6 +266,11 @@
         "1stdibs.com",
         "chairish.com",
         "rubylane.com"
+      ],
+      "keywords": [
+        "porcelain",
+        "patina",
+        "restoration"
       ]
     },
     {
@@ -206,6 +285,13 @@
         "competitionpolicyinternational.com",
         "globalcompetitionreview.com",
         "mlex.com"
+      ],
+      "keywords": [
+        "merger",
+        "litigation",
+        "regulator",
+        "dominance",
+        "price-fixing"
       ]
     },
     {
@@ -221,6 +307,11 @@
         "postman.com",
         "rapidapi.com",
         "swagger.io"
+      ],
+      "keywords": [
+        "graphql",
+        "json",
+        "webhook"
       ]
     },
     {
@@ -234,6 +325,13 @@
         "archaeology.co.uk",
         "archaeology.org",
         "heritagedaily.com"
+      ],
+      "keywords": [
+        "unearthed",
+        "stratigraphy",
+        "relic",
+        "dig-site",
+        "potsherd"
       ]
     },
     {
@@ -248,6 +346,10 @@
         "archive.today",
         "openculture.com",
         "ubu.com"
+      ],
+      "keywords": [
+        "wayback",
+        "ephemera"
       ]
     },
     {
@@ -274,6 +376,12 @@
         "pinterest.com",
         "pixiv.net",
         "saatchiart.com"
+      ],
+      "keywords": [
+        "sketch",
+        "illustration",
+        "gallery",
+        "brushes"
       ]
     },
     {
@@ -288,6 +396,13 @@
         "ctrlpaint.com",
         "drawabox.com",
         "proko.com"
+      ],
+      "keywords": [
+        "anatomy",
+        "perspective",
+        "shading",
+        "gesture",
+        "proportions"
       ]
     },
     {
@@ -302,6 +417,10 @@
         "bombbomb.com",
         "loom.com",
         "vidyard.com"
+      ],
+      "keywords": [
+        "transcript",
+        "screencast"
       ]
     },
     {
@@ -316,6 +435,13 @@
         "heritageauctions.com",
         "invaluable.com",
         "liveauctioneers.com"
+      ],
+      "keywords": [
+        "lot",
+        "reserve-price",
+        "hammer-price",
+        "consignment",
+        "bidder"
       ]
     },
     {
@@ -331,6 +457,11 @@
         "chirpbooks.com",
         "librivox.org",
         "scribd.com"
+      ],
+      "keywords": [
+        "abridged",
+        "unabridged",
+        "chapters"
       ]
     },
     {
@@ -346,6 +477,12 @@
         "authelia.com",
         "keycloak.org",
         "okta.com"
+      ],
+      "keywords": [
+        "login",
+        "password",
+        "mfa",
+        "credential"
       ]
     },
     {
@@ -361,6 +498,13 @@
         "napaonline.com",
         "oreillyauto.com",
         "rockauto.com"
+      ],
+      "keywords": [
+        "brake",
+        "alternator",
+        "gasket",
+        "muffler",
+        "transmission"
       ]
     },
     {
@@ -378,6 +522,10 @@
         "make.com",
         "n8n.io",
         "zapier.com"
+      ],
+      "keywords": [
+        "zap",
+        "scheduler"
       ]
     },
     {
@@ -391,6 +539,11 @@
         "autonews.com",
         "just-auto.com",
         "wardsauto.com"
+      ],
+      "keywords": [
+        "recall",
+        "horsepower",
+        "dealership"
       ]
     },
     {
@@ -405,6 +558,12 @@
         "aviationweek.com",
         "flightglobal.com",
         "simpleflying.com"
+      ],
+      "keywords": [
+        "cockpit",
+        "fuselage",
+        "turbulence",
+        "airspace"
       ]
     },
     {
@@ -419,6 +578,11 @@
         "babylist.com",
         "carters.com",
         "potterybarnkids.com"
+      ],
+      "keywords": [
+        "stroller",
+        "diaper",
+        "nursery"
       ]
     },
     {
@@ -438,6 +602,11 @@
         "idrive.com",
         "rclone.org",
         "restic.net"
+      ],
+      "keywords": [
+        "restore",
+        "redundancy",
+        "incremental"
       ]
     },
     {
@@ -452,6 +621,13 @@
         "food52.com",
         "kingarthurbaking.com",
         "sallysbakingaddiction.com"
+      ],
+      "keywords": [
+        "dough",
+        "yeast",
+        "frosting",
+        "oven",
+        "sourdough"
       ]
     },
     {
@@ -468,6 +644,11 @@
         "bankrate.com",
         "globalbankingandfinance.com",
         "thebanker.com"
+      ],
+      "keywords": [
+        "overdraft",
+        "teller",
+        "atm"
       ]
     },
     {
@@ -482,6 +663,12 @@
         "abi.org",
         "reorg.com",
         "turnaround.org"
+      ],
+      "keywords": [
+        "creditor",
+        "liquidation",
+        "receivership",
+        "debtor"
       ]
     },
     {
@@ -496,6 +683,13 @@
         "baseball-reference.com",
         "fangraphs.com",
         "mlb.com"
+      ],
+      "keywords": [
+        "pitcher",
+        "dugout",
+        "bullpen",
+        "strikeout",
+        "bases"
       ]
     },
     {
@@ -510,6 +704,12 @@
         "basketball-reference.com",
         "hoopshype.com",
         "nba.com"
+      ],
+      "keywords": [
+        "dunk",
+        "rebound",
+        "dribble",
+        "jumpshot"
       ]
     },
     {
@@ -525,6 +725,13 @@
         "birchbox.com",
         "sephora.com",
         "ulta.com"
+      ],
+      "keywords": [
+        "mascara",
+        "foundation",
+        "moisturizer",
+        "serum",
+        "exfoliate"
       ]
     },
     {
@@ -539,6 +746,13 @@
         "beeradvocate.com",
         "ratebeer.com",
         "untappd.com"
+      ],
+      "keywords": [
+        "hops",
+        "lager",
+        "stout",
+        "ipa",
+        "malt"
       ]
     },
     {
@@ -553,6 +767,13 @@
         "scopus.com",
         "semanticscholar.org",
         "webofscience.com"
+      ],
+      "keywords": [
+        "h-index",
+        "altmetric",
+        "quartile",
+        "journal-ranking",
+        "indexing"
       ]
     },
     {
@@ -568,6 +789,9 @@
         "getdbt.com",
         "hadoop.apache.org",
         "spark.apache.org"
+      ],
+      "keywords": [
+        "batch-processing"
       ]
     },
     {
@@ -582,6 +806,11 @@
         "ebi.ac.uk",
         "jax.org",
         "ncbi.nlm.nih.gov"
+      ],
+      "keywords": [
+        "genome",
+        "organism",
+        "enzyme"
       ]
     },
     {
@@ -596,6 +825,12 @@
         "allaboutbirds.org",
         "audubon.org",
         "ebird.org"
+      ],
+      "keywords": [
+        "plumage",
+        "songbird",
+        "binoculars",
+        "sighting"
       ]
     },
     {
@@ -610,6 +845,12 @@
         "tumblr.com",
         "typepad.com",
         "wordpress.com"
+      ],
+      "keywords": [
+        "rss",
+        "permalink",
+        "trackback",
+        "blogroll"
       ]
     },
     {
@@ -624,6 +865,12 @@
         "boardgamearena.com",
         "boardgamegeek.com",
         "tabletopia.com"
+      ],
+      "keywords": [
+        "dice",
+        "meeple",
+        "expansion",
+        "rulebook"
       ]
     },
     {
@@ -638,6 +885,13 @@
         "boats.com",
         "boattrader.com",
         "discoverboating.com"
+      ],
+      "keywords": [
+        "hull",
+        "marina",
+        "nautical",
+        "anchor",
+        "knots"
       ]
     },
     {
@@ -652,6 +906,12 @@
         "bondbuyer.com",
         "marketaxess.com",
         "tradeweb.com"
+      ],
+      "keywords": [
+        "maturity",
+        "duration",
+        "credit-rating",
+        "issuance"
       ]
     },
     {
@@ -666,6 +926,13 @@
         "blinkist.com",
         "getabstract.com",
         "shortform.com"
+      ],
+      "keywords": [
+        "takeaways",
+        "digest",
+        "synopsis",
+        "highlights",
+        "chapter-recap"
       ]
     },
     {
@@ -680,6 +947,11 @@
         "diigo.com",
         "pinboard.in",
         "symbaloo.com"
+      ],
+      "keywords": [
+        "folder",
+        "import-export",
+        "reading-list"
       ]
     },
     {
@@ -697,6 +969,10 @@
         "kirkusreviews.com",
         "librarything.com",
         "thestorygraph.com"
+      ],
+      "keywords": [
+        "hardcover",
+        "paperback"
       ]
     },
     {
@@ -716,6 +992,12 @@
         "betterworldbooks.com",
         "bookshop.org",
         "thriftbooks.com"
+      ],
+      "keywords": [
+        "first-edition",
+        "secondhand",
+        "out-of-print",
+        "signed-copy"
       ]
     },
     {
@@ -729,6 +1011,12 @@
         "kew.org",
         "tropicos.org",
         "worldfloraonline.org"
+      ],
+      "keywords": [
+        "photosynthesis",
+        "herbarium",
+        "cultivar",
+        "pollination"
       ]
     },
     {
@@ -741,6 +1029,11 @@
         "broadcastingcable.com",
         "rapidtvnews.com",
         "tvnewscheck.com"
+      ],
+      "keywords": [
+        "spectrum",
+        "syndication",
+        "affiliate"
       ]
     },
     {
@@ -748,8 +1041,7 @@
       "aliases": [
         "brokerage",
         "trading",
-        "stockbroker",
-        "platform"
+        "stockbroker"
       ],
       "hosts": [
         "etrade.com",
@@ -757,6 +1049,10 @@
         "interactivebrokers.com",
         "robinhood.com",
         "schwab.com"
+      ],
+      "keywords": [
+        "commission",
+        "order-book"
       ]
     },
     {
@@ -772,6 +1068,13 @@
         "brave.com",
         "chromium.org",
         "mozilla.org"
+      ],
+      "keywords": [
+        "tab",
+        "incognito",
+        "userscript",
+        "addon",
+        "rendering-engine"
       ]
     },
     {
@@ -790,6 +1093,11 @@
         "fortune.com",
         "hbr.org",
         "inc.com"
+      ],
+      "keywords": [
+        "revenue",
+        "ceo",
+        "quarterly-earnings"
       ]
     },
     {
@@ -805,6 +1113,12 @@
         "keycdn.com",
         "memcached.org",
         "varnish-cache.org"
+      ],
+      "keywords": [
+        "eviction",
+        "ttl",
+        "hit-rate",
+        "invalidation"
       ]
     },
     {
@@ -819,6 +1133,12 @@
         "calculator.net",
         "rapidtables.com",
         "unitconverters.net"
+      ],
+      "keywords": [
+        "equation",
+        "percentage",
+        "exponent",
+        "arithmetic"
       ]
     },
     {
@@ -832,6 +1152,11 @@
         "calendar.google.com",
         "calendly.com",
         "when2meet.com"
+      ],
+      "keywords": [
+        "reminder",
+        "recurring-event",
+        "invite"
       ]
     },
     {
@@ -846,6 +1171,11 @@
         "dpreview.com",
         "dxomark.com",
         "photographylife.com"
+      ],
+      "keywords": [
+        "shutter-speed",
+        "iso",
+        "tripod"
       ]
     },
     {
@@ -861,6 +1191,11 @@
         "koa.com",
         "rei.com",
         "thedyrt.com"
+      ],
+      "keywords": [
+        "campfire",
+        "sleeping-bag",
+        "rv"
       ]
     },
     {
@@ -876,6 +1211,11 @@
         "budget.com",
         "enterprise.com",
         "hertz.com"
+      ],
+      "keywords": [
+        "deposit",
+        "collision-waiver",
+        "drop-off-fee"
       ]
     },
     {
@@ -891,6 +1231,13 @@
         "cars.com",
         "edmunds.com",
         "kbb.com"
+      ],
+      "keywords": [
+        "sedan",
+        "suv",
+        "trim-level",
+        "odometer",
+        "msrp"
       ]
     },
     {
@@ -905,6 +1252,11 @@
         "adultswim.com",
         "cartoonnetwork.com",
         "nick.com"
+      ],
+      "keywords": [
+        "storyboard",
+        "voice-actor",
+        "saturday-morning"
       ]
     },
     {
@@ -920,6 +1272,13 @@
         "bis.org",
         "ecb.europa.eu",
         "federalreserve.gov"
+      ],
+      "keywords": [
+        "inflation",
+        "rate-hike",
+        "quantitative-easing",
+        "fomc",
+        "benchmark-rate"
       ]
     },
     {
@@ -934,6 +1293,12 @@
         "certiport.com",
         "credly.com",
         "pearsonvue.com"
+      ],
+      "keywords": [
+        "proctored",
+        "exam-prep",
+        "pass-rate",
+        "continuing-education"
       ]
     },
     {
@@ -948,6 +1313,11 @@
         "globalgiving.org",
         "guidestar.org",
         "oxfam.org"
+      ],
+      "keywords": [
+        "volunteer",
+        "tax-deductible",
+        "grant"
       ]
     },
     {
@@ -975,6 +1345,12 @@
         "telegram.org",
         "viber.com",
         "whatsapp.com"
+      ],
+      "keywords": [
+        "channel",
+        "emoji",
+        "mention",
+        "typing-indicator"
       ]
     },
     {
@@ -989,6 +1365,10 @@
         "cheatengine.org",
         "pcgamingwiki.com",
         "wemod.com"
+      ],
+      "keywords": [
+        "mod",
+        "godmode"
       ]
     },
     {
@@ -1002,6 +1382,13 @@
         "chemspider.com",
         "ptable.com",
         "pubchem.ncbi.nlm.nih.gov"
+      ],
+      "keywords": [
+        "molecule",
+        "reaction",
+        "compound",
+        "catalyst",
+        "solvent"
       ]
     },
     {
@@ -1016,6 +1403,12 @@
         "chess.com",
         "chess24.com",
         "lichess.org"
+      ],
+      "keywords": [
+        "checkmate",
+        "opening",
+        "gambit",
+        "endgame"
       ]
     },
     {
@@ -1032,6 +1425,13 @@
         "drone.io",
         "jenkins.io",
         "travis-ci.com"
+      ],
+      "keywords": [
+        "runner",
+        "rollback",
+        "container-image",
+        "deploy-stage",
+        "staging"
       ]
     },
     {
@@ -1048,6 +1448,10 @@
         "endnote.com",
         "mendeley.com",
         "zotero.org"
+      ],
+      "keywords": [
+        "reference-list",
+        "annotated-bibliography"
       ]
     },
     {
@@ -1062,6 +1466,12 @@
         "allofbach.com",
         "idagio.com",
         "naxos.com"
+      ],
+      "keywords": [
+        "concerto",
+        "philharmonic",
+        "sonata",
+        "libretto"
       ]
     },
     {
@@ -1077,6 +1487,13 @@
         "gumtree.com",
         "nextdoor.com",
         "offerup.com"
+      ],
+      "keywords": [
+        "for-sale",
+        "seller",
+        "listing-price",
+        "garage-sale",
+        "wanted-ad"
       ]
     },
     {
@@ -1092,6 +1509,12 @@
         "merrymaids.com",
         "mollymaid.com",
         "thumbtack.com"
+      ],
+      "keywords": [
+        "vacuum",
+        "disinfect",
+        "mop",
+        "housekeeper"
       ]
     },
     {
@@ -1105,6 +1528,13 @@
         "climate.nasa.gov",
         "ipcc.ch",
         "unfccc.int"
+      ],
+      "keywords": [
+        "carbon",
+        "greenhouse-gas",
+        "sea-level",
+        "decarbonization",
+        "wildfire"
       ]
     },
     {
@@ -1119,6 +1549,13 @@
         "8a.nu",
         "climbing.com",
         "ukclimbing.com"
+      ],
+      "keywords": [
+        "carabiner",
+        "belay",
+        "crag",
+        "ascent",
+        "harness"
       ]
     },
     {
@@ -1138,6 +1575,11 @@
         "linode.com",
         "oracle.com",
         "vultr.com"
+      ],
+      "keywords": [
+        "compute-instance",
+        "region",
+        "provisioning"
       ]
     },
     {
@@ -1165,6 +1607,9 @@
         "onedrive.live.com",
         "pcloud.com",
         "photos.google.com"
+      ],
+      "keywords": [
+        "shared-folder"
       ]
     },
     {
@@ -1180,6 +1625,12 @@
         "joomla.org",
         "strapi.io",
         "wordpress.org"
+      ],
+      "keywords": [
+        "plugin",
+        "theme",
+        "shortcode",
+        "custom-field"
       ]
     },
     {
@@ -1194,6 +1645,15 @@
         "diffordsguide.com",
         "liquor.com",
         "punchdrink.com"
+      ],
+      "keywords": [
+        "rum",
+        "whiskey",
+        "gin",
+        "vodka",
+        "tequila",
+        "shaker",
+        "muddle"
       ]
     },
     {
@@ -1207,6 +1667,13 @@
         "gerritcodereview.com",
         "graphite.dev",
         "reviewable.io"
+      ],
+      "keywords": [
+        "reviewer",
+        "approve",
+        "patch",
+        "changeset",
+        "reject"
       ]
     },
     {
@@ -1221,6 +1688,10 @@
         "codecademy.com",
         "egghead.io",
         "pluralsight.com"
+      ],
+      "keywords": [
+        "capstone",
+        "instructor"
       ]
     },
     {
@@ -1236,6 +1707,13 @@
         "lavazza.com",
         "peets.com",
         "starbucks.com"
+      ],
+      "keywords": [
+        "roast",
+        "barista",
+        "latte",
+        "arabica",
+        "roastery"
       ]
     },
     {
@@ -1250,6 +1728,13 @@
         "colorhunt.co",
         "coolors.co",
         "paletton.com"
+      ],
+      "keywords": [
+        "swatch",
+        "hue",
+        "pigment",
+        "gradient",
+        "tint"
       ]
     },
     {
@@ -1264,6 +1749,13 @@
         "comedycentral.com",
         "drybarcomedy.com",
         "funnyordie.com"
+      ],
+      "keywords": [
+        "comedian",
+        "punchline",
+        "satire",
+        "improv",
+        "heckler"
       ]
     },
     {
@@ -1280,6 +1772,12 @@
         "dc.com",
         "imagecomics.com",
         "marvel.com"
+      ],
+      "keywords": [
+        "villain",
+        "sidekick",
+        "illustrator",
+        "storyline"
       ]
     },
     {
@@ -1294,6 +1792,12 @@
         "dcbservice.com",
         "midtowncomics.com",
         "mycomicshop.com"
+      ],
+      "keywords": [
+        "preorder",
+        "back-issue",
+        "variant-cover",
+        "longbox"
       ]
     },
     {
@@ -1308,6 +1812,15 @@
         "agweb.com",
         "kitco.com",
         "mining.com"
+      ],
+      "keywords": [
+        "silver",
+        "copper",
+        "wheat",
+        "crude",
+        "livestock",
+        "bullion",
+        "harvest"
       ]
     },
     {
@@ -1328,6 +1841,11 @@
         "lobste.rs",
         "news.ycombinator.com",
         "scribophile.com"
+      ],
+      "keywords": [
+        "karma",
+        "novelist",
+        "critique"
       ]
     },
     {
@@ -1346,6 +1864,12 @@
         "levels.fyi",
         "payscale.com",
         "salary.com"
+      ],
+      "keywords": [
+        "bonus",
+        "benefits",
+        "raise",
+        "negotiation"
       ]
     },
     {
@@ -1360,6 +1884,13 @@
         "godbolt.org",
         "llvm.org",
         "mingw-w64.org"
+      ],
+      "keywords": [
+        "optimizer",
+        "assembly",
+        "codegen",
+        "linker",
+        "bitcode"
       ]
     },
     {
@@ -1373,6 +1904,11 @@
         "complianceweek.com",
         "corporatecomplianceinsights.com",
         "regulationasia.com"
+      ],
+      "keywords": [
+        "enforcement",
+        "violation",
+        "mandate"
       ]
     },
     {
@@ -1387,6 +1923,13 @@
         "bdcnetwork.com",
         "constructiondive.com",
         "enr.com"
+      ],
+      "keywords": [
+        "concrete",
+        "blueprint",
+        "scaffolding",
+        "masonry",
+        "jobsite"
       ]
     },
     {
@@ -1401,6 +1944,14 @@
         "consumerreports.org",
         "morningconsult.com",
         "numerator.com"
+      ],
+      "keywords": [
+        "household",
+        "retail",
+        "purchasing",
+        "demographics",
+        "survey",
+        "disposable"
       ]
     },
     {
@@ -1416,6 +1967,9 @@
         "docker.com",
         "linuxcontainers.org",
         "podman.io"
+      ],
+      "keywords": [
+        "orchestration"
       ]
     },
     {
@@ -1434,6 +1988,11 @@
         "skillshare.com",
         "udacity.com",
         "udemy.com"
+      ],
+      "keywords": [
+        "lecture",
+        "module",
+        "semester"
       ]
     },
     {
@@ -1449,6 +2008,12 @@
         "liquidspace.com",
         "regus.com",
         "wework.com"
+      ],
+      "keywords": [
+        "lounge",
+        "meeting-room",
+        "membership",
+        "desk"
       ]
     },
     {
@@ -1463,6 +2028,13 @@
         "cplusplus.com",
         "cppreference.com",
         "isocpp.org"
+      ],
+      "keywords": [
+        "pointer",
+        "header",
+        "destructor",
+        "overload",
+        "iterator"
       ]
     },
     {
@@ -1478,6 +2050,14 @@
         "hobbylobby.com",
         "joann.com",
         "michaels.com"
+      ],
+      "keywords": [
+        "knitting",
+        "sewing",
+        "embroidery",
+        "yarn",
+        "stitching",
+        "glitter"
       ]
     },
     {
@@ -1493,6 +2073,13 @@
         "creditcards.com",
         "doctorofcredit.com",
         "thepointsguy.com"
+      ],
+      "keywords": [
+        "apr",
+        "annual-fee",
+        "signup-bonus",
+        "issuer",
+        "foreign-transaction"
       ]
     },
     {
@@ -1508,6 +2095,14 @@
         "fitchratings.com",
         "moodys.com",
         "spglobal.com"
+      ],
+      "keywords": [
+        "downgrade",
+        "upgrade",
+        "sovereign",
+        "bondholder",
+        "outlook",
+        "default-risk"
       ]
     },
     {
@@ -1522,6 +2117,14 @@
         "equifax.com",
         "experian.com",
         "transunion.com"
+      ],
+      "keywords": [
+        "utilization",
+        "inquiry",
+        "delinquency",
+        "lender",
+        "dispute",
+        "bureau"
       ]
     },
     {
@@ -1537,6 +2140,12 @@
         "hubspot.com",
         "pipedrive.com",
         "salesforce.com"
+      ],
+      "keywords": [
+        "prospect",
+        "upsell",
+        "outreach",
+        "pipeline"
       ]
     },
     {
@@ -1551,6 +2160,14 @@
         "indiegogo.com",
         "justgiving.com",
         "kickstarter.com"
+      ],
+      "keywords": [
+        "backers",
+        "pledge",
+        "stretch-goal",
+        "reward-tier",
+        "funding-goal",
+        "donor"
       ]
     },
     {
@@ -1566,6 +2183,12 @@
         "ncl.com",
         "princess.com",
         "royalcaribbean.com"
+      ],
+      "keywords": [
+        "embarkation",
+        "cabin",
+        "deck",
+        "gangway"
       ]
     },
     {
@@ -1586,6 +2209,13 @@
         "decrypt.co",
         "kraken.com",
         "theblock.co"
+      ],
+      "keywords": [
+        "wallet",
+        "ledger",
+        "staking",
+        "altcoin",
+        "defi"
       ]
     },
     {
@@ -1601,6 +2231,14 @@
         "cyclingweekly.com",
         "strava.com",
         "zwift.com"
+      ],
+      "keywords": [
+        "peloton",
+        "cadence",
+        "saddle",
+        "cyclist",
+        "criterium",
+        "drivetrain"
       ]
     },
     {
@@ -1617,6 +2255,12 @@
         "kaggle.com",
         "numpy.org",
         "pandas.pydata.org"
+      ],
+      "keywords": [
+        "dataframe",
+        "statistics",
+        "clustering",
+        "feature-engineering"
       ]
     },
     {
@@ -1632,6 +2276,13 @@
         "redash.io",
         "superset.apache.org",
         "tableau.com"
+      ],
+      "keywords": [
+        "kpi",
+        "metric",
+        "drilldown",
+        "widget",
+        "benchmarking"
       ]
     },
     {
@@ -1646,6 +2297,13 @@
         "datawrapper.de",
         "flourish.studio",
         "observablehq.com"
+      ],
+      "keywords": [
+        "axis",
+        "legend",
+        "scatterplot",
+        "bar-chart",
+        "tooltip"
       ]
     },
     {
@@ -1663,6 +2321,11 @@
         "postgresql.org",
         "redis.io",
         "sqlite.org"
+      ],
+      "keywords": [
+        "replication",
+        "transaction",
+        "sharding"
       ]
     },
     {
@@ -1679,6 +2342,14 @@
         "rakuten.com",
         "retailmenot.com",
         "slickdeals.net"
+      ],
+      "keywords": [
+        "promo-code",
+        "clearance",
+        "flash-sale",
+        "voucher",
+        "doorbuster",
+        "rebate"
       ]
     },
     {
@@ -1694,6 +2365,13 @@
         "raygun.com",
         "rollbar.com",
         "sentry.io"
+      ],
+      "keywords": [
+        "breakpoint",
+        "exception",
+        "traceback",
+        "segfault",
+        "crash-report"
       ]
     },
     {
@@ -1708,6 +2386,14 @@
         "defensenews.com",
         "janes.com",
         "militarytimes.com"
+      ],
+      "keywords": [
+        "missile",
+        "airstrike",
+        "weapons",
+        "warship",
+        "troops",
+        "artillery"
       ]
     },
     {
@@ -1723,6 +2409,11 @@
         "doordash.com",
         "grubhub.com",
         "ubereats.com"
+      ],
+      "keywords": [
+        "eta",
+        "curbside",
+        "tipping"
       ]
     },
     {
@@ -1738,6 +2429,11 @@
         "cboe.com",
         "cmegroup.com",
         "theice.com"
+      ],
+      "keywords": [
+        "strike-price",
+        "expiration",
+        "underlying"
       ]
     },
     {
@@ -1763,6 +2459,12 @@
         "penpot.app",
         "sketch.com",
         "smashingmagazine.com"
+      ],
+      "keywords": [
+        "typography",
+        "moodboard",
+        "icon-set",
+        "layout"
       ]
     },
     {
@@ -1777,6 +2479,14 @@
         "electronjs.org",
         "qt.io",
         "tauri.app"
+      ],
+      "keywords": [
+        "installer",
+        "executable",
+        "windowing",
+        "binary",
+        "packaging",
+        "tray-icon"
       ]
     },
     {
@@ -1790,6 +2500,11 @@
         "github.com",
         "gitlab.com",
         "stackoverflow.com"
+      ],
+      "keywords": [
+        "framework",
+        "commit",
+        "open-source"
       ]
     },
     {
@@ -1809,6 +2524,12 @@
         "lucidchart.com",
         "mermaid.js.org",
         "plantuml.com"
+      ],
+      "keywords": [
+        "shapes",
+        "swimlane",
+        "node",
+        "click-drag"
       ]
     },
     {
@@ -1825,6 +2546,12 @@
         "merriam-webster.com",
         "thesaurus.com",
         "wordreference.com"
+      ],
+      "keywords": [
+        "synonym",
+        "antonym",
+        "etymology",
+        "phonetic"
       ]
     },
     {
@@ -1837,6 +2564,13 @@
         "adho.org",
         "perseus.tufts.edu",
         "voyant-tools.org"
+      ],
+      "keywords": [
+        "corpus",
+        "philology",
+        "archival",
+        "paleography",
+        "textmining"
       ]
     },
     {
@@ -1851,6 +2585,11 @@
         "state.gov",
         "un.org",
         "usip.org"
+      ],
+      "keywords": [
+        "ambassador",
+        "envoy",
+        "bilateral"
       ]
     },
     {
@@ -1865,6 +2604,12 @@
         "dividend.com",
         "simplysafedividends.com",
         "suredividend.com"
+      ],
+      "keywords": [
+        "ex-dividend",
+        "payout-ratio",
+        "reinvestment",
+        "dividend-aristocrat"
       ]
     },
     {
@@ -1879,6 +2624,14 @@
         "divessi.com",
         "padi.com",
         "scubadiving.com"
+      ],
+      "keywords": [
+        "wetsuit",
+        "drysuit",
+        "reef",
+        "buoyancy",
+        "decompression",
+        "dive-site"
       ]
     },
     {
@@ -1894,6 +2647,14 @@
         "familyhandyman.com",
         "instructables.com",
         "thisoldhouse.com"
+      ],
+      "keywords": [
+        "toolbox",
+        "drywall",
+        "plumbing",
+        "carpentry",
+        "caulk",
+        "powertools"
       ]
     },
     {
@@ -1909,6 +2670,12 @@
         "beatport.com",
         "mixcloud.com",
         "ra.co"
+      ],
+      "keywords": [
+        "turntable",
+        "bpm",
+        "crossfade",
+        "vinyl"
       ]
     },
     {
@@ -1924,6 +2691,12 @@
         "gitbook.com",
         "mkdocs.org",
         "readthedocs.org"
+      ],
+      "keywords": [
+        "api-reference",
+        "sidebar-nav",
+        "readme",
+        "toc"
       ]
     },
     {
@@ -1936,6 +2709,13 @@
         "curiositystream.com",
         "magellantv.com",
         "topdocumentaryfilms.com"
+      ],
+      "keywords": [
+        "filmmaker",
+        "archival-footage",
+        "docuseries",
+        "expose",
+        "footage"
       ]
     },
     {
@@ -1949,6 +2729,12 @@
         "docs.zoho.com",
         "office.com",
         "onlyoffice.com"
+      ],
+      "keywords": [
+        "presentation",
+        "formatting",
+        "pdf-export",
+        "collaborative-editing"
       ]
     },
     {
@@ -1965,6 +2751,13 @@
         "name.com",
         "namecheap.com",
         "porkbun.com"
+      ],
+      "keywords": [
+        "nameserver",
+        "tld",
+        "dns-record",
+        "renewal",
+        "subdomain"
       ]
     },
     {
@@ -1979,6 +2772,14 @@
         "dotnet.microsoft.com",
         "mono-project.com",
         "nuget.org"
+      ],
+      "keywords": [
+        "nuget",
+        "mvc",
+        "razor",
+        "clr",
+        "blazor",
+        "linq"
       ]
     },
     {
@@ -1994,6 +2795,14 @@
         "hellosign.com",
         "pandadoc.com",
         "signnow.com"
+      ],
+      "keywords": [
+        "signer",
+        "envelope",
+        "initials",
+        "notarize",
+        "audit-trail",
+        "countersign"
       ]
     },
     {
@@ -2009,6 +2818,12 @@
         "gutenberg.org",
         "kobo.com",
         "overdrive.com"
+      ],
+      "keywords": [
+        "e-reader",
+        "library-loan",
+        "digital-lending",
+        "bookshelf"
       ]
     },
     {
@@ -2023,6 +2838,12 @@
         "eol.org",
         "gbif.org",
         "iucnredlist.org"
+      ],
+      "keywords": [
+        "habitat",
+        "species",
+        "biome",
+        "rewilding"
       ]
     },
     {
@@ -2037,6 +2858,12 @@
         "digitalcommerce360.com",
         "ecommercebytes.com",
         "practicalecommerce.com"
+      ],
+      "keywords": [
+        "fulfillment",
+        "sku",
+        "marketplace",
+        "shipping-cost"
       ]
     },
     {
@@ -2055,6 +2882,13 @@
         "project-syndicate.org",
         "voxeu.org",
         "worldbank.org"
+      ],
+      "keywords": [
+        "recession",
+        "monetary-policy",
+        "fiscal",
+        "stagflation",
+        "deflation"
       ]
     },
     {
@@ -2071,6 +2905,12 @@
         "neovim.io",
         "sublimetext.com",
         "vim.org"
+      ],
+      "keywords": [
+        "syntax-highlighting",
+        "autocomplete",
+        "linting",
+        "intellisense"
       ]
     },
     {
@@ -2091,6 +2931,13 @@
         "freedomhouse.org",
         "idea.int",
         "ifes.org"
+      ],
+      "keywords": [
+        "incumbent",
+        "precinct",
+        "turnout",
+        "gerrymandering",
+        "runoff"
       ]
     },
     {
@@ -2106,6 +2953,12 @@
         "digikey.com",
         "mouser.com",
         "sparkfun.com"
+      ],
+      "keywords": [
+        "resistor",
+        "solder",
+        "capacitor",
+        "transistor"
       ]
     },
     {
@@ -2129,6 +2982,12 @@
         "protonmail.com",
         "sendgrid.com",
         "tutanota.com"
+      ],
+      "keywords": [
+        "imap",
+        "pop3",
+        "attachment",
+        "dkim"
       ]
     },
     {
@@ -2144,6 +3003,11 @@
         "brevo.com",
         "campaignmonitor.com",
         "constantcontact.com"
+      ],
+      "keywords": [
+        "drip-campaign",
+        "segmentation",
+        "deliverability"
       ]
     },
     {
@@ -2160,6 +3024,13 @@
         "caixinglobal.com",
         "mercopress.com",
         "theafricareport.com"
+      ],
+      "keywords": [
+        "currency-devaluation",
+        "foreign-investment",
+        "capital-flows",
+        "trade-deficit",
+        "informal-economy"
       ]
     },
     {
@@ -2175,6 +3046,13 @@
         "openemu.org",
         "pcsx2.net",
         "retroarch.com"
+      ],
+      "keywords": [
+        "bios",
+        "savestate",
+        "controller-mapping",
+        "framerate",
+        "cartridge"
       ]
     },
     {
@@ -2190,6 +3068,14 @@
         "keybase.io",
         "openssl.org",
         "veracrypt.fr"
+      ],
+      "keywords": [
+        "keypair",
+        "ciphertext",
+        "decrypt",
+        "public-key",
+        "cipher-suite",
+        "checksum"
       ]
     },
     {
@@ -2206,6 +3092,14 @@
         "irena.org",
         "world-nuclear.org",
         "worldenergy.org"
+      ],
+      "keywords": [
+        "solar-panel",
+        "turbine",
+        "grid",
+        "reactor",
+        "megawatt",
+        "fossil-fuel"
       ]
     },
     {
@@ -2224,6 +3118,11 @@
         "thewrap.com",
         "tvline.com",
         "variety.com"
+      ],
+      "keywords": [
+        "red-carpet",
+        "casting",
+        "tabloid"
       ]
     },
     {
@@ -2238,6 +3137,13 @@
         "rainforest-alliance.org",
         "unep.org",
         "worldwildlife.org"
+      ],
+      "keywords": [
+        "deforestation",
+        "poaching",
+        "sanctuary",
+        "endangered",
+        "rainforest"
       ]
     },
     {
@@ -2251,6 +3157,12 @@
         "esgtoday.com",
         "greenbiz.com",
         "responsible-investor.com"
+      ],
+      "keywords": [
+        "stakeholder",
+        "greenwashing",
+        "net-zero",
+        "sustainability"
       ]
     },
     {
@@ -2266,6 +3178,11 @@
         "esportsearnings.com",
         "hltv.org",
         "liquipedia.net"
+      ],
+      "keywords": [
+        "scrim",
+        "lan-event",
+        "mvp"
       ]
     },
     {
@@ -2281,6 +3198,13 @@
         "eventbrite.com",
         "evite.com",
         "partyslate.com"
+      ],
+      "keywords": [
+        "invitation",
+        "guestlist",
+        "catering",
+        "banquet",
+        "decorations"
       ]
     },
     {
@@ -2295,6 +3219,12 @@
         "concur.com",
         "expense.zoho.com",
         "expensify.com"
+      ],
+      "keywords": [
+        "per-diem",
+        "approval-workflow",
+        "receipt-scan",
+        "expense-policy"
       ]
     },
     {
@@ -2309,6 +3239,13 @@
         "avvo.com",
         "experts-exchange.com",
         "justanswer.com"
+      ],
+      "keywords": [
+        "consultant",
+        "testimonial",
+        "appointment",
+        "referral",
+        "specialist"
       ]
     },
     {
@@ -2324,6 +3261,12 @@
         "fullfact.org",
         "politifact.com",
         "snopes.com"
+      ],
+      "keywords": [
+        "hoax",
+        "evidence",
+        "fabricated",
+        "falsehood"
       ]
     },
     {
@@ -2338,6 +3281,13 @@
         "archiveofourown.org",
         "fanfiction.net",
         "wattpad.com"
+      ],
+      "keywords": [
+        "canon",
+        "oneshot",
+        "headcanon",
+        "crossover",
+        "beta-reader"
       ]
     },
     {
@@ -2354,6 +3304,13 @@
         "net-a-porter.com",
         "nordstrom.com",
         "zara.com"
+      ],
+      "keywords": [
+        "silhouette",
+        "couture",
+        "streetwear",
+        "accessorize",
+        "hemline"
       ]
     },
     {
@@ -2369,6 +3326,13 @@
         "getunleash.io",
         "launchdarkly.com",
         "split.io"
+      ],
+      "keywords": [
+        "canary-release",
+        "targeting-rule",
+        "experiment-group",
+        "percentage-rollout",
+        "split-testing"
       ]
     },
     {
@@ -2383,6 +3347,13 @@
         "cloudconvert.com",
         "convertio.co",
         "zamzar.com"
+      ],
+      "keywords": [
+        "filetype",
+        "resize",
+        "batch",
+        "pdf",
+        "docx"
       ]
     },
     {
@@ -2402,6 +3373,11 @@
         "sendspace.com",
         "syncthing.net",
         "wetransfer.com"
+      ],
+      "keywords": [
+        "encrypted",
+        "protocol",
+        "filesize"
       ]
     },
     {
@@ -2417,6 +3393,10 @@
         "metacritic.com",
         "mubi.com",
         "rottentomatoes.com"
+      ],
+      "keywords": [
+        "actor",
+        "screenplay"
       ]
     },
     {
@@ -2432,6 +3412,12 @@
         "filmfreeway.com",
         "sundance.org",
         "tiff.net"
+      ],
+      "keywords": [
+        "screening",
+        "jury",
+        "shortfilm",
+        "laurels"
       ]
     },
     {
@@ -2449,6 +3435,12 @@
         "morningstar.com",
         "nerdwallet.com",
         "thebalancemoney.com"
+      ],
+      "keywords": [
+        "retirement",
+        "taxes",
+        "debt",
+        "credit-score"
       ]
     },
     {
@@ -2463,6 +3455,13 @@
         "fintechfutures.com",
         "fintechweekly.com",
         "thefintechtimes.com"
+      ],
+      "keywords": [
+        "payments",
+        "disruption",
+        "startup",
+        "banking",
+        "digital-wallet"
       ]
     },
     {
@@ -2477,6 +3476,14 @@
         "fishbrain.com",
         "in-fisherman.com",
         "takemefishing.org"
+      ],
+      "keywords": [
+        "bait",
+        "reel",
+        "rod",
+        "lure",
+        "catch",
+        "saltwater"
       ]
     },
     {
@@ -2492,6 +3499,13 @@
         "fitbit.com",
         "fitnessblender.com",
         "myfitnesspal.com"
+      ],
+      "keywords": [
+        "cardio",
+        "strength",
+        "reps",
+        "calories",
+        "muscle"
       ]
     },
     {
@@ -2508,6 +3522,11 @@
         "kayak.com",
         "momondo.com",
         "skyscanner.com"
+      ],
+      "keywords": [
+        "baggage",
+        "departure",
+        "airport"
       ]
     },
     {
@@ -2522,6 +3541,13 @@
         "1800flowers.com",
         "ftd.com",
         "proflowers.com"
+      ],
+      "keywords": [
+        "petals",
+        "roses",
+        "bloom",
+        "vase",
+        "orchid"
       ]
     },
     {
@@ -2536,6 +3562,14 @@
         "focusmate.com",
         "freedom.to",
         "pomofocus.io"
+      ],
+      "keywords": [
+        "timer",
+        "productivity",
+        "sessions",
+        "breaks",
+        "flow-state",
+        "blocklist"
       ]
     },
     {
@@ -2550,6 +3584,12 @@
         "nfl.com",
         "pro-football-reference.com",
         "profootballtalk.nbcsports.com"
+      ],
+      "keywords": [
+        "quarterback",
+        "endzone",
+        "linebacker",
+        "fumble"
       ]
     },
     {
@@ -2564,6 +3604,11 @@
         "dailyfx.com",
         "forexlive.com",
         "fxstreet.com"
+      ],
+      "keywords": [
+        "pips",
+        "spread",
+        "candlestick"
       ]
     },
     {
@@ -2577,6 +3622,10 @@
         "lemmy.world",
         "metafilter.com",
         "reddit.com"
+      ],
+      "keywords": [
+        "subforum",
+        "poster"
       ]
     },
     {
@@ -2591,6 +3640,13 @@
         "franchisedirect.com",
         "franchisetimes.com",
         "franchising.com"
+      ],
+      "keywords": [
+        "franchisee",
+        "franchisor",
+        "royalty",
+        "territory",
+        "brand-standards"
       ]
     },
     {
@@ -2605,6 +3661,13 @@
         "acfe.com",
         "ftc.gov",
         "identitytheft.gov"
+      ],
+      "keywords": [
+        "phishing",
+        "scammer",
+        "victim",
+        "fraudulent",
+        "ponzi"
       ]
     },
     {
@@ -2621,6 +3684,13 @@
         "peopleperhour.com",
         "toptal.com",
         "upwork.com"
+      ],
+      "keywords": [
+        "contractor",
+        "remote-work",
+        "hourly-rate",
+        "self-employed",
+        "project-based"
       ]
     },
     {
@@ -2636,6 +3706,11 @@
         "giantbomb.com",
         "igdb.com",
         "mobygames.com"
+      ],
+      "keywords": [
+        "release-date",
+        "publisher",
+        "achievements"
       ]
     },
     {
@@ -2650,6 +3725,11 @@
         "cheapshark.com",
         "gg.deals",
         "isthereanydeal.com"
+      ],
+      "keywords": [
+        "bundle",
+        "giveaway",
+        "price-alert"
       ]
     },
     {
@@ -2664,6 +3744,13 @@
         "khinsider.com",
         "materiacollective.com",
         "ocremix.org"
+      ],
+      "keywords": [
+        "composer",
+        "score",
+        "chiptune",
+        "remix",
+        "orchestral"
       ]
     },
     {
@@ -2678,6 +3765,11 @@
         "backloggd.com",
         "grouvee.com",
         "howlongtobeat.com"
+      ],
+      "keywords": [
+        "playtime",
+        "logged",
+        "hours-played"
       ]
     },
     {
@@ -2695,6 +3787,13 @@
         "playstation.com",
         "steampowered.com",
         "xbox.com"
+      ],
+      "keywords": [
+        "multiplayer",
+        "controller",
+        "gameplay",
+        "singleplayer",
+        "esports"
       ]
     },
     {
@@ -2714,6 +3813,10 @@
         "pcgamer.com",
         "polygon.com",
         "rockpapershotgun.com"
+      ],
+      "keywords": [
+        "hands-on",
+        "screenshots"
       ]
     },
     {
@@ -2729,6 +3832,13 @@
         "gardenersworld.com",
         "gardeningknowhow.com",
         "rhs.org.uk"
+      ],
+      "keywords": [
+        "soil",
+        "seedling",
+        "compost",
+        "perennial",
+        "mulch"
       ]
     },
     {
@@ -2743,6 +3853,13 @@
         "familysearch.org",
         "findmypast.com",
         "myheritage.com"
+      ],
+      "keywords": [
+        "ancestor",
+        "lineage",
+        "census",
+        "pedigree",
+        "descendant"
       ]
     },
     {
@@ -2759,6 +3876,13 @@
         "internationalgenome.org",
         "omim.org",
         "uniprot.org"
+      ],
+      "keywords": [
+        "chromosome",
+        "mutation",
+        "sequencing",
+        "allele",
+        "genotype"
       ]
     },
     {
@@ -2771,6 +3895,13 @@
         "geonames.org",
         "nationalgeographic.com",
         "worldatlas.com"
+      ],
+      "keywords": [
+        "continent",
+        "latitude",
+        "longitude",
+        "terrain",
+        "atlas"
       ]
     },
     {
@@ -2785,6 +3916,12 @@
         "mindat.org",
         "minerals.net",
         "volcanodiscovery.com"
+      ],
+      "keywords": [
+        "mineral",
+        "sediment",
+        "tectonic",
+        "volcano"
       ]
     },
     {
@@ -2800,6 +3937,12 @@
         "stratfor.com",
         "thecipherbrief.com",
         "warontherocks.com"
+      ],
+      "keywords": [
+        "diplomacy",
+        "alliance",
+        "sovereignty",
+        "superpower"
       ]
     },
     {
@@ -2814,6 +3957,13 @@
         "redbubble.com",
         "uncommongoods.com",
         "zazzle.com"
+      ],
+      "keywords": [
+        "keepsake",
+        "personalized",
+        "wrapping",
+        "occasion",
+        "unwrap"
       ]
     },
     {
@@ -2828,6 +3978,12 @@
         "carto.com",
         "mapbox.com",
         "qgis.org"
+      ],
+      "keywords": [
+        "shapefile",
+        "raster",
+        "layer",
+        "spatial"
       ]
     },
     {
@@ -2844,6 +4000,10 @@
         "git-scm.com",
         "gitea.io",
         "sourcehut.org"
+      ],
+      "keywords": [
+        "branch",
+        "clone"
       ]
     },
     {
@@ -2859,6 +4019,11 @@
         "go.dev",
         "gofiber.io",
         "golang.org"
+      ],
+      "keywords": [
+        "channels",
+        "compiler",
+        "package"
       ]
     },
     {
@@ -2873,6 +4038,13 @@
         "golf.com",
         "golfdigest.com",
         "pga.com"
+      ],
+      "keywords": [
+        "birdie",
+        "putt",
+        "bogey",
+        "handicap",
+        "swing"
       ]
     },
     {
@@ -2887,6 +4059,10 @@
         "cii.org",
         "corpgov.law.harvard.edu",
         "ecgi.org"
+      ],
+      "keywords": [
+        "fiduciary",
+        "proxy"
       ]
     },
     {
@@ -2900,6 +4076,10 @@
         "europa.eu",
         "oecd.org",
         "unesco.org"
+      ],
+      "keywords": [
+        "policy",
+        "diplomatic"
       ]
     },
     {
@@ -2914,6 +4094,13 @@
         "amd.com",
         "intel.com",
         "nvidia.com"
+      ],
+      "keywords": [
+        "rendering",
+        "vram",
+        "drivers",
+        "overclocking",
+        "ray-tracing"
       ]
     },
     {
@@ -2927,6 +4114,12 @@
         "grammarly.com",
         "hemingwayapp.com",
         "prowritingaid.com"
+      ],
+      "keywords": [
+        "punctuation",
+        "spelling",
+        "sentence",
+        "plagiarism"
       ]
     },
     {
@@ -2940,6 +4133,13 @@
         "erc.europa.eu",
         "hhmi.org",
         "wellcome.org"
+      ],
+      "keywords": [
+        "applicant",
+        "proposal",
+        "award",
+        "deadline",
+        "eligibility"
       ]
     },
     {
@@ -2954,6 +4154,10 @@
         "apollographql.com",
         "graphql.org",
         "hasura.io"
+      ],
+      "keywords": [
+        "resolver",
+        "directive"
       ]
     },
     {
@@ -2969,6 +4173,11 @@
         "instacart.com",
         "kroger.com",
         "wholefoodsmarket.com"
+      ],
+      "keywords": [
+        "aisle",
+        "pantry",
+        "delivery"
       ]
     },
     {
@@ -2983,6 +4192,12 @@
         "e-chords.com",
         "songsterr.com",
         "ultimate-guitar.com"
+      ],
+      "keywords": [
+        "strum",
+        "capo",
+        "riff",
+        "fingerpicking"
       ]
     },
     {
@@ -2997,6 +4212,11 @@
         "mayoclinic.org",
         "medlineplus.gov",
         "webmd.com"
+      ],
+      "keywords": [
+        "treatment",
+        "patient",
+        "doctor"
       ]
     },
     {
@@ -3011,6 +4231,12 @@
         "hedgeweek.com",
         "institutionalinvestor.com",
         "opalesque.com"
+      ],
+      "keywords": [
+        "hedging",
+        "derivatives",
+        "allocation",
+        "short-position"
       ]
     },
     {
@@ -3026,6 +4252,13 @@
         "helpscout.com",
         "intercom.com",
         "zendesk.com"
+      ],
+      "keywords": [
+        "agent",
+        "sla",
+        "resolution",
+        "queue",
+        "escalation"
       ]
     },
     {
@@ -3039,6 +4272,11 @@
         "historyextra.com",
         "historytoday.com",
         "worldhistory.org"
+      ],
+      "keywords": [
+        "ancient",
+        "dynasty",
+        "empire"
       ]
     },
     {
@@ -3055,6 +4293,13 @@
         "potterybarn.com",
         "wayfair.com",
         "westelm.com"
+      ],
+      "keywords": [
+        "sofa",
+        "upholstery",
+        "cushion",
+        "tableware",
+        "rug"
       ]
     },
     {
@@ -3069,6 +4314,13 @@
         "bloody-disgusting.com",
         "dreadcentral.com",
         "rue-morgue.com"
+      ],
+      "keywords": [
+        "supernatural",
+        "haunted",
+        "gore",
+        "jumpscare",
+        "monster"
       ]
     },
     {
@@ -3086,6 +4338,12 @@
         "railway.app",
         "render.com",
         "vercel.com"
+      ],
+      "keywords": [
+        "ssl",
+        "domain",
+        "cdn",
+        "serverless"
       ]
     },
     {
@@ -3102,6 +4360,11 @@
         "hilton.com",
         "hotels.com",
         "marriott.com"
+      ],
+      "keywords": [
+        "suite",
+        "reservation",
+        "concierge"
       ]
     },
     {
@@ -3116,6 +4379,13 @@
         "msf.org",
         "unhcr.org",
         "unicef.org"
+      ],
+      "keywords": [
+        "relief",
+        "crisis",
+        "displacement",
+        "ngo",
+        "aid-worker"
       ]
     },
     {
@@ -3130,6 +4400,13 @@
         "cabelas.com",
         "gohunt.com",
         "realtree.com"
+      ],
+      "keywords": [
+        "rifle",
+        "buck",
+        "bowhunting",
+        "camouflage",
+        "antlers"
       ]
     },
     {
@@ -3146,6 +4423,12 @@
         "pulumi.com",
         "puppet.com",
         "terraform.io"
+      ],
+      "keywords": [
+        "playbook",
+        "state-file",
+        "declarative",
+        "idempotent"
       ]
     },
     {
@@ -3159,6 +4442,10 @@
         "flaticon.com",
         "iconfinder.com",
         "thenounproject.com"
+      ],
+      "keywords": [
+        "svg",
+        "pictogram"
       ]
     },
     {
@@ -3173,6 +4460,12 @@
         "svgrepo.com",
         "undraw.co",
         "vecteezy.com"
+      ],
+      "keywords": [
+        "artwork",
+        "brush",
+        "stock-image",
+        "drawing"
       ]
     },
     {
@@ -3187,6 +4480,13 @@
         "migrationpolicy.org",
         "refugeesinternational.org",
         "uscis.gov"
+      ],
+      "keywords": [
+        "asylum",
+        "deportation",
+        "citizenship",
+        "permit",
+        "naturalization"
       ]
     },
     {
@@ -3200,6 +4500,13 @@
         "immunology.org",
         "jimmunol.org",
         "niaid.nih.gov"
+      ],
+      "keywords": [
+        "antigen",
+        "pathogen",
+        "lymphocyte",
+        "immunization",
+        "cytokine"
       ]
     },
     {
@@ -3214,6 +4521,11 @@
         "gamejolt.com",
         "itch.io",
         "kongregate.com"
+      ],
+      "keywords": [
+        "pixel-art",
+        "solo-developer",
+        "greenlight"
       ]
     },
     {
@@ -3228,6 +4540,13 @@
         "hypeauditor.com",
         "influencermarketinghub.com",
         "socialmediatoday.com"
+      ],
+      "keywords": [
+        "followers",
+        "sponsored",
+        "endorsement",
+        "engagement-rate",
+        "niche"
       ]
     },
     {
@@ -3244,6 +4563,9 @@
         "insurancejournal.com",
         "insurancetimes.co.uk",
         "propertycasualty360.com"
+      ],
+      "keywords": [
+        "liability"
       ]
     },
     {
@@ -3258,6 +4580,12 @@
         "coverager.com",
         "insurancethoughtleadership.com",
         "insurtechinsights.com"
+      ],
+      "keywords": [
+        "telematics",
+        "embedded-insurance",
+        "usage-based",
+        "paperless"
       ]
     },
     {
@@ -3272,6 +4600,11 @@
         "internships.com",
         "joinhandshake.com",
         "wayup.com"
+      ],
+      "keywords": [
+        "intern",
+        "resume",
+        "stipend"
       ]
     },
     {
@@ -3289,6 +4622,10 @@
         "seekingalpha.com",
         "simplywall.st",
         "zacks.com"
+      ],
+      "keywords": [
+        "earnings",
+        "shares"
       ]
     },
     {
@@ -3302,6 +4639,12 @@
         "freshbooks.com",
         "invoice2go.com",
         "waveapps.com"
+      ],
+      "keywords": [
+        "receipt",
+        "payment-terms",
+        "overdue",
+        "remittance"
       ]
     },
     {
@@ -3316,6 +4659,11 @@
         "cocoapods.org",
         "developer.apple.com",
         "testflight.apple.com"
+      ],
+      "keywords": [
+        "swift",
+        "simulator",
+        "objective-c"
       ]
     },
     {
@@ -3330,6 +4678,12 @@
         "iposcoop.com",
         "nasdaq.com",
         "renaissancecapital.com"
+      ],
+      "keywords": [
+        "prospectus",
+        "roadshow",
+        "lockup",
+        "debut"
       ]
     },
     {
@@ -3346,6 +4700,11 @@
         "maven.apache.org",
         "openjdk.org",
         "spring.io"
+      ],
+      "keywords": [
+        "classpath",
+        "servlet",
+        "jar"
       ]
     },
     {
@@ -3362,6 +4721,11 @@
         "nodejs.org",
         "npmjs.com",
         "typescriptlang.org"
+      ],
+      "keywords": [
+        "npm",
+        "promise",
+        "bundler"
       ]
     },
     {
@@ -3377,6 +4741,13 @@
         "jamesallen.com",
         "kay.com",
         "pandora.net"
+      ],
+      "keywords": [
+        "diamond",
+        "necklace",
+        "bracelet",
+        "carat",
+        "pendant"
       ]
     },
     {
@@ -3391,6 +4762,11 @@
         "linkedin.com",
         "monster.com",
         "ziprecruiter.com"
+      ],
+      "keywords": [
+        "recruiter",
+        "vacancy",
+        "salary"
       ]
     },
     {
@@ -3405,6 +4781,12 @@
         "750words.com",
         "dayoneapp.com",
         "penzu.com"
+      ],
+      "keywords": [
+        "prompts",
+        "gratitude",
+        "mood",
+        "handwritten"
       ]
     },
     {
@@ -3422,6 +4804,11 @@
         "propublica.org",
         "revealnews.org",
         "themarshallproject.org"
+      ],
+      "keywords": [
+        "reporter",
+        "sources",
+        "newsroom"
       ]
     },
     {
@@ -3450,6 +4837,12 @@
         "karafun.com",
         "singsnap.com",
         "smule.com"
+      ],
+      "keywords": [
+        "lyrics",
+        "pitch",
+        "backing-track",
+        "duet"
       ]
     },
     {
@@ -3464,6 +4857,11 @@
         "kocowa.com",
         "mydramalist.com",
         "viki.com"
+      ],
+      "keywords": [
+        "actress",
+        "romance",
+        "plot-twist"
       ]
     },
     {
@@ -3478,6 +4876,11 @@
         "code.org",
         "scratch.mit.edu",
         "tynker.com"
+      ],
+      "keywords": [
+        "blocks",
+        "beginner",
+        "logic"
       ]
     },
     {
@@ -3492,6 +4895,12 @@
         "coda.io",
         "confluence.atlassian.com",
         "slite.com"
+      ],
+      "keywords": [
+        "faq",
+        "workspace",
+        "collaborative",
+        "searchable"
       ]
     },
     {
@@ -3508,6 +4917,10 @@
         "kubernetes.io",
         "longhorn.io",
         "rancher.com"
+      ],
+      "keywords": [
+        "container",
+        "ingress"
       ]
     },
     {
@@ -3521,6 +4934,15 @@
         "bls.gov",
         "shrm.org",
         "workforce.com"
+      ],
+      "keywords": [
+        "wages",
+        "picketing",
+        "unionization",
+        "occupational",
+        "layoffs",
+        "walkout",
+        "grievance"
       ]
     },
     {
@@ -3537,6 +4959,13 @@
         "duolingo.com",
         "memrise.com",
         "rosettastone.com"
+      ],
+      "keywords": [
+        "grammar",
+        "dialect",
+        "verb",
+        "conjugation",
+        "phrasebook"
       ]
     },
     {
@@ -3551,6 +4980,13 @@
         "hellotalk.com",
         "italki.com",
         "tandem.net"
+      ],
+      "keywords": [
+        "native-speaker",
+        "corrections",
+        "immersion",
+        "fluent",
+        "mother-tongue"
       ]
     },
     {
@@ -3565,6 +5001,12 @@
         "ctan.org",
         "latex-project.org",
         "overleaf.com"
+      ],
+      "keywords": [
+        "macros",
+        "preamble",
+        "compile",
+        "pdflatex"
       ]
     },
     {
@@ -3583,6 +5025,12 @@
         "hrw.org",
         "icj-cij.org",
         "law.cornell.edu"
+      ],
+      "keywords": [
+        "judiciary",
+        "ruling",
+        "tribunal",
+        "legislature"
       ]
     },
     {
@@ -3597,6 +5045,10 @@
         "chiefexecutive.net",
         "conference-board.org",
         "strategy-business.com"
+      ],
+      "keywords": [
+        "coaching",
+        "succession"
       ]
     },
     {
@@ -3611,6 +5063,14 @@
         "jdsupra.com",
         "law.com",
         "law360.com"
+      ],
+      "keywords": [
+        "esquire",
+        "litigator",
+        "associate",
+        "malpractice",
+        "disbarred",
+        "counsel"
       ]
     },
     {
@@ -3626,6 +5086,12 @@
         "libbyapp.com",
         "openlibrary.org",
         "worldcat.org"
+      ],
+      "keywords": [
+        "ebook",
+        "borrowing",
+        "patron",
+        "circulation"
       ]
     },
     {
@@ -3639,6 +5105,12 @@
         "ethnologue.com",
         "etymonline.com",
         "glottolog.org"
+      ],
+      "keywords": [
+        "phonetics",
+        "morphology",
+        "semantics",
+        "phoneme"
       ]
     },
     {
@@ -3654,6 +5126,14 @@
         "prettier.io",
         "sonarsource.com",
         "stylelint.io"
+      ],
+      "keywords": [
+        "autofix",
+        "ruleset",
+        "linter",
+        "indentation",
+        "whitespace",
+        "warnings"
       ]
     },
     {
@@ -3671,6 +5151,14 @@
         "kernel.org",
         "opensuse.org",
         "ubuntu.com"
+      ],
+      "keywords": [
+        "kernel",
+        "bash",
+        "systemd",
+        "filesystem",
+        "sysadmin",
+        "userland"
       ]
     },
     {
@@ -3686,6 +5174,14 @@
         "findlaw.com",
         "justia.com",
         "scotusblog.com"
+      ],
+      "keywords": [
+        "appeal",
+        "deposition",
+        "plaintiff",
+        "defendant",
+        "settlement",
+        "subpoena"
       ]
     },
     {
@@ -3700,6 +5196,12 @@
         "nugs.net",
         "relisten.net",
         "setlist.fm"
+      ],
+      "keywords": [
+        "bootleg",
+        "soundboard",
+        "encore",
+        "residency"
       ]
     },
     {
@@ -3714,6 +5216,12 @@
         "dlive.tv",
         "kick.com",
         "twitch.tv"
+      ],
+      "keywords": [
+        "chatroom",
+        "viewers",
+        "stream-key",
+        "emote"
       ]
     },
     {
@@ -3729,6 +5237,11 @@
         "jmeter.apache.org",
         "k6.io",
         "locust.io"
+      ],
+      "keywords": [
+        "ramp-up",
+        "scalability",
+        "spike"
       ]
     },
     {
@@ -3743,6 +5256,13 @@
         "lokalise.com",
         "transifex.com",
         "weblate.org"
+      ],
+      "keywords": [
+        "locale",
+        "multilingual",
+        "translators",
+        "transcreation",
+        "string-extraction"
       ]
     },
     {
@@ -3758,6 +5278,12 @@
         "loggly.com",
         "papertrailapp.com",
         "splunk.com"
+      ],
+      "keywords": [
+        "logfile",
+        "verbosity",
+        "log-rotation",
+        "logline"
       ]
     },
     {
@@ -3774,6 +5300,10 @@
         "longreads.com",
         "narrative.ly",
         "nautil.us"
+      ],
+      "keywords": [
+        "prose",
+        "investigative"
       ]
     },
     {
@@ -3789,6 +5319,14 @@
         "monos.com",
         "samsonite.com",
         "tumi.com"
+      ],
+      "keywords": [
+        "carry-on",
+        "hardshell",
+        "tsa",
+        "backpack",
+        "duffel",
+        "packable"
       ]
     },
     {
@@ -3804,6 +5342,13 @@
         "genius.com",
         "lyrics.com",
         "musixmatch.com"
+      ],
+      "keywords": [
+        "verse",
+        "chorus",
+        "songwriter",
+        "refrain",
+        "bridge"
       ]
     },
     {
@@ -3819,6 +5364,14 @@
         "brew.sh",
         "macports.org",
         "support.apple.com"
+      ],
+      "keywords": [
+        "finder",
+        "imac",
+        "macbook",
+        "dock",
+        "spotlight",
+        "keychain"
       ]
     },
     {
@@ -3837,6 +5390,13 @@
         "theatlantic.com",
         "time.com",
         "vanityfair.com"
+      ],
+      "keywords": [
+        "newsstand",
+        "columnist",
+        "masthead",
+        "kiosk",
+        "advertorial"
       ]
     },
     {
@@ -3851,6 +5411,12 @@
         "mangadex.org",
         "mangaupdates.com",
         "viz.com"
+      ],
+      "keywords": [
+        "mangaka",
+        "shonen",
+        "seinen",
+        "webtoon"
       ]
     },
     {
@@ -3866,6 +5432,12 @@
         "industryweek.com",
         "mmsonline.com",
         "thomasnet.com"
+      ],
+      "keywords": [
+        "conveyor",
+        "supply-chain",
+        "machinery",
+        "fabrication"
       ]
     },
     {
@@ -3882,6 +5454,12 @@
         "maps.google.com",
         "openstreetmap.org",
         "waze.com"
+      ],
+      "keywords": [
+        "cartography",
+        "waypoint",
+        "geolocation",
+        "basemap"
       ]
     },
     {
@@ -3898,6 +5476,13 @@
         "marketingprofs.com",
         "marketingweek.com",
         "martech.org"
+      ],
+      "keywords": [
+        "advertising",
+        "branding",
+        "conversions",
+        "seo",
+        "retargeting"
       ]
     },
     {
@@ -3915,6 +5500,12 @@
         "investing.com",
         "marketwatch.com",
         "wsj.com"
+      ],
+      "keywords": [
+        "bonds",
+        "futures",
+        "nasdaq",
+        "bullish"
       ]
     },
     {
@@ -3928,6 +5519,14 @@
         "desmos.com",
         "mathworld.wolfram.com",
         "oeis.org"
+      ],
+      "keywords": [
+        "theorem",
+        "algebra",
+        "calculus",
+        "geometry",
+        "equations",
+        "proof"
       ]
     },
     {
@@ -3943,6 +5542,9 @@
         "hellofresh.com",
         "homechef.com",
         "sunbasket.com"
+      ],
+      "keywords": [
+        "portioned"
       ]
     },
     {
@@ -3958,6 +5560,11 @@
         "mediaite.com",
         "niemanlab.org",
         "pressgazette.co.uk"
+      ],
+      "keywords": [
+        "journalists",
+        "wire-service",
+        "editorial-board"
       ]
     },
     {
@@ -3972,6 +5579,10 @@
         "foobar2000.org",
         "mpv.io",
         "videolan.org"
+      ],
+      "keywords": [
+        "equalizer",
+        "transcoding"
       ]
     },
     {
@@ -3991,6 +5602,11 @@
         "jellyfin.org",
         "kodi.tv",
         "plex.tv"
+      ],
+      "keywords": [
+        "docker",
+        "ripping",
+        "plugins"
       ]
     },
     {
@@ -4005,6 +5621,11 @@
         "behindthevoiceactors.com",
         "fandom.com",
         "tvtropes.org"
+      ],
+      "keywords": [
+        "infobox",
+        "talk-page",
+        "citation-needed"
       ]
     },
     {
@@ -4026,6 +5647,10 @@
         "pubmed.ncbi.nlm.nih.gov",
         "thelancet.com",
         "who.int"
+      ],
+      "keywords": [
+        "symptoms",
+        "physician"
       ]
     },
     {
@@ -4040,6 +5665,13 @@
         "calm.com",
         "psychologytoday.com",
         "talkspace.com"
+      ],
+      "keywords": [
+        "anxiety",
+        "depression",
+        "therapist",
+        "wellbeing",
+        "self-care"
       ]
     },
     {
@@ -4055,6 +5687,11 @@
         "kafka.apache.org",
         "nats.io",
         "rabbitmq.com"
+      ],
+      "keywords": [
+        "consumer",
+        "producer",
+        "queueing"
       ]
     },
     {
@@ -4070,6 +5707,11 @@
         "threads.net",
         "truthsocial.com",
         "x.com"
+      ],
+      "keywords": [
+        "retweet",
+        "mentions",
+        "character-limit"
       ]
     },
     {
@@ -4085,6 +5727,12 @@
         "mindmeister.com",
         "miro.com",
         "xmind.net"
+      ],
+      "keywords": [
+        "nodes",
+        "branches",
+        "diagram",
+        "freeform"
       ]
     },
     {
@@ -4099,6 +5747,12 @@
         "curseforge.com",
         "moddb.com",
         "nexusmods.com"
+      ],
+      "keywords": [
+        "modpack",
+        "texture-pack",
+        "overhaul",
+        "workshop"
       ]
     },
     {
@@ -4113,6 +5767,13 @@
         "cgtrader.com",
         "sketchfab.com",
         "turbosquid.com"
+      ],
+      "keywords": [
+        "polygon",
+        "rigging",
+        "wireframe",
+        "uv-mapping",
+        "topology"
       ]
     },
     {
@@ -4130,6 +5791,13 @@
         "prometheus.io",
         "statuspage.io",
         "uptimerobot.com"
+      ],
+      "keywords": [
+        "thresholds",
+        "incident",
+        "telemetry",
+        "downtime",
+        "outage"
       ]
     },
     {
@@ -4144,6 +5812,10 @@
         "housingwire.com",
         "mortgagenewsdaily.com",
         "nationalmortgagenews.com"
+      ],
+      "keywords": [
+        "amortization",
+        "foreclosure"
       ]
     },
     {
@@ -4158,6 +5830,13 @@
         "cycletrader.com",
         "motorcycle.com",
         "revzilla.com"
+      ],
+      "keywords": [
+        "throttle",
+        "helmet",
+        "handlebars",
+        "harley",
+        "fairing"
       ]
     },
     {
@@ -4175,6 +5854,11 @@
         "the-numbers.com",
         "themoviedb.org",
         "trakt.tv"
+      ],
+      "keywords": [
+        "filmography",
+        "sequel",
+        "genre"
       ]
     },
     {
@@ -4189,6 +5873,11 @@
         "publicstorage.com",
         "twomenandatruck.com",
         "uhaul.com"
+      ],
+      "keywords": [
+        "storage-unit",
+        "downsizing",
+        "resettle"
       ]
     },
     {
@@ -4208,6 +5897,10 @@
         "louvre.fr",
         "metmuseum.org",
         "si.edu"
+      ],
+      "keywords": [
+        "diorama",
+        "curatorial"
       ]
     },
     {
@@ -4234,6 +5927,14 @@
         "spotify.com",
         "sweetwater.com",
         "tidal.com"
+      ],
+      "keywords": [
+        "album",
+        "melody",
+        "band",
+        "tempo",
+        "chord",
+        "acoustic"
       ]
     },
     {
@@ -4248,6 +5949,12 @@
         "brooklynvegan.com",
         "hypem.com",
         "thelineofbestfit.com"
+      ],
+      "keywords": [
+        "tastemaker",
+        "hype",
+        "zine",
+        "breakout-artist"
       ]
     },
     {
@@ -4262,6 +5969,13 @@
         "allmusic.com",
         "last.fm",
         "rateyourmusic.com"
+      ],
+      "keywords": [
+        "scrobble",
+        "curation",
+        "shuffle",
+        "airplay",
+        "discography"
       ]
     },
     {
@@ -4276,6 +5990,13 @@
         "coachella.com",
         "lollapalooza.com",
         "tomorrowland.com"
+      ],
+      "keywords": [
+        "lineup",
+        "headliner",
+        "camping",
+        "mainstage",
+        "wristband"
       ]
     },
     {
@@ -4292,6 +6013,10 @@
         "pitchfork.com",
         "rollingstone.com",
         "stereogum.com"
+      ],
+      "keywords": [
+        "critic",
+        "liner-notes"
       ]
     },
     {
@@ -4306,6 +6031,12 @@
         "colorsxstudios.com",
         "mtv.com",
         "vevo.com"
+      ],
+      "keywords": [
+        "choreography",
+        "cinematography",
+        "visualizer",
+        "b-roll"
       ]
     },
     {
@@ -4319,6 +6050,13 @@
         "godchecker.com",
         "mythopedia.com",
         "theoi.com"
+      ],
+      "keywords": [
+        "deity",
+        "pantheon",
+        "underworld",
+        "oracle",
+        "immortals"
       ]
     },
     {
@@ -4335,6 +6073,11 @@
         "opnsense.org",
         "pfsense.org",
         "pi-hole.net"
+      ],
+      "keywords": [
+        "subnet",
+        "packet",
+        "router"
       ]
     },
     {
@@ -4348,6 +6091,13 @@
         "alleninstitute.org",
         "brainfacts.org",
         "humanbrainproject.eu"
+      ],
+      "keywords": [
+        "synapse",
+        "neuron",
+        "cortex",
+        "amygdala",
+        "fmri"
       ]
     },
     {
@@ -4368,6 +6118,12 @@
         "npr.org",
         "reuters.com",
         "theguardian.com"
+      ],
+      "keywords": [
+        "eyewitness",
+        "press-conference",
+        "developing-story",
+        "live-updates"
       ]
     },
     {
@@ -4390,6 +6146,9 @@
         "punchbowl.news",
         "substack.com",
         "thehustle.co"
+      ],
+      "keywords": [
+        "curated-links"
       ]
     },
     {
@@ -4403,6 +6162,12 @@
         "britishnewspaperarchive.co.uk",
         "chroniclingamerica.loc.gov",
         "newspapers.com"
+      ],
+      "keywords": [
+        "clippings",
+        "digitized",
+        "genealogy",
+        "obituaries"
       ]
     },
     {
@@ -4419,6 +6184,12 @@
         "notion.so",
         "obsidian.md",
         "simplenote.com"
+      ],
+      "keywords": [
+        "backlinks",
+        "outliner",
+        "checklist",
+        "quick-capture"
       ]
     },
     {
@@ -4433,6 +6204,11 @@
         "ntfy.sh",
         "onesignal.com",
         "pusher.com"
+      ],
+      "keywords": [
+        "trigger",
+        "delivery-rate",
+        "opt-in"
       ]
     },
     {
@@ -4452,6 +6228,12 @@
         "fao.org",
         "nutritionix.com",
         "wfp.org"
+      ],
+      "keywords": [
+        "macronutrients",
+        "micronutrients",
+        "fiber",
+        "carbohydrates"
       ]
     },
     {
@@ -4464,6 +6246,13 @@
         "marinebio.org",
         "mbari.org",
         "whoi.edu"
+      ],
+      "keywords": [
+        "seafloor",
+        "tides",
+        "coral-reef",
+        "currents",
+        "bathymetry"
       ]
     },
     {
@@ -4479,6 +6268,10 @@
         "discourse.org",
         "mightynetworks.com",
         "tribe.so"
+      ],
+      "keywords": [
+        "threads",
+        "member-directory"
       ]
     },
     {
@@ -4493,6 +6286,10 @@
         "doaj.org",
         "frontiersin.org",
         "plos.org"
+      ],
+      "keywords": [
+        "preprint",
+        "creative-commons"
       ]
     },
     {
@@ -4507,6 +6304,11 @@
         "data.un.org",
         "data.worldbank.org",
         "ourworldindata.org"
+      ],
+      "keywords": [
+        "open-format",
+        "machine-readable",
+        "indicators"
       ]
     },
     {
@@ -4523,6 +6325,11 @@
         "gnu.org",
         "opensource.org",
         "sourceforge.net"
+      ],
+      "keywords": [
+        "contributors",
+        "maintainers",
+        "upstream"
       ]
     },
     {
@@ -4540,6 +6347,13 @@
         "spiked-online.com",
         "thecritic.co.uk",
         "thenation.com"
+      ],
+      "keywords": [
+        "op-ed",
+        "polemic",
+        "dissent",
+        "contrarian",
+        "hot-take"
       ]
     },
     {
@@ -4555,6 +6369,11 @@
         "backpacker.com",
         "hikingproject.com",
         "wta.org"
+      ],
+      "keywords": [
+        "campsite",
+        "switchback",
+        "trailhead"
       ]
     },
     {
@@ -4570,6 +6389,11 @@
         "flatpak.org",
         "scoop.sh",
         "snapcraft.io"
+      ],
+      "keywords": [
+        "lockfile",
+        "version-pinning",
+        "uninstall"
       ]
     },
     {
@@ -4583,6 +6407,9 @@
         "amnh.org",
         "nhm.ac.uk",
         "paleobiodb.org"
+      ],
+      "keywords": [
+        "skeletal"
       ]
     },
     {
@@ -4597,6 +6424,13 @@
         "commonsensemedia.org",
         "doesthedogdie.com",
         "kids-in-mind.com"
+      ],
+      "keywords": [
+        "explicit-content",
+        "age-appropriate",
+        "nudity",
+        "censored",
+        "profanity"
       ]
     },
     {
@@ -4612,6 +6446,11 @@
         "familyeducation.com",
         "parents.com",
         "whattoexpect.com"
+      ],
+      "keywords": [
+        "newborn",
+        "discipline",
+        "milestones"
       ]
     },
     {
@@ -4630,6 +6469,12 @@
         "keepassxc.org",
         "keepersecurity.com",
         "lastpass.com"
+      ],
+      "keywords": [
+        "autofill",
+        "two-factor",
+        "breach",
+        "passphrase"
       ]
     },
     {
@@ -4651,6 +6496,11 @@
         "patents.google.com",
         "wipo.int",
         "worldipreview.com"
+      ],
+      "keywords": [
+        "infringement",
+        "novelty",
+        "patentability"
       ]
     },
     {
@@ -4667,6 +6517,12 @@
         "paymentssource.com",
         "pymnts.com",
         "thepaypers.com"
+      ],
+      "keywords": [
+        "gateway",
+        "chargeback",
+        "interchange-fee",
+        "tokenization"
       ]
     },
     {
@@ -4681,6 +6537,12 @@
         "gusto.com",
         "oysterhr.com",
         "rippling.com"
+      ],
+      "keywords": [
+        "paycheck",
+        "timesheet",
+        "payslip",
+        "deductions"
       ]
     },
     {
@@ -4696,6 +6558,10 @@
         "ilovepdf.com",
         "pdf2go.com",
         "smallpdf.com"
+      ],
+      "keywords": [
+        "ocr",
+        "e-signature"
       ]
     },
     {
@@ -4709,6 +6575,12 @@
         "f1000research.com",
         "publons.com",
         "retractionwatch.com"
+      ],
+      "keywords": [
+        "revisions",
+        "double-blind",
+        "impact-factor",
+        "reviewers"
       ]
     },
     {
@@ -4723,6 +6595,11 @@
         "gtmetrix.com",
         "web.dev",
         "webpagetest.org"
+      ],
+      "keywords": [
+        "render-blocking",
+        "waterfall",
+        "minification"
       ]
     },
     {
@@ -4737,6 +6614,12 @@
         "adoptapet.com",
         "aspca.org",
         "petfinder.com"
+      ],
+      "keywords": [
+        "adoptable",
+        "microchip",
+        "surrendered",
+        "rehome"
       ]
     },
     {
@@ -4751,6 +6634,11 @@
         "fetchpet.com",
         "healthypaws.com",
         "trupanion.com"
+      ],
+      "keywords": [
+        "copay",
+        "reimbursement",
+        "wellness-plan"
       ]
     },
     {
@@ -4767,6 +6655,14 @@
         "petco.com",
         "petsmart.com",
         "rover.com"
+      ],
+      "keywords": [
+        "breed",
+        "puppy",
+        "kitten",
+        "veterinarian",
+        "leash",
+        "aquarium"
       ]
     },
     {
@@ -4782,6 +6678,13 @@
         "goodrx.com",
         "riteaid.com",
         "walgreens.com"
+      ],
+      "keywords": [
+        "pharmacist",
+        "refill",
+        "prescriber",
+        "dispensing",
+        "formulary"
       ]
     },
     {
@@ -4795,6 +6698,14 @@
         "iep.utm.edu",
         "philpapers.org",
         "plato.stanford.edu"
+      ],
+      "keywords": [
+        "epistemology",
+        "ontology",
+        "existentialism",
+        "philosopher",
+        "dialectic",
+        "phenomenology"
       ]
     },
     {
@@ -4807,6 +6718,13 @@
         "gimp.org",
         "photopea.com",
         "pixlr.com"
+      ],
+      "keywords": [
+        "crop",
+        "retouch",
+        "layers",
+        "sharpen",
+        "filters"
       ]
     },
     {
@@ -4829,6 +6747,14 @@
         "lomography.com",
         "smugmug.com",
         "vsco.co"
+      ],
+      "keywords": [
+        "lens",
+        "exposure",
+        "shutter",
+        "portrait",
+        "landscape",
+        "telephoto"
       ]
     },
     {
@@ -4844,6 +6770,12 @@
         "laravel.com",
         "php.net",
         "symfony.com"
+      ],
+      "keywords": [
+        "autoload",
+        "artisan",
+        "eloquent",
+        "middleware"
       ]
     },
     {
@@ -4858,6 +6790,13 @@
         "arrowfilms.com",
         "criterion.com",
         "diabolikdvd.com"
+      ],
+      "keywords": [
+        "steelbook",
+        "region-free",
+        "boxset",
+        "remastered",
+        "special-features"
       ]
     },
     {
@@ -4871,6 +6810,14 @@
         "phys.org",
         "physicsworld.com",
         "symmetrymagazine.org"
+      ],
+      "keywords": [
+        "quark",
+        "boson",
+        "relativity",
+        "thermodynamics",
+        "subatomic",
+        "collider"
       ]
     },
     {
@@ -4885,6 +6832,13 @@
         "lospec.com",
         "opengameart.org",
         "pixeljoint.com"
+      ],
+      "keywords": [
+        "sprite",
+        "dithering",
+        "tileset",
+        "pixelated",
+        "low-res"
       ]
     },
     {
@@ -4899,6 +6853,12 @@
         "listennotes.com",
         "podcastindex.org",
         "podchaser.com"
+      ],
+      "keywords": [
+        "trending",
+        "crawled",
+        "aggregated",
+        "chart-position"
       ]
     },
     {
@@ -4913,6 +6873,12 @@
         "buzzsprout.com",
         "libsyn.com",
         "transistor.fm"
+      ],
+      "keywords": [
+        "monetization",
+        "sponsorship",
+        "ad-insertion",
+        "waveform"
       ]
     },
     {
@@ -4929,6 +6895,11 @@
         "pocketcasts.com",
         "podbean.com",
         "podcasts.apple.com"
+      ],
+      "keywords": [
+        "subscribe",
+        "co-host",
+        "guest"
       ]
     },
     {
@@ -4943,6 +6914,13 @@
         "allpoetry.com",
         "poetryfoundation.org",
         "poets.org"
+      ],
+      "keywords": [
+        "stanza",
+        "sonnet",
+        "haiku",
+        "metaphor",
+        "meter"
       ]
     },
     {
@@ -4960,6 +6938,13 @@
         "chathamhouse.org",
         "piie.com",
         "rand.org"
+      ],
+      "keywords": [
+        "legislative",
+        "policymakers",
+        "advocacy",
+        "briefing",
+        "whitepaper"
       ]
     },
     {
@@ -4976,6 +6961,14 @@
         "rollcall.com",
         "thedispatch.com",
         "thehill.com"
+      ],
+      "keywords": [
+        "senator",
+        "election",
+        "campaign",
+        "lawmaker",
+        "caucus",
+        "bipartisan"
       ]
     },
     {
@@ -4990,6 +6983,10 @@
         "medrxiv.org",
         "osf.io",
         "ssrn.com"
+      ],
+      "keywords": [
+        "peer-review",
+        "revision"
       ]
     },
     {
@@ -5004,6 +7001,12 @@
         "beautiful.ai",
         "prezi.com",
         "slides.google.com"
+      ],
+      "keywords": [
+        "bullet-points",
+        "presenter",
+        "transition",
+        "handout"
       ]
     },
     {
@@ -5018,6 +7021,12 @@
         "camelcamelcamel.com",
         "keepa.com",
         "pricerunner.com"
+      ],
+      "keywords": [
+        "price-drop",
+        "price-history",
+        "deal-alert",
+        "lowest-price"
       ]
     },
     {
@@ -5034,6 +7043,12 @@
         "privacyguides.org",
         "signal.org",
         "torproject.org"
+      ],
+      "keywords": [
+        "surveillance",
+        "gdpr",
+        "fingerprinting",
+        "cookies"
       ]
     },
     {
@@ -5048,6 +7063,13 @@
         "buyoutsinsider.com",
         "pehub.com",
         "privateequityinternational.com"
+      ],
+      "keywords": [
+        "acquisition",
+        "fundraising",
+        "limited-partners",
+        "capital-call",
+        "exit-strategy"
       ]
     },
     {
@@ -5068,6 +7090,14 @@
         "linear.app",
         "monday.com",
         "trello.com"
+      ],
+      "keywords": [
+        "backlog",
+        "milestone",
+        "gantt",
+        "standup",
+        "roadmap",
+        "workflow"
       ]
     },
     {
@@ -5080,6 +7110,13 @@
         "psypost.org",
         "simplypsychology.org",
         "verywellmind.com"
+      ],
+      "keywords": [
+        "cognition",
+        "behavioral",
+        "emotion",
+        "personality",
+        "disorder"
       ]
     },
     {
@@ -5094,6 +7131,12 @@
         "odwyerpr.com",
         "prnewsonline.com",
         "prweek.com"
+      ],
+      "keywords": [
+        "media-outreach",
+        "spokesperson",
+        "crisis-communications",
+        "publicist"
       ]
     },
     {
@@ -5116,6 +7159,11 @@
         "publishersweekly.com",
         "publishingperspectives.com",
         "thebookseller.com"
+      ],
+      "keywords": [
+        "imprint",
+        "acquisitions-editor",
+        "bookstore"
       ]
     },
     {
@@ -5131,6 +7179,13 @@
         "flask.palletsprojects.com",
         "pypi.org",
         "python.org"
+      ],
+      "keywords": [
+        "virtualenv",
+        "decorator",
+        "generator",
+        "interpreter",
+        "pep8"
       ]
     },
     {
@@ -5145,6 +7200,11 @@
         "answers.com",
         "quora.com",
         "stackexchange.com"
+      ],
+      "keywords": [
+        "answered",
+        "asker",
+        "unanswered"
       ]
     },
     {
@@ -5159,6 +7219,13 @@
         "azquotes.com",
         "brainyquote.com",
         "quotationspage.com"
+      ],
+      "keywords": [
+        "quotable",
+        "wisdom",
+        "proverb",
+        "attributed",
+        "inspirational"
       ]
     },
     {
@@ -5174,6 +7241,12 @@
         "live365.com",
         "radio.garden",
         "tunein.com"
+      ],
+      "keywords": [
+        "fm",
+        "am",
+        "dj",
+        "livestream"
       ]
     },
     {
@@ -5186,6 +7259,12 @@
         "shanghairanking.com",
         "timeshighereducation.com",
         "topuniversities.com"
+      ],
+      "keywords": [
+        "ranked",
+        "accreditation",
+        "tuition",
+        "admissions"
       ]
     },
     {
@@ -5200,6 +7279,10 @@
         "balena.io",
         "hackaday.com",
         "raspberrypi.com"
+      ],
+      "keywords": [
+        "gpio",
+        "soldering"
       ]
     },
     {
@@ -5215,6 +7298,11 @@
         "pocket.com",
         "raindrop.io",
         "readwise.io"
+      ],
+      "keywords": [
+        "bookmarklet",
+        "offline-reading",
+        "save-article"
       ]
     },
     {
@@ -5235,6 +7323,11 @@
         "therealdeal.com",
         "trulia.com",
         "zillow.com"
+      ],
+      "keywords": [
+        "listing-agent",
+        "square-footage",
+        "zoning"
       ]
     },
     {
@@ -5251,6 +7344,12 @@
         "epicurious.com",
         "foodnetwork.com",
         "seriouseats.com"
+      ],
+      "keywords": [
+        "tablespoon",
+        "preheat",
+        "marinate",
+        "simmer"
       ]
     },
     {
@@ -5266,6 +7365,12 @@
         "greenhouse.io",
         "lever.co",
         "workday.com"
+      ],
+      "keywords": [
+        "onboarding",
+        "interview-scheduling",
+        "sourcing",
+        "headhunter"
       ]
     },
     {
@@ -5281,6 +7386,10 @@
         "wikihow.com",
         "wikipedia.org",
         "wolframalpha.com"
+      ],
+      "keywords": [
+        "definition",
+        "cross-reference"
       ]
     },
     {
@@ -5295,6 +7404,11 @@
         "artemis.bm",
         "intelligentinsurer.com",
         "reinsurancene.ws"
+      ],
+      "keywords": [
+        "ceding",
+        "indemnity",
+        "cedant"
       ]
     },
     {
@@ -5309,6 +7423,14 @@
         "religionnews.com",
         "sacred-texts.com",
         "vatican.va"
+      ],
+      "keywords": [
+        "scripture",
+        "worship",
+        "doctrine",
+        "prayer",
+        "congregation",
+        "sacred"
       ]
     },
     {
@@ -5327,6 +7449,11 @@
         "rustdesk.com",
         "splashtop.com",
         "teamviewer.com"
+      ],
+      "keywords": [
+        "tunneling",
+        "port-forwarding",
+        "headless"
       ]
     },
     {
@@ -5341,6 +7468,11 @@
         "remote.com",
         "remotive.com",
         "weworkremotely.com"
+      ],
+      "keywords": [
+        "coworking",
+        "digital-nomad",
+        "flexible-hours"
       ]
     },
     {
@@ -5355,6 +7487,9 @@
         "researchgate.net",
         "scholar.google.com",
         "sciencedirect.com"
+      ],
+      "keywords": [
+        "empirical"
       ]
     },
     {
@@ -5369,6 +7504,11 @@
         "figshare.org",
         "pangaea.de",
         "zenodo.org"
+      ],
+      "keywords": [
+        "curated",
+        "archived",
+        "versioned"
       ]
     },
     {
@@ -5385,6 +7525,12 @@
         "thefork.com",
         "yelp.com",
         "zomato.com"
+      ],
+      "keywords": [
+        "menu",
+        "waitlist",
+        "tasting-menu",
+        "eatery"
       ]
     },
     {
@@ -5400,6 +7546,13 @@
         "novoresume.com",
         "resume.com",
         "zety.com"
+      ],
+      "keywords": [
+        "skills-section",
+        "job-history",
+        "recommendation-letter",
+        "objective-statement",
+        "ats-friendly"
       ]
     },
     {
@@ -5414,6 +7567,10 @@
         "nrf.com",
         "retaildive.com",
         "retailwire.com"
+      ],
+      "keywords": [
+        "merchandising",
+        "footfall"
       ]
     },
     {
@@ -5428,6 +7585,13 @@
         "401kspecialistmag.com",
         "planadviser.com",
         "plansponsor.com"
+      ],
+      "keywords": [
+        "401k",
+        "ira",
+        "social-security",
+        "withdrawal-rate",
+        "retiree"
       ]
     },
     {
@@ -5442,6 +7606,11 @@
         "lyft.com",
         "uber.com",
         "via.com"
+      ],
+      "keywords": [
+        "driver-rating",
+        "surge-pricing",
+        "dropoff"
       ]
     },
     {
@@ -5457,6 +7626,13 @@
         "inoreader.com",
         "newsblur.com",
         "theoldreader.com"
+      ],
+      "keywords": [
+        "xml",
+        "atom-feed",
+        "opml",
+        "unread-count",
+        "aggregator"
       ]
     },
     {
@@ -5472,6 +7648,13 @@
         "ruby-lang.org",
         "rubygems.org",
         "rubyonrails.org"
+      ],
+      "keywords": [
+        "gemfile",
+        "erb",
+        "activerecord",
+        "rvm",
+        "rake"
       ]
     },
     {
@@ -5487,6 +7670,13 @@
         "marathonguide.com",
         "runkeeper.com",
         "runnersworld.com"
+      ],
+      "keywords": [
+        "pace",
+        "treadmill",
+        "5k",
+        "interval-training",
+        "split-times"
       ]
     },
     {
@@ -5502,6 +7692,13 @@
         "docs.rs",
         "rust-lang.org",
         "rustup.rs"
+      ],
+      "keywords": [
+        "borrow-checker",
+        "ownership",
+        "crate",
+        "lifetimes",
+        "trait"
       ]
     },
     {
@@ -5516,6 +7713,13 @@
         "outdoorsy.com",
         "rvshare.com",
         "rvtrader.com"
+      ],
+      "keywords": [
+        "towable",
+        "fifth-wheel",
+        "campground",
+        "dry-camping",
+        "boondocking"
       ]
     },
     {
@@ -5530,6 +7734,13 @@
         "private-eye.co.uk",
         "reductress.com",
         "theonion.com"
+      ],
+      "keywords": [
+        "satirical",
+        "mock",
+        "farce",
+        "tongue-in-cheek",
+        "lampoon"
       ]
     },
     {
@@ -5551,6 +7762,11 @@
         "healthchecks.io",
         "setmore.com",
         "youcanbook.me"
+      ],
+      "keywords": [
+        "reminders",
+        "availability",
+        "reschedule"
       ]
     },
     {
@@ -5565,6 +7781,9 @@
         "brainpop.com",
         "ixl.com",
         "khanacademy.org"
+      ],
+      "keywords": [
+        "grade-level"
       ]
     },
     {
@@ -5583,6 +7802,12 @@
         "science.org",
         "scientificamerican.com",
         "zooniverse.org"
+      ],
+      "keywords": [
+        "experiment",
+        "laboratory",
+        "scientist",
+        "observation"
       ]
     },
     {
@@ -5597,6 +7822,13 @@
         "io9.com",
         "syfy.com",
         "tor.com"
+      ],
+      "keywords": [
+        "dystopian",
+        "extraterrestrial",
+        "spaceship",
+        "time-travel",
+        "cyberpunk"
       ]
     },
     {
@@ -5611,6 +7843,12 @@
         "imsdb.com",
         "scriptslug.com",
         "simplyscripts.com"
+      ],
+      "keywords": [
+        "dialogue",
+        "scene-heading",
+        "fade-in",
+        "screenwriter"
       ]
     },
     {
@@ -5626,6 +7864,12 @@
         "elastic.co",
         "meilisearch.com",
         "typesense.org"
+      ],
+      "keywords": [
+        "relevance",
+        "crawler",
+        "tokenizer",
+        "stemming"
       ]
     },
     {
@@ -5642,6 +7886,12 @@
         "therealreal.com",
         "thredup.com",
         "vinted.com"
+      ],
+      "keywords": [
+        "preloved",
+        "resell",
+        "gently-used",
+        "pre-owned"
       ]
     },
     {
@@ -5658,6 +7908,12 @@
         "metasploit.com",
         "owasp.org",
         "snyk.io"
+      ],
+      "keywords": [
+        "malware",
+        "firewall",
+        "cve",
+        "threat-actor"
       ]
     },
     {
@@ -5674,6 +7930,12 @@
         "portainer.io",
         "truenas.com",
         "unraid.net"
+      ],
+      "keywords": [
+        "docker-compose",
+        "reverse-proxy",
+        "containerized",
+        "raid"
       ]
     },
     {
@@ -5688,6 +7950,13 @@
         "draft2digital.com",
         "kdp.amazon.com",
         "smashwords.com"
+      ],
+      "keywords": [
+        "ebook-formatting",
+        "indie-author",
+        "print-on-demand",
+        "self-editing",
+        "cover-design"
       ]
     },
     {
@@ -5703,6 +7972,14 @@
         "ravelry.com",
         "simplicity.com",
         "spoonflower.com"
+      ],
+      "keywords": [
+        "pattern-piece",
+        "seam",
+        "crochet",
+        "fabric",
+        "bobbin",
+        "hemming"
       ]
     },
     {
@@ -5718,6 +7995,11 @@
         "imslp.org",
         "musescore.com",
         "sheetmusicplus.com"
+      ],
+      "keywords": [
+        "treble-clef",
+        "measure",
+        "transpose"
       ]
     },
     {
@@ -5732,6 +8014,13 @@
         "lloydslist.com",
         "seatrade-maritime.com",
         "tradewindsnews.com"
+      ],
+      "keywords": [
+        "tanker",
+        "port-authority",
+        "bulk-carrier",
+        "charter-rate",
+        "vessel-tracking"
       ]
     },
     {
@@ -5747,13 +8036,18 @@
         "dsw.com",
         "footlocker.com",
         "zappos.com"
+      ],
+      "keywords": [
+        "insole",
+        "outsole",
+        "cushioning",
+        "lace-up",
+        "half-size"
       ]
     },
     {
       "tag": "shopping",
       "aliases": [
-        "shop",
-        "store",
         "marketplace"
       ],
       "hosts": [
@@ -5762,6 +8056,11 @@
         "ebay.com",
         "target.com",
         "walmart.com"
+      ],
+      "keywords": [
+        "discount-code",
+        "order-tracking",
+        "retailer"
       ]
     },
     {
@@ -5776,6 +8075,13 @@
         "epicpass.com",
         "ikonpass.com",
         "onthesnow.com"
+      ],
+      "keywords": [
+        "chairlift",
+        "powder",
+        "mogul",
+        "piste",
+        "alpine"
       ]
     },
     {
@@ -5790,6 +8096,13 @@
         "nfib.com",
         "sba.gov",
         "score.org"
+      ],
+      "keywords": [
+        "bootstrapping",
+        "sole-proprietor",
+        "cash-flow",
+        "franchise",
+        "startup-costs"
       ]
     },
     {
@@ -5805,6 +8118,12 @@
         "homebridge.io",
         "hubitat.com",
         "openhab.org"
+      ],
+      "keywords": [
+        "thermostat",
+        "smart-plug",
+        "voice-assistant",
+        "automation-routine"
       ]
     },
     {
@@ -5820,12 +8139,19 @@
         "goal.com",
         "mlssoccer.com",
         "premierleague.com"
+      ],
+      "keywords": [
+        "striker",
+        "midfielder",
+        "offside",
+        "penalty-kick",
+        "referee",
+        "goalkeeper"
       ]
     },
     {
       "tag": "social",
       "aliases": [
-        "network",
         "feeds",
         "friends",
         "profiles"
@@ -5836,6 +8162,11 @@
         "instagram.com",
         "mastodon.social",
         "mewe.com"
+      ],
+      "keywords": [
+        "follower",
+        "direct-message",
+        "repost"
       ]
     },
     {
@@ -5850,6 +8181,13 @@
         "freesound.org",
         "soundbible.com",
         "zapsplat.com"
+      ],
+      "keywords": [
+        "ambience",
+        "sample-pack",
+        "wav-file",
+        "loop",
+        "sound-library"
       ]
     },
     {
@@ -5864,6 +8202,13 @@
         "booksy.com",
         "mindbodyonline.com",
         "vagaro.com"
+      ],
+      "keywords": [
+        "facial",
+        "sauna",
+        "aromatherapy",
+        "exfoliation",
+        "hot-stone"
       ]
     },
     {
@@ -5880,6 +8225,14 @@
         "skyandtelescope.org",
         "space.com",
         "spacex.com"
+      ],
+      "keywords": [
+        "telescope",
+        "orbit",
+        "spacecraft",
+        "launch",
+        "satellite",
+        "nebula"
       ]
     },
     {
@@ -5894,6 +8247,14 @@
         "speeddemosarchive.com",
         "speedrun.com",
         "tasvideos.org"
+      ],
+      "keywords": [
+        "skip",
+        "route",
+        "splits",
+        "sequence-break",
+        "warp",
+        "frame-perfect"
       ]
     },
     {
@@ -5909,6 +8270,14 @@
         "cbssports.com",
         "espn.com",
         "skysports.com"
+      ],
+      "keywords": [
+        "standings",
+        "scoreboard",
+        "matchday",
+        "athlete",
+        "championship",
+        "coach"
       ]
     },
     {
@@ -5924,6 +8293,10 @@
         "rows.com",
         "sheets.google.com",
         "smartsheet.com"
+      ],
+      "keywords": [
+        "workbook",
+        "vlookup"
       ]
     },
     {
@@ -5938,6 +8311,14 @@
         "digicert.com",
         "letsencrypt.org",
         "ssllabs.com"
+      ],
+      "keywords": [
+        "handshake",
+        "cipher",
+        "x509",
+        "csr",
+        "expiry",
+        "revocation"
       ]
     },
     {
@@ -5951,6 +8332,15 @@
         "iec.ch",
         "ietf.org",
         "iso.org"
+      ],
+      "keywords": [
+        "draft",
+        "working-group",
+        "rfc",
+        "consortium",
+        "ratify",
+        "interoperability",
+        "conformance"
       ]
     },
     {
@@ -5969,6 +8359,15 @@
         "producthunt.com",
         "sifted.eu",
         "techcrunch.com"
+      ],
+      "keywords": [
+        "seed-round",
+        "series-a",
+        "equity",
+        "pitch-deck",
+        "accelerator",
+        "unicorn",
+        "bootstrapped"
       ]
     },
     {
@@ -5985,12 +8384,19 @@
         "gatsbyjs.com",
         "gohugo.io",
         "jekyllrb.com"
+      ],
+      "keywords": [
+        "frontmatter",
+        "build-step",
+        "templating",
+        "deploy-preview",
+        "headless-cms",
+        "prerender"
       ]
     },
     {
       "tag": "statistics",
       "aliases": [
-        "data",
         "figures",
         "metrics",
         "indicators",
@@ -6006,6 +8412,12 @@
         "statcounter.com",
         "statista.com",
         "tradingeconomics.com"
+      ],
+      "keywords": [
+        "correlation",
+        "variance",
+        "percentile",
+        "sample-size"
       ]
     },
     {
@@ -6020,6 +8432,15 @@
         "coverr.co",
         "mixkit.co",
         "videvo.net"
+      ],
+      "keywords": [
+        "timelapse",
+        "drone-shot",
+        "slow-motion",
+        "4k",
+        "aerial",
+        "clip",
+        "handheld"
       ]
     },
     {
@@ -6040,6 +8461,11 @@
         "shutterstock.com",
         "storyblocks.com",
         "unsplash.com"
+      ],
+      "keywords": [
+        "thumbnail",
+        "download-limit",
+        "editorial"
       ]
     },
     {
@@ -6061,6 +8487,10 @@
         "primevideo.com",
         "tubitv.com",
         "tv.apple.com"
+      ],
+      "keywords": [
+        "bitrate",
+        "miniseries"
       ]
     },
     {
@@ -6075,6 +8505,15 @@
         "obsproject.com",
         "restream.io",
         "streamlabs.com"
+      ],
+      "keywords": [
+        "overlay",
+        "scene",
+        "donation-alert",
+        "greenscreen",
+        "chatbot",
+        "hotkeys",
+        "webcam"
       ]
     },
     {
@@ -6089,6 +8528,14 @@
         "credible.com",
         "savingforcollege.com",
         "studentaid.gov"
+      ],
+      "keywords": [
+        "repayment",
+        "forbearance",
+        "refinance",
+        "borrower",
+        "deferment",
+        "principal"
       ]
     },
     {
@@ -6108,6 +8555,13 @@
         "opensubtitles.org",
         "rev.com",
         "subscene.com"
+      ],
+      "keywords": [
+        "sync",
+        "vtt",
+        "dubbing",
+        "timecode",
+        "hardsub"
       ]
     },
     {
@@ -6123,6 +8577,12 @@
         "joc.com",
         "logisticsmgmt.com",
         "supplychaindive.com"
+      ],
+      "keywords": [
+        "freight",
+        "warehousing",
+        "shipment",
+        "vendor"
       ]
     },
     {
@@ -6138,6 +8598,14 @@
         "qualtrics.com",
         "surveymonkey.com",
         "typeform.com"
+      ],
+      "keywords": [
+        "respondent",
+        "multiple-choice",
+        "likert",
+        "response-rate",
+        "skip-logic",
+        "branching"
       ]
     },
     {
@@ -6151,6 +8619,12 @@
         "earthday.org",
         "greenpeace.org",
         "sdgs.un.org"
+      ],
+      "keywords": [
+        "renewable",
+        "recycling",
+        "biodiversity",
+        "conservation"
       ]
     },
     {
@@ -6165,6 +8639,13 @@
         "hackingwithswift.com",
         "swift.org",
         "swiftpackageindex.com"
+      ],
+      "keywords": [
+        "protocol-oriented",
+        "optional",
+        "closures",
+        "cocoapods",
+        "uikit"
       ]
     },
     {
@@ -6181,6 +8662,12 @@
         "nypost.com",
         "thesun.co.uk",
         "tmz.com"
+      ],
+      "keywords": [
+        "affair",
+        "rumor",
+        "exposed",
+        "exclusive"
       ]
     },
     {
@@ -6195,6 +8682,13 @@
         "globaltrademag.com",
         "trade.gov",
         "wto.org"
+      ],
+      "keywords": [
+        "protectionism",
+        "retaliatory",
+        "trade-war",
+        "dumping",
+        "safeguard"
       ]
     },
     {
@@ -6210,6 +8704,14 @@
         "rememberthemilk.com",
         "ticktick.com",
         "todoist.com"
+      ],
+      "keywords": [
+        "due-date",
+        "subtask",
+        "priority",
+        "kanban",
+        "assignee",
+        "checkbox"
       ]
     },
     {
@@ -6224,6 +8726,11 @@
         "taxfoundation.org",
         "taxnotes.com",
         "taxpolicycenter.org"
+      ],
+      "keywords": [
+        "deduction",
+        "refund",
+        "exemption"
       ]
     },
     {
@@ -6238,6 +8745,14 @@
         "adagio.com",
         "davidstea.com",
         "harney.com"
+      ],
+      "keywords": [
+        "infusion",
+        "oolong",
+        "matcha",
+        "brew",
+        "teapot",
+        "caffeine"
       ]
     },
     {
@@ -6252,6 +8767,12 @@
         "amwell.com",
         "mdlive.com",
         "teladoc.com"
+      ],
+      "keywords": [
+        "clinician",
+        "symptom",
+        "consultation",
+        "patient-portal"
       ]
     },
     {
@@ -6268,6 +8789,10 @@
         "thetvdb.com",
         "tv.com",
         "tvguide.com"
+      ],
+      "keywords": [
+        "season",
+        "finale"
       ]
     },
     {
@@ -6283,6 +8808,11 @@
         "guerrillamail.com",
         "mailinator.com",
         "temp-mail.org"
+      ],
+      "keywords": [
+        "self-destruct",
+        "anonymity",
+        "no-signup"
       ]
     },
     {
@@ -6297,6 +8827,14 @@
         "atptour.com",
         "tennis.com",
         "wtatennis.com"
+      ],
+      "keywords": [
+        "serve",
+        "rally",
+        "ace",
+        "baseline",
+        "forehand",
+        "backhand"
       ]
     },
     {
@@ -6311,6 +8849,13 @@
         "iterm2.com",
         "starship.rs",
         "warp.dev"
+      ],
+      "keywords": [
+        "pipe",
+        "stdin",
+        "stdout",
+        "zsh",
+        "tmux"
       ]
     },
     {
@@ -6326,6 +8871,14 @@
         "magoosh.com",
         "prepscholar.com",
         "princetonreview.com"
+      ],
+      "keywords": [
+        "gre",
+        "gmat",
+        "practice-test",
+        "flashcards",
+        "score-report",
+        "proctor"
       ]
     },
     {
@@ -6342,6 +8895,15 @@
         "playwright.dev",
         "pytest.org",
         "selenium.dev"
+      ],
+      "keywords": [
+        "assertion",
+        "fixture",
+        "snapshot",
+        "flaky",
+        "mocking",
+        "stub",
+        "teardown"
       ]
     },
     {
@@ -6355,6 +8917,10 @@
         "merlot.org",
         "oercommons.org",
         "openstax.org"
+      ],
+      "keywords": [
+        "edition",
+        "coursework"
       ]
     },
     {
@@ -6368,6 +8934,11 @@
         "ethos.bl.uk",
         "ndltd.org",
         "proquest.com"
+      ],
+      "keywords": [
+        "advisor",
+        "defense",
+        "doctoral"
       ]
     },
     {
@@ -6382,6 +8953,12 @@
         "clockwise.com",
         "reclaim.ai",
         "usemotion.com"
+      ],
+      "keywords": [
+        "deep-work",
+        "calendar-sync",
+        "buffer-time",
+        "context-switching"
       ]
     },
     {
@@ -6397,6 +8974,12 @@
         "rescuetime.com",
         "timedoctor.com",
         "toggl.com"
+      ],
+      "keywords": [
+        "billable",
+        "stopwatch",
+        "clock-in",
+        "punch-clock"
       ]
     },
     {
@@ -6411,6 +8994,13 @@
         "everytimezone.com",
         "timeanddate.com",
         "worldtimebuddy.com"
+      ],
+      "keywords": [
+        "utc",
+        "daylight-saving",
+        "gmt",
+        "offset",
+        "meridian"
       ]
     },
     {
@@ -6430,6 +9020,14 @@
         "qbittorrent.org",
         "transmissionbt.com",
         "utorrent.com"
+      ],
+      "keywords": [
+        "seeder",
+        "leecher",
+        "tracker",
+        "swarm",
+        "peer",
+        "dht"
       ]
     },
     {
@@ -6444,6 +9042,11 @@
         "1337x.to",
         "thepiratebay.org",
         "yts.mx"
+      ],
+      "keywords": [
+        "uploader",
+        "ratio",
+        "private-tracker"
       ]
     },
     {
@@ -6459,6 +9062,11 @@
         "eurail.com",
         "raileurope.com",
         "trainline.com"
+      ],
+      "keywords": [
+        "locomotive",
+        "timetable",
+        "carriage"
       ]
     },
     {
@@ -6473,6 +9081,12 @@
         "citymapper.com",
         "moovitapp.com",
         "transit.app"
+      ],
+      "keywords": [
+        "ridership",
+        "bus-stop",
+        "metro",
+        "transfer"
       ]
     },
     {
@@ -6490,6 +9104,12 @@
         "proz.com",
         "reverso.net",
         "translate.google.com"
+      ],
+      "keywords": [
+        "localization",
+        "source-language",
+        "target-language",
+        "transliteration"
       ]
     },
     {
@@ -6505,6 +9125,11 @@
         "lonelyplanet.com",
         "tripadvisor.com",
         "viator.com"
+      ],
+      "keywords": [
+        "passport",
+        "backpacking",
+        "sightseeing"
       ]
     },
     {
@@ -6519,6 +9144,12 @@
         "ccjdigital.com",
         "overdriveonline.com",
         "ttnews.com"
+      ],
+      "keywords": [
+        "semi-truck",
+        "cdl",
+        "dispatcher",
+        "load-board"
       ]
     },
     {
@@ -6534,6 +9165,12 @@
         "tutor.com",
         "varsitytutors.com",
         "wyzant.com"
+      ],
+      "keywords": [
+        "mentor",
+        "one-on-one",
+        "lesson-plan",
+        "study-session"
       ]
     },
     {
@@ -6548,6 +9185,13 @@
         "episodate.com",
         "next-episode.net",
         "tvtime.com"
+      ],
+      "keywords": [
+        "airdate",
+        "rewatch",
+        "marathon",
+        "spoiler-free",
+        "unwatched"
       ]
     },
     {
@@ -6562,6 +9206,13 @@
         "fontsquirrel.com",
         "myfonts.com",
         "typewolf.com"
+      ],
+      "keywords": [
+        "kerning",
+        "serif",
+        "sans-serif",
+        "ligature",
+        "font-weight"
       ]
     },
     {
@@ -6583,6 +9234,10 @@
         "orcid.org",
         "ox.ac.uk",
         "stanford.edu"
+      ],
+      "keywords": [
+        "alumni",
+        "dean"
       ]
     },
     {
@@ -6598,6 +9253,11 @@
         "newshosting.com",
         "sabnzbd.org",
         "usenetserver.com"
+      ],
+      "keywords": [
+        "nntp",
+        "spool",
+        "indexer"
       ]
     },
     {
@@ -6610,6 +9270,11 @@
         "hotjar.com",
         "maze.co",
         "usertesting.com"
+      ],
+      "keywords": [
+        "participant",
+        "moderated",
+        "unmoderated"
       ]
     },
     {
@@ -6624,6 +9289,11 @@
         "airbnb.com",
         "homeexchange.com",
         "vrbo.com"
+      ],
+      "keywords": [
+        "nightly-rate",
+        "host",
+        "booking"
       ]
     },
     {
@@ -6638,6 +9308,13 @@
         "forksoverknives.com",
         "minimalistbaker.com",
         "ohsheglows.com"
+      ],
+      "keywords": [
+        "tofu",
+        "dairy-free",
+        "cruelty-free",
+        "seitan",
+        "tempeh"
       ]
     },
     {
@@ -6652,6 +9329,11 @@
         "banfield.com",
         "petmd.com",
         "vcahospitals.com"
+      ],
+      "keywords": [
+        "vaccination",
+        "pet-owner",
+        "clinic"
       ]
     },
     {
@@ -6676,6 +9358,11 @@
         "tiktok.com",
         "vimeo.com",
         "youtube.com"
+      ],
+      "keywords": [
+        "viral",
+        "creator",
+        "vertical-video"
       ]
     },
     {
@@ -6691,6 +9378,11 @@
         "webex.com",
         "whereby.com",
         "zoom.us"
+      ],
+      "keywords": [
+        "breakout-room",
+        "mute",
+        "waiting-room"
       ]
     },
     {
@@ -6705,6 +9397,13 @@
         "discogs.com",
         "recordstoreday.com",
         "vinylmeplease.com"
+      ],
+      "keywords": [
+        "pressing",
+        "groove",
+        "stylus",
+        "crackle",
+        "needle"
       ]
     },
     {
@@ -6721,6 +9420,12 @@
         "virtualbox.org",
         "vmware.com",
         "xenproject.org"
+      ],
+      "keywords": [
+        "guest-os",
+        "host-os",
+        "kvm",
+        "bare-metal"
       ]
     },
     {
@@ -6736,19 +9441,30 @@
         "skype.com",
         "voice.google.com",
         "vonage.com"
+      ],
+      "keywords": [
+        "sip",
+        "pbx",
+        "softphone",
+        "dial-tone"
       ]
     },
     {
       "tag": "volunteering",
       "aliases": [
         "volunteer",
-        "volunteer-work",
-        "service"
+        "volunteer-work"
       ],
       "hosts": [
         "idealist.org",
         "unv.org",
         "volunteermatch.org"
+      ],
+      "keywords": [
+        "nonprofit",
+        "charity",
+        "donate",
+        "grassroots"
       ]
     },
     {
@@ -6766,6 +9482,12 @@
         "protonvpn.com",
         "tailscale.com",
         "wireguard.com"
+      ],
+      "keywords": [
+        "ip-address",
+        "no-logs",
+        "geo-blocking",
+        "server-location"
       ]
     },
     {
@@ -6780,6 +9502,11 @@
         "canistream.it",
         "justwatch.com",
         "reelgood.com"
+      ],
+      "keywords": [
+        "region-lock",
+        "geo-restriction",
+        "expiring"
       ]
     },
     {
@@ -6795,6 +9522,12 @@
         "financial-planning.com",
         "thinkadvisor.com",
         "wealthmanagement.com"
+      ],
+      "keywords": [
+        "estate-planning",
+        "high-net-worth",
+        "luxury",
+        "opulence"
       ]
     },
     {
@@ -6815,6 +9548,13 @@
         "windy.com",
         "wmo.int",
         "wunderground.com"
+      ],
+      "keywords": [
+        "precipitation",
+        "humidity",
+        "radar",
+        "barometric",
+        "hurricane"
       ]
     },
     {
@@ -6829,6 +9569,13 @@
         "wasmer.io",
         "wasmtime.dev",
         "webassembly.org"
+      ],
+      "keywords": [
+        "linear-memory",
+        "emscripten",
+        "wat",
+        "portability",
+        "instantiate"
       ]
     },
     {
@@ -6843,6 +9590,11 @@
         "gocomics.com",
         "tapas.io",
         "webtoons.com"
+      ],
+      "keywords": [
+        "vertical-scroll",
+        "hiatus",
+        "artist"
       ]
     },
     {
@@ -6859,6 +9611,12 @@
         "developer.mozilla.org",
         "tailwindcss.com",
         "w3.org"
+      ],
+      "keywords": [
+        "javascript",
+        "responsive",
+        "browser-compatibility",
+        "markup"
       ]
     },
     {
@@ -6873,6 +9631,11 @@
         "crowdcast.io",
         "gotowebinar.com",
         "livestorm.co"
+      ],
+      "keywords": [
+        "attendee",
+        "replay",
+        "panelist"
       ]
     },
     {
@@ -6888,6 +9651,12 @@
         "royalroad.com",
         "scribblehub.com",
         "webnovel.com"
+      ],
+      "keywords": [
+        "cliffhanger",
+        "serialized",
+        "arc",
+        "translator"
       ]
     },
     {
@@ -6904,6 +9673,11 @@
         "haproxy.org",
         "nginx.org",
         "traefik.io"
+      ],
+      "keywords": [
+        "htaccess",
+        "virtual-host",
+        "daemon"
       ]
     },
     {
@@ -6919,6 +9693,12 @@
         "squarespace.com",
         "webflow.com",
         "wix.com"
+      ],
+      "keywords": [
+        "drag-and-drop",
+        "domain-name",
+        "wysiwyg",
+        "hosting-plan"
       ]
     },
     {
@@ -6934,6 +9714,13 @@
         "theknot.com",
         "weddingwire.com",
         "zola.com"
+      ],
+      "keywords": [
+        "bridesmaid",
+        "groom",
+        "reception",
+        "vows",
+        "honeymoon"
       ]
     },
     {
@@ -6948,6 +9735,12 @@
         "microsoft.com",
         "neowin.net",
         "windowscentral.com"
+      ],
+      "keywords": [
+        "taskbar",
+        "powershell",
+        "blue-screen",
+        "start-menu"
       ]
     },
     {
@@ -6963,6 +9756,12 @@
         "vivino.com",
         "wine.com",
         "winespectator.com"
+      ],
+      "keywords": [
+        "tannin",
+        "varietal",
+        "cork",
+        "cellar"
       ]
     },
     {
@@ -6977,6 +9776,14 @@
         "finewoodworking.com",
         "popularwoodworking.com",
         "rockler.com"
+      ],
+      "keywords": [
+        "joinery",
+        "chisel",
+        "lathe",
+        "sawdust",
+        "dovetail",
+        "plywood"
       ]
     },
     {
@@ -6996,6 +9803,11 @@
         "globalvoices.org",
         "news.sky.com",
         "worldpoliticsreview.com"
+      ],
+      "keywords": [
+        "geopolitics",
+        "diplomat",
+        "ceasefire"
       ]
     }
   ]

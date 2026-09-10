@@ -4898,7 +4898,15 @@ type BookmarkPreview struct {
 	PublishedAt int64  `json:"publishedAt,omitempty"`
 	// EmbedHTML is an oEmbed player, for the providers that offer one.
 	EmbedHTML string `json:"embedHtml,omitempty"`
-	FetchedAt int64  `json:"fetchedAt"`
+	/*
+	 * Keywords is what the page said it was about, for the tag suggestions.
+	 *
+	 * Derived words only -- never the page's text. A dozen words is tens of
+	 * bytes per bookmark; the prose they came from would be megabytes in the
+	 * data directory and in every backup ZIP. See extractKeywords.
+	 */
+	Keywords  []string `json:"keywords,omitempty"`
+	FetchedAt int64    `json:"fetchedAt"`
 }
 
 // GetDataRevision fingerprints bookmark, category, finder, page, and settings files.

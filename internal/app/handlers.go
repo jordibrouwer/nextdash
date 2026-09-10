@@ -2983,7 +2983,7 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * pages -- see readDocumentHead. A further previewBodySample is taken for
 	 * ContentLength, which measures prose rather than tags.
 	 */
-	headBytes, err := readDocumentHead(resp.Body, previewMaxHead)
+	headBytes, overRead, err := readDocumentHeadAndRest(resp.Body, previewMaxHead)
 	if err != nil {
 		return preview
 	}
@@ -3059,6 +3059,17 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	preview.Author = extractAuthor(htmlBody)
 	preview.PublishedAt = extractPublishedAt(htmlBody)
 	preview.ContentLength = readableTextLength(string(bodySample))
+	/*
+	 * The head for the meta tags, the start of the body for the h1.
+	 *
+	 * overRead is what the chunked head read had already taken off the wire
+	 * past </head> -- usually the first stretch of the body, which is where an
+	 * h1 lives. bodySample starts after that, so the two together are the
+	 * page's opening. ContentLength deliberately still measures bodySample
+	 * alone: it is the soft-404 signal, and widening what it counts would
+	 * change a threshold that has nothing to do with keywords.
+	 */
+	preview.Keywords = extractKeywords(htmlBody, string(overRead)+string(bodySample))
 
 	/*
 	 * oEmbed, when the page advertises it.

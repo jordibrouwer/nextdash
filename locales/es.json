@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "Sugerencia rechazada.",
     "tagSuggestionsDismissedCount": "{n} rechazadas.",
     "tagSuggestionsRestore": "Volver a ofrecerlas",
-    "tagSuggestionsRestored": "Las sugerencias rechazadas han vuelto."
+    "tagSuggestionsRestored": "Las sugerencias rechazadas han vuelto.",
+    "tagSuggestionReasonText": "el texto de la página ({words})",
+    "tagSuggestionAcrossSites": "en varios sitios",
+    "tagScanCost": "{n} marcadores aún no tienen palabras clave.",
+    "tagScanStart": "Leer sus páginas",
+    "tagScanStop": "Detener",
+    "tagScanProgress": "{done} de {total}"
   },
   "colors": {
     "title": "personalización del tema",

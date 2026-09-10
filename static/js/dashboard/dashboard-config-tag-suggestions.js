@@ -59,6 +59,10 @@
             return t('config.tagSuggestionReasonCatalogue', 'the catalogue ({subject})')
                 .replace('{subject}', String(group.reason.subject || ''));
         }
+        if (group.reason.kind === 'text') {
+            return t('config.tagSuggestionReasonText', 'the page text ({words})')
+                .replace('{words}', (group.reason.words || []).join(', '));
+        }
         return t('config.tagSuggestionReasonDerived', 'your own tags ({have} of {of})')
             .replace('{have}', String(group.reason.have))
             .replace('{of}', String(group.reason.of));
@@ -170,7 +174,11 @@
 
             const pattern = document.createElement('span');
             pattern.className = 'config-suggestion-pattern';
-            pattern.textContent = group.pattern;
+            // A page-text row is grouped by subject across sites, so there is
+            // no host to name in this column.
+            pattern.textContent = group.pattern === 'page-text'
+                ? t('config.tagSuggestionAcrossSites', 'across sites')
+                : group.pattern;
 
             const count = document.createElement('span');
             count.className = 'config-suggestion-count';
@@ -211,6 +219,7 @@
             rules: ctx.rules,
             catalogue: ctx.catalogue,
             dismissed: ctx.dismissed,
+            keywords: ctx.keywords,
         });
         container.replaceChildren();
         container.hidden = false;
@@ -258,6 +267,31 @@
             empty.textContent = t('config.tagSuggestionsEmpty',
                 'Nothing to propose yet. Give three bookmarks from the same site the same tag and the rest of that site is offered it — or write a rule below and it proposes at once.');
             container.appendChild(empty);
+        }
+
+        if (ctx.scan && ctx.scan.pending > 0) {
+            const scan = document.createElement('p');
+            scan.className = 'config-widget-field-hint';
+            scan.setAttribute('data-tag-scan', '');
+            const cost = document.createElement('span');
+            cost.textContent = `${t('config.tagScanCost', '{n} bookmarks have no keywords yet.')
+                .replace('{n}', String(ctx.scan.pending))} `;
+            const start = document.createElement('button');
+            start.type = 'button';
+            start.className = 'config-btn config-btn--small';
+            start.setAttribute('data-tag-scan-start', '');
+            start.textContent = ctx.scan.running
+                ? t('config.tagScanStop', 'Stop')
+                : t('config.tagScanStart', 'Read their pages');
+            scan.append(cost, start);
+            if (ctx.scan.progress) {
+                const progress = document.createElement('span');
+                progress.className = 'config-suggestion-count';
+                progress.setAttribute('data-tag-scan-progress', '');
+                progress.textContent = ` ${ctx.scan.progress}`;
+                scan.appendChild(progress);
+            }
+            container.appendChild(scan);
         }
 
         const refused = (ctx.dismissed || []).length;

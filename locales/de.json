@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "Vorschlag abgelehnt.",
     "tagSuggestionsDismissedCount": "{n} abgelehnt.",
     "tagSuggestionsRestore": "Wieder anbieten",
-    "tagSuggestionsRestored": "Abgelehnte Vorschläge sind zurück."
+    "tagSuggestionsRestored": "Abgelehnte Vorschläge sind zurück.",
+    "tagSuggestionReasonText": "der Seitentext ({words})",
+    "tagSuggestionAcrossSites": "über Websites hinweg",
+    "tagScanCost": "{n} Lesezeichen haben noch keine Stichwörter.",
+    "tagScanStart": "Ihre Seiten lesen",
+    "tagScanStop": "Anhalten",
+    "tagScanProgress": "{done} von {total}"
   },
   "colors": {
     "title": "themenanpassung",

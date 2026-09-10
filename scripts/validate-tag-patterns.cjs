@@ -34,6 +34,7 @@ let failed = false;
 const problems = [];
 const seenTags = new Map();
 const seenHosts = new Map();
+const seenKeywords = new Map();
 
 if (doc.version !== 1) {
     problems.push(`version is ${JSON.stringify(doc.version)}, want 1`);
@@ -71,6 +72,32 @@ if (!entries) {
         aliasSeen.add(alias);
     });
 
+    /*
+     * Keywords are matched against words pulled out of a page, so the same
+     * three failures apply as to a tag -- with one extra that only they have.
+     * A word claimed by two subjects cannot decide between them: it would
+     * propose whichever entry the loop happened to weigh first, which is
+     * arbitrary, so the merge drops such words and this refuses to ship one
+     * that slipped through.
+     */
+    const keywords = Array.isArray(entry.keywords) ? entry.keywords : [];
+    keywords.forEach((word) => {
+        if (!WORD.test(String(word))) {
+            problems.push(`${where}: keyword ${JSON.stringify(word)} must be lowercase letters, digits and hyphens`);
+            return;
+        }
+        if (word === entry.tag || aliases.includes(word)) {
+            problems.push(`${where}: keyword ${word} repeats the tag or one of its aliases`);
+            return;
+        }
+        const owner = seenKeywords.get(word);
+        if (owner && owner !== entry.tag) {
+            problems.push(`${word}: keyword claimed by both ${owner} and ${entry.tag}`);
+            return;
+        }
+        seenKeywords.set(word, entry.tag);
+    });
+
     const hosts = Array.isArray(entry.hosts) ? entry.hosts : [];
     if (!hosts.length) {
         problems.push(`${where}: no hosts, so it can never match`);
@@ -104,4 +131,5 @@ if (failed) {
     process.exit(1);
 }
 
-console.log(`  ok tag-patterns.json: ${seenTags.size} tags, ${seenHosts.size} hosts, no collisions`);
+console.log(`  ok tag-patterns.json: ${seenTags.size} tags, ${seenHosts.size} hosts, `
+    + `${seenKeywords.size} keywords, no collisions`);

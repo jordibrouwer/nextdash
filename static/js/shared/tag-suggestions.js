@@ -11,6 +11,27 @@
     'use strict';
 
     const DEFAULTS = { minGroup: 3, minShare: 0.6, maxPerBookmark: 2 };
+
+    /*
+     * How many of a page's own words have to land on one subject.
+     *
+     * Two, not one. A single shared word is a coincidence often enough to be
+     * worthless -- "charts" belongs to finance and to music, "python" to code
+     * and to wildlife -- and a wrong tag offered on one word's evidence is
+     * worse than no row at all, because the reader has to work out why it is
+     * there before they can refuse it.
+     */
+    const MIN_KEYWORD_HITS = 2;
+
+    /*
+     * The pseudo-pattern a page-text row carries where the others carry a host.
+     *
+     * These rows are grouped by subject across sites, so there is no host to
+     * name. It is a real string rather than an empty one because it is half of
+     * the key a refusal is stored under, and it is written in the shape
+     * sanitizeDismissedTagSuggestions accepts.
+     */
+    const TEXT_PATTERN = 'page-text';
     const EMPTY = new Set();
 
     /*
@@ -222,6 +243,102 @@
                     reason: { kind: 'catalogue', subject: entry.tag },
                     keys,
                     rank: 3,
+                });
+            });
+        }
+
+        /*
+         * The catalogue, by what the page said about itself.
+         *
+         * The last source, and the only one that needed a network round to
+         * become possible: these are the bookmarks on sites the catalogue has
+         * never heard of, so the host says nothing and the collection says
+         * nothing either. What is left is the page's own vocabulary, read
+         * once by the scan round and stored as a dozen words.
+         *
+         * Only for bookmarks the first three sources could not reach. A
+         * bookmark that already has a proposal has one from better evidence --
+         * something the reader wrote, or did, or a site the catalogue knows by
+         * name -- and page text is the guess of last resort, not a second
+         * opinion.
+         *
+         * Grouped by subject rather than by host, because that is the shape
+         * this evidence has: the nine bookmarks that mention kubernetes are on
+         * nine different sites, and a row per site would be nine rows saying
+         * the same thing.
+         */
+        if (settings.keywords) {
+            const spokenFor = new Set();
+            proposals.forEach((proposal) => proposal.keys.forEach((key) => spokenFor.add(key)));
+            const vocabulary = new Set();
+            rows.forEach((item) => tagsOf(item).forEach((tag) => vocabulary.add(tag)));
+
+        /*
+         * A page that names the subject outright counts double.
+         *
+         * The catalogue's keywords are the vocabulary *around* a subject --
+         * "kubelet", "etcd" -- and two of them agreeing is the floor. But a
+         * page whose own words include the subject's name, or a word the
+         * reader uses for it, has said what it is rather than hinted: drawio
+         * writes "diagramming" in its h1, and waiting for a second word there
+         * would be pedantry. So a name is worth the whole floor on its own,
+         * and two hints are worth the same.
+         */
+            const bySubject = new Map();
+            (Array.isArray(settings.catalogue) ? settings.catalogue : []).forEach((entry) => {
+                const tag = String(entry?.tag || '').trim().toLowerCase();
+                const words = (Array.isArray(entry?.keywords) ? entry.keywords : [])
+                    .map((word) => String(word).trim().toLowerCase())
+                    .filter(Boolean);
+                const names = new Set([tag, ...(Array.isArray(entry?.aliases) ? entry.aliases : [])
+                    .map((alias) => String(alias).trim().toLowerCase())].filter(Boolean));
+                if (tag && (words.length || names.size)) {
+                    bySubject.set(tag, { entry, words: new Set(words), names });
+                }
+            });
+
+            const byTag = new Map();
+            rows.forEach((item) => {
+                if (spokenFor.has(item.key)) return;
+                const found = (settings.keywords[item.key] || [])
+                    .map((word) => String(word).trim().toLowerCase())
+                    .filter(Boolean);
+                if (!found.length) return;
+
+                let best = null;
+                bySubject.forEach(({ entry, words, names }, tag) => {
+                    const distinct = [...new Set(found)];
+                    const named = distinct.filter((word) => names.has(word));
+                    const hinted = distinct.filter((word) => words.has(word));
+                    // One shared hint is a coincidence often enough to be
+                    // worthless: "charts" is finance and it is also music. A
+                    // name is not a hint, so it carries the floor by itself.
+                    const score = named.length * MIN_KEYWORD_HITS + hinted.length;
+                    if (score < MIN_KEYWORD_HITS) return;
+                    const hits = [...new Set([...named, ...hinted])];
+                    if (!best || score > best.score) best = { entry, tag, hits, score };
+                });
+                if (!best) return;
+
+                const tag = inTheirWords(best.entry, vocabulary);
+                if (tagsOf(item).includes(tag)) return;
+                const bucket = byTag.get(tag) || { subject: best.entry.tag, keys: [], words: new Set() };
+                bucket.keys.push(item.key);
+                best.hits.forEach((word) => bucket.words.add(word));
+                byTag.set(tag, bucket);
+            });
+
+            byTag.forEach((bucket, tag) => {
+                proposals.push({
+                    tag,
+                    pattern: TEXT_PATTERN,
+                    reason: {
+                        kind: 'text',
+                        subject: bucket.subject,
+                        words: [...bucket.words].slice(0, 4),
+                    },
+                    keys: bucket.keys,
+                    rank: 4,
                 });
             });
         }

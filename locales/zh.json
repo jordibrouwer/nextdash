@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "已拒绝该建议。",
     "tagSuggestionsDismissedCount": "已拒绝 {n} 条。",
     "tagSuggestionsRestore": "重新提供",
-    "tagSuggestionsRestored": "被拒绝的建议已恢复。"
+    "tagSuggestionsRestored": "被拒绝的建议已恢复。",
+    "tagSuggestionReasonText": "页面文字（{words}）",
+    "tagSuggestionAcrossSites": "跨站点",
+    "tagScanCost": "{n} 个书签还没有关键词。",
+    "tagScanStart": "读取它们的页面",
+    "tagScanStop": "停止",
+    "tagScanProgress": "{done} / {total}"
   },
   "colors": {
     "title": "主题自定义",

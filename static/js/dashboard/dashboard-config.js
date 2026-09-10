@@ -20391,6 +20391,8 @@ class DashboardConfig {
             rules: this.dash.settings?.tagRules || [],
             catalogue: this._tagCatalogue || [],
             dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+            keywords: this.tagKeywordsByItemKey(),
+            scan: this._tagScanState || null,
             t: (key, fallback) => this.t(key, fallback),
         });
     }
@@ -20437,6 +20439,14 @@ class DashboardConfig {
         // Drawn twice on a cold load: once from what is already known, and
         // again when the catalogue arrives, rather than leaving the tab blank
         // behind a fetch.
+        if (!this._tagKeywords) {
+            void this.ensureTagKeywords().then(() => {
+                if (document.getElementById('config-bm-suggestions')) {
+                    this.renderTagSuggestionsSafe();
+                    this.syncTagSuggestionCount();
+                }
+            });
+        }
         if (!this._tagCatalogue) {
             void this.ensureTagCatalogue().then(() => {
                 if (document.getElementById('config-bm-suggestions')) {
@@ -20460,6 +20470,10 @@ class DashboardConfig {
             if (refuse) {
                 const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
                 void this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            if (event.target.closest('[data-tag-scan-start]')) {
+                void this.runTagScan();
                 return;
             }
             if (event.target.closest('[data-tag-suggestions-restore]')) {
@@ -20508,6 +20522,7 @@ class DashboardConfig {
                 rules: this.dash.settings?.tagRules || [],
                 catalogue: this._tagCatalogue || [],
                 dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+                keywords: this.tagKeywordsByItemKey(),
             }).length;
         } catch (err) {
             return 0;
@@ -20558,6 +20573,112 @@ class DashboardConfig {
             htmlMessage: this.dash.escapeHtml(body).replace(/\n/g, '<br>'),
             confirmText: this.t('config.gotIt', 'Got it'),
         });
+    }
+
+    /*
+     * What the scan round has read, keyed the way the engine keys a bookmark.
+     *
+     * The server answers by address, because that is the one identifier both
+     * halves already agree on -- the canonicalising that turns an address into
+     * a cache key lives in Go, and a second copy of it here would be a second
+     * thing to keep in step. Two bookmarks on different pages sharing an
+     * address share its words, which is right: it is the same page.
+     */
+    tagKeywordsByItemKey() {
+        const byURL = this._tagKeywords;
+        if (!byURL) return null;
+        const byKey = {};
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const words = byURL[String(b.url || '').trim()];
+            if (words && words.length) byKey[this.bookmarkKey(b)] = words;
+        });
+        return byKey;
+    }
+
+    /*
+     * The words already read, refetched on demand.
+     *
+     * Kept apart from the scan state on purpose: a round refreshes the words
+     * after every slice, and folding both into one call meant each refresh
+     * rebuilt the state object -- including `running`, which reset to false
+     * and stopped the round after its first slice.
+     */
+    async refreshTagKeywords() {
+        try {
+            const response = await fetch('/api/tags/keywords', { cache: 'no-cache' });
+            const data = response.ok ? await response.json() : null;
+            this._tagKeywords = data?.keywords || {};
+        } catch (err) {
+            this._tagKeywords = {};
+        }
+        return this._tagKeywords;
+    }
+
+    /** The words already read, and how many pages are still unread. */
+    ensureTagKeywords() {
+        if (this._tagKeywordsPromise) return this._tagKeywordsPromise;
+        this._tagKeywordsPromise = Promise.all([
+            this.refreshTagKeywords(),
+            fetch('/api/tags/scan', { cache: 'no-cache' })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((data) => {
+                    this._tagScanState = {
+                        pending: Number(data?.pending) || 0,
+                        batch: Number(data?.batch) || 20,
+                        running: false,
+                        progress: '',
+                    };
+                })
+                .catch(() => { this._tagScanState = null; }),
+        ]);
+        return this._tagKeywordsPromise;
+    }
+
+    /*
+     * Walk the collection one slice at a time, from the browser.
+     *
+     * The loop lives here rather than on the server because that is what makes
+     * stopping free: the button flips a flag, the next slice is simply not
+     * asked for, and nothing is left half-running behind a request nobody is
+     * waiting on. Each round trip is short enough to survive a proxy, and the
+     * count on screen is the caller's own arithmetic rather than a second
+     * progress model to keep in step.
+     */
+    async runTagScan() {
+        if (!this._tagScanState) return;
+        if (this._tagScanState.running) {
+            this._tagScanState.running = false;
+            return;
+        }
+        this._tagScanState.running = true;
+        const total = this._tagScanState.pending;
+        let done = 0;
+        this.renderTagSuggestionsSafe();
+        while (this._tagScanState.running && this._tagScanState.pending > 0) {
+            let data = null;
+            try {
+                const response = await this.writeFetch('/api/tags/scan', { method: 'POST' });
+                data = response && response.ok ? await response.json() : null;
+            } catch (err) {
+                data = null;
+            }
+            if (!data) break;
+            done += (Number(data.read) || 0) + (Number(data.failed) || 0);
+            this._tagScanState.pending = Number(data.pending) || 0;
+            this._tagScanState.progress = this.t('config.tagScanProgress', '{done} of {total}')
+                .replace('{done}', String(Math.min(done, total)))
+                .replace('{total}', String(total));
+            // Re-read after every slice rather than at the end: a round over a
+            // large collection is minutes long, and rows the reader can act on
+            // should appear while it runs.
+            await this.refreshTagKeywords();
+            if (!this._tagScanState.pending) this._tagScanState.progress = '';
+            this.renderTagSuggestionsSafe();
+            this.syncTagSuggestionCount();
+        }
+        this._tagScanState.running = false;
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
     }
 
     renderBookmarkFilterChipsSafe() {

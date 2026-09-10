@@ -167,6 +167,71 @@ test.describe('the tag suggestion engine', () => {
         expect(groups[0].tag).toBe('work');
     });
 
+    test('the page text speaks for bookmarks nothing else can reach', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((sets) => window.TagSuggestions.suggest(sets.rows, {
+            catalogue: sets.catalogue,
+            keywords: sets.keywords,
+        }), {
+            catalogue: [{ tag: 'k8s', aliases: [], hosts: [], keywords: ['helm', 'etcd', 'kubelet'] }],
+            // Three unrelated hosts, none of them in the catalogue: only what
+            // the pages say about themselves is left.
+            rows: items([
+                ['a', 'https://blog.example/one', []],
+                ['b', 'https://other.example/two', []],
+                ['c', 'https://third.example/three', []],
+            ]),
+            keywords: { a: ['helm', 'etcd'], b: ['kubelet', 'helm'], c: ['helm'] },
+        });
+        expect(groups).toHaveLength(1);
+        // Grouped by subject rather than by host: the two bookmarks are on
+        // different sites, and a row each would say the same thing twice.
+        expect(groups[0].pattern).toBe('page-text');
+        expect(groups[0].keys.sort()).toEqual(['a', 'b']);
+        expect(groups[0].reason.kind).toBe('text');
+        // 'c' shares one word, which is a coincidence often enough to be
+        // worthless -- two is the floor.
+        expect(groups[0].keys).not.toContain('c');
+    });
+
+    test('a page that names the subject outright needs no second word', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((sets) => window.TagSuggestions.suggest(sets.rows, {
+            catalogue: sets.catalogue,
+            keywords: sets.keywords,
+        }), {
+            catalogue: [{ tag: 'diagramming', aliases: ['diagrams'], hosts: [], keywords: ['flowchart'] }],
+            rows: items([
+                ['a', 'https://unknown.example/one', []],
+                ['b', 'https://unknown.example/two', []],
+            ]),
+            // 'a' writes the subject's own name; 'b' writes the reader's word
+            // for it. Both have said what they are, so neither waits for a
+            // second word -- while one loose keyword still would.
+            keywords: { a: ['diagramming', 'teams'], b: ['diagrams'] },
+        });
+        expect(groups).toHaveLength(1);
+        expect(groups[0].reason.kind).toBe('text');
+        expect(groups[0].keys.sort()).toEqual(['a', 'b']);
+    });
+
+    test('page text is the last word, not a second opinion', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((sets) => window.TagSuggestions.suggest(sets.rows, {
+            rules: [{ pattern: 'ruled.example', tag: 'work' }],
+            catalogue: sets.catalogue,
+            keywords: sets.keywords,
+        }), {
+            catalogue: [{ tag: 'k8s', aliases: [], hosts: [], keywords: ['helm', 'etcd'] }],
+            rows: items([['a', 'https://ruled.example/one', []]]),
+            keywords: { a: ['helm', 'etcd'] },
+        });
+        // The rule already reached this bookmark, so the page text says
+        // nothing: it is the guess of last resort.
+        expect(groups).toHaveLength(1);
+        expect(groups[0].reason.kind).toBe('rule');
+    });
+
     test('a broken catalogue costs its own rows and nothing else', async ({ page }) => {
         await open(page);
         const got = await page.evaluate((rows) => ({

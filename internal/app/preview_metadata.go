@@ -240,6 +240,20 @@ to tell a soft-404 from a real page, and a page cut short reads as shorter,
 which is the safe direction for that judgement.
 */
 func readDocumentHead(body io.Reader, maxBytes int64) ([]byte, error) {
+	head, _, err := readDocumentHeadAndRest(body, maxBytes)
+	return head, err
+}
+
+/*
+readDocumentHeadAndRest is readDocumentHead, plus what it over-read.
+
+Reading is chunked, so finding </head> in the middle of a 32 KB chunk means the
+rest of that chunk has already been taken off the wire. It used to be dropped,
+which quietly cost the caller the first stretch of the body -- and the first
+stretch of the body is exactly where an h1 is. Handing it back turns a silent
+loss into the one place a page states its subject in words.
+*/
+func readDocumentHeadAndRest(body io.Reader, maxBytes int64) ([]byte, []byte, error) {
 	var out bytes.Buffer
 	buf := make([]byte, 32<<10)
 	limited := io.LimitReader(body, maxBytes)
@@ -254,18 +268,19 @@ func readDocumentHead(body io.Reader, maxBytes int64) ([]byte, error) {
 			}
 			out.Write(buf[:n])
 			if idx := headClosePattern.FindIndex(out.Bytes()[from:]); idx != nil {
-				return out.Bytes()[:from+idx[1]], nil
+				end := from + idx[1]
+				return out.Bytes()[:end], out.Bytes()[end:], nil
 			}
 		}
 		if err == io.EOF {
-			return out.Bytes(), nil
+			return out.Bytes(), nil, nil
 		}
 		if err != nil {
 			// Whatever arrived before the failure may still hold the tags.
 			if out.Len() > 0 {
-				return out.Bytes(), nil
+				return out.Bytes(), nil, nil
 			}
-			return nil, err
+			return nil, nil, err
 		}
 	}
 }
@@ -287,4 +302,143 @@ const (
 	 * one -- reading more cannot change the verdict.
 	 */
 	previewBodySample = 64 << 10
+)
+
+/*
+extractKeywords pulls the words a page uses to file itself.
+
+Four places, in the order a publisher is likely to mean them: the keywords meta
+tag, every article:tag (a page tagged "kubernetes, helm, ops" writes three of
+them), og:section, and the first h1. All of it out of the document already in
+hand, so this costs no request of its own -- the meta tags from the head, the
+h1 from the body sample, since the head read stops at </head> and an h1 is
+never inside it.
+
+What comes back is a small, bounded list of derived words -- never the page's
+text. A dozen words is tens of bytes per bookmark; two kilobytes of prose per
+bookmark is megabytes in the data directory and in every backup ZIP, which is
+the reason the design stores the words rather than what they were read from.
+
+Deliberately unclever: no stemming, no frequency counting, no stop-word list
+beyond the length floor. The words are matched against a shipped catalogue that
+was written to be matched exactly, so a stemmer would only introduce ways for
+the two halves to disagree.
+*/
+func extractKeywords(doc, body string) []string {
+	raw := []string{
+		metaContent(doc, "name", "keywords"),
+		metaContent(doc, "property", "article:tag"),
+		metaContent(doc, "property", "og:section"),
+		metaContent(doc, "name", "news_keywords"),
+	}
+	// article:tag repeats rather than listing, so one match is not enough.
+	for _, match := range metaContentPattern("property", "article:tag").FindAllStringSubmatch(doc, keywordMaxCount) {
+		for _, group := range match[1:] {
+			if group != "" {
+				raw = append(raw, html.UnescapeString(group))
+			}
+		}
+	}
+	if heading := firstHeadingPattern.FindStringSubmatch(doc + body); heading != nil {
+		raw = append(raw, html.UnescapeString(stripTagsPattern.ReplaceAllString(heading[1], " ")))
+	}
+
+	seen := map[string]struct{}{}
+	words := make([]string, 0, keywordMaxCount)
+	for _, line := range raw {
+		for _, field := range strings.FieldsFunc(line, func(r rune) bool {
+			return r == ',' || r == ';' || r == '|' || r == '/' || r == '·'
+		}) {
+			for _, word := range strings.Fields(field) {
+				word = normalizeKeyword(word)
+				if word == "" {
+					continue
+				}
+				if _, dup := seen[word]; dup {
+					continue
+				}
+				seen[word] = struct{}{}
+				words = append(words, word)
+				if len(words) >= keywordMaxCount {
+					return words
+				}
+			}
+		}
+	}
+	return words
+}
+
+/*
+normalizeKeyword reduces one word to the shape the catalogue is written in, or
+to "" when it is not a word worth keeping.
+
+Three floors, all of them about the same thing -- a keyword that cannot
+discriminate is worse than no keyword, because it proposes a tag on no evidence.
+A two-letter word matches too much, a number is a date or a count rather than a
+subject, and anything past the length cap is a sentence that lost its commas.
+*/
+func normalizeKeyword(word string) string {
+	word = strings.ToLower(strings.Trim(strings.TrimSpace(word), ".,:;!?\"'()[]{}#"))
+	if len(word) < keywordMinLength || len(word) > keywordMaxLength {
+		return ""
+	}
+	digits := 0
+	for _, r := range word {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= '0' && r <= '9':
+			digits++
+		case r == '-':
+		default:
+			return ""
+		}
+	}
+	if digits == len(word) {
+		return ""
+	}
+	if _, furniture := keywordFurniture[word]; furniture {
+		return ""
+	}
+	return word
+}
+
+/*
+keywordFurniture is the words a page says because it is a page.
+
+The h1 is the only place many sites state their subject in words, and it is
+also where "Sign in", "Welcome to our website" and "You need to enable
+JavaScript to run this app" live. Those words carry no subject, and one of them
+is worse than merely useless: "javascript" is a real subject in the catalogue,
+so a JavaScript-required notice would file a cooking blog under code.
+
+Deliberately short and hand-picked rather than a general stop-word list. The
+words below were read off what a real collection's pages actually produced;
+anything longer starts removing vocabulary that discriminates.
+*/
+var keywordFurniture = map[string]struct{}{
+	"about": {}, "account": {}, "all": {}, "and": {}, "are": {}, "back": {},
+	"browser": {}, "click": {}, "close": {}, "cookie": {}, "cookies": {},
+	"continue": {}, "enable": {}, "error": {}, "find": {}, "for": {},
+	"forbidden": {}, "get": {}, "here": {}, "how": {}, "javascript": {},
+	"just": {}, "loading": {}, "log": {}, "login": {}, "make": {}, "more": {},
+	"not": {}, "now": {}, "our": {}, "out": {}, "please": {}, "privacy": {},
+	"register": {}, "search": {}, "see": {}, "sign": {}, "signin": {},
+	"start": {}, "support": {}, "terms": {}, "that": {}, "the": {}, "this": {},
+	"use": {}, "using": {}, "want": {}, "welcome": {}, "what": {}, "when": {},
+	"where": {}, "why": {}, "with": {}, "you": {}, "your": {},
+}
+
+var (
+	firstHeadingPattern = regexp.MustCompile(`(?is)<h1[^>]*>(.*?)</h1>`)
+	stripTagsPattern    = regexp.MustCompile(`(?s)<[^>]*>`)
+)
+
+const (
+	// keywordMaxCount, keywordMinLength and keywordMaxLength bound what one
+	// page may contribute. Twelve words is what the design allows per
+	// bookmark; the length floor drops "of" and "to", and the ceiling drops a
+	// keywords tag that turned out to be a sentence.
+	keywordMaxCount  = 12
+	keywordMinLength = 3
+	keywordMaxLength = 40
 )

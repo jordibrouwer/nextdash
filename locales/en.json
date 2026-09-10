@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "Suggestion turned down.",
     "tagSuggestionsDismissedCount": "{n} turned down.",
     "tagSuggestionsRestore": "Offer them again",
-    "tagSuggestionsRestored": "Turned-down suggestions are back."
+    "tagSuggestionsRestored": "Turned-down suggestions are back.",
+    "tagSuggestionReasonText": "the page text ({words})",
+    "tagSuggestionAcrossSites": "across sites",
+    "tagScanCost": "{n} bookmarks have no keywords yet.",
+    "tagScanStart": "Read their pages",
+    "tagScanStop": "Stop",
+    "tagScanProgress": "{done} of {total}"
   },
   "colors": {
     "title": "theme customization",

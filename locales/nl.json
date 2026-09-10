@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "Voorstel afgewezen.",
     "tagSuggestionsDismissedCount": "{n} afgewezen.",
     "tagSuggestionsRestore": "Bied ze opnieuw aan",
-    "tagSuggestionsRestored": "Afgewezen voorstellen staan er weer."
+    "tagSuggestionsRestored": "Afgewezen voorstellen staan er weer.",
+    "tagSuggestionReasonText": "de paginatekst ({words})",
+    "tagSuggestionAcrossSites": "over sites heen",
+    "tagScanCost": "{n} bookmarks hebben nog geen trefwoorden.",
+    "tagScanStart": "Lees hun pagina's",
+    "tagScanStop": "Stop",
+    "tagScanProgress": "{done} van {total}"
   },
   "colors": {
     "title": "thema-aanpassing",

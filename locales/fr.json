@@ -5893,7 +5893,13 @@
     "tagSuggestionDismissed": "Proposition refusée.",
     "tagSuggestionsDismissedCount": "{n} refusée(s).",
     "tagSuggestionsRestore": "Les proposer à nouveau",
-    "tagSuggestionsRestored": "Les propositions refusées sont de retour."
+    "tagSuggestionsRestored": "Les propositions refusées sont de retour.",
+    "tagSuggestionReasonText": "le texte de la page ({words})",
+    "tagSuggestionAcrossSites": "tous sites confondus",
+    "tagScanCost": "{n} marque-pages n’ont pas encore de mots-clés.",
+    "tagScanStart": "Lire leurs pages",
+    "tagScanStop": "Arrêter",
+    "tagScanProgress": "{done} sur {total}"
   },
   "colors": {
     "title": "personnalisation du thème",
