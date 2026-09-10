@@ -322,7 +322,20 @@ class DashboardConfig {
         // The filters ride in a query string after the path, so the page id
         // stops at the first `?` as well as at the end.
         const match = hash.replace(/^#/, '').match(/^config\/bookmarks\/([^/?]+)/);
-        return match ? decodeURIComponent(match[1]) : null;
+        if (!match) return null;
+        const segment = decodeURIComponent(match[1]);
+        /*
+         * That third segment is two things at once: the page a filtered list
+         * is scoped to, and -- when no page filter is set -- the sub-tab.
+         * Reading a tab name back as a page id left the List tab filtered to a
+         * page called "tag-suggestions", which no collection has, so it showed
+         * nothing and offered a chip nobody had asked for.
+         *
+         * A page filter is always a page id, and those are numbers, so a
+         * segment that spells one of the tabs can only be a tab.
+         */
+        if (DashboardConfig.BM_TABS.includes(segment)) return null;
+        return segment;
     }
 
     /** Composite category filter value when scoping to a page. */
