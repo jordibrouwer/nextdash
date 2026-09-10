@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} marque-pages n’ont pas encore de mots-clés.",
     "tagScanStart": "Lire leurs pages",
     "tagScanStop": "Arrêter",
-    "tagScanProgress": "{done} sur {total}"
+    "tagScanProgress": "{done} sur {total}",
+    "tagScanTitle": "Lecture des pages…",
+    "tagScanStopping": "Arrêt en cours…",
+    "tagScanDone": "{n} pages lues.",
+    "tagScanStopped": "Arrêté après {n} sur {total}."
   },
   "colors": {
     "title": "personnalisation du thème",

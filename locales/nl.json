@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} bookmarks hebben nog geen trefwoorden.",
     "tagScanStart": "Lees hun pagina's",
     "tagScanStop": "Stop",
-    "tagScanProgress": "{done} van {total}"
+    "tagScanProgress": "{done} van {total}",
+    "tagScanTitle": "Pagina's lezen…",
+    "tagScanStopping": "Bezig met stoppen…",
+    "tagScanDone": "{n} pagina's gelezen.",
+    "tagScanStopped": "Gestopt na {n} van {total}."
   },
   "colors": {
     "title": "thema-aanpassing",

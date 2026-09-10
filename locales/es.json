@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} marcadores aún no tienen palabras clave.",
     "tagScanStart": "Leer sus páginas",
     "tagScanStop": "Detener",
-    "tagScanProgress": "{done} de {total}"
+    "tagScanProgress": "{done} de {total}",
+    "tagScanTitle": "Leyendo páginas…",
+    "tagScanStopping": "Deteniendo…",
+    "tagScanDone": "{n} páginas leídas.",
+    "tagScanStopped": "Detenido tras {n} de {total}."
   },
   "colors": {
     "title": "personalización del tema",

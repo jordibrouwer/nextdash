@@ -270,27 +270,24 @@
         }
 
         if (ctx.scan && ctx.scan.pending > 0) {
-            const scan = document.createElement('p');
-            scan.className = 'config-widget-field-hint';
+            // A row rather than a line of prose: it offers an action, the rows
+            // above it offer actions, and it lines up with them.
+            const scan = document.createElement('div');
+            scan.className = 'config-suggestion-row config-suggestion-row--scan';
             scan.setAttribute('data-tag-scan', '');
             const cost = document.createElement('span');
-            cost.textContent = `${t('config.tagScanCost', '{n} bookmarks have no keywords yet.')
-                .replace('{n}', String(ctx.scan.pending))} `;
+            cost.className = 'config-suggestion-scan-text';
+            cost.textContent = t('config.tagScanCost', '{n} bookmarks have no keywords yet.')
+                .replace('{n}', String(ctx.scan.pending));
             const start = document.createElement('button');
             start.type = 'button';
             start.className = 'config-btn config-btn--small';
             start.setAttribute('data-tag-scan-start', '');
-            start.textContent = ctx.scan.running
-                ? t('config.tagScanStop', 'Stop')
-                : t('config.tagScanStart', 'Read their pages');
+            // Stopping lives on the progress overlay the round puts up, so
+            // this stays one button rather than changing meaning mid-round.
+            start.textContent = t('config.tagScanStart', 'Read their pages');
+            start.disabled = !!ctx.scan.running;
             scan.append(cost, start);
-            if (ctx.scan.progress) {
-                const progress = document.createElement('span');
-                progress.className = 'config-suggestion-count';
-                progress.setAttribute('data-tag-scan-progress', '');
-                progress.textContent = ` ${ctx.scan.progress}`;
-                scan.appendChild(progress);
-            }
             container.appendChild(scan);
         }
 

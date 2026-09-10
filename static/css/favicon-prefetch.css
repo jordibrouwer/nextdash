@@ -74,6 +74,37 @@
 }
 
 /*
+ * The way out, for the work that has one.
+ *
+ * Quiet rather than prominent: it is not the expected answer, only the
+ * available one, and a bright button beside a running bar invites the click it
+ * exists to make possible rather than to encourage. Hidden entirely unless the
+ * caller passed a way to stop.
+ */
+.progress-overlay-cancel {
+    align-self: center;
+    margin-top: var(--space-2, 0.5rem);
+    padding: 0.25rem 0.9rem;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.progress-overlay-cancel:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.progress-overlay-cancel:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+/*
  * The indeterminate bar.
  *
  * A source import is a single request: the server walks the service's API,

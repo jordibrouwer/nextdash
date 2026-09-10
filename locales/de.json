@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} Lesezeichen haben noch keine Stichwörter.",
     "tagScanStart": "Ihre Seiten lesen",
     "tagScanStop": "Anhalten",
-    "tagScanProgress": "{done} von {total}"
+    "tagScanProgress": "{done} von {total}",
+    "tagScanTitle": "Seiten werden gelesen…",
+    "tagScanStopping": "Wird angehalten…",
+    "tagScanDone": "{n} Seiten gelesen.",
+    "tagScanStopped": "Nach {n} von {total} angehalten."
   },
   "colors": {
     "title": "themenanpassung",

@@ -7614,8 +7614,8 @@ class DashboardConfig {
      * are almost the same is how two surfaces drift apart. These three stay as
      * the names the rest of this file already calls.
      */
-    showProgressOverlay(title, status) {
-        return window.ProgressOverlay?.show(title, status);
+    showProgressOverlay(title, status, options) {
+        return window.ProgressOverlay?.show(title, status, options);
     }
 
     finishProgressOverlay(status) {
@@ -20658,40 +20658,66 @@ class DashboardConfig {
      * progress model to keep in step.
      */
     async runTagScan() {
-        if (!this._tagScanState) return;
-        if (this._tagScanState.running) {
-            this._tagScanState.running = false;
-            return;
-        }
+        if (!this._tagScanState || this._tagScanState.running) return;
         this._tagScanState.running = true;
         const total = this._tagScanState.pending;
         let done = 0;
-        this.renderTagSuggestionsSafe();
-        while (this._tagScanState.running && this._tagScanState.pending > 0) {
-            let data = null;
-            try {
+        let read = 0;
+
+        const progressText = (position) => this.t('config.tagScanProgress', '{done} of {total}')
+            .replace('{done}', String(Math.min(position, total)))
+            .replace('{total}', String(total));
+
+        // The same overlay every other long walk in config uses, plus the way
+        // out this one needs: a round over a large collection is minutes of
+        // outbound requests, and a reader who started it by mistake should not
+        // have to reload the page to take it back.
+        this.showProgressOverlay(
+            this.t('config.tagScanTitle', 'Reading pages…'),
+            progressText(0),
+            {
+                onCancel: () => { if (this._tagScanState) this._tagScanState.running = false; },
+                cancelLabel: this.t('config.tagScanStop', 'Stop'),
+                cancellingLabel: this.t('config.tagScanStopping', 'Stopping…'),
+            },
+        );
+
+        try {
+            while (this._tagScanState.running && this._tagScanState.pending > 0) {
                 const response = await this.writeFetch('/api/tags/scan', { method: 'POST' });
-                data = response && response.ok ? await response.json() : null;
-            } catch (err) {
-                data = null;
+                if (!response || !response.ok) throw new Error(`HTTP ${response && response.status}`);
+                const data = await response.json();
+
+                read += Number(data.read) || 0;
+                done += (Number(data.read) || 0) + (Number(data.failed) || 0);
+                this._tagScanState.pending = Number(data.pending) || 0;
+                window.ProgressOverlay?.update(Math.min(done, total), total, progressText(done));
+
+                // Re-read after every slice rather than at the end: rows the
+                // reader can act on should appear while it runs.
+                await this.refreshTagKeywords();
+                this.renderTagSuggestionsSafe();
+                this.syncTagSuggestionCount();
             }
-            if (!data) break;
-            done += (Number(data.read) || 0) + (Number(data.failed) || 0);
-            this._tagScanState.pending = Number(data.pending) || 0;
-            this._tagScanState.progress = this.t('config.tagScanProgress', '{done} of {total}')
-                .replace('{done}', String(Math.min(done, total)))
-                .replace('{total}', String(total));
-            // Re-read after every slice rather than at the end: a round over a
-            // large collection is minutes long, and rows the reader can act on
-            // should appear while it runs.
-            await this.refreshTagKeywords();
-            if (!this._tagScanState.pending) this._tagScanState.progress = '';
+            const stopped = this._tagScanState.pending > 0;
+            this.finishProgressOverlay(stopped
+                ? this.t('config.tagScanStopped', 'Stopped after {n} of {total}.')
+                    .replace('{n}', String(Math.min(done, total))).replace('{total}', String(total))
+                : this.t('config.tagScanDone', 'Read {n} pages.').replace('{n}', String(read)));
+        } catch (err) {
+            this.hideProgressOverlay();
+            // Says how far it got: a round that stopped at 40 of 85 read 40
+            // pages for real, and starting over is not required.
+            this.notify(this.t('config.tagScanStopped', 'Stopped after {n} of {total}.')
+                .replace('{n}', String(Math.min(done, total))).replace('{total}', String(total)), 'error');
+        } finally {
+            if (this._tagScanState) {
+                this._tagScanState.running = false;
+                this._tagScanState.progress = '';
+            }
             this.renderTagSuggestionsSafe();
             this.syncTagSuggestionCount();
         }
-        this._tagScanState.running = false;
-        this.renderTagSuggestionsSafe();
-        this.syncTagSuggestionCount();
     }
 
     renderBookmarkFilterChipsSafe() {

@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} 个书签还没有关键词。",
     "tagScanStart": "读取它们的页面",
     "tagScanStop": "停止",
-    "tagScanProgress": "{done} / {total}"
+    "tagScanProgress": "{done} / {total}",
+    "tagScanTitle": "正在读取页面…",
+    "tagScanStopping": "正在停止…",
+    "tagScanDone": "已读取 {n} 个页面。",
+    "tagScanStopped": "在 {n} / {total} 处停止。"
   },
   "colors": {
     "title": "主题自定义",

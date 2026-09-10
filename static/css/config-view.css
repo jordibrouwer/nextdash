@@ -6200,6 +6200,29 @@ button.config-bm-shortcut-pill {
     text-align: right;
 }
 
+/*
+ * The scan offer: same card as the proposals above it, so the panel is one
+ * column of rows rather than a list with a sentence stuck under it. What it
+ * says is on the left, what it does is on the right -- the reading order of
+ * every other row here.
+ */
+.config-suggestion-row--scan {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 0.85rem);
+    margin-top: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--accent-color, var(--border-primary, #e0e0e0));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 7%, transparent);
+}
+
+.config-suggestion-scan-text {
+    text-align: left;
+}
+
+
 /* Apply and its refusal sit together at the end of the row: the pair is one
    decision, and a reader who reaches for the wrong one is as likely either
    way -- both are undoable from the toast. */

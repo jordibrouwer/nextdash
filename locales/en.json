@@ -5899,7 +5899,11 @@
     "tagScanCost": "{n} bookmarks have no keywords yet.",
     "tagScanStart": "Read their pages",
     "tagScanStop": "Stop",
-    "tagScanProgress": "{done} of {total}"
+    "tagScanProgress": "{done} of {total}",
+    "tagScanTitle": "Reading pages…",
+    "tagScanStopping": "Stopping…",
+    "tagScanDone": "Read {n} pages.",
+    "tagScanStopped": "Stopped after {n} of {total}."
   },
   "colors": {
     "title": "theme customization",
