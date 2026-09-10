@@ -361,27 +361,66 @@ func extractKeywords(doc, body string) []string {
 		metaContent(doc, "name", "description"),
 	)
 
-	seen := map[string]struct{}{}
-	words := make([]string, 0, keywordMaxCount)
-	for _, line := range raw {
-		for _, field := range strings.FieldsFunc(line, func(r rune) bool {
+	splitFields := func(line string) []string {
+		return strings.FieldsFunc(line, func(r rune) bool {
 			// A title separates with a dash or a colon as often as with a
 			// pipe -- "Ars Technica — Serving the technologist" is three
 			// fields, not one.
 			return r == ',' || r == ';' || r == '|' || r == '/' || r == '·' ||
 				r == '—' || r == '–' || r == ':'
-		}) {
+		})
+	}
+
+	seen := map[string]struct{}{}
+	words := make([]string, 0, keywordMaxCount)
+	keep := func(word string) bool {
+		if word == "" {
+			return false
+		}
+		if _, dup := seen[word]; dup {
+			return false
+		}
+		seen[word] = struct{}{}
+		words = append(words, word)
+		return len(words) >= keywordMaxCount
+	}
+
+	for _, line := range raw {
+		for _, field := range splitFields(line) {
 			for _, word := range strings.Fields(field) {
-				word = normalizeKeyword(word)
-				if word == "" {
+				if keep(normalizeKeyword(word)) {
+					return words
+				}
+			}
+		}
+	}
+
+	/*
+	 * The pairs, once the single words have had the slots they wanted.
+	 *
+	 * A page writes "peer reviewed" and "meal kit"; the catalogue writes
+	 * "peer-reviewed" and "meal-kit", because a subject named in two words has
+	 * to be one token to be matched at all. Splitting on whitespace alone left
+	 * 354 of the catalogue's 1,924 keywords -- 18% of them -- reachable only by
+	 * a page that happened to hyphenate the phrase itself.
+	 *
+	 * Second pass rather than woven into the first: a pair is weaker evidence
+	 * than a word a publisher chose, and the twelve slots belong to the
+	 * deliberate sources in the order they were read. Pairs get what is left,
+	 * which on most pages is most of it.
+	 */
+	for _, line := range raw {
+		for _, field := range splitFields(line) {
+			fields := strings.Fields(field)
+			for i := 0; i+1 < len(fields); i++ {
+				first := normalizeKeyword(fields[i])
+				second := normalizeKeyword(fields[i+1])
+				// Both halves have to be words in their own right. A pair
+				// resting on "the" or on a page's furniture is not a subject.
+				if first == "" || second == "" {
 					continue
 				}
-				if _, dup := seen[word]; dup {
-					continue
-				}
-				seen[word] = struct{}{}
-				words = append(words, word)
-				if len(words) >= keywordMaxCount {
+				if keep(normalizeKeyword(first + "-" + second)) {
 					return words
 				}
 			}

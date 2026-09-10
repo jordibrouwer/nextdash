@@ -105,6 +105,40 @@ func TestExtractKeywordsReadsTheTitleAndDescription(t *testing.T) {
 	}
 }
 
+/*
+A subject named in two words is one keyword in the catalogue, so it has to be
+one token here as well -- 18% of the shipped keywords carry a hyphen, and a
+page that writes the phrase with a space could never reach any of them.
+*/
+func TestExtractKeywordsPairsAdjacentWords(t *testing.T) {
+	head := `<html><head><title>Peer reviewed research</title></head>`
+
+	got := extractKeywords(head, "")
+	joined := strings.Join(got, " ")
+	if !strings.Contains(joined, "peer-reviewed") {
+		t.Errorf("missing the pair %q in %v", "peer-reviewed", got)
+	}
+	// The single words keep their slots and keep their order: a pair is weaker
+	// evidence than a word the publisher chose, so it comes after.
+	if len(got) < 3 || got[0] != "peer" || got[1] != "reviewed" || got[2] != "research" {
+		t.Errorf("the single words did not come first: %v", got)
+	}
+}
+
+/*
+A pair whose half carries no subject is not a subject either: the words a page
+says because it is a page are dropped before the pairing, not after.
+*/
+func TestExtractKeywordsDoesNotPairAcrossFurniture(t *testing.T) {
+	head := `<html><head><title>Home cooking</title></head>`
+
+	for _, word := range extractKeywords(head, "") {
+		if strings.Contains(word, "home") {
+			t.Errorf("paired on furniture: %q", word)
+		}
+	}
+}
+
 func TestExtractKeywordsPrefersTheDeliberateSources(t *testing.T) {
 	var filler []string
 	for i := 0; i < 20; i++ {
