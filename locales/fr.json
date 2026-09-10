@@ -3210,6 +3210,7 @@
     "tagSuggestionReasonRule": "votre règle",
     "tagSuggestionReasonDerived": "vos propres étiquettes ({have} sur {of})",
     "tagSuggestionApplied": "Étiquettes ajoutées.",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "Étiquettes rétablies.",
     "tagRulesTitle": "Vos règles",
     "tagRuleAdd": "Ajouter une règle",

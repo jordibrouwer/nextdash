@@ -3215,6 +3215,7 @@
     "tagSuggestionReasonRule": "jouw regel",
     "tagSuggestionReasonDerived": "je eigen tags ({have} van {of})",
     "tagSuggestionApplied": "Tags toegevoegd.",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "Tags teruggezet.",
     "tagRulesTitle": "Jouw regels",
     "tagRuleAdd": "Regel toevoegen",

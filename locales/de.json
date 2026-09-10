@@ -3210,6 +3210,7 @@
     "tagSuggestionReasonRule": "deine Regel",
     "tagSuggestionReasonDerived": "deine eigenen Tags ({have} von {of})",
     "tagSuggestionApplied": "Tags hinzugefügt.",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "Tags zurückgesetzt.",
     "tagRulesTitle": "Deine Regeln",
     "tagRuleAdd": "Regel hinzufügen",

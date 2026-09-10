@@ -3222,6 +3222,7 @@
     "tagSuggestionReasonRule": "tu regla",
     "tagSuggestionReasonDerived": "tus propias etiquetas ({have} de {of})",
     "tagSuggestionApplied": "Etiquetas añadidas.",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "Etiquetas restauradas.",
     "tagRulesTitle": "Tus reglas",
     "tagRuleAdd": "Añadir regla",

@@ -3222,6 +3222,7 @@
     "tagSuggestionReasonRule": "your rule",
     "tagSuggestionReasonDerived": "your own tags ({have} of {of})",
     "tagSuggestionApplied": "Tags added.",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "Tags put back.",
     "tagRulesTitle": "Your rules",
     "tagRuleAdd": "Add rule",

@@ -822,6 +822,92 @@ test.describe('the suggestions panel', () => {
     });
 
     /*
+     * The count chip is a control, so it answers the keyboard.
+     *
+     * It carries role="button" rather than being one, and a span with a role
+     * and no key handling is a control a keyboard-first reader cannot reach:
+     * Enter and Space fire a click on a real button and on nothing else.
+     */
+    test('the count opens the group from the keyboard', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://bykey.example/one', tags: ['keyed'] },
+                { name: 'Two', url: 'https://bykey.example/two', tags: ['keyed'] },
+                { name: 'Three', url: 'https://bykey.example/three', tags: ['keyed'] },
+                { name: 'Four', url: 'https://bykey.example/four', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await openSuggestionsTab(page);
+
+        const row = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'bykey.example' }).first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        const chip = row.locator('[data-tag-suggestion-toggle]');
+        await chip.focus();
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
+            .toBeVisible({ timeout: 15_000 });
+        // And Space closes it again rather than scrolling the panel.
+        await row.locator('[data-tag-suggestion-toggle]').focus();
+        await page.keyboard.press('Space');
+        await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
+            .toHaveCount(0, { timeout: 15_000 });
+    });
+
+    /*
+     * Apply with nothing ticked used to be silent.
+     *
+     * Unticking every member and then pressing Apply is an easy accident, and
+     * the answer was no tag, no toast and no reason given.
+     */
+    test('applying an empty group says why nothing happened', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://untick.example/one', tags: ['unticked'] },
+                { name: 'Two', url: 'https://untick.example/two', tags: ['unticked'] },
+                { name: 'Three', url: 'https://untick.example/three', tags: ['unticked'] },
+                { name: 'Four', url: 'https://untick.example/four', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await openSuggestionsTab(page);
+
+        const row = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'untick.example' }).first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.locator('[data-tag-suggestion-toggle]').click();
+        const members = page.locator('#config-bm-suggestions .config-suggestion-member input');
+        await expect(members).toHaveCount(1, { timeout: 15_000 });
+        await members.first().uncheck();
+        await row.locator('[data-tag-suggestion-apply]').click();
+
+        await expect(page.locator('body')).toContainText('nothing to apply', { timeout: 15_000 });
+        // And the bookmark is untouched: a message instead of a tag.
+        expect(await page.evaluate(() => ((window.dashboardInstance.allBookmarks || [])
+            .find((b) => b.url === 'https://untick.example/four')?.tags || []).length)).toBe(0);
+    });
+
+    /*
      * One refusal at a time.
      *
      * The turned-down list was a count and a single "offer them again", so

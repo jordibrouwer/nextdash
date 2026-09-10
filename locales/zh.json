@@ -3222,6 +3222,7 @@
     "tagSuggestionReasonRule": "你的规则",
     "tagSuggestionReasonDerived": "你自己的标签（{of} 个中有 {have} 个）",
     "tagSuggestionApplied": "已添加标签。",
+    "tagSuggestionNoneTicked": "Nothing is ticked in that group, so there is nothing to apply.",
     "tagSuggestionUndone": "标签已还原。",
     "tagRulesTitle": "你的规则",
     "tagRuleAdd": "添加规则",

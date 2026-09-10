@@ -20694,6 +20694,23 @@ class DashboardConfig {
                 }
             });
         }
+        /*
+         * The count chip answers the keyboard too.
+         *
+         * It is a span carrying role="button" rather than a <button>, because
+         * it sits in a subgrid column whose width is the number -- and a span
+         * with a role but no keys is a control this app's readers cannot
+         * reach: Enter and Space fire a click on a real button and on nothing
+         * else. Space is swallowed rather than scrolling the panel.
+         */
+        host.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+            const toggle = event.target.closest?.('[data-tag-suggestion-toggle]');
+            if (!toggle) return;
+            event.preventDefault();
+            const index = Number(toggle.getAttribute('data-tag-suggestion-toggle'));
+            this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
+        });
         host.addEventListener('click', (event) => {
             if (event.target.closest('[data-tag-suggestions-info]')) {
                 this.openTagSuggestionsInfo();
@@ -23616,7 +23633,15 @@ class DashboardConfig {
          */
         const left = new Set(this._tagSuggestionExcluded || []);
         const keys = group.keys.filter((key) => !left.has(`${group.pattern}|${group.tag}|${key}`));
-        if (!keys.length) return;
+        // Unticking every member and then pressing Apply is a reasonable thing
+        // to do by accident, and it used to do nothing at all -- no tag, no
+        // toast, no reason given.
+        if (!keys.length) {
+            this.notify(this.t('config.tagSuggestionNoneTicked',
+                'Nothing is ticked in that group, so there is nothing to apply.'), 'error');
+            return;
+        }
+
         const wanted = new Set(keys);
         const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;
