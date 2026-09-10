@@ -10,18 +10,17 @@
     'use strict';
 
     /*
-     * The two tokens do different jobs, and both move for v1.7.0.
+     * The two tokens do different jobs, and both move for v1.8.0.
      *
      * DASHBOARD_RELEASE is the one that reopens this window: an install whose
      * stored value differs sees the notes once on its next visit. It names the
-     * release the modal leads with, which is v1.7.0 — nothing is held back now,
-     * and v1.6.1 and v1.6.2 were released from the hold they were under.
+     * release the modal leads with, which is v1.8.0 — nothing is held back.
      *
      * NEXTDASH_WHATS_NEW_DATA_VERSION below is the `?v=` on every what's-new
      * file, and always has to move: without a new token a browser that already
-     * read the index keeps its copy and never learns v1.7.0 exists.
+     * read the index keeps its copy and never learns v1.8.0 exists.
      */
-    const DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.7.1';
+    const DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.8.0';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -30,7 +29,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v281';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v282';
 
     let loadPromise = null;
 

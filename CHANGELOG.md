@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v1.8.0 — 10 September 2026](#v180--10-september-2026)
 - [v1.7.1 — 9 September 2026](#v171--9-september-2026)
 - [v1.7.0 — 8 September 2026](#v170--8-september-2026)
 - [v1.6.2 — 8 September 2026](#v162--8-september-2026)
@@ -207,6 +208,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+---
+
+## v1.8.0 — 10 September 2026
+
 ### Fixes
 
 - **fix — following the system dark mode left the old background nailed to the page when the switch happened in a background tab.** A theme switch pins the outgoing background on `<body>` with `!important` so the repaint cannot flash, and released it two `requestAnimationFrame` ticks later. A hidden tab runs no animation frames, so a Mac going dark while the dashboard sat behind another tab came back with the light background stuck under the dark theme's text — white on white, or the reverse — and only a reload cleared it. The frames are the fast path now, with a 250 ms timer behind them and a `visibilitychange` for the tab that stays hidden longer than the timer; every path goes through the same idempotent release, and a switch on top of a switch lets the earlier pin go before making its own.
@@ -249,6 +254,11 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix — Apply on a group with every member unticked did nothing, and said nothing.** Untick the lot (an easy accident, since the ticks are how a single wrong member is left out) and the button wrote no tag, raised no toast and gave no reason. It now says so.
 - **fix — a subject named in two words could only be read off a page that hyphenated it.** Keywords are matched as single tokens, so the catalogue writes `peer-reviewed` and `meal-kit` — but the extractor split a page's text on whitespace, which left 354 of the 1,924 shipped keywords (18% of them) reachable only by a page that happened to write the hyphen itself. Adjacent words are now also offered as a hyphenated pair, in a second pass after the single words have taken the slots they wanted: a pair is weaker evidence than a word a publisher chose, and it rests on two words that each survived the furniture list on their own.
 - **fix — the 177 KB tag catalogue was fetched twice per visit, and revalidated every time.** Both readers of it — the review panel and the corner card — fetched it for themselves, so seeing the card and then opening the panel paid for the largest file the app ships twice over. Worse, both asked with `cache: 'no-cache'`, which forced a conditional request on every visit even though `/static/data` is served `immutable` for a year. It is one loader now (`static/js/shared/tag-catalogue.js`) holding a single promise, asking for the file the way `overview-features.json` is asked for: versioned by the app fingerprint, and then cached until the next release. The suggestion engine itself no longer blocks the parser either — nothing needs it before the document is there.
+
+### Docs
+
+- **docs — v1.8.0 published across every surface.** `static/data/whats-new/v1.8.0.json` with `index.json` naming it first, both tokens in `whats-new-stub.js` moved (`2026.09-dashboard-release-v1.8.0`, `whats-new-v282`) and `tests/whats-new-hidden-release.spec.js` moved with them. Three spotlights carrying `since: "v1.8.0"` in `static/data/overview-features.json` — the suggestions tab, your own rules, and the two review offers — which is what Config → Overview and About → News & features draw from. `MANUAL.md` gained a *Tag suggestions* subsection under §12 and a paragraph on the bookmark list's keyboard in §16, and the sub-tab table now names all five Bookmarks tabs. `README.md` gained one line: the feature list is what a new reader reads, and bulk tagging is a capability rather than a release note. Config → Help says what the section's five tabs are and what each of the four sources is, `helpVersionBody` names 1.8.0, and two tips joined the catalogue (`tipEditTagSuggestions`, `tipTuneReviewOffers`). Asset hashes regenerated.
+- **docs — the six locale files translated for this release.** The keys this feature added ship translated rather than English-with-a-key: the panel, the rules editor, the scan round, the corner card and the two switches in nl, de, fr, es and zh, plus the fifteen new overview-feature keys, the two tips, the Bookmarks help and the version panel. `validate:locale-parity`, `validate:locale-placeholders` and `validate:help-i18n` all pass.
 
 ---
 

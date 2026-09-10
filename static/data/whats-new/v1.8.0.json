@@ -1,0 +1,72 @@
+{
+  "tag": "v1.8.0",
+  "date": "10 September 2026",
+  "releasedAt": "2026-09-10",
+  "modalLead": "Tags, in bulk. Config → Bookmarks has a new Tag suggestions tab that proposes a tag for whole groups of bookmarks at once — from the tags you already use, from a shipped list of 463 subjects and the sites that belong to them, and, if you ask it to, from what your bookmarks' own pages say they are about. Nothing is tagged until you press Apply, and every acceptance can be undone.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Tag suggestions &mdash; a tag for a whole group, in one click.</strong> A new tab in <em>Config &rarr; Bookmarks</em> lists what it can propose: <em>#code</em> for the forty-seven GitHub links you never tagged, because the eleven you did tag say so, or because nextDash already knows what that site is. Each row says which of the two it is. <em>Apply</em> tags the group, and the toast that follows puts it all back if you disagree."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The number opens the group, and one bookmark can be left out.</strong> <em>47 bookmarks</em> was a number to take on trust. Click it &mdash; or reach it with the keyboard &mdash; and every bookmark in the group is named, each with a tick. Untick the recipe someone linked from a gist and the other forty-six still get their tag in one click."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A proposal can be turned down, and taken back.</strong> <em>No thanks</em> sits beside <em>Apply</em>, and a row you refuse stops coming back on every visit. The refusals are listed by name underneath &mdash; <em>youtube.com &rarr; #video</em> &mdash; each with its own way back, or all of them at once."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Your rules, on a tab of their own.</strong> Write <em>github.com &rarr; #code</em> and every GitHub bookmark is offered that tag from the moment you add the rule. A rule can name a section as well as a site &mdash; <em>github.com/trending</em> &mdash; and always beats what nextDash worked out on its own. The <strong>&#8505;</strong> beside the heading explains what a rule may look like."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Read their pages, for the bookmarks nothing else can place.</strong> A page on a site nextDash has never heard of can still say what it is about. <em>Read their pages</em> reads them and files them by subject &mdash; <em>#networking, across sites, 3 bookmarks</em> &mdash; and says what it will cost before it starts: <em>85 bookmarks have no keywords yet</em>. It runs only when you press it, shows the usual progress bar, and stops when you say <em>Stop</em>. What it read can be forgotten again, or read once more, from the same tab and from <em>Data &amp; backups</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The bookmark list answers the arrow keys again.</strong> Pressing down on a freshly opened list moved you to the next section of Config instead of down the list. The arrows now walk the rows, the way <kbd>j</kbd> and <kbd>k</kbd> always did, and the search box keeps its own letters &mdash; <em>github</em>, <em>json</em> and <em>jira</em> can be searched for."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A row's <em>More</em> menu offers what right-clicking it does.</strong> The two had drifted: right-click knew <em>Open in new tab</em>, <em>Edit</em>, <em>Pin</em>, <em>Checking</em> and the filters, and <em>More</em> knew nine of the sixteen. Same row, same bookmark, one list now. Opened with <kbd>m</kbd> it can be walked with the arrows and closed with <kbd>Esc</kbd>, which leaves you on the row you were on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An open row menu stays open.</strong> Scrolling the list closed it, and so did opening the Bookmarks section at all &mdash; a menu opened in the first seconds shut itself again a moment later, with nothing on screen to explain why."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A card in the corner offers a round of tag review.</strong> The suggestions tab only ever helped someone who thought to go and look at it. Now and then, when there is a pile worth accepting, a card says so &mdash; with <em>Start</em>, <em>Not today</em> and <em>Remind me in 30 days</em>. It waits for ten new proposals before it asks again, so accepting part of a pile does not bring it straight back."
+        }
+      ]
+    },
+    {
+      "title": "Behavior",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Both review offers can be switched off.</strong> Two switches join the session tips under <em>Behavior &rarr; General &rarr; Onboarding</em>: the tag review card, and the link review card that until now could only be silenced by giving up link checking altogether. Both start on."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Following the system dark mode no longer leaves the old background behind.</strong> If your Mac went dark while the dashboard sat in a background tab, the page came back with the previous background under the new theme's text &mdash; white on white, or the reverse &mdash; until you reloaded it."
+        }
+      ]
+    }
+  ]
+}
