@@ -977,6 +977,16 @@ class DashboardConfig {
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;
             }
+            /*
+             * An open row menu takes Escape before the row cursor does.
+             *
+             * This handler is on document in the capture phase and registers
+             * first, so a menu opened with `m` never saw the key: Escape wiped
+             * the cursor underneath and left the menu hanging. Same shape as
+             * the right-click menu's branch above, and it calls the menu's own
+             * handler rather than repeating what closing one means.
+             */
+            if (this.handleBookmarkMenuKeys?.(e)) return;
             if (this._bmKeyboardKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1127,11 +1137,35 @@ class DashboardConfig {
      */
     shouldUseBookmarkKeyboardNav(target) {
         if (this.section !== 'bookmarks') return false;
+        // A menu is up: its keys are handled before anything else, including
+        // the Escape that would otherwise close the whole config view.
+        if (this.bookmarkListRoot()?.querySelector('.health-view-menu:not([hidden])')) return true;
         if (this._bmKeyboardKey) return true;
         const inList = target?.closest?.('#config-bm-list');
         if (inList) return this.getBookmarkKeyboardRows().length > 0;
         if (target?.id === 'config-bm-search') return this.getBookmarkKeyboardRows().length > 0;
-        return false;
+        /*
+         * Nothing focused, and a list on screen: the keys belong to the rows.
+         *
+         * A page opens with focus on <body>, so until something was clicked
+         * this said no and j fell through to the section shortcut -- pressing
+         * "down" on the bookmark list moved to Appearance instead. The reader
+         * has to click a row first for the keys to reach the list at all,
+         * which is precisely the thing a keyboard user is trying to avoid.
+         *
+         * Fields keep their keys: an input, a textarea, a select and anything
+         * contenteditable are excluded here, so typing j in a box still types
+         * a j, and the list's own handler declines a key aimed at a control
+         * inside a row.
+         */
+        const tag = target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            return false;
+        }
+        if (target && target !== document.body && target.closest?.('.config-choices, .config-sub-tabs')) {
+            return false;
+        }
+        return this.getBookmarkKeyboardRows().length > 0;
     }
 
     /**
@@ -1165,12 +1199,19 @@ class DashboardConfig {
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
-        const isBmSearch = target?.id === 'config-bm-search';
+        /*
+         * The tag filter hands the arrows to its list; the bookmark search box
+         * hands nothing to anyone.
+         *
+         * The search box used to let j, k, g, G, Enter and space through, so
+         * typing one of them there moved the row cursor instead of typing --
+         * github, json and jira could not be searched for, and a space opened
+         * whatever the cursor was on. The arrows would have been the defensible
+         * choice; letters never were.
+         */
         const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
-        const bmNavFromSearch = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))
-                && !(this.section === 'bookmarks' && isBmSearch && bmNavFromSearch.has(e.key))) {
+            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))) {
                 return false;
             }
         }
@@ -2220,18 +2261,106 @@ class DashboardConfig {
         this.syncBookmarkKeyboardSelectionAfterRender();
     }
 
+    /*
+     * An open row menu owns the keyboard while it is up.
+     *
+     * Opening one with `m` left the reader stranded: Escape fell through to
+     * the view's own handler, and j/k were refused here (the focused item is a
+     * control inside a row) and then taken by the config section shortcut --
+     * so "down" in an open menu moved to the next section with the menu still
+     * hanging over it.
+     *
+     * The same movement as the list itself, for the same reason the arrows now
+     * work there: a menu you opened with the keyboard has to be walkable with
+     * it. Enter is left alone -- focus is already on the item, so the button
+     * activates itself.
+     */
+    handleBookmarkMenuKeys(e) {
+        const root = this.bookmarkListRoot();
+        const menu = root?.querySelector('.health-view-menu:not([hidden])');
+        if (!menu) return false;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const key = menu.getAttribute('data-menu-for');
+            this.closeBookmarkMenus();
+            // Back to the row it belongs to, so the next key carries on down
+            // the list rather than starting over.
+            if (key) {
+                this._bmKeyboardKey = key;
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+                root.querySelector(`[data-menu-toggle="${CSS.escape(key)}"][data-menu-kind="more"]`)
+                    ?.focus?.({ preventScroll: true });
+            }
+            return true;
+        }
+
+        const down = e.key === 'ArrowDown' || e.key === 'j';
+        const up = e.key === 'ArrowUp' || e.key === 'k';
+        if (!down && !up && e.key !== 'Home' && e.key !== 'End') return false;
+
+        const items = [...menu.querySelectorAll('.health-view-menu-item, .health-check-option')]
+            .filter((item) => !item.disabled && item.offsetParent !== null);
+        if (!items.length) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        /*
+         * Focus outside the menu counts as the first item.
+         *
+         * toggleMenu focuses it on the way open, so "no item focused" means
+         * the focus has not landed yet rather than that the reader is
+         * somewhere else -- and treating that as "start again at the top" made
+         * the first arrow press do nothing visible, since the top is where
+         * they already were.
+         */
+        const at = items.indexOf(document.activeElement);
+        const from = at < 0 ? 0 : at;
+        let next;
+        if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = items.length - 1;
+        else next = (from + (down ? 1 : -1) + items.length) % items.length;
+        items[next].focus({ preventScroll: true });
+        return true;
+    }
+
     handleBookmarkKeyboardNavigation(e) {
         if (this.section !== 'bookmarks') return false;
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
+        if (this.handleBookmarkMenuKeys(e)) return true;
 
         const target = e.target;
         const tag = target?.tagName;
         const isBmSearch = target?.id === 'config-bm-search';
-        const bmNavKeys = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
+
+        /*
+         * The arrows do what j and k do.
+         *
+         * j/k is what the list was built for and what its legend named, but
+         * "up" and "down" on a list of rows is the arrow keys to almost
+         * everyone -- and with the legend gone there is nothing on screen
+         * saying otherwise. Mapped rather than duplicated, so the two cannot
+         * drift.
+         *
+         * Not inside the search box: there the arrows move the caret, which is
+         * what a text field owes the reader.
+         */
+        const key = e.key === 'ArrowDown' ? 'j' : e.key === 'ArrowUp' ? 'k' : e.key;
+        /*
+         * A field keeps every key, the search box included.
+         *
+         * j, k, g and G used to be let through from the search box: typing one
+         * there left the field and moved the row cursor instead of typing, so
+         * searching for github, json or jira was impossible, and a space
+         * opened whatever the cursor happened to be on. A field that refuses
+         * letters is not a field.
+         *
+         * Escape still reaches the view's own handler, which is what clears
+         * the box, and the arrows still move the caret.
+         */
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!isBmSearch || !bmNavKeys.has(e.key)) {
-                return false;
-            }
+            return false;
         }
 
         const onRowControl = Boolean(
@@ -2242,19 +2371,17 @@ class DashboardConfig {
         const rows = this.getBookmarkKeyboardRows();
         if (!rows.length) return false;
 
-        if (e.key === 'j') {
+        if (key === 'j') {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isBmSearch) target.blur();
             this.moveBookmarkKeyboardSelection(1, rows);
             return true;
         }
-        if (e.key === 'k') {
+        if (key === 'k') {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isBmSearch) target.blur();
             this.moveBookmarkKeyboardSelection(-1, rows);
             return true;
         }
@@ -20346,9 +20473,18 @@ class DashboardConfig {
     repaintBookmarkRowsOnly() {
         const host = document.getElementById('config-bm-list');
         if (!host || typeof this.renderBookmarksList !== 'function') return;
-        // A menu hangs off a row; replacing the rows under it would leave the
-        // menu pointing at an element that is no longer in the document.
+        /*
+         * A menu hangs off a row; replacing the rows under it would leave the
+         * menu pointing at an element that is no longer in the document.
+         *
+         * The row's own More menu belongs in that list and was missing from
+         * it: scrolling redraws the window, so a menu opened and then scrolled
+         * past vanished mid-use. It is the same failure the two below already
+         * describe, from the one menu that lives inside the rows rather than
+         * over them.
+         */
         if (document.querySelector('.move-popover, .config-bm-context-menu')) return;
+        if (document.querySelector('#config-bm-list .health-view-menu:not([hidden])')) return;
         // Focus lives on a row, and this replaces every row. Without putting it
         // back, closing a menu or finishing an edit drops the list's j/k
         // navigation on the floor.
@@ -21507,18 +21643,32 @@ class DashboardConfig {
         return `<div class="config-bm-icon config-bm-icon--placeholder" aria-hidden="true">🔗</div>`;
     }
 
+    /*
+     * The row's More menu, built from the context menu's own list.
+     *
+     * The two used to be written out separately and had drifted: right-click
+     * offered Open in new tab, Edit, Pin, Checking, the three filters and
+     * Select; More offered nine of the sixteen and nothing else. Same row,
+     * same bookmark, two different answers to "what can I do with this".
+     *
+     * actionsFor() is the one list now, so a row added to either menu appears
+     * in both, and the click goes through the context menu's run() -- which
+     * already knows the handful of actions the row dispatcher never learned.
+     */
     renderBookmarkRowMenu(b, key) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const items = [];
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="health">${esc(this.t('dashboard.healthOpenInHealth', 'Show in Health'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="copy-url">${esc(this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="share">${esc(this.shareBookmarkActionLabel())}</button>`);
-        items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${esc(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
-        items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-bm-menu-action="delete">${esc(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
+        const menu = this.bookmarkContextMenu();
+        const actions = menu?.actionsFor?.(b);
+        if (!Array.isArray(actions) || !actions.length) return '';
+        const items = actions.map((action) => {
+            const danger = action.danger ? ' health-view-menu-item--danger' : '';
+            // A submenu entry opens a second menu rather than acting, and says
+            // so the way a menu is expected to: with a trailing marker.
+            const trailer = action.submenu ? ' <span aria-hidden="true">›</span>' : '';
+            return `<button type="button" class="health-view-menu-item${danger}" role="menuitem"`
+                + `${action.submenu ? ' aria-haspopup="menu"' : ''}`
+                + ` data-bm-menu-action="${esc(action.id)}">${esc(action.label)}${trailer}</button>`;
+        });
         return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
     }
 

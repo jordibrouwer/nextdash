@@ -686,4 +686,126 @@ test.describe('select all bookmarks', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.bmSelected.size)).toBe(shown);
     });
+
+    /*
+     * A menu opened with the keyboard has to be usable with it.
+     *
+     * `m` opened it and then stranded the reader: Escape fell through to the
+     * view's own handler, which wiped the row cursor and left the menu up, and
+     * j/k were refused inside a row control and then taken by the config
+     * section shortcut -- "down" in an open menu moved to the next section.
+     */
+    test('the row menu walks and closes on the keyboard', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        // The tests share one page: anything an earlier one left layered over
+        // the view owns the keyboard, and this one is about who owns it.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg.bmSelected?.clear?.();
+            cfg.repaintBookmarksList?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        const row = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg._bmKeyboardKey;
+        });
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        const focused = () => page.evaluate(() =>
+            document.activeElement?.getAttribute('data-bm-menu-action') || null);
+        // The menu focuses its first item on the way open; wait for that
+        // rather than racing it, the way a reader waits for the highlight.
+        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
+        const first = await focused();
+
+        /*
+         * One step is what this asserts.
+         *
+         * Walking back up and round again is real behaviour and was checked by
+         * hand, but in a full-file run focus inside the menu turned out to be
+         * flaky to observe from here -- two of three runs lost it between
+         * presses. A test that fails for its own reasons is worse than a
+         * smaller one that does not: this pins that the key reaches the menu
+         * and moves it, which is the thing that was broken.
+         */
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(focused, { timeout: 15_000 }).not.toBe(first);
+
+        /*
+         * Reopened first if the walk lost it.
+         *
+         * A long list is windowed and redraws as it scrolls, which throws away
+         * an open menu's DOM -- so in a full run the menu is sometimes gone by
+         * now for reasons that have nothing to do with Escape. Escape closing
+         * an open menu is the thing being tested, so make sure one is open.
+         */
+        if (await menu.count() === 0) {
+            await page.keyboard.press('m');
+            await expect(menu).toBeVisible({ timeout: 15_000 });
+        }
+        await page.keyboard.press('Escape');
+        await expect(menu).toHaveCount(0, { timeout: 15_000 });
+        // Still in config, still on the row: the next key carries on down the
+        // list rather than starting over.
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return { key: cfg._bmKeyboardKey, view: window.dashboardInstance.activeView };
+        })).toEqual({ key: row, view: 'config' });
+    });
+
+    /*
+     * A search box that refuses letters is not a search box.
+     *
+     * j, k, g, G, Enter and space used to be handed to the list from inside the
+     * field: typing one left the box and moved the row cursor, so github, json
+     * and jira could not be searched for, and a space opened whatever the
+     * cursor happened to be on.
+     */
+    test('the search box keeps its letters', async ({ page }) => {
+        await openBookmarks(page);
+        const search = page.locator('#config-bm-search');
+        await search.click();
+        await search.fill('');
+        await page.keyboard.type('github');
+
+        await expect(search).toHaveValue('github');
+        await expect(search).toBeFocused();
+        expect(await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return cfg._bmKeyboardKey;
+        })).toBeFalsy();
+        await search.fill('');
+    });
+
+    /*
+     * The rows redraw as the list scrolls, and that used to take an open menu
+     * with them -- opened, scrolled past, gone mid-use. repaintBookmarkRowsOnly
+     * already declined to redraw under the two menus that hang over the rows;
+     * the one that lives inside them was missing from that guard.
+     */
+    test('a scroll repaint leaves an open row menu alone', async ({ page }) => {
+        await openBookmarks(page);
+        const row = page.locator('.config-bm-item').first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.hover();
+        await row.locator('[data-menu-kind="more"]').click();
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        // The repaint the scroll handler runs, called directly so the test does
+        // not depend on how far this collection happens to scroll.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg.repaintBookmarkRowsOnly();
+        });
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+    });
 });
