@@ -1,6 +1,9 @@
 package app
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+)
 
 func TestSanitizeTagRulesKeepsWhatCanMatch(t *testing.T) {
 	clean := sanitizeTagRules([]TagRule{
@@ -27,9 +30,9 @@ func TestSanitizeTagRulesKeepsWhatCanMatch(t *testing.T) {
 func TestSanitizeTagRulesIsBounded(t *testing.T) {
 	many := make([]TagRule, 0, 200)
 	for i := 0; i < 200; i++ {
-		many = append(many, TagRule{Pattern: "host" + string(rune('a'+i%26)) + ".example", Tag: "t"})
+		many = append(many, TagRule{Pattern: "host" + strconv.Itoa(i) + ".example", Tag: "t"})
 	}
-	if got := len(sanitizeTagRules(many)); got > tagRulesMax {
-		t.Errorf("kept %d rules, want at most %d", got, tagRulesMax)
+	if got := len(sanitizeTagRules(many)); got != tagRulesMax {
+		t.Errorf("kept %d rules, want exactly %d", got, tagRulesMax)
 	}
 }
