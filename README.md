@@ -314,6 +314,7 @@ each thing works and why it behaves the way it does.
 - Unlimited pages and categories, each with its own icon, colour and sort — drag to reorder anywhere. *[Manual §11](MANUAL.md#11-organising-pages-and-categories)*
 - Add a link four ways: a one-key quick add, the full form, a paste on the dashboard, or the browser extension. *[Manual §7](MANUAL.md#7-adding-bookmarks)*
 - Tags, notes, shortcuts and pins on any bookmark, with a preview card that says what a page is without opening it. *[Manual §8](MANUAL.md#8-opening-and-using-bookmarks), [§12](MANUAL.md#12-tags-notes-and-metadata)*
+- **Tag suggestions** propose a tag for whole groups at once — from the tags you already use, from a shipped list of 463 subjects and the sites that belong to them, and from rules you write. Nothing is tagged until you accept it. *[Manual §12](MANUAL.md#tag-suggestions-v180)*
 - An **Inbox** for links worth keeping before you know where they belong — snooze them, triage them, promote them. *[Manual §7.9](MANUAL.md#79-inbox-capture-links-for-later)*
 - **Smart collections** gather bookmarks by what you do with them; collections of your own take rules you write. *[Manual §13](MANUAL.md#13-smart-collections-and-custom-collections)*
 
