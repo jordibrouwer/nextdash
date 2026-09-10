@@ -22822,8 +22822,10 @@ class DashboardConfig {
                 // repaintBookmarkMutationSurfaces falls through to a whole
                 // config.render() -- but that path bails out early whenever an
                 // inline edit is open, and it is an accident either way. Say it
-                // here, where the undo is. No-ops when the panel is not on
-                // screen, which is every undo but the tag ones.
+                // here, where the undo is. Every bulk undo is raised from this
+                // same section, so this runs for pin, move and delete too --
+                // one extra suggest() pass, and render() replaces the container
+                // outright, so a second draw changes nothing.
                 this.renderTagSuggestionsSafe();
                 this.notify(this.t(doneKey, doneFallback), 'success');
             } catch {
