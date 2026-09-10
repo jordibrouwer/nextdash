@@ -56,6 +56,46 @@ test.describe('the finder line', () => {
     });
 });
 
+/*
+ * The overlay is built by the key that opens it, after the last render.
+ *
+ * SearchComponent handed its finders component an empty list and left the real
+ * one to updateData(), which nothing calls between the bundle landing and the
+ * first "?" — so straight after a load the line said "No finders set up yet"
+ * with finders configured, and a shortcut typed after "?" never gained its
+ * space, because there was no shortcut to complete against.
+ */
+test.describe('a freshly built overlay', () => {
+    test('knows the finders the dashboard already has', async ({ page }) => {
+        await openDashboard(page);
+        const configured = await page.evaluate(() => (window.dashboardInstance.finders || []).length);
+        expect(configured).toBeGreaterThan(0);
+
+        // Built the way the loader builds it: a new component, and nothing
+        // rendering between that and the key.
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.searchComponent = null;
+            d.initializeSearchComponent();
+        });
+
+        expect(await page.evaluate(() =>
+            (window.dashboardInstance.searchComponent.findersComponent.finders || []).length)).toBe(configured);
+
+        await openFinders(page);
+        const matches = page.locator('#search-matches');
+        await expect(matches).not.toContainText(/no finders/i, { timeout: 5000 });
+
+        // And a shortcut typed after "?" completes, which is where the missing
+        // space came from.
+        const shortcut = await page.evaluate(() =>
+            (window.dashboardInstance.finders || []).find((f) => f.shortcut)?.shortcut || '');
+        await page.keyboard.type(shortcut);
+        await page.waitForTimeout(300);
+        expect(await query(page)).toBe(`?${shortcut.toUpperCase()} `);
+    });
+});
+
 test.describe('the finder line with nothing set up', () => {
     test('says so, and offers the way to add one', async ({ page }) => {
         await openDashboard(page);

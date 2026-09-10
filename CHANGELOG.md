@@ -208,6 +208,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Fixes
+
+- **fix — the finder line was empty straight after a page load, with finders configured.** `?` said *No finders set up yet* and offered the way to add one, and a shortcut typed after it never gained its trailing space — both symptoms of the same thing: `SearchComponent`'s constructor handed `SearchFindersComponent` an empty array and left the real list to `updateData()`. The search stack is fetched by the key that opens it, so the component is built after the dashboard's last render and nothing calls `updateData()` in between; the overlay opened on a set of finders it had never been told about, and only the next render — a page switch, a setting, anything — put them there. That is why it looked like a first-visit-only fault. The constructor passes the finders it was given.
+
 ---
 
 ## v1.8.0 — 10 September 2026
