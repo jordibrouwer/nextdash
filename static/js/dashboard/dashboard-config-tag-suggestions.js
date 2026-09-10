@@ -15,18 +15,69 @@
             .replace('{of}', String(group.reason.of));
     }
 
+    function renderRules(container, ctx) {
+        const t = ctx.t;
+        const wrap = document.createElement('div');
+        wrap.className = 'config-suggestion-rules';
+
+        const heading = document.createElement('h4');
+        heading.className = 'config-suggestions-title';
+        heading.textContent = t('config.tagRulesTitle', 'Your rules');
+        wrap.appendChild(heading);
+
+        (ctx.rules || []).forEach((rule, index) => {
+            const row = document.createElement('div');
+            row.className = 'config-suggestion-row';
+            const text = document.createElement('span');
+            text.textContent = `${rule.pattern} → #${rule.tag}`;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'config-btn config-btn--small config-btn--danger';
+            remove.setAttribute('data-tag-rule-remove', String(index));
+            remove.textContent = t('config.tagRuleRemove', 'Remove');
+            row.append(text, remove);
+            wrap.appendChild(row);
+        });
+
+        const form = document.createElement('div');
+        form.className = 'config-suggestion-row';
+        const pattern = document.createElement('input');
+        pattern.type = 'text';
+        pattern.className = 'config-text';
+        pattern.setAttribute('data-tag-rule-pattern', '');
+        pattern.placeholder = t('config.tagRulePatternPlaceholder', 'github.com');
+        const tag = document.createElement('input');
+        tag.type = 'text';
+        tag.className = 'config-text';
+        tag.setAttribute('data-tag-rule-tag', '');
+        tag.placeholder = t('config.tagRuleTagPlaceholder', 'code');
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'config-btn config-btn--small';
+        add.setAttribute('data-tag-rule-add', '');
+        add.textContent = t('config.tagRuleAdd', 'Add rule');
+        form.append(pattern, tag, add);
+        wrap.appendChild(form);
+        container.appendChild(wrap);
+    }
+
     function render(container, ctx) {
         if (!container) return [];
         const t = ctx.t;
         const groups = global.TagSuggestions.suggest(ctx.items, { rules: ctx.rules });
         container.replaceChildren();
+        container.hidden = false;
         if (!groups.length) {
-            // Silence rather than an empty box: a panel that is always there
-            // saying nothing is a panel people stop reading.
-            container.hidden = true;
+            // A hint rather than silence: an editor lives here too, so the
+            // panel still has a reason to show even with nothing proposed.
+            const empty = document.createElement('p');
+            empty.className = 'config-widget-field-hint';
+            empty.textContent = t('config.tagSuggestionsEmpty',
+                'Nothing to suggest yet — tag a few bookmarks and their neighbours will start proposing themselves.');
+            container.appendChild(empty);
+            renderRules(container, ctx);
             return groups;
         }
-        container.hidden = false;
 
         const title = document.createElement('h4');
         title.className = 'config-suggestions-title';
@@ -67,6 +118,7 @@
             list.appendChild(row);
         });
         container.appendChild(list);
+        renderRules(container, ctx);
         return groups;
     }
 

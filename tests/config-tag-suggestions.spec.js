@@ -128,4 +128,28 @@ test.describe('the suggestions panel', () => {
                 .filter((b) => b.url.includes('plan.example') && (b.tags || []).includes('code')).length),
         { timeout: 15_000 }).toBe(4);
     });
+
+    test('a rule you write survives a reload and proposes on its own', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            await d.config.writeFetch('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: 1, bookmark: { name: 'X', url: 'https://ruled.example/x' } }),
+            });
+            const cfg = d.config?.instance || d.config;
+            await cfg.addTagRule('ruled.example', 'work');
+        });
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => !!window.dashboardInstance?.settings, null, { timeout: 15_000 });
+
+        const stored = await page.evaluate(() => window.dashboardInstance.settings.tagRules);
+        expect(stored).toContainEqual({ pattern: 'ruled.example', tag: 'work' });
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        const row = page.locator('#config-bm-suggestions [data-tag-suggestion]').filter({ hasText: 'work' });
+        await expect(row.first()).toBeVisible({ timeout: 15_000 });
+    });
 });

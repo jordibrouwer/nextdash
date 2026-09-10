@@ -21824,9 +21824,21 @@ class DashboardConfig {
         this.renderTagSuggestionsSafe();
         container.querySelector('#config-bm-suggestions')?.addEventListener('click', (event) => {
             const button = event.target.closest('[data-tag-suggestion-apply]');
-            if (!button) return;
-            const index = Number(button.getAttribute('data-tag-suggestion-apply'));
-            void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+            if (button) {
+                const index = Number(button.getAttribute('data-tag-suggestion-apply'));
+                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                return;
+            }
+            const removeRule = event.target.closest('[data-tag-rule-remove]');
+            if (removeRule) {
+                void this.removeTagRule(Number(removeRule.getAttribute('data-tag-rule-remove')));
+                return;
+            }
+            if (event.target.closest('[data-tag-rule-add]')) {
+                const host = container.querySelector('[data-tag-rule-pattern]')?.value;
+                const label = container.querySelector('[data-tag-rule-tag]')?.value;
+                void this.addTagRule(host, label);
+            }
         });
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
@@ -22937,6 +22949,30 @@ class DashboardConfig {
                 'config.bulkUndoFailed', 'Could not undo that.'),
             duration: 8000,
         });
+        this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * A rule is a setting, so it is written the way every other setting is.
+     *
+     * setBehavior already writes the value, records the change and leaves the
+     * server to narrow it -- sanitizeTagRules drops a pattern carrying a
+     * scheme rather than storing one that could never match.
+     */
+    async addTagRule(pattern, tag) {
+        const cleanPattern = String(pattern || '').trim().toLowerCase();
+        const cleanTag = String(tag || '').trim().toLowerCase();
+        if (!cleanPattern || !cleanTag) return;
+        const rules = [...(this.dash.settings?.tagRules || []), { pattern: cleanPattern, tag: cleanTag }];
+        await this.setBehavior('tagRules', rules);
+        this.renderTagSuggestionsSafe();
+    }
+
+    async removeTagRule(index) {
+        const rules = [...(this.dash.settings?.tagRules || [])];
+        if (index < 0 || index >= rules.length) return;
+        rules.splice(index, 1);
+        await this.setBehavior('tagRules', rules);
         this.renderTagSuggestionsSafe();
     }
 
