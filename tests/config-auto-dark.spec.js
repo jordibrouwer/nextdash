@@ -110,3 +110,42 @@ test.describe('follow system dark mode — dark OS', () => {
             document.documentElement.getAttribute('data-auto-dark-mode'))).toBe('false');
     });
 });
+
+/**
+ * Switching theme while the tab is hidden.
+ *
+ * applyTheme pins the outgoing background on <body> with !important so the
+ * repaint cannot flash, and took it off again two requestAnimationFrame ticks
+ * later. A hidden tab never runs those ticks, so a Mac switching to dark while
+ * the dashboard sat in a background tab came back with the light background
+ * nailed to the body under dark text -- and only a reload cleared it.
+ */
+test.describe('theme switch with no animation frames', () => {
+    test.use({ colorScheme: 'light' });
+
+    test('the pinned background is released without an animation frame', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.ThemeLoader.applyTheme('moss-stone-light', 'm'));
+        // Let that switch release its own pinned background first, so what the
+        // assertion sees belongs to the switch made below and not to this one.
+        await expect.poll(() => page.evaluate(() =>
+            document.body.style.getPropertyValue('background-color'))).toBe('');
+
+        // Stand in for a hidden tab: requestAnimationFrame callbacks never run.
+        await page.evaluate(() => {
+            window.requestAnimationFrame = () => 0;
+            window.ThemeLoader.applyTheme('moss-stone-dark', 'm');
+        });
+
+        await expect.poll(() => page.evaluate(() =>
+            document.body.style.getPropertyValue('background-color'))).toBe('');
+        const [bg, color] = await page.evaluate(() => [
+            getComputedStyle(document.body).backgroundColor,
+            getComputedStyle(document.body).color,
+        ]);
+        expect(bg).not.toBe(color);
+    });
+});

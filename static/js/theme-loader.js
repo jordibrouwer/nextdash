@@ -392,21 +392,56 @@
      * @param {string} theme - The theme to apply ('dark' or 'light')
      * @param {string} fontSize - The font size to apply ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
      */
+    /*
+     * The outgoing background, pinned across the repaint and then let go.
+     *
+     * Two animation frames used to be the whole release, and a hidden tab runs
+     * none: a Mac switching to dark while the dashboard sat in a background tab
+     * came back with the old background nailed to the body under the new
+     * theme's text -- white on white, or the reverse -- and only a reload
+     * cleared it. So the frames are now just the fast path, with a timer behind
+     * them for the tab nobody is looking at, and a visibilitychange for the tab
+     * that stays hidden longer than the timer.
+     *
+     * Every path goes through the same release, which is idempotent, so
+     * whichever fires first wins and the rest are free.
+     */
+    let releaseBodyBackground = null;
+
     function preserveBodyBackgroundDuringThemeSwitch() {
         const body = document.body;
         if (!body) {
             return;
         }
+        // A switch on top of a switch: let the earlier one go before pinning
+        // again, or its release would take this pin off instead of its own.
+        releaseBodyBackground?.();
         const bg = getComputedStyle(body).backgroundColor;
         if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
             return;
         }
         body.style.setProperty('background-color', bg, 'important');
+
+        let released = false;
+        const release = () => {
+            if (released) {
+                return;
+            }
+            released = true;
+            releaseBodyBackground = null;
+            clearTimeout(timer);
+            document.removeEventListener('visibilitychange', release);
+            body.style.removeProperty('background-color');
+            syncThemeColorMeta();
+        };
+        releaseBodyBackground = release;
+
+        // Long enough that a visible tab has painted twice over well before it
+        // fires, so the flash the frames prevent is still prevented.
+        const timer = setTimeout(release, 250);
+        document.addEventListener('visibilitychange', release);
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                body.style.removeProperty('background-color');
-                syncThemeColorMeta();
-            });
+            requestAnimationFrame(release);
         });
     }
 
