@@ -10659,6 +10659,8 @@ class DashboardConfig {
         showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
+        enableTagSuggestionNotice: { hint: 'tagSuggestionNoticeHint', def: true },
+        enableHealthReviewNotice: { hint: 'healthReviewNoticeHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         lockLayout: { info: ['lockLayoutInfoTitle', 'lockLayoutInfoMessage'], def: false },
         // Date, time & weather
@@ -11088,9 +11090,17 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
-                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
+                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
+                    // The two cards that offer a review on their own. Here
+                    // rather than beside the feature each belongs to, because
+                    // this group is where everything that appears unasked is
+                    // answered -- and a reader who wants one of them to stop
+                    // is not thinking about tags or health, they are thinking
+                    // about being interrupted.
+                    bool('enableTagSuggestionNotice', 'config.tagSuggestionNoticeLabel', 'Offer to review tag suggestions'),
+                    bool('enableHealthReviewNotice', 'config.healthReviewNoticeLabel', 'Offer to review links'),
                 ],
             },
             {

@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "Standaardwaarden herstellen",
     "themeResetConfirm": "De meegeleverde thema's terugzetten naar hun oorspronkelijke kleuren? Je eigen thema's blijven behouden.",
     "generalGroupOnboarding": "Onboarding",
-    "generalGroupOnboardingNote": "De snelstartkaart, de incidentele sneltoetstip en het overzicht van nieuwe functies.",
+    "generalGroupOnboardingNote": "De snelstartkaart, de incidentele toetsenbordtip, de releasesamenvatting en de twee aanbiedingen om iets na te lopen.",
     "generalGroupHyprMode": "Hypr mode",
     "generalGroupHyprModeNote": "Voor nextDash geïnstalleerd als Progressive Web App (PWA). Een klik op een bladwijzer opent die in een nieuw browsertabblad en sluit daarna automatisch het PWA-venster — het gedrag van een traditionele app-launcher.",
     "statsScoreTitle": "Opruimscore",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "Elke pagina is gelezen.",
     "tagScanForget": "Trefwoorden vergeten",
     "tagScanAgain": "Opnieuw lezen",
-    "tagScanAgainError": "Kon geen nieuwe ronde starten."
+    "tagScanAgainError": "Kon geen nieuwe ronde starten.",
+    "tagSuggestionNoticeLabel": "Bied aan om tagsuggesties te bekijken",
+    "tagSuggestionNoticeHint": "Een kaartje in de hoek als er genoeg bookmarks een tag kunnen krijgen. Het stelt voor; er wordt niets getagd zonder jou.",
+    "healthReviewNoticeLabel": "Bied aan om links te bekijken",
+    "healthReviewNoticeHint": "Een kaartje in de hoek als er genoeg links een tweede blik waard zijn. Uitzetten laat het controleren van links zelf ongemoeid."
   },
   "colors": {
     "title": "thema-aanpassing",

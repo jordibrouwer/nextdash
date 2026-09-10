@@ -593,14 +593,19 @@ type Settings struct {
 	TagCollectionsMinCount      int                        `json:"tagCollectionsMinCount"`            // Minimum bookmarks per tag to show collection (0 = all)
 	FaviconRefreshPolicy        string                     `json:"faviconRefreshPolicy"`              // Favicon policy: manual, on-save
 	OnboardingCompleted         bool                       `json:"onboardingCompleted"`
-	AnalyticsOptIn              bool                       `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
-	EnableSessionTips           bool                       `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
-	ShowShortcutTooltips        bool                       `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
-	ShowGridKeyLegend           bool                       `json:"showGridKeyLegend"`
-	ShortcutOpenMode            string                     `json:"shortcutOpenMode,omitempty"`
-	RememberScrollPosition      bool                       `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	DetectSoftNotFound          bool                       `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	CertWarnDays                int                        `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	AnalyticsOptIn              bool                       `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
+	EnableSessionTips           bool                       `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
+	// The two cards that offer a review on their own. Both default on and are
+	// switched off in Config → Behavior → General, beside the session tips:
+	// that group is where everything which appears unasked is answered.
+	EnableTagSuggestionNotice bool   `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
+	EnableHealthReviewNotice  bool   `json:"enableHealthReviewNotice"`  // The link-review offer
+	ShowShortcutTooltips      bool   `json:"showShortcutTooltips"`      // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
+	ShowGridKeyLegend         bool   `json:"showGridKeyLegend"`
+	ShortcutOpenMode          string `json:"shortcutOpenMode,omitempty"`
+	RememberScrollPosition    bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	DetectSoftNotFound        bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	CertWarnDays              int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -1255,6 +1260,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OpenInNewTab:                 true,
 			AnalyticsOptIn:               false,
 			EnableSessionTips:            true,
+			EnableTagSuggestionNotice:    true,
+			EnableHealthReviewNotice:     true,
 			ShowShortcutTooltips:         false,
 			ShowGridKeyLegend:            true,
 			ShortcutOpenMode:             "instant",
@@ -3260,6 +3267,8 @@ func (fs *FileStore) GetSettings() Settings {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
+			EnableTagSuggestionNotice:      true,
+			EnableHealthReviewNotice:       true,
 			ShowShortcutTooltips:           false,
 			ShowGridKeyLegend:              true,
 			ShortcutOpenMode:               "instant",
@@ -3636,6 +3645,20 @@ func (fs *FileStore) GetSettings() Settings {
 		// local UI nicety, not data leaving the machine.
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
+		}
+		/*
+		 * The same contract for the two review offers.
+		 *
+		 * Without it an install that predates these keys would read them as
+		 * false and lose the health card it has always had -- silently, on the
+		 * upgrade that added a switch for it. An absent key means "never
+		 * answered", which for an opt-out is on.
+		 */
+		if _, ok := rawSettings["enableTagSuggestionNotice"]; !ok {
+			settings.EnableTagSuggestionNotice = true
+		}
+		if _, ok := rawSettings["enableHealthReviewNotice"]; !ok {
+			settings.EnableHealthReviewNotice = true
 		}
 		// Off unless the file says otherwise. This used to fill an absent key
 		// with true — the popovers were how the keys were discovered — and the

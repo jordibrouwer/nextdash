@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "Volver al valor por defecto",
     "themeResetConfirm": "¿Devolver los temas incluidos a sus colores originales? Los tuyos se conservan.",
     "generalGroupOnboarding": "Puesta en marcha",
-    "generalGroupOnboardingNote": "La tarjeta de inicio rápido, el consejo de teclado ocasional y el resumen de la versión.",
+    "generalGroupOnboardingNote": "La tarjeta de inicio rápido, el consejo de teclado ocasional, el resumen de la versión y las dos ofertas de revisión.",
     "generalGroupHyprMode": "Modo Hypr",
     "generalGroupHyprModeNote": "Para nextDash instalado como aplicación web progresiva (PWA). Hacer clic en un marcador lo abre en una pestaña nueva del navegador y luego cierra sola la ventana de la PWA: el comportamiento de un lanzador de aplicaciones de toda la vida.",
     "statsScoreTitle": "Puntuación de limpieza",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "Se han leído todas las páginas.",
     "tagScanForget": "Olvidar las palabras clave",
     "tagScanAgain": "Leerlas de nuevo",
-    "tagScanAgainError": "No se pudo iniciar otra pasada."
+    "tagScanAgainError": "No se pudo iniciar otra pasada.",
+    "tagSuggestionNoticeLabel": "Ofrecer revisar las sugerencias de etiquetas",
+    "tagSuggestionNoticeHint": "Una tarjeta en la esquina cuando bastantes marcadores podrían llevar una etiqueta. Propone; nada se etiqueta sin ti.",
+    "healthReviewNoticeLabel": "Ofrecer revisar los enlaces",
+    "healthReviewNoticeHint": "Una tarjeta en la esquina cuando bastantes enlaces merecen una segunda mirada. Desactivarla no cambia la comprobación de enlaces."
   },
   "colors": {
     "title": "personalización del tema",

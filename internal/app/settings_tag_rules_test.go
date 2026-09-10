@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 )
@@ -99,5 +101,45 @@ func TestSanitizeDismissedTagSuggestionsIsBounded(t *testing.T) {
 	}
 	if got := len(sanitizeDismissedTagSuggestions(raw)); got != dismissedTagSuggestionsMax {
 		t.Errorf("kept %d, want the cap of %d", got, dismissedTagSuggestionsMax)
+	}
+}
+
+func TestReviewOfferSettingsDefaultOnForAnOlderFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	// A settings file written before these keys existed. Read as plain JSON
+	// they would be false, which would take the health card away from an
+	// install that has always had it -- silently, on the upgrade that added a
+	// switch for it.
+	older := `{"currentPage":1,"theme":"` + defaultThemeID + `","enableSessionTips":false}`
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(older), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewStore()
+	settings := store.GetSettings()
+	if !settings.EnableTagSuggestionNotice {
+		t.Error("enableTagSuggestionNotice read as off for a file that never mentioned it")
+	}
+	if !settings.EnableHealthReviewNotice {
+		t.Error("enableHealthReviewNotice read as off for a file that never mentioned it")
+	}
+	// And a key the file does answer is still obeyed.
+	if settings.EnableSessionTips {
+		t.Error("enableSessionTips ignored the value the file gave it")
+	}
+}
+
+func TestReviewOfferSettingsKeepAnExplicitOff(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	written := `{"currentPage":1,"enableTagSuggestionNotice":false,"enableHealthReviewNotice":false}`
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(written), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	settings := NewStore().GetSettings()
+	if settings.EnableTagSuggestionNotice || settings.EnableHealthReviewNotice {
+		t.Error("the backfill overwrote an answer the reader had given")
 	}
 }

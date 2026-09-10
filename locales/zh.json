@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "恢复默认",
     "themeResetConfirm": "把内置主题恢复成它们原来的颜色？你自己的主题会保留。",
     "generalGroupOnboarding": "引导",
-    "generalGroupOnboardingNote": "快速开始卡片、偶尔出现的键盘提示，以及版本摘要。",
+    "generalGroupOnboardingNote": "快速开始卡片、偶尔的键盘提示、版本摘要，以及两个查看提议。",
     "generalGroupHyprMode": "Hypr mode",
     "generalGroupHyprModeNote": "适用于把 nextDash 安装为渐进式网页应用（PWA）的情况。点击书签会在新的浏览器标签页中打开它，然后自动关闭 PWA 窗口——就像传统应用启动器那样。",
     "statsScoreTitle": "清理评分",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "每个页面都已读取。",
     "tagScanForget": "忘记关键词",
     "tagScanAgain": "重新读取",
-    "tagScanAgainError": "无法开始新一轮。"
+    "tagScanAgainError": "无法开始新一轮。",
+    "tagSuggestionNoticeLabel": "提议查看标签建议",
+    "tagSuggestionNoticeHint": "当有足够多的书签可以打标签时，角落里出现一张卡片。它只是建议；没有你，什么都不会被打上标签。",
+    "healthReviewNoticeLabel": "提议查看链接",
+    "healthReviewNoticeHint": "当有足够多的链接值得再看一眼时，角落里出现一张卡片。关掉它不影响链接检查本身。"
   },
   "colors": {
     "title": "主题自定义",

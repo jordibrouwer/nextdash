@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "Réinitialiser",
     "themeResetConfirm": "Réinitialiser les thèmes fournis à leurs couleurs d’origine ? Vos propres thèmes sont conservés.",
     "generalGroupOnboarding": "Prise en main",
-    "generalGroupOnboardingNote": "La carte de démarrage rapide, l’astuce clavier occasionnelle et le résumé des nouveautés.",
+    "generalGroupOnboardingNote": "La carte de démarrage, l’astuce clavier occasionnelle, le résumé de version et les deux propositions de revue.",
     "generalGroupHyprMode": "Hypr mode",
     "generalGroupHyprModeNote": "Pour nextDash installé en tant qu'application web progressive (PWA). Cliquer sur un favori l'ouvre dans un nouvel onglet du navigateur, puis ferme automatiquement la fenêtre PWA — le comportement d'un lanceur d'applications traditionnel.",
     "statsScoreTitle": "Score de nettoyage",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "Toutes les pages ont été lues.",
     "tagScanForget": "Oublier les mots-clés",
     "tagScanAgain": "Les relire",
-    "tagScanAgainError": "Impossible de lancer une nouvelle passe."
+    "tagScanAgainError": "Impossible de lancer une nouvelle passe.",
+    "tagSuggestionNoticeLabel": "Proposer de passer en revue les étiquettes",
+    "tagSuggestionNoticeHint": "Une carte dans le coin quand assez de marque-pages pourraient recevoir une étiquette. Elle propose ; rien n’est étiqueté sans vous.",
+    "healthReviewNoticeLabel": "Proposer de passer en revue les liens",
+    "healthReviewNoticeHint": "Une carte dans le coin quand assez de liens méritent un second regard. La désactiver ne change rien à la vérification des liens."
   },
   "colors": {
     "title": "personnalisation du thème",

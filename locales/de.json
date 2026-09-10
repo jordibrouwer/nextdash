@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "Auf Standard zurücksetzen",
     "themeResetConfirm": "Die mitgelieferten Themen auf ihre ursprünglichen Farben zurücksetzen? Deine eigenen Themen bleiben erhalten.",
     "generalGroupOnboarding": "Einstieg",
-    "generalGroupOnboardingNote": "Die Schnellstartkarte, der gelegentliche Tastaturtipp und die Zusammenfassung neuer Funktionen.",
+    "generalGroupOnboardingNote": "Die Schnellstartkarte, der gelegentliche Tastaturtipp, die Release-Zusammenfassung und die beiden Angebote zur Durchsicht.",
     "generalGroupHyprMode": "Hypr mode",
     "generalGroupHyprModeNote": "Für nextDash, das als Progressive Web App (PWA) installiert ist. Ein Klick auf ein Lesezeichen öffnet es in einem neuen Browser-Tab und schließt danach automatisch das PWA-Fenster — das Verhalten eines klassischen App-Launchers.",
     "statsScoreTitle": "Aufräum-Score",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "Jede Seite wurde gelesen.",
     "tagScanForget": "Stichwörter vergessen",
     "tagScanAgain": "Erneut lesen",
-    "tagScanAgainError": "Eine weitere Runde konnte nicht gestartet werden."
+    "tagScanAgainError": "Eine weitere Runde konnte nicht gestartet werden.",
+    "tagSuggestionNoticeLabel": "Tag-Vorschläge zur Durchsicht anbieten",
+    "tagSuggestionNoticeHint": "Eine Karte in der Ecke, wenn genug Lesezeichen ein Tag vertragen könnten. Sie schlägt vor; ohne Sie wird nichts getaggt.",
+    "healthReviewNoticeLabel": "Links zur Durchsicht anbieten",
+    "healthReviewNoticeHint": "Eine Karte in der Ecke, wenn genug Links einen zweiten Blick wert sind. Ausschalten lässt die Link-Prüfung selbst unberührt."
   },
   "colors": {
     "title": "themenanpassung",

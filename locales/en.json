@@ -4833,7 +4833,7 @@
     "themeResetDefaults": "Reset to default",
     "themeResetConfirm": "Reset the packaged themes to their original colours? Your own themes are kept.",
     "generalGroupOnboarding": "Onboarding",
-    "generalGroupOnboardingNote": "The quick-start card, the occasional keyboard tip, and the release summary.",
+    "generalGroupOnboardingNote": "The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.",
     "generalGroupHyprMode": "Hypr mode",
     "generalGroupHyprModeNote": "For nextDash installed as a Progressive Web App (PWA). Clicking a bookmark opens it in a new browser tab, then closes the PWA window automatically — the behaviour of a traditional app launcher.",
     "statsScoreTitle": "Cleanup score",
@@ -5919,7 +5919,11 @@
     "tagScanAllRead": "Every page has been read.",
     "tagScanForget": "Forget the keywords",
     "tagScanAgain": "Read them again",
-    "tagScanAgainError": "Could not start another round."
+    "tagScanAgainError": "Could not start another round.",
+    "tagSuggestionNoticeLabel": "Offer to review tag suggestions",
+    "tagSuggestionNoticeHint": "A card in the corner when enough bookmarks could take a tag. It proposes; nothing is tagged without you.",
+    "healthReviewNoticeLabel": "Offer to review links",
+    "healthReviewNoticeHint": "A card in the corner when enough links are worth a second look. Switching it off leaves link checking itself untouched."
   },
   "colors": {
     "title": "theme customization",
