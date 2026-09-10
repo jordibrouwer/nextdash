@@ -885,6 +885,95 @@ test.describe('select all bookmarks', () => {
     });
 
     /*
+     * The other direction, from the top.
+     *
+     * `k` and ArrowUp were refused inside a row control and then taken by the
+     * config section shortcut, the same as `j` was -- and the menu opens on its
+     * first item, so backwards from there is the press that has to wrap to the
+     * bottom rather than stay put. One press, for the reason the forward walk
+     * takes one: focus inside a windowed list is flaky to observe across more.
+     */
+    test('the row menu walks backwards from its first item', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        // Whatever an earlier test layered over the view owns the keyboard.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg.bmSelected?.clear?.();
+            cfg.repaintBookmarksList?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        const focused = () => page.evaluate(() =>
+            document.activeElement?.getAttribute('data-bm-menu-action') || null);
+        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
+
+        /*
+         * Where in the menu, read in one go.
+         *
+         * The list is windowed and redraws as it scrolls, so a "last item"
+         * read a moment earlier can belong to a menu that no longer exists.
+         * Asking for the position of the focused item inside the menu that is
+         * open right now compares the two things that have to agree.
+         */
+        const place = () => page.evaluate(() => {
+            const menu = document.querySelector('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+            if (!menu) return 'no menu';
+            const items = [...menu.querySelectorAll('.health-view-menu-item, .health-check-option')]
+                .filter((item) => !item.disabled && item.offsetParent !== null);
+            const at = items.indexOf(document.activeElement);
+            if (at < 0) return 'outside the menu';
+            if (items.length < 2) return 'too few items';
+            return at === items.length - 1 ? 'last' : `${at} of ${items.length}`;
+        });
+        expect(await place()).toBe('0 of ' + (await menu.locator('.health-view-menu-item').count()));
+
+        await page.keyboard.press('k');
+        await expect.poll(place, { timeout: 15_000 }).toBe('last');
+    });
+
+    /*
+     * Health tidying up must not reach into config's rows.
+     *
+     * The row menu markup is shared between the two views, class names and
+     * all, and health's closeAllMenus swept the whole document. openConfigView
+     * calls health.clearKeyboardSelection(), health is loaded lazily, and the
+     * proxy replays that call once the module arrives -- so a menu the reader
+     * opened in config closed itself a few seconds later, on its own.
+     */
+    test('an open row menu survives health cleaning up after itself', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            cfg._bmContextMenu?.close?.();
+            cfg.closeBookmarkMenus?.();
+            cfg._bmKeyboardKey = null;
+            document.activeElement?.blur?.();
+        });
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('m');
+        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+        await expect(menu).toBeVisible({ timeout: 15_000 });
+
+        // The call config itself makes on the way in, awaited here rather than
+        // waited out: the lazy proxy loads health and then runs it.
+        await page.evaluate(async () => {
+            await window.dashboardInstance.health?.clearKeyboardSelection?.();
+        });
+        await expect(menu).toBeVisible();
+    });
+
+    /*
      * A search box that refuses letters is not a search box.
      *
      * j, k, g, G, Enter and space used to be handed to the list from inside the
