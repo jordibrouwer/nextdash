@@ -330,6 +330,19 @@ type Collection struct {
 	Rules []CollectionRule `json:"rules"`
 }
 
+/*
+TagRule is one thing you wrote down: this pattern means this tag.
+
+Kept beside Collections because it is the same shape of setting -- a small
+rule the reader owns -- but it is deliberately not a CollectionRule: a
+collection filters a view, and this labels a bookmark.
+*/
+type TagRule struct {
+	// Pattern is a host, or a host and its first path segment.
+	Pattern string `json:"pattern"`
+	Tag     string `json:"tag"`
+}
+
 type Category struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -574,6 +587,7 @@ type Settings struct {
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`           // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`        // Page IDs where smart most used is enabled (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`       // User-defined dynamic collections
+	TagRules                    []TagRule                  `json:"tagRules,omitempty"`          // Patterns you wrote that propose a tag
 	ShowTagCollections          bool                       `json:"showTagCollections"`          // Auto-generate a collection per tag
 	TagCollectionsMinCount      int                        `json:"tagCollectionsMinCount"`      // Minimum bookmarks per tag to show collection (0 = all)
 	FaviconRefreshPolicy        string                     `json:"faviconRefreshPolicy"`        // Favicon policy: manual, on-save

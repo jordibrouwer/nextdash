@@ -1486,6 +1486,42 @@ func normalizeTags(tags []string) []string {
 	return result
 }
 
+// tagRulesMax bounds how many rules one install may keep. A reader with more
+// than this is describing a taxonomy rather than correcting a few guesses.
+const tagRulesMax = 100
+
+/*
+sanitizeTagRules keeps the rules that could ever match, and drops the rest.
+
+A pattern is a host, optionally with its first path segment -- never a whole
+address. A rule carrying a scheme looks configured and matches nothing, since
+what it is compared against is already reduced to host and segment.
+*/
+func sanitizeTagRules(rules []TagRule) []TagRule {
+	clean := make([]TagRule, 0, len(rules))
+	seen := map[string]struct{}{}
+	for _, rule := range rules {
+		if len(clean) >= tagRulesMax {
+			break
+		}
+		pattern := strings.ToLower(strings.TrimSpace(rule.Pattern))
+		tags := normalizeTags([]string{rule.Tag})
+		if pattern == "" || len(tags) == 0 {
+			continue
+		}
+		if strings.Contains(pattern, "://") || strings.ContainsAny(pattern, " ?#") {
+			continue
+		}
+		key := pattern + "\x00" + tags[0]
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		clean = append(clean, TagRule{Pattern: pattern, Tag: tags[0]})
+	}
+	return clean
+}
+
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	var result strings.Builder
@@ -2122,6 +2158,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.TagRules = sanitizeTagRules(settings.TagRules)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	clampBookmarkSettings(&settings)
 	clampCategoryLayoutSettings(&settings)
