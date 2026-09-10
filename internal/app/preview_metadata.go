@@ -325,6 +325,17 @@ was written to be matched exactly, so a stemmer would only introduce ways for
 the two halves to disagree.
 */
 func extractKeywords(doc, body string) []string {
+	/*
+	 * The tag-shaped sources first, prose last.
+	 *
+	 * A keywords tag and an article:tag were written to file the page; a title
+	 * and a description were written to describe it, so they carry a subject
+	 * wrapped in sentence. Both are worth reading -- most pages publish no tags
+	 * at all, and on a real collection only sixteen of eighty-five yielded a
+	 * word without them -- but the cap is what keeps them in their place: the
+	 * deliberate sources fill the twelve slots first, and the prose only gets
+	 * what is left.
+	 */
 	raw := []string{
 		metaContent(doc, "name", "keywords"),
 		metaContent(doc, "property", "article:tag"),
@@ -342,12 +353,23 @@ func extractKeywords(doc, body string) []string {
 	if heading := firstHeadingPattern.FindStringSubmatch(doc + body); heading != nil {
 		raw = append(raw, html.UnescapeString(stripTagsPattern.ReplaceAllString(heading[1], " ")))
 	}
+	if title := documentTitlePattern.FindStringSubmatch(doc); title != nil {
+		raw = append(raw, html.UnescapeString(stripTagsPattern.ReplaceAllString(title[1], " ")))
+	}
+	raw = append(raw,
+		metaContent(doc, "property", "og:description"),
+		metaContent(doc, "name", "description"),
+	)
 
 	seen := map[string]struct{}{}
 	words := make([]string, 0, keywordMaxCount)
 	for _, line := range raw {
 		for _, field := range strings.FieldsFunc(line, func(r rune) bool {
-			return r == ',' || r == ';' || r == '|' || r == '/' || r == '·'
+			// A title separates with a dash or a colon as often as with a
+			// pipe -- "Ars Technica — Serving the technologist" is three
+			// fields, not one.
+			return r == ',' || r == ';' || r == '|' || r == '/' || r == '·' ||
+				r == '—' || r == '–' || r == ':'
 		}) {
 			for _, word := range strings.Fields(field) {
 				word = normalizeKeyword(word)
@@ -426,11 +448,27 @@ var keywordFurniture = map[string]struct{}{
 	"start": {}, "support": {}, "terms": {}, "that": {}, "the": {}, "this": {},
 	"use": {}, "using": {}, "want": {}, "welcome": {}, "what": {}, "when": {},
 	"where": {}, "why": {}, "with": {}, "you": {}, "your": {},
+	/*
+	 * The second half arrived with the title and the description.
+	 *
+	 * A page's own prose says these because it is selling itself, and each of
+	 * them matched a subject by name on a real collection: "breaking news" in
+	 * 9gag's title filed a meme site under #news, the word "home" in a
+	 * file-sharing page's description filed it under #home, "power" filed a
+	 * chat assistant under #energy, and "mobile" filed a webmail client under
+	 * #android. A word that names a subject is worth the whole threshold on
+	 * its own, which is what makes these expensive rather than merely noisy.
+	 */
+	"best": {}, "breaking": {}, "created": {}, "files": {}, "free": {},
+	"fun": {}, "help": {}, "home": {}, "inbox": {}, "manage": {}, "mobile": {},
+	"news": {}, "official": {}, "power": {}, "simple": {}, "source": {},
+	"try": {}, "users": {},
 }
 
 var (
-	firstHeadingPattern = regexp.MustCompile(`(?is)<h1[^>]*>(.*?)</h1>`)
-	stripTagsPattern    = regexp.MustCompile(`(?s)<[^>]*>`)
+	firstHeadingPattern  = regexp.MustCompile(`(?is)<h1[^>]*>(.*?)</h1>`)
+	documentTitlePattern = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
+	stripTagsPattern     = regexp.MustCompile(`(?s)<[^>]*>`)
 )
 
 const (

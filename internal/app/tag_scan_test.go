@@ -80,6 +80,48 @@ func TestExtractKeywordsReadsTheFourPlaces(t *testing.T) {
 	}
 }
 
+func TestExtractKeywordsReadsTheTitleAndDescription(t *testing.T) {
+	// No tags of any kind: what such a page says about itself is all there is,
+	// and most of the web is this page.
+	head := `<html><head><title>Bazarr — Subtitles for Sonarr and Radarr</title>
+		<meta name="description" content="Manage and download subtitles automatically.">
+		</head>`
+
+	got := extractKeywords(head, "")
+	joined := strings.Join(got, " ")
+	for _, want := range []string{"bazarr", "subtitles", "sonarr", "radarr", "download"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("missing %q in %v", want, got)
+		}
+	}
+	// The title's separator is not part of a word, and the words a page says
+	// because it is a page are gone.
+	for _, unwanted := range []string{"—", "and", "manage", "for"} {
+		for _, word := range got {
+			if word == unwanted {
+				t.Errorf("kept %q, which carries no subject", unwanted)
+			}
+		}
+	}
+}
+
+func TestExtractKeywordsPrefersTheDeliberateSources(t *testing.T) {
+	var filler []string
+	for i := 0; i < 20; i++ {
+		filler = append(filler, "prose"+string(rune('a'+i)))
+	}
+	head := `<html><head><title>` + strings.Join(filler, " ") + `</title>
+		<meta name="keywords" content="kubernetes, helm">
+		</head>`
+
+	got := extractKeywords(head, "")
+	// The cap is what keeps prose in its place: a keywords tag was written to
+	// file the page, a title to sell it, so the tag fills the slots first.
+	if len(got) < 2 || got[0] != "kubernetes" || got[1] != "helm" {
+		t.Errorf("the keywords tag did not come first: %v", got)
+	}
+}
+
 func TestExtractKeywordsIsBoundedAndDeduplicated(t *testing.T) {
 	var words []string
 	for i := 0; i < 40; i++ {
