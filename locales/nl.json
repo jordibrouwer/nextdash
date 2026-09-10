@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "Een regel die jij schrijft wint altijd van wat nextDash zelf uitzocht, en stelt voor zodra je hem toevoegt.",
     "tagRulesEmpty": "Nog geen regels. Alles op het tabblad Tagsuggesties komt uit je eigen tags en de catalogus.",
     "tagRulesInfoTitle": "Hoe jouw regels werken",
-    "tagRulesInfoBody": "Een regel is een site en de tag die hij moet krijgen.\n\nSchrijf github.com → #code en elke GitHub-bookmark krijgt #code aangeboden, wat de rest van je collectie ook zegt. Een regel wint altijd: van de tags die nextDash je zag gebruiken, en van de meegeleverde catalogus.\n\nEen patroon is een site, eventueel met één padsegment — github.com, of github.com/trending. Geen heel adres, en niet twee segmenten diep.\n\nRegels stellen voor; ze taggen nooit uit zichzelf. Wat ze opleveren staat op het tabblad Tagsuggesties, één rij per regel, met Apply ernaast."
+    "tagRulesInfoBody": "Een regel is een site en de tag die hij moet krijgen.\n\nSchrijf github.com → #code en elke GitHub-bookmark krijgt #code aangeboden, wat de rest van je collectie ook zegt. Een regel wint altijd: van de tags die nextDash je zag gebruiken, en van de meegeleverde catalogus.\n\nEen patroon is een site, eventueel met één padsegment — github.com, of github.com/trending. Geen heel adres, en niet twee segmenten diep.\n\nRegels stellen voor; ze taggen nooit uit zichzelf. Wat ze opleveren staat op het tabblad Tagsuggesties, één rij per regel, met Apply ernaast.",
+    "tagSuggestionsDismissedTitle": "Afgewezen",
+    "tagSuggestionRestoreOne": "Opnieuw aanbieden",
+    "tagSuggestionMembersAria": "Laat zien welke bookmarks dit betreft",
+    "clearTagKeywordsBtn": "Gescande trefwoorden vergeten",
+    "clearTagKeywordsConfirm": "De trefwoorden uit je pagina's vergeten? Tagsuggesties uit je eigen tags, je regels en de catalogus blijven werken.",
+    "clearTagKeywordsDone": "Trefwoorden vergeten voor {n} bookmarks.",
+    "clearTagKeywordsError": "Kon de trefwoorden niet vergeten.",
+    "tagScanAllRead": "Elke pagina is gelezen.",
+    "tagScanForget": "Trefwoorden vergeten",
+    "tagScanAgain": "Opnieuw lezen",
+    "tagScanAgainError": "Kon geen nieuwe ronde starten."
   },
   "colors": {
     "title": "thema-aanpassing",

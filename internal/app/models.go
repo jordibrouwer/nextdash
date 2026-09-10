@@ -4905,8 +4905,18 @@ type BookmarkPreview struct {
 	 * bytes per bookmark; the prose they came from would be megabytes in the
 	 * data directory and in every backup ZIP. See extractKeywords.
 	 */
-	Keywords  []string `json:"keywords,omitempty"`
-	FetchedAt int64    `json:"fetchedAt"`
+	Keywords []string `json:"keywords,omitempty"`
+	/*
+	 * KeywordsAt is when this page was last read for keywords.
+	 *
+	 * Its own stamp rather than FetchedAt, which belongs to the preview card:
+	 * a page with no words of its own has to be remembered as asked-and-empty
+	 * or every round would offer it again, and forgetting the words has to
+	 * make it askable again without throwing away the card. One field says
+	 * both.
+	 */
+	KeywordsAt int64 `json:"keywordsAt,omitempty"`
+	FetchedAt  int64 `json:"fetchedAt"`
 }
 
 // GetDataRevision fingerprints bookmark, category, finder, page, and settings files.

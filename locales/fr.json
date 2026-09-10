@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "Une règle que vous écrivez l’emporte toujours sur ce que nextDash a déduit seul, et elle propose dès que vous l’ajoutez.",
     "tagRulesEmpty": "Aucune règle pour l’instant. Tout ce qui figure dans l’onglet Suggestions d’étiquettes vient de vos propres étiquettes et du catalogue.",
     "tagRulesInfoTitle": "Comment fonctionnent vos règles",
-    "tagRulesInfoBody": "Une règle est un site et l’étiquette qu’il doit recevoir.\n\nÉcrivez github.com → #code et chaque marque-page GitHub se voit proposer #code, quoi que dise le reste de votre collection. Une règle l’emporte toujours : sur les étiquettes que nextDash vous a vu employer, et sur le catalogue fourni.\n\nUn motif est un site, éventuellement avec un segment de chemin — github.com, ou github.com/trending. Pas une adresse entière, et pas deux segments de profondeur.\n\nLes règles proposent ; elles n’étiquettent jamais d’elles-mêmes. Ce qu’elles produisent apparaît dans l’onglet Suggestions d’étiquettes, une ligne par règle, avec un Apply à côté."
+    "tagRulesInfoBody": "Une règle est un site et l’étiquette qu’il doit recevoir.\n\nÉcrivez github.com → #code et chaque marque-page GitHub se voit proposer #code, quoi que dise le reste de votre collection. Une règle l’emporte toujours : sur les étiquettes que nextDash vous a vu employer, et sur le catalogue fourni.\n\nUn motif est un site, éventuellement avec un segment de chemin — github.com, ou github.com/trending. Pas une adresse entière, et pas deux segments de profondeur.\n\nLes règles proposent ; elles n’étiquettent jamais d’elles-mêmes. Ce qu’elles produisent apparaît dans l’onglet Suggestions d’étiquettes, une ligne par règle, avec un Apply à côté.",
+    "tagSuggestionsDismissedTitle": "Refusées",
+    "tagSuggestionRestoreOne": "Proposer à nouveau",
+    "tagSuggestionMembersAria": "Montrer les marque-pages concernés",
+    "clearTagKeywordsBtn": "Oublier les mots-clés lus",
+    "clearTagKeywordsConfirm": "Oublier les mots-clés lus dans vos pages ? Les suggestions issues de vos étiquettes, de vos règles et du catalogue ne changent pas.",
+    "clearTagKeywordsDone": "Mots-clés oubliés pour {n} marque-pages.",
+    "clearTagKeywordsError": "Impossible d’oublier les mots-clés.",
+    "tagScanAllRead": "Toutes les pages ont été lues.",
+    "tagScanForget": "Oublier les mots-clés",
+    "tagScanAgain": "Les relire",
+    "tagScanAgainError": "Impossible de lancer une nouvelle passe."
   },
   "colors": {
     "title": "personnalisation du thème",

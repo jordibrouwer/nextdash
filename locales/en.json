@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "A rule you write always beats what nextDash worked out on its own, and it proposes from the moment you add it.",
     "tagRulesEmpty": "No rules yet. Everything on the Tag suggestions tab is worked out from your own tags and the catalogue.",
     "tagRulesInfoTitle": "How your rules work",
-    "tagRulesInfoBody": "A rule is a site and the tag it should get.\n\nWrite github.com → #code and every GitHub bookmark is offered #code, whatever the rest of your collection says. A rule always wins: it beats the tags nextDash noticed you using, and it beats the shipped catalogue.\n\nA pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address, and not two segments deep.\n\nRules propose; they never tag anything on their own. What they produce appears on the Tag suggestions tab, one row per rule, with an Apply beside it."
+    "tagRulesInfoBody": "A rule is a site and the tag it should get.\n\nWrite github.com → #code and every GitHub bookmark is offered #code, whatever the rest of your collection says. A rule always wins: it beats the tags nextDash noticed you using, and it beats the shipped catalogue.\n\nA pattern is a site, optionally with one path segment — github.com, or github.com/trending. Not a whole address, and not two segments deep.\n\nRules propose; they never tag anything on their own. What they produce appears on the Tag suggestions tab, one row per rule, with an Apply beside it.",
+    "tagSuggestionsDismissedTitle": "Turned down",
+    "tagSuggestionRestoreOne": "Offer again",
+    "tagSuggestionMembersAria": "Show which bookmarks this covers",
+    "clearTagKeywordsBtn": "Forget the scanned keywords",
+    "clearTagKeywordsConfirm": "Forget the keywords read from your pages? Tag suggestions from your own tags, your rules and the catalogue are unaffected.",
+    "clearTagKeywordsDone": "Keywords forgotten for {n} bookmarks.",
+    "clearTagKeywordsError": "Could not forget the keywords.",
+    "tagScanAllRead": "Every page has been read.",
+    "tagScanForget": "Forget the keywords",
+    "tagScanAgain": "Read them again",
+    "tagScanAgainError": "Could not start another round."
   },
   "colors": {
     "title": "theme customization",

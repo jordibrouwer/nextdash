@@ -5216,6 +5216,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-backup-action="refresh-previews">${esc(this.t('config.refreshAllPreviewsBtn', 'Refresh all link previews'))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-previews">${esc(this.t('config.clearAllPreviewsBtn', 'Clear all link previews'))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-testid="clear-preview-images" data-backup-action="clear-preview-images">${esc(this.t('config.clearPreviewImagesBtn', 'Remove cached images'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-tag-keywords">${esc(this.t('config.clearTagKeywordsBtn', 'Forget the scanned keywords'))}</button>
                 </div>
             </div>
         `;
@@ -6643,6 +6644,7 @@ class DashboardConfig {
             case 'refresh-favicons': void this.refreshAllFavicons(); break;
             case 'refresh-previews': void this.refreshAllPreviews(); break;
             case 'clear-previews': void this.clearAllPreviews(); break;
+            case 'clear-tag-keywords': void this.clearTagKeywords(); break;
             case 'clear-preview-images': void this.clearPreviewImages(); break;
             case 'delete-bookmarks': void this.deleteAllBookmarks(); break;
             case 'download-all': void this.downloadAllBackups(); break;
@@ -6869,6 +6871,60 @@ class DashboardConfig {
             await this.refreshPreviewImageStats();
         } catch {
             this.notify(this.t('config.clearPreviewImagesError', 'Could not remove the cached images.'), 'error');
+        }
+    }
+
+    /*
+     * Forget what the scan round read.
+     *
+     * Only the words: the same cache entries hold the title, the description
+     * and the picture, fetched for the cards and none of this feature's to
+     * throw away. Undoing it costs a scan round, which is what it cost to have
+     * -- so it is offered plainly rather than guarded like a deletion.
+     */
+    /*
+     * Read every page again.
+     *
+     * The words that are there are kept until they are replaced, so the panel
+     * goes on proposing from what it has while the round runs rather than
+     * emptying itself first. Worth having after a site redesign, or after the
+     * catalogue has grown enough that what a page says is worth weighing
+     * again.
+     */
+    async rescanTagKeywords() {
+        try {
+            const res = await this.writeFetch('/api/tags/scan/reset', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch {
+            this.notify(this.t('config.tagScanAgainError', 'Could not start another round.'), 'error');
+            return;
+        }
+        this._tagKeywordsPromise = null;
+        this._tagScanState = null;
+        await this.ensureTagKeywords();
+        this.renderTagSuggestionsSafe();
+        await this.runTagScan();
+    }
+
+    async clearTagKeywords() {
+        if (!await this.confirmAction(
+            this.t('config.clearTagKeywordsConfirm',
+                'Forget the keywords read from your pages? Tag suggestions from your own tags, your rules and the catalogue are unaffected.'),
+            { confirmLabel: this.t('config.confirmClear', 'Clear') },
+        )) return;
+        try {
+            const res = await this.writeFetch('/api/tags/keywords/clear', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            this._tagKeywords = {};
+            this._tagKeywordsPromise = null;
+            this._tagScanState = null;
+            this.renderTagSuggestionsSafe();
+            this.syncTagSuggestionCount();
+            this.notify(this.t('config.clearTagKeywordsDone', 'Keywords forgotten for {n} bookmarks.')
+                .replace('{n}', String(Number(body.cleared) || 0)), 'success');
+        } catch {
+            this.notify(this.t('config.clearTagKeywordsError', 'Could not forget the keywords.'), 'error');
         }
     }
 
@@ -20532,6 +20588,9 @@ class DashboardConfig {
         return (this.dash.allBookmarks || []).map((b) => ({
             key: this.bookmarkKey(b),
             url: b.url,
+            // Carried for the expanded row: a list of addresses is a list
+            // nobody reads, and the name is what the reader gave it.
+            name: b.name || '',
             tags: Array.isArray(b.tags) ? b.tags : [],
         }));
     }
@@ -20546,6 +20605,8 @@ class DashboardConfig {
             dismissed: this.dash.settings?.dismissedTagSuggestions || [],
             keywords: this.tagKeywordsByItemKey(),
             scan: this._tagScanState || null,
+            expanded: this._tagSuggestionOpen || new Set(),
+            excluded: this._tagSuggestionExcluded || new Set(),
             t: (key, fallback) => this.t(key, fallback),
         });
     }
@@ -20589,6 +20650,21 @@ class DashboardConfig {
             || (container.id === 'config-bm-suggestions' ? container : null);
         if (!host) return;
         this.renderTagSuggestionsSafe();
+        /*
+         * Unticking a member of an expanded group.
+         *
+         * Recorded rather than redrawn: the reader is mid-tick, and replacing
+         * the list under them would take the checkbox they are looking at with
+         * it. What is still ticked is read again when Apply runs.
+         */
+        host.addEventListener('change', (event) => {
+            const box = event.target.closest?.('[data-tag-suggestion-member]');
+            if (!box) return;
+            const id = box.getAttribute('data-tag-suggestion-member');
+            this._tagSuggestionExcluded = this._tagSuggestionExcluded || new Set();
+            if (box.checked) this._tagSuggestionExcluded.delete(id);
+            else this._tagSuggestionExcluded.add(id);
+        });
         // Drawn twice on a cold load: once from what is already known, and
         // again when the catalogue arrives, rather than leaving the tab blank
         // behind a fetch.
@@ -20629,8 +20705,27 @@ class DashboardConfig {
                 void this.runTagScan();
                 return;
             }
+            if (event.target.closest('[data-tag-keywords-clear]')) {
+                void this.clearTagKeywords();
+                return;
+            }
+            if (event.target.closest('[data-tag-scan-again]')) {
+                void this.rescanTagKeywords();
+                return;
+            }
             if (event.target.closest('[data-tag-suggestions-restore]')) {
                 void this.restoreTagSuggestions();
+                return;
+            }
+            const backOne = event.target.closest('[data-tag-suggestion-restore-one]');
+            if (backOne) {
+                void this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one'));
+                return;
+            }
+            const toggle = event.target.closest('[data-tag-suggestion-toggle]');
+            if (toggle) {
+                const index = Number(toggle.getAttribute('data-tag-suggestion-toggle'));
+                this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
                 return;
             }
         });
@@ -22285,6 +22380,22 @@ class DashboardConfig {
     }
 
     bindBookmarksSection(container) {
+        /*
+         * The tab's number needs the catalogue and the scanned keywords.
+         *
+         * They used to load when the Tag suggestions tab was opened, which is
+         * the one moment the number is no longer worth reading: arriving on
+         * Bookmarks showed "1" -- everything a rule of your own had found and
+         * nothing else -- and opening the tab turned it into 19. A count that
+         * changes when you look at it is worse than no count.
+         *
+         * Loaded once per page here instead, and the strip is corrected when
+         * they land. Both are cached, so the tab itself still costs nothing.
+         */
+        if (!this._tagCatalogue || !this._tagKeywords) {
+            void Promise.all([this.ensureTagCatalogue(), this.ensureTagKeywords()])
+                .then(() => this.syncTagSuggestionCount());
+        }
         this.bindSubTabStrip(container, 'data-bm-tab', (tab) => {
             if (tab === this.bmTab) return;
             this.bmTab = tab;
@@ -22581,7 +22692,27 @@ class DashboardConfig {
                     e.stopPropagation();
                     const key = actionItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
                     const action = actionItem.getAttribute('data-bm-menu-action');
-                    if (key && action) this.handleBookmarkMenuAction(action, key);
+                    if (!key || !action) return;
+                    /*
+                     * Through the context menu's dispatcher, because the menu
+                     * is now built from its list: Edit, Pin, the filters and
+                     * Select are actions this one never knew, and run() falls
+                     * through to handleBookmarkMenuAction for the rest anyway.
+                     * A submenu entry is anchored to the item that opened it,
+                     * so the second menu appears where the reader clicked.
+                     */
+                    const menu = this.bookmarkContextMenu();
+                    const bookmark = this.findBookmarkByKey(key);
+                    if (menu?.run && bookmark) {
+                        if (action === 'check-mode') {
+                            const box = actionItem.getBoundingClientRect();
+                            menu._anchor = { x: Math.round(box.right), y: Math.round(box.top) };
+                        }
+                        this.closeBookmarkMenus();
+                        void menu.run(action, key, bookmark);
+                        return;
+                    }
+                    this.handleBookmarkMenuAction(action, key);
                 }
             });
         }
@@ -23464,7 +23595,19 @@ class DashboardConfig {
      */
     async applyTagSuggestion(group) {
         if (!group?.tag || !Array.isArray(group.keys) || !group.keys.length) return;
-        const wanted = new Set(group.keys);
+        /*
+         * Only the ones still ticked.
+         *
+         * An expanded row lets the reader take a bookmark out of a group
+         * before accepting the rest -- forty-six of forty-seven GitHub links
+         * are #code and one is a recipe someone linked from a gist. Without
+         * this the answer to a group with one wrong member was to refuse the
+         * whole row and tag forty-six by hand.
+         */
+        const left = new Set(this._tagSuggestionExcluded || []);
+        const keys = group.keys.filter((key) => !left.has(`${group.pattern}|${group.tag}|${key}`));
+        if (!keys.length) return;
+        const wanted = new Set(keys);
         const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;
         // mutateSelected clears the selection, which is right for the bulk bar
@@ -23577,6 +23720,32 @@ class DashboardConfig {
             },
             duration: 8000,
         });
+    }
+
+    /** Show or hide the bookmarks a proposal covers. */
+    toggleTagSuggestionMembers(group) {
+        if (!group?.tag || !group?.pattern) return;
+        const id = `${group.pattern}|${group.tag}`;
+        this._tagSuggestionOpen = this._tagSuggestionOpen || new Set();
+        if (this._tagSuggestionOpen.has(id)) this._tagSuggestionOpen.delete(id);
+        else this._tagSuggestionOpen.add(id);
+        this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * Take one refusal back.
+     *
+     * The list used to be a count and a single "offer them again", so wanting
+     * one proposal back meant taking every refusal back with it.
+     */
+    async restoreTagSuggestion(entry) {
+        const key = String(entry || '').trim().toLowerCase();
+        if (!key) return;
+        const before = this.dash.settings?.dismissedTagSuggestions || [];
+        if (!before.includes(key)) return;
+        await this.setBehavior('dismissedTagSuggestions', before.filter((one) => one !== key));
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount();
     }
 
     async restoreTagSuggestions() {

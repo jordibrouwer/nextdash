@@ -530,7 +530,9 @@ test.describe('the suggestions panel', () => {
         await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]')
             .filter({ hasText: 'refused.example' })).toHaveCount(0, { timeout: 15_000 });
 
-        // And the line under the list takes it back.
+        // And the line under the list takes it back -- the turned-down list is
+        // folded away, so open it the way a reader would.
+        await page.locator('[data-tag-suggestions-dismissed] > summary').click();
         await page.locator('[data-tag-suggestions-restore]').click();
         await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]')
             .filter({ hasText: 'refused.example' })).toHaveCount(1, { timeout: 15_000 });
@@ -712,4 +714,157 @@ test.describe('the suggestions panel', () => {
         const row = page.locator('#config-bm-suggestions [data-tag-suggestion]').filter({ hasText: 'work' });
         await expect(row.first()).toBeVisible({ timeout: 15_000 });
     });
+
+    /*
+     * The number on the tab has to be the number in the tab.
+     *
+     * The catalogue and the scanned keywords used to load when the tab was
+     * opened, so arriving on Bookmarks counted rules alone -- the strip said
+     * "1", and opening it turned that into nineteen. A count that changes when
+     * you look at it is worse than no count.
+     */
+    test('the tab count matches what the tab holds, before it is opened', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://counted.example/one', tags: ['count'] },
+                { name: 'Two', url: 'https://counted.example/two', tags: ['count'] },
+                { name: 'Three', url: 'https://counted.example/three', tags: ['count'] },
+                { name: 'Four', url: 'https://counted.example/four', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+
+        // Landing on the section, without touching the tab.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        const chip = page.locator('[data-bm-tab="tag-suggestions"] .config-subtab-count');
+        await expect(chip).toBeVisible({ timeout: 15_000 });
+        // Settled: the catalogue is fetched, so the number stops moving.
+        await page.waitForFunction(() => {
+            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
+            return Array.isArray(cfg._tagCatalogue) && cfg._tagKeywords;
+        }, null, { timeout: 15_000 });
+        const before = Number(await chip.textContent());
+        expect(before).toBeGreaterThan(0);
+
+        await page.locator('[data-bm-tab="tag-suggestions"]').click();
+        await expect(page.locator('#config-bm-suggestions')).toBeVisible({ timeout: 15_000 });
+        const after = Number(await chip.textContent());
+        const rows = await page.locator('#config-bm-suggestions [data-tag-suggestion]').count();
+
+        expect(after).toBe(before);
+        // And the number is the list's own length, not a second reckoning of it.
+        expect(rows).toBe(Math.min(before, 25));
+    });
+
+    /*
+     * "47 bookmarks" is a number to take on trust.
+     *
+     * A group with one wrong member left the reader nothing to do but refuse
+     * the whole row and tag the other forty-six by hand. The count opens the
+     * list, and what stays ticked is what Apply writes.
+     */
+    test('a group can be opened, and one bookmark left out of it', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'One', url: 'https://opened.example/one', tags: ['open'] },
+                { name: 'Two', url: 'https://opened.example/two', tags: ['open'] },
+                { name: 'Three', url: 'https://opened.example/three', tags: ['open'] },
+                { name: 'Spared', url: 'https://opened.example/spared', tags: [] },
+                { name: 'Caught', url: 'https://opened.example/caught', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await openSuggestionsTab(page);
+
+        const row = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'opened.example' }).first();
+        await expect(row).toBeVisible({ timeout: 15_000 });
+        await row.locator('[data-tag-suggestion-toggle]').click();
+
+        const members = page.locator('#config-bm-suggestions [data-tag-suggestion-member]');
+        await expect(members).toHaveCount(2, { timeout: 15_000 });
+        // Named, not just counted.
+        await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
+            .toContainText('Spared');
+
+        // Untick the one that does not belong, then accept the rest.
+        const spared = page.locator('#config-bm-suggestions .config-suggestion-member')
+            .filter({ hasText: 'Spared' }).locator('input');
+        await spared.uncheck();
+        await row.locator('[data-tag-suggestion-apply]').click();
+
+        await expect.poll(() => page.evaluate(() => {
+            const tagged = (window.dashboardInstance.allBookmarks || [])
+                .filter((b) => b.url.includes('opened.example'));
+            return {
+                spared: (tagged.find((b) => b.name === 'Spared')?.tags || []).includes('open'),
+                caught: (tagged.find((b) => b.name === 'Caught')?.tags || []).includes('open'),
+            };
+        }), { timeout: 15_000 }).toEqual({ spared: false, caught: true });
+    });
+
+    /*
+     * One refusal at a time.
+     *
+     * The turned-down list was a count and a single "offer them again", so
+     * wanting one proposal back meant taking every refusal back with it.
+     */
+    test('a turned-down proposal can be taken back on its own', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            const rows = [
+                { name: 'A', url: 'https://refuse-one.example/a', tags: ['keep'] },
+                { name: 'B', url: 'https://refuse-one.example/b', tags: ['keep'] },
+                { name: 'C', url: 'https://refuse-one.example/c', tags: ['keep'] },
+                { name: 'D', url: 'https://refuse-one.example/d', tags: [] },
+            ];
+            for (const bookmark of rows) {
+                await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: 1, bookmark }),
+                });
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await openSuggestionsTab(page);
+
+        const offered = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'refuse-one.example' });
+        await expect(offered).toHaveCount(1, { timeout: 15_000 });
+        await offered.first().locator('[data-tag-suggestion-dismiss]').click();
+        await expect(offered).toHaveCount(0, { timeout: 15_000 });
+
+        // The turned-down list is folded away; open it the way a reader would.
+        await page.locator('[data-tag-suggestions-dismissed] > summary').click();
+        const refused = page.locator('[data-tag-suggestion-refused]')
+            .filter({ hasText: 'refuse-one.example' });
+        await expect(refused).toBeVisible({ timeout: 15_000 });
+        await refused.locator('[data-tag-suggestion-restore-one]').click();
+
+        await expect(offered).toHaveCount(1, { timeout: 15_000 });
+        expect(await page.evaluate(() =>
+            (window.dashboardInstance.settings.dismissedTagSuggestions || [])
+                .filter((one) => one.includes('refuse-one.example')).length)).toBe(0);
+    });
 });
+

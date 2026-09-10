@@ -57,9 +57,9 @@ tagScanTargets is every bookmark whose page has not been read for keywords.
 
 An entry that was fetched but yielded nothing counts as read: a page with no
 keywords of its own does not become one by being asked twice, and retrying it
-on every round would mean the round never shrinks. That is what FetchedAt
-distinguishes -- an entry with a fetch behind it and no words is done, an entry
-with no cache entry at all has never been tried.
+on every round would mean the round never shrinks. KeywordsAt is what says so,
+rather than FetchedAt -- that one belongs to the preview card, which is fetched
+for other reasons entirely and must not decide what this round has left to do.
 */
 func (h *Handlers) tagScanTargets() []tagScanTarget {
 	var targets []tagScanTarget
@@ -73,7 +73,7 @@ func (h *Handlers) tagScanTargets() []tagScanTarget {
 			if key == "" {
 				continue
 			}
-			if entry, ok := h.getPreviewCacheEntry(key); ok && entry.FetchedAt > 0 {
+			if entry, ok := h.getPreviewCacheEntry(key); ok && entry.KeywordsAt > 0 {
 				continue
 			}
 			targets = append(targets, tagScanTarget{pageID: page.ID, url: raw, key: key})
@@ -142,6 +142,106 @@ func (h *Handlers) TagKeywords(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+TagKeywordsClear forgets every word the scan round read.
+
+Only the words. The preview cache holds the title, the description, the
+picture and the soft-404 signals for the same pages, all of it fetched for
+other features and none of it this feature's to throw away -- so the entries
+stay and the Keywords field is emptied.
+
+What it costs to undo is a scan round, which is the same thing it cost to
+have. That is why this is offered rather than guarded: nothing here is
+irreplaceable, and a reader who tried the feature and wants their disk back
+should not have to clear the whole preview cache to get it.
+*/
+func (h *Handlers) TagKeywordsClear(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	updates := map[string]BookmarkPreview{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			key := canonicalBookmarkURLKey(strings.TrimSpace(bm.URL))
+			if key == "" {
+				continue
+			}
+			if _, done := updates[key]; done {
+				continue
+			}
+			entry, ok := h.getPreviewCacheEntry(key)
+			if !ok || len(entry.Keywords) == 0 {
+				continue
+			}
+			entry.Keywords = nil
+			// And askable again: the round picks its targets by KeywordsAt, so
+			// leaving it set would forget the words and refuse to read them
+			// back.
+			entry.KeywordsAt = 0
+			updates[key] = entry
+		}
+	}
+
+	cleared := len(updates)
+	if !respondStorePersistError(w, h.mergePreviewCacheUpdates(updates)) {
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{"status": "ok", "cleared": cleared})
+}
+
+/*
+TagScanReset makes every page askable again, without forgetting a word.
+
+For the reader who has scanned the lot and wants it done over: a site was
+redesigned, or the catalogue grew and what a page says is worth weighing
+again. Only the stamp is cleared, so the words that are there stay until they
+are replaced -- the panel keeps proposing from what it has while the round
+runs, rather than emptying itself first and filling back up.
+*/
+func (h *Handlers) TagScanReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	updates := map[string]BookmarkPreview{}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			key := canonicalBookmarkURLKey(strings.TrimSpace(bm.URL))
+			if key == "" {
+				continue
+			}
+			if _, done := updates[key]; done {
+				continue
+			}
+			entry, ok := h.getPreviewCacheEntry(key)
+			if !ok || entry.KeywordsAt == 0 {
+				continue
+			}
+			entry.KeywordsAt = 0
+			updates[key] = entry
+		}
+	}
+
+	reset := len(updates)
+	if !respondStorePersistError(w, h.mergePreviewCacheUpdates(updates)) {
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{"status": "ok", "reset": reset})
+}
+
+/*
 TagScan reads one slice of the pages that have no keywords yet.
 
 The caller walks the collection: it asks for offset 0, gets back how many
@@ -205,6 +305,17 @@ func (h *Handlers) TagScan(w http.ResponseWriter, r *http.Request) {
 			defer func() { <-gate }()
 			cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
 			preview := h.fetchBookmarkPreview(r.Context(), target.url, &cache, false)
+			/*
+			 * Stamped even when the page could not be read.
+			 *
+			 * A refused address or a dead host returns before the extraction
+			 * runs, so the stamp it would have set is missing -- and an
+			 * unstamped page is one this round offers again on the next pass,
+			 * forever. Asked is asked.
+			 */
+			if preview.KeywordsAt == 0 {
+				preview.KeywordsAt = time.Now().UnixMilli()
+			}
 			results[i] = result{
 				key:     target.key,
 				preview: preview,

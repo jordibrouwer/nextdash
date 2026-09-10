@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "Eine Regel, die Sie schreiben, schlägt immer das, was nextDash selbst ermittelt hat, und schlägt vor, sobald Sie sie anlegen.",
     "tagRulesEmpty": "Noch keine Regeln. Alles im Tab Tag-Vorschläge stammt aus Ihren eigenen Tags und dem Katalog.",
     "tagRulesInfoTitle": "So funktionieren Ihre Regeln",
-    "tagRulesInfoBody": "Eine Regel ist eine Website und das Tag, das sie bekommen soll.\n\nSchreiben Sie github.com → #code, und jedem GitHub-Lesezeichen wird #code angeboten, was der Rest Ihrer Sammlung auch sagt. Eine Regel gewinnt immer: gegen die Tags, die nextDash Sie verwenden sah, und gegen den mitgelieferten Katalog.\n\nEin Muster ist eine Website, wahlweise mit einem Pfadsegment — github.com oder github.com/trending. Keine ganze Adresse und nicht zwei Segmente tief.\n\nRegeln schlagen vor; sie taggen nie von selbst. Was sie ergeben, steht im Tab Tag-Vorschläge, eine Zeile je Regel, mit Apply daneben."
+    "tagRulesInfoBody": "Eine Regel ist eine Website und das Tag, das sie bekommen soll.\n\nSchreiben Sie github.com → #code, und jedem GitHub-Lesezeichen wird #code angeboten, was der Rest Ihrer Sammlung auch sagt. Eine Regel gewinnt immer: gegen die Tags, die nextDash Sie verwenden sah, und gegen den mitgelieferten Katalog.\n\nEin Muster ist eine Website, wahlweise mit einem Pfadsegment — github.com oder github.com/trending. Keine ganze Adresse und nicht zwei Segmente tief.\n\nRegeln schlagen vor; sie taggen nie von selbst. Was sie ergeben, steht im Tab Tag-Vorschläge, eine Zeile je Regel, mit Apply daneben.",
+    "tagSuggestionsDismissedTitle": "Abgelehnt",
+    "tagSuggestionRestoreOne": "Erneut anbieten",
+    "tagSuggestionMembersAria": "Zeigen, welche Lesezeichen dazugehören",
+    "clearTagKeywordsBtn": "Gelesene Stichwörter vergessen",
+    "clearTagKeywordsConfirm": "Die aus Ihren Seiten gelesenen Stichwörter vergessen? Vorschläge aus Ihren eigenen Tags, Ihren Regeln und dem Katalog bleiben.",
+    "clearTagKeywordsDone": "Stichwörter für {n} Lesezeichen vergessen.",
+    "clearTagKeywordsError": "Die Stichwörter konnten nicht vergessen werden.",
+    "tagScanAllRead": "Jede Seite wurde gelesen.",
+    "tagScanForget": "Stichwörter vergessen",
+    "tagScanAgain": "Erneut lesen",
+    "tagScanAgainError": "Eine weitere Runde konnte nicht gestartet werden."
   },
   "colors": {
     "title": "themenanpassung",

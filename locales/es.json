@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "Una regla que escribes siempre gana a lo que nextDash dedujo por su cuenta, y propone desde el momento en que la añades.",
     "tagRulesEmpty": "Aún no hay reglas. Todo lo que ves en la pestaña Sugerencias de etiquetas sale de tus propias etiquetas y del catálogo.",
     "tagRulesInfoTitle": "Cómo funcionan tus reglas",
-    "tagRulesInfoBody": "Una regla es un sitio y la etiqueta que debe recibir.\n\nEscribe github.com → #code y a cada marcador de GitHub se le ofrecerá #code, diga lo que diga el resto de tu colección. Una regla siempre gana: a las etiquetas que nextDash te vio usar y al catálogo incluido.\n\nUn patrón es un sitio, opcionalmente con un segmento de ruta: github.com, o github.com/trending. No una dirección entera, ni dos segmentos de profundidad.\n\nLas reglas proponen; nunca etiquetan solas. Lo que producen aparece en la pestaña Sugerencias de etiquetas, una fila por regla, con Apply al lado."
+    "tagRulesInfoBody": "Una regla es un sitio y la etiqueta que debe recibir.\n\nEscribe github.com → #code y a cada marcador de GitHub se le ofrecerá #code, diga lo que diga el resto de tu colección. Una regla siempre gana: a las etiquetas que nextDash te vio usar y al catálogo incluido.\n\nUn patrón es un sitio, opcionalmente con un segmento de ruta: github.com, o github.com/trending. No una dirección entera, ni dos segmentos de profundidad.\n\nLas reglas proponen; nunca etiquetan solas. Lo que producen aparece en la pestaña Sugerencias de etiquetas, una fila por regla, con Apply al lado.",
+    "tagSuggestionsDismissedTitle": "Rechazadas",
+    "tagSuggestionRestoreOne": "Ofrecer de nuevo",
+    "tagSuggestionMembersAria": "Mostrar qué marcadores abarca",
+    "clearTagKeywordsBtn": "Olvidar las palabras clave leídas",
+    "clearTagKeywordsConfirm": "¿Olvidar las palabras clave leídas de tus páginas? Las sugerencias de tus propias etiquetas, tus reglas y el catálogo no cambian.",
+    "clearTagKeywordsDone": "Palabras clave olvidadas en {n} marcadores.",
+    "clearTagKeywordsError": "No se pudieron olvidar las palabras clave.",
+    "tagScanAllRead": "Se han leído todas las páginas.",
+    "tagScanForget": "Olvidar las palabras clave",
+    "tagScanAgain": "Leerlas de nuevo",
+    "tagScanAgainError": "No se pudo iniciar otra pasada."
   },
   "colors": {
     "title": "personalización del tema",

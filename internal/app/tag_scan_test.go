@@ -250,3 +250,102 @@ func TestTagScanStatusReportsTheCostWithoutFetching(t *testing.T) {
 		t.Error("the status route fetched a page")
 	}
 }
+
+func TestTagKeywordsClearKeepsTheRestOfThePreview(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<html><head><title>Ops handbook</title>
+			<meta name="keywords" content="kubernetes, helm">
+			<meta name="description" content="Running clusters.">
+			</head><body></body></html>`))
+	}))
+	defer service.Close()
+
+	seedBookmarkForTest(t, h, service.URL)
+	postForTest(t, h.TagScan, "/api/tags/scan")
+
+	key := canonicalBookmarkURLKey(service.URL)
+	before, ok := h.getPreviewCacheEntry(key)
+	if !ok || len(before.Keywords) == 0 || before.Title == "" {
+		t.Fatalf("nothing to clear: %+v", before)
+	}
+
+	body := postForTest(t, h.TagKeywordsClear, "/api/tags/keywords/clear")
+	if body["cleared"] != float64(1) {
+		t.Errorf("cleared = %v, want 1", body["cleared"])
+	}
+
+	after, ok := h.getPreviewCacheEntry(key)
+	if !ok {
+		t.Fatal("the cache entry itself was thrown away")
+	}
+	if len(after.Keywords) != 0 {
+		t.Errorf("keywords survived: %v", after.Keywords)
+	}
+	// The title, the description and the fetch stamp were fetched for the
+	// preview card and are not this feature's to delete.
+	if after.Title != before.Title || after.Description != before.Description {
+		t.Errorf("the preview lost more than its keywords: %+v", after)
+	}
+	if after.FetchedAt == 0 {
+		t.Error("FetchedAt was cleared, so the round would read the page again")
+	}
+}
+
+func TestTagScanResetMakesPagesAskableWithoutLosingWords(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<html><head><title>Ops</title>
+			<meta name="keywords" content="kubernetes, helm">
+			</head><body></body></html>`))
+	}))
+	defer service.Close()
+
+	seedBookmarkForTest(t, h, service.URL)
+	postForTest(t, h.TagScan, "/api/tags/scan")
+	if left := len(h.tagScanTargets()); left != 0 {
+		t.Fatalf("%d pages still waiting after a round", left)
+	}
+
+	body := postForTest(t, h.TagScanReset, "/api/tags/scan/reset")
+	if body["reset"] != float64(1) {
+		t.Errorf("reset = %v, want 1", body["reset"])
+	}
+	if left := len(h.tagScanTargets()); left != 1 {
+		t.Errorf("%d pages askable after a reset, want 1", left)
+	}
+
+	// The words stay until they are replaced, so the panel goes on proposing
+	// from what it has while the round runs.
+	entry, ok := h.getPreviewCacheEntry(canonicalBookmarkURLKey(service.URL))
+	if !ok || len(entry.Keywords) == 0 {
+		t.Errorf("the reset threw the words away: %+v", entry)
+	}
+}
+
+func TestTagScanRemembersAPageItCouldNotRead(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer service.Close()
+
+	seedBookmarkForTest(t, h, service.URL)
+	postForTest(t, h.TagScan, "/api/tags/scan")
+
+	// A page that answered 500 never reached the extraction, so nothing
+	// stamped it -- and an unstamped page is one every later round offers
+	// again, forever.
+	entry, ok := h.getPreviewCacheEntry(canonicalBookmarkURLKey(service.URL))
+	if !ok || entry.KeywordsAt == 0 {
+		t.Errorf("an unreadable page was not remembered as asked: %+v", entry)
+	}
+}

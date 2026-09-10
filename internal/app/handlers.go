@@ -3070,6 +3070,7 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	 * change a threshold that has nothing to do with keywords.
 	 */
 	preview.Keywords = extractKeywords(htmlBody, string(overRead)+string(bodySample))
+	preview.KeywordsAt = preview.FetchedAt
 
 	/*
 	 * oEmbed, when the page advertises it.

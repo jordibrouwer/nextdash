@@ -268,6 +268,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/tags/scan", handlers.TagScan).Methods("POST")
 	r.HandleFunc("/api/tags/scan", handlers.TagScanStatus).Methods("GET")
 	r.HandleFunc("/api/tags/keywords", handlers.TagKeywords).Methods("GET")
+	r.HandleFunc("/api/tags/keywords/clear", handlers.TagKeywordsClear).Methods("POST")
+	r.HandleFunc("/api/tags/scan/reset", handlers.TagScanReset).Methods("POST")
 	r.HandleFunc("/api/previews/clear", handlers.ClearAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/previews/refresh", handlers.RefreshAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/previews/images", handlers.PreviewImageStats).Methods("GET")

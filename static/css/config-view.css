@@ -6099,7 +6099,34 @@ button.config-bm-shortcut-pill {
  * proportional numerals in a column are the other half of why this looked
  * ragged.
  */
+/* The members of a group, once the count is opened. */
+.config-suggestion-members {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 var(--space-1, 0.35rem);
+    padding: var(--space-1, 0.35rem) var(--space-3, 0.85rem) var(--space-2, 0.55rem);
+    list-style: none;
+}
+
+.config-suggestion-member {
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 1fr) minmax(6rem, 1.4fr);
+    align-items: baseline;
+    gap: var(--space-2, 0.55rem);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.config-suggestion-member-url {
+    color: var(--text-muted, #888);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .config-suggestion-count {
+    cursor: pointer;
     justify-self: end;
     min-width: 1.75rem;
     padding: 0 0.45em;

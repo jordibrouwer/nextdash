@@ -5908,7 +5908,18 @@
     "tagRulesIntro": "你写的规则总是胜过 nextDash 自己得出的结论，并且从你添加的那一刻起就开始提出建议。",
     "tagRulesEmpty": "还没有规则。标签建议标签页里的内容都来自你自己的标签和目录。",
     "tagRulesInfoTitle": "你的规则如何运作",
-    "tagRulesInfoBody": "一条规则就是一个站点，加上它该得到的标签。\n\n写下 github.com → #code，那么每个 GitHub 书签都会被建议 #code，无论你其余的收藏怎么说。规则总是优先：胜过 nextDash 看到你在用的标签，也胜过随附的目录。\n\n模式是一个站点，可以带一个路径段 — github.com，或 github.com/trending。不是整个地址，也不能深到两段。\n\n规则只是建议；它们从不自行打标签。它们产生的结果出现在标签建议标签页里，每条规则一行，旁边有 Apply。"
+    "tagRulesInfoBody": "一条规则就是一个站点，加上它该得到的标签。\n\n写下 github.com → #code，那么每个 GitHub 书签都会被建议 #code，无论你其余的收藏怎么说。规则总是优先：胜过 nextDash 看到你在用的标签，也胜过随附的目录。\n\n模式是一个站点，可以带一个路径段 — github.com，或 github.com/trending。不是整个地址，也不能深到两段。\n\n规则只是建议；它们从不自行打标签。它们产生的结果出现在标签建议标签页里，每条规则一行，旁边有 Apply。",
+    "tagSuggestionsDismissedTitle": "已拒绝",
+    "tagSuggestionRestoreOne": "重新提供",
+    "tagSuggestionMembersAria": "显示这涉及哪些书签",
+    "clearTagKeywordsBtn": "忘记已读取的关键词",
+    "clearTagKeywordsConfirm": "忘记从你的页面读取的关键词？来自你自己的标签、你的规则和目录的建议不受影响。",
+    "clearTagKeywordsDone": "已忘记 {n} 个书签的关键词。",
+    "clearTagKeywordsError": "无法忘记这些关键词。",
+    "tagScanAllRead": "每个页面都已读取。",
+    "tagScanForget": "忘记关键词",
+    "tagScanAgain": "重新读取",
+    "tagScanAgainError": "无法开始新一轮。"
   },
   "colors": {
     "title": "主题自定义",

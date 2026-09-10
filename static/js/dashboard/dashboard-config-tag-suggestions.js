@@ -157,7 +157,7 @@
         container.appendChild(list);
     }
 
-    function renderList(t, groups) {
+    function renderList(t, groups, ctx) {
         const list = document.createElement('ul');
         list.className = 'config-suggestions-list config-suggestions-list--proposals';
         groups.slice(0, MAX_ROWS).forEach((group, index) => {
@@ -215,6 +215,48 @@
 
             row.append(tag, pattern, count, why, actions);
             list.appendChild(row);
+
+            /*
+             * What the row is actually offering, on request.
+             *
+             * "47 bookmarks" is a number to take on trust, and a group with
+             * one wrong member left the reader nothing to do but refuse the
+             * whole row. Expanding names them, and each carries a tick: what
+             * stays ticked is what Apply writes.
+             */
+            const id = `${group.pattern}|${group.tag}`;
+            const open = ctx.expanded?.has?.(id);
+            // The count is the handle: it is the thing the reader is being
+            // asked to take on trust, so it is the thing that opens the proof.
+            count.setAttribute('data-tag-suggestion-toggle', String(index));
+            count.setAttribute('aria-expanded', open ? 'true' : 'false');
+            count.setAttribute('role', 'button');
+            count.tabIndex = 0;
+            count.title = t('config.tagSuggestionMembersAria', 'Show which bookmarks this covers');
+            if (!open) return;
+
+            const byKey = new Map((ctx.items || []).map((item) => [item.key, item]));
+            const members = document.createElement('li');
+            members.className = 'config-suggestion-members';
+            members.setAttribute('data-tag-suggestion-members', String(index));
+            group.keys.forEach((key) => {
+                const item = byKey.get(key);
+                const line = document.createElement('label');
+                line.className = 'config-suggestion-member';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.checked = !ctx.excluded?.has?.(`${id}|${key}`);
+                box.setAttribute('data-tag-suggestion-member', `${id}|${key}`);
+                const name = document.createElement('span');
+                name.className = 'config-suggestion-member-name';
+                name.textContent = item?.name || item?.url || key;
+                const where = document.createElement('span');
+                where.className = 'config-suggestion-member-url';
+                where.textContent = item?.url || '';
+                line.append(box, name, where);
+                members.appendChild(line);
+            });
+            list.appendChild(members);
         });
         return list;
     }
@@ -257,7 +299,7 @@
             count.textContent = t('config.tagSuggestionsSummaryCount', '{n} to review')
                 .replace('{n}', String(groups.length));
             container.appendChild(count);
-            container.appendChild(renderList(t, groups));
+            container.appendChild(renderList(t, groups, ctx));
             if (groups.length > MAX_ROWS) {
                 const more = document.createElement('p');
                 more.className = 'config-widget-field-hint';
@@ -296,22 +338,93 @@
             start.disabled = !!ctx.scan.running;
             scan.append(cost, start);
             container.appendChild(scan);
+        } else if (ctx.scan) {
+            /*
+             * Nothing left to read: the round is done, and the only thing this
+             * row still has to offer is the way back out.
+             */
+            const done = document.createElement('div');
+            done.className = 'config-suggestion-row config-suggestion-row--scan';
+            done.setAttribute('data-tag-scan', '');
+            const said = document.createElement('span');
+            said.className = 'config-suggestion-scan-text';
+            said.textContent = t('config.tagScanAllRead', 'Every page has been read.');
+            const again = document.createElement('button');
+            again.type = 'button';
+            again.className = 'config-btn config-btn--small';
+            again.setAttribute('data-tag-scan-again', '');
+            again.textContent = t('config.tagScanAgain', 'Read them again');
+            const forget = document.createElement('button');
+            forget.type = 'button';
+            forget.className = 'config-btn config-btn--small config-btn--danger';
+            forget.setAttribute('data-tag-keywords-clear', '');
+            forget.textContent = t('config.tagScanForget', 'Forget the keywords');
+            const actions = document.createElement('span');
+            actions.className = 'config-suggestion-actions';
+            actions.append(again, forget);
+            done.append(said, actions);
+            container.appendChild(done);
         }
 
-        const refused = (ctx.dismissed || []).length;
-        if (refused) {
-            const note = document.createElement('p');
-            note.className = 'config-widget-field-hint';
-            note.setAttribute('data-tag-suggestions-dismissed', '');
-            note.textContent = `${t('config.tagSuggestionsDismissedCount', '{n} turned down.')
-                .replace('{n}', String(refused))} `;
+        /*
+         * What was turned down, one line each.
+         *
+         * It used to be a count and a single "offer them again": a reader who
+         * refused #video on youtube.com last week and now wants it back had to
+         * take back every refusal to get it. Each is named and each has its own
+         * way back; the all-at-once button stays for the reader who wants a
+         * clean slate.
+         */
+        const refused = ctx.dismissed || [];
+        if (refused.length) {
+            const wrap = document.createElement('details');
+            wrap.className = 'config-suggestion-rules';
+            wrap.setAttribute('data-tag-suggestions-dismissed', '');
+
+            const head = document.createElement('summary');
+            head.className = 'config-suggestions-summary';
+            const headName = document.createElement('span');
+            headName.className = 'config-suggestions-summary-title';
+            headName.textContent = t('config.tagSuggestionsDismissedTitle', 'Turned down');
+            const headNote = document.createElement('span');
+            headNote.className = 'config-suggestions-summary-note';
+            headNote.textContent = t('config.tagSuggestionsDismissedCount', '{n} turned down.')
+                .replace('{n}', String(refused.length));
+            head.append(headName, headNote);
+            wrap.appendChild(head);
+
+            const list = document.createElement('div');
+            list.className = 'config-suggestions-list config-suggestion-rules-list';
+            refused.forEach((entry) => {
+                const [pattern, tag] = String(entry).split('|');
+                const row = document.createElement('div');
+                row.className = 'config-suggestion-row config-suggestion-row--rule';
+                row.setAttribute('data-tag-suggestion-refused', String(entry));
+                const text = document.createElement('span');
+                text.className = 'config-suggestion-rule-text';
+                text.textContent = `${pattern === 'page-text'
+                    ? t('config.tagSuggestionAcrossSites', 'across sites')
+                    : pattern} → #${tag}`;
+                const back = document.createElement('button');
+                back.type = 'button';
+                back.className = 'config-btn config-btn--small';
+                back.setAttribute('data-tag-suggestion-restore-one', String(entry));
+                back.textContent = t('config.tagSuggestionRestoreOne', 'Offer again');
+                row.append(text, back);
+                list.appendChild(row);
+            });
+            wrap.appendChild(list);
+
+            const all = document.createElement('p');
+            all.className = 'config-widget-field-hint';
             const restore = document.createElement('button');
             restore.type = 'button';
             restore.className = 'config-link-button';
             restore.setAttribute('data-tag-suggestions-restore', '');
             restore.textContent = t('config.tagSuggestionsRestore', 'Offer them again');
-            note.appendChild(restore);
-            container.appendChild(note);
+            all.appendChild(restore);
+            wrap.appendChild(all);
+            container.appendChild(wrap);
         }
 
         return groups;
