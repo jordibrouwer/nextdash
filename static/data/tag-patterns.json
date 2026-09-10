@@ -791,7 +791,10 @@
         "spark.apache.org"
       ],
       "keywords": [
-        "batch-processing"
+        "batch-processing",
+        "hadoop",
+        "data-lake",
+        "mapreduce"
       ]
     },
     {
@@ -1609,7 +1612,10 @@
         "photos.google.com"
       ],
       "keywords": [
-        "shared-folder"
+        "shared-folder",
+        "file-storage",
+        "storage-quota",
+        "upload-files"
       ]
     },
     {
@@ -1969,7 +1975,10 @@
         "podman.io"
       ],
       "keywords": [
-        "orchestration"
+        "orchestration",
+        "dockerfile",
+        "container-registry",
+        "kubelet"
       ]
     },
     {
@@ -4565,7 +4574,10 @@
         "propertycasualty360.com"
       ],
       "keywords": [
-        "liability"
+        "liability",
+        "premiums",
+        "deductible",
+        "claims-adjuster"
       ]
     },
     {
@@ -4823,6 +4835,11 @@
         "springer.com",
         "tandfonline.com",
         "wiley.com"
+      ],
+      "keywords": [
+        "peer-reviewed",
+        "doi",
+        "issn"
       ]
     },
     {
@@ -5544,7 +5561,10 @@
         "sunbasket.com"
       ],
       "keywords": [
-        "portioned"
+        "portioned",
+        "recipe-box",
+        "dinner-kit",
+        "ingredients-delivered"
       ]
     },
     {
@@ -6148,7 +6168,10 @@
         "thehustle.co"
       ],
       "keywords": [
-        "curated-links"
+        "curated-links",
+        "weekly-issue",
+        "issue-archive",
+        "back-issues"
       ]
     },
     {
@@ -6409,7 +6432,10 @@
         "paleobiodb.org"
       ],
       "keywords": [
-        "skeletal"
+        "skeletal",
+        "fossil-record",
+        "dinosaur",
+        "extinct-species"
       ]
     },
     {
@@ -7489,7 +7515,10 @@
         "sciencedirect.com"
       ],
       "keywords": [
-        "empirical"
+        "empirical",
+        "research-methods",
+        "literature-review",
+        "study-design"
       ]
     },
     {
@@ -7783,7 +7812,10 @@
         "khanacademy.org"
       ],
       "keywords": [
-        "grade-level"
+        "grade-level",
+        "classroom",
+        "curriculum",
+        "pupils"
       ]
     },
     {
