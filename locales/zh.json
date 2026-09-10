@@ -3211,6 +3211,7 @@
     "bulkTagsUpdated": "已更新 {count} 个书签的标签。",
     "tagSuggestionsTitle": "标签建议",
     "tagSuggestionsEmpty": "暂时没有可建议的内容——先给几个书签打上标签，同一站点的其他书签就会自己冒出来。",
+    "tagSuggestionsCapped": "显示 {total} 条建议中最大的 {shown} 条。采纳几条后，其余的就会往上补。",
     "tagSuggestionApply": "应用",
     "tagSuggestionCount": "{n} 个书签",
     "tagSuggestionReasonRule": "你的规则",

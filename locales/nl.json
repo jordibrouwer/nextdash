@@ -3204,6 +3204,7 @@
     "bulkTagsUpdated": "Tags bijgewerkt voor {count} bladwijzer(s).",
     "tagSuggestionsTitle": "Tagsuggesties",
     "tagSuggestionsEmpty": "Nog niets voor te stellen — tag een paar bladwijzers, dan gaan hun buren zichzelf aandragen.",
+    "tagSuggestionsCapped": "Je ziet de {shown} grootste suggesties van {total}. Neem er een paar aan, dan schuift de rest omhoog.",
     "tagSuggestionApply": "Toepassen",
     "tagSuggestionCount": "{n} bladwijzers",
     "tagSuggestionReasonRule": "jouw regel",

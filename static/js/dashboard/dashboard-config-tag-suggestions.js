@@ -8,6 +8,19 @@
 (function (global) {
     'use strict';
 
+    /*
+     * How many groups the panel will draw.
+     *
+     * A ten-thousand-bookmark collection with a hundred rules behind it
+     * produced sixteen hundred rows, which is not a review -- it is a wall.
+     * Twenty-five is roughly what fits a long scroll of the section without
+     * turning the page into the suggestions page, and the engine already
+     * orders the biggest groups first, so the ones worth a click are the ones
+     * that survive the cut. The rest are not hidden: the count below the list
+     * says how many are waiting, and they surface as these are accepted.
+     */
+    const MAX_ROWS = 25;
+
     function reasonText(t, group) {
         if (group.reason.kind === 'rule') return t('config.tagSuggestionReasonRule', 'your rule');
         return t('config.tagSuggestionReasonDerived', 'your own tags ({have} of {of})')
@@ -86,7 +99,7 @@
 
         const list = document.createElement('ul');
         list.className = 'config-suggestions-list';
-        groups.forEach((group, index) => {
+        groups.slice(0, MAX_ROWS).forEach((group, index) => {
             const row = document.createElement('li');
             row.className = 'config-suggestion-row';
             row.setAttribute('data-tag-suggestion', String(index));
@@ -118,6 +131,16 @@
             list.appendChild(row);
         });
         container.appendChild(list);
+        if (groups.length > MAX_ROWS) {
+            const more = document.createElement('p');
+            more.className = 'config-widget-field-hint';
+            more.setAttribute('data-tag-suggestions-capped', '');
+            more.textContent = t('config.tagSuggestionsCapped',
+                'Showing the {shown} biggest suggestions of {total}. Accept some and the rest move up.')
+                .replace('{shown}', String(MAX_ROWS))
+                .replace('{total}', String(groups.length));
+            container.appendChild(more);
+        }
         renderRules(container, ctx);
         return groups;
     }

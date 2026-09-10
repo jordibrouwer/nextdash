@@ -3199,6 +3199,7 @@
     "bulkTagsUpdated": "Tags mis à jour pour {count} favori(s).",
     "tagSuggestionsTitle": "Suggestions d’étiquettes",
     "tagSuggestionsEmpty": "Rien à proposer pour l’instant — étiquetez quelques favoris et leurs voisins se proposeront d’eux-mêmes.",
+    "tagSuggestionsCapped": "Voici les {shown} suggestions les plus larges sur {total}. Acceptez-en quelques-unes et les autres remonteront.",
     "tagSuggestionApply": "Appliquer",
     "tagSuggestionCount": "{n} favoris",
     "tagSuggestionReasonRule": "votre règle",

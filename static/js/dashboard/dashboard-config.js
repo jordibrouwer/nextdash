@@ -22815,6 +22815,16 @@ class DashboardConfig {
                     });
                 }
                 await this.refreshBookmarksAfterWrite();
+                // The suggestions panel is built from the tags an undo just put
+                // back, so it has to be redrawn or it keeps showing the
+                // collection as it was before the undo. Today the refresh above
+                // usually gets there by accident -- with Config on screen
+                // repaintBookmarkMutationSurfaces falls through to a whole
+                // config.render() -- but that path bails out early whenever an
+                // inline edit is open, and it is an accident either way. Say it
+                // here, where the undo is. No-ops when the panel is not on
+                // screen, which is every undo but the tag ones.
+                this.renderTagSuggestionsSafe();
                 this.notify(this.t(doneKey, doneFallback), 'success');
             } catch {
                 this.notify(this.t(failKey, failFallback), 'error');

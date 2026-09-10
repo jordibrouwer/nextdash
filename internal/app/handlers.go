@@ -1496,6 +1496,14 @@ sanitizeTagRules keeps the rules that could ever match, and drops the rest.
 A pattern is a host, optionally with its first path segment -- never a whole
 address. A rule carrying a scheme looks configured and matches nothing, since
 what it is compared against is already reduced to host and segment.
+
+The one-segment limit and the two normalisations below are not taste: they are
+the exact shape patternsFor() in static/js/shared/tag-suggestions.js emits for a
+URL, and a rule is only ever compared against that list. patternsFor stops at
+the first path segment and strips a leading "www.", so "reddit.com/r/selfhosted"
+and "www.github.com" and "github.com/" would all be stored as rules that can
+never fire -- configured-looking and silently dead. Reject what cannot be
+rescued, normalise what can.
 */
 func sanitizeTagRules(rules []TagRule) []TagRule {
 	clean := make([]TagRule, 0, len(rules))
@@ -1510,6 +1518,11 @@ func sanitizeTagRules(rules []TagRule) []TagRule {
 			continue
 		}
 		if strings.Contains(pattern, "://") || strings.ContainsAny(pattern, " ?#") {
+			continue
+		}
+		pattern = strings.TrimPrefix(pattern, "www.")
+		pattern = strings.TrimRight(pattern, "/")
+		if pattern == "" || strings.Count(pattern, "/") > 1 {
 			continue
 		}
 		key := pattern + "\x00" + tags[0]

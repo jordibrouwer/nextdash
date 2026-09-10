@@ -72,6 +72,46 @@ test.describe('the tag suggestion engine', () => {
         expect(byTag.code.keys).toEqual(['d']);
     });
 
+    test('a rule that only restates a group the app already noticed is one row, not two', async ({ page }) => {
+        await open(page);
+        const groups = await page.evaluate((rows) => window.TagSuggestions.suggest(rows, {
+            rules: [{ pattern: 'github.com', tag: 'code' }],
+        }), items([
+            ['a', 'https://github.com/one', ['code']],
+            ['b', 'https://github.com/two', ['code']],
+            ['c', 'https://github.com/three', ['code']],
+            ['d', 'https://github.com/four', []],
+        ]));
+        // The rule and the pattern the app derived agree on tag and on
+        // bookmark, so the reader is offered it once -- and the rule wins,
+        // because it is the reason they would recognise.
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toMatchObject({ tag: 'code', pattern: 'github.com', source: 'rule', keys: ['d'] });
+    });
+
+    test('the biggest group is offered first, however specific the others are', async ({ page }) => {
+        await open(page);
+        const patterns = await page.evaluate((rows) => window.TagSuggestions.suggest(rows)
+            .map((g) => `${g.pattern}:${g.keys.length}`), items([
+            ['m1', 'https://many.example/one/a', ['code']],
+            ['m2', 'https://many.example/two/a', ['code']],
+            ['m3', 'https://many.example/three/a', ['code']],
+            ['m4', 'https://many.example/four/a', []],
+            ['m5', 'https://many.example/five/a', []],
+            ['m6', 'https://many.example/six/a', []],
+            ['m7', 'https://many.example/seven/a', []],
+            ['m8', 'https://many.example/eight/a', []],
+            ['s1', 'https://small.example/r/one', ['wiki']],
+            ['s2', 'https://small.example/r/two', ['wiki']],
+            ['s3', 'https://small.example/r/three', []],
+            ['s4', 'https://small.example/r/four', []],
+        ]));
+        // The narrower small.example/r group still outranks the bare host for
+        // resolving a conflict, but five bookmarks are worth reading before
+        // two.
+        expect(patterns).toEqual(['many.example:5', 'small.example/r:2']);
+    });
+
     test('no bookmark is offered more than two tags', async ({ page }) => {
         await open(page);
         const perKey = await page.evaluate((rows) => {
@@ -123,10 +163,62 @@ test.describe('the suggestions panel', () => {
         await expect(row).toContainText('plan.example');
         await row.locator('[data-tag-suggestion-apply]').click();
 
-        await expect.poll(async () => page.evaluate(() =>
+        const tagged = async () => page.evaluate(() =>
             (window.dashboardInstance.allBookmarks || [])
-                .filter((b) => b.url.includes('plan.example') && (b.tags || []).includes('code')).length),
-        { timeout: 15_000 }).toBe(4);
+                .filter((b) => b.url.includes('plan.example') && (b.tags || []).includes('code')).length);
+        await expect.poll(tagged, { timeout: 15_000 }).toBe(4);
+        // Wait for the panel to catch up before undoing, so what it shows
+        // afterwards is the undo's doing and not a repaint that had not landed.
+        const offered = panel.locator('[data-tag-suggestion]').filter({ hasText: 'plan.example' });
+        await expect(offered).toHaveCount(0, { timeout: 15_000 });
+
+        // It went through the bulk path, so the toast's own Undo puts the
+        // previous tags back -- the three that were already tagged stay tagged,
+        // the fourth loses what the panel just gave it.
+        const undo = page.locator('.app-notification.show .app-notification-action');
+        await expect(undo).toBeVisible({ timeout: 15_000 });
+        await undo.click();
+        await expect.poll(tagged, { timeout: 15_000 }).toBe(3);
+
+        // And the panel is offering plan.example again, rather than still
+        // showing the collection as it was before the undo.
+        await expect(offered).toHaveCount(1, { timeout: 15_000 });
+    });
+
+    test('caps how many rows it draws, and says how many are waiting', async ({ page }) => {
+        await open(page);
+        await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
+        const drawn = await page.evaluate(() => {
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            // Thirty hosts, each three tagged and one not: thirty groups, more
+            // than the panel is willing to put on screen at once.
+            const rows = [];
+            for (let h = 0; h < 30; h += 1) {
+                for (let i = 0; i < 4; i += 1) {
+                    rows.push({
+                        key: `h${h}-${i}`,
+                        url: `https://host${h}.example/page${i}`,
+                        tags: i < 3 ? ['code'] : [],
+                    });
+                }
+            }
+            const groups = window.ConfigTagSuggestions.render(host, {
+                items: rows, rules: [], t: (key, fallback) => fallback,
+            });
+            const notice = host.querySelector('[data-tag-suggestions-capped]');
+            const result = {
+                groups: groups.length,
+                rows: host.querySelectorAll('[data-tag-suggestion]').length,
+                notice: notice ? notice.textContent : '',
+            };
+            host.remove();
+            return result;
+        });
+        expect(drawn.groups).toBe(30);
+        expect(drawn.rows).toBe(25);
+        expect(drawn.notice).toContain('25');
+        expect(drawn.notice).toContain('30');
     });
 
     test('a rule you write survives a reload and proposes on its own', async ({ page }) => {

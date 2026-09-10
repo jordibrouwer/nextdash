@@ -3211,6 +3211,7 @@
     "bulkTagsUpdated": "Tags updated for {count} bookmark(s).",
     "tagSuggestionsTitle": "Tag suggestions",
     "tagSuggestionsEmpty": "Nothing to suggest yet — tag a few bookmarks and their neighbours will start proposing themselves.",
+    "tagSuggestionsCapped": "Showing the {shown} biggest suggestions of {total}. Accept some and the rest move up.",
     "tagSuggestionApply": "Apply",
     "tagSuggestionCount": "{n} bookmarks",
     "tagSuggestionReasonRule": "your rule",

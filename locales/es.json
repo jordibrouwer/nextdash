@@ -3211,6 +3211,7 @@
     "bulkTagsUpdated": "Etiquetas actualizadas en {count} marcador(es).",
     "tagSuggestionsTitle": "Sugerencias de etiquetas",
     "tagSuggestionsEmpty": "Nada que sugerir todavía: etiqueta unos cuantos marcadores y sus vecinos empezarán a proponerse solos.",
+    "tagSuggestionsCapped": "Mostrando las {shown} sugerencias más grandes de {total}. Acepta algunas y el resto subirá.",
     "tagSuggestionApply": "Aplicar",
     "tagSuggestionCount": "{n} marcadores",
     "tagSuggestionReasonRule": "tu regla",
