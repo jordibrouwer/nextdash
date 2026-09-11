@@ -172,7 +172,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 - Drag the **`//` prefix** in a category title to reorder sections.  
 - Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal-shiftb-or-ctrlshifta).  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
-- In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
+- In **config → structure → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
 #### Spreading a category across columns
 
@@ -195,7 +195,7 @@ A spread category says so with a small **↔ N** beside the title, naming the nu
 | Mouse | Right-click the category header → **Spread across columns** |
 | Keyboard | **Shift + W** on the focused category |
 | Command | `:width on` / `:width off`, or `:width all` to switch every category back |
-| Config | **pages & tags → categories** has a ↔ button per row |
+| Config | **structure → categories** has a ↔ button per row |
 
 **Config → appearance → layout → Categories across columns** holds what applies to all of them: **items per category**, whether a **new** category starts out spread, and whether **Turn spreading off everywhere** covers only the current page or every page.
 
@@ -895,7 +895,7 @@ lingers.
 
 Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https://www.google.com/search?q=%s`.
 
-Configure finders in **config → pages & tags → finders** (desktop):
+Configure finders in **config → structure → finders** (desktop):
 
 - **+ Add finder** — appends a new row at the bottom of the table and focuses the name field; the existing list stays visible (no reload needed).
 - **Filter** — narrow the list by name, shortcut, URL, or tags; **✕** or `Escape` clears.
@@ -935,13 +935,13 @@ A category you have just created **stays visible** even with *hide empty categor
 
 ### Reorder categories
 
-- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → pages & tags → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
-- Order in **config → pages & tags → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
+- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → structure → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
+- Order in **config → structure → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
 - With **Lock layout** on, the `//` handle takes a plain cursor and no longer drags; it still toggles collapse.
 
 ### Reorder pages
 
-- Drag the **grip** on a row in **config → pages & tags → pages**, or focus a row and press **↑** / **↓**.
+- Drag the **grip** on a row in **config → structure → pages**, or focus a row and press **↑** / **↓**.
 - Order saves automatically after a short debounce (~600 ms) and shows a localized sync toast.
 
 ### Move between pages
@@ -956,7 +956,7 @@ Double-click a page tab **on desktop or tablet landscape** (not on mobile — av
 - Set an optional **emoji** icon  
 - Pick a **colour dot** from eight swatches (or the empty swatch to remove it); the dot appears on the tab beside the label or page number
 
-The popover saves when you click away or press **Enter**. Use **config → pages & tags → pages** to rename on any device or to manage several pages in a list.
+The popover saves when you click away or press **Enter**. Use **config → structure → pages** to rename on any device or to manage several pages in a list.
 
 ### Widgets (v1.4.0)
 
@@ -1468,7 +1468,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
 - **Dashboard tag cloud (desktop):** `/` or / FAB — toggle one or more tags while the modal stays open; **OR match** (bookmarks with any selected tag); per-tag filter chips in the header; **Escape** on the dashboard clears all filters.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
-- **config → pages & tags → tags** (desktop): global tag management across all pages.  
+- **config → bookmarks → tags** (desktop): global tag management across all pages.  
   - **Word cloud:** dashboard-style popularity scaling — larger tags mean more bookmarks; tier colours and light animations; click a chip to scroll to that tag in the list.  
   - **List:** column headers (Tag / Usage / Actions), usage bar per row, sorted by bookmark count; scrolls with the config page (no inner scroll panel).  
   - Expand a row for bookmarks with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
@@ -1523,7 +1523,7 @@ The list shows at most 25 rows, largest group first, with a line saying how many
 
 ### Smart collections (built-in)
 
-Enabled in **config → pages & tags → collections**:
+Enabled in **config → structure → collections**:
 
 | Collection | Shows |
 |------------|--------|
@@ -1555,7 +1555,7 @@ You can **long-press** or press **`Shift+E`** on a smart-collection row to inlin
 
 ### Custom collections
 
-**config → pages & tags → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
+**config → structure → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
 
 ### Tag collections
 
@@ -1719,9 +1719,9 @@ All 214 variants now carry an accent of their own. A custom theme made before
 v1.4.0 keeps accenting in its success colour rather than losing its accent
 altogether, so nothing you built changes underneath you.
 
-### Config → pages & categories (list tabs)
+### Config → structure (list tabs)
 
-Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collections**) share the same layout pattern: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
+Desktop list tabs (**categories**, **pages**, **finders**, **collections** — and **bookmarks → tags**, which shares the pattern from its own section) share the same layout: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
 
 - **Pages** — add, rename, remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). **Usage** column shows a popularity bar and bookmark count (Tags-style). Desktop only (mobile shows a toast). On the dashboard, **double-click a page tab** (desktop/tablet landscape) to rename, set an emoji, and pick a **colour dot**; on **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.
 - **Categories** — per-page list with icon, name, **merge**, remove; drag or **↑/↓** reorder with auto-save; **Usage** column with popularity bar and bookmark count (Tags-style). Switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Breadcrumb shows the selected page. On **Bookmarks**, **Context** only switches the active category filter. Desktop only for full editing.
@@ -2312,7 +2312,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `↑` / `↓` (list rows) | Move between rows when focus is in the list panel — the Structure lists and Bookmarks → Tags |
 | `Enter` / `Space` (list row) | Focus the first field in the selected list row |
 | `g` / `G` (list row) | Jump to first / last row in one of those lists |
-| `/` (Tags tab) | Focus the tag filter |
+| `/` (Bookmarks → Tags) | Focus the tag filter |
 | `j` / `k` (Bookmarks list) | Move between bookmark rows |
 | `Enter` / `o` / double-click (bookmark row) | Open the bookmark URL |
 | `e` (bookmark row) | Open the bookmark editor modal |
