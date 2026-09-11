@@ -1690,6 +1690,24 @@
     min-width: 120px;
 }
 
+/* Finder row: the URL is the long value and the one that has to stay readable,
+   so it takes the slack. The name is short and the shortcut is at most a few
+   letters, so both are capped instead of splitting the row in three. */
+.config-crud-fields .config-finder-name {
+    flex: 0 1 150px;
+    min-width: 90px;
+}
+
+.config-crud-fields .config-finder-url {
+    flex: 4 1 320px;
+    min-width: 180px;
+}
+
+.config-crud-fields .config-finder-shortcut {
+    flex: 0 0 72px;
+    min-width: 0;
+}
+
 .config-tag-count {
     font-size: calc(var(--font-size-text) * 0.891);
     color: var(--text-muted, #888);

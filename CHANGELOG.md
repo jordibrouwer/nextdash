@@ -208,6 +208,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Config
+
+- **fix — the finder rows split their width three ways, so the URL was the field you could not read.** Name, search URL and shortcut each flexed to an equal share, which left the URL — the only long value of the three, and the one you check for `%s` — cut off after about thirty characters while the shortcut box sat two-thirds empty for a key of at most five letters. The URL now takes the slack (`flex: 4`), the name is capped at 150px and the shortcut at 72px; below roughly 700px the row still wraps as before.
+
 ### Docs
 
 - **docs — the second gallery in Emerald Matrix [dark] is gone from the README.** Its ten files were removed from `screenshots/emerald-matrix/` without the block that pointed at them, so the fold held ten broken images on the published page. The `<details>` section goes with the files; the ten shots above it are untouched.

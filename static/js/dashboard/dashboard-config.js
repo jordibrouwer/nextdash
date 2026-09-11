@@ -14100,9 +14100,9 @@ class DashboardConfig {
             return `
             <li class="config-crud-row" data-finder-index="${i}">
                 <div class="config-crud-fields">
-                    <input type="text" class="config-text" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
-                    <input type="text" class="config-text${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
-                    <input type="text" class="config-text" style="min-width:70px" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
+                    <input type="text" class="config-text config-finder-name" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
+                    <input type="text" class="config-text config-finder-url${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
+                    <input type="text" class="config-text config-finder-shortcut" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
                     ${warning}
                 </div>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
