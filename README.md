@@ -34,61 +34,133 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 <table border="0" width="100%">
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-1.png" alt="Dashboard" width="100%" />
+      <img src="screenshots/nextdash-dashboard.png" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> — Your new home.</sub>
+      <sub><b>Dashboard</b> — Your new home: categories, live status, and a cursor that never leaves the keyboard.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-2.png" alt="Inbox view" width="100%" />
+      <img src="screenshots/nextdash-search.png" alt="Search" width="100%" />
       <br />
-      <sub><b>Inbox</b> — The inbox holding area for links you want to keep without deciding where they go yet.</sub>
+      <sub><b>Search</b> — One field for bookmarks, filters, commands and finders.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-3.png" alt="Health view" width="100%" />
+      <img src="screenshots/nextdash-inbox.png" alt="Inbox view" width="100%" />
       <br />
-      <sub><b>Health</b> — The health view collects everything needing attention across all pages.</sub>
+      <sub><b>Inbox</b> — The holding area for links you want to keep without deciding where they go yet.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-4.png" alt="Health monitoring" width="100%" />
+      <img src="screenshots/nextdash-health.png" alt="Health view" width="100%" />
       <br />
-      <sub><b>Health Monitor</b> — Monitored bookmarks keep a history.</sub>
+      <sub><b>Health</b> — Everything needing attention across all pages, in one list.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-5.png" alt="Statistics" width="100%" />
+      <img src="screenshots/nextdash-health-monitors.png" alt="Health monitoring" width="100%" />
       <br />
-      <sub><b>Inbox</b> — See trends of your bookmarks usage.</sub>
+      <sub><b>Health Monitor</b> — Monitored bookmarks keep an uptime history.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-6.png" alt="Dashboard with combined columns" width="100%" />
+      <img src="screenshots/nextdash-statistics.png" alt="Statistics" width="100%" />
       <br />
-      <sub><b>Dashboard</b> with combined columns.</sub>
+      <sub><b>Statistics</b> — What is in your dashboard, and how you actually use it.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-8.png" alt="Dashboard with widgets" width="100%" />
+      <img src="screenshots/nextdash-widgets.png" alt="Widgets" width="100%" />
       <br />
-      <sub><b>Dashboard</b> with widgets.</sub>
+      <sub><b>Widgets</b> — Blocks that hold something other than bookmarks.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-7.png" alt="Widget settings" width="100%" />
+      <img src="screenshots/nextdash-themes.png" alt="Theme browser" width="100%" />
       <br />
-      <sub><b>Widgets</b> — Adding and configuring a widget.</sub>
+      <sub><b>Themes</b> — 114 built-in themes, light and dark, plus your own.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-9.png" alt="Widget settings" width="100%" />
+      <img src="screenshots/nextdash-bookmarks.png" alt="Bookmark manager" width="100%" />
       <br />
-      <sub><b>Widgets</b> — The full widget settings panel.</sub>
+      <sub><b>Bookmarks</b> — Every bookmark across your pages: search, edit, tag, remove.</sub>
     </td>
-    <td width="50%"></td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-shortcuts.png" alt="Keyboard shortcuts" width="100%" />
+      <br />
+      <sub><b>Keyboard</b> — The whole dashboard is reachable without the mouse.</sub>
+    </td>
   </tr>
 </table>
+
+<details>
+<summary><b>The same ten screens in another theme</b> — Emerald Matrix [dark], one of 114 built in.</summary>
+
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-dashboard.png" alt="Dashboard in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Dashboard</b></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-search.png" alt="Search in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Search</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-inbox.png" alt="Inbox in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Inbox</b></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-health.png" alt="Health in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Health</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-health-monitors.png" alt="Health Monitor in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Health Monitor</b></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-statistics.png" alt="Statistics in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Statistics</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-widgets.png" alt="Widgets in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Widgets</b></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-themes.png" alt="Themes in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Themes</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-bookmarks.png" alt="Bookmarks in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Bookmarks</b></sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/emerald-matrix/nextdash-shortcuts.png" alt="Keyboard in the Emerald Matrix theme" width="100%" />
+      <br />
+      <sub><b>Keyboard</b></sub>
+    </td>
+  </tr>
+</table>
+
+</details>
 
 
 ---

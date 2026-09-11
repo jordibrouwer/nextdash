@@ -208,6 +208,10 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Docs
+
+- **docs — the README screenshots are from the app as it is now.** The nine shots dated from before the theme browser, the search overlay, the statistics tabs and the bookmark manager's tabs, and two of them showed widgets that no longer exist. Ten new captures replace them, taken against a real collection rather than a seeded one, and named after what they show rather than numbered — the Unraid template lists the same files. The same ten screens are there a second time in Emerald Matrix [dark], behind a fold, so the page shows what a theme change actually changes.
+
 ---
 
 ## v1.8.0 — 10 September 2026
