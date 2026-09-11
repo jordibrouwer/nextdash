@@ -210,7 +210,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ### Docs
 
-- **docs — the README screenshots are from the app as it is now.** The nine shots dated from before the theme browser, the search overlay, the statistics tabs and the bookmark manager's tabs, and two of them showed widgets that no longer exist. Ten new captures replace them, taken against a real collection rather than a seeded one, and named after what they show rather than numbered — the Unraid template lists the same files. The same ten screens are there a second time in Emerald Matrix [dark], behind a fold, so the page shows what a theme change actually changes.
+- **docs — the second gallery in Emerald Matrix [dark] is gone from the README.** Its ten files were removed from `screenshots/emerald-matrix/` without the block that pointed at them, so the fold held ten broken images on the published page. The `<details>` section goes with the files; the ten shots above it are untouched.
+- **repo — every screenshot ever committed is out of the git history.** `screenshots/` had been in the tree since the initial commit, and 89 blobs totalling 178 MB were still reachable from main, dev, the other branches and all 314 tags — including captures of a real dashboard that were added and removed again the same day. A `git filter-repo --path screenshots/ --invert-paths` pass rewrites all refs; the packed repository drops from 209 MB to 29 MB and the file trees are byte-identical apart from that directory. Every commit SHA changed, and the commits that touched nothing but screenshots are gone rather than left empty.
+- **docs — the README screenshots are from the app as it is now.** The nine shots dated from before the theme browser, the search overlay, the statistics tabs and the bookmark manager's tabs, and two of them showed widgets that no longer exist. Ten new captures replace them, taken against a real collection rather than a seeded one, and named after what they show rather than numbered — the Unraid template lists the same files.
 
 ---
 
