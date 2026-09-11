@@ -218,8 +218,13 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix — a long section name wrapped the rail button onto two lines.** The rail is a fixed 200px column, so a name never widened it — it broke across lines, and one two-line button in a column of one-line buttons makes the whole rail look ragged. Every translation of a name is a different length, so rather than keeping each one short enough for the widest language, a button now holds itself to one line and shortens with an ellipsis, with the full name on hover.
 - **fix — every deep link into a Bookmarks tab opened List.** `subTabFromHash` refused the section outright, because the segment after `/bookmarks/` is usually a page filter and reading a page id as a tab name would have opened a tab that does not exist. A page id is a number and a tab is a word from a known list, so the two can be told apart — `#config/bookmarks/settings`, `/local-copies` and the rest now arrive where they say, and a reload keeps the tab it was on.
 
+### Dashboard
+
+- **fix — a bookmark whose shortcut starts with c could not be reached by typing it.** Bare `c` added a category, and it did so unconditionally: the handler stopped the event dead, so the shortcut search never saw the letter. That is one twenty-sixth of the alphabet spent on an action taken a few times a day, in an app whose main gesture is typing a shortcut. Adding a category is **Shift + N** now, beside the other Shift actions (`Shift + B` adds a bookmark, `Shift + W` sets a width), and every letter starts a search again.
+
 ### Docs
 
+- **docs — the cheat sheet follows the keys and the sections that moved.** The `!` modal, the printable sheet and both PDFs are regenerated from the registry, so `Shift + N` is on paper as well as on screen; the config rows no longer say *Pages & tags*, and the tag filter is listed where the Tags tab now is. Help's *Config navigation* had that filter on a Structure tab it no longer sits on.
 - **docs — Help and the manual describe the config that exists.** Help's rail list named a section that had been renamed and put it in the old order, its Bookmarks page counted five tabs where there are six, and the tag panel still sent you to the section Tags had left. The manual pointed at `config → pages & tags` in ten places. All of it in six languages, except the release notes, which say what shipped at the time and are left alone.
 
 ### Appearance

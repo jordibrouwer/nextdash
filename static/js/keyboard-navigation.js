@@ -39,6 +39,10 @@
 // a third of a second on the common case to keep a fallback for the rare one.
 // The letters these keys take are still reachable in search: open it first
 // (>, @ or /) and type.
+//
+// c is no longer one of them: adding a category moved to Shift+N, because a
+// bare letter that swallows the key is a letter no bookmark shortcut can start
+// with.
 const G_CHORD_MS = 3000;
 
 class KeyboardNavigation {
@@ -376,14 +380,19 @@ class KeyboardNavigation {
                 }
             }
 
-            // Plain c — add a category. Shift+C is the availability popover and
-            // is handled above, so this branch only ever sees the bare key.
-            // Not gated on the cursor the way g, j and k are: "c adds a category"
-            // is a decision this project already made and pinned — see
-            // create-page-category-from-dashboard.spec.js, which asserts both
-            // that c works with no row focused and that it must not reach the
-            // shortcut search. The cost is that a search cannot begin with c.
-            if (e.code === 'KeyC' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            // Shift+N — add a category.
+            //
+            // It was a bare c, which cost more than it looked: the branch stops
+            // the event dead, so the shortcut search never saw the letter and no
+            // bookmark whose shortcut starts with c could be reached by typing
+            // it. A shortcut for adding something is pressed a few times a day;
+            // typing a shortcut is the thing this dashboard is for.
+            //
+            // Shift+N rather than another bare letter, because every bare letter
+            // is a letter somebody's shortcut starts with. It sits with the
+            // other Shift actions — Shift+B adds a bookmark, Shift+W sets a
+            // width — and N is for new, which is what it does.
+            if (e.code === 'KeyN' && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 e.stopPropagation();
