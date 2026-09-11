@@ -2,6 +2,57 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureStructureTitle",
+      "titleFallback": "Structure, and Tags where the tags are",
+      "whatKey": "config.overviewNewFeatureStructureWhat",
+      "whatFallback": "Pages & tags described two of its five tabs, and the tag list sat a section away from the other tag panels.",
+      "howKey": "config.overviewNewFeatureStructureHow",
+      "howFallback": "The section is called Structure and holds what a collection is filed in: pages, categories, finders and smart collections. Tags moved to Bookmarks, between List and Tag suggestions, with the same cloud, filter and rename-everywhere. Appearance now sits above Bookmarks in the rail, and links handed out before today still land where they should.",
+      "enableKey": "config.overviewNewFeatureStructureEnable",
+      "enableFallback": "Config → Bookmarks → Tags, and Config → Structure.",
+      "ctaKey": "config.overviewNewFeatureStructureCta",
+      "ctaFallback": "Open Tags →",
+      "go": {
+        "section": "bookmarks",
+        "bmTab": "tags"
+      },
+      "since": "v1.9.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemeGlowTitle",
+      "titleFallback": "Every theme lifts its surfaces",
+      "whatKey": "config.overviewNewFeatureThemeGlowWhat",
+      "whatFallback": "The glow under a card was built for a handful of themes; 132 of the 222 had none at all, every light theme among them.",
+      "howKey": "config.overviewNewFeatureThemeGlowHow",
+      "howFallback": "A theme now bleeds a little of its own accent under the cards, widgets and panels. On a dark theme that reads as a halo; on a light one the colour sits in the shadow underneath. Themes whose whole point is quiet stay flat, and Depth → Flat still switches all of it off.",
+      "enableKey": "config.overviewNewFeatureThemeGlowEnable",
+      "enableFallback": "Config → Appearance → Theme, and Depth on the same tab.",
+      "ctaKey": "config.overviewNewFeatureThemeGlowCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "theme"
+      },
+      "since": "v1.9.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureAddCategoryKeyTitle",
+      "titleFallback": "c searches again",
+      "whatKey": "config.overviewNewFeatureAddCategoryKeyWhat",
+      "whatFallback": "A bare c added a category and kept the letter to itself, so no bookmark whose shortcut starts with c could be reached by typing it.",
+      "howKey": "config.overviewNewFeatureAddCategoryKeyHow",
+      "howFallback": "Adding a category is Shift + N, beside the other Shift actions. Every letter starts a search again, and the cheat sheet under ! says so along with the printable sheet and Help.",
+      "enableKey": "config.overviewNewFeatureAddCategoryKeyEnable",
+      "enableFallback": "Press ! on the dashboard for the full list of keys.",
+      "ctaKey": "config.overviewNewFeatureAddCategoryKeyCta",
+      "ctaFallback": "Open Help → Search & keyboard →",
+      "go": {
+        "section": "help",
+        "helpTab": "search"
+      },
+      "since": "v1.9.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureTagSuggestionsTitle",
       "titleFallback": "A tag for a whole group of bookmarks",
       "whatKey": "config.overviewNewFeatureTagSuggestionsWhat",

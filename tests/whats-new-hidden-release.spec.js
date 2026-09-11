@@ -153,15 +153,15 @@ test.describe('a release flagged hideFromModal', () => {
     // The cases above prove the mechanism against a fixture. This one asserts
     // what the shipped files do with it: nothing is held back right now.
     // v1.6.1 and v1.6.2 were hidden while v1.6.0 was the release worth
-    // reading; v1.7.0 released them from that hold and v1.8.0 leads now, so
+    // reading; v1.7.0 released them from that hold and v1.9.0 leads now, so
     // a reader following the notes back finds every version in between.
-    test('no shipped release is held back, and v1.8.0 leads the modal', async ({ page }) => {
+    test('no shipped release is held back, and v1.9.0 leads the modal', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.8.0');
+        expect(index[0].tag).toBe('v1.9.0');
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
@@ -176,9 +176,9 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // The modal leads with v1.8.0, and the two releases that used to be
+        // The modal leads with v1.9.0, and the two releases that used to be
         // held back are reachable in it.
-        expect(await shownTags()).toContain('v1.8.0');
+        expect(await shownTags()).toContain('v1.9.0');
 
         await expect.poll(async () => {
             await modal.evaluate((m) => {
@@ -199,17 +199,17 @@ test.describe('a release flagged hideFromModal', () => {
         }, { timeout: 20_000 }).toContain('v1.2.1');
     });
 
-    test('the release constants name v1.8.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.9.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
          * The release token names what the modal leads with. Nothing is hidden
-         * for v1.8.0, so it is also what index[0] names -- an install that
-         * already read v1.7.1's notes is reopened once for this release.
+         * for v1.9.0, so it is also what index[0] names -- an install that
+         * already read v1.8.0's notes is reopened once for this release.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.8.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.9.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.8.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v283'");
+        // holding its old copy would never learn v1.9.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v284'");
     });
 });

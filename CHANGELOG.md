@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v1.9.0 — 11 September 2026](#v190--11-september-2026)
 - [v1.8.0 — 10 September 2026](#v180--10-september-2026)
 - [v1.7.1 — 9 September 2026](#v171--9-september-2026)
 - [v1.7.0 — 8 September 2026](#v170--8-september-2026)
@@ -206,26 +206,20 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v1.9.0 — 11 September 2026
 
 ### Config
 
 - **fix — the sub-tab labels under Structure were lowercase.** *categories · pages · finders · collections* sat beside Bookmarks' *List · Tags · Tag suggestions*, which are capitalised, and the strip read as two designs on one screen. The five locale strings behind them carry a capital now; the breadcrumb lowercases what it shows, so `config › structure › finders` is unchanged.
-
 - **new — Pages & tags is Structure, and Tags is a Bookmarks tab.** The section holds what a collection is filed in — pages, categories, finders, collections — and a tag is not that: it is a word a bookmark carries, which is why the other tag panels (suggestions, your rules) were already under Bookmarks and this one sat a section away from them. **Tags** now sits between **List** and **Tag suggestions**, keeping its word cloud, its filter and its ↑/↓ row cursor rather than taking on the j/k of the bookmark list beside it. The section's new name is one word, like every other name in the rail: *Pages & tags* described two of its five tabs, and with Tags gone it described one of four. Links handed out before this keep working: `#config/pages-tags` lands on the renamed section, `#config/pages-tags/tags` on the tab in its new home, and `/config?section=tags` redirects to `#config/bookmarks/tags`. The address bar is rewritten to the current name, so the next link copied is the new one.
 - **new — Appearance sits above Bookmarks in the rail.** It moved under Bookmarks in v1.3.3, when the rail was ordered by how often a section is opened. Ordered that way it is in the wrong half: Appearance, Structure and Behavior say what the dashboard *is*, and Bookmarks is the collection it shows. Appearance now opens the list of the three, and the deep links are unaffected — the rail's order is not part of any address.
-
 - **fix — a long section name wrapped the rail button onto two lines.** The rail is a fixed 200px column, so a name never widened it — it broke across lines, and one two-line button in a column of one-line buttons makes the whole rail look ragged. Every translation of a name is a different length, so rather than keeping each one short enough for the widest language, a button now holds itself to one line and shortens with an ellipsis, with the full name on hover.
 - **fix — every deep link into a Bookmarks tab opened List.** `subTabFromHash` refused the section outright, because the segment after `/bookmarks/` is usually a page filter and reading a page id as a tab name would have opened a tab that does not exist. A page id is a number and a tab is a word from a known list, so the two can be told apart — `#config/bookmarks/settings`, `/local-copies` and the rest now arrive where they say, and a reload keeps the tab it was on.
+- **fix — the finder rows split their width three ways, so the URL was the field you could not read.** Name, search URL and shortcut each flexed to an equal share, which left the URL — the only long value of the three, and the one you check for `%s` — cut off after about thirty characters while the shortcut box sat two-thirds empty for a key of at most five letters. The URL now takes the slack (`flex: 4`), the name is capped at 150px and the shortcut at 72px; below roughly 700px the row still wraps as before.
 
 ### Dashboard
 
 - **fix — a bookmark whose shortcut starts with c could not be reached by typing it.** Bare `c` added a category, and it did so unconditionally: the handler stopped the event dead, so the shortcut search never saw the letter. That is one twenty-sixth of the alphabet spent on an action taken a few times a day, in an app whose main gesture is typing a shortcut. Adding a category is **Shift + N** now, beside the other Shift actions (`Shift + B` adds a bookmark, `Shift + W` sets a width), and every letter starts a search again.
-
-### Docs
-
-- **docs — the cheat sheet follows the keys and the sections that moved.** The `!` modal, the printable sheet and both PDFs are regenerated from the registry, so `Shift + N` is on paper as well as on screen; the config rows no longer say *Pages & tags*, and the tag filter is listed where the Tags tab now is. Help's *Config navigation* had that filter on a Structure tab it no longer sits on.
-- **docs — Help and the manual describe the config that exists.** Help's rail list named a section that had been renamed and put it in the old order, its Bookmarks page counted five tabs where there are six, and the tag panel still sent you to the section Tags had left. The manual pointed at `config → pages & tags` in ten places. All of it in six languages, except the release notes, which say what shipped at the time and are left alone.
 
 ### Appearance
 
@@ -233,12 +227,11 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix — in the classic layout the config view had no glow at all, whichever theme was picked.** The glow rides two tokens, and every consumer of `--layout-shadow-*` sits inside a `body[data-layout-version="modern"]` rule — 58 of them in `config-view.css` alone — so in classic those tokens resolved to nothing and the panels carried no shadow to hang it on. Eight surfaces that classic left without a `box-shadow` now paint the accent layer and nothing else: config tiles, panels and choice rows, the search container, the list-view summary and groups, the quickstart card and the health monitor stats. No grey base shadow comes with it — classic stays classic, with colour under its surfaces rather than a second modern layout. The repeating rows (feed rows, inbox items, health items, CRUD rows) are deliberately left out: fifty glowing rows in a column is noise, not depth.
 - **fix — the glow scaled its own geometry, so the softest ones were invisible.** Strength multiplied the offset and the blur as well as the colour, which at the new floor of 0.12 shrank a 6px shadow to 0.7px — precisely the themes this was meant to reach. Strength now decides how strong the glow is and not how large, and at zero the colour is fully transparent, so a theme that asked for none still paints nothing.
 
-### Config
-
-- **fix — the finder rows split their width three ways, so the URL was the field you could not read.** Name, search URL and shortcut each flexed to an equal share, which left the URL — the only long value of the three, and the one you check for `%s` — cut off after about thirty characters while the shortcut box sat two-thirds empty for a key of at most five letters. The URL now takes the slack (`flex: 4`), the name is capped at 150px and the shortcut at 72px; below roughly 700px the row still wraps as before.
-
 ### Docs
 
+- **docs — the release round for v1.9.0.** `static/data/whats-new/v1.9.0.json` and the index entry ahead of it, both tokens in `whats-new-stub.js` (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v284`) and the constants they are pinned with in `tests/whats-new-hidden-release.spec.js`. Three spotlights with `since: "v1.9.0"` in `overview-features.json` — the section rename, the theme glow, and `c` going back to search — each with its five locale keys in all six languages, so the overview stream and About → News & features carry the release rather than yesterday's. `helpVersionBody` names 1.9.0 in six languages, MANUAL.md tags what changed, and `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — the cheat sheet follows the keys and the sections that moved.** The `!` modal, the printable sheet and both PDFs are regenerated from the registry, so `Shift + N` is on paper as well as on screen; the config rows no longer say *Pages & tags*, and the tag filter is listed where the Tags tab now is. Help's *Config navigation* had that filter on a Structure tab it no longer sits on.
+- **docs — Help and the manual describe the config that exists.** Help's rail list named a section that had been renamed and put it in the old order, its Bookmarks page counted five tabs where there are six, and the tag panel still sent you to the section Tags had left. The manual pointed at `config → pages & tags` in ten places. All of it in six languages, except the release notes, which say what shipped at the time and are left alone.
 - **docs — the second gallery in Emerald Matrix [dark] is gone from the README.** Its ten files were removed from `screenshots/emerald-matrix/` without the block that pointed at them, so the fold held ten broken images on the published page. The `<details>` section goes with the files; the ten shots above it are untouched.
 - **repo — every screenshot ever committed is out of the git history.** `screenshots/` had been in the tree since the initial commit, and 89 blobs totalling 178 MB were still reachable from main, dev, the other branches and all 314 tags — including captures of a real dashboard that were added and removed again the same day. A `git filter-repo --path screenshots/ --invert-paths` pass rewrites all refs; the packed repository drops from 209 MB to 29 MB and the file trees are byte-identical apart from that directory. Every commit SHA changed, and the commits that touched nothing but screenshots are gone rather than left empty.
 - **docs — the README screenshots are from the app as it is now.** The nine shots dated from before the theme browser, the search overlay, the statistics tabs and the bookmark manager's tabs, and two of them showed widgets that no longer exist. Ten new captures replace them, taken against a real collection rather than a seeded one, and named after what they show rather than numbered — the Unraid template lists the same files.
