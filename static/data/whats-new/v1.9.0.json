@@ -1,0 +1,63 @@
+{
+  "tag": "v1.9.0",
+  "date": "11 September 2026",
+  "releasedAt": "2026-09-11",
+  "modalLead": "Config is laid out the way you read it. Pages & tags is now Structure — pages, categories, finders and collections — and Tags has moved in with the other tag panels under Bookmarks, where a tag belongs. Appearance sits above Bookmarks in the rail. On the dashboard, adding a category moved from c to Shift + N, so every letter starts a search again. And a theme's own colour now glows under the cards, widgets and panels of almost every theme instead of a handful.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Pages &amp; tags is called Structure, and it holds what its name says.</strong> Pages, categories, finders and smart collections &mdash; the shelves your collection stands on. A tag is not a shelf, so <em>Tags</em> left for <em>Bookmarks</em>, where <em>Tag suggestions</em> and <em>Your rules</em> already were. Links you handed out before today still land where they should."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tags is a Bookmarks tab, between List and Tag suggestions.</strong> The same word cloud, the same filter, the same rename-everywhere and delete-everywhere &mdash; one tab away from the list it describes, instead of one section away."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Appearance sits above Bookmarks.</strong> Appearance, Structure and Behavior say what the dashboard <em>is</em>; Bookmarks is what it shows. The rail now opens with the first of those rather than burying it under the collection."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The tabs under Structure read like every other strip.</strong> They were lowercase beside Bookmarks' <em>List</em> and <em>Tags</em>. Now: <em>Categories &middot; Pages &middot; Finders &middot; Collections</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A finder's address is wide enough to read.</strong> Name, address and shortcut each took a third of the row, so the one long value &mdash; the search URL you check for <code>%s</code> &mdash; was cut off while a five-letter shortcut sat in a field three times its size."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A link to a Bookmarks tab opens that tab.</strong> <em>Settings</em>, <em>Local copies</em> and the rest all opened <em>List</em>, however the address read &mdash; and a reload dropped you back there too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A section name no longer breaks across two lines in the rail.</strong> One wrapped button in a column of single-line buttons made the whole rail look ragged, and it happened sooner in languages whose words are longer. The full name is on hover."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Adding a category is <kbd>Shift</kbd> + <kbd>N</kbd>, and <kbd>c</kbd> searches again.</strong> A bare <kbd>c</kbd> added a category and kept the letter to itself, so no bookmark whose shortcut starts with c &mdash; <em>CNN</em>, <em>CLOUD</em>, <em>CALIB</em> &mdash; could be reached by typing it. Every letter starts a search now. The cheat sheet (<kbd>!</kbd>), the printable sheet and Help all say <kbd>Shift</kbd> + <kbd>N</kbd>."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Almost every theme now glows a little of its own colour under a raised surface.</strong> It was built for a handful of themes and 132 of the 222 were flat &mdash; every light theme among them. A dark theme lifts its cards, widgets and panels with a halo; a light one lets the accent sit in the shadow underneath, because light around a surface on paper reads as a smudge. Themes whose whole point is quiet &mdash; <em>Nocturne Ink</em>, <em>Porcelain</em>, <em>Paper Ink</em>, <em>Bone China</em>, <em>Salt Flat</em> &mdash; stay flat on purpose, and <em>Depth &rarr; Flat</em> still switches all of it off."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config has the glow too, on the Classic layout.</strong> Its tiles and panels were flat there whichever theme you picked. They now carry the same accent as the rest of the app &mdash; the colour only, not the drop shadows Classic never had."
+        }
+      ]
+    }
+  ]
+}

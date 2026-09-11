@@ -126,9 +126,19 @@
     }
 }
 
+/*
+ * The rail is a fixed 200px column, so a long section name does not widen it --
+ * it wraps, and one two-line button makes the whole rail look ragged. Since
+ * every translation of a name is a different length, the button holds itself to
+ * one line rather than every name being kept short enough for the widest
+ * language. The full name stays available as a tooltip.
+ */
 .config-nav-item {
     text-align: left;
     padding: 9px 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     border: none;
     border-radius: var(--radius-5, 8px);
     background: transparent;
@@ -1688,6 +1698,24 @@
 .config-crud-fields .config-text {
     flex: 1;
     min-width: 120px;
+}
+
+/* Finder row: the URL is the long value and the one that has to stay readable,
+   so it takes the slack. The name is short and the shortcut is at most a few
+   letters, so both are capped instead of splitting the row in three. */
+.config-crud-fields .config-finder-name {
+    flex: 0 1 150px;
+    min-width: 90px;
+}
+
+.config-crud-fields .config-finder-url {
+    flex: 4 1 320px;
+    min-width: 180px;
+}
+
+.config-crud-fields .config-finder-shortcut {
+    flex: 0 0 72px;
+    min-width: 0;
 }
 
 .config-tag-count {

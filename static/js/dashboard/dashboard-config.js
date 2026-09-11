@@ -29,9 +29,9 @@ class DashboardConfig {
      */
     static SECTIONS = [
         'overview',
-        'bookmarks',
         'appearance',
-        'pages-tags',
+        'bookmarks',
+        'structure',
         'behavior',
         'data-backups',
         'widgets',
@@ -286,6 +286,12 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
+        // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
+        // handed out before that still name the old section, and a link that
+        // stops working is worse than a name that lingers.
+        if (raw === 'config/pages-tags') return 'structure';
+        if (raw === 'config/pages-tags/tags') return 'bookmarks';
+        if (raw.startsWith('config/pages-tags/')) return 'structure';
         // Branding stopped being a tab; its panel is the tail of Display.
         if (raw === 'config/appearance/branding') return 'appearance';
         // A trailing /<tab> is optional and handled by subTabFromHash; help
@@ -308,10 +314,27 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
         if (raw === 'config/appearance/branding') return 'display';
+        // Tags left Pages & tags for Bookmarks; an old link to it lands on the
+        // tab in its new home rather than on whatever tab opens first.
+        if (raw === 'config/pages-tags/tags') return 'tags';
+        if (raw.startsWith('config/pages-tags/')) {
+            const tab = raw.slice('config/pages-tags/'.length);
+            return DashboardConfig.PT_TABS.includes(tab) ? tab : null;
+        }
         // The optional third segment is a help panel, which this ignores — it
         // must not stop the tab in front of it from being read.
         const match = raw.match(/^config\/([a-z-]+)\/([a-z-]+)(?:\/[a-z0-9-]+)?$/);
-        if (!match || match[1] === 'bookmarks') return null;
+        if (!match) return null;
+        /*
+         * Bookmarks was excluded here because its second segment is usually a
+         * page filter, and reading a page id as a tab would have opened a tab
+         * that does not exist. But a page id is a number and a tab is a word
+         * from a known list, so the two can be told apart -- and while they
+         * could not, every deep link into a Bookmarks tab landed on List.
+         */
+        if (match[1] === 'bookmarks') {
+            return DashboardConfig.BM_TABS.includes(match[2]) ? match[2] : null;
+        }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         return tabs && tabs.includes(match[2]) ? match[2] : null;
     }
@@ -362,7 +385,7 @@ class DashboardConfig {
     static get SUB_TABS() {
         return {
             behavior: DashboardConfig.BEHAVIOR_TABS,
-            'pages-tags': DashboardConfig.PT_TABS,
+            'structure': DashboardConfig.PT_TABS,
             appearance: DashboardConfig.APPEARANCE_TABS,
             stats: DashboardConfig.STATS_TABS,
             'data-backups': DashboardConfig.DB_TABS,
@@ -396,7 +419,7 @@ class DashboardConfig {
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
         about: 'aboutTab',
-        'pages-tags': 'ptTab',
+        'structure': 'ptTab',
         appearance: 'appearanceTab',
         stats: 'statsTab',
         'data-backups': 'dbTab',
@@ -409,11 +432,11 @@ class DashboardConfig {
      * Sub-tab strip attribute → section id, so a tracked tab switch is reported
      * under the same section name the rail and the hash use. Without this the
      * analytics would say 'data-pt-tab' where every other event says
-     * 'pages-tags'.
+     * 'structure'.
      */
     static SUB_TAB_SECTION = {
         'data-behavior-tab': 'behavior',
-        'data-pt-tab': 'pages-tags',
+        'data-pt-tab': 'structure',
         'data-appearance-tab': 'appearance',
         'data-stats-tab': 'stats',
         'data-db-tab': 'data-backups',
@@ -425,7 +448,7 @@ class DashboardConfig {
     /** data-* attribute on each section's sub-tab strip buttons. */
     static SUB_TAB_ATTR = {
         behavior: 'data-behavior-tab',
-        'pages-tags': 'data-pt-tab',
+        'structure': 'data-pt-tab',
         appearance: 'data-appearance-tab',
         stats: 'data-stats-tab',
         'data-backups': 'data-db-tab',
@@ -1122,12 +1145,27 @@ class DashboardConfig {
      * panel). j/k stay reserved for the section rail unless a row is already
      * keyboard-selected.
      */
+    /**
+     * Which panel the list-keyboard cursor works in.
+     *
+     * The four structural lists live in Structure; Tags lives under
+     * Bookmarks, because a tag is something a bookmark carries rather than
+     * part of the structure a page is made of. Both are ↑/↓ lists, so rather
+     * than teach every gate about two sections, they ask this.
+     */
+    listKeyboardBodyId() {
+        if (this.section === 'structure') return 'config-pt-body';
+        if (this.section === 'bookmarks' && this.bmTab === 'tags') return 'config-bm-body';
+        return null;
+    }
+
     shouldUseListKeyboardNav(target) {
-        if (this.section !== 'pages-tags') return false;
+        const bodyId = this.listKeyboardBodyId();
+        if (!bodyId) return false;
         if (this._listKeyboardKey) return true;
-        const body = target?.closest?.('#config-pt-body');
+        const body = target?.closest?.(`#${bodyId}`);
         if (!body) return false;
-        if (target?.closest?.('.config-sub-tabs, [data-pt-tab]')) return false;
+        if (target?.closest?.('.config-sub-tabs, [data-pt-tab], [data-bm-tab]')) return false;
         return this.getListKeyboardRows().length > 0;
     }
 
@@ -1211,7 +1249,7 @@ class DashboardConfig {
          */
         const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))) {
+            if (!(this.listKeyboardBodyId() && isTagFilter && listNavFromFilter.has(e.key))) {
                 return false;
             }
         }
@@ -1373,7 +1411,7 @@ class DashboardConfig {
                 }
                 break;
             }
-            case 'pages-tags':
+            case 'structure':
                 this.clearListKeyboardSelection();
                 this.repaintPtBody();
                 break;
@@ -1498,7 +1536,7 @@ class DashboardConfig {
     sectionLabel(section) {
         const map = {
             overview: ['config.sectionOverview', 'Overview'],
-            'pages-tags': ['config.sectionPagesTags', 'Pages & tags'],
+            'structure': ['config.sectionStructure', 'Structure'],
             bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
@@ -1536,7 +1574,7 @@ class DashboardConfig {
     subTabHeaderLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
-            case 'pages-tags': return this.ptTabLabel?.(tab) || tab;
+            case 'structure': return this.ptTabLabel?.(tab) || tab;
             case 'appearance': return this.appearanceTabLabel?.(tab) || tab;
             case 'stats': return this.statsTabLabel?.(tab) || tab;
             case 'data-backups': return this.dbTabLabel?.(tab) || tab;
@@ -1641,7 +1679,7 @@ class DashboardConfig {
             }
         } else if (this.section === 'behavior') {
             this.bindBehaviorControls(container);
-        } else if (this.section === 'pages-tags') {
+        } else if (this.section === 'structure') {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
@@ -1855,7 +1893,8 @@ class DashboardConfig {
     }
 
     getListKeyboardRows() {
-        const body = document.getElementById('config-pt-body');
+        const bodyId = this.listKeyboardBodyId();
+        const body = bodyId ? document.getElementById(bodyId) : null;
         if (!body) return [];
         // Only rows the cursor can actually name. The Collection sizes table on
         // the Collections tab is built from .config-crud-row too, but its rows
@@ -1868,7 +1907,7 @@ class DashboardConfig {
 
     clearListKeyboardSelection() {
         this._listKeyboardKey = null;
-        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected').forEach((row) => {
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected, #config-bm-body .config-crud-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
             row.removeAttribute('aria-selected');
         });
@@ -1952,8 +1991,9 @@ class DashboardConfig {
     }
 
     bindListKeyboard(container) {
-        if (this.section !== 'pages-tags') return;
-        const body = container?.querySelector('#config-pt-body') || document.getElementById('config-pt-body');
+        const bodyId = this.listKeyboardBodyId();
+        if (!bodyId) return;
+        const body = container?.querySelector(`#${bodyId}`) || document.getElementById(bodyId);
         if (!body) return;
         this.appendListKeyboardLegend(body);
         if (!body.dataset.configListKbdWired) {
@@ -1969,7 +2009,7 @@ class DashboardConfig {
     }
 
     handleListKeyboardNavigation(e) {
-        if (this.section !== 'pages-tags') return false;
+        if (!this.listKeyboardBodyId()) return false;
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
 
         const target = e.target;
@@ -2032,7 +2072,7 @@ class DashboardConfig {
             this.applyListKeyboardSelection(rows);
             return true;
         }
-        if (e.key === '/' && this.ptTab === 'tags' && !isTagFilter) {
+        if (e.key === '/' && this.bmTab === 'tags' && this.section === 'bookmarks' && !isTagFilter) {
             const filter = document.getElementById('config-tag-filter');
             if (filter) {
                 e.preventDefault();
@@ -2459,7 +2499,7 @@ class DashboardConfig {
         { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
         { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
         { tab: 'config', titleKey: 'config.helpAppearanceTitle', fallback: 'Appearance & themes' },
-        { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Pages & categories' },
+        { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -2484,7 +2524,7 @@ class DashboardConfig {
     subTabLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel(tab);
-            case 'pages-tags': return this.ptTabLabel(tab);
+            case 'structure': return this.ptTabLabel(tab);
             case 'appearance': return this.appearanceTabLabel(tab);
             case 'stats': return this.statsTabLabel(tab);
             case 'data-backups': return this.dbTabLabel(tab);
@@ -3141,6 +3181,7 @@ class DashboardConfig {
                         tabindex="${active ? '0' : '-1'}"
                         id="config-section-${esc(section)}"
                         aria-controls="${panelId}"
+                        title="${esc(this.sectionLabel(section))}"
                         data-config-section="${esc(section)}">
                     ${esc(this.sectionLabel(section))}${stars}
                 </button>`;
@@ -3196,7 +3237,7 @@ class DashboardConfig {
         if (this.section === 'behavior') {
             return this.renderBehavior();
         }
-        if (this.section === 'pages-tags') {
+        if (this.section === 'structure') {
             return this.renderPagesTags();
         }
         if (this.section === 'widgets') {
@@ -4176,9 +4217,9 @@ class DashboardConfig {
             }
             // Pages & tags has its own strip too, and was the one section a
             // spotlight could name a tab for and not reach it.
-            if (target.ptTab && target.section === 'pages-tags') {
+            if (target.ptTab && target.section === 'structure') {
                 this.ptTab = target.ptTab;
-                if (this.section === 'pages-tags') {
+                if (this.section === 'structure') {
                     this.render();
                     return;
                 }
@@ -5018,6 +5059,7 @@ class DashboardConfig {
     bmTabLabel(tab) {
         const map = {
             list: ['config.bmTabList', 'List'],
+            tags: ['config.bmTabTags', 'Tags'],
             'tag-suggestions': ['config.bmTabTagSuggestions', 'Tag suggestions'],
             'tag-rules': ['config.bmTabTagRules', 'Your rules'],
             settings: ['config.bmTabSettings', 'Settings'],
@@ -13597,7 +13639,7 @@ class DashboardConfig {
             }
             return;
         }
-        if (this.section === 'pages-tags' && this.ptTab === 'collections') {
+        if (this.section === 'structure' && this.ptTab === 'collections') {
             const body = document.getElementById('config-pt-body');
             if (body) { body.innerHTML = this.renderCollections(); this.bindCollections(container); }
         }
@@ -13617,7 +13659,7 @@ class DashboardConfig {
      * and stopped being a list of names — and the thing it is arranged with,
      * the block order, lives on the categories tab regardless.
      */
-    static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
+    static PT_TABS = ['categories', 'pages', 'finders', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
@@ -13647,7 +13689,7 @@ class DashboardConfig {
      * is a list of bookmarks, not a setting. Where the copies come from is
      * configuration; which pages you have kept is part of the collection.
      */
-    static BM_TABS = ['list', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
+    static BM_TABS = ['list', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
@@ -13879,7 +13921,7 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-pt-body" data-pt-tab="${esc(tab)}">${esc(this.ptTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.pagesTagsIntro', 'Manage pages, categories, tags, finders, and smart collections.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.structureIntro', 'Manage pages, categories, finders, and smart collections.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-pt-body" role="tabpanel" tabindex="0">${this.renderPtTab()}</div>
         `;
@@ -13888,7 +13930,6 @@ class DashboardConfig {
     renderPtTab() {
         switch (this.ptTab) {
             case 'finders': return this.renderFinders();
-            case 'tags': return this.renderTagsManager();
             case 'collections': return this.renderCollections();
             case 'pages': return this.renderPagesEditor();
             case 'categories': return this.renderCategoriesEditor();
@@ -13922,10 +13963,6 @@ class DashboardConfig {
 
     bindPtTabControls(container) {
         if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
-        // bindTags here as well as after the fetch: loadTagsManager returns
-        // early once loaded, so a repaint would otherwise leave the filter and
-        // the cloud with no handlers.
-        else if (this.ptTab === 'tags') { this.bindTags(container); void this.loadTagsManager(); }
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
@@ -14100,9 +14137,9 @@ class DashboardConfig {
             return `
             <li class="config-crud-row" data-finder-index="${i}">
                 <div class="config-crud-fields">
-                    <input type="text" class="config-text" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
-                    <input type="text" class="config-text${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
-                    <input type="text" class="config-text" style="min-width:70px" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
+                    <input type="text" class="config-text config-finder-name" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
+                    <input type="text" class="config-text config-finder-url${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
+                    <input type="text" class="config-text config-finder-shortcut" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
                     ${warning}
                 </div>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
@@ -14496,9 +14533,9 @@ class DashboardConfig {
             this._tagList = [];
             this._tagList._loaded = true;
         }
-        // repaintPtBody re-runs bindPtTabControls, which binds the tags
-        // controls against the markup it just wrote.
-        if (this.ptTab === 'tags') this.repaintPtBody();
+        // The repaint re-binds the tags controls against the markup it just
+        // wrote; without it the filter and the cloud come back dead.
+        if (this.section === 'bookmarks' && this.bmTab === 'tags') this.repaintBookmarkTagsBody();
     }
 
     bindTags(container) {
@@ -14557,7 +14594,7 @@ class DashboardConfig {
         const active = document.activeElement;
         const wasFilter = active?.id === 'config-tag-filter';
         const caret = wasFilter ? active.selectionStart : null;
-        this.repaintPtBody();
+        this.repaintBookmarkTagsBody();
         if (!wasFilter) return;
         const next = document.getElementById('config-tag-filter');
         if (!next) return;
@@ -20169,6 +20206,9 @@ class DashboardConfig {
 
     /** Which sub-tab of Bookmarks is showing. */
     renderBmTab() {
+        if (this.bmTab === 'tags') {
+            return this.renderTagsManager();
+        }
         if (this.bmTab === 'tag-suggestions') {
             return '<div id="config-bm-suggestions" class="config-suggestions"></div>';
         }
@@ -22418,6 +22458,9 @@ class DashboardConfig {
         }
         this.bindSubTabStrip(container, 'data-bm-tab', (tab) => {
             if (tab === this.bmTab) return;
+            // Tags is a row list with a cursor of its own; leaving it must not
+            // leave that cursor pointing at a row nobody can see.
+            this.clearListKeyboardSelection();
             this.bmTab = tab;
             this.restoreConfigHash();
             const body = document.getElementById('config-bm-body');
@@ -22425,7 +22468,9 @@ class DashboardConfig {
             body.innerHTML = this.renderBmTab();
             // Bind the new body only: re-binding the whole container would stack
             // a second listener on every tab button.
-            if (tab === 'tag-suggestions') {
+            if (tab === 'tags') {
+                this.bindBookmarkTagsTab(body);
+            } else if (tab === 'tag-suggestions') {
                 this.bindTagSuggestionsTab(body);
             } else if (tab === 'tag-rules') {
                 this.bindTagRulesTab(body);
@@ -22440,6 +22485,10 @@ class DashboardConfig {
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
         });
+        if (this.bmTab === 'tags') {
+            this.bindBookmarkTagsTab(container);
+            return;
+        }
         if (this.bmTab === 'tag-suggestions') {
             this.bindTagSuggestionsTab(container);
             return;
@@ -22456,6 +22505,31 @@ class DashboardConfig {
             return;
         }
         this.bindBookmarksListTab(container);
+    }
+
+    /**
+     * The Tags tab, which sits under Bookmarks.
+     *
+     * It keeps the Structure toolbar and the ↑/↓ list cursor rather
+     * than the j/k of the bookmarks list beside it: it is one of the five
+     * lists that toolbar was written for, and two row cursors on one tab is a
+     * question the reader would have to answer before every key.
+     */
+    bindBookmarkTagsTab(container) {
+        if (!container) return;
+        this.bindTags(container);
+        this.bindPtToolbar(container);
+        this.bindListKeyboard(container);
+        void this.loadTagsManager();
+    }
+
+    repaintBookmarkTagsBody() {
+        const body = document.getElementById('config-bm-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderBmTab();
+        this.syncSubTabStrip('data-bm-tab', this.bmTab);
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindBookmarkTagsTab(container);
     }
 
     bindBookmarksListTab(container) {
@@ -26172,7 +26246,7 @@ class DashboardConfig {
         // The walkthrough the corner card offers, kept reachable after the card
         // has been dismissed — which is the state most readers of this page are
         // in. Same pattern as the cheat sheet button above it.
-        return this.helpPanel('config.helpWorkspaceTitle', 'Pages & categories',
+        return this.helpPanel('config.helpWorkspaceTitle', 'Structure',
             'config.helpWorkspaceBody', '',
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>

@@ -172,7 +172,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 - Drag the **`//` prefix** in a category title to reorder sections.  
 - Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal-shiftb-or-ctrlshifta).  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
-- In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
+- In **config → structure → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
 #### Spreading a category across columns
 
@@ -195,7 +195,7 @@ A spread category says so with a small **↔ N** beside the title, naming the nu
 | Mouse | Right-click the category header → **Spread across columns** |
 | Keyboard | **Shift + W** on the focused category |
 | Command | `:width on` / `:width off`, or `:width all` to switch every category back |
-| Config | **pages & tags → categories** has a ↔ button per row |
+| Config | **structure → categories** has a ↔ button per row |
 
 **Config → appearance → layout → Categories across columns** holds what applies to all of them: **items per category**, whether a **new** category starts out spread, and whether **Turn spreading off everywhere** covers only the current page or every page.
 
@@ -256,7 +256,7 @@ What counts as a step is deliberately narrow. **A filter is not one** — change
 | Keyboard-first | Bookmark editor, stats, backups |
 | Live layout and themes | Every setting, grouped by topic |
 
-It has ten sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+It has ten sections — **Overview**, **Appearance**, **Bookmarks**, **Structure**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
 **The overview is a news stream** (**v1.3.3**). Under the act zone sits one dated list mixing three sources — posts from **nextdash.cc**, **releases**, and the **settings** each release introduced — newest first, each row carrying a source label, a one-line summary, its date in your own date format, and its own way in: read the post, show what's new, or open the setting. The chips above it narrow the list to one source, and pressing the active chip again widens it back; hiding the site's posts entirely is one click. A green dot marks anything published since you last read the stream, with a count on **Overview** in the section rail — a first visit starts quiet rather than declaring everything unread. Fourteen rows fit on the overview, and up to ten of them are kept for **posts from the site** (**v1.4.1.1**; six rows with two reserved before that) — in plain date order a busy release day fills the window with release rows and the settings they brought, and the posts drop off the page the day after they went up. The server keeps the ten most recent posts, so ten is what the overview can show. The features shown are those from the two most recent releases **that introduced one**, so a hotfix does not spend the window. **All news & features** opens the rest under **About → News & features**, together with every setting worth switching on from earlier releases and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
 
@@ -367,8 +367,8 @@ Follow this path once; later you will mix steps freely.
 | Step | Action | Where |
 |------|--------|--------|
 | 1 | Complete or skip the quick-start card | First visit |
-| 2 | Open **config → pages & tags → pages** — add or rename pages | `/#config/pages-tags` |
-| 3 | Open **config → pages & tags → categories** — create sections per page | `/#config/pages-tags` |
+| 2 | Open **config → structure → pages** — add or rename pages | `/#config/structure` |
+| 3 | Open **config → structure → categories** — create sections per page | `/#config/structure` |
 | 4 | Add 3–5 bookmarks with **&** quick-add | Dashboard |
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
@@ -569,7 +569,7 @@ Every mouse gesture on the dashboard, in one place:
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
 - If the bookmark has a **shortcut**, type it: the bookmark opens the moment your query matches it. That is the default again since **v1.3.0** — making `Enter` the default in v1.2.0 was a mistake, because a shortcut that needs a second key to finish is not much of a shortcut. The cost is real and known: a shortcut can swallow an ordinary word that starts with the same letters, and which words survive depends on the shortcuts you own — on an install with 200 shortcuts, eight of thirteen everyday words were cut off mid-word (`invoice` opened something at `in` and left `voice` behind). Two ways out sit under **Config → Behavior → Search → Typing a bookmark shortcut**: *Open after a short pause*, where the shortcut waits until you stop typing and a longer word carries on untouched, and *Press Enter to open*, where typing only narrows the list. The ℹ beside the three says what each one costs.
-- **While a row is selected the letters belong to the grid** — **`j`** / **`k`** move, **`x`** ticks, **`g`** starts the jump chord, **`t`** filters by the row's tag — and **`Esc`** hands them back to the search line. **`c`** is the exception: it adds a category whether or not a row is selected, so a search cannot begin with `c`; press **`>`** first.
+- **While a row is selected the letters belong to the grid** — **`j`** / **`k`** move, **`x`** ticks, **`g`** starts the jump chord, **`t`** filters by the row's tag — and **`Esc`** hands them back to the search line. There is no longer an exception: adding a category moved from bare `c` to **`Shift + N`**, so every letter can start a search.
 - **The shortcut field says what a letter costs.** Assigning `c`, `g`, `j`, `k` or `x` now shows what the dashboard does with it and when the bookmark is still reachable, beside the check that another bookmark already has it. Both the inline editor and the bookmark form say it.
 
 ### 🃏 The link preview card
@@ -638,7 +638,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
 | `n` | In the page overview: open the **New page** row. Arrowing one stop past the last page reaches it too (**v2026.09.06**) |
-| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press since **v1.1.1**; it used to need a hold of about 300 ms so a tap could still reach the shortcut search. It is the one letter that keeps the grid over the search line, so a search cannot begin with `c` — press **`>`** first |
+| `Shift + N` | Add a category to the page on screen (**v2026.09.06**; moved off bare `c` in **v1.9.0**). It was the one letter that kept the grid over the search line, so no search — and no bookmark shortcut — could begin with `c`. Typing `c` now starts a search like any other letter |
 | `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
@@ -838,7 +838,7 @@ Use **`Enter`** on a highlighted row to run it (including after autocomplete exp
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
 | `:recent` / `:overview` / `:cheat` / `:help` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet (`!` / `F1`), what's new, reload |
 | `:inbox` / `:inbox triage` | Open Inbox (`Shift+I`, or `0`) or triage unread items one by one |
-| `:config [section]` | Open a config section in place: `overview`, `bookmarks`, `appearance`, `pages-tags`, `behavior`, `data-backups`, `widgets`, `stats`, `help`, `about`. The names that became sub-tabs — `categories`, `tags`, `finders`, `pages`, `backups`, `themes` — still work and land on their tab |
+| `:config [section]` | Open a config section in place: `overview`, `bookmarks`, `appearance`, `structure`, `behavior`, `data-backups`, `widgets`, `stats`, `help`, `about`. The names that became sub-tabs — `categories`, `tags`, `finders`, `pages`, `backups`, `themes` — still work and land on their tab |
 | `:stale [days]` | List stale bookmarks |
 | `:health [filter]` | Open health view (`Shift+H`) — `broken`, `duplicate`, `stale`, `refresh`, … |
 | `:health page [n]` | Open health with a specific page context |
@@ -895,7 +895,7 @@ lingers.
 
 Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https://www.google.com/search?q=%s`.
 
-Configure finders in **config → pages & tags → finders** (desktop):
+Configure finders in **config → structure → finders** (desktop):
 
 - **+ Add finder** — appends a new row at the bottom of the table and focuses the name field; the existing list stays visible (no reload needed).
 - **Filter** — narrow the list by name, shortcut, URL, or tags; **✕** or `Escape` clears.
@@ -917,7 +917,7 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 Neither has to start in config (**v2026.09.06**). Both gestures live where the things themselves live.
 
 - **A page** — open the pages overview with **`,`** and use the **New page** row under the list: by click, by **`n`**, or by arrowing one stop past the last page. Naming it takes you straight to the new page, which is where its first category gets added anyway. The pages button in the header is unchanged — switching pages is the daily action, creating one is the rare one.
-- **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **`c`** does the same from the keyboard. The **⋯** button next to those chips opens the sort menu with **`ArrowDown`** as well as with a click (**v1.3.3.1**) — it advertised as much all along, but a bare arrow started grid navigation and took the focus off the button on the way. Both act on the page on screen, so neither asks which page you meant. The key acts on the first press: it used to wait out a hold of about 300 ms so a tap could still reach the shortcut search, and it was one of only two keys that did. The `+` appears in whichever header ends the grid, and costs no space of its own.
+- **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **`Shift + N`** does the same from the keyboard. The **⋯** button next to those chips opens the sort menu with **`ArrowDown`** as well as with a click (**v1.3.3.1**) — it advertised as much all along, but a bare arrow started grid navigation and took the focus off the button on the way. Both act on the page on screen, so neither asks which page you meant. The key acts on the first press: it used to wait out a hold of about 300 ms so a tap could still reach the shortcut search, and it was one of only two keys that did. The `+` appears in whichever header ends the grid, and costs no space of its own.
 - **From the bookmark form** — the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form.
 
 **Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation (**v1.1.1**) — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data-backups-trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
@@ -935,13 +935,13 @@ A category you have just created **stays visible** even with *hide empty categor
 
 ### Reorder categories
 
-- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → pages & tags → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
-- Order in **config → pages & tags → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
+- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → structure → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
+- Order in **config → structure → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
 - With **Lock layout** on, the `//` handle takes a plain cursor and no longer drags; it still toggles collapse.
 
 ### Reorder pages
 
-- Drag the **grip** on a row in **config → pages & tags → pages**, or focus a row and press **↑** / **↓**.
+- Drag the **grip** on a row in **config → structure → pages**, or focus a row and press **↑** / **↓**.
 - Order saves automatically after a short debounce (~600 ms) and shows a localized sync toast.
 
 ### Move between pages
@@ -956,7 +956,7 @@ Double-click a page tab **on desktop or tablet landscape** (not on mobile — av
 - Set an optional **emoji** icon  
 - Pick a **colour dot** from eight swatches (or the empty swatch to remove it); the dot appears on the tab beside the label or page number
 
-The popover saves when you click away or press **Enter**. Use **config → pages & tags → pages** to rename on any device or to manage several pages in a list.
+The popover saves when you click away or press **Enter**. Use **config → structure → pages** to rename on any device or to manage several pages in a list.
 
 ### Widgets (v1.4.0)
 
@@ -1468,7 +1468,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
 - **Dashboard tag cloud (desktop):** `/` or / FAB — toggle one or more tags while the modal stays open; **OR match** (bookmarks with any selected tag); per-tag filter chips in the header; **Escape** on the dashboard clears all filters.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
-- **config → pages & tags → tags** (desktop): global tag management across all pages.  
+- **config → bookmarks → tags** (desktop): global tag management across all pages.  
   - **Word cloud:** dashboard-style popularity scaling — larger tags mean more bookmarks; tier colours and light animations; click a chip to scroll to that tag in the list.  
   - **List:** column headers (Tag / Usage / Actions), usage bar per row, sorted by bookmark count; scrolls with the config page (no inner scroll panel).  
   - Expand a row for bookmarks with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
@@ -1523,7 +1523,7 @@ The list shows at most 25 rows, largest group first, with a line saying how many
 
 ### Smart collections (built-in)
 
-Enabled in **config → pages & tags → collections**:
+Enabled in **config → structure → collections**:
 
 | Collection | Shows |
 |------------|--------|
@@ -1555,7 +1555,7 @@ You can **long-press** or press **`Shift+E`** on a smart-collection row to inlin
 
 ### Custom collections
 
-**config → pages & tags → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
+**config → structure → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
 
 ### Tag collections
 
@@ -1697,6 +1697,16 @@ If you have set a **background image or gradient** of your own, it wins: the
 washes switch off entirely, because a background you chose was chosen *instead*
 of this rather than on top of it.
 
+**A glow under raised surfaces (v1.9.0).** A theme also bleeds a little of its own
+accent around the things that sit above the page — cards, widgets, panels,
+modals. How much is worked out from the theme's own palette: how much colour
+its accent carries and how light it is. On a dark theme that reads as a halo
+around the surface; on a light one the same colour sits in the shadow
+*underneath* it, because light around a surface on paper reads as a smudge.
+Themes whose whole point is quiet — *Nocturne Ink*, *Porcelain*, *Paper Ink*,
+*Bone China*, *Salt Flat* — ask for none and get none, and **Depth → Flat**
+switches it off everywhere along with the rest of the layering.
+
 ### Every theme's own accent (v1.4.0)
 
 The accent colour — the focus ring, the active tab, the hovered row, the bar on
@@ -1709,9 +1719,9 @@ All 214 variants now carry an accent of their own. A custom theme made before
 v1.4.0 keeps accenting in its success colour rather than losing its accent
 altogether, so nothing you built changes underneath you.
 
-### Config → pages & categories (list tabs)
+### Config → structure (list tabs)
 
-Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collections**) share the same layout pattern: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
+Desktop list tabs (**categories**, **pages**, **finders**, **collections** — and **bookmarks → tags**, which shares the pattern from its own section) share the same layout: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
 
 - **Pages** — add, rename, remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). **Usage** column shows a popularity bar and bookmark count (Tags-style). Desktop only (mobile shows a toast). On the dashboard, **double-click a page tab** (desktop/tablet landscape) to rename, set an emoji, and pick a **colour dot**; on **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.
 - **Categories** — per-page list with icon, name, **merge**, remove; drag or **↑/↓** reorder with auto-save; **Usage** column with popularity bar and bookmark count (Tags-style). Switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Breadcrumb shows the selected page. On **Bookmarks**, **Context** only switches the active category filter. Desktop only for full editing.
@@ -2081,9 +2091,9 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | Anything needing attention and the optional **GitHub update check** (since **v2026.08.04**) at the top, then — since **v1.3.3** — one dated news stream: posts from nextdash.cc, releases, and the settings each release introduced, with source filters and a green dot for anything published since you last read it. Beside it: **About the developer**, then a *Your install* line heading **At a glance** and *what differs from the defaults*. Tips close the page |
-| **Pages & tags** | Categories, tags, pages, finders, and custom collections — five sub-tabs (**Categories** opens first since **v2026.08.06**) |
-| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
+| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
+| **Structure** | Categories, pages, finders, and custom collections — four sub-tabs (**Categories** opens first since **v2026.08.06**). Named *Pages & tags* until **v1.9.0**, when Tags moved to **Bookmarks**; `/#config/pages-tags` and `/#config/pages-tags/tags` still land where they should |
 | **Behavior** | General, date & weather, search, status, and privacy — five sub-tabs |
 | **Data & backups** | Backup, restore, import, export — plus **Reset** on its own tab |
 | **Statistics** | Usage insights across five sub-tabs |
@@ -2103,9 +2113,9 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 
 | Section | Sub-tabs |
 |---------|----------|
-| **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
-| **Bookmarks** | List · Tag suggestions · Your rules (**v1.8.0**) · Settings (**v1.1.0**) · Local copies |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Custom themes |
+| **Bookmarks** | List · Tags (**v1.9.0**) · Tag suggestions · Your rules (**v1.8.0**) · Settings (**v1.1.0**) · Local copies |
+| **Structure** | Categories · Pages · Finders · Collections |
 
 **Branding** — page title and favicon — is the tail of **Display** rather than a tab of its own; `/#config/appearance/branding` still lands on it. Each tab has a **filter** beside *Only changed*, and `Escape` clears it. The theme list answers to **typing**: open it and type the first letters of a name to jump to it among a hundred and fifty. Pointing at a **type size** shows it on the dashboard behind config and moving away puts it back — the same idea as browsing the theme list, which previews its colours. A custom theme has **⤓ Export** on its row and **Import theme…** beside *Add custom theme*, so one palette can move between installs without a whole backup.
 | **Behavior** | General · Date & weather · Search · Inbox · Status & health · Privacy |
@@ -2201,7 +2211,7 @@ they have got and can be left running.
 ### Widgets (Config → Widgets, v1.4.0)
 
 A section of its own in the rail, under **Data & backups**. It began as a tab
-under *Pages & tags*, beside Categories, because a widget is a block on a page
+under *Structure*, beside Categories, because a widget is a block on a page
 like a category is — but it grew a settings panel per type and stopped being a
 list of names. Arranging blocks still happens on the **Categories** tab, which is
 where the one block order lives.
@@ -2299,10 +2309,10 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `Home` / `End` (section rail) | Jump to first / last section |
 | `Alt + ←` / `→` or `[` / `]` | Previous / next sub-tab |
 | `←` / `→` (sub-tabs) | Move between sub-tabs when a sub-tab strip is focused |
-| `↑` / `↓` (Pages & tags lists) | Move between rows when focus is in the list panel |
+| `↑` / `↓` (list rows) | Move between rows when focus is in the list panel — the Structure lists and Bookmarks → Tags |
 | `Enter` / `Space` (list row) | Focus the first field in the selected list row |
-| `g` / `G` (list row) | Jump to first / last row in a Pages & tags list |
-| `/` (Tags tab) | Focus the tag filter |
+| `g` / `G` (list row) | Jump to first / last row in one of those lists |
+| `/` (Bookmarks → Tags) | Focus the tag filter |
 | `j` / `k` (Bookmarks list) | Move between bookmark rows |
 | `Enter` / `o` / double-click (bookmark row) | Open the bookmark URL |
 | `e` (bookmark row) | Open the bookmark editor modal |
