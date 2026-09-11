@@ -20,8 +20,8 @@ class DashboardConfigLoader {
      */
     static SECTIONS = [
         'overview',
-        'bookmarks',
         'appearance',
+        'bookmarks',
         'structure',
         'behavior',
         'data-backups',

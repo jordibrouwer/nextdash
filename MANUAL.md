@@ -256,7 +256,7 @@ What counts as a step is deliberately narrow. **A filter is not one** — change
 | Keyboard-first | Bookmark editor, stats, backups |
 | Live layout and themes | Every setting, grouped by topic |
 
-It has ten sections — **Overview**, **Structure**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+It has ten sections — **Overview**, **Appearance**, **Bookmarks**, **Structure**, **Behavior**, **Data & backups**, **Widgets**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
 **The overview is a news stream** (**v1.3.3**). Under the act zone sits one dated list mixing three sources — posts from **nextdash.cc**, **releases**, and the **settings** each release introduced — newest first, each row carrying a source label, a one-line summary, its date in your own date format, and its own way in: read the post, show what's new, or open the setting. The chips above it narrow the list to one source, and pressing the active chip again widens it back; hiding the site's posts entirely is one click. A green dot marks anything published since you last read the stream, with a count on **Overview** in the section rail — a first visit starts quiet rather than declaring everything unread. Fourteen rows fit on the overview, and up to ten of them are kept for **posts from the site** (**v1.4.1.1**; six rows with two reserved before that) — in plain date order a busy release day fills the window with release rows and the settings they brought, and the posts drop off the page the day after they went up. The server keeps the ten most recent posts, so ten is what the overview can show. The features shown are those from the two most recent releases **that introduced one**, so a hotfix does not spend the window. **All news & features** opens the rest under **About → News & features**, together with every setting worth switching on from earlier releases and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
 
@@ -2091,9 +2091,9 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | Anything needing attention and the optional **GitHub update check** (since **v2026.08.04**) at the top, then — since **v1.3.3** — one dated news stream: posts from nextdash.cc, releases, and the settings each release introduced, with source filters and a green dot for anything published since you last read it. Beside it: **About the developer**, then a *Your install* line heading **At a glance** and *what differs from the defaults*. Tips close the page |
-| **Structure** | Categories, pages, finders, and custom collections — four sub-tabs (**Categories** opens first since **v2026.08.06**). Tags moved to **Bookmarks**; `/#config/pages-tags` and `/#config/pages-tags/tags` still land where they should |
-| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
+| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
+| **Structure** | Categories, pages, finders, and custom collections — four sub-tabs (**Categories** opens first since **v2026.08.06**). Tags moved to **Bookmarks**; `/#config/pages-tags` and `/#config/pages-tags/tags` still land where they should |
 | **Behavior** | General, date & weather, search, status, and privacy — five sub-tabs |
 | **Data & backups** | Backup, restore, import, export — plus **Reset** on its own tab |
 | **Statistics** | Usage insights across five sub-tabs |
@@ -2113,9 +2113,9 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 
 | Section | Sub-tabs |
 |---------|----------|
-| **Structure** | Categories · Pages · Finders · Collections |
-| **Bookmarks** | List · Tags · Tag suggestions · Your rules (**v1.8.0**) · Settings (**v1.1.0**) · Local copies |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Custom themes |
+| **Bookmarks** | List · Tags · Tag suggestions · Your rules (**v1.8.0**) · Settings (**v1.1.0**) · Local copies |
+| **Structure** | Categories · Pages · Finders · Collections |
 
 **Branding** — page title and favicon — is the tail of **Display** rather than a tab of its own; `/#config/appearance/branding` still lands on it. Each tab has a **filter** beside *Only changed*, and `Escape` clears it. The theme list answers to **typing**: open it and type the first letters of a name to jump to it among a hundred and fifty. Pointing at a **type size** shows it on the dashboard behind config and moving away puts it back — the same idea as browsing the theme list, which previews its colours. A custom theme has **⤓ Export** on its row and **Import theme…** beside *Add custom theme*, so one palette can move between installs without a whole backup.
 | **Behavior** | General · Date & weather · Search · Inbox · Status & health · Privacy |

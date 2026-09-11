@@ -27,6 +27,19 @@ test.describe('config: sections restored from the old config', () => {
         }
     });
 
+    test('the rail is ordered what-it-is before what-it-shows', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'overview');
+        const order = await page.evaluate(() =>
+            [...document.querySelectorAll('[data-config-section]')].map((b) => b.getAttribute('data-config-section')));
+
+        // Appearance, Structure and Behavior say what the dashboard is;
+        // Bookmarks is the collection it shows. Appearance opens that group
+        // rather than sitting under the collection, which is where an ordering
+        // by how often a section is opened had put it.
+        expect(order.slice(0, 4)).toEqual(['overview', 'appearance', 'bookmarks', 'structure']);
+    });
+
     test('the bookmarks section lists bookmarks and filters by search', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');

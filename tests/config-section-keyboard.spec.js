@@ -81,7 +81,11 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await openSection(page, 'overview');
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('j');
-        await expect(page.locator('[data-config-section="bookmarks"][aria-selected="true"]')).toBeVisible();
+        // Whatever sits second in the rail, rather than a section by name: the
+        // order is a design decision and this test is about the keys.
+        const second = await page.evaluate(() =>
+            document.querySelectorAll('[data-config-section]')[1].getAttribute('data-config-section'));
+        await expect(page.locator(`[data-config-section="${second}"][aria-selected="true"]`)).toBeVisible();
         await page.keyboard.press('k');
         await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
     });
