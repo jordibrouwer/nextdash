@@ -66,13 +66,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Required="true"
           Mask="false" />
 
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-1.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-2.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-3.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-4.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-5.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-6.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-7.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-8.png</Screenshot>
-  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-9.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-dashboard.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-search.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-inbox.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-health-monitors.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-statistics.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-widgets.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-themes.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-bookmarks.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-shortcuts.png</Screenshot>
 </Container>
