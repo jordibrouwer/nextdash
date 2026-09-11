@@ -18,9 +18,9 @@ test.describe('config pages & tags', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
 
-        for (const tab of ['categories', 'tags', 'pages', 'finders', 'collections']) {
+        for (const tab of ['categories', 'pages', 'finders', 'collections']) {
             await expect(page.locator(`[data-pt-tab="${tab}"]`)).toBeVisible();
         }
         await page.locator('[data-pt-tab="finders"]').click();
@@ -37,7 +37,7 @@ test.describe('config pages & tags', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="finders"]').click();
         await page.locator('[data-finder-add]').click();
 
@@ -62,8 +62,8 @@ test.describe('config pages & tags', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
 
         await expect(page.locator('[data-tag-rename="dev"]')).toBeVisible();
         await expect(page.locator('[data-tag-row="dev"] .config-tag-count')).toHaveText('2 bookmarks');
@@ -77,7 +77,7 @@ test.describe('config pages & tags', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="collections"]').click();
 
         await expect(page.locator('[data-collection-field="showSmartTodayCollection"]')).toBeVisible();
@@ -97,7 +97,7 @@ test.describe('config pages & tags', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="pages"]').click();
 
         // At least the current page shows, and the first page's delete is disabled.
@@ -121,7 +121,7 @@ test.describe('config pages & tags', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'work', name: 'Work' }]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
 
         await expect(page.locator('[data-cat="name"]').first()).toHaveValue('Work');
@@ -157,7 +157,7 @@ test.describe('config pages & tags', () => {
             ];
             cfg._catBlockOrder = ['w1', 'work', 'w2', 'home'];
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await expect(page.locator('[data-block-row]').first()).toBeVisible();
 
@@ -190,7 +190,7 @@ test.describe('config pages & tags', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
 
         // Pages: the only page holds all three bookmarks.
         await page.locator('[data-pt-tab="pages"]').click();
@@ -258,7 +258,7 @@ test.describe('unique names', () => {
 
     test('a page cannot be renamed onto another page name', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="pages"]').click();
         await page.evaluate(() => window.dashboardInstance.config.addPage());
         await page.locator('[data-pt-tab="pages"]').click();
@@ -291,7 +291,7 @@ test.describe('unique names', () => {
 
     test('a category cannot be renamed onto another category on the same page', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await expect(page.locator('[data-cat="name"]').first()).toBeVisible();
 
@@ -311,8 +311,8 @@ test.describe('unique names', () => {
 
     test('a tag cannot be renamed onto an existing tag', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
         await expect(page.locator('[data-tag-rename]').first()).toBeVisible();
 
         const tags = page.locator('[data-tag-rename]');
@@ -344,7 +344,7 @@ test.describe('unique names', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="finders"]').click();
 
         const names = page.locator('[data-finder="name"]');
@@ -363,7 +363,7 @@ test.describe('unique names', () => {
 
     test('adding pages repeatedly never repeats a name', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
             await c.addPage();
@@ -401,7 +401,7 @@ test.describe('category statistics', () => {
                 { name: 'D', url: 'https://d.com', pageId: 2, category: 'development' },
             ];
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await expect(page.locator('[data-cat-row="0"] .config-tag-count')).toHaveText('2 bookmarks');
         await expect(page.locator('[data-cat-row="1"] .config-tag-count')).toHaveText('1 bookmarks');
@@ -440,7 +440,7 @@ test.describe('smart collection limits', () => {
             s.smartRecentLimit = 50;
             s.smartStaleLimit = 0;
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="collections"]').click();
         await expect(page.locator('[data-collection-field="smartMostUsedLimit"]')).toHaveValue('25');
         await expect(page.locator('[data-collection-field="smartRecentLimit"]')).toHaveValue('50');
@@ -451,7 +451,7 @@ test.describe('smart collection limits', () => {
 
     test('the collections panel explains why Most used can look empty', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="collections"]').click();
         await expect(page.locator('.config-field-hint').filter({ hasText: /most used/i }).first()).toBeVisible();
         // A `note` entry has no field: it must not become a bound text input.
@@ -481,7 +481,7 @@ test.describe('destructive actions confirm first', () => {
         let nativeDialogs = 0;
         page.on('dialog', (d) => { nativeDialogs += 1; d.dismiss(); });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await page.waitForSelector('[data-cat-delete]');
 
@@ -505,7 +505,7 @@ test.describe('destructive actions confirm first', () => {
 
     test('Escape cancels the dialog without also leaving config', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await page.locator('[data-cat-delete]').first().click();
         await expect(page.locator('#config-confirm-modal')).toBeVisible();
@@ -523,7 +523,7 @@ test.describe('destructive actions confirm first', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="finders"]').click();
         await page.waitForSelector('[data-finder-delete]');
         await page.locator('[data-finder-delete]').first().click();
@@ -542,7 +542,7 @@ test.describe('finder URL placeholder', () => {
             ]) });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="finders"]').click();
         const url = page.locator('[data-finder="searchUrl"]').first();
         // search.js does searchUrl.replace('%s', query) — without it the finder
@@ -562,7 +562,7 @@ test.describe('finder URL placeholder', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="finders"]').click();
         await page.locator('[data-finder-add]').click();
         await expect(page.locator('[data-finder="name"]')).toHaveCount(1);
@@ -577,7 +577,7 @@ test.describe('finder URL placeholder', () => {
 test.describe('category list accessibility', () => {
     test('the category move buttons are labelled for screen readers', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
         await page.waitForSelector('[data-cat-move]');
         // Without these a screen reader announces only "↑".
@@ -589,8 +589,8 @@ test.describe('category list accessibility', () => {
 test.describe('tag cloud and filter', () => {
     test('the tags tab shows a usage-sized word cloud', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
         await expect(page.locator('[data-tag-row]').first()).toBeVisible();
 
         // Reuses the dashboard's own .tag-cloud-word styling and tier classes
@@ -605,8 +605,8 @@ test.describe('tag cloud and filter', () => {
 
     test('a selected tag is visibly marked, not just filtered', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
         const word = page.locator('[data-tag-cloud]').first();
         await expect(word).toBeVisible();
 
@@ -626,8 +626,8 @@ test.describe('tag cloud and filter', () => {
 
     test('clicking a word filters the list, and again clears it', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
         await expect(page.locator('[data-tag-cloud]').first()).toBeVisible();
 
         const before = await page.locator('[data-tag-row]').count();
@@ -646,8 +646,8 @@ test.describe('tag cloud and filter', () => {
 
     test('the filter box narrows the list and keeps focus while typing', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('[data-bm-tab="tags"]').click();
         await expect(page.locator('#config-tag-filter')).toBeVisible();
 
         const before = await page.locator('[data-tag-row]').count();
@@ -664,7 +664,7 @@ test.describe('custom collections', () => {
     test('a rule-based collection can be created, edited and saved', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="collections"]').click();
         await expect(page.locator('[data-collection-add]')).toBeVisible();
 
@@ -692,7 +692,7 @@ test.describe('custom collections', () => {
     test('the last rule cannot be removed, since a ruleless collection is skipped', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await dismissBlockingOverlays(page);
         await page.locator('[data-pt-tab="collections"]').click();
         await page.locator('[data-collection-add]').click();
@@ -707,7 +707,7 @@ test.describe('custom collections', () => {
     test('deleting a collection asks first', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await dismissBlockingOverlays(page);
         await page.locator('[data-pt-tab="collections"]').click();
         await page.locator('[data-collection-add]').click();

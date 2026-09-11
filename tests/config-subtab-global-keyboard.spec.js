@@ -29,13 +29,13 @@ test.describe('config sub-tab shortcuts from the panel', () => {
         await expect(page.locator('[data-behavior-tab="general"][aria-selected="true"]')).toBeVisible();
     });
 
-    test('[ and ] cycle pages & tags sub-tabs', async ({ page }) => {
-        await openSection(page, 'pages-tags');
+    test('[ and ] cycle Structure sub-tabs', async ({ page }) => {
+        await openSection(page, 'structure');
         await expect(page.locator('[data-pt-tab="categories"][aria-selected="true"]')).toBeVisible();
         await page.locator('#config-section-panel').focus();
 
         await page.keyboard.press(']');
-        await expect(page.locator('[data-pt-tab="tags"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-pt-tab="pages"][aria-selected="true"]')).toBeVisible();
 
         await page.keyboard.press('[');
         await expect(page.locator('[data-pt-tab="categories"][aria-selected="true"]')).toBeVisible();

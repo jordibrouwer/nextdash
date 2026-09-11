@@ -15,7 +15,7 @@ async function openConfig(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
     await page.waitForTimeout(800);
 }
 

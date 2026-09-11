@@ -22,7 +22,7 @@ class DashboardConfigLoader {
         'overview',
         'bookmarks',
         'appearance',
-        'pages-tags',
+        'structure',
         'behavior',
         'data-backups',
         'widgets',
@@ -45,6 +45,11 @@ class DashboardConfigLoader {
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
+        // Pages & tags is Structure now, and its Tags tab went to
+        // Bookmarks. Both old shapes are still in people's links, and this
+        // reader runs before the module that knows about either.
+        if (raw === 'config/pages-tags/tags') return 'bookmarks';
+        if (raw === 'config/pages-tags' || raw.startsWith('config/pages-tags/')) return 'structure';
         // Help links carry a third segment naming a panel; the section is
         // still the first, and the loader only needs that much.
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
@@ -60,7 +65,7 @@ class DashboardConfigLoader {
     /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
-        'pages-tags': 'ptTab',
+        'structure': 'ptTab',
         appearance: 'appearanceTab',
         stats: 'statsTab',
         'data-backups': 'dataTab',

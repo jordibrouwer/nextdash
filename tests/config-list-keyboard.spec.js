@@ -17,7 +17,7 @@ async function openPagesTags(page, finders = []) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
         window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
-        return window.dashboardInstance.config.openConfigView('pages-tags');
+        return window.dashboardInstance.config.openConfigView('structure');
     });
     await page.locator('[data-pt-tab="finders"]').click();
     await expect(page.locator('[data-finder-index="0"]')).toBeVisible({ timeout: 10_000 });
@@ -32,8 +32,8 @@ async function openPagesTags(page, finders = []) {
  * row further down. Focusing the element states the intent instead of
  * depending on where the middle of the panel happens to be.
  */
-async function focusListPanel(page) {
-    await page.locator('#config-pt-body').focus();
+async function focusListPanel(page, bodyId = 'config-pt-body') {
+    await page.locator(`#${bodyId}`).focus();
 }
 
 test.describe('config list keyboard navigation', () => {
@@ -120,12 +120,13 @@ test.describe('config list keyboard navigation', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => {
             window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
-            return window.dashboardInstance.config.openConfigView('pages-tags');
+            return window.dashboardInstance.config.openConfigView('bookmarks');
         });
-        await page.locator('[data-pt-tab="tags"]').click();
+        await page.locator('[data-bm-tab="tags"]').click();
         await expect(page.locator('#config-tag-filter')).toBeVisible();
 
-        await focusListPanel(page);
+        // Tags lives under Bookmarks now, so its rows sit in that body.
+        await focusListPanel(page, 'config-bm-body');
         await page.keyboard.press('/');
         await expect(page.locator('#config-tag-filter')).toBeFocused();
     });

@@ -22,7 +22,7 @@ test.describe('config: sections restored from the old config', () => {
     test('the rail lists every section including bookmarks, stats and help', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'overview');
-        for (const s of ['overview', 'bookmarks', 'pages-tags', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
+        for (const s of ['overview', 'bookmarks', 'structure', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
             await expect(page.locator(`[data-config-section="${s}"]`)).toBeVisible();
         }
     });
@@ -268,7 +268,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('the smart-collection panels explain what they do', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'pages-tags');
+        await openSection(page, 'structure');
         await page.locator('[data-pt-tab="collections"]').click();
         // Smart collections, tag collections, and the "Today" keyword boxes —
         // the last of which is three bare text fields without a note.
@@ -451,7 +451,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('collections expose the per-page scope pickers', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'pages-tags');
+        await openSection(page, 'structure');
         await page.locator('[data-pt-tab="collections"]').click();
         await expect(page.locator('[data-scope-field="smartTodayPageIds"]').first()).toBeVisible();
     });

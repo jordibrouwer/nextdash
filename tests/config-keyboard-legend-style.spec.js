@@ -58,7 +58,7 @@ test.describe('config keyboard legends match the inbox/health treatment', () => 
 
     test('the pages/tags list legend does too', async ({ page }) => {
         await loadDashboard(page);
-        await openConfig(page, 'pages-tags');
+        await openConfig(page, 'structure');
         const legend = page.locator('.config-list-keyboard-legend');
         await expect(legend).toBeVisible();
         await expect(legend.locator('kbd')).toHaveCount(5);
@@ -72,7 +72,7 @@ test.describe('config keyboard legends match the inbox/health treatment', () => 
         const form = await page.locator('.config-form-keyboard-legend').evaluate(eval(CHROME));
         const formKbd = await page.locator('.config-form-keyboard-legend').evaluate(eval(KBD_CHROME));
 
-        await openConfig(page, 'pages-tags');
+        await openConfig(page, 'structure');
         const list = await page.locator('.config-list-keyboard-legend').evaluate(eval(CHROME));
 
         await openConfig(page, 'bookmarks');

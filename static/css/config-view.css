@@ -126,9 +126,19 @@
     }
 }
 
+/*
+ * The rail is a fixed 200px column, so a long section name does not widen it --
+ * it wraps, and one two-line button makes the whole rail look ragged. Since
+ * every translation of a name is a different length, the button holds itself to
+ * one line rather than every name being kept short enough for the widest
+ * language. The full name stays available as a tooltip.
+ */
 .config-nav-item {
     text-align: left;
     padding: 9px 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     border: none;
     border-radius: var(--radius-5, 8px);
     background: transparent;

@@ -1100,12 +1100,16 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 }
 
 // mapLegacyConfigSection maps an old config tab name onto one of the regrouped
-// view sections (overview · pages-tags · appearance · behavior · data-backups).
+// view sections (overview · structure · appearance · behavior · data-backups).
 // Returns "" for the overview/unknown case so the caller falls back to /#config.
 func mapLegacyConfigSection(section string) string {
 	switch strings.ToLower(section) {
-	case "pages", "categories", "tags", "finders":
-		return "pages-tags"
+	case "pages", "categories", "finders":
+		return "structure"
+	// Tags moved to Bookmarks when Pages & tags became Structure: a tag is
+	// something a bookmark carries, not part of a page's structure.
+	case "tags":
+		return "bookmarks/tags"
 	case "appearance", "colors", "themes", "fonts", "layout":
 		return "appearance"
 	case "behavior", "settings", "keyboard", "language", "quickadd", "quick-add":

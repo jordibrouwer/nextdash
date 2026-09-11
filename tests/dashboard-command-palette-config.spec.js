@@ -57,7 +57,7 @@ test.describe('the config commands name the config that exists', () => {
 
         const labels = {
             overview: 'Overview', bookmarks: 'Bookmarks', appearance: 'Appearance',
-            'pages-tags': 'Pages & tags', behavior: 'Behavior',
+            structure: 'Structure', behavior: 'Behavior',
             'data-backups': 'Data & backups', widgets: 'Widgets', stats: 'Statistics',
             help: 'Help', about: 'About',
         };
@@ -90,7 +90,7 @@ test.describe('the config commands name the config that exists', () => {
         await page.keyboard.press('Enter');
 
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance?.config?.section), { timeout: 10_000 }).toBe('pages-tags');
+            window.dashboardInstance?.config?.section), { timeout: 10_000 }).toBe('structure');
         expect(await page.evaluate(() => window.dashboardInstance.config.ptTab)).toBe('categories');
     });
 });

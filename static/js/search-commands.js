@@ -261,7 +261,7 @@ class SearchCommandsComponent {
         { id: 'overview', labelKey: 'commands.configOverview', fallback: 'Overview' },
         { id: 'bookmarks', labelKey: 'commands.configBookmarks', fallback: 'Bookmarks' },
         { id: 'appearance', labelKey: 'commands.configAppearance', fallback: 'Appearance' },
-        { id: 'pages-tags', labelKey: 'commands.configPagesTags', fallback: 'Pages & tags' },
+        { id: 'structure', labelKey: 'commands.configStructure', fallback: 'Structure' },
         { id: 'behavior', labelKey: 'commands.configBehavior', fallback: 'Behavior' },
         { id: 'data-backups', labelKey: 'commands.configDataBackups', fallback: 'Data & backups' },
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
@@ -270,10 +270,10 @@ class SearchCommandsComponent {
         { id: 'about', labelKey: 'commands.configAbout', fallback: 'About' },
         // The names that used to be sections and are now tabs, kept so typing
         // what you remember still arrives somewhere sensible.
-        { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories', section: 'pages-tags', tab: 'categories' },
-        { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags', section: 'pages-tags', tab: 'tags' },
-        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders', section: 'pages-tags', tab: 'finders' },
-        { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages', section: 'pages-tags', tab: 'pages' },
+        { id: 'categories', labelKey: 'commands.configCategories', fallback: 'Categories', section: 'structure', tab: 'categories' },
+        { id: 'tags', labelKey: 'commands.configTags', fallback: 'Tags', section: 'bookmarks', tab: 'tags' },
+        { id: 'finders', labelKey: 'commands.configFinders', fallback: 'Finders', section: 'structure', tab: 'finders' },
+        { id: 'pages', labelKey: 'commands.configPages', fallback: 'Pages', section: 'structure', tab: 'pages' },
         { id: 'backups', labelKey: 'commands.configBackups', fallback: 'Backups', section: 'data-backups', tab: 'backups' },
         { id: 'themes', labelKey: 'commands.configThemes', fallback: 'Themes', section: 'appearance', tab: 'general' },
     ];
@@ -296,7 +296,7 @@ class SearchCommandsComponent {
         this._closeCommandPalette();
         const dash = window.dashboardInstance;
         const section = entry.section || entry.id;
-        const state = { 'pages-tags': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab' }[section];
+        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab' }[section];
         if (dash?.config?.openConfigView) {
             if (entry.tab && state) dash.config[state] = entry.tab;
             void dash.config.openConfigView(section);
