@@ -2375,19 +2375,29 @@ the backdrop is worked out, because 218 of the themes in the register predate
 the field and hand-writing a number for each of them would be inventing 218
 opinions. A theme that wants no glow at all says so with a negative number.
 
-Derived from three things, all read off the theme's own palette:
+Derived from the theme's own palette, along two branches, because a glow is
+not one effect. On a dark page it is light around a surface; on a light page
+light around a surface is a smudge, and what reads instead is the accent
+sitting in the shadow underneath. Both branches answer the same question --
+how much accent -- and themeGlowMode says which geometry spends it.
 
   - how much colour the accent actually carries, in OKLCH chroma rather than
     HSL saturation. Saturation calls #58A6FF fully saturated because one
     channel touches 255, which ranks GitHub's blue above a neon green; chroma
     does not make that mistake.
-  - how light the accent is, because a glow is light. A dark accent glowing is
-    a shadow.
-  - how dark the page is, because a glow on paper is a smudge.
+  - how light the accent is. On a dark page a pale accent glows and a dark one
+    would only be a shadow; on a light page it is the other way round, because
+    a shadow is what is being tinted.
+  - how dark the page is, on the dark branch only. The light branch has
+    already answered that by being the light branch.
 
-Capped at 0.45, deliberately well under the 1.0 a theme can ask for by hand.
-A number this function chose should be felt and not seen; the flagships that
-declare 1.0 have earned it.
+Both branches have a floor, so that a quiet palette still says something
+rather than being flat by omission -- 132 of the 222 built-in themes derived
+to exactly zero before it, 109 of them for no reason other than being light.
+A theme that means silence still declares -1 and gets it.
+
+The light branch is capped well under the dark one. On paper this is a tinted
+shadow and it is meant to be felt and not seen.
 */
 func themeSurfaceGlow(tc ThemeColors) string {
 	if tc.SurfaceGlow < 0 {
@@ -2407,16 +2417,49 @@ func themeSurfaceGlow(tc ThemeColors) string {
 		return "0"
 	}
 
-	const derivedCap = 0.45
-	chroma := unitRange((accentChroma - 0.08) / 0.12)
-	light := unitRange((accentLightness - 0.45) / 0.30)
-	ground := unitRange((0.45 - pageLightness) / 0.25)
-
-	glow := chroma * light * ground * derivedCap * 2.2
-	if glow > derivedCap {
-		glow = derivedCap
+	var glow float64
+	if pageLightness < lightPageThreshold {
+		chroma := unitRange((accentChroma - 0.08) / 0.12)
+		light := unitRange((accentLightness - 0.45) / 0.30)
+		ground := unitRange((lightPageThreshold - pageLightness) / 0.25)
+		glow = clampFloat(chroma*light*ground*0.99, 0.15, 0.60, 0.15)
+	} else {
+		chroma := unitRange((accentChroma - 0.06) / 0.12)
+		depth := unitRange((0.62 - accentLightness) / 0.30)
+		glow = clampFloat(chroma*depth*0.70, 0.12, 0.35, 0.12)
 	}
 	return formatFloat(math.Round(glow*100) / 100)
+}
+
+/*
+lightPageThreshold is where a page stops being dark, in OKLCH lightness.
+
+One constant for both questions a glow asks of the page -- how much, and which
+shape -- so the branch themeSurfaceGlow takes and the word themeGlowMode
+writes can never disagree about a theme.
+*/
+const lightPageThreshold = 0.45
+
+/*
+themeGlowLift says which of the two glow geometries a theme spends its glow
+on: 1 is a halo around the surface, 0 a shadow tinted underneath it.
+
+The stylesheet cannot work this out for itself -- CSS can mix a colour but it
+cannot ask how light one is. It arrives as a number rather than as a word
+because CSS cannot branch on what a variable says either: a word would have to
+be matched somewhere, and there is nothing to match it against. A number the
+lengths can be interpolated with needs no matching at all.
+
+A page whose colour cannot be read is treated as dark, which is what the
+themes that ship a malformed background look like anyway: the glow itself is
+zero there, so the geometry is never spent.
+*/
+func themeGlowLift(tc ThemeColors) string {
+	pageLightness, _, ok := hexOklch(tc.BackgroundPrimary)
+	if ok && pageLightness >= lightPageThreshold {
+		return "0"
+	}
+	return "1"
 }
 
 // unitRange clamps to 0-1, which every one of the three factors above needs.
@@ -2783,6 +2826,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-surface-alpha: ` + formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1)) + `;
     --theme-surface-blur: ` + formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0)) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
+    --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
     --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;

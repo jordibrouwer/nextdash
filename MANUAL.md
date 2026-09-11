@@ -1697,6 +1697,16 @@ If you have set a **background image or gradient** of your own, it wins: the
 washes switch off entirely, because a background you chose was chosen *instead*
 of this rather than on top of it.
 
+**A glow under raised surfaces.** A theme also bleeds a little of its own
+accent around the things that sit above the page — cards, widgets, panels,
+modals. How much is worked out from the theme's own palette: how much colour
+its accent carries and how light it is. On a dark theme that reads as a halo
+around the surface; on a light one the same colour sits in the shadow
+*underneath* it, because light around a surface on paper reads as a smudge.
+Themes whose whole point is quiet — *Nocturne Ink*, *Porcelain*, *Paper Ink*,
+*Bone China*, *Salt Flat* — ask for none and get none, and **Depth → Flat**
+switches it off everywhere along with the rest of the layering.
+
 ### Every theme's own accent (v1.4.0)
 
 The accent colour — the focus ring, the active tab, the hovered row, the bar on

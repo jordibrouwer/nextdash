@@ -30,6 +30,7 @@ func TestCharacterFieldsClampToTheirRange(t *testing.T) {
 				"--theme-surface-alpha: 1;",
 				"--theme-surface-blur: 0px;",
 				"--theme-surface-glow: 0;", // geen palet om iets uit af te leiden
+				"--theme-glow-lift: 1;",    // en een onleesbare pagina telt als donker
 				"--theme-radius-scale: 1;",
 				"--theme-label-transform: none;",
 				"--theme-label-spacing: normal;",
@@ -154,11 +155,46 @@ func TestDerivedGlowFollowsThePalette(t *testing.T) {
 	if neon <= muted {
 		t.Errorf("a neon accent should out-glow a grey one: neon %.2f, muted %.2f", neon, muted)
 	}
-	if paper != 0 {
-		t.Errorf("a light page should not glow at all, got %.2f", paper)
+	if neon > 0.60 {
+		t.Errorf("a derived glow should stay under what a theme can declare, got %.2f", neon)
 	}
-	if neon > 0.45 {
-		t.Errorf("a derived glow should stay well under what a theme can declare, got %.2f", neon)
+
+	// A light page glows too, as a tinted shadow rather than a halo, and it
+	// stays under what the same accent would do on a dark page. The whole
+	// point of the second branch is that 109 light themes were flat by
+	// omission rather than by choice.
+	if paper == 0 {
+		t.Error("a light theme should pick up a glow of its own")
+	}
+	if paper > 0.35 {
+		t.Errorf("a light page should stay quiet, got %.2f", paper)
+	}
+	sameAccentDark := glowOf(ThemeColors{AccentPrimary: "#2F6F5E", BackgroundPrimary: "#0B1020"})
+	sameAccentLight := glowOf(ThemeColors{AccentPrimary: "#2F6F5E", BackgroundPrimary: "#FBFAF7"})
+	if sameAccentLight >= sameAccentDark && sameAccentDark > 0 {
+		t.Errorf("the light branch should stay below the dark one for one accent: light %.2f, dark %.2f",
+			sameAccentLight, sameAccentDark)
+	}
+
+	// Nothing is flat by accident. A theme that means silence says so.
+	silent := map[string]bool{
+		"nocturne-ink-dark": true, "nocturne-ink-light": true,
+		"porcelain-dark": true, "porcelain-light": true,
+		"paper-ink-dark": true, "paper-ink-light": true,
+		"bone-china-dark": true, "bone-china-light": true,
+		"salt-flat-dark": true, "salt-flat-light": true,
+	}
+	for id, tc := range getDefaultBuiltInThemes() {
+		got := glowOf(tc)
+		if silent[id] {
+			if got != 0 {
+				t.Errorf("%s declared no glow and got %.2f", id, got)
+			}
+			continue
+		}
+		if got == 0 {
+			t.Errorf("%s derives to no glow at all, which only a declared -1 should do", id)
+		}
 	}
 
 	// Declared beats derived, in both directions.
@@ -176,6 +212,35 @@ func TestDerivedGlowFollowsThePalette(t *testing.T) {
 	}
 	if first == 0 {
 		t.Error("the packaged terminal theme should have picked up a glow of its own")
+	}
+}
+
+// TestGlowLiftIsOneOfTwoNumbers guards the token that decides the geometry: a
+// halo on a dark page, a tinted shadow on a light one, and never a third thing
+// the stylesheet would have to interpolate past.
+func TestGlowLiftIsOneOfTwoNumbers(t *testing.T) {
+	for id, tc := range getDefaultBuiltInThemes() {
+		lift := themeGlowLift(tc)
+		if lift != "0" && lift != "1" {
+			t.Fatalf("%s produced a glow lift of %q", id, lift)
+		}
+		pageLightness, _, ok := hexOklch(tc.BackgroundPrimary)
+		if !ok {
+			continue
+		}
+		wantLift := "1"
+		if pageLightness >= lightPageThreshold {
+			wantLift = "0"
+		}
+		if lift != wantLift {
+			t.Errorf("%s has a page lightness of %.2f and a glow lift of %s", id, pageLightness, lift)
+		}
+	}
+
+	// A background nothing can read is treated as dark, where the glow is zero
+	// anyway, so the geometry is never spent.
+	if got := themeGlowLift(ThemeColors{BackgroundPrimary: "not a colour"}); got != "1" {
+		t.Errorf("an unreadable background should fall back to a halo, got %s", got)
 	}
 }
 
