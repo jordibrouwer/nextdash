@@ -5,7 +5,7 @@
    verder in niets. Niet in vorm, niet in gewicht, niet in of hun vlakken
    doorzichtig zijn.
 
-   renderThemeCSSBlock (handlers.go) schrijft nu zeven tokens mee, allemaal uit
+   renderThemeCSSBlock (handlers.go) schrijft nu acht tokens mee, allemaal uit
    getypte velden op ThemeColors en allemaal geklemd op de server -- er komt
    geen CSS uit een theme, alleen getallen en woorden uit een vaste lijst. Het
    nulwaarde van elk veld is precies het huidige gedrag, dus een theme dat
@@ -14,6 +14,7 @@
      --theme-surface-alpha    1      hoe massief een opgetild vlak is
      --theme-surface-blur     0px    de blur erachter
      --theme-surface-glow     0      hoeveel accent er omheen bloedt
+     --theme-glow-lift        1      of dat een halo is (1) of een schaduw (0)
      --theme-radius-scale     1      vermenigvuldigt de radius-tokens
      --theme-label-transform  none   kapitalen op de categoriekop
      --theme-label-spacing    normal letterafstand daarvan
@@ -159,7 +160,8 @@ html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .catego
 }
 
 /* ── Gloed ───────────────────────────────────────────────────────────────
-   Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default.
+   Nul is de vlakke rand die elk theme vandaag heeft, en blijft de default voor
+   een theme dat om stilte vraagt.
 
    Niet aan de glas-stand gekoppeld. Gloed is iets van het theme, niet van de
    diepte: Retro CRT Mk II hoort te gloeien omdat fosfor gloeit, ook als je op
@@ -172,33 +174,86 @@ html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .catego
    stapelt binnen één declaratie, niet over declaraties heen. Via de tokens
    blijft de bestaande schaduw de eerste laag en komt de gloed erachteraan.
 
-   Twee tokens, want de app heeft twee kaart-idiomen: --edge-light is de lichte
+   --surface-glow-ring is die tweede laag, één keer geschreven in plaats van
+   vier keer uitgerekend. Bij gloed 0 is elke lengte 0 en de kleur volledig
+   doorzichtig, dus een theme dat -1 declareert rendert precies zoals het
+   vandaag rendert.
+
+   De vier lengtes erin staan niet vast, want een glans heeft twee vormen. Op
+   een donkere pagina staat licht óm het vlak; op een lichte pagina is dat een
+   veeg, en leest alleen het accent dat ónder het vlak in de schaduw zit. De
+   server zegt met --theme-glow-lift welke van de twee het is (1 is halo, 0 is
+   schaduw), als getal en niet als woord: CSS kan geen kant op met wat een
+   variabele zégt, maar met een getal kan het rekenen. Elke lengte staat dus
+   tussen de twee standen in en wordt er door lift heen geschoven.
+
+   De gloedsterkte zit alleen in de kleur en niet in de lengtes. Dat was eerst
+   andersom en dat werkte niet: bij een zachte gloed van 0.12 kromp de hele
+   schaduw mee tot 0,7px en was er niets meer te zien, precies bij de themes
+   die deze laag moest bereiken. Nu verandert sterkte hoe sterk de gloed is en
+   niet hoe groot -- en bij 0 is de kleur volledig doorzichtig, dus een theme
+   dat -1 declareert schildert nog altijd niets. */
+
+html[data-theme] body:not([data-depth="flat"]) {
+    --glow-y: calc(6px + 4px * var(--theme-glow-lift, 1));
+    --glow-blur: calc(18px + 8px * var(--theme-glow-lift, 1));
+    --glow-spread: calc(-6px - 6px * var(--theme-glow-lift, 1));
+    --glow-pct: calc(34% + 16% * var(--theme-glow-lift, 1));
+
+    --surface-glow-ring:
+        0 var(--glow-y) var(--glow-blur) var(--glow-spread)
+        color-mix(in srgb, var(--accent-primary)
+            calc(var(--theme-surface-glow, 0) * var(--glow-pct)), transparent);
+}
+
+/* Twee tokens, want de app heeft twee kaart-idiomen: --edge-light is de lichte
    bovenrand die theme-depth.css op de klassieke kaarten en widgets zet, en
-   --layout-shadow-* zijn die van de moderne layout. Bij gloed 0 is de tweede
-   laag volledig doorzichtig en verandert er in beide niets. */
+   --layout-shadow-* zijn die van de moderne layout. */
 
 html[data-theme] body:not([data-depth="flat"]) {
     --edge-light:
         inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth)), transparent),
-        0 calc(var(--theme-surface-glow, 0) * 10px)
-          calc(var(--theme-surface-glow, 0) * 26px)
-          calc(var(--theme-surface-glow, 0) * -12px)
-        color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 50%), transparent);
+        var(--surface-glow-ring);
 }
 
 body[data-layout-version="modern"]:not([data-depth="flat"]) {
     --layout-shadow-sm:
         0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent),
-        0 calc(var(--theme-surface-glow, 0) * 8px) calc(var(--theme-surface-glow, 0) * 20px) calc(var(--theme-surface-glow, 0) * -10px)
-          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 45%), transparent);
+        var(--surface-glow-ring);
     --layout-shadow-md:
         0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent),
-        0 calc(var(--theme-surface-glow, 0) * 16px) calc(var(--theme-surface-glow, 0) * 38px) calc(var(--theme-surface-glow, 0) * -18px)
-          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 55%), transparent);
+        var(--surface-glow-ring);
     --layout-shadow-lg:
         0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent),
-        0 calc(var(--theme-surface-glow, 0) * 24px) calc(var(--theme-surface-glow, 0) * 54px) calc(var(--theme-surface-glow, 0) * -26px)
-          color-mix(in srgb, var(--accent-primary) calc(var(--theme-surface-glow, 0) * 60%), transparent);
+        var(--surface-glow-ring);
+}
+
+/* ── Gloed in classic ────────────────────────────────────────────────────
+   De klassieke layout heeft nooit opgetilde vlakken gehad en krijgt ze hier
+   ook niet: dit zet alleen de accentlaag, geen grijze schaduw eronder.
+
+   De kaart-presets, het widgetlichaam, de modal en de theme-browser-tegels
+   staan er niet bij, want die schilderen --edge-light al en gloeien dus mee
+   vanaf de regel hierboven. Wat hier staat zijn de vlakken die in classic
+   helemaal geen box-shadow hadden -- en dat is waarom de config view daar tot
+   nu toe vlak bleef, welk theme je ook koos.
+
+   De repeterende rijen (.feed-row, .inbox-item, .health-view-item,
+   .config-crud-row) staan er bewust niet bij. Vijftig gloeiende rijen onder
+   elkaar is ruis en geen diepte, en in classic hebben die rijen geen vlak om
+   op te tillen. In modern gloeien ze mee via --layout-shadow-*, zoals nu. */
+
+html[data-theme] body:not([data-layout-version="modern"]):not([data-depth="flat"]) :is(
+    .config-tile,
+    .config-panel,
+    .config-choices,
+    .search-container,
+    .lvs-summary,
+    .lvs-group,
+    .quickstart-card,
+    .health-monitor-stat
+) {
+    box-shadow: var(--surface-glow-ring);
 }
 
 /* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan

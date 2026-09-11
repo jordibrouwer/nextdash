@@ -24,7 +24,7 @@ async function openCollections(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
     await page.locator('[data-pt-tab="collections"]').click();
     await expect(page.locator('[data-scope-field]').first()).toBeAttached();
     // Every box starts clear, so .check() below always represents a real change.

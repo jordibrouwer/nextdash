@@ -670,7 +670,7 @@ test.describe('config sets the switch too', () => {
 
     test('Pages & tags carries a switch per category, without a wall of labels', async ({ page }) => {
         await openDashboard(page);
-        await openConfig(page, 'pages-tags', 'categories');
+        await openConfig(page, 'structure', 'categories');
 
         const toggle = page.locator('.config-crud-row [data-cat-spread]').first();
         await expect(toggle).toHaveAttribute('aria-pressed', 'false');

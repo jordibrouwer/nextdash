@@ -181,7 +181,7 @@ test.describe('arranging blocks in config', () => {
                 body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
             });
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.click('[data-pt-tab="categories"]');
         await expect(page.locator('.config-crud-list')).toBeVisible({ timeout: 15_000 });
     });

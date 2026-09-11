@@ -55,7 +55,7 @@ async function clearNotifications(page) {
 async function openPagesTags(page, tab) {
     await page.evaluate(async (subTab) => {
         const cfg = window.dashboardInstance.config;
-        await cfg.openConfigView('pages-tags');
+        await cfg.openConfigView('structure');
         cfg.ptTab = subTab;
         cfg.render();
     }, tab);

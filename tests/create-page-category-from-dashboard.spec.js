@@ -51,14 +51,15 @@ const overlayRow = (page) => page.locator('#app-modal .page-overview-modal-actio
 const gridRow = (page) => page.locator('.bookmark-inline-create.category-add-create');
 
 /**
- * c adds a category on the first press.
+ * Shift+N adds a category on the first press.
  *
- * It used to need a hold of about 300 ms so a tap could still fall through to
- * the shortcut search; that made it one of two bare letters with a rule of
- * their own, and the wait was paid on every use.
+ * It was a bare c, which swallowed the letter before the shortcut search saw
+ * it — so no bookmark whose shortcut starts with c could be reached by typing
+ * it. Adding is a few presses a day; typing a shortcut is the whole point of
+ * the grid.
  */
-async function pressC(page) {
-    await page.keyboard.press('c');
+async function pressAddCategory(page) {
+    await page.keyboard.press('Shift+N');
 }
 
 test.describe('pages overlay — creating a page', () => {
@@ -270,36 +271,45 @@ test.describe('dashboard grid — adding a category', () => {
 
     test('c opens the name row without a bookmark focused', async ({ page }) => {
         await loadDashboard(page);
-        await pressC(page);
+        await pressAddCategory(page);
 
         await expect(gridRow(page)).toBeVisible();
         await expect(gridRow(page).locator('.bookmark-inline-create-input')).toBeFocused();
     });
 
-    test('a quick c adds a category rather than reaching the shortcut search', async ({ page }) => {
+    test('Shift+N adds a category rather than reaching the shortcut search', async ({ page }) => {
         await loadDashboard(page);
-        // The hold is gone: a tap is the shortcut now, and the search box must
-        // not open behind it.
-        await page.keyboard.press('c');
+        // A tap is the shortcut, and the search box must not open behind it.
+        await page.keyboard.press('Shift+N');
 
         await expect(gridRow(page)).toBeVisible();
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
-    test('c still works a second time', async ({ page }) => {
+    test('a bare c belongs to the shortcut search again', async ({ page }) => {
         await loadDashboard(page);
-        await pressC(page);
+        // This is what the move bought: c starts a search, so a bookmark whose
+        // shortcut begins with c can be typed like any other.
+        await page.keyboard.press('c');
+
+        await expect(page.locator('#shortcut-search.show')).toBeVisible();
+        await expect(gridRow(page)).toHaveCount(0);
+    });
+
+    test('Shift+N still works a second time', async ({ page }) => {
+        await loadDashboard(page);
+        await pressAddCategory(page);
         await expect(gridRow(page)).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(gridRow(page)).toHaveCount(0);
 
-        await pressC(page);
+        await pressAddCategory(page);
         await expect(gridRow(page)).toBeVisible();
     });
 
     test('c while typing in the name row types a c instead of reopening', async ({ page }) => {
         await loadDashboard(page);
-        await pressC(page);
+        await pressAddCategory(page);
         await expect(gridRow(page)).toBeVisible();
 
         await page.keyboard.type('abc');
@@ -414,7 +424,7 @@ test.describe('dashboard grid — adding a category', () => {
 
     test('the name row is labelled for screen readers', async ({ page }) => {
         await loadDashboard(page);
-        await pressC(page);
+        await pressAddCategory(page);
 
         // A placeholder is not a name: without aria-label the field is announced
         // as unlabelled, and the conflict message is never announced at all.

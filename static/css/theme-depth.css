@@ -144,6 +144,10 @@ html[data-theme] body {
         --theme-depth: 0.5;
         --hairline: var(--border-primary);
         --hairline-strong: var(--border-primary);
+
+        /* En om dezelfde reden geen gloed. Een accentgekleurde halo is precies
+           de kleurbeweging die deze voorkeur weg wil hebben. */
+        --theme-surface-glow: 0;
     }
 }
 

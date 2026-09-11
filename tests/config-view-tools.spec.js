@@ -80,7 +80,7 @@ test.describe('a statistics row leads somewhere', () => {
 
 test.describe('copying structure', () => {
     test('a page row offers Duplicate, and the method exists', async ({ page }) => {
-        await config(page, 'pages-tags');
+        await config(page, 'structure');
         // Pages & tags opens on Categories; the pages list is the other tab.
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;

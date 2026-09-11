@@ -22,9 +22,22 @@ test.describe('config: sections restored from the old config', () => {
     test('the rail lists every section including bookmarks, stats and help', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'overview');
-        for (const s of ['overview', 'bookmarks', 'pages-tags', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
+        for (const s of ['overview', 'bookmarks', 'structure', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
             await expect(page.locator(`[data-config-section="${s}"]`)).toBeVisible();
         }
+    });
+
+    test('the rail is ordered what-it-is before what-it-shows', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'overview');
+        const order = await page.evaluate(() =>
+            [...document.querySelectorAll('[data-config-section]')].map((b) => b.getAttribute('data-config-section')));
+
+        // Appearance, Structure and Behavior say what the dashboard is;
+        // Bookmarks is the collection it shows. Appearance opens that group
+        // rather than sitting under the collection, which is where an ordering
+        // by how often a section is opened had put it.
+        expect(order.slice(0, 4)).toEqual(['overview', 'appearance', 'bookmarks', 'structure']);
     });
 
     test('the bookmarks section lists bookmarks and filters by search', async ({ page }) => {
@@ -268,7 +281,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('the smart-collection panels explain what they do', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'pages-tags');
+        await openSection(page, 'structure');
         await page.locator('[data-pt-tab="collections"]').click();
         // Smart collections, tag collections, and the "Today" keyword boxes —
         // the last of which is three bare text fields without a note.
@@ -451,7 +464,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('collections expose the per-page scope pickers', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'pages-tags');
+        await openSection(page, 'structure');
         await page.locator('[data-pt-tab="collections"]').click();
         await expect(page.locator('[data-scope-field="smartTodayPageIds"]').first()).toBeVisible();
     });

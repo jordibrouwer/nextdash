@@ -29,14 +29,16 @@ func TestConfigRedirectsToHash(t *testing.T) {
 func TestConfigRedirectMapsLegacySection(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"pages":      "/#config/pages-tags",
-		"categories": "/#config/pages-tags",
-		"tags":       "/#config/pages-tags",
-		"colors":     "/#config/appearance",
-		"keyboard":   "/#config/behavior",
-		"backups":    "/#config/data-backups",
-		"bookmarks":  "/#config", // maps to overview → bare hash
-		"unknown":    "/#config",
+		"pages":      "/#config/structure",
+		"categories": "/#config/structure",
+		// Tags is a Bookmarks tab now, and the old query has to land on it
+		// rather than on the section it used to live in.
+		"tags":      "/#config/bookmarks/tags",
+		"colors":    "/#config/appearance",
+		"keyboard":  "/#config/behavior",
+		"backups":   "/#config/data-backups",
+		"bookmarks": "/#config", // maps to overview → bare hash
+		"unknown":   "/#config",
 	}
 	for section, want := range cases {
 		section, want := section, want
