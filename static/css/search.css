@@ -888,13 +888,36 @@ mark.search-highlight {
 }
 
 /* Search mode tabs — shown at the bottom of the search container */
+/*
+ * One track, three positions.
+ *
+ * These are not three buttons to three places: search, commands and finders
+ * are one panel that changes mode on a key, and this is how that is shown. A
+ * shared border around the set says "pick one of these"; three separately
+ * outlined pills said "here are three things".
+ *
+ * The modern layout has drawn it this way since it landed (overlays-modern.css
+ * still refines the radii and transitions there). Classic is the default and
+ * is where most readers are, so it gets the same treatment rather than a
+ * looser one -- a switch should not look like a switch only for people who
+ * changed a layout preference.
+ */
 .search-mode-tabs {
     display: flex;
     gap: var(--space-1-5, 0.4rem);
-    padding-top: var(--space-2, 0.6rem);
-    margin-top: var(--space-1-5, 0.4rem);
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+    padding: var(--space-1-5, 0.35rem);
+    margin-top: var(--space-2, 0.5rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+    border-radius: var(--radius-6, 10px);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     flex-shrink: 0;
+    width: fit-content;
+}
+
+/* The pill's own outline goes with it: inside a track, two borders around one
+   thing read as a seam. The active position is told apart by its fill. */
+.search-mode-tab {
+    border-color: transparent;
 }
 
 .search-mode-tab {
