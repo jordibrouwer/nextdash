@@ -438,7 +438,7 @@ func TestGlassIsDerivedPerTheme(t *testing.T) {
 }
 
 /*
-The fourth semantic colour.
+The fourth semantic colour, and the ladder's step.
 
 Two things the stylesheet had been asking a theme for that a theme could not
 answer. --accent-info marks a kind rather than a verdict -- a feature row
@@ -509,4 +509,28 @@ func TestThemeContractCoversInfoAndTheLadder(t *testing.T) {
 		}
 	})
 
+	t.Run("the ladder's step is anchored on the theme it was drawn against", func(t *testing.T) {
+		if got := themeSurfaceStep(themes[defaultThemeID]); got != "1" {
+			t.Errorf("the default theme is no longer the reference: %q", got)
+		}
+	})
+
+	t.Run("a palette with less room gets a bigger step", func(t *testing.T) {
+		// Three per cent of an ink that sits close to its ground is not a step
+		// anyone can see, so those themes lift further per rung.
+		wide := themeSurfaceStep(ThemeColors{BackgroundPrimary: "#000000", TextPrimary: "#FFFFFF"})
+		narrow := themeSurfaceStep(ThemeColors{BackgroundPrimary: "#3A3A3A", TextPrimary: "#9A9A9A"})
+		if wide >= narrow {
+			t.Errorf("a low-contrast palette got no more room per rung: %q against %q", narrow, wide)
+		}
+	})
+
+	t.Run("and a theme may say for itself", func(t *testing.T) {
+		if got := themeSurfaceStep(ThemeColors{SurfaceStep: 1.4}); got != "1.4" {
+			t.Errorf("a declared step was overridden: %q", got)
+		}
+		if got := themeSurfaceStep(ThemeColors{SurfaceStep: 9}); got != "1.8" {
+			t.Errorf("a step past the range was not clamped: %q", got)
+		}
+	})
 }

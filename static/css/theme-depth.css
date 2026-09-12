@@ -81,15 +81,20 @@ html[data-theme] body {
      * surface-0 is the page. Each step above it is a card on a card.
      */
     --surface-0: var(--background-primary);
+    /* The 3/6/9 are scaled by --theme-surface-step, which the server derives
+       from how much room a palette has between its page and its ink: three per
+       cent of an ink that sits close to its ground is not a step anyone can
+       see. The depth control still multiplies on top, so the reader's choice
+       is unchanged; this only decides what one rung is worth on this theme. */
     --surface-1: color-mix(in srgb,
         var(--accent-primary) var(--theme-tint),
-        color-mix(in srgb, var(--text-primary) calc(3% * var(--theme-depth)), var(--background-primary)));
+        color-mix(in srgb, var(--text-primary) calc(3% * var(--theme-depth) * var(--theme-surface-step, 1)), var(--background-primary)));
     --surface-2: color-mix(in srgb,
         var(--accent-primary) var(--theme-tint),
-        color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth)), var(--background-primary)));
+        color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth) * var(--theme-surface-step, 1)), var(--background-primary)));
     --surface-3: color-mix(in srgb,
         var(--accent-primary) var(--theme-tint),
-        color-mix(in srgb, var(--text-primary) calc(9% * var(--theme-depth)), var(--background-primary)));
+        color-mix(in srgb, var(--text-primary) calc(9% * var(--theme-depth) * var(--theme-surface-step, 1)), var(--background-primary)));
 
     /*
      * Hairlines.

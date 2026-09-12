@@ -2505,6 +2505,50 @@ func themeAccentInfo(tc ThemeColors) string {
 		" " + formatFloat(math.Round(hue*10)/10) + ")"
 }
 
+/*
+How far apart the rungs of the surface ladder sit.
+
+Each rung mixes a few per cent of the text colour into the page: 3, 6 and 9,
+scaled by the depth control. Those numbers were chosen against a mid-contrast
+palette, and they are not worth the same everywhere. On a page and an ink that
+sit far apart -- near-black under near-white -- three per cent is a visible
+step. On a palette that keeps its ink close to its ground, three per cent of
+almost nothing is nothing, and every card on those themes reads as flat
+whatever the reader picked.
+
+So the step is scaled by the room the palette actually has. Not by the depth,
+which is the reader's choice and already multiplies this; by the theme's own
+distance between page and ink, which is a property of the palette.
+
+Bounded well inside doubling: this shifts a card against its page, and a step
+large enough to be a colour of its own would fight the accent tint mixed in
+beside it.
+*/
+func themeSurfaceStep(tc ThemeColors) string {
+	if tc.SurfaceStep > 0 {
+		return formatFloat(clampFloat(tc.SurfaceStep, 0.6, 1.8, 1))
+	}
+
+	page, _, okPage := hexOklch(tc.BackgroundPrimary)
+	ink, _, okInk := hexOklch(tc.TextPrimary)
+	if !okPage || !okInk {
+		return "1"
+	}
+
+	// The room retro-crt-dark has: 0.828 in OKLCH lightness between its page
+	// and its ink. It is the default theme and the one the 3/6/9 were drawn
+	// against, so it is what "a step worth one" means -- and it comes out at
+	// exactly 1, which a guessed constant did not. A first pass used 0.62 and
+	// put the median theme at 0.84, flattening most of the collection to fix
+	// the few.
+	room := math.Abs(ink - page)
+	step := 1.0
+	if room > 0 {
+		step = 0.828 / room
+	}
+	return formatFloat(math.Round(clampFloat(step, 0.6, 1.8, 1)*100) / 100)
+}
+
 func themeSurfaceAlpha(tc ThemeColors) string {
 	if tc.SurfaceAlpha < 0 {
 		return "1"
@@ -3047,6 +3091,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
     --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
+    --theme-surface-step: ` + themeSurfaceStep(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;

@@ -1001,6 +1001,24 @@ type ThemeColors struct {
 	AccentInfo string `json:"accentInfo,omitempty"`
 
 	/*
+	 * SurfaceStep is how far apart the rungs of the surface ladder sit, as a
+	 * multiplier on the 3/6/9% of text colour each one mixes in.
+	 *
+	 * The rungs themselves stay derived rather than declarable, and that is
+	 * deliberate: they are mixed from background-primary, text-primary and the
+	 * accent, they scale on --theme-depth, and theme-ink.css derives the
+	 * secondary and tertiary ink *from* surface-2. A theme that named a
+	 * surface outright would take its own depth control out of service and
+	 * move the ink floor with it. How far apart the steps sit is the part a
+	 * palette can have an opinion about without any of that following.
+	 *
+	 * 0.6 to 1.8, with 1 the ladder as it was. Left empty it is derived from
+	 * how much room the palette has between its page and its ink -- see
+	 * themeSurfaceStep.
+	 */
+	SurfaceStep float64 `json:"surfaceStep,omitempty"`
+
+	/*
 	 * Character. Everything above is colour; everything below is what a theme
 	 * is allowed to be besides a palette.
 	 *

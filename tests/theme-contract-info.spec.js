@@ -82,4 +82,35 @@ test.describe('the widened theme contract', () => {
         }
     });
 
+    test('the surface ladder carries the theme\'s own step', async ({ page }) => {
+        await dashboard(page);
+
+        const step = await page.evaluate(() =>
+            window.getComputedStyle(document.body).getPropertyValue('--theme-surface-step').trim());
+
+        expect(step, '--theme-surface-step is not declared').not.toBe('');
+        expect(Number(step), `a step of ${step} is outside the range`).toBeGreaterThanOrEqual(0.6);
+        expect(Number(step), `a step of ${step} is outside the range`).toBeLessThanOrEqual(1.8);
+    });
+
+    test('and the depth control still multiplies on top of it', async ({ page }) => {
+        await dashboard(page);
+
+        const surfaceAt = (depth) => page.evaluate((value) => {
+            document.body.setAttribute('data-depth', value);
+            const probe = document.createElement('span');
+            probe.style.color = 'var(--surface-2)';
+            document.body.appendChild(probe);
+            const painted = window.getComputedStyle(probe).color;
+            probe.remove();
+            return painted;
+        }, depth);
+
+        // The step decides what one rung is worth on this theme; the reader
+        // still decides how many rungs are drawn. A theme naming its surfaces
+        // outright would have taken this away, which is why it cannot.
+        const flat = await surfaceAt('flat');
+        const rich = await surfaceAt('rich');
+        expect(rich, 'the depth control no longer moves the surface').not.toBe(flat);
+    });
 });
