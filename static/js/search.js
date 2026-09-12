@@ -339,7 +339,7 @@ class SearchComponent {
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
                 } else if (mode === 'finder') {
-                    this.currentQuery = '?';
+                    this.currentQuery = this.finderModeQuery();
                 } else {
                     this.currentQuery = '';
                     this.commandsComponent.resetState();
@@ -356,6 +356,34 @@ class SearchComponent {
     }
 
     /**
+     * What finder mode looks like as a query, the moment you enter it.
+     *
+     * `?` on its own is a prompt for a shortcut letter, and everything typed
+     * after it is read as that letter until a space arrives -- which is why a
+     * space cannot simply be inserted here: an empty shortcut matches no
+     * finder, so `? jordibrw.nl` searches for nothing at all.
+     *
+     * With exactly one finder configured there is no letter left to choose.
+     * The prompt is asking a question with one possible answer, and the reader
+     * who types their terms straight after the `?` is right to expect them to
+     * land. So the one finder is picked here and the space it needs comes with
+     * it. Two or more, and the question is real again: `?` lists them and
+     * waits, as before.
+     *
+     * Called from all three ways in -- the `?` key, the toolbar button and the
+     * mode tab -- rather than from each of them separately, so a fourth cannot
+     * arrive without it.
+     */
+    finderModeQuery() {
+        const finders = this.findersComponent?.finders;
+        if (!Array.isArray(finders) || finders.length !== 1) {
+            return '?';
+        }
+        const only = finders[0];
+        return only?.shortcut ? `?${String(only.shortcut).toUpperCase()} ` : '?';
+    }
+
+    /**
      * Open the overlay directly in commands (`:`) or finders (`?`) mode.
      *
      * The prefix is set before the first updateSearch() so the open is tracked as
@@ -368,7 +396,7 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
         }
         this.commandsComponent.resetState();
-        this.currentQuery = prefix;
+        this.currentQuery = prefix === '?' ? this.finderModeQuery() : prefix;
         this.updateSearch();
         this.renderSearchMatches();
     }
@@ -778,6 +806,18 @@ class SearchComponent {
             e.preventDefault();
             if (!this.currentQuery.startsWith('?')) {
                 this.addToQuery('?');
+                // Still through addToQuery for the `?` itself: it starts the
+                // search session, resets the command state and arms the
+                // shortcut open. Only the prompt it leaves behind is replaced,
+                // and only when there is one finder to replace it with -- the
+                // trailing space cannot be typed, because the guard in
+                // addToQuery swallows a lone space after `?` (an empty
+                // shortcut matches no finder).
+                const entry = this.finderModeQuery();
+                if (entry !== '?' && this.currentQuery.endsWith('?')) {
+                    this.currentQuery = `${this.currentQuery.slice(0, -1)}${entry}`;
+                    this._scheduleUpdateSearch();
+                }
             }
             return;
         }

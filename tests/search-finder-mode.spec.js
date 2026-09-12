@@ -9,7 +9,23 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
  * guard that swallows a lone space reads what follows the first "?" -- now "?"
  * rather than empty -- so spaces started landing in the query, and the whole
  * thing was searched for literally: "jordibrw.nl" became "??JORDIBRW.NL".
+ *
+ * Two finders are installed where the prompt itself is the subject. With one
+ * configured the app answers the prompt on the way in and enters as "?B ";
+ * see finder-single-entry.spec.js. That is a different situation, and these
+ * tests are about the one where a shortcut still has to be chosen.
  */
+
+/** Installs two finders, so "?" is still a question when it opens. */
+const twoFinders = (page) => page.evaluate(() => {
+    const fc = window.dashboardInstance.searchComponent.findersComponent;
+    const finders = [
+        { shortcut: 'g', name: 'Google', searchUrl: 'https://example.com/?q=%s' },
+        { shortcut: 'd', name: 'DuckDuckGo', searchUrl: 'https://example.net/?q=%s' },
+    ];
+    fc.finders = finders;
+    fc.shortcuts = new Map(finders.map((finder) => [finder.shortcut, finder]));
+});
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto('/');
@@ -29,6 +45,7 @@ const query = (page) => page.evaluate(
 test.describe('the finder line', () => {
     test('a second ? is not typed into the query', async ({ page }) => {
         await openDashboard(page);
+        await twoFinders(page);
         await openFinders(page);
         expect(await query(page)).toBe('?');
 
@@ -41,6 +58,7 @@ test.describe('the finder line', () => {
 
     test('a search typed after ? keeps its spaces and carries no stray ?', async ({ page }) => {
         await openDashboard(page);
+        await twoFinders(page);
         await openFinders(page);
 
         await page.keyboard.press('Shift+Slash');
@@ -86,11 +104,12 @@ test.describe('a freshly built overlay', () => {
         const matches = page.locator('#search-matches');
         await expect(matches).not.toContainText(/no finders/i, { timeout: 5000 });
 
-        // And a shortcut typed after "?" completes, which is where the missing
-        // space came from.
+        // And the shortcut carries its trailing space, which is where the
+        // missing one came from. Read off the query the mode opened with: with
+        // a single finder configured the entry completes it outright, and
+        // typing the letter again would land in the search text.
         const shortcut = await page.evaluate(() =>
             (window.dashboardInstance.finders || []).find((f) => f.shortcut)?.shortcut || '');
-        await page.keyboard.type(shortcut);
         await page.waitForTimeout(300);
         expect(await query(page)).toBe(`?${shortcut.toUpperCase()} `);
     });

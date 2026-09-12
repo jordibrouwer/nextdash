@@ -13,6 +13,12 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
  * is typed next lands after that space instead of being read as a shortcut
  * letter. "?" then space then "jordi" becomes "? jordi" -- searched as
  * literal text against finder names, which is why nothing was ever found.
+ *
+ * Two finders are installed before the mode is opened. The guard only has
+ * anything to do while "?" is still a prompt, and with a single finder
+ * configured the app now answers that prompt itself and enters as "?B " --
+ * see finder-single-entry.spec.js. A shortcut still has to be chosen here,
+ * which is the situation these tests are about.
  */
 async function openFinders(page) {
     await markWhatsNewSeen(page);
@@ -20,6 +26,20 @@ async function openFinders(page) {
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await page.waitForFunction(
+        () => window.dashboardInstance?.searchComponent?.findersComponent != null,
+        null,
+        { timeout: 15_000 },
+    );
+    await page.evaluate(() => {
+        const fc = window.dashboardInstance.searchComponent.findersComponent;
+        const finders = [
+            { shortcut: 'g', name: 'Google', searchUrl: 'https://example.com/?q=%s' },
+            { shortcut: 'd', name: 'DuckDuckGo', searchUrl: 'https://example.net/?q=%s' },
+        ];
+        fc.finders = finders;
+        fc.shortcuts = new Map(finders.map((finder) => [finder.shortcut, finder]));
+    });
     await page.keyboard.press('?');
     await expect
         .poll(() => page.evaluate(() => Boolean(window.dashboardInstance?.searchComponent?.isActive?.())),
@@ -56,14 +76,7 @@ test.describe('finders mode ignores a leading space', () => {
 
     test('a real finder shortcut still completes with its trailing space', async ({ page }) => {
         await openFinders(page);
-        // No finder ships in the fixture, so give the component one directly
-        // rather than depend on shared seed data existing.
-        const shortcut = await page.evaluate(() => {
-            const fc = window.dashboardInstance.searchComponent.findersComponent;
-            const letter = 'g';
-            fc.shortcuts.set(letter, { shortcut: letter, name: 'Google', searchUrl: 'https://example.com/?q=%s' });
-            return letter;
-        });
+        const shortcut = 'g';
 
         // completeShortcutWithSpace fires the moment the query matches a known
         // shortcut -- typing the letter is enough, nothing further to press.
