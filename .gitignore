@@ -48,3 +48,8 @@ docs/
 .vscode/settings.json
 .idea/
 .superpowers/
+
+# Design working files: the design system, the repo analysis the design tool
+# writes, its canvas/draft ids and its scratch HTML. Local working material,
+# not part of the app — never committed and so never pushed.
+.superdesign/
