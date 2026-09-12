@@ -5373,9 +5373,29 @@ button.config-bm-shortcut-pill {
     font-variant-numeric: tabular-nums;
 }
 
-.config-tile-delta--up { color: var(--accent-success, #2e7d32); }
+/*
+ * Two meanings, one set of rules.
+ *
+ * A delta on a STATE carries direction: one more broken bookmark is worse, so
+ * it is red, and every surface that shows one agrees -- see the matching
+ * declarations in dashboard.css for the widget figure and the trend tile.
+ *
+ * A delta on a COUNT does not. One fewer bookmark this week is smaller, not
+ * worse, and painting it red would be the app having an opinion nobody asked
+ * for. That is what config's statistics show, which is why the old --up/--down
+ * pair resolved to green-and-grey rather than green-and-red: right call, wrong
+ * name, and it read --accent-success where the others read --status-success.
+ *
+ * --up and --down stay as the neutral pair. --good and --bad join them for
+ * the cases that do carry direction.
+ */
+.config-tile-delta--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
+.config-tile-delta--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
 
-.config-tile-delta--down { color: var(--text-muted, #777); }
+.config-tile-delta--up,
+.config-tile-delta--neutral { color: var(--text-tertiary); }
+
+.config-tile-delta--down { color: var(--text-muted, var(--text-secondary)); }
 
 .config-tile-delta-period {
     font-weight: 400;

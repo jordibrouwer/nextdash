@@ -99,10 +99,22 @@
             // that far: a count says what you have, a direction says what you
             // are doing. Only shown when it actually moved — "+0 this week" is
             // noise dressed as information.
-            const tile = (label, value, hint, was = null) => {
+            /*
+             * `tone` is what the change MEANS, not which way it points.
+             *
+             * These tiles count things -- bookmarks, pages, tags -- and a count
+             * going down is smaller, not worse. So they stay neutral, and the
+             * directional pair (--good / --bad, the same colours the widget
+             * figures and the trend tile use) is there for the figures that do
+             * carry a verdict.
+             */
+            const tile = (label, value, hint, was = null, tone = 'neutral') => {
                 const delta = (was === null || was === undefined) ? null : Number(value) - Number(was);
+                const toneClass = tone === 'directional'
+                    ? (delta > 0 ? 'config-tile-delta--bad' : 'config-tile-delta--good')
+                    : 'config-tile-delta--neutral';
                 const trend = delta ? `
-                    <span class="config-tile-delta config-tile-delta--${delta > 0 ? 'up' : 'down'}">
+                    <span class="config-tile-delta ${toneClass}">
                         ${delta > 0 ? '+' : '−'}${esc(this.statsNumber(Math.abs(delta)))}
                         <span class="config-tile-delta-period">${esc(this.t('config.statsDeltaWeek', 'this week'))}</span>
                     </span>` : '';
