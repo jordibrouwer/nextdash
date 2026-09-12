@@ -1192,3 +1192,38 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 .search-group-more-arrow {
     opacity: 0.7;
 }
+
+/*
+ * The bar as a surface of its own.
+ *
+ * It is the one free-floating control surface in the product: always there,
+ * over whatever is on the page. Until now it was a transparent flex row and
+ * every button carried its own plate, which read as a handful of loose
+ * controls rather than as chrome.
+ *
+ * Airier than any other surface, deliberately -- the grid and the page wash
+ * read through it -- and lifted by a deep shadow rather than by a glow. An
+ * ambient halo was tried and rejected: a permanently glowing element competes
+ * with the bloom that marks focus, and once two effects look alike neither
+ * means anything.
+ *
+ * Not on flat. Whoever asked for flat asked for no plate either, and the
+ * rules above that made this transparent stay the whole story there.
+ */
+body:not([data-depth="flat"]) .button-container {
+    /* Sized to the buttons it holds, because a plate the width of the old
+       transparent row would be a slab across half the screen. The ceiling is
+       the one the row already had, so a narrow window still wraps inside it
+       rather than overflowing. */
+    width: fit-content;
+    max-width: min(52rem, calc(100vw - 2.5rem));
+    padding: var(--space-3, 0.7rem);
+    border-radius: var(--radius-7, 12px);
+    background: color-mix(in srgb, var(--background-secondary) 25%, transparent);
+    backdrop-filter: blur(var(--glass-blur-page, 18px)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur-page, 18px)) saturate(1.8);
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 12px 48px color-mix(in srgb, black 40%, transparent);
+}
