@@ -8539,6 +8539,19 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>
+                <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
+                    <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
+                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
+                    ${this.appearanceAff('randomThemeMode')}
+                </div>
+                <div class="config-actions" style="margin-top:14px">
+                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
@@ -8554,6 +8567,11 @@ class DashboardConfig {
                     <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
                 </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackdropTitle', 'Backdrop'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceBackdropNote', 'What is behind the content, under your own background image.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
                     <select class="config-select" data-appearance-select="themeBackdrop">
@@ -8570,15 +8588,12 @@ class DashboardConfig {
                     <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                     ${this.appearanceAff('backgroundPattern')}
                 </div>
-                <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
-                    <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
-                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
-                    ${this.appearanceAff('randomThemeMode')}
-                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsNote', 'How far the icons on your bookmark rows are pulled toward the theme.'))}</p>
                 ${this.renderIconStyling()}
-                <div class="config-actions" style="margin-top:14px">
-                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
-                </div>
             </div>
 
             <div class="config-panel">
