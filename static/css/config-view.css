@@ -855,7 +855,9 @@
 
 .config-stats-trend--good { color: var(--accent-success, #3fa45b); }
 
-.config-stats-trend--bad { color: var(--accent-danger, #c0524a); }
+/* The same red every other "worse" in the app uses. It read --accent-danger,
+   which no theme has ever set, so a bad trend was #c0524a on all 222. */
+.config-stats-trend--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
 
 .config-stats-trend-chart {
     width: 240px;

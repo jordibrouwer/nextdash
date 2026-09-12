@@ -366,16 +366,16 @@ body[data-side-margin="airy"] {
 }
 
 .move-popover-item.is-danger {
-    color: var(--accent-error, var(--accent-danger, #c0392b));
+    color: var(--accent-error);
 }
 
 .move-popover-item.is-danger.is-focused {
-    background: color-mix(in srgb, var(--accent-error, var(--accent-danger, #c0392b)) 14%, var(--background-primary));
-    color: var(--accent-error, var(--accent-danger, #c0392b));
+    background: color-mix(in srgb, var(--accent-error) 14%, var(--background-primary));
+    color: var(--accent-error);
 }
 
 .move-popover-item.is-danger .move-popover-check {
-    color: var(--accent-error, var(--accent-danger, #c0392b));
+    color: var(--accent-error);
 }
 
 .move-popover-check {
