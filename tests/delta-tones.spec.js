@@ -38,9 +38,9 @@ async function openDashboard(page) {
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await page.waitForFunction(() => {
         const probe = document.createElement('span');
-        probe.className = 'config-tile-label';
+        probe.className = 'config-tile-delta';
         document.body.appendChild(probe);
-        const styled = window.getComputedStyle(probe).textTransform === 'uppercase';
+        const styled = parseFloat(window.getComputedStyle(probe).marginLeft) > 0;
         probe.remove();
         return styled;
     }, null, { timeout: 20_000 });

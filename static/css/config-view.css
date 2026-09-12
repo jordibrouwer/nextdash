@@ -535,11 +535,23 @@
 
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
+/*
+ * The same caption a widget figure carries.
+ *
+ * These were upper case at 0.06em in the secondary text colour while the
+ * dashboard's widget labels were normal case at 0.03em in the tertiary --
+ * one idea drawn as two objects. The widget's treatment won: the app
+ * lower-cases everywhere it names something, from the category heading to
+ * the view title, and the capitals here were the exception.
+ *
+ * The size still differs, and should. A statistics tile is the content of
+ * its page; a widget figure is one cell in a tile on a dashboard.
+ */
 .config-tile-label {
     font-size: calc(var(--font-size-text) * 0.823);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted, #888);
+    letter-spacing: 0.03em;
+    text-transform: none;
+    color: var(--text-tertiary);
 }
 
 .config-tile-value {
