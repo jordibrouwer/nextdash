@@ -3311,7 +3311,7 @@ class DashboardConfig {
 
     renderTile(tile) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const clickable = tile.action ? ' config-tile--action' : '';
+        const clickable = Boolean(tile.action);
         const tag = tile.action ? 'button' : 'div';
         // A tile can hand off to a dashboard view, or to a sub-tab of the
         // section it is sitting in.
@@ -3324,15 +3324,35 @@ class DashboardConfig {
                   tile.action.appearanceTab ? ` data-tile-appearance-tab="${esc(tile.action.appearanceTab)}"` : ''
               }`
             : '';
-        const detail = tile.detail
-            ? `<p class="config-tile-detail">${esc(tile.detail)}</p>`
-            : '';
-        return `
-            <${tag} class="config-tile config-tile--${esc(tile.tone)}${clickable}"${attrs}>
-                <span class="config-tile-label">${esc(tile.label)}</span>
-                <span class="config-tile-value">${esc(String(tile.value))}</span>
-                ${detail}
-            </${tag}>`;
+        /*
+         * Drawn by the shared component and given config's names on top.
+         *
+         * The tone here is the severity stripe down the tile's left edge, not
+         * the colour of the figure, so it stays a config class rather than
+         * becoming the shared --good / --warn / --bad, which paint the value.
+         * `quiet` is off for the same reason: config's figures are not toned,
+         * so dimming a nought would be a new behaviour rather than a shared
+         * one. See static/js/shared/stat-tile.js.
+         */
+        return window.StatTile.html({
+            label: tile.label,
+            value: String(tile.value),
+            detail: tile.detail,
+            size: 'md',
+            quiet: false,
+            tag,
+            attrs,
+            extraClasses: [
+                'config-tile',
+                `config-tile--${tile.tone}`,
+                ...(clickable ? ['config-tile--action'] : []),
+            ],
+            partClass: {
+                label: 'config-tile-label',
+                value: 'config-tile-value',
+                detail: 'config-tile-detail',
+            },
+        });
     }
 
     /**

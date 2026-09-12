@@ -501,19 +501,22 @@
     }
 }
 
+/*
+ * What is left of config's tile after the shared component took the rest.
+ *
+ * The layout, the type, the tones, the quiet nought and the delta live in
+ * static/css/stat-tile.css and reach this element through the `stat-tile`
+ * class it also carries. What stays here is what belongs to this setting: the
+ * card it is drawn as, and the severity stripe below. Repeating the shared
+ * declarations would undo the point of sharing them -- config-view.css loads
+ * after stat-tile.css, so every repeated line is a silent override that a
+ * later change to the component would not reach.
+ */
 .config-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
     border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
-    position: relative;
     overflow: hidden;
-    text-align: left;
-    font: inherit;
-    color: inherit;
 }
 
 /* Severity stripe encodes state independently of the accent hue. */
@@ -535,37 +538,6 @@
 
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
-/*
- * The same caption a widget figure carries.
- *
- * These were upper case at 0.06em in the secondary text colour while the
- * dashboard's widget labels were normal case at 0.03em in the tertiary --
- * one idea drawn as two objects. The widget's treatment won: the app
- * lower-cases everywhere it names something, from the category heading to
- * the view title, and the capitals here were the exception.
- *
- * The size still differs, and should. A statistics tile is the content of
- * its page; a widget figure is one cell in a tile on a dashboard.
- */
-.config-tile-label {
-    font-size: calc(var(--font-size-text) * 0.823);
-    letter-spacing: 0.03em;
-    text-transform: none;
-    color: var(--text-tertiary);
-}
-
-.config-tile-value {
-    font-size: calc(var(--font-size-text) * 1.943);
-    font-weight: 600;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-
-.config-tile-detail {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.891);
-    color: var(--text-muted, #888);
-}
 
 .config-tile--action {
     cursor: pointer;
@@ -5401,18 +5373,11 @@ button.config-bm-shortcut-pill {
  * --up and --down stay as the neutral pair. --good and --bad join them for
  * the cases that do carry direction.
  */
-.config-tile-delta--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
-.config-tile-delta--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
-
-.config-tile-delta--up,
-.config-tile-delta--neutral { color: var(--text-tertiary); }
+/* The tones are the component's; only the two directions config has of its
+   own are left here. */
+.config-tile-delta--up { color: var(--text-tertiary); }
 
 .config-tile-delta--down { color: var(--text-muted, var(--text-secondary)); }
-
-.config-tile-delta-period {
-    font-weight: 400;
-    opacity: 0.75;
-}
 
 /* The chart in a sentence, above the bars: the shape a table of thirty numbers
    cannot give, and the peak a sighted reader would otherwise have to hover for. */

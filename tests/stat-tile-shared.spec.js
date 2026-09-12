@@ -18,6 +18,13 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  *
  * The sizes still differ, and should: a statistics tile is the content of its
  * page, a widget figure is one cell in a tile on a dashboard.
+ *
+ * Read off real elements rather than off bare class names. The two captions
+ * are one component now, and the shared declarations sit on `stat-tile-label`
+ * -- a probe wearing only the legacy name would come back unstyled and the
+ * test would compare two sets of inherited values, which agree about nothing
+ * in particular. What is worth holding is that the elements config and the
+ * widgets actually render still agree.
  */
 
 async function openConfig(page) {
@@ -45,7 +52,9 @@ async function openConfig(page) {
 
 const labelStyle = (page, className) => page.evaluate((name) => {
     const probe = document.createElement('span');
-    probe.className = name;
+    // Both names, as the markup carries them: the shared class brings the
+    // treatment, the legacy one brings whatever its own sheet still owns.
+    probe.className = `stat-tile-label ${name}`;
     document.body.appendChild(probe);
     const style = window.getComputedStyle(probe);
     // Tracking as a share of the type it sits in. Both are declared in em, so

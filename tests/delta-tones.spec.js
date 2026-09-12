@@ -11,6 +11,12 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * the first two read --status-success / --status-error, while config read
  * --accent-success and painted a fall in grey.
  *
+ * Two of the three are one thing now: the widget figure and config's tile are
+ * the same component, so their delta is .stat-tile-delta in both and cannot
+ * drift by construction. The trend tile is still its own element with its own
+ * layout rules, so what these tests hold is the part that can still drift --
+ * the trend tile agreeing with the shared delta.
+ *
  * That disagreement turns out to be right, so it is kept and made explicit
  * rather than flattened. A delta on a *state* carries direction: one more
  * broken bookmark is worse, so it is red. A delta on a *count* does not: one
@@ -60,31 +66,27 @@ test.describe('delta tones', () => {
     test('every directional delta agrees on better', async ({ page }) => {
         await openDashboard(page);
 
-        const stat = await colourOf(page, 'dashboard-widget-stat-delta dashboard-widget-stat-delta--good');
+        const shared = await colourOf(page, 'stat-tile-delta stat-tile-delta--good');
         const trend = await colourOf(page, 'dashboard-widget-trend-change is-better');
-        const config = await colourOf(page, 'config-tile-delta config-tile-delta--good');
 
-        expect(trend, 'the trend tile disagrees on better').toBe(stat);
-        expect(config, 'config disagrees on better').toBe(stat);
+        expect(trend, 'the trend tile disagrees on better').toBe(shared);
     });
 
     test('every directional delta agrees on worse', async ({ page }) => {
         await openDashboard(page);
 
-        const stat = await colourOf(page, 'dashboard-widget-stat-delta dashboard-widget-stat-delta--bad');
+        const shared = await colourOf(page, 'stat-tile-delta stat-tile-delta--bad');
         const trend = await colourOf(page, 'dashboard-widget-trend-change is-worse');
-        const config = await colourOf(page, 'config-tile-delta config-tile-delta--bad');
 
-        expect(trend, 'the trend tile disagrees on worse').toBe(stat);
-        expect(config, 'config disagrees on worse').toBe(stat);
+        expect(trend, 'the trend tile disagrees on worse').toBe(shared);
     });
 
     test('a count that moved is quiet, not bad news', async ({ page }) => {
         await openDashboard(page);
 
-        const neutral = await colourOf(page, 'config-tile-delta config-tile-delta--neutral');
-        const worse = await colourOf(page, 'config-tile-delta config-tile-delta--bad');
-        const plain = await colourOf(page, 'dashboard-widget-stat-delta');
+        const neutral = await colourOf(page, 'stat-tile-delta stat-tile-delta--neutral');
+        const worse = await colourOf(page, 'stat-tile-delta stat-tile-delta--bad');
+        const plain = await colourOf(page, 'stat-tile-delta');
 
         // A count going down is smaller, not worse: it must not borrow the
         // colour the app uses to say something is wrong.

@@ -110,23 +110,31 @@
              */
             const tile = (label, value, hint, was = null, tone = 'neutral') => {
                 const delta = (was === null || was === undefined) ? null : Number(value) - Number(was);
-                const toneClass = tone === 'directional'
-                    ? (delta > 0 ? 'config-tile-delta--bad' : 'config-tile-delta--good')
-                    : 'config-tile-delta--neutral';
-                const trend = delta ? `
-                    <span class="config-tile-delta ${toneClass}">
-                        ${delta > 0 ? '+' : '−'}${esc(this.statsNumber(Math.abs(delta)))}
-                        <span class="config-tile-delta-period">${esc(this.t('config.statsDeltaWeek', 'this week'))}</span>
-                    </span>` : '';
+                const deltaTone = tone === 'directional'
+                    ? (delta > 0 ? 'bad' : 'good')
+                    : 'neutral';
                 const spoken = delta
-                    ? `${esc(label)}: ${esc(this.statsNumber(value))}, ${delta > 0 ? '+' : '−'}${esc(this.statsNumber(Math.abs(delta)))} ${esc(this.t('config.statsDeltaWeek', 'this week'))}`
-                    : `${esc(label)}: ${esc(this.statsNumber(value))}`;
-                return `
-                <div class="config-tile" role="listitem" aria-label="${spoken}${hint ? `. ${esc(hint)}` : ''}">
-                    <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                    <span class="config-tile-value" aria-hidden="true">${esc(this.statsNumber(value))}${trend}</span>
-                    ${hint ? `<p class="config-tile-detail" aria-hidden="true">${esc(hint)}</p>` : ''}
-                </div>`;
+                    ? `${label}: ${this.statsNumber(value)}, ${delta > 0 ? '+' : '−'}${this.statsNumber(Math.abs(delta))} ${this.t('config.statsDeltaWeek', 'this week')}`
+                    : `${label}: ${this.statsNumber(value)}`;
+                return window.StatTile.html({
+                    label,
+                    value: this.statsNumber(value),
+                    detail: hint,
+                    delta: delta ? `${delta > 0 ? '+' : '−'}${this.statsNumber(Math.abs(delta))}` : null,
+                    deltaTone: delta ? deltaTone : null,
+                    deltaNote: delta ? this.t('config.statsDeltaWeek', 'this week') : null,
+                    size: 'md',
+                    quiet: false,
+                    role: 'listitem',
+                    ariaLabel: `${spoken}${hint ? `. ${hint}` : ''}`,
+                    extraClasses: ['config-tile'],
+                    partClass: {
+                        label: 'config-tile-label',
+                        value: 'config-tile-value',
+                        detail: 'config-tile-detail',
+                        delta: 'config-tile-delta',
+                    },
+                });
             };
             // A week back, from the daily points the health report records.
             // Narrowed to one page, the figures no longer describe what history
@@ -1135,11 +1143,16 @@
                     </tr>`).join('');
 
             // One accessible name per tile; see the overview tile for why.
-            const tile = (label, value) => `
-                <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}">
-                    <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                    <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
-                </div>`;
+            const tile = (label, value) => window.StatTile.html({
+                label,
+                value: String(value),
+                size: 'md',
+                quiet: false,
+                role: 'listitem',
+                ariaLabel: `${label}: ${value}`,
+                extraClasses: ['config-tile'],
+                partClass: { label: 'config-tile-label', value: 'config-tile-value' },
+            });
 
             return `
                 <div class="config-panel">
@@ -1753,11 +1766,16 @@
                 : 0;
 
             // One accessible name per tile; see the overview tile for why.
-            const tile = (label, value) => `
-                <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}">
-                    <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                    <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
-                </div>`;
+            const tile = (label, value) => window.StatTile.html({
+                label,
+                value: String(value),
+                size: 'md',
+                quiet: false,
+                role: 'listitem',
+                ariaLabel: `${label}: ${value}`,
+                extraClasses: ['config-tile'],
+                partClass: { label: 'config-tile-label', value: 'config-tile-value' },
+            });
 
             // Inflow per source, current inbox against lifetime, so a source that
             // has been fully triaged still shows up.

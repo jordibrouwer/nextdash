@@ -1,0 +1,209 @@
+/*
+ * A figure with a caption under it.
+ *
+ * The app draws this in two places and drew it as two components: config's
+ * statistics (`.config-tile`, sixteen call sites across three template
+ * helpers) and a dashboard widget's readout (`.dashboard-widget-stat`, built
+ * as DOM by `statGrid`). They had already drifted twice -- the label case and
+ * tracking, then the delta tones -- and each drift was found by eye and fixed
+ * by hand in two files. One component ends that: what a figure looks like is
+ * decided here, once.
+ *
+ * Both markup sites keep their own class as well, because both carry rules
+ * that genuinely belong to their setting: config's tile has the severity
+ * stripe down its left edge, and a widget cell paints the ground that draws
+ * the hairline grid around it. What moved here is everything that was the
+ * same idea written twice.
+ *
+ * Two sizes, and they should stay different. A statistics tile is the content
+ * of its page; a widget figure is one cell in a tile on a dashboard. The size
+ * is the only thing that varies -- treatment, tone and rhythm are shared.
+ */
+
+.stat-tile {
+    /*
+     * The four measurements a size sets. Declared on the component rather than
+     * hard-coded per variant, so a third size -- a compact statistics tile, a
+     * figure in an overlay -- is four values and no new rules.
+     */
+    --stat-tile-gap: 3px;
+    --stat-tile-pad-y: var(--space-2, 0.45rem);
+    --stat-tile-pad-x: var(--space-2, 0.55rem);
+    --stat-tile-value-size: 1.5em;
+    --stat-tile-label-size: var(--font-size-small);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--stat-tile-gap);
+    min-width: 0;
+    padding: var(--stat-tile-pad-y) var(--stat-tile-pad-x);
+    text-align: left;
+    /* Buttons do not inherit either of these, and about half of these tiles
+       are buttons -- a figure you can open. */
+    font: inherit;
+    color: inherit;
+}
+
+/* The page's own size: config's statistics, where the figure is the content. */
+.stat-tile--md {
+    --stat-tile-gap: 8px;
+    --stat-tile-pad-y: 16px;
+    --stat-tile-pad-x: 16px;
+    --stat-tile-value-size: calc(var(--font-size-text) * 1.943);
+    --stat-tile-label-size: calc(var(--font-size-text) * 0.823);
+}
+
+/*
+ * The figure and its delta sit on one baseline.
+ *
+ * A row of their own rather than the delta nested inside the value: the value
+ * clips with an ellipsis so a long one -- a size, a version, a date -- cannot
+ * push the cell beside it out of the grid, and anything nested inside it gets
+ * clipped along with it. Config nested it and got away with it only because a
+ * statistics tile is wide enough never to overflow.
+ */
+.stat-tile-figure {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+}
+
+/*
+ * The figure, and the whole point of a tile.
+ *
+ * Large, tight and lined up: a dashboard is scanned rather than read, so the
+ * number has to carry at a glance and the word under it only has to survive a
+ * second look. Tabular figures because these stack in columns, and a column of
+ * proportional digits does not line up.
+ */
+.stat-tile-value {
+    font-size: var(--stat-tile-value-size);
+    font-weight: var(--font-weight-semibold, 600);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+    /* Long values -- a size, a version, a date -- shrink rather than push the
+       cell beside them out of the grid. */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/*
+ * The caption, in the quiet treatment.
+ *
+ * Lower case and tracked out a little: a short dim word under a large number
+ * needs the width to read as a caption rather than as a smudge. Config set
+ * these in upper case at 0.06em for a long time, which made one idea read as
+ * two objects; the widget's treatment won because the app lower-cases
+ * everywhere it names something, from the category heading to the view title.
+ */
+.stat-tile-label {
+    font-size: var(--stat-tile-label-size);
+    letter-spacing: 0.03em;
+    text-transform: none;
+    color: var(--text-tertiary);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* A sentence under the figure, where there is room for one. */
+.stat-tile-detail {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.891);
+    color: var(--text-muted, var(--text-tertiary));
+}
+
+/*
+ * Tone by what the figure means, never by how large it is.
+ *
+ * Nought lost is the best news a tile can carry and still belongs in the lost
+ * cell, so the tone says which figure this is rather than how alarming it is.
+ */
+.stat-tile--bad .stat-tile-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.stat-tile--warn .stat-tile-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
+.stat-tile--good .stat-tile-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
+
+/*
+ * A nought is not an alarm.
+ *
+ * Tone says which figure this is; it should not also shout when the figure is
+ * the good one. Every value used to be painted its row's colour, so a tile
+ * reading "0 lost, 0 died, 4 broken" was three reds and the reader had to
+ * check all three to find the one that wanted them. The good tone included:
+ * green is the screen's word for "this is fine", and no healthy links is not
+ * fine.
+ */
+.stat-tile.is-quiet .stat-tile-value {
+    color: var(--text-tertiary);
+    font-weight: var(--font-weight-normal, 400);
+}
+
+/*
+ * Which way it moved, beside the figure that moved.
+ *
+ * Two modes and one set of rules. A delta on a *state* carries direction: one
+ * more broken bookmark is worse, so it is red. A delta on a *count* does not:
+ * one fewer bookmark this week is smaller, not worse, and colouring it red
+ * would be the app having an opinion nobody asked for.
+ */
+.stat-tile-delta {
+    flex: 0 0 auto;
+    margin-left: var(--space-1, 0.25rem);
+    font-size: var(--text-2xs, 0.65rem);
+    font-weight: var(--font-weight-semibold, 600);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+}
+
+.stat-tile-delta--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
+.stat-tile-delta--warn { color: var(--status-warning, var(--accent-warning, var(--text-secondary))); }
+.stat-tile-delta--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.stat-tile-delta--neutral { color: var(--text-tertiary); }
+
+/* "this week" after the number: the qualifier is what makes a delta mean
+   anything, and it should not read as loud as the figure it qualifies. */
+.stat-tile-delta-period {
+    margin-left: 0.25em;
+    font-weight: var(--font-weight-normal, 400);
+    opacity: 0.75;
+}
+
+/*
+ * The key that gets you there, on the figures that go somewhere.
+ *
+ * Every other affordance in the app prints its key in its label; a figure has
+ * no room for that, so the chip sits in the corner and waits until the reader
+ * is on the tile. A grid of figures each shouting its key would be louder than
+ * the figures.
+ */
+.stat-tile-key {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-2xs, 0.65rem);
+    line-height: 1;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transition: opacity 0.16s ease;
+}
+
+.stat-tile:is(:hover, :focus-visible) .stat-tile-key {
+    opacity: 0.75;
+}
+
+body.no-animations .stat-tile-key {
+    transition: none;
+}
+
+button.stat-tile {
+    border: 0;
+    cursor: pointer;
+}

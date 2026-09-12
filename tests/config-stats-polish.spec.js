@@ -162,7 +162,18 @@ test.describe('statistics: tiles read as one thing', () => {
         await loadDashboard(page);
         await openStats(page);
         const tile = page.locator('.config-tiles--overview .config-tile').first();
-        await expect(tile.locator('.config-tile-label')).toHaveAttribute('aria-hidden', 'true');
-        await expect(tile.locator('.config-tile-value')).toHaveAttribute('aria-hidden', 'true');
+
+        // Asked of the accessibility tree rather than of the element: the
+        // figure and its delta share a wrapper now, and that wrapper is what
+        // carries the aria-hidden. Stamping it on the value as well would be
+        // markup that says nothing -- a child of a hidden subtree is already
+        // hidden -- and a test that insists on it is a test of where the
+        // attribute happens to sit rather than of what a reader hears.
+        const hidden = await tile.evaluate((el) => ({
+            label: el.querySelector('.config-tile-label')?.closest('[aria-hidden="true"]') !== null,
+            value: el.querySelector('.config-tile-value')?.closest('[aria-hidden="true"]') !== null,
+        }));
+        expect(hidden.label, 'the label is announced beside the tile name').toBe(true);
+        expect(hidden.value, 'the figure is announced beside the tile name').toBe(true);
     });
 });

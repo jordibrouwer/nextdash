@@ -21,6 +21,9 @@
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/shared/escape-html.js"}}"></script>
     <script src="{{asset "js/shared/clock-format.js"}}"></script>
+    <!-- The shared figure-with-a-caption. Not deferred: config's statistics
+         build their markup from it during a synchronous render. -->
+    <script src="{{asset "js/shared/stat-tile.js"}}"></script>
     <script src="{{asset "js/shared/tag-suggestions.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-catalogue.js"}}" defer></script>
     <script src="{{asset "js/settings-sanitize.js"}}"></script>
@@ -75,6 +78,9 @@
          that carries its own modern rules can read --layout-* directly. The
          override files below (layout-modern, overlays-modern) consume these. -->
     <link rel="stylesheet" href="{{asset "css/layout-modern-tokens.css"}}">
+    <!-- The shared figure-with-a-caption, ahead of both sheets that specialise
+         it: dashboard.css here and config-view.css in the views bundle. -->
+    <link rel="stylesheet" href="{{asset "css/stat-tile.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-bookmark-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/modal.css"}}">
