@@ -197,7 +197,12 @@ test.describe('reset a whole panel', () => {
 
     test('it restores every changed field in that panel at once', async ({ page }) => {
         await openConfig(page, 'behavior');
-        await change(page, [['openInNewTab', false], ['globalShortcuts', false]]);
+        // Two fields from the same panel. They used to be openInNewTab and
+        // globalShortcuts, which shared the old catch-all General; the two are
+        // under Opening links and Keyboard now, so a reset of one panel is
+        // correctly not a reset of the other. Both of these default to on, so
+        // a restore is something the test can see.
+        await change(page, [['globalShortcuts', false], ['showGridKeyLegend', false]]);
 
         await page.locator('[data-panel-reset]').click();
         // AppModal is in-page rather than a native dialog; the confirm button
@@ -206,14 +211,14 @@ test.describe('reset a whole panel', () => {
 
         await expect.poll(() => page.evaluate(() => {
             const s = window.dashboardInstance.settings;
-            return [s.openInNewTab, s.globalShortcuts];
+            return [s.globalShortcuts, s.showGridKeyLegend];
         }), { timeout: 10_000 }).toEqual([true, true]);
     });
 
     /** One write for the panel, not one per field. */
     test('resetting a panel saves once', async ({ page }) => {
         await openConfig(page, 'behavior');
-        await change(page, [['openInNewTab', false], ['globalShortcuts', false]]);
+        await change(page, [['globalShortcuts', false], ['showGridKeyLegend', false]]);
 
         let saves = 0;
         await page.route('**/api/settings', (route) => {
@@ -225,7 +230,7 @@ test.describe('reset a whole panel', () => {
         await page.locator('#app-modal .modal-button').first().click();
 
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.settings.openInNewTab), { timeout: 10_000 }).toBe(true);
+            window.dashboardInstance.settings.globalShortcuts), { timeout: 10_000 }).toBe(true);
         await page.waitForTimeout(500);
 
         expect(saves, `two fields must not mean two writes (saw ${saves})`).toBe(1);

@@ -11142,22 +11142,43 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'general',
+                // Three subjects lived here under one heading that named none of
+                // them: the language, what the keyboard does, and what a click
+                // does. Eight switches deep, "General" is a label for whatever
+                // was left over, and a reader looking for the key legend had no
+                // reason to look under it.
                 title: t('config.generalGroupGeneral', 'General'),
-                note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
+                note: t('config.generalGroupGeneralNote', 'The language, and what the dashboard remembers between visits.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
                         opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'), opt('es', 'Español'),
                     ] },
-                    bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
+                    bool('rememberScrollPosition', 'config.rememberScrollPositionLabel', 'Come back to where you were on a page'),
+                    { ...bool('lockLayout', 'config.lockLayoutLabel', 'Lock layout'), special: 'render', badge: true },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupKeyboard', 'Keyboard'),
+                note: t('config.generalGroupKeyboardNote', 'Whether the keyboard works outside the dashboard, and whether it explains itself.'),
+                controls: [
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
                     { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
-                    // Beside the other two discoverability switches rather than
-                    // under Appearance: what it controls is whether the keyboard
-                    // explains itself, not how the grid looks.
+                    // Here rather than under Appearance: what it controls is
+                    // whether the keyboard explains itself, not how the grid
+                    // looks.
                     { ...bool('showGridKeyLegend', 'config.gridKeyLegendLabel', 'Show a key legend under the bookmarks'), special: 'render' },
-                    bool('rememberScrollPosition', 'config.rememberScrollPositionLabel', 'Come back to where you were on a page'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupLinks', 'Opening links'),
+                note: t('config.generalGroupLinksNote', 'What a click on a bookmark does, and which addresses are allowed to be one.'),
+                controls: [
+                    bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
-                    { ...bool('lockLayout', 'config.lockLayoutLabel', 'Lock layout'), special: 'render', badge: true },
                 ],
             },
             {
@@ -11196,8 +11217,13 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'datetime',
-                title: t('config.generalGroupDateTime', 'Date, time & weather'),
-                note: t('config.generalGroupDateTimeNote', 'The clock, date line, and weather shown above the bookmarks.'),
+                // Three subjects, and the weather is five of the eleven fields
+                // on its own -- a reader setting a date format scrolled past a
+                // location, a unit and a refresh interval to reach the clock.
+                // The line above the bookmarks is still one line; what is
+                // split here is the settings behind it.
+                title: t('config.generalGroupDateTime', 'Date & time'),
+                note: t('config.generalGroupDateTimeNote', 'The clock and date line shown above the bookmarks.'),
                 controls: [
                     { field: 'dateFormat', type: 'select', label: t('config.dateFormatLabel', 'Date format'), special: 'datetime', options: [
                         opt('short-slash', '31/12/2026'), opt('short-dash', '31-12-2026'), opt('mm-slash', '12/31/2026'),
@@ -11208,6 +11234,14 @@ class DashboardConfig {
                     ] },
                     bool('showDate', 'config.showDateLabel', 'Show the date'),
                     bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'datetime',
+                title: t('config.generalGroupWeather', 'Weather'),
+                note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
+                controls: [
                     bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
                     { field: 'weatherSource', type: 'select', label: t('config.weatherSourceLabel', 'Weather source'), special: 'datetime', options: [
                         opt('manual', t('config.weatherSourceManual', 'Manual location')), opt('auto', t('config.weatherSourceAuto', 'Automatic (by IP)')),
@@ -11217,6 +11251,14 @@ class DashboardConfig {
                     ] },
                     { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
                     { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'datetime',
+                title: t('config.generalGroupCalendar', 'Calendar'),
+                note: t('config.generalGroupCalendarNote', 'A feed to read your next appointments from. Two addresses because the widget and the date line ask for different things.'),
+                controls: [
                     { field: 'calendarUrl', type: 'text', label: t('config.calendarUrlLabel', 'Calendar URL (iCal)'), special: 'datetime' },
                     { field: 'calendarIcsUrl', type: 'text',
                       label: t('config.calendarIcsUrlLabel', 'Calendar feed URL (.ics)'), special: 'datetime' },
@@ -11467,8 +11509,13 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'search',
-                title: t('config.generalGroupSearch', 'Search'),
-                note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
+                // New keys rather than the old ones: generalGroupSearch reads
+                // "Search" in every locale, which was right while this was the
+                // whole tab and is wrong now that Suggestions and The panel
+                // stand beside it. A fallback cannot override a locale that
+                // already answers, so the rename needs a key of its own.
+                title: t('config.generalGroupTyping', 'Typing'),
+                note: t('config.generalGroupTypingNote', 'What a keystroke does: when a shortcut opens, and which mode a bare letter searches in.'),
                 controls: [
                     {
                         field: 'shortcutOpenMode',
@@ -11496,9 +11543,30 @@ class DashboardConfig {
                         ],
                     },
                     bool('interleaveMode', 'config.interleaveMode', 'Switch Search Mode'),
+                ],
+            },
+            {
+                // What the list offers, as against how the panel behaves. The
+                // two used to sit in one seven-field block under a heading that
+                // said "Search" and therefore said nothing: the card explaining
+                // three ways to open a shortcut ended up beside a switch for a
+                // hint banner.
+                section: 'behavior',
+                tab: 'search',
+                title: t('config.generalGroupSuggestions', 'Suggestions'),
+                note: t('config.generalGroupSuggestionsNote', 'What the list offers while you type, beyond the bookmarks whose names match.'),
+                controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'search',
+                title: t('config.generalGroupSearchPanel', 'The panel'),
+                note: t('config.generalGroupSearchPanelNote', 'How the overlay itself behaves once it is open.'),
+                controls: [
                     bool('keepSearchOpenWhenEmpty', 'config.keepSearchOpenWhenEmpty', 'Keep search open when empty'),
                     bool('showSearchFlowBanner', 'config.showSearchFlowBanner', 'Show the search flow hint'),
                 ],
