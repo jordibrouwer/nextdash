@@ -107,8 +107,13 @@ html[data-theme] body {
      * rectangle starts reading as something sitting on the page rather than
      * printed on it. This is the cheapest depth cue there is.
      */
-    --edge-light: inset 0 1px 0 color-mix(in srgb,
-        var(--text-primary) calc(6% * var(--theme-depth)), transparent);
+    /* The line itself, kept separate so theme-character.css can fold the
+       ambient glow ring in behind it without restating the strength. It did
+       restate it, at 6%, and quietly won -- so raising the number here moved
+       nothing at all. One percentage, one place. */
+    --edge-top: inset 0 1px 0 color-mix(in srgb,
+        var(--text-primary) calc(16% * var(--theme-depth)), transparent);
+    --edge-light: var(--edge-top);
 
     /*
      * And the shaded bottom edge, which is the other half of the same cue.
@@ -125,7 +130,7 @@ html[data-theme] body {
      * line may not.
      */
     --edge-dark: inset 0 -1px 0 color-mix(in srgb,
-        var(--text-primary) calc(9% * var(--theme-depth)), transparent);
+        var(--text-primary) calc(24% * var(--theme-depth)), transparent);
 
     /*
      * The state bloom: what the reader is acting on, right now.
@@ -145,6 +150,21 @@ html[data-theme] body {
      */
     --bloom: 0 0 12px color-mix(in srgb,
         var(--accent-primary) calc(40% * var(--theme-depth)), transparent);
+
+    /*
+     * And the shadow the surface casts.
+     *
+     * The two edges are one pixel each, and on a card that already draws a
+     * hairline border they lose that argument -- which is why switching depth
+     * changed almost nothing you could point at. A surface reads as lifted
+     * because of what falls under it, not because of a line on it.
+     *
+     * Black rather than --text-primary: this falls BESIDE the surface, on the
+     * page, where black is what a shadow is on any theme. The inset edges are
+     * the opposite case and stay theme-derived.
+     */
+    --surface-cast: 0 calc(2px * var(--theme-depth)) calc(10px * var(--theme-depth))
+        color-mix(in srgb, black calc(22% * var(--theme-depth)), transparent);
 
     /*
      * A very slight vertical wash for a card to carry. Two and a half percent:
@@ -287,14 +307,14 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-cards .category {
     background-color: var(--surface-2);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light), var(--edge-dark);
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
 body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
     background-color: var(--surface-1);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light), var(--edge-dark);
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
 /*
@@ -309,7 +329,7 @@ body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
     background: var(--surface-2);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light), var(--edge-dark);
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
 }
 
 /*
