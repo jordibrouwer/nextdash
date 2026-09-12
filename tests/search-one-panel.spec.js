@@ -3,14 +3,18 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * A command can carry a URL.
+ * One panel with three modes, and the keys that name them keep working.
  *
- * The keys that open a mode -- ">", ":", "/", "?" -- were handled above the
- * branch that reads a command's text, so none of them ever reached it. Typing
- * ":new https://example.com/a?b=1" produced "/:new https:/example.com/a?B b=1":
- * the first slash was read as the fuzzy-mode switch and moved to the front of
- * the query, the second was eaten, and the "?" opened finders inside the
- * command. The branch existed all along; it just sat in the wrong place.
+ * Search, commands and finders have been one overlay with one segmented
+ * switch for a while. What made it read as three things anyway was that the
+ * keys only worked on the way in: ">" opened into search and from there ":"
+ * and "?" switched, but from commands or finders every mode key was typed
+ * into the query instead. ":" then "?" left ":?B ", "?" then ">" left "?B >",
+ * and the only ways to another mode were the mouse and Escape.
+ *
+ * Only while nothing has been typed. Past that the key is a character, which
+ * is what lets a command carry a URL -- and switching mode under someone
+ * mid-sentence would throw away what they had written.
  *
  * Shift+Period rather than type('>'): Playwright's type() synthesises the
  * character without the shift a real keyboard sends, and the handler reads the
@@ -46,6 +50,37 @@ async function openIn(page, key) {
     await page.keyboard.press(KEY[key]);
     await expect.poll(() => state(page).then((s) => s.mode)).toBe(MODE[key]);
 }
+
+test.describe('the command surface switches mode on a key', () => {
+    for (const from of ['>', ':', '?']) {
+        for (const to of ['>', ':', '?']) {
+            if (from === to) continue;
+            test(`${from} then ${to} lands in ${MODE[to]}`, async ({ page }) => {
+                await dashboard(page);
+                await openIn(page, from);
+                await page.keyboard.press(KEY[to]);
+
+                await expect.poll(() => state(page).then((s) => s.mode),
+                    { message: `${from} to ${to} did not switch` }).toBe(MODE[to]);
+
+                // And the key that switched is not also in the query.
+                const { query } = await state(page);
+                expect(query, `the key was typed as well: ${query}`).not.toContain(`${from}${to}`);
+            });
+        }
+    }
+
+    test('pressing the mode you are already in changes nothing', async ({ page }) => {
+        await dashboard(page);
+        await openIn(page, ':');
+        const before = await state(page);
+
+        await page.keyboard.press(KEY[':']);
+        await page.waitForTimeout(300);
+
+        expect(await state(page), 'the key doubled up in the query').toEqual(before);
+    });
+});
 
 test.describe('past the entry a mode key is a character', () => {
     test('a command carries a URL, query string and all', async ({ page }) => {

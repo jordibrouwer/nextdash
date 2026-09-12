@@ -360,6 +360,35 @@ class SearchComponent {
     }
 
     /**
+     * The three keys that name a mode, and what each one opens as.
+     *
+     * Global search (@) is deliberately not among them: it is a scope rather
+     * than a mode, has no pill in the switch, and reads as a variant of search
+     * rather than as a fourth place to be.
+     */
+    static MODE_ENTRY = { '>': '', ':': ':', '?': '?' };
+
+    /**
+     * True while the panel is open on a mode and nothing has been typed into
+     * it yet.
+     *
+     * "Nothing typed" has to allow for what the mode itself put there: the ":"
+     * that opens commands, and in finders the shortcut the entry completes for
+     * you when only one finder is configured -- "?B " is still an empty finder
+     * query, not a search for the letter B.
+     */
+    _isAtModeEntry() {
+        const q = this.currentQuery;
+        if (q === '' || q === ':' || q === '?') return true;
+        return /^\?[A-Za-z0-9]*\s?$/.test(q) && q !== '?';
+    }
+
+    /** The query a mode key opens its mode with. */
+    _modeEntryQuery(key) {
+        return key === '?' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
+    }
+
+    /**
      * What finder mode looks like as a query, the moment you enter it.
      *
      * `?` on its own is a prompt for a shortcut letter, and everything typed
@@ -720,6 +749,33 @@ class SearchComponent {
         if (key === 'BACKSPACE' && this.searchActive) {
             e.preventDefault();
             this.removeLastChar();
+            return;
+        }
+
+        /*
+         * The mode keys switch mode while the panel is open and empty.
+         *
+         * One panel with three modes is only one panel if the keys that name
+         * them keep working once you are inside it. They did not: ">" opened
+         * into search and from there ":" and "?" switched, but from commands
+         * or finders every mode key was typed into the query instead -- ":"
+         * then "?" left ":?B ", and "?" then ">" left "?B >". The only ways
+         * out were the mouse and Escape.
+         *
+         * Only while nothing has been typed yet. Past that the key is a
+         * character, which is what makes ":new a:b" and a URL's own "?"
+         * possible -- and switching mode under someone mid-sentence would
+         * throw away what they had written.
+         */
+        if (this.searchActive && Object.prototype.hasOwnProperty.call(SearchComponent.MODE_ENTRY, key) && this._isAtModeEntry()) {
+            e.preventDefault();
+            const next = this._modeEntryQuery(key);
+            if (next !== this.currentQuery) {
+                this.commandsComponent.resetState();
+                this.currentQuery = next;
+                this.selectedMatchIndex = 0;
+                this.updateSearch();
+            }
             return;
         }
 
