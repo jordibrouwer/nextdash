@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"testing"
@@ -433,4 +435,78 @@ func TestGlassIsDerivedPerTheme(t *testing.T) {
 			}
 		}
 	})
+}
+
+/*
+The fourth semantic colour.
+
+Two things the stylesheet had been asking a theme for that a theme could not
+answer. --accent-info marks a kind rather than a verdict -- a feature row
+against a post, a filter completion against a finder -- and was asked for in
+seven places that all fell through to a hard-coded #60A5FA, so a paper theme
+and a green terminal carried the same foreign blue. And the surface ladder's
+3/6/9% of ink were drawn against one palette's contrast and applied to all of
+them, so a theme keeping its ink close to its ground got cards it could not
+see whatever depth the reader picked.
+
+Both derived rather than written 222 times, and both overridable by a theme
+with an opinion.
+*/
+func TestThemeContractCoversInfoAndTheLadder(t *testing.T) {
+	themes := getDefaultBuiltInThemes()
+
+	t.Run("info is the theme's, not a blue from nowhere", func(t *testing.T) {
+		for id, tc := range themes {
+			got := themeAccentInfo(tc)
+			if strings.EqualFold(got, "#60A5FA") {
+				t.Errorf("%s still carries the hard-coded blue", id)
+			}
+			if got == "" {
+				t.Errorf("%s derived no info colour at all", id)
+			}
+		}
+	})
+
+	t.Run("and it is not mistakable for a verdict", func(t *testing.T) {
+		// The whole job of this colour is to not read as success, warning or
+		// error. Checked as a hue, because that is what the derivation picks
+		// and what a reader tells apart at a glance.
+		for id, tc := range themes {
+			info := themeAccentInfo(tc)
+			if !strings.HasPrefix(info, "oklch(") {
+				continue // a theme that named its own; its choice to make
+			}
+			var l, c, hue float64
+			if _, err := fmt.Sscanf(info, "oklch(%g %g %g)", &l, &c, &hue); err != nil {
+				t.Errorf("%s derived something unreadable: %q", id, info)
+				continue
+			}
+			if c < 0.02 {
+				continue // a greyscale palette has no hue to be wrong about
+			}
+			for _, other := range []string{tc.AccentSuccess, tc.AccentWarning, tc.AccentError} {
+				if _, chroma, ok := hexOklch(other); !ok || chroma < 0.02 {
+					continue
+				}
+				verdict, ok := hexOklchHue(other)
+				if !ok {
+					continue
+				}
+				gap := math.Abs(hue - verdict)
+				if gap > 180 {
+					gap = 360 - gap
+				}
+				if gap < 25 {
+					t.Errorf("%s: info at %.0f° sits %.0f° from %s", id, hue, gap, other)
+				}
+			}
+		}
+	})
+
+	t.Run("a theme that names its own info keeps it", func(t *testing.T) {
+		if got := themeAccentInfo(ThemeColors{AccentPrimary: "#4ADE80", AccentInfo: "#123456"}); got != "#123456" {
+			t.Errorf("a declared info colour was overridden: %q", got)
+		}
+	})
+
 }

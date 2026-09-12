@@ -986,6 +986,21 @@ type ThemeColors struct {
 	AccentError   string `json:"accentError"`
 
 	/*
+	 * AccentInfo is the fourth semantic colour: not good, not a warning, not
+	 * wrong -- a kind of thing. It tells the news stream's feature rows from
+	 * its posts, a filter completion from a finder in the search list, and
+	 * marks the note field you are typing in.
+	 *
+	 * The stylesheet has asked for it in seven places since long before this
+	 * field existed, and nothing ever answered: every one of those uses fell
+	 * through to a hard-coded #60A5FA, so a paper theme and a green terminal
+	 * both carried the same foreign blue. Left empty it is derived from the
+	 * palette (see themeAccentInfo), which is what the other 218 of the 222
+	 * built-in themes rely on.
+	 */
+	AccentInfo string `json:"accentInfo,omitempty"`
+
+	/*
 	 * Character. Everything above is colour; everything below is what a theme
 	 * is allowed to be besides a palette.
 	 *
@@ -1255,34 +1270,34 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// Initialize settings if file doesn't exist
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
-			CurrentPage:                  1,
-			Theme:                        defaultThemeID,
-			OpenInNewTab:                 true,
-			AnalyticsOptIn:               false,
-			EnableSessionTips:            true,
-			EnableTagSuggestionNotice:    true,
-			EnableHealthReviewNotice:     true,
-			ShowShortcutTooltips:         false,
-			ShowGridKeyLegend:            true,
-			ShortcutOpenMode:             "instant",
-			RememberScrollPosition:       true,
-			DetectSoftNotFound:           true,
-			ColumnsPerRow:                3,
-			FontSize:                     "m",
-			ShowTitle:                    true,
-			ShowDate:                     true,
-			ShowTime:                     true,
-			TimeFormat:                   "24h",
-			DateFormat:                   "short-slash",
-			ShowWeatherWithDate:          false,
-			WeatherSource:                "manual",
-			WeatherLocation:              "",
-			WeatherUnit:                  "celsius",
-			WeatherRefreshMinutes:        30,
-			ShowConfigButton:             true,
-			ShowHealthDashboard:          true,
-			ShowSearchButton:             true,
-			ShowAddBookmarkButton:        true,
+			CurrentPage:               1,
+			Theme:                     defaultThemeID,
+			OpenInNewTab:              true,
+			AnalyticsOptIn:            false,
+			EnableSessionTips:         true,
+			EnableTagSuggestionNotice: true,
+			EnableHealthReviewNotice:  true,
+			ShowShortcutTooltips:      false,
+			ShowGridKeyLegend:         true,
+			ShortcutOpenMode:          "instant",
+			RememberScrollPosition:    true,
+			DetectSoftNotFound:        true,
+			ColumnsPerRow:             3,
+			FontSize:                  "m",
+			ShowTitle:                 true,
+			ShowDate:                  true,
+			ShowTime:                  true,
+			TimeFormat:                "24h",
+			DateFormat:                "short-slash",
+			ShowWeatherWithDate:       false,
+			WeatherSource:             "manual",
+			WeatherLocation:           "",
+			WeatherUnit:               "celsius",
+			WeatherRefreshMinutes:     30,
+			ShowConfigButton:          true,
+			ShowHealthDashboard:       true,
+			ShowSearchButton:          true,
+			ShowAddBookmarkButton:     true,
 			// Off by default. Search, commands and finders are one panel
 			// that changes mode on a key, and the pills at its foot say so
 			// now -- three doors to one room is two more than it needs. The

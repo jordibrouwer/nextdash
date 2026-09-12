@@ -2425,6 +2425,86 @@ overlay nearly all of it -- so this is the most translucent the page ever gets.
 A step back from the 0.58 Aurora Glass sets for itself, because that theme was
 drawn around being glass and these 218 were not.
 */
+/*
+The fourth semantic colour, when a theme has not named one.
+
+--accent-info marks a kind rather than a verdict: a feature row against a post
+in the news stream, a filter completion against a finder in the search list,
+the note you are typing in. The stylesheet has asked for it in seven places
+since long before a theme could answer, so all seven fell through to a
+hard-coded #60A5FA -- one blue across a paper theme, a green terminal and 220
+others, belonging to none of them.
+
+Derived rather than added to 222 records by hand, and derived by hue rather
+than by picking a colour: the tone comes from AccentPrimary, so the theme's
+own weight and saturation carry over, and only the hue is chosen. It is the
+hue furthest from the three accents that already mean something -- success,
+warning and error -- because the whole job of this colour is to not be
+mistaken for a verdict. On a green terminal whose primary and success are the
+same green, that lands it well away from both; on a greyscale theme the
+primary has no chroma to give, so info comes out grey too, which is the right
+answer there.
+
+Searched in five-degree steps rather than solved: the objective is the minimum
+of three circular distances, which is not differentiable at the crossings, and
+seventy-two candidates is nothing to walk.
+*/
+func themeAccentInfo(tc ThemeColors) string {
+	if strings.TrimSpace(tc.AccentInfo) != "" {
+		return strings.TrimSpace(tc.AccentInfo)
+	}
+
+	primary := tc.AccentPrimary
+	if primary == "" {
+		primary = tc.AccentSuccess
+	}
+	lightness, chroma, ok := hexOklch(primary)
+	if !ok {
+		// A palette that cannot be read gets the theme's own accent rather
+		// than a blue from nowhere: wrong in the same direction as the rest
+		// of a malformed theme, instead of wrong in a new one.
+		return "var(--accent-primary)"
+	}
+
+	taken := []float64{}
+	for _, c := range []string{tc.AccentSuccess, tc.AccentWarning, tc.AccentError} {
+		if _, chr, good := hexOklch(c); !good || chr < 0.02 {
+			continue
+		}
+		if hue, good := hexOklchHue(c); good {
+			taken = append(taken, hue)
+		}
+	}
+
+	hue := 0.0
+	if h, good := hexOklchHue(primary); good {
+		hue = h
+	}
+	if len(taken) > 0 {
+		best, bestGap := hue, -1.0
+		for candidate := 0.0; candidate < 360; candidate += 5 {
+			gap := 360.0
+			for _, other := range taken {
+				d := math.Abs(candidate - other)
+				if d > 180 {
+					d = 360 - d
+				}
+				if d < gap {
+					gap = d
+				}
+			}
+			if gap > bestGap {
+				best, bestGap = candidate, gap
+			}
+		}
+		hue = best
+	}
+
+	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
+		" " + formatFloat(math.Round(chroma*1000)/1000) +
+		" " + formatFloat(math.Round(hue*10)/10) + ")"
+}
+
 func themeSurfaceAlpha(tc ThemeColors) string {
 	if tc.SurfaceAlpha < 0 {
 		return "1"
@@ -2586,17 +2666,17 @@ OKLab is worth the twenty lines here: it is the only space in this file where
 "how much colour is this" and "how light is this" are separate questions with
 honest answers. sRGB conflates them and HSL lies about both.
 */
-func hexOklch(color string) (lightness, chroma float64, ok bool) {
+func hexOklab(color string) (lightness, a, b float64, ok bool) {
 	h := strings.TrimSpace(color)
 	if !strings.HasPrefix(h, "#") {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	h = h[1:]
 	if len(h) == 3 {
 		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
 	}
 	if len(h) != 6 {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	linear := func(part string) (float64, bool) {
 		v, err := strconv.ParseUint(part, 16, 16)
@@ -2611,18 +2691,52 @@ func hexOklch(color string) (lightness, chroma float64, ok bool) {
 	}
 	r, okR := linear(h[0:2])
 	g, okG := linear(h[2:4])
-	b, okB := linear(h[4:6])
+	blue, okB := linear(h[4:6])
 	if !okR || !okG || !okB {
+		return 0, 0, 0, false
+	}
+	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*blue)
+	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*blue)
+	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*blue)
+	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+		1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+		0.0259040371*l + 0.7827717662*m - 0.8086757660*s,
+		true
+}
+
+/*
+The same colour as lightness and chroma, which is what most callers want.
+
+Kept as its own function rather than folded into hexOklab: three of the four
+readers here care about how light and how colourful a colour is and not at all
+about which colour it is, and a third return value they would each discard
+reads as though the hue mattered to them.
+*/
+func hexOklch(color string) (lightness, chroma float64, ok bool) {
+	l, a, b, good := hexOklab(color)
+	if !good {
 		return 0, 0, false
 	}
-	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b)
-	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b)
-	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b)
-	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
-		math.Hypot(
-			1.9779984951*l-2.4285922050*m+0.4505937099*s,
-			0.0259040371*l+0.7827717662*m-0.8086757660*s,
-		), true
+	return l, math.Hypot(a, b), true
+}
+
+/*
+And as a hue, in degrees.
+
+Only meaningful once there is chroma to have a hue of: a neutral grey reports
+whatever the rounding left in a and b, which is why every caller here checks
+the chroma before it asks.
+*/
+func hexOklchHue(color string) (float64, bool) {
+	_, a, b, ok := hexOklab(color)
+	if !ok {
+		return 0, false
+	}
+	deg := math.Atan2(b, a) * 180 / math.Pi
+	if deg < 0 {
+		deg += 360
+	}
+	return deg, true
 }
 
 /*
@@ -2927,6 +3041,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-primary: ` + accentPrimary + `;
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
+    --accent-info: ` + themeAccentInfo(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
