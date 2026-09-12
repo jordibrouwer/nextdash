@@ -1968,7 +1968,9 @@
     "tagSuggestionsNoticeBody": "Afgeleid uit de tags die je al gebruikt en de sites die nextDash kent. Er wordt niets getagd tot jij het zegt.",
     "tagSuggestionsNoticeStart": "Beginnen",
     "tagSuggestionsNoticeLater": "Niet vandaag",
-    "tagSuggestionsNoticeRemindLater": "Herinner me over 30 dagen"
+    "tagSuggestionsNoticeRemindLater": "Herinner me over 30 dagen",
+    "widgetAsOf": "stand van {time}",
+    "widgetAsOfStale": "stand van {time} — ouder dan deze widget ververst"
   },
   "health": {
     "reloadPage": "Pagina herladen",

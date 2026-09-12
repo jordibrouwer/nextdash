@@ -1968,7 +1968,9 @@
     "tagSuggestionsNoticeBody": "根据你已经在用的标签和 nextDash 认识的站点得出。在你同意之前不会打上任何标签。",
     "tagSuggestionsNoticeStart": "开始",
     "tagSuggestionsNoticeLater": "今天不用",
-    "tagSuggestionsNoticeRemindLater": "30 天后提醒我"
+    "tagSuggestionsNoticeRemindLater": "30 天后提醒我",
+    "widgetAsOf": "截至 {time}",
+    "widgetAsOfStale": "截至 {time} — 早于该小组件的刷新周期"
   },
   "health": {
     "reloadPage": "重新加载页面",

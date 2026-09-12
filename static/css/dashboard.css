@@ -6302,3 +6302,14 @@ button.dashboard-widget-stat:focus-visible {
         grid-column: 1 / -1;
     }
 }
+
+/*
+ * A figure older than the interval it refreshes on.
+ *
+ * Not an error -- the number is what it was -- but the reader was led to
+ * expect it to have moved by now, and a cached figure that looks live is
+ * worse than a stale one that admits it.
+ */
+.dashboard-widget-asof--stale {
+    color: var(--status-warning, var(--accent-warning, var(--text-tertiary)));
+}

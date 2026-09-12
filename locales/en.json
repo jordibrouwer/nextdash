@@ -1968,7 +1968,9 @@
     "tagSuggestionsNoticeBody": "Worked out from the tags you already use and the sites nextDash knows. Nothing is tagged until you say so.",
     "tagSuggestionsNoticeStart": "Start",
     "tagSuggestionsNoticeLater": "Not today",
-    "tagSuggestionsNoticeRemindLater": "Remind me in 30 days"
+    "tagSuggestionsNoticeRemindLater": "Remind me in 30 days",
+    "widgetAsOf": "as of {time}",
+    "widgetAsOfStale": "as of {time} — older than this widget refreshes"
   },
   "health": {
     "reloadPage": "Reload page",

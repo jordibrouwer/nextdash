@@ -1968,7 +1968,9 @@
     "tagSuggestionsNoticeBody": "Ermittelt aus den Tags, die Sie schon verwenden, und den Websites, die nextDash kennt. Getaggt wird nichts, bis Sie es sagen.",
     "tagSuggestionsNoticeStart": "Loslegen",
     "tagSuggestionsNoticeLater": "Nicht heute",
-    "tagSuggestionsNoticeRemindLater": "In 30 Tagen erinnern"
+    "tagSuggestionsNoticeRemindLater": "In 30 Tagen erinnern",
+    "widgetAsOf": "Stand {time}",
+    "widgetAsOfStale": "Stand {time} — älter als dieses Widget aktualisiert"
   },
   "health": {
     "reloadPage": "Seite neu laden",

@@ -1968,7 +1968,9 @@
     "tagSuggestionsNoticeBody": "Deducido de las etiquetas que ya usas y de los sitios que nextDash conoce. Nada se etiqueta hasta que tú lo digas.",
     "tagSuggestionsNoticeStart": "Empezar",
     "tagSuggestionsNoticeLater": "Hoy no",
-    "tagSuggestionsNoticeRemindLater": "Recordármelo en 30 días"
+    "tagSuggestionsNoticeRemindLater": "Recordármelo en 30 días",
+    "widgetAsOf": "a las {time}",
+    "widgetAsOfStale": "a las {time} — más antiguo de lo que este widget actualiza"
   },
   "health": {
     "reloadPage": "Recargar la página",
