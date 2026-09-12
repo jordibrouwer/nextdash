@@ -308,7 +308,11 @@ html[data-theme] body:not([data-layout-version="modern"]):not([data-depth="flat"
     .quickstart-card,
     .health-monitor-stat
 ) {
-    box-shadow: var(--surface-glow-ring);
+    /* De gloed plus de twee randen, in één declaratie omdat box-shadow niet
+       stapelt over regels heen. Zonder de randen bleven dit de enige opgetilde
+       vlakken in de app zonder dikte: het dashboardblok, het widgetlichaam en
+       de overlaysecties hebben ze wel. */
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-glow-ring);
 }
 
 /* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan
