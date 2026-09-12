@@ -724,6 +724,24 @@ class SearchComponent {
         }
 
         /*
+         * Inside a command, a printable character is text.
+         *
+         * Ahead of the launcher keys for the same reason the finder branch
+         * below is: a command takes a URL, and a URL is made of the characters
+         * that open modes. Typing ":new https://example.com/a?b=1" produced
+         * "/:new https:/example.com/a?B b=1" -- the first slash was read as
+         * the fuzzy-mode switch and moved to the front, the second was eaten,
+         * and the "?" opened finders inside the command. The command branch
+         * existed all along; it just sat below the launchers.
+         */
+        if (this.currentQuery.startsWith(':') && e.key.length === 1
+                && /^[\x20-\x7E]$/.test(e.key)) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
+        /*
          * Inside a finder's search text, a printable character is text.
          *
          * Ahead of the launcher keys below on purpose. `/`, `@` and `>` all
@@ -894,14 +912,6 @@ class SearchComponent {
         )) {
             e.preventDefault();
             this.addToQuery(' ');
-            return;
-        }
-
-        // In command mode allow all printable characters (needed for URLs: dots, slashes, underscores, etc.)
-        // Use e.key directly to preserve original case for URL paths.
-        if (this.currentQuery.startsWith(':') && e.key.length === 1) {
-            e.preventDefault();
-            this.addToQuery(e.key);
             return;
         }
 
