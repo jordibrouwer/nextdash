@@ -128,6 +128,25 @@ html[data-theme] body {
         var(--text-primary) calc(9% * var(--theme-depth)), transparent);
 
     /*
+     * The state bloom: what the reader is acting on, right now.
+     *
+     * Not to be confused with --surface-glow-ring in theme-character.css,
+     * which is an ambient halo under resting surfaces and is set per theme.
+     * This one is tight and bright and appears only on focus and selection.
+     * The two must stay tellable apart -- once two effects look alike, they
+     * stop meaning two things, which is why this blurs at 12px where the
+     * ambient ring blurs at 18px and up, and carries no offset or spread.
+     *
+     * Decoration only. The focus outline stays exactly where it was, so a
+     * reader who cannot make out the glow loses nothing by it.
+     *
+     * Scaled by --theme-depth, so flat resolves it to a fully transparent
+     * colour and paints nothing.
+     */
+    --bloom: 0 0 12px color-mix(in srgb,
+        var(--accent-primary) calc(40% * var(--theme-depth)), transparent);
+
+    /*
      * A very slight vertical wash for a card to carry. Two and a half percent:
      * invisible when you look for it, and the reason a large surface stops
      * looking like a swatch.
@@ -163,8 +182,10 @@ html[data-theme] body {
         --hairline-strong: var(--border-primary);
 
         /* En om dezelfde reden geen gloed. Een accentgekleurde halo is precies
-           de kleurbeweging die deze voorkeur weg wil hebben. */
+           de kleurbeweging die deze voorkeur weg wil hebben. Dat geldt net zo
+           voor de toestandsbloom: de focus-outline draagt de betekenis al. */
         --theme-surface-glow: 0;
+        --bloom: none;
     }
 }
 
@@ -817,3 +838,4 @@ html[data-theme="bone-china-dark"] body,
 html[data-theme="bone-china-light"] body {
     --theme-title-spacing: 0.02em;
 }
+

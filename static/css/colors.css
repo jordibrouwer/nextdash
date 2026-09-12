@@ -671,3 +671,38 @@
         position: static;
     }
 }
+
+/* ── The state bloom, applied ───────────────────────────────────────────────
+ *
+ * The token lives in theme-depth.css with the rest of the depth ladder; the
+ * application lives here, because this file loads after the view stylesheets
+ * and box-shadow does not stack across rules. From theme-depth.css the
+ * bookmark row's own `box-shadow: none` won and the cursor never glowed.
+ *
+ * One rule rather than a hundred: these are the app's live-state surfaces --
+ * the control with focus, the row the keyboard cursor is on, the filter in
+ * force. Everything else keeps the shadow it already had, which is why this
+ * is a list and not a blanket `*:focus-visible`.
+ *
+ * The outline is untouched throughout. This is decoration on top of it, not a
+ * replacement for it.
+ */
+body:not([data-depth="flat"]) :is(
+    .search-button,
+    .page-nav-btn,
+    .lvs-filter,
+    .lvs-section,
+    .config-nav-item,
+    .tag-cloud-toggle-btn,
+    .whats-new-btn
+):focus-visible {
+    box-shadow: var(--bloom);
+}
+
+body:not([data-depth="flat"]) :is(
+    .bookmark-link.keyboard-selected,
+    .feed-row.keyboard-selected,
+    .lvs-filter.is-active
+) {
+    box-shadow: var(--bloom);
+}
