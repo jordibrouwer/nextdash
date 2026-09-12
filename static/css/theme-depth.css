@@ -111,6 +111,23 @@ html[data-theme] body {
         var(--text-primary) calc(6% * var(--theme-depth)), transparent);
 
     /*
+     * And the shaded bottom edge, which is the other half of the same cue.
+     *
+     * A lit line on its own is a highlight; a lit line with a shaded one
+     * opposite it is a slab with a thickness, which is what every surface in
+     * the redesign drafts wears. Nine percent rather than six: a shadow at
+     * the foot of a surface reads weaker than a highlight at its head, so
+     * matching the numbers would not match the effect.
+     *
+     * Mixed from --text-primary like its twin, never from black. This line
+     * lies ON the surface, so a fixed black one turns into a hard stripe on
+     * every light and paper theme -- a cast shadow may use black, a surface
+     * line may not.
+     */
+    --edge-dark: inset 0 -1px 0 color-mix(in srgb,
+        var(--text-primary) calc(9% * var(--theme-depth)), transparent);
+
+    /*
      * A very slight vertical wash for a card to carry. Two and a half percent:
      * invisible when you look for it, and the reason a large surface stops
      * looking like a swatch.
@@ -249,14 +266,14 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-cards .category {
     background-color: var(--surface-2);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light);
+    box-shadow: var(--edge-light), var(--edge-dark);
 }
 
 body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
     background-color: var(--surface-1);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light);
+    box-shadow: var(--edge-light), var(--edge-dark);
 }
 
 /*
@@ -271,7 +288,7 @@ body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
     background: var(--surface-2);
     background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light);
+    box-shadow: var(--edge-light), var(--edge-dark);
 }
 
 /*
@@ -286,6 +303,7 @@ body:not([data-depth="flat"]) .modal {
     border: 1px solid var(--hairline-strong);
     box-shadow:
         var(--edge-light),
+        var(--edge-dark),
         0 24px 64px rgba(0, 0, 0, 0.28),
         0 2px 8px rgba(0, 0, 0, 0.12);
 }
