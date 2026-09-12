@@ -5543,18 +5543,31 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * direction the text does: lighter on a dark theme, darker on a light one.
  * That is one step towards the reader on every theme, which is the whole
  * relationship a readout needs.
+ *
+ * --text-primary and not --text-secondary, which is what these mixed for a
+ * long time and is why a readout came out grey on a themed dashboard. The
+ * secondary ink is derived in theme-ink.css as oklch(from <surface> ...) with
+ * `calc(c * 0.5)` -- half the chroma of the surface it stands on. On a dark
+ * theme that surface is near-black and carries almost none to begin with, so
+ * halving it lands at effectively zero: measured on retro-crt-dark, the cell
+ * came out srgb(0.723 0.761 0.733), which is a grey on a green dashboard.
+ * Scaling the chroma down is right for ink (it is what keeps a greyscale
+ * theme neutral instead of picking up a tint), and wrong for a surface that
+ * has to belong to the card it sits in. --text-primary comes straight from
+ * the theme with its own chroma, so the tint carries the theme's hue and the
+ * direction above still holds.
  */
 .dashboard-widget {
-    --dashboard-widget-rule: color-mix(in srgb, var(--text-secondary) 13%, transparent);
-    --dashboard-widget-cell: color-mix(in srgb, var(--text-secondary) 7%, transparent);
-    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+    --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 13%, transparent);
+    --dashboard-widget-cell: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 16%, transparent);
 }
 
 .dashboard-widget .dashboard-widget-body {
     padding: var(--space-3, 0.75rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 9px);
-    background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
     /*
      * Reserved before the data arrives.
      *
@@ -6116,15 +6129,16 @@ button.dashboard-widget-stat {
     cursor: pointer;
 }
 
+/*
+ * One rule, not two. A second block followed this one at the same specificity
+ * and mixed a grey into --background-primary, so it won for hover and focus
+ * and left the accent tint reachable only by keyboard -- the same cell lit up
+ * in two different colours depending on how you got to it.
+ */
 button.dashboard-widget-stat:hover,
 button.dashboard-widget-stat:focus-visible,
 button.dashboard-widget-stat.keyboard-selected {
     background: color-mix(in srgb, var(--accent-primary) 8%, var(--dashboard-widget-cell));
-}
-
-button.dashboard-widget-stat:hover,
-button.dashboard-widget-stat:focus-visible {
-    background: color-mix(in srgb, var(--text-secondary) 10%, var(--background-primary, #111));
 }
 
 /*
@@ -6200,7 +6214,7 @@ button.dashboard-widget-stat:focus-visible {
     /* A track that can be seen when the fill is short: at four pixels on a
        16%-tint ground the empty part of the bar was invisible, so a bar at 5%
        looked like a stray mark rather than like a bar that is nearly empty. */
-    background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
 }
 
 .dashboard-widget-meter-fill {
