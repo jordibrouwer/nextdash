@@ -24,11 +24,16 @@ func TestCharacterFieldsClampToTheirRange(t *testing.T) {
 		want  []string
 	}{
 		{
-			name:  "unset renders as today",
+			// Not "as today" for the two glass fields any more. Both used to
+			// fall back to the value that means "not glass at all", which made
+			// the glass depth step do nothing on the 218 built-in themes that
+			// never mention it. A theme with no opinion gets the step's own
+			// glass now; see TestGlassHasADefaultOnThemesThatNeverMentionedIt.
+			name:  "unset renders as today, except that glass is glass",
 			theme: ThemeColors{},
 			want: []string{
-				"--theme-surface-alpha: 1;",
-				"--theme-surface-blur: 0px;",
+				"--theme-surface-alpha: 0.72;",
+				"--theme-surface-blur: 18px;",
 				"--theme-surface-glow: 0;", // geen palet om iets uit af te leiden
 				"--theme-glow-lift: 1;",    // en een onleesbare pagina telt als donker
 				"--theme-radius-scale: 1;",
@@ -280,4 +285,78 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if defaultThemeID != "retro-crt-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
+}
+
+/*
+The glass depth step has to mean something on every theme, not on four.
+
+--theme-surface-alpha and --theme-surface-blur are read only under
+body[data-depth="glass"], and both used to fall back to the value that means
+"not glass at all": fully solid, no blur. Four of the 222 built-in themes
+declare an alpha and two declare a blur, so on the other 218 picking glass
+produced a dashboard indistinguishable from rich -- a setting that did nothing,
+which is worse than a setting that is not offered.
+
+A theme with an opinion still wins, and a theme that means solid says so with a
+negative rather than by omission.
+*/
+func TestGlassHasADefaultOnThemesThatNeverMentionedIt(t *testing.T) {
+	t.Run("a theme that says nothing gets the step's own glass", func(t *testing.T) {
+		alpha := themeSurfaceAlpha(ThemeColors{})
+		blur := themeSurfaceBlur(ThemeColors{})
+		if alpha == "1" {
+			t.Errorf("glass is solid on a theme with no opinion: alpha %q", alpha)
+		}
+		if blur == "0" {
+			t.Errorf("glass has no blur on a theme with no opinion: blur %q", blur)
+		}
+	})
+
+	t.Run("a theme with an opinion keeps it", func(t *testing.T) {
+		aurora := ThemeColors{SurfaceAlpha: 0.58, SurfaceBlur: 20}
+		if got := themeSurfaceAlpha(aurora); got != "0.58" {
+			t.Errorf("Aurora Glass lost its own alpha: %q", got)
+		}
+		if got := themeSurfaceBlur(aurora); got != "20" {
+			t.Errorf("Aurora Glass lost its own blur: %q", got)
+		}
+
+		// Near-solid is an opinion too, and the one most likely to be mistaken
+		// for silence: 0.9 is a deliberate sheet of glass you can almost not
+		// see through, and it must not be read as "no value given".
+		if got := themeSurfaceAlpha(ThemeColors{SurfaceAlpha: 0.9}); got != "0.9" {
+			t.Errorf("a near-solid theme was overridden: %q", got)
+		}
+	})
+
+	t.Run("a theme that means solid says so with a negative", func(t *testing.T) {
+		if got := themeSurfaceAlpha(ThemeColors{SurfaceAlpha: -1}); got != "1" {
+			t.Errorf("a theme asking for solid surfaces got glass: %q", got)
+		}
+		if got := themeSurfaceBlur(ThemeColors{SurfaceBlur: -1}); got != "0" {
+			t.Errorf("a theme asking for no blur got one: %q", got)
+		}
+	})
+
+	t.Run("the values still clamp", func(t *testing.T) {
+		if got := themeSurfaceAlpha(ThemeColors{SurfaceAlpha: 4}); got != "1" {
+			t.Errorf("an alpha above the range was not clamped: %q", got)
+		}
+		if got := themeSurfaceBlur(ThemeColors{SurfaceBlur: 900}); got != "32" {
+			t.Errorf("a blur above the range was not clamped: %q", got)
+		}
+	})
+
+	t.Run("and the default theme is one of the 218", func(t *testing.T) {
+		// Which is what makes this visible rather than theoretical: a fresh
+		// install starts on a theme that never mentions glass.
+		themes := getDefaultBuiltInThemes()
+		def := themes[defaultThemeID]
+		if def.SurfaceAlpha != 0 || def.SurfaceBlur != 0 {
+			t.Skip("the default theme now declares glass of its own")
+		}
+		if themeSurfaceAlpha(def) == "1" || themeSurfaceBlur(def) == "0" {
+			t.Errorf("glass does nothing on the theme a fresh install starts on")
+		}
+	})
 }

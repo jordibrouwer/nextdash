@@ -2403,6 +2403,48 @@ A theme that means silence still declares -1 and gets it.
 The light branch is capped well under the dark one. On paper this is a tinted
 shadow and it is meant to be felt and not seen.
 */
+/*
+What the glass depth step is worth on a theme that never mentioned it.
+
+Both of these are read only under body[data-depth="glass"], and both used to
+fall back to the value that means "not glass at all": fully solid, no blur.
+Four of the 222 built-in themes declare an alpha and two declare a blur, so on
+the other 218 the glass step was a setting that did nothing -- pick it, and the
+dashboard was indistinguishable from rich. A depth step the reader chose should
+do what it says whatever theme is underneath it.
+
+So a theme that says nothing gets the step's own glass rather than none. A
+theme with an opinion still wins, which is how Aurora Glass keeps its deeper
+0.58 and Retro CRT Mk II its near-solid 0.9. And a theme that means solid on
+purpose says so with a negative, the convention themeSurfaceGlow already uses
+for a palette that means silence.
+
+0.72 and 18px rather than something bolder: the tiers in theme-character.css
+scale these down per reading need -- the page ground takes 70% of the alpha, an
+overlay nearly all of it -- so this is the most translucent the page ever gets.
+A step back from the 0.58 Aurora Glass sets for itself, because that theme was
+drawn around being glass and these 218 were not.
+*/
+func themeSurfaceAlpha(tc ThemeColors) string {
+	if tc.SurfaceAlpha < 0 {
+		return "1"
+	}
+	if tc.SurfaceAlpha > 0 {
+		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
+	}
+	return "0.72"
+}
+
+func themeSurfaceBlur(tc ThemeColors) string {
+	if tc.SurfaceBlur < 0 {
+		return "0"
+	}
+	if tc.SurfaceBlur > 0 {
+		return formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0))
+	}
+	return "18"
+}
+
 func themeSurfaceGlow(tc ThemeColors) string {
 	if tc.SurfaceGlow < 0 {
 		return "0"
@@ -2827,8 +2869,8 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-error: ` + s.AccentError + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
-    --theme-surface-alpha: ` + formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1)) + `;
-    --theme-surface-blur: ` + formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0)) + `px;
+    --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
+    --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
