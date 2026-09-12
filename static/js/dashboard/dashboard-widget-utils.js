@@ -218,12 +218,52 @@
             value.className = 'dashboard-widget-stat-value';
             value.textContent = String(stat.value ?? '—');
 
+            /*
+             * Which way it moved, beside the figure that moved.
+             *
+             * Toned by what the change means rather than by its sign: one more
+             * broken bookmark is worse, one more reachable one is better, and
+             * only the caller knows which of the two it is holding.
+             *
+             * Left out entirely when there is nothing to report -- an empty
+             * delta reads as "unchanged", which is a claim of its own.
+             */
+            let deltaEl = null;
+            if (stat.delta !== undefined && stat.delta !== null && String(stat.delta) !== '') {
+                deltaEl = document.createElement('span');
+                deltaEl.className = 'dashboard-widget-stat-delta';
+                if (stat.deltaTone) {
+                    deltaEl.classList.add(`dashboard-widget-stat-delta--${stat.deltaTone}`);
+                }
+                deltaEl.textContent = String(stat.delta);
+            }
+
             const name = document.createElement('span');
             name.className = 'dashboard-widget-stat-label';
             name.textContent = String(stat.label || '');
 
             if (stat.title) cell.title = stat.title;
-            cell.append(value, name);
+            cell.append(value);
+            if (deltaEl) cell.appendChild(deltaEl);
+            cell.appendChild(name);
+
+            /*
+             * The key that gets you there, on the figures that go somewhere.
+             *
+             * Every other affordance in the app prints its key in its label; a
+             * figure has no room for that, so the chip sits in the corner and
+             * waits until the reader is on the tile. Only where there is both
+             * a destination and a key -- a key on a figure that leads nowhere
+             * is a promise it cannot keep.
+             */
+            if (stat.onOpen && stat.key) {
+                const chip = document.createElement('kbd');
+                chip.className = 'dashboard-widget-stat-key';
+                chip.textContent = String(stat.key);
+                chip.setAttribute('aria-hidden', 'true');
+                cell.appendChild(chip);
+                cell.setAttribute('aria-keyshortcuts', String(stat.key));
+            }
             if (stat.onOpen) {
                 // The grid's own description unless the figure carries one:
                 // "Open Health" for a tile of health figures, "Open the trash"

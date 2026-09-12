@@ -6313,3 +6313,54 @@ button.dashboard-widget-stat:focus-visible {
 .dashboard-widget-asof--stale {
     color: var(--status-warning, var(--accent-warning, var(--text-tertiary)));
 }
+
+/*
+ * The delta beside a widget figure, and the key in its corner.
+ *
+ * The delta is toned by what the change means, not by its sign: one more
+ * broken bookmark is worse, one more reachable one is better, and the widget
+ * is the only thing that knows which it is holding.
+ */
+.dashboard-widget-stat-delta {
+    margin-left: var(--space-1, 0.25rem);
+    font-size: var(--text-2xs, 0.65rem);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-stat-delta--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
+.dashboard-widget-stat-delta--warn { color: var(--status-warning, var(--accent-warning, var(--text-secondary))); }
+.dashboard-widget-stat-delta--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+
+/*
+ * Waits until the reader is on the tile. A grid of figures each shouting its
+ * key would be louder than the figures, and the key is only useful to someone
+ * already looking at that one.
+ */
+.dashboard-widget-stat-key {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-2xs, 0.65rem);
+    line-height: 1;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transition: opacity 0.16s ease;
+}
+
+.dashboard-widget-stat {
+    position: relative;
+}
+
+.dashboard-widget-stat:is(:hover, :focus-visible) .dashboard-widget-stat-key {
+    opacity: 0.75;
+}
+
+body.no-animations .dashboard-widget-stat-key {
+    transition: none;
+}
