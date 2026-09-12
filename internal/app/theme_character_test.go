@@ -27,13 +27,15 @@ func TestCharacterFieldsClampToTheirRange(t *testing.T) {
 			// Not "as today" for the two glass fields any more. Both used to
 			// fall back to the value that means "not glass at all", which made
 			// the glass depth step do nothing on the 218 built-in themes that
-			// never mention it. A theme with no opinion gets the step's own
-			// glass now; see TestGlassHasADefaultOnThemesThatNeverMentionedIt.
+			// never mention it. A theme with no opinion gets glass derived
+			// from its palette now; with no palette either, as here, that is
+			// the bare base the derivation starts from.
+			// See TestGlassHasADefaultOnThemesThatNeverMentionedIt.
 			name:  "unset renders as today, except that glass is glass",
 			theme: ThemeColors{},
 			want: []string{
-				"--theme-surface-alpha: 0.72;",
-				"--theme-surface-blur: 18px;",
+				"--theme-surface-alpha: 0.7;",
+				"--theme-surface-blur: 19px;",
 				"--theme-surface-glow: 0;", // geen palet om iets uit af te leiden
 				"--theme-glow-lift: 1;",    // en een onleesbare pagina telt als donker
 				"--theme-radius-scale: 1;",
@@ -357,6 +359,78 @@ func TestGlassHasADefaultOnThemesThatNeverMentionedIt(t *testing.T) {
 		}
 		if themeSurfaceAlpha(def) == "1" || themeSurfaceBlur(def) == "0" {
 			t.Errorf("glass does nothing on the theme a fresh install starts on")
+		}
+	})
+}
+
+/*
+Glass has to differ per theme, not only from rich.
+
+Giving the 218 themes that never mention glass one flat number made the depth
+step work and made all 218 glass in exactly the same way, which is the opposite
+of what 111 hand-drawn palettes are for. Written as thresholds first, and 182
+of the 222 came out on the same pair -- a flat default wearing a formula. Both
+factors read as slopes now.
+
+What is held here is the spread and its direction, not the numbers: a light
+page keeps more of itself because everything it shows through lightens, and a
+surface that already stands clear of its page has more worth keeping.
+*/
+func TestGlassIsDerivedPerTheme(t *testing.T) {
+	themes := getDefaultBuiltInThemes()
+
+	pairs := map[string]int{}
+	for _, tc := range themes {
+		pairs[themeSurfaceAlpha(tc)+"/"+themeSurfaceBlur(tc)]++
+	}
+
+	t.Run("the collection lands on more than a handful of values", func(t *testing.T) {
+		if len(pairs) < 8 {
+			t.Errorf("only %d distinct glass settings across %d themes", len(pairs), len(themes))
+		}
+		// And no single value may swallow the collection. Half of 222 on one
+		// pair is the failure this test exists for.
+		for pair, count := range pairs {
+			if count > len(themes)/2 {
+				t.Errorf("%d of %d themes share %q", count, len(themes), pair)
+			}
+		}
+	})
+
+	t.Run("a light page keeps more of itself than a dark one", func(t *testing.T) {
+		dark := derivedSurfaceAlpha(ThemeColors{BackgroundPrimary: "#0B1020", BackgroundSecondary: "#141B33"})
+		light := derivedSurfaceAlpha(ThemeColors{BackgroundPrimary: "#F4F6FE", BackgroundSecondary: "#E9EDFB"})
+		if light <= dark {
+			t.Errorf("a light theme is no more solid than a dark one: %v against %v", light, dark)
+		}
+	})
+
+	t.Run("a surface that barely stands out lets more through", func(t *testing.T) {
+		flat := derivedSurfaceAlpha(ThemeColors{BackgroundPrimary: "#101010", BackgroundSecondary: "#111111"})
+		stepped := derivedSurfaceAlpha(ThemeColors{BackgroundPrimary: "#101010", BackgroundSecondary: "#2E2E2E"})
+		if flat >= stepped {
+			t.Errorf("a barely-there surface is no more translucent: %v against %v", flat, stepped)
+		}
+	})
+
+	t.Run("the blur follows the translucency", func(t *testing.T) {
+		// What shows through has to stay out of the way of the text on top, so
+		// the surface letting the most through needs the most blur.
+		open := ThemeColors{BackgroundPrimary: "#101010", BackgroundSecondary: "#111111"}
+		closed := ThemeColors{BackgroundPrimary: "#F4F6FE", BackgroundSecondary: "#D8DFF6"}
+		if themeSurfaceBlur(open) <= themeSurfaceBlur(closed) {
+			t.Errorf("the most translucent surface has the least blur: %q against %q",
+				themeSurfaceBlur(open), themeSurfaceBlur(closed))
+		}
+	})
+
+	t.Run("and every derived value is one a theme could have written", func(t *testing.T) {
+		// Two decimals, not the sixteen a float subtraction leaves behind.
+		for id, tc := range themes {
+			alpha := themeSurfaceAlpha(tc)
+			if len(alpha) > 4 {
+				t.Errorf("%s derived an unwritable alpha: %q", id, alpha)
+			}
 		}
 	})
 }

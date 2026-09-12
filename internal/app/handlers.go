@@ -2432,7 +2432,60 @@ func themeSurfaceAlpha(tc ThemeColors) string {
 	if tc.SurfaceAlpha > 0 {
 		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
 	}
-	return "0.72"
+	return formatFloat(derivedSurfaceAlpha(tc))
+}
+
+/*
+How much of the page a theme can afford to let through.
+
+A flat number for all 218 would make the glass step work, and make every one
+of them glass in the same way -- which is the opposite of what 111 hand-drawn
+palettes are for. Two things about a palette decide this, and both are about
+whether the text on the surface survives the page showing through it.
+
+How light the page is. On a dark theme the ground behind a surface is close to
+black, so what comes through barely moves the surface and pale text holds. On
+a light theme the page is near-white and everything it touches lightens, which
+is where translucency turns text grey -- so a light theme keeps more of itself.
+
+How far the surface already stands from the page. A palette whose secondary
+background is nearly its primary draws a surface you can only just make out;
+letting more through costs it almost nothing and finally gives the step
+something to show. One that steps well clear has a surface worth keeping, so
+it keeps more of it.
+
+Both read as slopes rather than as thresholds. Written as buckets first, and
+182 of the 222 themes came out on the same number -- a flat default wearing a
+formula.
+
+The range runs 0.62 to 0.88. Below that the figures on a widget start
+competing with whatever is behind them; above it the step stops being visible,
+which is the bug this exists to fix.
+*/
+func derivedSurfaceAlpha(tc ThemeColors) float64 {
+	alpha := 0.70
+
+	pageLightness, _, okPage := hexOklch(tc.BackgroundPrimary)
+	if okPage {
+		// Read as a slope and not as two buckets. Thresholds put 182 of the
+		// 222 themes on one number, which is a flat default wearing a formula:
+		// the point of deriving this is that a pale slate and a near-black
+		// terminal should not be glass in the same way.
+		alpha += 0.12 * unitRange(pageLightness)
+	}
+
+	surfaceLightness, _, okSurface := hexOklch(tc.BackgroundSecondary)
+	if okPage && okSurface {
+		// Measured against 0.2, which is about as far as a palette ever steps
+		// between its page and its raised surface; past that it is already a
+		// different colour rather than a step.
+		step := math.Abs(surfaceLightness - pageLightness)
+		alpha += 0.10 * unitRange(step/0.2)
+	}
+
+	// Rounded to the hundredth the CSS will carry, so a derived value reads
+	// like one a theme could have written by hand rather than like arithmetic.
+	return math.Round(clampFloat(alpha, 0.62, 0.88, 0.72)*100) / 100
 }
 
 func themeSurfaceBlur(tc ThemeColors) string {
@@ -2442,7 +2495,14 @@ func themeSurfaceBlur(tc ThemeColors) string {
 	if tc.SurfaceBlur > 0 {
 		return formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0))
 	}
-	return "18"
+	// Blur follows translucency rather than being chosen beside it. The blur is
+	// what keeps text readable over whatever shows through, so the surface that
+	// lets the most through needs the most of it: 0.62 alpha earns 22px, 0.88
+	// earns 12px, and everything between lands on the line -- a palette with
+	// nothing to derive from sits in the middle at 18.
+	alpha := derivedSurfaceAlpha(tc)
+	blur := 22 - (alpha-0.62)*(10/0.26)
+	return formatFloat(math.Round(clampFloat(blur, 12, 22, 18)))
 }
 
 func themeSurfaceGlow(tc ThemeColors) string {
