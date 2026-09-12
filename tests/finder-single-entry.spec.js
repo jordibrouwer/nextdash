@@ -50,16 +50,65 @@ const query = (page) => page.evaluate(() => window.dashboardInstance.searchCompo
 
 const closeSearch = (page) => page.evaluate(() => window.dashboardInstance.searchComponent.closeSearch());
 
+test.describe('typing into a finder', () => {
+    /**
+     * Past the space a finder query is the reader's search text.
+     *
+     * Until the space every character is part of the shortcut, which is
+     * matched case-insensitively and shown uppercased. After it, this fell
+     * through to the letters-and-digits branch that passes e.key.toUpperCase()
+     * and admits only [A-Z0-9-._] -- so a search for a domain went out
+     * shouting, and a query with a slash or an ampersand in it could not be
+     * typed at all. Only really visible once "?" drops you straight into the
+     * terms, which is why it is fixed alongside.
+     */
+    test('the terms keep the case they were typed in', async ({ page }) => {
+        await dashboard(page);
+        await setFinders(page, ['b']);
+
+        await page.keyboard.type('?');
+        await expect.poll(() => query(page)).toBe('?B ');
+        await page.keyboard.type('Jordi Brouwer');
+
+        expect(await query(page), 'the search text was shouted').toBe('?B Jordi Brouwer');
+    });
+
+    test('and punctuation a search needs gets through', async ({ page }) => {
+        await dashboard(page);
+        await setFinders(page, ['b']);
+
+        await page.keyboard.type('?');
+        await expect.poll(() => query(page)).toBe('?B ');
+        await page.keyboard.type("site:nl a/b&c='d'");
+
+        expect(await query(page), 'characters were dropped on the way in')
+            .toBe("?B site:nl a/b&c='d'");
+    });
+
+    test('but the shortcut itself is still matched loosely', async ({ page }) => {
+        await dashboard(page);
+        await setFinders(page, ['b', 'g']);
+
+        await page.keyboard.type('?');
+        await page.keyboard.type('g');
+
+        // Lower case in, upper case on screen: the shortcut is a key, not text.
+        expect(await query(page)).toBe('?G ');
+    });
+});
+
 test.describe('entering finder mode', () => {
     test('one finder: the key lands you ready to type', async ({ page }) => {
         await dashboard(page);
         await setFinders(page, ['b']);
 
         await page.keyboard.type('?');
-
-        // The space comes with the shortcut, so the next keystroke is a term
-        // rather than more of a shortcut that was never in question.
         await expect.poll(() => query(page)).toBe('?B ');
+
+        // And the terms go where they are meant to, rather than being read as
+        // more of the shortcut.
+        await page.keyboard.type('jordibrw.nl');
+        await expect.poll(() => query(page)).toBe('?B jordibrw.nl');
     });
 
     test('two finders: the question is real, so it is still asked', async ({ page }) => {

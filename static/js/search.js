@@ -203,15 +203,19 @@ class SearchComponent {
                 const inCommandMode = this.currentQuery.startsWith(':');
                 const inFinderMode = this.currentQuery.startsWith('?');
                 const inGlobalMode = this.currentQuery.startsWith('@');
-                const value = inCommandMode
-                    ? raw
-                    : (inFinderMode || inGlobalMode ? raw.toUpperCase() : raw);
+                // Past the space a finder query is search text, so it keeps
+                // its case and its punctuation -- the same split the key
+                // handler makes. Before the space it is a shortcut, which is
+                // uppercased on screen and matched case-insensitively.
+                const inFinderText = inFinderMode && this.currentQuery.includes(' ');
+                const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
+                const value = shouts ? raw.toUpperCase() : raw;
                 if (value.length > this.currentQuery.length) {
                     // Character added
                     const newChar = value[value.length - 1];
-                    const allowed = inCommandMode || (!inFinderMode && !inGlobalMode)
-                        ? /^[\x20-\x7E]$/.test(newChar)
-                        : /^[A-Z0-9: \?/#\.\-_]$/.test(newChar);
+                    const allowed = shouts
+                        ? /^[A-Z0-9: \?/#\.\-_]$/.test(newChar)
+                        : /^[\x20-\x7E]$/.test(newChar);
                     if (allowed) {
                         this.addToQuery(newChar);
                     }
@@ -716,6 +720,26 @@ class SearchComponent {
         if (key === 'BACKSPACE' && this.searchActive) {
             e.preventDefault();
             this.removeLastChar();
+            return;
+        }
+
+        /*
+         * Inside a finder's search text, a printable character is text.
+         *
+         * Ahead of the launcher keys below on purpose. `/`, `@` and `>` all
+         * mean something at the start of a query, and all three turn up inside
+         * an ordinary search -- a path, an address, a comparison. With this
+         * branch below them, typing "a/b" into a finder moved the slash to the
+         * front of the query and swallowed it, which is not a thing anyone can
+         * be expected to work out.
+         *
+         * Only past the space: before it, every character is part of the
+         * shortcut, and the launchers still have their say there.
+         */
+        if (this.currentQuery.startsWith('?') && this.currentQuery.includes(' ')
+                && e.key.length === 1 && /^[\x20-\x7E]$/.test(e.key)) {
+            e.preventDefault();
+            this.addToQuery(e.key);
             return;
         }
 
