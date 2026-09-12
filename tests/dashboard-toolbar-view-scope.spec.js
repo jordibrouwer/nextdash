@@ -66,15 +66,19 @@ const VIEWS = [
 test.describe('quick-action toolbar is scoped to the bookmarks dashboard', () => {
     test('the toolbar and What\'s New are visible on the dashboard', async ({ page }) => {
         await loadDashboard(page);
-        // Recent, Help and Fold-all are off by default on a fresh install
-        // (see settings_defaults_test.go) and their group collapses when all
-        // three are off; switch them on so every one of the seven buttons is
-        // actually on screen to check.
+        // Five of the seven are off by default on a fresh install (see
+        // settings_defaults_test.go): Recent, Help and Fold-all because the
+        // bar would be crowded, Commands and Finders because the search panel
+        // shows its three modes as one switch and does not need two more
+        // doors. Their group collapses when they are all off, so switch every
+        // one on to check that each can actually appear.
         await page.evaluate(() => {
             const d = window.dashboardInstance;
             d.settings.showRecentButton = true;
             d.settings.showCheatSheetButton = true;
             d.settings.showCollapseAllButton = true;
+            d.settings.showCommandsButton = true;
+            d.settings.showFindersButton = true;
             d.setupDOM();
         });
         await expect(page.locator('.button-container')).toBeVisible();

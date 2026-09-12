@@ -1283,8 +1283,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowHealthDashboard:          true,
 			ShowSearchButton:             true,
 			ShowAddBookmarkButton:        true,
-			ShowFindersButton:            true,
-			ShowCommandsButton:           true,
+			// Off by default. Search, commands and finders are one panel
+			// that changes mode on a key, and the pills at its foot say so
+			// now -- three doors to one room is two more than it needs. The
+			// search button stays, and both of these are one toggle away in
+			// Config for anyone who wants them back.
+			ShowFindersButton:            false,
+			ShowCommandsButton:           false,
 			ShowRecentButton:             false,
 			ShowTagCloudButton:           true,
 			ShowSearchFlowBanner:         true,
@@ -3290,8 +3295,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowHealthDashboard:            true,
 			ShowSearchButton:               true,
 			ShowAddBookmarkButton:          true,
-			ShowFindersButton:              true,
-			ShowCommandsButton:             true,
+			ShowFindersButton:              false,
+			ShowCommandsButton:             false,
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,

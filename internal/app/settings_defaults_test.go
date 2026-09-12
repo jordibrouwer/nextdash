@@ -31,6 +31,19 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if settings.ShowCheatSheetButton {
 		t.Fatal("fresh install: showCheatSheetButton should be false")
 	}
+	// Search, commands and finders are one panel that switches mode on a key,
+	// and the pills at its foot now show that. Three separate doors to it in
+	// the button bar is two more than the panel needs; search keeps its own,
+	// the other two are a setting away for anyone who wants them back.
+	if !settings.ShowSearchButton {
+		t.Fatal("fresh install: showSearchButton should be true")
+	}
+	if settings.ShowFindersButton {
+		t.Fatal("fresh install: showFindersButton should be false")
+	}
+	if settings.ShowCommandsButton {
+		t.Fatal("fresh install: showCommandsButton should be false")
+	}
 	if !settings.ShowIcons {
 		t.Fatal("fresh install: showIcons should be true")
 	}
