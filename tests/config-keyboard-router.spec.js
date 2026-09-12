@@ -21,7 +21,9 @@ test.describe('config keyboard router', () => {
         await openConfig(page, 'overview');
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('j');
-        await expect(page.locator('[data-config-section="bookmarks"][aria-selected="true"]')).toBeVisible();
+        // Appearance sits between Overview and Bookmarks in the rail, so one
+        // step down from Overview lands there.
+        await expect(page.locator('[data-config-section="appearance"][aria-selected="true"]')).toBeVisible();
         await page.keyboard.press('k');
         await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);

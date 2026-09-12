@@ -62,6 +62,23 @@ async function computed(page, selector, props) {
     }, { sel: selector, list: props });
 }
 
+/**
+ * What modern paints on top of what the theme already painted.
+ *
+ * "Classic is flat" stopped being the signal when the theme glow reached the
+ * config view: a theme that declares a glow now paints its accent ring on
+ * .config-tile, .config-panel and .config-choices in both layouts, so the
+ * classic reading is that ring rather than `none`. Modern keeps that ring as
+ * the back layer and stacks its own elevation in front of it, which is the
+ * override this file is here to pin. An empty string means modern added
+ * nothing — either the ring is all there is, or the two layouts agree.
+ */
+function addedShadow(classic, modern) {
+    if (classic === 'none') return modern === 'none' ? '' : modern;
+    if (!modern.endsWith(classic)) return '';
+    return modern.slice(0, -classic.length).replace(/,\s*$/, '');
+}
+
 async function bothLayouts(page, selector, props) {
     await setLayout(page, 'classic');
     const classic = await computed(page, selector, props);
@@ -86,11 +103,9 @@ test.describe('modern layout — config view', () => {
             ['borderRadius', 'boxShadow'],
         );
 
-        // Radius is deliberately not asserted here: classic already sets 12px on
-        // .config-tile, which is exactly --layout-radius-md, so the two agree by
-        // coincidence rather than by omission. Depth is the real signal.
-        expect(classic.boxShadow).toBe('none');
-        expect(modern.boxShadow).not.toBe('none');
+        // Depth is the real signal, and it is what modern adds over the
+        // theme's own glow rather than the presence of a shadow at all.
+        expect(addedShadow(classic.boxShadow, modern.boxShadow)).not.toBe('');
         expect(modern.borderRadius).toBe('12px');
     });
 
@@ -170,8 +185,7 @@ test.describe('modern layout — config view', () => {
             ['borderRadius', 'boxShadow'],
         );
 
-        expect(classic.boxShadow).toBe('none');
-        expect(modern.boxShadow).not.toBe('none');
+        expect(addedShadow(classic.boxShadow, modern.boxShadow)).not.toBe('');
         expect(modern.borderRadius).not.toBe(classic.borderRadius);
     });
 
@@ -189,8 +203,7 @@ test.describe('modern layout — config view', () => {
         await expect(page.locator('.config-choices').first()).toBeVisible();
 
         const group = await bothLayouts(page, '.config-choices', ['borderRadius', 'boxShadow']);
-        expect(group.classic.boxShadow).toBe('none');
-        expect(group.modern.boxShadow).not.toBe('none');
+        expect(addedShadow(group.classic.boxShadow, group.modern.boxShadow)).not.toBe('');
         expect(group.modern.borderRadius).not.toBe(group.classic.borderRadius);
 
         const activeChoice = await bothLayouts(page, '.config-choice.is-active', ['borderRadius', 'boxShadow']);

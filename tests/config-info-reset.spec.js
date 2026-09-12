@@ -114,6 +114,10 @@ test.describe('config info + reset affordances', () => {
             // "Tokens and passwords" / "Saved page copies" — the label is the
             // explanation, like the toolbar toggles above.
             'backupExcludeSecrets', 'backupExcludeArchives',
+            // The two review offers carry a hint line under the toggle that
+            // says what the card does and what switching it off leaves alone,
+            // so the explanation is on screen rather than behind an ℹ.
+            'enableTagSuggestionNotice', 'enableHealthReviewNotice',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
