@@ -2212,6 +2212,19 @@
     color: var(--accent-info, #60A5FA);
 }
 
+/*
+ * A headline on one line, because the row is scanned rather than read.
+ *
+ * A post's title comes from the feed as it was written, and some of them are a
+ * sentence: "nextDash 1.6.x: a theme is more than a palette, and..." wrapped
+ * to three lines and took the row to 137px on its own. Clipped, the reader
+ * still gets what it is about and the full text is one click away -- which is
+ * what the row's own link is for.
+ *
+ * The dot keeps its place: it is the first child and a fixed six pixels, so
+ * the clipping falls on the end of the title rather than on the one mark that
+ * says this row is new.
+ */
 .config-news-title {
     margin: 0;
     font-size: var(--font-size-controls);
@@ -2221,6 +2234,28 @@
     align-items: center;
     gap: 7px;
     min-width: 0;
+    overflow: hidden;
+}
+
+/* Placed for the same reason as the date above. */
+.config-news-title {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+/*
+ * The ellipsis needs an element to sit on.
+ *
+ * The title is a flex row -- a dot, then the words -- and bare text inside a
+ * flex container becomes an anonymous item that text-overflow cannot reach.
+ * Clipped without it, a headline ended mid-word with nothing to say it had
+ * been cut: "Health: what your bookmar".
+ */
+.config-news-title-text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* What "new" means here: published since you last read the stream. */
@@ -2233,8 +2268,20 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 16%, transparent);
 }
 
+/*
+ * Every cell placed by name, none left to auto-flow.
+ *
+ * The row is a two-by-two: what it is and when, then what it says and the way
+ * in. One explicitly placed item used to be enough, because the rest fell into
+ * the gaps in DOM order -- but explicit placement runs first, so pinning the
+ * action to the second row took the slot the date had been landing in and
+ * pushed the date onto a line of its own under the title. Four names, no
+ * order of operations to reason about.
+ */
 .config-news-when {
-    grid-row: span 2;
+    grid-row: 1;
+    grid-column: 3;
+    align-self: baseline;
     font-family: var(--font-family-mono, monospace);
     font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
@@ -2242,7 +2289,24 @@
     font-variant-numeric: tabular-nums;
 }
 
+/*
+ * One line, which is what the row was always described as carrying.
+ *
+ * The stream is fourteen rows because the overview guarantees the site's ten
+ * posts a place -- reserving ten out of six would have been the whole page, so
+ * the count is not the thing to cut. What made it 1775px was the row: two
+ * clamped lines of summary plus an action on a line of its own is 120px
+ * fourteen times over, against an 867px column beside it. Two columns nine
+ * hundred pixels apart in height is the mess, and the reader scrolls past
+ * ragged white space to reach what is under the shorter one.
+ *
+ * A line each, with the action beside it rather than under it, puts the row at
+ * about sixty and the two columns within a screen of each other. What the row
+ * says is unchanged: where it came from, what it is, when, a line about it,
+ * and the way in.
+ */
 .config-news-summary {
+    grid-row: 2;
     grid-column: 2;
     margin: 0;
     font-size: calc(var(--font-size-controls) * 0.88);
@@ -2250,13 +2314,24 @@
     line-height: 1.45;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     overflow: hidden;
 }
 
+/*
+ * In the third column, under the date: the row's two right-hand things are
+ * when it happened and where it goes, and stacking them there leaves the
+ * summary the width it needs.
+ */
 .config-news-action {
-    grid-column: 2;
-    margin-top: 3px;
+    /* Beside the summary, not under it. The row is two lines: what it is and
+       when, then what it says and the way in. Placed explicitly, because
+       auto-placement drops it onto a third row of its own. */
+    grid-row: 2;
+    grid-column: 3;
+    justify-self: end;
+    margin-top: 0;
+    white-space: nowrap;
 }
 
 .config-news-go {

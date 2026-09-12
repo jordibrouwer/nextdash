@@ -3852,7 +3852,7 @@ class DashboardConfig {
         return `
             <li class="config-news-item" data-news-source="${esc(item.source)}">
                 <span class="config-src-chip config-src-chip--${esc(item.source)}">${esc(label)}</span>
-                <h4 class="config-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}${esc(title)}</h4>
+                <h4 class="config-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}<span class="config-news-title-text">${esc(title)}</span></h4>
                 <span class="config-news-when">${esc(this.formatNewsDate(item.at))}</span>
                 ${summary ? `<p class="config-news-summary">${esc(summary)}</p>` : ''}
                 ${action ? `<span class="config-news-action">${action}</span>` : ''}
