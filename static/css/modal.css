@@ -1531,3 +1531,37 @@ body.no-animations .modal-button.danger.selected {
         transform: scale(1);
     }
 }
+
+/*
+ * Slabs inside an overlay.
+ *
+ * An overlay is near-opaque because its text is what the reader acts on, so
+ * what sits inside it cannot separate itself by being more see-through. It
+ * separates the other way: its own surface step, the lit top edge, the shaded
+ * bottom edge, and a small lift off the sheet it stands on.
+ *
+ * The cheat sheet's sections, the recents list and the tag cloud's field all
+ * want the same thing, so they share one rule rather than three copies.
+ *
+ * Not on flat, like every other depth cue in the app.
+ */
+body:not([data-depth="flat"]) :is(
+    .cheat-sheet-group,
+    .recent-bookmarks-modal-list,
+    .tag-cloud-modal-body
+) {
+    background: var(--surface-2);
+    border-radius: var(--radius-5, 8px);
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 2px 8px color-mix(in srgb, black 22%, transparent);
+}
+
+/* The section divider was doing the separating on its own; the slab does it
+   now, and two lines where one will do reads as a seam. */
+body:not([data-depth="flat"]) .cheat-sheet-group {
+    border-bottom: none;
+    margin-bottom: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
