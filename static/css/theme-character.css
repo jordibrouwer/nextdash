@@ -163,7 +163,8 @@ html[data-theme] body[data-depth="glass"] :is(
 /* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
 html[data-theme] body[data-depth="glass"] :is(
     .modal,
-    .search-container
+    .search-container,
+    .bookmark-form-modal-dialog
 ) {
     backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
     -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
@@ -288,7 +289,6 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     .config-tile,
     .config-panel,
     .config-choices,
-    .search-container,
     .lvs-summary,
     .lvs-group,
     .quickstart-card,
@@ -299,6 +299,21 @@ html[data-theme] body:not([data-depth="flat"]) :is(
        de hergroepering hierboven al in --edge-light zelf, en twee keer dezelfde
        ring schilderen maakt hem alleen maar harder. */
     box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+}
+
+/*
+ * Het commandovenster krijgt dezelfde twee randen, maar zijn eigen val.
+ *
+ * Het stond in de lijst hierboven en kreeg daarmee de cast van een plaat: 3px
+ * omlaag, 15px zacht. Dat is de schaduw van iets dat op de pagina ligt, en dit
+ * ligt erboven -- de overlay-spec tekent 0 24px 64px. De randen blijven, want
+ * die zijn de taal van de app; alleen de diepte hoort bij wat het ding is.
+ */
+html[data-theme] body:not([data-depth="flat"]) .search-container {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 24px 64px color-mix(in srgb, black calc(60% * var(--theme-depth)), transparent);
 }
 
 /* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan

@@ -126,11 +126,14 @@ test.describe('bookmark form modal — fits without scrolling', () => {
     });
 
     /*
-     * Below the breakpoint the columns dissolve.
+     * Below the breakpoint the two groups stack.
      *
-     * They are real elements so Tab runs down one and then the other; `display:
-     * contents` is what lets the same markup be a single column on a narrow
-     * window without a second form to keep in step.
+     * They used to dissolve -- `display: contents`, so the boxes stopped
+     * existing and the eleven fields became one list. They are drawn groups
+     * now, with a ground and a title, so they stay boxes and go one above the
+     * other instead. What the narrow window has to keep is the single column
+     * of fields, which is what is read here: one left edge, and the second
+     * group starting below the first rather than beside it.
      */
     test('a narrow window keeps the single column', async ({ page }) => {
         await page.setViewportSize({ width: 800, height: 900 });
@@ -140,12 +143,15 @@ test.describe('bookmark form modal — fits without scrolling', () => {
             const cols = [...document.querySelectorAll('.bookmark-inline-col')];
             const fields = [...document.querySelectorAll('.bookmark-inline-form .bookmark-inline-field')];
             const lefts = new Set(fields.map((f) => Math.round(f.getBoundingClientRect().left)));
+            const boxes = cols.map((c) => c.getBoundingClientRect());
             return {
-                columnsDissolved: cols.every((c) => c.getBoundingClientRect().width === 0),
+                groupsStacked: boxes.length === 2 && Math.round(boxes[1].top) >= Math.round(boxes[0].bottom),
+                groupLeftsAgree: new Set(boxes.map((b) => Math.round(b.left))).size === 1,
                 distinctLefts: lefts.size,
             };
         });
-        expect(stacked.columnsDissolved).toBe(true);
+        expect(stacked.groupsStacked, 'the groups sit beside each other on a narrow window').toBe(true);
+        expect(stacked.groupLeftsAgree, 'the groups do not share a left edge').toBe(true);
         expect(stacked.distinctLefts).toBe(1);
     });
 
@@ -271,9 +277,13 @@ test.describe('bookmark form modal — fits without scrolling', () => {
                     noteShown: note.getBoundingClientRect().height > 0,
                     iconInputPresent: Boolean(icon.querySelector('input')),
                     noteInputPresent: Boolean(note.querySelector('textarea')),
-                    // Still one column, whatever the width says.
-                    columnsDissolved: [...document.querySelectorAll('.bookmark-inline-col')]
-                        .every((c) => c.getBoundingClientRect().width === 0),
+                    // Still one column, whatever the width says: the groups
+                    // are drawn boxes now, so they stack rather than dissolve.
+                    groupsStacked: (() => {
+                        const b = [...document.querySelectorAll('.bookmark-inline-col')]
+                            .map((c) => c.getBoundingClientRect());
+                        return b.length === 2 && Math.round(b[1].top) >= Math.round(b[0].bottom);
+                    })(),
                 };
             });
             expect(shape).toEqual({
@@ -281,7 +291,7 @@ test.describe('bookmark form modal — fits without scrolling', () => {
                 noteShown: false,
                 iconInputPresent: true,
                 noteInputPresent: true,
-                columnsDissolved: true,
+                groupsStacked: true,
             });
         } finally {
             await context.close();

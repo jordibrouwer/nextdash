@@ -32,7 +32,10 @@ class DashboardInlineEdit {
         shell.innerHTML = `
             <div class="bookmark-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bookmark-form-modal-title">
                 <div class="bookmark-form-modal-header">
-                    <h2 id="bookmark-form-modal-title"></h2>
+                    <div class="bookmark-form-modal-title-group">
+                        <h2 id="bookmark-form-modal-title"></h2>
+                        <span class="bookmark-form-modal-key" aria-hidden="true"></span>
+                    </div>
                     <button type="button" class="bookmark-form-modal-close" aria-label="${cfg('close', 'Close')}">×</button>
                 </div>
                 <div class="bookmark-form-modal-body"></div>
@@ -173,6 +176,17 @@ class DashboardInlineEdit {
             ? cfg('editBookmark', 'Edit bookmark')
             : cfg('addNewBookmark', 'Add bookmark');
 
+        /*
+         * The way back in, next to the name.
+         *
+         * Every other overlay names its own key in the header, and this one
+         * arrived without one -- so the only way to learn how to reach it again
+         * was the cheatsheet. Not a label: the keys themselves, as they are
+         * typed.
+         */
+        const keyEl = shell.querySelector('.bookmark-form-modal-key');
+        if (keyEl) keyEl.textContent = isEdit ? ';' : ':new';
+
         this._formModalContext = {
             mode: isEdit ? 'edit' : 'create',
             bookmarkRef,
@@ -227,16 +241,34 @@ class DashboardInlineEdit {
         // keyboard-selected gradient, which is why a row left with it looked
         // unselected afterwards.
         this._solidSurfaceRow = row && !row.closest('.layout-launcher') ? row : null;
-        const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
-        const fieldBg = this.readSolidThemeSurface('--background-secondary', '--background-primary');
+        /*
+         * The grounds the stylesheet chose, resolved to opaque rgb.
+         *
+         * They used to be named here -- the page colour for the panel, the step
+         * above it for the fields -- which meant the form's whole colour scheme
+         * lived in JavaScript and the stylesheet could not change it. It is
+         * --bookmark-sheet-ground and --bookmark-sheet-field now: this reads what the sheet says
+         * and only does the part CSS cannot, which is flattening a rgba or a
+         * color-mix into something opaque enough to sit over a blurred grid.
+         */
+        const panelBg = this.readSolidThemeSurface('--bookmark-sheet-ground', '--background-primary');
+        const fieldBg = this.readSolidThemeSurface('--bookmark-sheet-field', '--background-secondary');
         document.body.style.setProperty('--inline-edit-panel-bg', panelBg);
         document.body.style.setProperty('--inline-edit-field-bg', fieldBg);
-        form.style.background = panelBg;
         if (row && !row.closest('.layout-launcher')) {
             row.style.background = panelBg;
         }
+        /*
+         * What you type into, not what you press.
+         *
+         * The buttons were painted here too, and an inline background is the
+         * last word in the cascade -- so the stylesheet could not fill the save
+         * button, or tell any of the three apart. They sit on an opaque sheet
+         * and never needed it; the fields keep it because a field is the thing
+         * that has to stay readable over a blurred grid.
+         */
         form.querySelectorAll(
-            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-action-btn, .bookmark-inline-create-btn, .bookmark-inline-icon-preview'
+            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-icon-preview'
         ).forEach((node) => {
             node.style.background = fieldBg;
         });
@@ -620,6 +652,24 @@ class DashboardInlineEdit {
         form.appendChild(colWhere);
 
         const cfg = (key, fallback) => d.configLabel(key, fallback);
+
+        /*
+         * Each column says what it is for.
+         *
+         * The split has always been there and has always been silent: the two
+         * groups only read as groups on a wide window, where the gap between
+         * them is the only thing saying so, and on a narrow one they run
+         * together into the eleven-row list the columns were built to avoid.
+         * A heading holds either way.
+         */
+        const mkGroupTitle = (text) => {
+            const title = document.createElement('h3');
+            title.className = 'bookmark-inline-group-title';
+            title.textContent = text;
+            return title;
+        };
+        colWhat.appendChild(mkGroupTitle(cfg('bookmarkGroupWhat', 'What it is')));
+        colWhere.appendChild(mkGroupTitle(cfg('bookmarkGroupWhere', 'Where it goes')));
 
         const mkField = (labelText, inputEl, errorEl) => {
             const wrap = document.createElement('div');
@@ -1554,9 +1604,15 @@ class DashboardInlineEdit {
         const dialog = this._formModalShell?.querySelector('.bookmark-form-modal-dialog');
         this.applySolidInlineEditSurfaces(null, form);
         if (dialog) {
-            const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
-            dialog.style.background = panelBg;
-            form.style.background = panelBg;
+            /*
+             * The sheet paints itself.
+             *
+             * An inline background here outranked the stylesheet, so the sheet
+             * was the page colour whatever the CSS asked for. The form inside
+             * it stays transparent: it is not a surface of its own, it is the
+             * contents of one.
+             */
+            form.style.background = 'transparent';
         }
         d._inlineEditContext = {
             bookmarkRef,
