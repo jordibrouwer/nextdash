@@ -1257,15 +1257,27 @@ body[data-side-margin="airy"] {
     outline: none;
 }
 
+/*
+ * The health link breathes in the theme's own accent.
+ *
+ * It asked for --accent-primary-rgb, which nothing has ever defined: the theme
+ * block writes colours, not channel triplets. So all 222 themes fell through
+ * to the literal rgba(66, 135, 245) behind it -- a blue from nowhere, pulsing
+ * on a green terminal and on a paper theme alike.
+ *
+ * color-mix rather than a new triplet token: the accent is already there as a
+ * colour, and mixing it with transparent is how every other fade in this
+ * stylesheet is written.
+ */
 @keyframes healthLinkShimmer {
     0% {
-        text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0);
+        text-shadow: 0 0 0 transparent;
     }
     50% {
-        text-shadow: 0 0 8px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.6);
+        text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 60%, transparent);
     }
     100% {
-        text-shadow: 0 0 0 rgba(var(--accent-primary-rgb, 66, 135, 245), 0);
+        text-shadow: 0 0 0 transparent;
     }
 }
 
@@ -1295,7 +1307,7 @@ body[data-side-margin="airy"] {
 
 .health-link a:hover {
     animation: none;
-    text-shadow: 0 0 12px rgba(var(--accent-primary-rgb, 66, 135, 245), 0.8);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 80%, transparent);
 }
 
 .health-badge {

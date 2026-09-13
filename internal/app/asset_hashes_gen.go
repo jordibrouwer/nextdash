@@ -17,7 +17,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/dashboard-multi-select.css":                         "6c1e3cc21eb4",
 	"css/dashboard-quickstart.css":                           "80824026fcf9",
 	"css/dashboard-tag-cloud.css":                            "4620a0cb9613",
-	"css/dashboard.css":                                      "427fbaf8347b",
+	"css/dashboard.css":                                      "9231a981d071",
 	"css/enhanced-features.css":                              "c6dfabb767f3",
 	"css/favicon-prefetch.css":                               "ce2768f02932",
 	"css/feed-row.css":                                       "5c1c63b342cd",
