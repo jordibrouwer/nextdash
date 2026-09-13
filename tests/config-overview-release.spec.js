@@ -20,6 +20,25 @@ async function openOverview(page) {
 }
 
 /**
+ * The stream is on About now, not on the overview (v1.10.0).
+ *
+ * The overview says what the collection is; the news it used to open with --
+ * release rows, spotlights and the site's posts -- is a page of its own, with
+ * the unread count and the per-source filter. Through the tab itself, because
+ * openConfigView resets which one is showing.
+ */
+async function openNews(page) {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+    await page.click('[data-about-tab="news"]');
+    await page.waitForSelector('.config-news-panel', { timeout: 15_000 });
+}
+
+/**
  * Version-agnostic on purpose: it reads the release the app itself reports, so
  * shipping v1.3.4 does not send someone editing a spec named after v1.3.2.
  */
@@ -43,9 +62,14 @@ test.describe('the current release as the reader meets it', () => {
     });
 
     test('the stream leads with the release and its new setting', async ({ page }) => {
-        await openOverview(page);
+        await openNews(page);
         const currentTag = String(await page.evaluate(() => window.NEXTDASH_WHATS_NEW_RELEASE)).replace(/^.*-v/, 'v');
-        const stream = page.locator('.config-news-stream');
+        /*
+         * The dated stream, not the back catalogue under it: About draws both
+         * as .config-news-stream, and only the first is the one a release
+         * arrives in.
+         */
+        const stream = page.locator('.config-news-panel .config-news-stream').first();
         await expect(stream).toBeVisible({ timeout: 15_000 });
         // The carousel is gone: what was one of forty-nine spotlights is now a
         // dated row beside the release it shipped in.
@@ -55,7 +79,7 @@ test.describe('the current release as the reader meets it', () => {
         // A feature row leads where its own button says it does — read from the
         // button rather than named here, so the spec survives the next release
         // putting a different feature at the top.
-        const button = page.locator('.config-news-item[data-news-source="feature"] .config-news-go').first();
+        const button = page.locator('.config-news-panel .config-news-item[data-news-source="feature"] .config-news-go').first();
         const target = JSON.parse(await button.getAttribute('data-overview-go'));
         await button.click();
         // Two shapes lead somewhere different: a section stays inside config,

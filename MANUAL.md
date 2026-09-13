@@ -646,7 +646,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 | Keys | Action |
 |------|--------|
-| `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected). Moving the mouse softens the keyboard highlight rather than clearing it, so a stale cursor does not compete with what the pointer is over, and the next keypress brings it back at full strength. On **Modern** a keyboard-selected row is filled across its whole width in the accent colour |
+| `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected). Moving the mouse softens the keyboard highlight rather than clearing it, so a stale cursor does not compete with what the pointer is over, and the next keypress brings it back at full strength. How far the row lights up is **Row highlight** under Config → Appearance → Layout (**v1.10.0**) |
 | `k` / `j` | Same as `↑` / `↓`, matching the lists in config (**v1.1.1**) — but **only once a row is selected**: the dashboard's search line is always listening, so a bare letter typed with no cursor in the grid is a character, not a command. The arrows are the way in |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
@@ -855,8 +855,6 @@ Use **`Enter`** on a highlighted row to run it (including after autocomplete exp
 | `:favicons fetch` | Re-download every bookmark icon on every page (replaces existing icons) |
 | `:metadata` | Health missing previews or config bookmarks |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
-| `:layoutversion` | List classic / modern |
-| `:layoutversion modern` / `classic` / `toggle` | Switch layout version (`toggle` switches between classic and modern) |
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
@@ -1565,25 +1563,22 @@ When enabled, one auto-group per tag that meets minimum count.
 
 ## 14. 🎨 Layouts, themes, and appearance
 
-### Layout version (Classic / Modern)
+### One layout (v1.10.0)
 
-nextDash has two **layout versions** — same bookmark grid and categories, different visual polish:
+nextDash had two **layout versions**, *Classic* and *Modern*. There is one layout now. What Modern did better — the row treatment, the mode pills reading as one switch, the thickness under config's panels — was carried onto everything, and the `layoutVersion` setting, the `:layoutversion` command and the `data-layout-version` attribute are gone with it.
 
-| Version | What it does |
-|---------|----------------|
-| **Classic** | Original dashboard styling and spacing (default). |
-| **Modern** | Refreshed visuals — updated row highlights, tooltips, and chrome — same structure underneath. |
+**Row highlight** is what came out of the merge as a setting of its own, under **Config → Appearance → Layout**: how far a row lights up when you move to it. An install that had chosen Modern is migrated to the stronger highlight, so the look it picked is kept rather than reset.
 
-**Glass was removed in v2026.07.14.2.** It was a third parallel layout that needed its own styling for every visual change. Dashboards set to Glass switch to **Classic** automatically — nothing to do, and a one-time note tells you it happened. Your theme and presets are unaffected.
+**Glass was removed in v2026.07.14.2** as a third parallel layout. Dashboards set to it switched to Classic at the time; the depth control's *glass* step is a different thing — see [Depth and backdrop](#depth-and-backdrop-v140) below.
 
-**Themes control all colors** in every version; switching layout version does not change your theme.
+**Themes control all colors**, and none of the above changes your theme.
 
 **Where to switch**
 
-- **Config → Behavior → Layout** — layout preset and density, each with a live description under the control.  
+- **Config → Appearance → Layout** — row highlight, layout preset and density, each with a live description under the control.  
 - **Quick-start card** — the layout step covers packed columns and columns per row (see [Quick-start card](#quick-start-card-doesnt-appear)).  
-- **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
-  (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
+- **Command palette** — `:` and the name of the setting; depth, text contrast, theme backdrop, backdrop, favicon harmonisation and style are all there (**v1.10.0**).  
+  (`:layout` switches **presets** like launcher or compact — see below.)
 
 **A deploy is noticed by a fingerprint** of the app's own files, appended to every `/locales/` request so a release makes the URL new. Until **v1.3.3.1** it hashed CSS and JavaScript only, so a release that changed nothing but wording was served from the browser cache: rewritten text stayed as it was and a newly added line came back empty. The translations count towards it now.
 
@@ -1668,9 +1663,24 @@ declares.
 | **Flat** | The dashboard exactly as it was before any of this existed |
 | **Soft** | A slight tint in the greys, a surface ladder, a gentle sheen on cards |
 | **Rich** | The same, more of it — the default for a new install |
+| **Glass** | Rich, plus a blur behind surfaces (**v1.10.0**: three strengths, see below) |
 
 *Flat* exists so that preferring the old look is one control rather than a
 reason not to upgrade.
+
+**Glass is three tiers, derived per theme (v1.10.0).** A page, a panel and an
+overlay blur by how much has to be read through them, so a menu you are reading
+is not blurred as hard as the page behind a sheet. Each theme works its own
+glass out of its own colours rather than four hand-written themes sharing a set
+of values, which is why picking *glass* now does something on every theme
+instead of on a handful. One rung of the surface ladder is also worth what the
+palette has room for: three per cent of an ink sitting close to its ground is
+not a step anyone can see, so a theme with little contrast gets a larger step
+and a theme with plenty gets a smaller one.
+
+Menus are the one surface that never blurs, at any depth. Blur on a menu gives
+Safari a compositing layer that hit-tests in front of what it covers, which
+swallows the clicks aimed at it.
 
 Two other things come with it:
 
@@ -1721,7 +1731,7 @@ altogether, so nothing you built changes underneath you.
 
 ### Config → structure (list tabs)
 
-Desktop list tabs (**categories**, **pages**, **finders**, **collections** — and **bookmarks → tags**, which shares the pattern from its own section) share the same layout: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
+Desktop list tabs (**categories**, **pages**, **finders**, **collections** — and **bookmarks → tags**, which shares the pattern from its own section) share the same layout: a short intro paragraph, toolbar with **+ Add** and filters, then the list. Toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
 
 - **Pages** — add, rename, remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). **Usage** column shows a popularity bar and bookmark count (Tags-style). Desktop only (mobile shows a toast). On the dashboard, **double-click a page tab** (desktop/tablet landscape) to rename, set an emoji, and pick a **colour dot**; on **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.
 - **Categories** — per-page list with icon, name, **merge**, remove; drag or **↑/↓** reorder with auto-save; **Usage** column with popularity bar and bookmark count (Tags-style). Switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Breadcrumb shows the selected page. On **Bookmarks**, **Context** only switches the active category filter. Desktop only for full editing.
@@ -1878,8 +1888,8 @@ Left column                     Sticky header
 | **When many fail at once** | One upstream going down — a host, a reverse proxy, the network itself — takes every bookmark behind it down in the same sweep. Alerting per bookmark would post a dozen near-identical messages within a second, which is exactly the pattern Slack and Telegram rate-limit, so the alerts that mattered would be dropped by the service rather than delivered. Past a handful in one round they collapse into a single message naming the first few and counting the rest. Below that the individual messages are kept, because they name the bookmark and its error and are strictly more useful. A round mixing kinds — an outage and a recovery together — stays expanded for the same reason, and certificate warnings are never collapsed, since each names a different host |
 | **Maintenance windows** | Recurring periods when downtime is expected — a nightly backup, a weekly reboot. Set them under **Config → Behavior → Status & health**: pick the days, a start and an end. Failures inside a window raise no alert and do not count against uptime, but the checks still run and the heartbeat still records what happened, so a real outage that began during maintenance is not hidden. A window whose end is before its start runs **past midnight**, which is when most maintenance happens; the row says so rather than leaving it looking like a typo. An incomplete window, or one whose start equals its end, is ignored and says so |
 | **Browser notifications** | The same downtime and recovery alerts, delivered to your browser rather than to a webhook — so they arrive while nextDash is closed. Switch them on from the card on the dashboard or under **Config → Behavior → Status & health**, then allow notifications once per device. Backup results and new-release notices are available there too, off by default. **Requires HTTPS**: Safari refuses notifications on `http://localhost`, as does every browser on iPhone and iPad (all WebKit); desktop Chrome and Firefox do allow localhost. See [Browser notifications](#browser-notifications) |
-| **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
-| **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips). The **More** menu is drawn as the same opaque panel as the dashboard's right-click menu — same surface, radius, spacing and shadow, and the same blurred edge under the Modern layout |
+| **Layout parity** | Uses the same visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
+| **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips). The **More** menu is drawn as the same opaque panel as the dashboard's right-click menu — same surface, radius, spacing and shadow, and the same edges the depth setting decides (**v1.10.0**: menus follow the depth ladder, and are never blurred) |
 | **Right-click a row** | Opens that row's **More** menu at the cursor, the way right-clicking a bookmark does on the dashboard. It is the same menu the ⋯ button opens — a second way in, not a second set of actions — so it also answers `m`, arrow keys and `Esc`. **`Shift` + right-click** still gives you the browser's own menu |
 | **dashboard link** | Jump to bookmark on correct page/category |
 | **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS). The row updates immediately |
@@ -2163,7 +2173,7 @@ Its **settings** — what a quick-added bookmark starts with, the sort the list 
 
 **Theme** covers your saved theme, **Random theme**, background (none / gradient / image / auto, with opacity), fonts, and branding. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** (includes dashboard page switches since **v2026.07.26.2**) — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active; picking another theme while random is on saves your choice and shows a toast that rotation continues until random is off (**v2026.07.26.3**). On desktop, the first visit to this tab may show a one-time themed popover below **Random theme** (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** (the button does not float with the card).
 
-**Layout** holds layout version (Classic / Modern), launcher icon size, column count, layout preset, and density.
+**Layout** holds row highlight, launcher icon size, column count, layout preset, and density (**v1.10.0**: the Classic/Modern choice is gone — there is one layout).
 
 **Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times — and the **Link preview cards** panel.
 
@@ -2555,7 +2565,7 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | **Recent bookmarks (`*`)** | `:open recent …` in command mode (or `*` with a keyboard) | Recent footer button or `*` |
 | **Cheat sheet (`!`)** | — | Footer Help or `!` / `F1` |
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
-| **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; on **Modern** layout many tabs scroll inside the header without widening the page (**v2026.07.26.1**); `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
+| **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; many tabs scroll inside the header without widening the page; `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
 | **Config** | All eight sections; content stacks to the narrower width | All eight sections side by side |
 | **Link preview on hover** | Off | On, unless set to keyboard only or off |
