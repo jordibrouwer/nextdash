@@ -3377,7 +3377,13 @@ class DashboardConfig {
      * What went with the rebuild: a carousel that showed one of forty-nine
      * spotlights at a time, and a Latest update panel repeating the release the
      * bar above it already named. Both answered "what is new" — which the
-     * stream now answers once, in date order, with the source on every row.
+     * stream answers once, in date order, with the source on every row.
+     *
+     * The stream itself has since moved to About → News, where it was always
+     * addressable from. Measured on this page it was 655 of 816 words and 1029
+     * of 1386 pixels: four fifths of a section called Overview was a feed, and
+     * a feed is not an overview of your install. What is left of it here is
+     * four lines saying what the newest thing is and how much of it there is.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -3393,13 +3399,13 @@ class DashboardConfig {
                 ${this.renderZoneRule('project', this.t('config.overviewZoneProject', 'From nextDash'),
                     `<a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer">nextdash.cc ↗</a>`)}
                 <div class="config-overview-about-row">
-                    ${this.renderOverviewNews()}
-                    <div class="config-overview-side">
-                        ${this.renderOverviewAbout()}
-                        ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
-                        ${this.renderOverviewStats()}
-                        ${this.renderOverviewChangedPanel()}
-                    </div>
+                    ${this.renderOverviewAbout()}
+                    ${this.renderOverviewWhatsNew()}
+                </div>
+                ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
+                <div class="config-overview-install-row">
+                    ${this.renderOverviewStats()}
+                    ${this.renderOverviewChangedPanel()}
                 </div>
                 ${this.renderOverviewTips()}
             </div>
@@ -3735,50 +3741,67 @@ class DashboardConfig {
     }
 
     /**
-     * The news stream: posts, releases and new settings in one dated list.
+     * What is new, in four lines rather than in fourteen rows.
      *
-     * One row per item — source label, title, one line of summary, the date on
-     * the right — because six one-line rows fit where one sixty-word spotlight
-     * used to, and the reader picks which to open instead of reading what was
-     * put in front of them. The date is rendered in the format set under
-     * Behavior → Date & weather: a dashboard offering 31/12/2026 and 2026-12-31
-     * should not print a third shape of its own.
+     * The stream lives at About → News, which is where its own "All news &
+     * features" button already pointed. What belongs on a page called Overview
+     * is the answer to "is there anything new", not the reading itself: the
+     * newest release and its date, how much has arrived since, and the way in.
      *
-     * Filtering is by source, and the chips are why a news block in a
-     * self-hosted tool does not read as marketing: the site's posts can be
-     * switched off from the row itself.
+     * Counted from the same stream the full list is built from, so the figures
+     * here and the list there cannot disagree. Undated back-catalogue features
+     * are left out of the count for the same reason they are left out of the
+     * stream -- they are not news, they are the drill-in.
      */
-    renderOverviewNews() {
+    renderOverviewWhatsNew() {
         const esc = (v) => this.dash.escapeHtml(v);
         const stream = this._newsStream;
-        const filter = this.newsFilter || 'all';
-        // Falls back to the module's own figure; the literal is only for a
-        // page where the stream module has not loaded, and must not disagree.
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
 
-        let body;
-        if (stream === undefined) {
-            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
-        } else if (!stream.length) {
-            body = `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
-                'No posts to show right now.'))}</p>`;
-        } else {
-            const shown = window.DashboardNewsStream?.overviewRows
-                ? window.DashboardNewsStream.overviewRows(stream, { limit, filter })
-                : stream.filter((item) => filter === 'all' || item.source === filter).slice(0, limit);
-            body = shown.length
-                ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
-                : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter',
-                    'Nothing from this source yet.'))}</p>`;
-        }
+        const body = () => {
+            if (stream === undefined) {
+                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+            }
+            if (!stream.length) {
+                return `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
+                    'No posts to show right now.'))}</p>`;
+            }
+            const newest = stream.find((item) => item.source === 'release');
+            const since = newest ? Number(newest.at) || 0 : 0;
+            const counts = {
+                feature: stream.filter((i) => i.source === 'feature' && (Number(i.at) || 0) >= since).length,
+                site: stream.filter((i) => i.source === 'site' && (Number(i.at) || 0) >= since).length,
+            };
+            const line = (label, value) => `
+                <div class="config-whats-new-line">
+                    <span class="config-whats-new-label">${esc(label)}</span>
+                    <span class="config-whats-new-value">${esc(value)}</span>
+                </div>`;
+
+            const rows = [];
+            if (newest) {
+                const title = newest.titleKey ? this.t(newest.titleKey, newest.title) : newest.title;
+                rows.push(line(this.t('config.overviewNewsSourceRelease', 'release'),
+                    `${title} · ${this.formatNewsDate(newest.at)}`));
+            }
+            if (counts.feature) {
+                rows.push(line(this.t('config.overviewWhatsNewFeatures', 'new settings'), String(counts.feature)));
+            }
+            if (counts.site) {
+                rows.push(line(this.t('config.overviewNewsSourceSite', 'nextdash.cc'), String(counts.site)));
+            }
+            return rows.join('');
+        };
 
         this.markNewsRead();
 
         return `
-            <div class="config-panel config-panel--plain config-news-panel">
-                ${this.renderNewsChips()}
-                ${body}
-                ${this.renderNewsFoot()}
+            <div class="config-panel config-panel--plain config-whats-new">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'What\u2019s new'))}</h3>
+                ${body()}
+                <div class="config-news-foot">
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
+                </div>
             </div>`;
     }
 
@@ -3880,31 +3903,6 @@ class DashboardConfig {
             </div>`;
     }
 
-    /** How much is shown, and where the rest is. */
-    renderNewsFoot() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const stream = this._newsStream;
-        if (stream === undefined) return '';
-        const filter = this.newsFilter || 'all';
-        const matching = stream.filter((item) => filter === 'all' || item.source === filter).length;
-        // The same figure the list above uses, or the foot would count rows the
-        // reader cannot see.
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
-        const shown = Math.min(matching, limit);
-        const offline = this._siteNewsEnabled === false
-            ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')
-            : (this._siteNewsFailed
-                ? this.t('config.overviewNewsSiteUnavailable', 'Site news is unavailable.')
-                : '');
-
-        return `
-            <div class="config-news-foot">
-                <button type="button" class="config-btn config-btn--small"
-                        data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
-                <span class="config-field-hint">${esc(this.t('config.overviewNewsShown', '{shown} of {total} shown')
-                    .replace('{shown}', String(shown)).replace('{total}', String(matching)))}${offline ? ` · ${esc(offline)}` : ''}</span>
-            </div>`;
-    }
 
     /** A post's date in the format the reader picked for the dashboard clock. */
     formatNewsDate(publishedAt) {

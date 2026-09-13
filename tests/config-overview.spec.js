@@ -113,19 +113,20 @@ test.describe('config overview', () => {
         await expect(page.locator('.config-overview-act > .config-update-bar')).toHaveCount(1);
     });
 
-    test('the stream shows translated copy, not locale keys', async ({ page }) => {
+    test('what is new shows translated copy, not locale keys', async ({ page }) => {
         await openOverview(page);
-        const stream = page.locator('.config-news-stream');
-        await expect(stream).toBeVisible({ timeout: 15_000 });
-        // A feature's words live in the locale files; a post's come from the
-        // feed. Neither may render as a key.
-        await expect(stream).not.toContainText('config.overviewNewFeature');
-        await expect(stream).not.toContainText('config.overviewNews');
-        // Every row says where it came from.
-        const sources = await page.locator('.config-src-chip').evaluateAll((els) =>
-            [...new Set(els.map((el) => el.textContent.trim().toLowerCase()))]);
-        expect(sources.length).toBeGreaterThan(0);
-        expect(sources.every((s) => s.length > 0)).toBe(true);
+        // The stream itself moved to About → News; what stands here is its
+        // summary, and it reads from the same locale files.
+        const panel = page.locator('.config-whats-new');
+        await expect(panel).toBeVisible({ timeout: 15_000 });
+        await expect(panel).not.toContainText('config.overviewNewFeature');
+        await expect(panel).not.toContainText('config.overviewNews');
+        await expect(panel).not.toContainText('config.overviewWhatsNew');
+
+        // Every line says what it is counting.
+        const labels = await page.locator('.config-whats-new-label').evaluateAll((els) =>
+            els.map((el) => el.textContent.trim()).filter(Boolean));
+        expect(labels.length).toBeGreaterThan(0);
     });
 
     test('problems are listed with a way to act on each', async ({ page }) => {
@@ -171,13 +172,15 @@ test.describe('config overview', () => {
             window.dashboardInstance.config.section)).toBe('stats');
     });
 
-    test('the posts from the site lead the read row', async ({ page }) => {
+    test('what is new is answered in a few lines, not read here', async ({ page }) => {
         await openOverview(page);
-        // The Latest update panel used to sit here and said what the update bar
-        // above it already said, with the notes a button away in What's new.
-        // The site's posts are what it could not say.
-        await expect(page.locator('.config-news-panel')).toBeVisible();
+        // A Latest update panel used to sit here saying what the update bar
+        // above it already said. Then a fourteen-row feed, which was four
+        // fifths of the page's words. What answers "is there anything new" is
+        // the newest release, how much has arrived since, and the way in.
+        await expect(page.locator('.config-whats-new')).toBeVisible();
         await expect(page.locator('.config-overview-layout')).not.toContainText('Latest update');
+        await expect(page.locator('.config-news-stream')).toHaveCount(0);
     });
 
     /**
@@ -255,11 +258,7 @@ test.describe('config overview', () => {
     //
     // Within that column: About, then the "Your install" line, then the figures
     // and the settings that differ from stock. About belongs to the zone the
-    // page opens with — what the project is — so it sits level with the stream,
-    // and the line under it heads exactly the two blocks that describe your own
-    // install. At the foot it was the last thing on a column nobody scrolls to
-    // the end of.
-    test('the stream leads, with About and the figures beside it', async ({ page }) => {
+    test('two pairs of blocks, and the install line between them', async ({ page }) => {
         await loadOverview(page);
 
         const box = await page.evaluate(() => {
@@ -271,13 +270,11 @@ test.describe('config overview', () => {
             const find = (text) => [...document.querySelectorAll('.config-overview-layout .config-panel')]
                 .find((el) => el.textContent.includes(text));
             return {
-                news: measure(document.querySelector('.config-news-panel')),
                 about: measure(document.querySelector('.config-about-panel')),
+                whatsNew: measure(document.querySelector('.config-whats-new')),
                 glance: measure(find('At a glance')),
-                // The panel, not the flex row inside it: the blocks in the side
-                // column line up with one another, and a panel has padding.
                 changed: measure(find('Not stock')),
-                installRule: measure(document.querySelector('.config-overview-side .config-zone-rule')),
+                installRule: measure(document.querySelector('.config-overview-layout .config-zone-rule[data-zone="install"]')),
                 act: measure(document.querySelector('.config-overview-act')),
                 tips: measure(document.querySelector('.config-overview-tips-row')),
                 viewport: window.innerHeight,
@@ -288,24 +285,20 @@ test.describe('config overview', () => {
             if (name === 'viewport') continue;
             expect(r, `${name} should be on the overview`).not.toBeNull();
         }
-        // The stream starts within a screen of the top: it used to begin at
-        // 936px on a 900px window, which is the definition of not being seen.
-        expect(box.news.y).toBeLessThan(box.viewport);
-        expect(box.news.y).toBeGreaterThan(box.act.y);
-        // Side column to the right, and wider on the left where the list is.
-        expect(box.about.x).toBeGreaterThan(box.news.x);
-        expect(box.news.w).toBeGreaterThan(box.about.w);
-        // About leads that column, and the two blocks about your own install
-        // follow it in order.
-        expect(box.glance.x).toBe(box.about.x);
-        expect(box.about.y).toBeLessThan(box.glance.y);
-        expect(box.changed.x).toBe(box.about.x);
-        expect(box.glance.y).toBeLessThan(box.changed.y);
-        // The install line sits between them, heading only what it covers.
+
+        // What the project is, then what your install is. Two rows of two.
+        expect(box.about.y).toBeLessThan(box.viewport);
+        expect(box.about.y).toBeGreaterThan(box.act.y);
+        expect(box.whatsNew.y, 'the two blocks in a row are not level').toBe(box.about.y);
+        expect(box.whatsNew.x).toBeGreaterThan(box.about.x);
+        expect(box.changed.y, 'the install blocks are not level').toBe(box.glance.y);
+        expect(box.changed.x).toBeGreaterThan(box.glance.x);
+
+        // The install line heads exactly the pair below it.
         expect(box.installRule.y).toBeGreaterThan(box.about.y);
         expect(box.installRule.y).toBeLessThan(box.glance.y);
         // Tips still closes the page.
-        expect(box.tips.y).toBeGreaterThan(box.news.y);
+        expect(box.tips.y).toBeGreaterThan(box.glance.y);
     });
 
     test('about lists its addresses one per line, with Ko-fi across the card', async ({ page }) => {

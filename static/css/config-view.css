@@ -1989,17 +1989,59 @@
 }
 
 /*
- * The news stream beside About the developer.
+ * Two pairs of blocks, each pair one line of the page.
  *
- * Not an even split: the stream is a list that has to stay readable before it
- * is clipped, while About is a fixed paragraph that does not grow — and it
- * signs the zone rather than competing with it.
+ * The uneven split was for a news stream that had to stay readable before it
+ * was clipped. The stream lives at About → News now, and what stands here is
+ * two panels of a few lines each -- so they share the width.
  */
-.config-overview-about-row {
+.config-overview-about-row,
+.config-overview-install-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 34px;
     align-items: start;
+}
+
+.config-overview-install-row > .config-panel {
+    margin-top: 0;
+}
+
+/*
+ * What is new, as four lines rather than fourteen rows: a label on the left
+ * and the answer on the right, which is the shape the install figures beside
+ * it already use.
+ */
+.config-whats-new-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-1-5, 0.35rem) 0;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+.config-whats-new-line:first-of-type {
+    border-top: 0;
+}
+
+.config-whats-new-label {
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-2xs, 0.62rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    flex: 0 0 auto;
+}
+
+.config-whats-new-value {
+    min-width: 0;
+    text-align: right;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    color: var(--text-primary);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /*
