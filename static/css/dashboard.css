@@ -4638,25 +4638,92 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 /* Recent bookmarks modal */
+/*
+ * Recent bookmarks, drawn the way the overlays spec draws a panel.
+ *
+ * It used to be a 52rem sheet of cards: every row an outlined box with the
+ * name on one line and its category under it, a pill for the time and a count
+ * beside that, and the row opened with its own position in the list. Four
+ * bookmarks filled a window. The spec draws this as a narrow panel of quiet
+ * rows in one slab -- icon, name, category, time on a single line -- which is
+ * a list you read down rather than four cards you read one at a time.
+ */
 .modal.recent-bookmarks-modal {
     max-height: 88vh;
     overflow: hidden;
-    max-width: min(52rem, calc(100vw - 2.5rem));
-    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: min(27.5rem, calc(100vw - 2.5rem));
+    width: min(27.5rem, calc(100vw - 2.5rem));
+}
+
+/* The header carries the name, the key, and the way out. */
+.modal.recent-bookmarks-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.recent-bookmarks-modal .modal-title {
+    /* The app lower-cases everywhere it names something. */
+    text-transform: lowercase;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.recent-bookmarks-modal-key {
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+}
+
+.recent-bookmarks-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.recent-bookmarks-modal-close:hover,
+.recent-bookmarks-modal-close:focus-visible {
+    opacity: 1;
+}
+
+/*
+ * The panel closes with the key in its own header, so the wide Close button
+ * and the hint under it are saying a third time what the header already says.
+ */
+.modal.recent-bookmarks-modal .modal-actions,
+#app-modal:has(.recent-bookmarks-modal) .modal-esc-hint {
+    display: none;
 }
 
 .modal.recent-bookmarks-modal .modal-body {
     margin-top: var(--space-4, 1rem);
-    margin-bottom: var(--space-4, 1rem);
+    margin-bottom: 0;
 }
 
+/*
+ * Opening the whole list is an offer, not the subject.
+ *
+ * The button ran the full width of the panel above the list, so the loudest
+ * thing on a panel about four bookmarks was a button about all of them. Small
+ * and left, under the list it acts on.
+ */
 .recent-bookmarks-modal-toolbar {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-    margin-bottom: var(--space-3, 0.85rem);
-    padding-bottom: var(--space-3, 0.85rem);
-    border-bottom: 1px solid var(--border-primary);
+    gap: var(--space-1, 0.3rem);
+    margin: var(--space-3, 0.75rem) 0 0;
 }
 
 .recent-bookmarks-open-actions {
@@ -4666,61 +4733,89 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
 }
 
 .recent-bookmarks-open-btn.modal-button {
-    flex: 1 1 auto;
-    min-width: min(100%, 12rem);
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.2rem 0.55rem;
+    font-size: var(--font-size-small, 0.72rem);
     justify-content: center;
 }
 
 .recent-bookmarks-open-hint {
     margin: 0;
     color: var(--text-tertiary);
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-small, 0.72rem);
     line-height: 1.35;
+    opacity: 0.7;
 }
 
+/*
+ * One slab holding the rows, rather than a row holding its own box.
+ *
+ * A list of ten outlined cards is ten borders competing with the panel's own;
+ * a single lifted surface under them lets the rows be rows.
+ *
+ * The surface itself comes from the shared overlay-slab rule in modal.css,
+ * which the cheat sheet and the tag cloud already stand on and which knows not
+ * to paint on a flat theme. Only the layout is here.
+ */
 .recent-bookmarks-modal-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-    max-height: 58vh;
+    gap: 0.1rem;
+    max-height: 52vh;
     overflow-y: auto;
-    padding-right: var(--space-1, 0.25rem);
+    padding: var(--space-2, 0.5rem);
 }
 
 .recent-bookmarks-modal-item {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 1.1rem minmax(0, 1fr) auto auto auto;
     align-items: center;
-    gap: var(--space-3, 0.75rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-primary);
-    padding: var(--space-2, 0.55rem) var(--space-3, 0.7rem);
+    gap: 0.6rem;
+    border-radius: var(--radius-3, 4px);
+    padding: 0.3rem 0.5rem;
     color: var(--text-primary);
-    text-decoration: none;
-    transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
-}
-
-.recent-bookmarks-modal-item:hover {
-    transform: none;
-    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
-    border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
-}
-
-.recent-bookmarks-modal-rank {
-    flex-shrink: 0;
-    min-width: 1.35rem;
-    color: var(--text-tertiary);
     font-size: var(--font-size-controls);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
+    text-decoration: none;
+    transition: background 0.1s ease, color 0.1s ease;
 }
 
-.recent-bookmarks-modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-hairline, 0.12rem);
-    min-width: 0;
+/*
+ * Hover and the keyboard land on the same row treatment.
+ *
+ * Selection in this panel *is* focus -- the arrow keys move focus down the
+ * list -- so the selected row of the spec is the focused row here, down to the
+ * accent bar on its left edge and the glow the theme's depth decides.
+ */
+.recent-bookmarks-modal-item:hover,
+.recent-bookmarks-modal-item:focus-visible {
+    transform: none;
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.recent-bookmarks-modal-item:focus-visible {
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
+}
+
+.recent-bookmarks-modal-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 2px;
+}
+
+.recent-bookmarks-modal-icon--letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    font-weight: 700;
 }
 
 .recent-bookmarks-modal-name {
@@ -4728,7 +4823,6 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: var(--font-weight-medium);
 }
 
 .recent-bookmarks-modal-detail {
@@ -4736,33 +4830,50 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-tertiary);
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-small, 0.65rem);
+    opacity: 0.55;
 }
 
-.recent-bookmarks-modal-stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--space-hairline, 0.18rem);
-    flex-shrink: 0;
-}
-
+/*
+ * The time is text, not a badge.
+ *
+ * It wore a bordered pill in the accent colour, which made "4m ago" the
+ * loudest thing in a row whose subject is the bookmark.
+ */
 .recent-bookmarks-modal-recency {
-    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
-    border-radius: var(--layout-radius-pill, 999px);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
     color: var(--text-secondary);
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-small, 0.65rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    opacity: 0.75;
 }
 
 .recent-bookmarks-modal-opens {
     color: var(--text-tertiary);
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-small, 0.65rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    opacity: 0.55;
+}
+
+/* The panel's own foot: what is on screen, and what Enter does with it. */
+.recent-bookmarks-modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    opacity: 0.6;
+}
+
+.recent-bookmarks-modal-foot .recent-bookmarks-modal-key {
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    color: inherit;
+    padding: 0.1rem 0.35rem;
 }
 
 .recent-bookmarks-modal-meta {

@@ -120,7 +120,9 @@ test.describe('recent bookmarks modal', () => {
         await expect(modal).toBeVisible({ timeout: 5000 });
 
         const first = modal.locator('.recent-bookmarks-modal-item').first();
-        await expect(first.locator('.recent-bookmarks-modal-rank')).toHaveText('1');
+        // The row opens with the site's own mark. It used to open with its
+        // position in the list, which is a number the order already gives.
+        await expect(first.locator('.recent-bookmarks-modal-icon')).toBeVisible();
         await expect(first.locator('.recent-bookmarks-modal-recency')).not.toBeEmpty();
         await expect(first.locator('.recent-bookmarks-modal-opens')).toContainText('×');
         await expect(first.locator('.recent-bookmarks-modal-detail')).toBeVisible();

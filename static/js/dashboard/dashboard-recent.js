@@ -111,7 +111,7 @@ class DashboardRecent {
             confirmText: d.language.t('dashboard.close') || 'Close',
             showCancel: false,
             modalClass: 'recent-bookmarks-modal',
-            modalMaxWidth: '760px',
+            modalMaxWidth: '440px',
             modalWidth: '92vw',
             onHide: () => {
                 this._cleanupRecentModalKeyHandler();
@@ -120,6 +120,30 @@ class DashboardRecent {
         (document.getElementById('modal-text')
             || document.querySelector('.recent-bookmarks-modal .modal-body'))
             ?.setAttribute('aria-busy', 'true');
+
+        /*
+         * The header, in the same language as the other overlays: the name, the
+         * key that opens it, and a way out on the right. AppModal renders a
+         * bare title, so the chip is added once the panel is on screen.
+         */
+        const header = document.querySelector('.recent-bookmarks-modal .modal-header');
+        if (header && !header.querySelector('.recent-bookmarks-modal-key')) {
+            const chip = document.createElement('span');
+            chip.className = 'recent-bookmarks-modal-key';
+            chip.dataset.modalHeaderExtra = 'true';
+            chip.setAttribute('aria-hidden', 'true');
+            chip.textContent = '*';
+            document.getElementById('modal-title')?.after(chip);
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'recent-bookmarks-modal-close';
+            close.dataset.modalHeaderExtra = 'true';
+            close.setAttribute('aria-label', d.language.t('dashboard.close') || 'Close');
+            close.innerHTML = '<span aria-hidden="true">Esc</span> \u00D7';
+            close.addEventListener('click', () => window.AppModal.hide());
+            header.appendChild(close);
+        }
 
         if (!d._bookmarksReady) {
             d._pendingRecentModalRefresh = true;
@@ -165,8 +189,7 @@ class DashboardRecent {
             : '';
 
         const listHtml = recentBookmarks.length > 0
-            ? `${openToolbarHtml}
-               <div class="recent-bookmarks-modal-list">
+            ? `<div class="recent-bookmarks-modal-list">
                    ${recentBookmarks.map((bookmark, index) => {
                        const safeName = d.escapeHtml(bookmark.name || d.bookmarkFallbackName());
                        const safeUrl = this.safeHttpBookmarkHref(bookmark.url);
@@ -178,17 +201,20 @@ class DashboardRecent {
                            : '';
                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
                        return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
-                                   <span class="recent-bookmarks-modal-rank" aria-hidden="true">${index + 1}</span>
-                                   <span class="recent-bookmarks-modal-body">
-                                       <span class="recent-bookmarks-modal-name">${safeName}</span>
-                                       <span class="recent-bookmarks-modal-detail">${safeCategory}</span>
-                                   </span>
-                                   <span class="recent-bookmarks-modal-stats">
-                                       <span class="recent-bookmarks-modal-recency">${recency}</span>
-                                       ${openCountHtml}
-                                   </span>
+                                   ${this.recentIconHtml(bookmark)}
+                                   <span class="recent-bookmarks-modal-name">${safeName}</span>
+                                   <span class="recent-bookmarks-modal-detail">// ${safeCategory}</span>
+                                   <span class="recent-bookmarks-modal-recency">${recency}</span>
+                                   ${openCountHtml}
                                </a>`;
                    }).join('')}
+               </div>
+               ${openToolbarHtml}
+               <div class="recent-bookmarks-modal-foot">
+                   <span>${d.escapeHtml(d.formatDashboardLabel('recentShowing', { n: recentBookmarks.length },
+                       `Showing the last ${recentBookmarks.length}`))}</span>
+                   <span><span class="recent-bookmarks-modal-key">\u21B5</span> ${d.escapeHtml(
+                       d.formatDashboardLabel('recentFootOpen', {}, 'open'))}</span>
                </div>`
             : `<div class="recent-bookmarks-empty">${d.escapeHtml(noRecentText)}</div>`;
 
@@ -217,6 +243,30 @@ class DashboardRecent {
 
     }
 
+
+    /**
+     * The bookmark's icon, or the letter standing in for one.
+     *
+     * The row used to open with its position in the list -- 1, 2, 3 -- which is
+     * a number nobody needs twice, the order being the list. A favicon is what
+     * makes a row recognisable before it is read, and it is what every other
+     * list of bookmarks in the app puts there.
+     *
+     * Icons are stored as bare filenames and served from /data/icons/; an
+     * absolute or root-relative value is already a src. Same resolution as the
+     * dashboard rows and the health view, or the file is requested from the
+     * site root and 404s.
+     */
+    recentIconHtml(bookmark) {
+        const d = this.dash;
+        const raw = String(bookmark?.icon || '').trim();
+        if (raw) {
+            const src = /^(https?:|data:|\/)/i.test(raw) ? raw : `/data/icons/${encodeURIComponent(raw)}`;
+            return `<img class="recent-bookmarks-modal-icon" src="${d.escapeHtml(src)}" alt="" loading="lazy">`;
+        }
+        const letter = (String(bookmark?.name || '').trim()[0] || '?').toUpperCase();
+        return `<span class="recent-bookmarks-modal-icon recent-bookmarks-modal-icon--letter" aria-hidden="true">${d.escapeHtml(letter)}</span>`;
+    }
 
     _setupRecentModalKeyboardNav(body) {
         const d = this.dash;
