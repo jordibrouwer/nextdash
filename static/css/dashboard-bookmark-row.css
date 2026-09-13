@@ -40,6 +40,45 @@
        background until a state rule says otherwise. */
     --bookmark-row-edge: var(--background-primary);
 }
+/*
+ * A row that lights up further, for anyone who wants to see it from across
+ * the desk.
+ *
+ * The same gradient as above, lit from the same edge; only how far the accent
+ * carries differs. It arrived with the modern layout, where it was one of
+ * twenty-one tokens describing a whole visual language -- and it is the one
+ * of them that is a preference about rows rather than a layout. Lifted here
+ * so it survives that layout being folded away, and so somebody on classic
+ * can have it without taking the rest.
+ *
+ * The edge colours follow the 100% stop of each gradient, the way the subtle
+ * set does: the shortcut label floating over a row's right edge has to sit on
+ * the colour that is actually under it.
+ */
+body[data-row-highlight="strong"] {
+    --bookmark-row-hover-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
+    );
+    --bookmark-row-selected-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
+    );
+    --bookmark-row-dimmed-bg: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
+        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
+        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
+    );
+    --bookmark-row-edge-hover: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
+    --bookmark-row-edge-selected: color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary));
+    --bookmark-row-edge-dimmed: color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary));
+}
+
 
 .bookmark-link:not(.bookmark-inline-editing) {
     transition:

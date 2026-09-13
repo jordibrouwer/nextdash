@@ -10766,6 +10766,7 @@ class DashboardConfig {
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
+        rowHighlight: { def: 'subtle' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -11386,6 +11387,27 @@ class DashboardConfig {
                                 value: 'never',
                                 label: t('config.shortcutDisplayNever', 'Never'),
                                 body: t('config.shortcutDisplayNeverBody', 'No letters anywhere. The shortcuts themselves keep working.'),
+                            },
+                        ],
+                    },
+                    {
+                        field: 'rowHighlight',
+                        type: 'cards',
+                        // 'chrome' for the same reason shortcutDisplay is: the
+                        // setting is a body attribute the CSS reads, so without
+                        // it the choice only arrives on the next reload.
+                        special: 'chrome',
+                        label: t('config.rowHighlightLabel', 'How a row lights up'),
+                        options: [
+                            {
+                                value: 'subtle',
+                                label: t('config.rowHighlightSubtle', 'Subtle'),
+                                body: t('config.rowHighlightSubtleBody', 'The accent reaches a little way in from the left edge. Enough to see which row you are on without the colour becoming the thing you look at.'),
+                            },
+                            {
+                                value: 'strong',
+                                label: t('config.rowHighlightStrong', 'Strong'),
+                                body: t('config.rowHighlightStrongBody', 'The same light from the same edge, carried much further across the row. Easier to pick out at a glance or from a distance, and the row name reads against the accent rather than against the page.'),
                             },
                         ],
                     },

@@ -497,6 +497,21 @@ type Settings struct {
 	ThemeDepth string `json:"themeDepth,omitempty"`
 
 	/*
+	 * RowHighlight is how strongly a bookmark row lights up under the pointer
+	 * and under the keyboard cursor.
+	 *
+	 * Both settings are the same gradient, lit from the left edge so a row
+	 * reads as picked up rather than uniformly tinted; they differ in how far
+	 * the accent carries. "subtle" is what the dashboard has always drawn.
+	 * "strong" is the treatment the modern layout brought, lifted into the
+	 * shared layer so it survives that layout being folded away -- it is a
+	 * preference about rows, which is not what a layout version is for.
+	 *
+	 * subtle | strong. Empty means subtle.
+	 */
+	RowHighlight string `json:"rowHighlight,omitempty"`
+
+	/*
 	 * InkGap is how far the derived text colours sit from the surface they are
 	 * drawn on, in OKLCH lightness. theme-ink.css does the deriving; this is
 	 * the one number a reader gets to move.
@@ -1375,6 +1390,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LayoutPreset:                 "default",
 			LayoutVersion:                "classic",
 			ThemeDepth:                   "rich",
+			RowHighlight:                 "subtle",
 			InkGap:                       defaultInkGap,
 			ThemeBackdrop:                "on",
 			BackgroundPattern:            "auto",
@@ -3409,6 +3425,7 @@ func (fs *FileStore) GetSettings() Settings {
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
 			ThemeDepth:                     "rich",
+			RowHighlight:                   "subtle",
 			InkGap:                         defaultInkGap,
 			ThemeBackdrop:                  "on",
 			BackgroundPattern:              "auto",
@@ -3722,6 +3739,11 @@ func (fs *FileStore) GetSettings() Settings {
 		case "flat", "soft", "rich", "glass":
 		default:
 			settings.ThemeDepth = "rich"
+		}
+		switch settings.RowHighlight {
+		case "subtle", "strong":
+		default:
+			settings.RowHighlight = "subtle"
 		}
 		switch settings.BackgroundPattern {
 		case "auto", "dots", "grid", "lines", "hatch", "none":

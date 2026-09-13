@@ -11,6 +11,11 @@ class DashboardSetup {
         d.updateDateVisibility();
 
         document.body.setAttribute('data-show-title', d.settings.showTitle);
+        // How far a row's accent carries when it lights up. Written here as
+        // well as by the server, so changing it in config lands without a
+        // reload; the CSS reads the attribute, see dashboard-bookmark-row.css.
+        document.body.setAttribute('data-row-highlight',
+            d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle');
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
