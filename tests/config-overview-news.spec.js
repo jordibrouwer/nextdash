@@ -12,9 +12,10 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
  * a 900px screen.
  *
  * Now: posts, releases and new settings in one list, newest first, each row
- * saying where it came from and openable on its own. What was pushed out is
- * pinned here — the figures about your own install moved to the side column,
- * which is what lifts the stream above the fold.
+ * saying where it came from and openable on its own — at About → News, which
+ * is where its own "All news & features" button always pointed. The overview
+ * keeps the four lines that answer whether there is anything new; the reading
+ * itself is here, because four fifths of that page's words were this feed.
  */
 
 const POSTS = [
@@ -23,7 +24,7 @@ const POSTS = [
     { title: 'A title long enough that no side-by-side column could ever show all of it without clipping somewhere along the way', url: 'https://nextdash.cc/2026/08/19/long/', summary: 'Decay, drift, and the moment a bookmark stops being worth keeping.', publishedAt: Date.UTC(2026, 7, 19, 11, 17) },
 ];
 
-async function openOverviewWith(page, items, { enabled = true } = {}) {
+async function openNewsWith(page, items, { enabled = true } = {}) {
     await page.route('**/api/site-news*', (route) => route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({ enabled, items, fetchedAt: Date.now() }),
@@ -36,13 +37,15 @@ async function openOverviewWith(page, items, { enabled = true } = {}) {
     // Settings persist server-side between specs, and one test below clears
     // this one deliberately, so each test sets the state it needs.
     await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-    await page.waitForSelector('.config-overview-layout', { timeout: 15_000 });
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+    // Through the tab itself: openConfigView resets which one is showing.
+    await page.click('[data-about-tab="news"]');
+    await page.waitForSelector('.config-news-panel', { timeout: 15_000 });
 }
 
 test.describe('the news stream', () => {
     test('mixes the three sources, newest first, each row saying which', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         const rows = page.locator('.config-news-item');
         await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 
@@ -68,7 +71,7 @@ test.describe('the news stream', () => {
     });
 
     test('the source chips narrow it, and say how much of each there is', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const chips = page.locator('.config-src-filter');
@@ -90,7 +93,7 @@ test.describe('the news stream', () => {
     });
 
     test('the rows line up: one label width, one title edge, one date edge', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const edges = await page.evaluate(() => {
@@ -114,7 +117,7 @@ test.describe('the news stream', () => {
     });
 
     test('a post opens on the site, in a new tab', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         const post = page.locator('.config-news-item[data-news-source="site"]').first();
         await expect(post).toBeVisible({ timeout: 15_000 });
         const link = post.locator('.config-news-go');
@@ -124,7 +127,7 @@ test.describe('the news stream', () => {
     });
 
     test('the date follows the format the reader chose', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const withFormat = async (format) => {
@@ -145,7 +148,7 @@ test.describe('the news stream', () => {
     });
 
     test('the site being unreachable leaves the rest of the stream standing', async ({ page }) => {
-        await openOverviewWith(page, []);
+        await openNewsWith(page, []);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
         // Releases and features need no network, so a NAS behind a firewall
         // still gets a stream — just without the site's half of it.
@@ -176,7 +179,7 @@ test.describe('the news stream', () => {
         await page.addInitScript(() => {
             localStorage.setItem('nextdash:news-seen-v1', String(Date.now() - 7 * 86400000));
         });
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         // Marking it read used to write localStorage only, so the dots came
@@ -230,7 +233,7 @@ test.describe('the news stream', () => {
     });
 
     test('the drill-in carries everything the overview left out', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
         const onOverview = await page.locator('.config-news-item').count();
 
@@ -296,7 +299,7 @@ test.describe('the switch under Behavior → Privacy', () => {
     });
 
     test('turning it back on brings the posts back without reopening config', async ({ page }) => {
-        await openOverviewWith(page, POSTS);
+        await openNewsWith(page, POSTS);
         await expect(page.locator('.config-news-item[data-news-source="site"]').first()).toBeVisible({ timeout: 15_000 });
 
         await openPrivacy(page);

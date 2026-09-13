@@ -218,15 +218,15 @@ test.describe('config dashboard view (scaffold)', () => {
      * The carousel this used to describe is gone (v1.3.3). It showed one of
      * forty-nine spotlights at a time — 498px of a 1451px page for a single
      * item, needing forty-eight clicks to show what it had — and the overview
-     * answers "what is new" as one dated stream instead. What replaced it is
-     * pinned in config-overview-news.spec.js; what matters here is that the
-     * stepper and its counter are not on the page for anyone to click.
+     * answers "what is new" in four lines instead, with the stream itself at
+     * About → News. What matters here is that the stepper and its counter are
+     * not on the page for anyone to click.
      */
     test('the overview has no feature carousel to step through', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
 
-        await expect(page.locator('.config-news-panel')).toBeVisible();
+        await expect(page.locator('.config-whats-new')).toBeVisible();
         for (const gone of ['.config-feature-spotlight', '.config-new-features-nav',
             '.config-new-features-counter', '[data-overview-feature]']) {
             await expect(page.locator(gone)).toHaveCount(0);

@@ -118,6 +118,9 @@ test.describe('config info + reset affordances', () => {
             // says what the card does and what switching it off leaves alone,
             // so the explanation is on screen rather than behind an ℹ.
             'enableTagSuggestionNotice', 'enableHealthReviewNotice',
+            // Two choice cards with a sentence on each, like shortcutDisplay
+            // and monitorEmphasis above: the explanation is the control.
+            'rowHighlight',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

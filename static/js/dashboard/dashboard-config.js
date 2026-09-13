@@ -3904,6 +3904,28 @@ class DashboardConfig {
     }
 
 
+    /**
+     * Why a source is missing, under the list.
+     *
+     * The site's posts can be switched off from the chips above, and the fetch
+     * can fail — and an empty stream with no word about either reads as "there
+     * is no news", which is a different claim. The old foot also counted a
+     * window; there is none here, so it counts nothing.
+     */
+    renderNewsFoot(shownCount, totalCount) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const offline = this._siteNewsEnabled === false
+            ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')
+            : (this._siteNewsFailed
+                ? this.t('config.overviewNewsSiteUnavailable', 'Site news is unavailable.')
+                : '');
+        if (!offline) return '';
+        return `
+            <div class="config-news-foot">
+                <span class="config-field-hint">${esc(offline)}</span>
+            </div>`;
+    }
+
     /** A post's date in the format the reader picked for the dashboard clock. */
     formatNewsDate(publishedAt) {
         const at = Number(publishedAt || 0);
@@ -26719,12 +26741,23 @@ class DashboardConfig {
         const catalogue = (this._overviewFeatures || [])
             .filter((feature) => !stream.some((item) => item.titleKey === feature.titleKey));
 
+        /*
+         * Reading the stream is what marks it read.
+         *
+         * It used to happen in the overview's own renderer, which is where the
+         * stream used to be. Reading is here now, so the dots clear here --
+         * marking them anywhere else would clear them for a page nobody looked
+         * at.
+         */
+        this.markNewsRead();
+
         return `
             <div class="config-panel config-panel--plain config-news-panel">
                 ${this.renderNewsChips()}
                 ${shown.length
                     ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
                     : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter', 'Nothing from this source yet.'))}</p>`}
+                ${this.renderNewsFoot(shown.length, stream.length)}
             </div>
             ${(filter === 'all' || filter === 'feature') && catalogue.length ? `
             <div class="config-panel config-panel--plain">
