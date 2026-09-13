@@ -186,6 +186,19 @@ class Modal {
             return;
         }
 
+        /*
+         * Anything a previous caller hung in the header goes with it.
+         *
+         * One #app-modal serves every panel, and show() only ever replaced the
+         * title -- so a key chip and a close button added beside it by the
+         * cheat sheet were still there when What's New reused the shell, which
+         * showed its reader two "Esc x" buttons and the cheat sheet's "!".
+         * Callers mark what they add with data-modal-header-extra; clearing it
+         * here means a new caller cannot inherit the last one's furniture.
+         */
+        titleEl.parentElement?.querySelectorAll('[data-modal-header-extra]')
+            .forEach((node) => node.remove());
+
         // Set content
         titleEl.textContent = title;
         if (htmlMessage !== null) {

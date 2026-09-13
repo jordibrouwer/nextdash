@@ -497,8 +497,9 @@ body.no-animations .wn-kofi-star {
     border-bottom: 1px solid var(--border-primary);
     font-size: calc(var(--font-size-controls) * 0.86);
     font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    /* The app lower-cases everywhere it names something; this shouted. */
+    text-transform: lowercase;
     color: var(--text-tertiary);
 }
 .wn-group-count {
@@ -1706,6 +1707,58 @@ body:not([data-depth="flat"]) .wn-earlier {
 }
 
 .cheat-sheet-foot-key {
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+/*
+ * What's New wears the same panel chrome as the other overlays.
+ *
+ * It named itself and then said "close" three times: a full-width button, an
+ * ESC hint under it, and nothing at all in the header. The header carries the
+ * name and the way out; the foot already holds the update line and the Ko-fi
+ * link, so the Esc hint joins them there.
+ */
+.modal.whats-new-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.wn-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.wn-modal-close:hover,
+.wn-modal-close:focus-visible {
+    opacity: 1;
+}
+
+.modal.whats-new-modal .modal-actions,
+#app-modal:has(.whats-new-modal) .modal-esc-hint {
+    display: none;
+}
+
+.wn-foot-esc {
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    opacity: 0.6;
+    white-space: nowrap;
+}
+
+.wn-foot-key {
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
     background: color-mix(in srgb, var(--text-primary) 12%, transparent);
