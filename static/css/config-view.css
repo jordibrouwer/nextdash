@@ -501,19 +501,22 @@
     }
 }
 
+/*
+ * What is left of config's tile after the shared component took the rest.
+ *
+ * The layout, the type, the tones, the quiet nought and the delta live in
+ * static/css/stat-tile.css and reach this element through the `stat-tile`
+ * class it also carries. What stays here is what belongs to this setting: the
+ * card it is drawn as, and the severity stripe below. Repeating the shared
+ * declarations would undo the point of sharing them -- config-view.css loads
+ * after stat-tile.css, so every repeated line is a silent override that a
+ * later change to the component would not reach.
+ */
 .config-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
     border-radius: var(--radius-7, 12px);
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
-    position: relative;
     overflow: hidden;
-    text-align: left;
-    font: inherit;
-    color: inherit;
 }
 
 /* Severity stripe encodes state independently of the accent hue. */
@@ -535,25 +538,6 @@
 
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
-.config-tile-label {
-    font-size: calc(var(--font-size-text) * 0.823);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted, #888);
-}
-
-.config-tile-value {
-    font-size: calc(var(--font-size-text) * 1.943);
-    font-weight: 600;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-
-.config-tile-detail {
-    margin: 0;
-    font-size: calc(var(--font-size-text) * 0.891);
-    color: var(--text-muted, #888);
-}
 
 .config-tile--action {
     cursor: pointer;
@@ -871,7 +855,9 @@
 
 .config-stats-trend--good { color: var(--accent-success, #3fa45b); }
 
-.config-stats-trend--bad { color: var(--accent-danger, #c0524a); }
+/* The same red every other "worse" in the app uses. It read --accent-danger,
+   which no theme has ever set, so a bad trend was #c0524a on all 222. */
+.config-stats-trend--bad { color: var(--accent-error); }
 
 .config-stats-trend-chart {
     width: 240px;
@@ -1065,7 +1051,7 @@
 }
 
 .config-widget-savebar.is-dirty .config-widget-savebar-state {
-    color: var(--status-warning, var(--text-secondary));
+    color: var(--accent-warning);
 }
 
 .config-btn--danger:hover {
@@ -2003,17 +1989,59 @@
 }
 
 /*
- * The news stream beside About the developer.
+ * Two pairs of blocks, each pair one line of the page.
  *
- * Not an even split: the stream is a list that has to stay readable before it
- * is clipped, while About is a fixed paragraph that does not grow — and it
- * signs the zone rather than competing with it.
+ * The uneven split was for a news stream that had to stay readable before it
+ * was clipped. The stream lives at About → News now, and what stands here is
+ * two panels of a few lines each -- so they share the width.
  */
-.config-overview-about-row {
+.config-overview-about-row,
+.config-overview-install-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 34px;
     align-items: start;
+}
+
+.config-overview-install-row > .config-panel {
+    margin-top: 0;
+}
+
+/*
+ * What is new, as four lines rather than fourteen rows: a label on the left
+ * and the answer on the right, which is the shape the install figures beside
+ * it already use.
+ */
+.config-whats-new-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-1-5, 0.35rem) 0;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+.config-whats-new-line:first-of-type {
+    border-top: 0;
+}
+
+.config-whats-new-label {
+    font-family: var(--font-family-mono, monospace);
+    font-size: var(--text-2xs, 0.62rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    flex: 0 0 auto;
+}
+
+.config-whats-new-value {
+    min-width: 0;
+    text-align: right;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    color: var(--text-primary);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /*
@@ -2228,6 +2256,19 @@
     color: var(--accent-info, #60A5FA);
 }
 
+/*
+ * A headline on one line, because the row is scanned rather than read.
+ *
+ * A post's title comes from the feed as it was written, and some of them are a
+ * sentence: "nextDash 1.6.x: a theme is more than a palette, and..." wrapped
+ * to three lines and took the row to 137px on its own. Clipped, the reader
+ * still gets what it is about and the full text is one click away -- which is
+ * what the row's own link is for.
+ *
+ * The dot keeps its place: it is the first child and a fixed six pixels, so
+ * the clipping falls on the end of the title rather than on the one mark that
+ * says this row is new.
+ */
 .config-news-title {
     margin: 0;
     font-size: var(--font-size-controls);
@@ -2237,6 +2278,28 @@
     align-items: center;
     gap: 7px;
     min-width: 0;
+    overflow: hidden;
+}
+
+/* Placed for the same reason as the date above. */
+.config-news-title {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+/*
+ * The ellipsis needs an element to sit on.
+ *
+ * The title is a flex row -- a dot, then the words -- and bare text inside a
+ * flex container becomes an anonymous item that text-overflow cannot reach.
+ * Clipped without it, a headline ended mid-word with nothing to say it had
+ * been cut: "Health: what your bookmar".
+ */
+.config-news-title-text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* What "new" means here: published since you last read the stream. */
@@ -2249,8 +2312,20 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 16%, transparent);
 }
 
+/*
+ * Every cell placed by name, none left to auto-flow.
+ *
+ * The row is a two-by-two: what it is and when, then what it says and the way
+ * in. One explicitly placed item used to be enough, because the rest fell into
+ * the gaps in DOM order -- but explicit placement runs first, so pinning the
+ * action to the second row took the slot the date had been landing in and
+ * pushed the date onto a line of its own under the title. Four names, no
+ * order of operations to reason about.
+ */
 .config-news-when {
-    grid-row: span 2;
+    grid-row: 1;
+    grid-column: 3;
+    align-self: baseline;
     font-family: var(--font-family-mono, monospace);
     font-size: var(--text-xs, 0.7rem);
     color: var(--text-tertiary);
@@ -2258,7 +2333,24 @@
     font-variant-numeric: tabular-nums;
 }
 
+/*
+ * One line, which is what the row was always described as carrying.
+ *
+ * The stream is fourteen rows because the overview guarantees the site's ten
+ * posts a place -- reserving ten out of six would have been the whole page, so
+ * the count is not the thing to cut. What made it 1775px was the row: two
+ * clamped lines of summary plus an action on a line of its own is 120px
+ * fourteen times over, against an 867px column beside it. Two columns nine
+ * hundred pixels apart in height is the mess, and the reader scrolls past
+ * ragged white space to reach what is under the shorter one.
+ *
+ * A line each, with the action beside it rather than under it, puts the row at
+ * about sixty and the two columns within a screen of each other. What the row
+ * says is unchanged: where it came from, what it is, when, a line about it,
+ * and the way in.
+ */
 .config-news-summary {
+    grid-row: 2;
     grid-column: 2;
     margin: 0;
     font-size: calc(var(--font-size-controls) * 0.88);
@@ -2266,13 +2358,24 @@
     line-height: 1.45;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     overflow: hidden;
 }
 
+/*
+ * In the third column, under the date: the row's two right-hand things are
+ * when it happened and where it goes, and stacking them there leaves the
+ * summary the width it needs.
+ */
 .config-news-action {
-    grid-column: 2;
-    margin-top: 3px;
+    /* Beside the summary, not under it. The row is two lines: what it is and
+       when, then what it says and the way in. Placed explicitly, because
+       auto-placement drops it onto a third row of its own. */
+    grid-row: 2;
+    grid-column: 3;
+    justify-self: end;
+    margin-top: 0;
+    white-space: nowrap;
 }
 
 .config-news-go {
@@ -3087,21 +3190,21 @@ body.no-animations .config-new-features-panel-star {
 /* The sample count beside an uptime percentage: how much the figure rests on,
    which is what separates "100% over 10 checks" from "100% over 3,685". */
 .config-ratio-sub {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
 }
 
 /* A window nothing was recorded in. Not a percentage, so it does not get the
    tabular alignment the numbers rely on. */
 .config-ratio-value--muted {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-style: italic;
 }
 
 /* The breakdown after a count — "Health 2 · Inbox 1" — kept quieter than the
    label it follows so the row still reads as one line. */
 .config-stat-detail-note {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
 }
 
@@ -3780,7 +3883,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-cloud-summary-note {
     font-weight: var(--font-weight-normal);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .config-bm-cloud-body {
@@ -3836,7 +3939,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-cloud-count {
     font-size: 0.68em;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
 }
 
@@ -3986,7 +4089,7 @@ body.no-animations .config-new-features-panel-star {
     gap: var(--space-1-5, 0.4rem);
     flex-wrap: wrap;
     font-size: calc(var(--font-size-text) * 0.9);
-    color: var(--accent-warning, var(--text-secondary));
+    color: var(--accent-warning);
 }
 
 .config-bulk-offscreen-text {
@@ -4456,12 +4559,12 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-crud-row.is-active {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    border-color: var(--accent-primary);
 }
 
 .config-crud-row.keyboard-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
 
 /* Tighter top margin than the shared rule's 1rem, since a config section already
@@ -4475,8 +4578,8 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-crud-row.keyboard-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
 
 .config-theme-groups {
@@ -4672,7 +4775,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-tag-cloud .tag-cloud-word.is-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    border-color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary, #4A7038) 14%, transparent);
 }
 
@@ -4685,241 +4788,13 @@ body.no-animations .config-new-features-panel-star {
     .config-tag-cloud .tag-cloud-word {
         transition: none;
     }
-}
-
-/* ─── Modern layout ─────────────────────────────────────────────────────────
-   Scoped to body[data-layout-version="modern"]; classic above is untouched.
-
-   Note on colour: the classic rules above are written against --card-bg,
-   --border-color, --accent-soft, --hover-bg and --text-muted, none of which are
-   ever defined — not in CSS, not injected at runtime — so every one of them
-   renders on its hardcoded grey fallback and the config view ignores the
-   active theme. That is a pre-existing bug, not something this block sets out
-   to fix, but it does decide the approach: modern rules state their colours
-   explicitly from the real theme variables (--background-secondary,
-   --border-primary, --accent-primary) rather than trying to override greys that
-   no theme ever produced.
-
-   Tokens come from layout-modern-tokens.css.
-   ------------------------------------------------------------------------- */
-
-/* Shared focus ring, replacing each control's hardcoded #4a90d9 outline. */
-body[data-layout-version="modern"] .config-nav-item:focus-visible,
-body[data-layout-version="modern"] .config-subtab:focus-visible,
-body[data-layout-version="modern"] .config-choice:focus-visible,
-body[data-layout-version="modern"] .config-btn:focus-visible,
-body[data-layout-version="modern"] .config-select:focus-visible,
-body[data-layout-version="modern"] .config-tile--action:focus-visible {
-    outline: var(--layout-focus-ring);
-    outline-offset: 2px;
-}
-
-/* ─── Section navigation ────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-nav-item {
-    border-radius: var(--layout-radius-sm);
-    color: var(--text-secondary);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .config-nav-item:hover {
-    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
-    color: var(--text-primary);
-}
-
-body[data-layout-version="modern"] .config-nav-item.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
-    color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-}
-
-/* ─── Section body ──────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-view-intro {
-    color: var(--text-secondary);
-}
-
-body[data-layout-version="modern"] .config-view-placeholder {
-    border-radius: var(--layout-radius-lg);
-    border-color: var(--layout-surface-border);
-    background: color-mix(in srgb, var(--background-secondary) 42%, transparent);
-    color: var(--text-secondary);
-}
-
-/* ─── Status tiles ──────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-tile {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-/* The stripe is a ::before pinned to the left edge, so a rounded tile would
+}/* ─── Section navigation ────────────────────────────────────────────────── *//* ─── Section body ──────────────────────────────────────────────────────── *//* ─── Status tiles ──────────────────────────────────────────────────────── *//* The stripe is a ::before pinned to the left edge, so a rounded tile would
    clip it into a wedge — same problem the health rows have. Inset it and let
-   it follow the corner. */
-body[data-layout-version="modern"] .config-tile::before {
-    inset: 0.35rem auto 0.35rem 0;
-    width: 3px;
-    border-radius: 0 var(--layout-radius-pill) var(--layout-radius-pill) 0;
-}
-
-/* The stripe colours are the clearest case of the undefined-variable problem
+   it follow the corner. *//* The stripe colours are the clearest case of the undefined-variable problem
    described above: --accent-color never resolves, so an accent tile renders a
    hardcoded #4a90d9 blue regardless of theme, and the severity hues are literal
    hex besides. Re-point all five at the theme so a green accent gets a green
-   stripe. Semantic colours stay semantic — only their source changes. */
-body[data-layout-version="modern"] .config-tile--accent  { --tile-stripe: var(--accent-primary); }
-
-body[data-layout-version="modern"] .config-tile--good     { --tile-stripe: var(--accent-success); }
-
-body[data-layout-version="modern"] .config-tile--warn     { --tile-stripe: var(--accent-warning); }
-
-body[data-layout-version="modern"] .config-tile--crit     { --tile-stripe: var(--accent-error); }
-
-body[data-layout-version="modern"] .config-tile--neutral  { --tile-stripe: var(--layout-surface-border); }
-
-body[data-layout-version="modern"] .config-tile--action {
-    transition:
-        border-color var(--layout-transition),
-        box-shadow var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .config-tile--action:hover {
-    box-shadow: var(--layout-shadow-md);
-    transform: translateY(-1px);
-}
-
-body[data-layout-version="modern"] .config-tile--action:active {
-    transform: translateY(0);
-}
-
-body[data-layout-version="modern"] .config-tile-label,
-body[data-layout-version="modern"] .config-tile-detail {
-    color: var(--text-tertiary);
-}
-
-/* ─── Panels ────────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-panel {
-    border-radius: var(--layout-radius-lg);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .config-panel--danger {
-    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
-}
-
-body[data-layout-version="modern"] .config-panel-note,
-body[data-layout-version="modern"] .config-panel-empty,
-body[data-layout-version="modern"] .config-view-loading {
-    color: var(--text-secondary);
-}
-
-/* ─── Buttons ───────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-btn {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border);
-    transition:
-        background-color var(--layout-transition),
-        border-color var(--layout-transition),
-        box-shadow var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .config-btn:hover {
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
-    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .config-btn--danger {
-    color: var(--accent-error);
-    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
-}
-
-body[data-layout-version="modern"] .config-btn--danger:hover {
-    background: color-mix(in srgb, var(--accent-error) 12%, transparent);
-    border-color: var(--accent-error);
-}
-
-/* ─── Fields, choices, inputs ───────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-field-label {
-    color: var(--text-secondary);
-}
-
-body[data-layout-version="modern"] .config-choices {
-    border-radius: var(--layout-radius-pill);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .config-choice {
-    border-radius: var(--layout-radius-pill);
-    color: var(--text-secondary);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .config-choice:hover {
-    color: var(--text-primary);
-}
-
-body[data-layout-version="modern"] .config-choice.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
-    color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
-}
-
-body[data-layout-version="modern"] .config-select,
-body[data-layout-version="modern"] .config-text {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border);
-    background: var(--background-secondary);
-    color: var(--text-primary);
-}
-
-body[data-layout-version="modern"] .config-text:focus-visible {
-    outline: var(--layout-focus-ring);
-    outline-offset: 2px;
-}
-
-body[data-layout-version="modern"] .config-toggle input {
-    accent-color: var(--accent-primary);
-}
-
-/* ─── Sub-tabs ──────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-subtabs {
-    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
-}
-
-body[data-layout-version="modern"] .config-subtab {
-    border-radius: var(--layout-radius-pill);
-    color: var(--text-secondary);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .config-subtab:hover {
-    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
-    color: var(--text-primary);
-}
-
-body[data-layout-version="modern"] .config-subtab.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
-    color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
-}
+   stripe. Semantic colours stay semantic — only their source changes. *//* ─── Panels ────────────────────────────────────────────────────────────── *//* ─── Buttons ───────────────────────────────────────────────────────────── *//* ─── Fields, choices, inputs ───────────────────────────────────────────── *//* ─── Sub-tabs ──────────────────────────────────────────────────────────── */
 
 /* ── Settings jump overlay (Ctrl/Cmd+Shift+K) ───────────────────────────── */
 
@@ -4984,63 +4859,11 @@ body[data-layout-version="modern"] .config-subtab.is-active {
 
 .modal.config-settings-jump-modal .modal-body {
     padding-top: 8px;
-}
-
-/* ─── CRUD lists ────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-crud-row {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-}
-
-body[data-layout-version="modern"] .config-bm-item {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border, var(--border-primary));
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .config-bm-item:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
-    box-shadow: var(--layout-shadow-md);
-}
-
-body[data-layout-version="modern"] .config-bm-item.keyboard-selected {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
-}
-
-body[data-layout-version="modern"] .config-bm-action-btn {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border, var(--border-primary));
-}
-
-body[data-layout-version="modern"] .config-tag-count {
-    color: var(--text-tertiary);
-}
-
-/* ─── Backup list ───────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .config-backup-row {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-}
+}/* ─── CRUD lists ────────────────────────────────────────────────────────── *//* ─── Backup list ───────────────────────────────────────────────────────── */
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .config-tile--action,
-    body[data-layout-version="modern"] .config-tile--action:hover,
-    body[data-layout-version="modern"] .config-nav-item,
-    body[data-layout-version="modern"] .config-subtab,
-    body[data-layout-version="modern"] .config-btn {
-        transition: none;
-        transform: none;
-    }
 }
 
 /* ── Server log viewer ───────────────────────────────────────────────────── */
@@ -5373,14 +5196,27 @@ button.config-bm-shortcut-pill {
     font-variant-numeric: tabular-nums;
 }
 
-.config-tile-delta--up { color: var(--accent-success, #2e7d32); }
+/*
+ * Two meanings, one set of rules.
+ *
+ * A delta on a STATE carries direction: one more broken bookmark is worse, so
+ * it is red, and every surface that shows one agrees -- see the matching
+ * declarations in dashboard.css for the widget figure and the trend tile.
+ *
+ * A delta on a COUNT does not. One fewer bookmark this week is smaller, not
+ * worse, and painting it red would be the app having an opinion nobody asked
+ * for. That is what config's statistics show, which is why the old --up/--down
+ * pair resolved to green-and-grey rather than green-and-red: right call, wrong
+ * name.
+ *
+ * --up and --down stay as the neutral pair. --good and --bad join them for
+ * the cases that do carry direction.
+ */
+/* The tones are the component's; only the two directions config has of its
+   own are left here. */
+.config-tile-delta--up { color: var(--text-tertiary); }
 
-.config-tile-delta--down { color: var(--text-muted, #777); }
-
-.config-tile-delta-period {
-    font-weight: 400;
-    opacity: 0.75;
-}
+.config-tile-delta--down { color: var(--text-muted, var(--text-secondary)); }
 
 /* The chart in a sentence, above the bars: the shape a table of thirty numbers
    cannot give, and the peak a sighted reader would otherwise have to hover for. */
@@ -5520,7 +5356,7 @@ button.config-bm-shortcut-pill {
     gap: 12px;
     margin-top: var(--space-1, 0.35rem);
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -5693,7 +5529,7 @@ button.config-bm-shortcut-pill {
 .config-widget-empty-hint {
     margin: 0 0 8px;
     max-width: 62ch;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
     text-wrap: pretty;
@@ -5891,7 +5727,7 @@ button.config-bm-shortcut-pill {
 /* How much room is left, so a reader picks by size rather than guessing
    which /mnt/diskN is the big one. */
 .config-widget-chip-size {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small, 0.66rem);
 }
 
@@ -6056,7 +5892,7 @@ button.config-bm-shortcut-pill {
 .config-suggestion-row--rule {
     align-items: center;
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -6290,7 +6126,7 @@ button.config-bm-shortcut-pill {
     align-items: flex-end;
     flex-wrap: wrap;
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -6318,7 +6154,7 @@ button.config-bm-shortcut-pill {
 .config-suggestion-error {
     margin: 0;
     padding: 0 var(--space-2, 0.55rem);
-    color: var(--accent-error, var(--status-error, var(--text-primary)));
+    color: var(--accent-error, var(--accent-error));
     font-size: calc(var(--font-size-text) * 0.86);
 }
 
@@ -6846,13 +6682,13 @@ button.config-bm-shortcut-pill {
 }
 
 .config-source-chip.is-ready {
-    border-color: var(--status-success, rgba(128, 128, 128, 0.5));
-    color: var(--status-success, var(--text-muted, #888));
+    border-color: var(--accent-success, rgba(128, 128, 128, 0.5));
+    color: var(--accent-success);
 }
 
 .config-source-chip.is-failed {
-    border-color: var(--status-error, rgba(128, 128, 128, 0.5));
-    color: var(--status-error, var(--text-muted, #888));
+    border-color: var(--accent-error, rgba(128, 128, 128, 0.5));
+    color: var(--accent-error);
 }
 
 /* Everything after the summary gets the room the summary does not need. */
@@ -7005,7 +6841,7 @@ button.config-bm-shortcut-pill {
 
 .config-widget-pick-about,
 .config-widget-type-about {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
     text-wrap: pretty;
@@ -7013,7 +6849,7 @@ button.config-bm-shortcut-pill {
 
 .config-widget-pick-footnote {
     margin: 8px 0 0;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
 }
@@ -7126,7 +6962,7 @@ button.config-bm-shortcut-pill {
 }
 
 .config-widget-custom-point-body {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.6;
     max-width: 70ch;
@@ -7205,3 +7041,32 @@ button.config-bm-shortcut-pill {
 }
 
 
+/*
+ * A key named in a tip looks like a key.
+ *
+ * Thirty-five of the ninety-one tips name a keystroke, written inline as
+ * <code>. Everywhere else in the app a key is a chip; here it fell back to
+ * the browser's <code>, which changes the typeface and nothing else -- so the
+ * one word in the sentence that the reader is meant to press read like the
+ * rest of it.
+ *
+ * Built from the same tokens as the app's kbd -- the theme's border, the
+ * theme's ground, --radius-3 -- but sized for running text rather than
+ * copying that rule outright. The standalone chip carries a fixed 12px and
+ * 4px/8px of padding, which inside a sentence would break the line rhythm it
+ * is meant to sit in.
+ */
+.config-help-tip code,
+.config-help-result code,
+.config-overview-tips-list code {
+    display: inline-block;
+    padding: 0.05em 0.35em;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    background: var(--background-primary);
+    font-family: var(--font-family-main, "Source Code Pro", monospace);
+    font-size: 0.92em;
+    font-weight: var(--font-weight-bold);
+    line-height: 1.3;
+    color: var(--text-primary);
+}

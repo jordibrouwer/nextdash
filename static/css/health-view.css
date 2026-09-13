@@ -137,7 +137,7 @@
     left: 0;
     font-size: var(--text-2xs, 0.6rem);
     line-height: 1;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
     pointer-events: none;
@@ -157,7 +157,7 @@
     padding-left: var(--space-6, 2.1rem);
     margin-top: var(--space-hairline, 0.15rem);
     font-size: var(--text-2xs, 0.6rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.75;
     font-variant-numeric: tabular-nums;
 }
@@ -1080,7 +1080,7 @@
 
 .health-expect-note {
     font-size: var(--text-2xs, 0.68rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.85;
 }
 
@@ -1179,7 +1179,7 @@
     font-size: var(--text-2xs, 0.66rem);
     white-space: nowrap;
     opacity: 0.75;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 .health-check-interval-label {
     display: block;
@@ -1750,26 +1750,6 @@
     overflow-y: auto;
 }
 
-/* The modern layout gives .move-popover softer corners; the health menu
-   follows so both context menus stay indistinguishable.
-   Deliberately no backdrop-filter here, unlike an earlier version of this
-   rule: .health-view-menu's background is the opaque --background-secondary,
-   so a blur has nothing translucent to show through and was pure cosmetic
-   weight. In Safari, backdrop-filter promotes the element to its own
-   compositing layer regardless of visible effect, and WebKit has a known bug
-   (see health-edit-safari-hittest-bug in project memory, same root cause on
-   the bookmark inline-edit form) where clicks over a composited layer that
-   overlaps unrelated content can hit-test the wrong element. The check-mode
-   menu is exactly that shape once it flips above a row near the top of the
-   list: its own comment above once claimed .move-popover uses "a blurred
-   edge" too, which is false — .move-popover has never had a backdrop-filter,
-   so removing this does not break the parity it was trying to keep. */
-body[data-layout-version="modern"] .health-view-menu {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border, var(--border-primary));
-    box-shadow: var(--layout-shadow-md);
-}
-
 /* The display above beats the browser's default [hidden] rule, so a closed menu
    would stay laid out — invisible enough to miss by eye, but still clickable and
    still announced to assistive tech. */
@@ -1818,16 +1798,6 @@ body[data-layout-version="modern"] .health-view-menu {
     color: var(--text-primary);
 }
 
-body[data-layout-version="modern"] .health-view-menu-item {
-    border-radius: var(--layout-radius-sm);
-}
-
-body[data-layout-version="modern"] .health-view-menu-item:hover,
-body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
-    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-}
-
 .health-view-menu-item--danger {
     color: var(--accent-error);
 }
@@ -1850,7 +1820,7 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
     font-weight: var(--font-weight-medium);
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .health-view-menu-label--danger {
@@ -1977,198 +1947,8 @@ body.no-animations .health-view-item-score-caret {
         margin-top: var(--space-2, 0.55rem);
         opacity: 1;
     }
-}
-
-/* ─── Modern layout ─────────────────────────────────────────────────────────
-   Scoped to body[data-layout-version="modern"]; classic above is untouched.
-
-   The view already reads --layout-radius-sm with an 8px fallback in a dozen
-   places, so corners track the layout for free. What classic cannot express is
-   the rest of the modern grammar: surface tint, layered shadow, the softer
-   focus ring, and hover as a lift rather than a border-colour change. Tokens
-   come from layout-modern-tokens.css.
-
-   The row menu (.health-view-menu) is styled next to its classic rule above,
-   where the display/[hidden] interaction it depends on is documented.
-   ------------------------------------------------------------------------- */
-
-/* Focus ring: matches the dashboard's, replacing each control's default.
-   The tile/filter-button ring that used to open this list moved with the
-   rest of that merged row's styling to list-view-shell.css
-   (.lvs-filter:focus-visible). */
-body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-rot-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-open-broken-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-merge-duplicates-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-fetch-previews-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-retest-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-search-input:focus-visible,
-body[data-layout-version="modern"] .health-view-sort-select:focus-visible,
-body[data-layout-version="modern"] .health-view-load-more-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-retry-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-item-score:focus-visible,
-body[data-layout-version="modern"] .health-check-mode:focus-visible,
-body[data-layout-version="modern"] .health-view-bulk-monitor-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-bulk-periodic-btn:focus-visible,
-body[data-layout-version="modern"] .health-monitor-expand-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-item:focus-visible {
-    outline: var(--layout-focus-ring);
-    outline-offset: 2px;
-}
-/* The toolbar buttons share one shape in classic (0.4rem); keep them sharing
-   one shape here rather than pinning each to its own radius. */
-body[data-layout-version="modern"] .health-view-export-btn,
-body[data-layout-version="modern"] .health-view-rot-btn,
-body[data-layout-version="modern"] .health-view-open-broken-btn,
-body[data-layout-version="modern"] .health-view-merge-duplicates-btn,
-body[data-layout-version="modern"] .health-view-fetch-previews-btn,
-body[data-layout-version="modern"] .health-view-checkoff-btn,
-body[data-layout-version="modern"] .health-view-bulk-monitor-btn,
-body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border);
-    transition:
-        border-color var(--layout-transition),
-        color var(--layout-transition),
-        background-color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .health-view-export-btn:hover,
-body[data-layout-version="modern"] .health-view-rot-btn:hover,
-body[data-layout-version="modern"] .health-view-open-broken-btn:hover:not([disabled]),
-body[data-layout-version="modern"] .health-view-merge-duplicates-btn:hover,
-body[data-layout-version="modern"] .health-view-fetch-previews-btn:hover:not([disabled]),
-body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover,
-body[data-layout-version="modern"] .health-view-bulk-periodic-btn:hover {
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
-}
-
-body[data-layout-version="modern"] .health-view-checkoff-btn:hover:not([disabled]) {
-    background: color-mix(in srgb, var(--accent-error) 8%, transparent);
-}
-
-/* ─── Feed rows ─────────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .health-view-item {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-    transition:
-        border-color var(--layout-transition),
-        background-color var(--layout-transition),
-        box-shadow var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-/* The severity marker is a left border in classic. A rounded row would clip it
-   into a wedge, so modern redraws it as an inset bar that follows the corner. */
-body[data-layout-version="modern"] .health-view-item.is-broken,
-body[data-layout-version="modern"] .health-view-item.is-warn {
-    border-left-width: 1px;
-    border-left-color: var(--layout-surface-border);
-}
-
-body[data-layout-version="modern"] .health-view-item.is-broken {
-    box-shadow:
-        var(--layout-shadow-sm),
-        inset 3px 0 0 0 var(--accent-error);
-}
-
-body[data-layout-version="modern"] .health-view-item.is-warn {
-    box-shadow:
-        var(--layout-shadow-sm),
-        inset 3px 0 0 0 var(--accent-warning);
-}
-
-body[data-layout-version="modern"] .health-view-item:hover {
-    box-shadow: var(--layout-shadow-md);
-    transform: translateY(-1px);
-}
-
-/* Hover must not erase the severity marker, so each state restates its bar. */
-body[data-layout-version="modern"] .health-view-item.is-broken:hover {
-    box-shadow:
-        var(--layout-shadow-md),
-        inset 3px 0 0 0 var(--accent-error);
-}
-
-body[data-layout-version="modern"] .health-view-item.is-warn:hover {
-    box-shadow:
-        var(--layout-shadow-md),
-        inset 3px 0 0 0 var(--accent-warning);
-}
-
-body[data-layout-version="modern"] .health-view-item.keyboard-selected {
-    box-shadow:
-        var(--layout-shadow-md),
-        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
-}
-
-body[data-layout-version="modern"] .health-view-item.keyboard-selected.is-broken {
-    box-shadow:
-        var(--layout-shadow-md),
-        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent),
-        inset 3px 0 0 0 var(--accent-error);
-}
-
-body[data-layout-version="modern"] .health-view-item.keyboard-selected.is-warn {
-    box-shadow:
-        var(--layout-shadow-md),
-        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent),
-        inset 3px 0 0 0 var(--accent-warning);
-}
-
-body[data-layout-version="modern"] .health-view-item-icon {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border);
-}
-
-/* ─── Row actions ───────────────────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .health-view-action-btn {
-    border-radius: var(--layout-radius-sm);
-    border-color: var(--layout-surface-border);
-    transition:
-        border-color var(--layout-transition),
-        color var(--layout-transition),
-        background-color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .health-view-action-btn:hover {
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-}
-
-body[data-layout-version="modern"] .health-view-action-btn--danger:hover {
-    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
-}
-
-body[data-layout-version="modern"] .health-monitor-expand-btn {
-    border-radius: var(--layout-radius-sm);
-}
-
-/* ─── Monitor statistics (modal) ────────────────────────────────────────── */
-
-body[data-layout-version="modern"] .health-monitor-stat {
-    border-radius: var(--layout-radius-md);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-}
-
-/* ─── Empty states ──────────────────────────────────────────────────────── */
-
-/* Classic leaves these as bare centred text. Modern gives them the same dashed
-   placeholder card the empty dashboard uses, so an empty health view reads as a
-   deliberate state rather than a failed render. */
-body[data-layout-version="modern"] .health-view-empty-state,
-body[data-layout-version="modern"] .health-view-empty {
-    border: 1px dashed var(--layout-surface-border);
-    border-radius: var(--layout-radius-lg);
-    background: color-mix(in srgb, var(--background-secondary) 42%, transparent);
-}
+}/* The toolbar buttons share one shape in classic (0.4rem); keep them sharing
+   one shape here rather than pinning each to its own radius. *//* ─── Feed rows ─────────────────────────────────────────────────────────── *//* Hover must not erase the severity marker, so each state restates its bar. *//* ─── Row actions ───────────────────────────────────────────────────────── *//* ─── Monitor statistics (modal) ────────────────────────────────────────── */
 
 /* ─── Motion preferences ────────────────────────────────────────────────── */
 
@@ -2177,11 +1957,6 @@ body[data-layout-version="modern"] .health-view-empty {
    merged the tile into `.lvs-filter`), and its reduced-motion counterpart now
    lives beside the rule it reduces, in list-view-shell.css. */
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .health-view-item,
-    body[data-layout-version="modern"] .health-view-item:hover {
-        transition: none;
-        transform: none;
-    }
 }
 
 /* Export button inside the enlarged monitor panel.

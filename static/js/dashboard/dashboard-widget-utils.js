@@ -199,31 +199,42 @@
         }
         if (cells.length) grid.setAttribute('data-stat-count', String(cells.length));
         cells.forEach((stat) => {
-            const cell = document.createElement(stat.onOpen ? 'button' : 'div');
-            if (stat.onOpen) cell.type = 'button';
-            cell.className = 'dashboard-widget-stat';
-            if (stat.tone) cell.classList.add(`dashboard-widget-stat--${stat.tone}`);
             /*
-             * Nought is marked so the stylesheet can quieten it.
+             * Built by the shared component, then given its widget names.
              *
-             * Decided here rather than in CSS because CSS cannot read a value.
-             * What it buys is the tile's whole legibility: a readout of "0
-             * kept, 4 lost, 0 died" was three figures in alarm colours, and
-             * the reader had to check each one to find the single number that
-             * wanted them.
+             * The legacy classes stay on the element and on each part because
+             * the widget's own sheet still owns what belongs to this setting:
+             * the cell paints the ground that draws the hairline grid around
+             * it, and the figures answer to a container query the statistics
+             * tiles have no use for. What the shared class brings is the
+             * treatment -- size, tone, the quiet nought, the delta, the key.
              */
-            if (Number(stat.value) === 0) cell.classList.add('is-quiet');
+            const cell = window.StatTile.build({
+                value: stat.value,
+                label: stat.label,
+                tone: stat.tone,
+                delta: stat.delta,
+                deltaTone: stat.deltaTone,
+                title: stat.title,
+                key: stat.onOpen ? stat.key : null,
+                onOpen: stat.onOpen,
+                size: 'sm',
+                extraClasses: ['dashboard-widget-stat'],
+            });
+            if (stat.tone) cell.classList.add(`dashboard-widget-stat--${stat.tone}`);
+            const rename = (selector, legacy) => {
+                const el = cell.querySelector(selector);
+                if (el) el.classList.add(legacy);
+            };
+            rename('.stat-tile-value', 'dashboard-widget-stat-value');
+            rename('.stat-tile-label', 'dashboard-widget-stat-label');
+            rename('.stat-tile-delta', 'dashboard-widget-stat-delta');
+            rename('.stat-tile-key', 'dashboard-widget-stat-key');
+            if (stat.deltaTone) {
+                cell.querySelector('.stat-tile-delta')
+                    ?.classList.add(`dashboard-widget-stat-delta--${stat.deltaTone}`);
+            }
 
-            const value = document.createElement('span');
-            value.className = 'dashboard-widget-stat-value';
-            value.textContent = String(stat.value ?? '—');
-
-            const name = document.createElement('span');
-            name.className = 'dashboard-widget-stat-label';
-            name.textContent = String(stat.label || '');
-
-            if (stat.title) cell.title = stat.title;
-            cell.append(value, name);
             if (stat.onOpen) {
                 // The grid's own description unless the figure carries one:
                 // "Open Health" for a tile of health figures, "Open the trash"
@@ -280,6 +291,53 @@
         line.className = 'dashboard-widget-footnote';
         if (tone) line.classList.add(`dashboard-widget-footnote--${tone}`);
         line.textContent = String(text);
+        return line;
+    }
+
+    /**
+     * How often this tile is promised to refresh, in milliseconds.
+     *
+     * Read back from the render core rather than worked out again here: the
+     * cadence has one owner (POLLED_WIDGET_TYPES plus the widget's own config
+     * key, with its floor applied) and a second copy would drift from it.
+     */
+    function refreshMs(widget, dash) {
+        const seconds = dash?.renderCore?.widgetPollSeconds?.(widget)
+            ?? dash?.widgetPollSeconds?.(widget)
+            ?? 0;
+        return Number(seconds) > 0 ? Number(seconds) * 1000 : 0;
+    }
+
+    /*
+     * When a polled widget last looked.
+     *
+     * Seven widget types refresh on a timer of their own; until now only the
+     * custom one said when it had last fetched, and a cached figure that looks
+     * live is worse than a stale one that admits it.
+     *
+     * Returns null rather than an empty line when there is no timestamp: an
+     * "as of" with nothing after it reads as a figure of unknown age, which is
+     * a worse claim than making none.
+     *
+     * intervalMs is what the widget promised itself. Past it, the line marks
+     * itself -- the figure is not wrong, but it is older than the reader has
+     * been led to expect, and that is worth a colour.
+     */
+    function asOf(dash, fetchedAt, { intervalMs = 0 } = {}) {
+        const when = Number(fetchedAt);
+        if (!(when > 0)) return null;
+
+        const stale = intervalMs > 0 && Date.now() - when > intervalMs;
+        const line = document.createElement('p');
+        line.className = 'dashboard-widget-asof';
+        if (stale) line.classList.add('dashboard-widget-asof--stale');
+
+        const key = stale ? 'dashboard.widgetAsOfStale' : 'dashboard.widgetAsOf';
+        const fallback = stale
+            ? 'as of {time} — older than this widget refreshes'
+            : 'as of {time}';
+        line.textContent = label(dash, key, fallback)
+            .replace('{time}', new Date(when).toLocaleTimeString());
         return line;
     }
 
@@ -394,7 +452,7 @@
     window.DashboardWidgetUtils = {
         appendOverflowRow, rowLimit, label, openHealthFiltered, openConfigTab, authFetch,
         bindRowAction,
-        panel, statGrid, meter, headline, footnote, rowList, row, say,
+        panel, statGrid, meter, headline, footnote, rowList, row, say, asOf, refreshMs,
         daysSince, bytes, host, bookmarksOf, onPage, isBroken, DAY_MS,
     };
 })();

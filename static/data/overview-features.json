@@ -2,6 +2,57 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureOneLayoutTitle",
+      "titleFallback": "One layout instead of two",
+      "whatKey": "config.overviewNewFeatureOneLayoutWhat",
+      "whatFallback": "Classic and modern were two dashboards to keep in step, and half of what modern did better never reached anyone who had not found the setting.",
+      "howKey": "config.overviewNewFeatureOneLayoutHow",
+      "howFallback": "There is one layout now. The row treatment, the mode pills reading as one switch and the thickness under config’s panels came across to everything. How far a row lights up when you move to it is a setting of its own, so it is a choice rather than a side effect of a layout you were not otherwise choosing.",
+      "enableKey": "config.overviewNewFeatureOneLayoutEnable",
+      "enableFallback": "Config → Appearance → Layout.",
+      "ctaKey": "config.overviewNewFeatureOneLayoutCta",
+      "ctaFallback": "Open Layout →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "layout"
+      },
+      "since": "v1.10.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePanelKeysTitle",
+      "titleFallback": "Every panel names the key that opens it",
+      "whatKey": "config.overviewNewFeaturePanelKeysWhat",
+      "whatFallback": "The cheat sheet, recent bookmarks and the bookmark form each had their own chrome, and none of them said how you had got there or how to get back.",
+      "howKey": "config.overviewNewFeaturePanelKeysHow",
+      "howFallback": "They are drawn the same way now: the name, the key that opens the panel and a way out, in the header. Recent bookmarks is one line per bookmark rather than four cards filling the window, a cheat sheet row reads as a sentence and ends in its key, and the bookmark form is two named groups with Save pinned at the foot.",
+      "enableKey": "config.overviewNewFeaturePanelKeysEnable",
+      "enableFallback": "Press ! for the cheat sheet, * for recent bookmarks.",
+      "ctaKey": "config.overviewNewFeaturePanelKeysCta",
+      "ctaFallback": "Open the cheat sheet →",
+      "go": {
+        "section": "help",
+        "helpTab": "search"
+      },
+      "since": "v1.10.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureNewsTabTitle",
+      "titleFallback": "News has a page of its own",
+      "whatKey": "config.overviewNewFeatureNewsTabWhat",
+      "whatFallback": "The overview opened with a feed of release notes and site posts, above the figures that say what your collection is.",
+      "howKey": "config.overviewNewFeatureNewsTabHow",
+      "howFallback": "The stream moved to About → News & features, where the unread count, the dates and the filter for each source live together. The overview is about your collection again.",
+      "enableKey": "config.overviewNewFeatureNewsTabEnable",
+      "enableFallback": "Config → About → News & features.",
+      "ctaKey": "config.overviewNewFeatureNewsTabCta",
+      "ctaFallback": "Open News & features →",
+      "go": {
+        "section": "about",
+        "aboutTab": "news"
+      },
+      "since": "v1.10.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureStructureTitle",
       "titleFallback": "Structure, and Tags where the tags are",
       "whatKey": "config.overviewNewFeatureStructureWhat",

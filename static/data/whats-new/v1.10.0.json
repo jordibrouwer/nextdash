@@ -1,0 +1,126 @@
+{
+  "tag": "v1.10.0",
+  "date": "13 September 2026",
+  "releasedAt": "2026-09-13",
+  "modalLead": "There is one dashboard layout now instead of two, and everything that used to be modern-only reaches every theme. The panels you open with a key — search, the cheat sheet, recent bookmarks, the tag cloud, the bookmark form — are drawn the same way, each naming the key that opens it. Config's Appearance and Behavior are laid out in blocks, and the news that sat on the overview has moved to About → News & features. How tightly rows sit is one setting again rather than two that disagreed.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One layout, and it is the good half of both.</strong> The choice between <em>classic</em> and <em>modern</em> is gone. What modern did better &mdash; the row treatment, the mode pills reading as one switch, the thickness under config's panels &mdash; came across to everything, and the setting that used to pick between them is no longer there to pick."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How far a row lights up is yours to set.</strong> The stronger highlight modern used is a setting of its own under <em>Appearance</em>, so it is a choice rather than a side effect of a layout you were not otherwise choosing."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Glass has three strengths instead of one.</strong> A page, a panel and an overlay each blur by how much you need to read through them, and each theme now works out its own glass from its own colours &mdash; so picking <em>glass</em> does something on every theme rather than on a handful."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Depth, contrast, backdrop and the rest apply as you pick them.</strong> No reload, and they are in the command palette too: press <kbd>:</kbd> and type what you want to change."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A theme with little room between its page and its ink no longer looks flat.</strong> One step of the ladder is worth more on those themes and less on the ones with room to spare, so the surfaces separate on every palette rather than only on the high-contrast ones."
+        }
+      ]
+    },
+    {
+      "title": "Panels",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every panel says which key opens it.</strong> The cheat sheet, recent bookmarks, the bookmark form and the rest carry that key beside their name, with a way out on the right &mdash; instead of a wide <em>Close</em> button, a second hint under it, and nothing in the header."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Recent bookmarks is a list you read down.</strong> Each bookmark is one line &mdash; its icon, its name, its category and when you opened it &mdash; in a narrow panel, rather than four cards filling the window."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A cheat sheet row reads as a sentence and ends in its key.</strong> What it does comes first and the key after it, which is the order you arrive in: you know what you want to do."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The add and edit bookmark form is in two named groups.</strong> <em>What it is</em> and <em>where it goes</em>, each on its own panel, with the fields cut into it rather than raised off it &mdash; and Save stays at the foot of the sheet instead of scrolling away under the fields."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Opening one panel no longer leaves the last one's buttons behind.</strong> After the cheat sheet, What's new showed two ways out and a key belonging to a panel you had already closed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The first-run card no longer covers the buttons in its own corner.</strong> On a new install it sat over the <em>What's new</em> and tag cloud buttons, so the reader it is there for could not reach either until it was dismissed."
+        }
+      ]
+    },
+    {
+      "title": "Search & commands",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One door to the command panel.</strong> Search, commands and finders are one surface with a mode switch, so <kbd>&gt;</kbd>, <kbd>:</kbd> and <kbd>?</kbd> open the same thing in the mode you asked for."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>After <kbd>?</kbd> you can type straight away.</strong> Opening the finders used to swallow what you typed next, and it shouted your search back at you in capitals."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The mode keys keep working once the panel is open.</strong> Switching from search to commands without closing it first no longer needs the mouse."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Appearance and Behavior are laid out in blocks.</strong> Each block holds one subject, so a long scroll of unrelated switches became a page you can look at."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>News moved off the overview to About &rarr; News &amp; features.</strong> The overview says what your collection is; the news is a page of its own, with the unread count and the dates where you would look for them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Four settings that did nothing are gone.</strong> They were read by nothing and changed nothing when you switched them."
+        }
+      ]
+    },
+    {
+      "title": "Health & Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The header takes its colour from the theme.</strong> It was a black band across the top of a dark theme and a white one on a light theme &mdash; the only part of either page that ignored the theme entirely."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Row density is one setting again.</strong> Choosing compact on the dashboard and opening Health gave comfortable rows, and the control that would fix it lived only in that view and did not follow you to another browser."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A toast no longer lands on the buttons in the corner.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A tip that names a key now draws it as a key.</strong> The promo card printed the markup instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark no longer frosts the cards behind the form.</strong>"
+        }
+      ]
+    }
+  ]
+}

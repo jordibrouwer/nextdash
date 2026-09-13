@@ -289,14 +289,57 @@ body.no-animations .tag-cloud-wordcloud--live .tag-cloud-word {
     text-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
-.tag-cloud-word.is-selected .tag-cloud-word-hash,
-.tag-cloud-word.is-selected .tag-cloud-word-label {
-    color: var(--accent-primary);
+/*
+ * A tag in the filter is a filled pill, which is what the overlays spec draws.
+ *
+ * It used to be the accent colour with an underline under it. In a cloud where
+ * size and colour already carry how often a tag is used, an underline is a
+ * third quiet signal competing with two loud ones -- and the one thing that is
+ * not about frequency at all is which tags are filtering the page right now.
+ * A filled pill is the only shape in the cloud, so it cannot be mistaken for a
+ * heavier tag.
+ */
+.tag-cloud-word.is-selected {
+    background: var(--accent-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.15em 0.6em;
+    font-weight: 700;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 40%, transparent);
 }
 
+.tag-cloud-word.is-selected .tag-cloud-word-hash,
 .tag-cloud-word.is-selected .tag-cloud-word-label {
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
+    /* On the accent, not in it: the page colour is what stays readable on a
+       filled accent across every theme. */
+    color: var(--background-primary);
+}
+
+/* The hover lift is a tag offering itself; a filled one is already taken. */
+.tag-cloud-word.is-selected:hover .tag-cloud-word-hash,
+.tag-cloud-word.is-selected:hover .tag-cloud-word-label {
+    color: var(--background-primary);
+    text-shadow: none;
+}
+
+/*
+ * What the cloud adds up to, on a rule under it.
+ *
+ * The spec closes the cloud with two figures at opposite ends: how many tags
+ * there are, and how many are filtering. Its own flex line, so it sits under
+ * the words rather than wrapping among them.
+ */
+.tag-cloud-total {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+    font-size: var(--text-2xs, 0.62rem);
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    white-space: nowrap;
 }
 
 .tag-cloud-word:focus,

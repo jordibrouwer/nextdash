@@ -109,6 +109,14 @@
             names.forEach(([name, detail, tone]) => list.appendChild(u.row(name, detail, tone)));
             panel.appendChild(list);
         }
+
+        /*
+         * And when that was read. Last, so it sits at the foot of the tile
+         * whatever the widget put above it, and quiet unless the figure is
+         * older than the interval this widget refreshes on.
+         */
+        const age = u.asOf(dash, data?._fetchedAt, { intervalMs: u.refreshMs(widget, dash) });
+        if (age) panel.appendChild(age);
     }
 
     async function render(body, widget, dash) {

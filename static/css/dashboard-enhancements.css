@@ -140,7 +140,7 @@ kbd,
 .dashboard-mini-status {
     display: none;
     font-size: calc(var(--font-size-controls) * 0.95);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-family: var(--font-family-main);
     white-space: nowrap;
     overflow: hidden;
@@ -153,10 +153,10 @@ kbd,
     margin: 0 0.35em;
 }
 
-body[data-layout-version="classic"] .dashboard-mini-status,
-body[data-layout-version="classic"] .status-loading-indicator.show,
-body[data-layout-version="classic"] .date-badge-mobile:not(:empty),
-body[data-layout-version="classic"] .page-swipe-hint {
+body .dashboard-mini-status,
+body .status-loading-indicator.show,
+body .date-badge-mobile:not(:empty),
+body .page-swipe-hint {
     padding: var(--header-chip-pad-block, 0.38rem) var(--header-chip-pad-inline, 0.8rem);
     border-radius: var(--header-chip-radius, 999px);
     border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);

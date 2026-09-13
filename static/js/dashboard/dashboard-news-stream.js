@@ -21,17 +21,6 @@
 (function () {
     'use strict';
 
-    /** What the overview shows before "All news & features" is needed. */
-    const OVERVIEW_LIMIT = 14;
-    /**
-     * How many of the site's own posts the overview guarantees a place.
-     *
-     * Ten, matching what the server keeps, so the posts are all on the page
-     * rather than two of them standing in for the rest. The window is sized to
-     * hold them and still leave room for the releases and features beside
-     * them -- reserving ten out of six would have been the whole overview.
-     */
-    const SITE_POSTS_ON_OVERVIEW = 10;
     /**
      * How many releases' features join the stream.
      *
@@ -196,54 +185,15 @@
         } catch (_error) { /* nothing to do: the dot simply stays */ }
     }
 
-    /**
-     * The rows the overview shows, with the site's posts guaranteed a place.
-     *
-     * Plain date order is right for the list as a whole and wrong for a
-     * six-row window: two hotfixes shipped in one afternoon carry two release
-     * rows and their features, all stamped today, and between them they fill
-     * the window — so the project's own posts, the one source that is not
-     * about the software's version number, fall off the page the day after
-     * they were published. Which is exactly when someone would look.
-     *
-     * Up to SITE_POSTS_ON_OVERVIEW of the newest posts keep their place;
-     * everything else is the stream as it stands, and the order within the
-     * window is still the date.
-     * With a source filter on there is nothing to reserve: the reader has
-     * already said which kind they want.
-     */
-    function overviewRows(items, { limit = OVERVIEW_LIMIT, filter = 'all', reserveForSite = SITE_POSTS_ON_OVERVIEW } = {}) {
-        const list = (items || []).filter((item) => filter === 'all' || item.source === filter);
-        if (filter !== 'all' || list.length <= limit) return list.slice(0, limit);
-
-        const head = list.slice(0, limit);
-        const posts = list.filter((item) => item.source === 'site').slice(0, reserveForSite);
-        // Counted rather than merely looked for: a window holding one post is
-        // not a window holding the posts. Asking "is there a post in here" was
-        // right while two were reserved and one was most of the answer; at ten
-        // it lets a single post stand in for all of them.
-        const already = head.filter((item) => item.source === 'site').length;
-        if (!posts.length || already >= posts.length) return head;
-
-        // The reserved posts, plus as much of the window as still fits around
-        // them. Sorted back into date order so the window reads as a stream
-        // rather than as two lists stapled together.
-        const rest = head.filter((item) => item.source !== 'site')
-            .slice(0, Math.max(0, limit - posts.length));
-        return [...rest, ...posts].sort((a, b) => (b.at || 0) - (a.at || 0));
-    }
-
     function unreadCount(items, seenAt) {
         return (items || []).filter((item) => (item.at || 0) > seenAt).length;
     }
 
     window.DashboardNewsStream = {
-        OVERVIEW_LIMIT,
         SOURCES,
         fetchReleases,
         fetchSiteNews,
         buildStream,
-        overviewRows,
         readSeenAt,
         markSeen,
         unreadCount,

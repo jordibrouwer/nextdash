@@ -2,9 +2,9 @@
 
    Unscoped, same reasoning as spacing-tokens.css and typography-tokens.css.
 
-   layout-modern-tokens.css already defines --layout-radius-sm/md/lg/pill
-   (8/12/16px/pill), but only for body[data-layout-version="modern"] — and
-   only four steps, which is coarser than what classic actually uses today.
+   A layout-scoped layer used to define four steps of its own (8/12/16px and
+   a pill) for one of the two layouts. Four is coarser than what the app
+   actually uses, and there is one layout now.
    Measured across every static/css/*.css file: 352 border-radius
    declarations, mixing px and rem for the same handful of intended sizes
    (3px sitting next to 0.2rem, 4px next to 0.25rem, and so on), clustering

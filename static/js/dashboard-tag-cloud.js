@@ -866,6 +866,28 @@
                 this.body.appendChild(chip);
             });
 
+            /*
+             * What the cloud adds up to: how many tags there are, and how many
+             * of them are filtering the page. The spec closes its cloud with
+             * exactly these two, at opposite ends of a rule -- a cloud says
+             * which tags are big, and says nothing about how many there are or
+             * how much of it you have switched on.
+             */
+            const active = this.normalizeActiveTags().length;
+            const total = document.createElement('div');
+            total.className = 'tag-cloud-total';
+            total.setAttribute('aria-hidden', 'true');
+            const left = document.createElement('span');
+            left.textContent = (t('dashboard.tagCloudTotal', 'Total tags: {count}') || 'Total tags: {count}')
+                .replace('{count}', String(ranked.length));
+            const right = document.createElement('span');
+            right.textContent = active
+                ? (t('dashboard.tagCloudActive', '{count} filtering') || '{count} filtering')
+                    .replace('{count}', String(active))
+                : t('dashboard.tagCloudNoneActive', 'none filtering');
+            total.append(left, right);
+            this.body.appendChild(total);
+
             requestAnimationFrame(() => this.positionModal());
         },
 

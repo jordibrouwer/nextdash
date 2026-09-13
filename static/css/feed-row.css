@@ -91,34 +91,6 @@
     border-left: 3px solid var(--accent-warning);
 }
 
-/* Rounded corners would clip a left border, so modern redraws the edge as an
-   inset shadow. Kept here with the edge it belongs to rather than repeated in
-   each view's modern block. */
-body[data-layout-version="modern"] .feed-row {
-    border-radius: var(--layout-radius-md, 12px);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-accent,
-body[data-layout-version="modern"] .feed-row--edge-error,
-body[data-layout-version="modern"] .feed-row--edge-warning {
-    border-left-width: 1px;
-}
-
-body[data-layout-version="modern"] .feed-row--edge-accent {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-primary);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-error {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-error);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-warning {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-warning);
-}
-
 /* The feed itself: a column of cards, no dividers and no striping — the card
    border and the gap do the separating. */
 .feed-list {
@@ -226,10 +198,24 @@ body[data-layout-version="modern"] .feed-row--edge-warning {
     grid-template-columns: 1.1rem 3rem 1fr auto;
 }
 
-body[data-list-density="compact"] .feed-row--grid {
+/*
+ * Row height follows the one density setting, not a second one.
+ *
+ * These read data-list-density, which this app no longer has: the rows and the
+ * dashboard's cards are the same reading preference and now share
+ * densityMode. Four values rather than two, because that is what the setting
+ * holds -- and `auto` sits with compact, which is what it resolved to before
+ * anyone could choose it here.
+ */
+body[data-density-mode="compact"] .feed-row--grid,
+body[data-density-mode="auto"] .feed-row--grid {
     padding-block: var(--space-1);
 }
 
-body[data-list-density="comfortable"] .feed-row--grid {
+body[data-density-mode="comfortable"] .feed-row--grid {
     padding-block: var(--space-3);
+}
+
+body[data-density-mode="dense"] .feed-row--grid {
+    padding-block: var(--space-hairline, 0.12rem);
 }

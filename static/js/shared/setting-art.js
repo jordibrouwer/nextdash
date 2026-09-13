@@ -72,19 +72,7 @@
         return frame(`<span class="setting-art-type is-${size}">Aa</span>`, 'setting-art-frame--type');
     }
 
-    /**
-     * The two layout versions, told apart by the one thing that differs at a
-     * glance: Classic sets its rows flat on the page, Modern puts each category
-     * on a raised card.
-     */
-    function layoutVersion(version) {
-        const block = `<span class="setting-art-card">${col(3)}</span>`;
-        return frame(
-            `<span class="setting-art-layout is-${version}">${block}${block}</span>`,
-            'setting-art-frame--layout'
-        );
-    }
-
+    
     /**
      * Where the button bar sits on the page. The dot is the bar; the frame is
      * the dashboard around it — which is the whole question this setting asks
@@ -393,7 +381,7 @@
     }
 
     const BUILDERS = {
-        grid, spacing, margins, density, fontSize, layoutVersion, barPosition, flow,
+        grid, spacing, margins, density, fontSize, barPosition, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
         boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
     };

@@ -28,16 +28,29 @@
     transition: opacity 0.2s ease-out, visibility 0s linear 0s;
 }
 
+/*
+ * The command surface, following the overlay spec.
+ *
+ * No padding of its own: the prompt row, the results and the mode switch each
+ * carry theirs, which is what lets the line under the prompt run the full
+ * width of the panel instead of stopping short on both sides.
+ *
+ * The spec's 8px corner rather than 12: a panel that sits on the page and
+ * holds a list of rows reads as a sheet, and a sheet has a tighter corner than
+ * a card. Through the radius token, so a theme's own radius scale still
+ * carries. Blur halved to 8px for the same reason the tiers elsewhere are
+ * graded -- what is behind an overlay you read should stay out of the way
+ * rather than churn.
+ */
 .search-container {
-    padding: var(--space-4, 1rem) 1.25rem var(--space-3, 0.75rem);
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: var(--layout-radius-md, 12px);
+    border-radius: var(--radius-5, 8px);
     background: color-mix(in srgb, var(--background-modal) 90%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
     display: flex;
     flex-direction: column;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
@@ -56,24 +69,38 @@
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
+/*
+ * The prompt: a row of its own, ruled off from the results under it.
+ *
+ * It used to be a line with a margin under it inside a padded panel, so what
+ * separated question from answer was white space. A rule the full width of
+ * the sheet is what the spec draws, and it is what makes the panel read as
+ * two parts rather than one column of things.
+ */
 .search-prompt {
     display: flex;
     align-items: center;
+    gap: 0.85rem;
+    padding: var(--space-4, 1rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--space-2, 0.5rem);
     justify-content: flex-start;
 }
 
+/*
+ * The mode, as a pill: small, loud and tinted with the accent of the mode it
+ * names. The gap on the row spaces it now, so it carries no margin of its own.
+ */
 .search-prefix {
     font-family: var(--font-family-main);
-    margin-right: var(--space-2, 0.5rem);
     color: var(--accent-success);
-    font-size: 0.65em;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    padding: 0.15em 0.45em;
-    border-radius: var(--layout-radius-sm, 8px);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: var(--radius-3, 4px);
     background: color-mix(in srgb, var(--accent-success) 15%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent-success) 35%, transparent);
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -149,6 +176,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-hairline, 0.15rem);
+    /* The surface has none; the block that scrolls keeps its own. */
+    padding: var(--space-2, 0.5rem) 0;
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
@@ -183,13 +212,19 @@
     min-height: 0;
 }
 
+/*
+ * A row runs the width of the sheet, and the 2px on its left edge is the only
+ * thing that moves when it is the one you are on. It used to be a rounded chip
+ * inset from both sides, which turned that edge into a floating tick.
+ */
 .search-match {
-    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    padding: 0.45rem var(--space-4, 1rem);
+    gap: 0.75rem;
     cursor: pointer;
     transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
     border: none;
     border-left: 2px solid transparent;
-    border-radius: var(--radius-3, 4px);
+    border-radius: 0;
     background: transparent;
     text-align: left;
     display: flex;
@@ -208,8 +243,11 @@
 .search-match:hover,
 .search-match.keyboard-selected {
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     border-left-color: var(--accent-primary);
+    /* The light falls in from the edge that carries the bar, rather than
+       sitting on the row as an even tint. */
+    box-shadow: inset 4px 0 12px -4px color-mix(in srgb, var(--accent-primary) 24%, transparent);
     transform: none;
 }
 
@@ -309,14 +347,17 @@
     display: flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem) var(--space-2, 0.5rem) var(--space-1, 0.2rem);
+    /* Indented to the row column, so a heading and the rows under it start on
+       one line rather than two. */
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem) var(--space-1, 0.25rem);
     cursor: pointer;
     user-select: none;
     margin-top: var(--space-1, 0.25rem);
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
-    opacity: 0.55;
-    font-size: var(--text-xs, 0.72rem);
-    letter-spacing: 0.08em;
+    opacity: 0.45;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     transition: opacity 0.15s ease;
 }
@@ -356,10 +397,18 @@
     flex: 1;
 }
 
+/* Pushed to the far edge: the label says what the group is and the figure says
+   how much of it there is, and the two belong at opposite ends of the line. */
+.search-command-group-label {
+    flex: 1;
+    min-width: 0;
+}
+
 .search-command-group-count {
-    font-size: var(--font-size-controls);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     opacity: 0.7;
+    flex-shrink: 0;
 }
 
 .search-match.command-group-child {
@@ -376,7 +425,7 @@
 }
 
 .search-match.filter-completion-entry .search-match-shortcut {
-    color: var(--accent-info, var(--accent-success));
+    color: var(--accent-info);
 }
 
 .search-match.filter-completion-entry .search-match-name {
@@ -671,8 +720,8 @@ body.no-animations .search-button[data-tooltip]::after {
  * under each group (corners) and keeps the faces translucent against it, which
  * is a whole answer to the same question. Not for the rail either -- there the
  * buttons sit on the rail's own surface. */
-body:not([data-layout-version="modern"]):not([data-rail]) .button-container .search-button,
-body:not([data-layout-version="modern"]):not([data-rail]) .tag-cloud-toggle-btn.search-button {
+body:not([data-rail]) .button-container .search-button,
+body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
     --search-button-under: var(--background-primary);
 }
 
@@ -808,7 +857,6 @@ body[data-button-position="bottom-right"] .btn-group-secondary {
 }
 
 
-
 /* search-flow-hint past niet in de dock */
 body[data-button-position="bottom-left"] .search-flow-hint,
 body[data-button-position="bottom-right"] .search-flow-hint {
@@ -888,13 +936,48 @@ mark.search-highlight {
 }
 
 /* Search mode tabs — shown at the bottom of the search container */
+/*
+ * One track, three positions.
+ *
+ * These are not three buttons to three places: search, commands and finders
+ * are one panel that changes mode on a key, and this is how that is shown. A
+ * shared border around the set says "pick one of these"; three separately
+ * outlined pills said "here are three things".
+ *
+ * The modern layout has drawn it this way since it landed (overlays-modern.css
+ * still refines the radii and transitions there). Classic is the default and
+ * is where most readers are, so it gets the same treatment rather than a
+ * looser one -- a switch should not look like a switch only for people who
+ * changed a layout preference.
+ */
 .search-mode-tabs {
     display: flex;
     gap: var(--space-1-5, 0.4rem);
-    padding-top: var(--space-2, 0.6rem);
-    margin-top: var(--space-1-5, 0.4rem);
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+    padding: var(--space-1-5, 0.35rem);
+    /* Centred under a rule of its own: the switch is the foot of the sheet,
+       not the last row of the list. */
+    margin: 0 auto var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+    border-radius: var(--radius-6, 10px);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     flex-shrink: 0;
+    width: fit-content;
+}
+
+/* The plate the switch stands on, ruled off from the results above it. */
+.search-mode-tabs-row {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--background-primary) 60%, transparent);
+    flex-shrink: 0;
+}
+
+/* The pill's own outline goes with it: inside a track, two borders around one
+   thing read as a seam. The active position is told apart by its fill. */
+.search-mode-tab {
+    border-color: transparent;
 }
 
 .search-mode-tab {
@@ -936,20 +1019,23 @@ mark.search-highlight {
 /* Active states — match the search-prefix badge colours */
 .search-mode-tab.active[data-mode="search"] {
     color: var(--accent-success);
-    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-success) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-success) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-success) 12%, transparent);
 }
 
 .search-mode-tab.active[data-mode="command"] {
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .search-mode-tab.active[data-mode="finder"] {
     color: var(--accent-secondary);
-    background: color-mix(in srgb, var(--accent-secondary) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-secondary) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-secondary) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-secondary) 12%, transparent);
 }
 
 /* Hide on mobile extra-small to save vertical space */
@@ -1191,4 +1277,39 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
 
 .search-group-more-arrow {
     opacity: 0.7;
+}
+
+/*
+ * The bar as a surface of its own.
+ *
+ * It is the one free-floating control surface in the product: always there,
+ * over whatever is on the page. Until now it was a transparent flex row and
+ * every button carried its own plate, which read as a handful of loose
+ * controls rather than as chrome.
+ *
+ * Airier than any other surface, deliberately -- the grid and the page wash
+ * read through it -- and lifted by a deep shadow rather than by a glow. An
+ * ambient halo was tried and rejected: a permanently glowing element competes
+ * with the bloom that marks focus, and once two effects look alike neither
+ * means anything.
+ *
+ * Not on flat. Whoever asked for flat asked for no plate either, and the
+ * rules above that made this transparent stay the whole story there.
+ */
+body:not([data-depth="flat"]) .button-container {
+    /* Sized to the buttons it holds, because a plate the width of the old
+       transparent row would be a slab across half the screen. The ceiling is
+       the one the row already had, so a narrow window still wraps inside it
+       rather than overflowing. */
+    width: fit-content;
+    max-width: min(52rem, calc(100vw - 2.5rem));
+    padding: var(--space-3, 0.7rem);
+    border-radius: var(--radius-7, 12px);
+    background: color-mix(in srgb, var(--background-secondary) 25%, transparent);
+    backdrop-filter: blur(var(--glass-blur-page, 18px)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur-page, 18px)) saturate(1.8);
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 12px 48px color-mix(in srgb, black 40%, transparent);
 }

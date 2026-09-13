@@ -31,6 +31,46 @@
  * overlay's clamped padding above — the two have to agree, or the cap starts
  * describing space the overlay is not giving.
  */
+/*
+ * The sheet, in the same language as the other overlays.
+ *
+ * This was the one overlay outside the depth ladder: its own corner, its own
+ * shadow, no edges, and it never saw the glass step. The overlay spec draws
+ * every panel the same way -- an 8px corner, a lit top edge and a shaded foot,
+ * and a deep drop that says the thing is above the page rather than resting on
+ * it. Through the tokens, so a theme's radius scale and depth choice reach it
+ * like they reach everything else.
+ *
+ * The ground stays near-opaque. It is the overlay tier: you type into this,
+ * and what is behind it has no business showing through.
+ */
+/*
+ * Three grounds: the sheet, the groups on it, the fields cut into them.
+ *
+ * The form used to be painted with two: the sheet took the page colour and the
+ * fields took the step above it, so every input sat *lighter* than the surface
+ * holding it -- eleven raised boxes on a sheet that was the same colour as the
+ * page behind it. The overlay spec has it the other way round, and so does
+ * every physical control anyone has ever pressed: the panel lifts off the
+ * page, and what you type into is cut back into the panel.
+ *
+ * These do not ride --theme-depth the way --surface-1 and --surface-2 do.
+ * Depth decides how much a thing is lit and how far it casts, and at flat it
+ * decides none of that -- which would collapse all three of these onto the
+ * page colour and leave the form a single flat field of one colour. That a
+ * sheet is a sheet is not a depth setting.
+ *
+ * On :root rather than on the open-modal class, because the form's surfaces
+ * are resolved to opaque rgb through a probe element that is measured against
+ * the body -- and that happens a frame before the class goes on, so scoped
+ * here the probe read the fallback every time.
+ */
+:root {
+    --bookmark-sheet-ground: color-mix(in srgb, var(--text-primary) 5%, var(--background-primary));
+    --bookmark-sheet-slab: color-mix(in srgb, var(--text-primary) 9%, var(--background-primary));
+    --bookmark-sheet-field: var(--background-primary);
+}
+
 .bookmark-form-modal-dialog {
     width: min(520px, 100%);
     max-height: min(calc(100dvh - (2 * clamp(8px, 3vh, 24px))), 920px);
@@ -39,10 +79,29 @@
     flex-direction: column;
     margin: auto;
     flex-shrink: 0;
-    border-radius: var(--radius-7, 14px);
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.28));
-    background: var(--background-primary, #fff);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    border-radius: var(--radius-5, 8px);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    /*
+     * The colour every other modal in the app is painted in.
+     *
+     * It used to be --background-primary, which is the page. The sheet was
+     * literally the same colour as what it covered, and the only thing saying
+     * it was a sheet at all was the shadow under it -- so on a flat theme,
+     * where there is no shadow, it had no edge of its own.
+     */
+    background: var(--bookmark-sheet-ground);
+    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
+}
+
+/*
+ * The edges and the drop, written where the depth ladder can reach them: one
+ * declaration, because box-shadow does not stack across rules.
+ */
+html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 24px 64px color-mix(in srgb, black calc(60% * var(--theme-depth)), transparent);
 }
 
 .bookmark-form-modal-header {
@@ -54,10 +113,31 @@
     border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
 }
 
+.bookmark-form-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
 .bookmark-form-modal-header h2 {
     margin: 0;
     font-size: calc(var(--font-size-text) * 1.12);
     font-weight: 600;
+    /* The app lower-cases everywhere it names something. This was the exception. */
+    text-transform: lowercase;
+}
+
+/* The key, as it is typed. Same chip the other overlays put beside their name. */
+.bookmark-form-modal-key {
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .bookmark-form-modal-close {
@@ -112,17 +192,6 @@
 }
 
 /*
- * One column or two.
- *
- * The columns are real elements so Tab runs down one and then the other; here
- * they are dissolved, which leaves the form exactly the flex column it always
- * was. The wide layout below is the only place they become boxes.
- */
-.bookmark-inline-col {
-    display: contents;
-}
-
-/*
  * Two columns once the window can hold them.
  *
  * 860px is where two columns of about 410 still hold a select, the icon row and
@@ -150,20 +219,50 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         column-gap: 20px;
-        align-items: start;
+        /* Equal-height slabs: two groups, not one group and a shorter one. */
+        align-items: stretch;
     }
 
-    .bookmark-form-modal-body .bookmark-inline-col {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1-5, 0.35rem);
-        min-width: 0;
+    /* Side by side there is nothing to stack, so the stacking gap goes. */
+    .bookmark-form-modal-body .bookmark-inline-form {
+        row-gap: 0;
     }
 
     /* The buttons belong to the whole form, not to the column they follow. */
     .bookmark-form-modal-body .bookmark-inline-actions {
         grid-column: 1 / -1;
     }
+}
+
+/*
+ * The buttons are the foot of the sheet, not the last field.
+ *
+ * They sat in the flow with a 4px margin, so what separated "fill this in"
+ * from "do it" was the same gap that separates two fields. A rule the width of
+ * the sheet is what every other overlay draws between a body and what closes
+ * it.
+ */
+.bookmark-form-modal-body .bookmark-inline-actions {
+    /*
+     * Pinned to the foot of the sheet, the way every overlay's footer is.
+     *
+     * The buttons scrolled with the fields, so on a short window -- a laptop
+     * with tabs open, a phone with the keyboard up -- Save was below the fold
+     * of a form you had just finished filling in, and the way to reach it was
+     * to scroll a form you were done with. Sticky rather than a real footer
+     * element: the buttons belong to the form, and the form is shared with
+     * whatever opens it.
+     *
+     * The negative margins pull the bar out to the body's own padding so the
+     * rule above it spans the sheet instead of stopping short on both sides.
+     */
+    position: sticky;
+    bottom: -18px;
+    z-index: 1;
+    margin: var(--space-3, 0.75rem) -16px -18px;
+    padding: var(--space-3, 0.75rem) 16px 18px;
+    background: var(--bookmark-sheet-ground);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
 }
 
 body.bookmark-form-modal-open .bookmark-inline-form,
@@ -196,4 +295,118 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
         max-height: none;
         min-height: min(90vh, 100%);
     }
+}
+
+/*
+ * The two groups become two slabs.
+ *
+ * The columns have always been there and have always been silent: on a wide
+ * window the gap between them was the only thing saying "these belong
+ * together", and on a narrow one they ran into each other and the form was
+ * back to the stack of rows the split was meant to break up. The overlay spec
+ * draws a group as a slab -- a lifted panel with a lit top edge and a title
+ * over a rule -- so that is what a group is here too.
+ *
+ * Both columns, at every width. `display: contents` below the breakpoint used
+ * to dissolve them; it cannot any more, or the slab has nothing to paint. The
+ * single column returns by the grid going away, not by the boxes going away.
+ */
+.bookmark-form-modal-body .bookmark-inline-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.35rem);
+    min-width: 0;
+    padding: var(--space-3, 0.75rem);
+    border-radius: var(--radius-5, 8px);
+    background: var(--bookmark-sheet-slab);
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+}
+
+.bookmark-inline-group-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding-bottom: var(--space-1, 0.25rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 50%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+    text-transform: lowercase;
+    opacity: 0.75;
+}
+
+/*
+ * A field is a hole in the slab, not another slab on top of it.
+ *
+ * The inputs were painted in --background-secondary while the sheet was
+ * --background-primary, so every field sat a step *lighter* than the surface
+ * holding it -- eleven raised boxes on a flat sheet, which is the arrangement
+ * upside down. The sheet is the modal colour now and the slabs step up from
+ * it, so the fields step back down to the page colour and read as recessed.
+ *
+ * Tighter corners than the slab, too. A 8px input inside an 8px group inside
+ * an 8px sheet is three identical corners nesting; the spec's scale steps down
+ * as the thing gets smaller.
+ */
+.bookmark-form-modal-body .bookmark-inline-input,
+.bookmark-form-modal-body .bookmark-inline-select,
+.bookmark-form-modal-body .bookmark-inline-textarea {
+    border-radius: var(--radius-3, 4px);
+}
+
+/*
+ * Focus, in the theme's own glow.
+ *
+ * A flat 2px halo in the accent colour was the one focus ring in the app that
+ * did not know what depth the theme was set to. The bloom is the same light
+ * every other lifted thing is lit with, so a flat theme gets a plain border
+ * and a rich one gets the glow, without this rule having to know which.
+ */
+.bookmark-form-modal-body .bookmark-inline-input:focus,
+.bookmark-form-modal-body .bookmark-inline-select:focus,
+.bookmark-form-modal-body .bookmark-inline-textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 45%, transparent),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(30% * var(--theme-depth, 1)), transparent);
+}
+
+/* The gap between the two groups when they are stacked. */
+.bookmark-form-modal-body .bookmark-inline-form {
+    gap: var(--space-3, 0.75rem);
+}
+
+/*
+ * A field label is a caption, not a heading.
+ *
+ * They were set at the body size in title case, so "Icon URL (opt)" carried
+ * the same weight as the group it sits in and rather more than the value
+ * underneath it -- eleven headings down a form whose actual headings are the
+ * two group titles. Smaller and lower-case, the way the app names everything
+ * else it names.
+ */
+.bookmark-form-modal-body .bookmark-inline-label {
+    font-size: var(--font-size-small, 0.78rem);
+    font-weight: var(--font-weight-medium, 500);
+    text-transform: lowercase;
+    opacity: 0.85;
+}
+
+/*
+ * The button that does the thing looks like it.
+ *
+ * Save, Create + New and Cancel were three outlined buttons in a row, so the
+ * one that commits the form was told apart from the one that throws it away by
+ * reading them. Filled while it can be pressed; when the form is not valid
+ * yet it keeps the outline, so the fill arriving is also the form saying it
+ * has what it needs.
+ *
+ * Scoped to the actions bar: `bookmark-inline-save` is not the save button's
+ * name, it is a style hook, and the Set URL button in the icon row wears it
+ * too. Filling that one as well put two identical green buttons in the form,
+ * neither of which was then the one that commits it.
+ */
+.bookmark-form-modal-body .bookmark-inline-actions .bookmark-inline-save:not([aria-disabled="true"]):not(.bookmark-inline-save--invalid) {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--background-primary);
+    font-weight: var(--font-weight-semibold, 600);
 }

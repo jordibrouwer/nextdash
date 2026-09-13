@@ -80,38 +80,94 @@ html[data-theme] body[data-depth="glass"] {
 
     --layout-surface: color-mix(in srgb,
         var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 78%), transparent);
-    --background-modal: color-mix(in srgb,
-        var(--background-primary) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    /* De modal leest mee op de overlaytrede in plaats van op de alpha van het
+       theme: hij draagt tekst waar de lezer op handelt. */
+    --background-modal: var(--surface-glass-overlay);
     --layout-modal-bg: var(--background-modal);
+
+    /*
+     * Drie tredes, geordend naar hoeveel er op een vlak gelezen wordt.
+     *
+     * Eén alpha voor alles was het probleem: dan is een contextmenu net zo
+     * doorzichtig als de ondergrond, terwijl dat juist het vlak is waarvan de
+     * lezer de tekst gebruikt om iets te doen. De eerste ontwerpronde kwam om
+     * precies die reden onleesbaar terug.
+     *
+     * Alle drie schalen mee met wat het theme zelf vraagt -- surfaceAlpha komt
+     * uit ThemeColors en staat op 1 tenzij een theme anders zegt -- behalve de
+     * bodem onder de overlaytrede. Die is er omdat leesbaarheid geen
+     * themakeuze is: wat tekst draagt om op te handelen staat op vaste grond,
+     * en haalt zijn diepte uit zijn randen en zijn schaduw.
+     */
+    --surface-glass-page: color-mix(in srgb,
+        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 70%), transparent);
+    --surface-glass-slab: color-mix(in srgb,
+        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 88%), transparent);
+    /* Vast, niet meeschalend: een theme mag zijn blokken zo dun maken als het
+       wil, maar niet het menu waar de lezer uit kiest. max() binnen color-mix
+       parst bovendien niet -- de hele waarde valt dan weg. */
+    --surface-glass-overlay: color-mix(in srgb,
+        var(--background-secondary) 96%, transparent);
+
+    /*
+     * En de blur erachter, in dezelfde volgorde. Een overlay houdt er net
+     * genoeg van over om zijn rand van de pagina te scheiden; meer zou over
+     * zijn eigen tekst heen wassen.
+     */
+    --glass-blur-page: var(--theme-surface-blur, 0px);
+    --glass-blur-slab: calc(var(--theme-surface-blur, 0px) * 0.6);
+    --glass-blur-overlay: calc(var(--theme-surface-blur, 0px) * 0.25);
 }
 
+/* ── De drie tredes, toegepast ──────────────────────────────────────────
+   Dezelfde lijst als hiervoor, nu gesplitst naar hoeveel er op een vlak
+   gelezen wordt. De chrome mag het meest doorkijken, blokken zitten
+   ertussenin, en wat tekst draagt om op te handelen houdt net genoeg blur
+   over om zijn rand van de pagina te scheiden. */
+
+/* Chrome: knoppen, tabs, de balk. Weinig tekst, veel doorkijk. */
 html[data-theme] body[data-depth="glass"] :is(
-    .config-tile,
-    .config-panel,
-    .config-choices,
     .pages-link--icon .pages-link-anchor,
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
     :not([data-button-position="side-left"]) .button-container,
+    .button-container,
     .search-button,
     .btn-group,
-    .tag-cloud-toggle-btn.search-button,
+    .tag-cloud-toggle-btn.search-button
+) {
+    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
+}
+
+/* Blokken en rails: een lijst om te lezen, geen venster om door te kijken. */
+html[data-theme] body[data-depth="glass"] :is(
+    .config-tile,
+    .config-panel,
+    .config-choices,
     #dashboard-layout > .empty-state,
     .feed-row,
-    .search-container,
-    .button-container,
     .quickstart-card,
     .inbox-item,
     .lvs-summary,
     .lvs-group,
     .lvs-filter,
     .health-view-item,
-    .health-monitor-stat,
-    .modal
+    .health-monitor-stat
 ) {
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
+}
+
+/* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
+html[data-theme] body[data-depth="glass"] :is(
+    .modal,
+    .search-container,
+    .bookmark-form-modal-dialog
+) {
+    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
 }
 
 /*
@@ -211,21 +267,7 @@ html[data-theme] body:not([data-depth="flat"]) {
    --layout-shadow-* zijn die van de moderne layout. */
 
 html[data-theme] body:not([data-depth="flat"]) {
-    --edge-light:
-        inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(6% * var(--theme-depth)), transparent),
-        var(--surface-glow-ring);
-}
-
-body[data-layout-version="modern"]:not([data-depth="flat"]) {
-    --layout-shadow-sm:
-        0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent),
-        var(--surface-glow-ring);
-    --layout-shadow-md:
-        0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent),
-        var(--surface-glow-ring);
-    --layout-shadow-lg:
-        0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent),
-        var(--surface-glow-ring);
+    --edge-light: var(--edge-top), var(--surface-glow-ring);
 }
 
 /* ── Gloed in classic ────────────────────────────────────────────────────
@@ -243,17 +285,35 @@ body[data-layout-version="modern"]:not([data-depth="flat"]) {
    elkaar is ruis en geen diepte, en in classic hebben die rijen geen vlak om
    op te tillen. In modern gloeien ze mee via --layout-shadow-*, zoals nu. */
 
-html[data-theme] body:not([data-layout-version="modern"]):not([data-depth="flat"]) :is(
+html[data-theme] body:not([data-depth="flat"]) :is(
     .config-tile,
     .config-panel,
     .config-choices,
-    .search-container,
     .lvs-summary,
     .lvs-group,
     .quickstart-card,
     .health-monitor-stat
 ) {
-    box-shadow: var(--surface-glow-ring);
+    /* De twee randen plus de schaduw, in één declaratie omdat box-shadow niet
+       stapelt over regels heen. De gloed staat er niet apart bij: die zit sinds
+       de hergroepering hierboven al in --edge-light zelf, en twee keer dezelfde
+       ring schilderen maakt hem alleen maar harder. */
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+}
+
+/*
+ * Het commandovenster krijgt dezelfde twee randen, maar zijn eigen val.
+ *
+ * Het stond in de lijst hierboven en kreeg daarmee de cast van een plaat: 3px
+ * omlaag, 15px zacht. Dat is de schaduw van iets dat op de pagina ligt, en dit
+ * ligt erboven -- de overlay-spec tekent 0 24px 64px. De randen blijven, want
+ * die zijn de taal van de app; alleen de diepte hoort bij wat het ding is.
+ */
+html[data-theme] body:not([data-depth="flat"]) .search-container {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 24px 64px color-mix(in srgb, black calc(60% * var(--theme-depth)), transparent);
 }
 
 /* Doorzichtigheid is een van de dingen waar een lezer expliciet nee tegen kan

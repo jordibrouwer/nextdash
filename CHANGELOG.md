@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.10.0 — 13 September 2026](#v1100--13-september-2026)
 - [v1.9.0 — 11 September 2026](#v190--11-september-2026)
 - [v1.8.0 — 10 September 2026](#v180--10-september-2026)
 - [v1.7.1 — 9 September 2026](#v171--9-september-2026)
@@ -203,6 +204,68 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.10.0 — 13 September 2026
+
+### Appearance
+
+- **new — one layout, and `layoutVersion` is gone.** Classic and modern were two dashboards to keep in step, and half of what modern did better never reached anyone who had not found the setting. The row treatment, the mode pills reading as one switch and the thickness under config's panels were carried onto classic first; the modern branch was then folded away, taking `data-layout-version` with it and leaving one set of rules per surface. A stored `layoutVersion: "modern"` migrates to `rowHighlight: "strong"` so an install that chose the stronger highlight keeps it — the setting is now its own, under Appearance, rather than a side effect of a layout nobody was otherwise choosing.
+- **new — glass is three tiers, derived per theme.** A page, a panel and an overlay each blur by how much has to be read through them (`--theme-surface-alpha`, `--theme-surface-blur`), and each theme works its own glass out of its own palette rather than sharing four hand-written character themes' values. Picking *glass* now does something on every theme.
+- **new — one rung of the surface ladder is worth what the palette has room for.** `themeSurfaceStep` scales `--surface-1..3` by the distance a theme leaves between its page and its ink, anchored on retro-crt-dark's measured 0.828. Three per cent of an ink that sits close to its ground is not a step anyone can see, and the collection had 182 of 222 themes on one value before the slope replaced the threshold.
+- **new — a theme answers for its fourth colour.** `--accent-info` is derived as the hue furthest from success, warning and error, so a surface that needs a fourth signal no longer borrows one of the three that already mean something.
+- **new — depth, text contrast, theme backdrop, backdrop, favicon harmonisation and style apply without a reload, and are in the command palette.** The controls carry `special: 'chrome'` / `'chromeRender'` so the change reaches the page as it is made.
+- **fix — the edge tokens were restated, so raising depth did nothing.** `theme-character.css` loads after `theme-depth.css` and redeclared `--edge-light` at a flat 6%; the lit edge is `--edge-top` now and character composes with it rather than overwriting it.
+
+### Panels
+
+- **new — the overlays are one design.** Search, the cheat sheet, recent bookmarks, the tag cloud, the bookmark form and the context menus are drawn from the same vocabulary: an 8px corner, the two edges, a real drop, the panel's name with the key that opens it beside it, and a way out on the right. The wide *Close* button and the duplicate ESC hint under it are gone from each.
+- **new — recent bookmarks is a narrow panel of quiet rows.** 760px of outlined cards became a 440px list: a favicon rather than the row's own position in the list, the category inline behind the name, the time as text rather than an accent pill, and every row in one slab instead of one box each. The foot says how many are shown and what Enter does.
+- **new — a cheat sheet row ends in its key.** The key led the row in a column 40% of its width, so the reader scanned keys to find the thing they wanted. The header carries `!` and the way out; a pinned foot counts the shortcuts.
+- **new — the bookmark form is a sheet with three grounds.** The sheet lifts off the page, the two groups (*what it is*, *where it goes*) lift off the sheet, and the fields are cut back down into them — the arrangement was upside down, with eleven raised fields on a sheet painted the same colour as the page behind it. The groups are equal-height boxes at every width, the actions are pinned to the foot, and only the button that saves is filled.
+- **new — the context menus joined the depth ladder.** `.move-popover` is the one surface every menu wears — bookmark, category, config, check-mode, and the move, tag and delete pickers — and it drew the same flat box at rich, glass and flat alike, with a 10px corner and `0 4px 18px` of `--text-primary` at 14%, which on a dark theme is a halo under the menu rather than a shadow. Edges, a black drop and the theme's own light now, and **no `backdrop-filter` at any depth**: blur on a menu is what gave Safari a composited layer that hit-tests in front of what it covers, which is why `.health-view-menu` lost its own.
+- **fix — a panel inherited the previous one's header.** One `#app-modal` serves every panel and `show()` only ever replaced the title, so opening What's new after the cheat sheet left two *Esc ×* buttons and a `!` chip naming a panel already closed. Callers mark what they add with `data-modal-header-extra`; `show()` clears it.
+- **fix — the What's new chrome rule hid another panel's buttons.** The analytics notice borrows the same shell (`modalClass: 'whats-new-modal analytics-notice-modal'`), so hiding the action row by class took its *Turn on* button with it — a panel whose whole purpose is that button. The rule is scoped to `:has(.wn-content)`, the release notes' own body, which only the panel it is about renders.
+- **fix — the first-run card covered the buttons in its own corner.** The Quick setup card is fixed bottom-left at `z-index: 2147482800`; the tag cloud and What's new buttons sit at 1002 and 1001. `elementFromPoint` in the middle of the What's new button returned `.quickstart-actions`. The card clears two rows of the corner stack now.
+
+### Search & commands
+
+- **new — one door to the command panel.** Search, commands and finders are one surface with a mode switch, so `>`, `:` and `?` open the same panel in the mode asked for, and the mode keys keep working once it is open.
+- **new — the search overlay is drawn to the command-surface spec.** Container padding 0 with a `--radius-5` corner and a 24/64 drop, a prompt row with a rule under it, uppercase prefix chips, tighter matches, and a plate under the mode tabs so the rule above them spans the sheet.
+- **new — a command can carry a URL.**
+- **fix — `?` swallowed what you typed next, and shouted it back.** The finders opened without taking the input, and the query was upper-cased on the way back out.
+
+### Config
+
+- **new — Appearance and Behavior are laid out in blocks, one subject each.**
+- **new — the overview is about the collection, and the news has a page.** The stream moved to About → News & features, which carries the unread count, the dates and the per-source filter. The foot that says why a source is missing and the marker that clears the dots moved with it.
+- **new — config's statistics and a widget readout are one component.** `StatTile.build`/`.html` in `static/js/shared/stat-tile.js`, with one set of rules for the figure, the caption and the delta; the two had drifted to upper case at 0.06em in one place and normal case at 0.03em in the other.
+- **new — a delta says which way it moved, and the rules are the same everywhere.** A directional delta (a state got better or worse) takes success or error; a neutral one (a count moved) stays quiet, because one fewer bookmark is smaller, not worse.
+- **fix — the finders and commands buttons had two defaults.** Folding the three doors into one panel set both to `false` in `defaultSettings`, while the normaliser still flipped an absent key to `true` — so a fresh install got one answer and every upgraded one the other, and the client's own `FIELD_META` agreed with the second. All three say `false` now; both are one toggle away in Config.
+- **fix — four settings nothing read are gone**, along with the locale keys for what was removed: `showSearchButtonText`, `showFindersButtonText`, `showCommandsButtonText`, `showDockLayoutSelector`, `configGeneralLayer` and `configGeneralPanels`.
+- **fix — the appearance settings are in the command palette.**
+
+### Health & Inbox
+
+- **new — the shell header takes its colour from the theme.** It was `--background-primary` with a hairline under it — a black band across the top of a dark theme, a white one on a light theme, and the one element on either page that took nothing from the theme. It wears the dashboard widget's shape now, mixed into `--background-primary` rather than into `transparent` because it is sticky and the rows have to pass behind it.
+- **fix — row density was two settings with opposite defaults.** The dashboard read `densityMode` off the server and defaulted to compact; the list views kept their own value in `localStorage` and defaulted to comfortable, while `list-density.js`'s own comment said it was "one setting for the whole app". `ListDensity` is a front for `densityMode` now, feed rows key off `data-density-mode`, and a value stored by the old module is carried over once and the key removed.
+
+### Dashboard
+
+- **fix — a toast landed on the button bar.**
+- **fix — a promo card printed `<kbd>…</kbd>` as text** instead of drawing the key.
+- **fix — the glass step frosted the cards behind an open inline form.** Every `.category` and widget body carries a `backdrop-filter` on glass; measured with a form open, five cards at `blur(17px)` fell across it, each its own compositing layer at opacity 1.
+- **fix — the health link shimmer uses the theme's own colour.**
+
+### Docs
+
+- **docs — the release round for v1.10.0.** `static/data/whats-new/v1.10.0.json` and the index entry ahead of it, both tokens in `whats-new-stub.js` (`DASHBOARD_RELEASE`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v285`) and the constants they are pinned with in `tests/whats-new-hidden-release.spec.js`. Three spotlights with `since: "v1.10.0"` in `overview-features.json` — the one layout, the panels naming their key, and news getting a page — each with its five locale keys in all six languages, so the overview stream and About → News & features carry the release. `helpVersionBody` names 1.10.0 in six languages, MANUAL.md follows the settings that moved or went, and `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — thirty keys that lived only in the code were translated**, a vocabulary that never existed was collapsed, and the new panel strings (`bookmarkGroupWhat`, `bookmarkGroupWhere`, `recentShowing`, `recentFootOpen`, `cheatsheetCount`, `cheatsheetFootClose`, `whatsNewFootClose`) got their keys in en, nl, de, fr, zh and es.
+- **docs — sixteen permanently skipped tests were removed from `tests/config-bookmarks-editor.spec.js`.** Each was an empty shell with a comment claiming the behaviour was covered elsewhere. Two of those claims were false: the modal's `__new__` category flow exists and is covered by `bookmark-form-create-page-category.spec.js`, and nothing at all covered the favicon fetch — `tests/bookmark-icon-fetch.spec.js` now does.
+- **docs — the specs follow the panels that went.** `config-appearance-layout-order`, `dashboard-category-spacing`, `config-custom-themes`, `config-field-grid-and-mobile-nav` and `config-view-performance` described a *Layout version* panel, a sixth appearance tile and a spotlight carousel, none of which this release leaves standing. `config-overview-release` and `config-overview-news` follow the stream to About → News & features, and scope to the dated panel because About draws the back catalogue with the same row class.
+- **fix — a preview test counted other rows' requests as its own.** `preview-card-image-arrives-live` stubbed every `/api/bookmark-preview` call and stepped one counter, so a preview asked for any other bookmark on the page spent the "first answer is pending" the test turns on, and the row under test got the finished picture on its first ask. The stubs answer for the bookmark under test and let the rest through.
+- **docs — the design working files are kept out of the repo.**
 
 ---
 

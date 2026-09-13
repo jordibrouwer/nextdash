@@ -2565,7 +2565,6 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
         { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
-        { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -2632,7 +2631,6 @@ class DashboardConfig {
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
         themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
-        layoutVersion: ['layout', 'modern', 'classic', 'beta'],
         buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
@@ -3056,7 +3054,6 @@ class DashboardConfig {
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
         const groups = {
-            layoutVersion: '[data-appearance-layout]',
             buttonBarPosition: '[data-appearance-barpos]',
             fontWeight: '[data-appearance-weight]',
             backgroundType: '[data-appearance-bg]',
@@ -3311,7 +3308,7 @@ class DashboardConfig {
 
     renderTile(tile) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const clickable = tile.action ? ' config-tile--action' : '';
+        const clickable = Boolean(tile.action);
         const tag = tile.action ? 'button' : 'div';
         // A tile can hand off to a dashboard view, or to a sub-tab of the
         // section it is sitting in.
@@ -3324,15 +3321,35 @@ class DashboardConfig {
                   tile.action.appearanceTab ? ` data-tile-appearance-tab="${esc(tile.action.appearanceTab)}"` : ''
               }`
             : '';
-        const detail = tile.detail
-            ? `<p class="config-tile-detail">${esc(tile.detail)}</p>`
-            : '';
-        return `
-            <${tag} class="config-tile config-tile--${esc(tile.tone)}${clickable}"${attrs}>
-                <span class="config-tile-label">${esc(tile.label)}</span>
-                <span class="config-tile-value">${esc(String(tile.value))}</span>
-                ${detail}
-            </${tag}>`;
+        /*
+         * Drawn by the shared component and given config's names on top.
+         *
+         * The tone here is the severity stripe down the tile's left edge, not
+         * the colour of the figure, so it stays a config class rather than
+         * becoming the shared --good / --warn / --bad, which paint the value.
+         * `quiet` is off for the same reason: config's figures are not toned,
+         * so dimming a nought would be a new behaviour rather than a shared
+         * one. See static/js/shared/stat-tile.js.
+         */
+        return window.StatTile.html({
+            label: tile.label,
+            value: String(tile.value),
+            detail: tile.detail,
+            size: 'md',
+            quiet: false,
+            tag,
+            attrs,
+            extraClasses: [
+                'config-tile',
+                `config-tile--${tile.tone}`,
+                ...(clickable ? ['config-tile--action'] : []),
+            ],
+            partClass: {
+                label: 'config-tile-label',
+                value: 'config-tile-value',
+                detail: 'config-tile-detail',
+            },
+        });
     }
 
     /**
@@ -3360,7 +3377,13 @@ class DashboardConfig {
      * What went with the rebuild: a carousel that showed one of forty-nine
      * spotlights at a time, and a Latest update panel repeating the release the
      * bar above it already named. Both answered "what is new" — which the
-     * stream now answers once, in date order, with the source on every row.
+     * stream answers once, in date order, with the source on every row.
+     *
+     * The stream itself has since moved to About → News, where it was always
+     * addressable from. Measured on this page it was 655 of 816 words and 1029
+     * of 1386 pixels: four fifths of a section called Overview was a feed, and
+     * a feed is not an overview of your install. What is left of it here is
+     * four lines saying what the newest thing is and how much of it there is.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -3376,13 +3399,13 @@ class DashboardConfig {
                 ${this.renderZoneRule('project', this.t('config.overviewZoneProject', 'From nextDash'),
                     `<a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer">nextdash.cc ↗</a>`)}
                 <div class="config-overview-about-row">
-                    ${this.renderOverviewNews()}
-                    <div class="config-overview-side">
-                        ${this.renderOverviewAbout()}
-                        ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
-                        ${this.renderOverviewStats()}
-                        ${this.renderOverviewChangedPanel()}
-                    </div>
+                    ${this.renderOverviewAbout()}
+                    ${this.renderOverviewWhatsNew()}
+                </div>
+                ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
+                <div class="config-overview-install-row">
+                    ${this.renderOverviewStats()}
+                    ${this.renderOverviewChangedPanel()}
                 </div>
                 ${this.renderOverviewTips()}
             </div>
@@ -3718,50 +3741,76 @@ class DashboardConfig {
     }
 
     /**
-     * The news stream: posts, releases and new settings in one dated list.
+     * What is new, in four lines rather than in fourteen rows.
      *
-     * One row per item — source label, title, one line of summary, the date on
-     * the right — because six one-line rows fit where one sixty-word spotlight
-     * used to, and the reader picks which to open instead of reading what was
-     * put in front of them. The date is rendered in the format set under
-     * Behavior → Date & weather: a dashboard offering 31/12/2026 and 2026-12-31
-     * should not print a third shape of its own.
+     * The stream lives at About → News, which is where its own "All news &
+     * features" button already pointed. What belongs on a page called Overview
+     * is the answer to "is there anything new", not the reading itself: the
+     * newest release and its date, how much has arrived since, and the way in.
      *
-     * Filtering is by source, and the chips are why a news block in a
-     * self-hosted tool does not read as marketing: the site's posts can be
-     * switched off from the row itself.
+     * Counted from the same stream the full list is built from, so the figures
+     * here and the list there cannot disagree. Undated back-catalogue features
+     * are left out of the count for the same reason they are left out of the
+     * stream -- they are not news, they are the drill-in.
      */
-    renderOverviewNews() {
+    renderOverviewWhatsNew() {
         const esc = (v) => this.dash.escapeHtml(v);
         const stream = this._newsStream;
-        const filter = this.newsFilter || 'all';
-        // Falls back to the module's own figure; the literal is only for a
-        // page where the stream module has not loaded, and must not disagree.
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
 
-        let body;
-        if (stream === undefined) {
-            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
-        } else if (!stream.length) {
-            body = `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
-                'No posts to show right now.'))}</p>`;
-        } else {
-            const shown = window.DashboardNewsStream?.overviewRows
-                ? window.DashboardNewsStream.overviewRows(stream, { limit, filter })
-                : stream.filter((item) => filter === 'all' || item.source === filter).slice(0, limit);
-            body = shown.length
-                ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
-                : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter',
-                    'Nothing from this source yet.'))}</p>`;
-        }
+        const body = () => {
+            if (stream === undefined) {
+                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+            }
+            if (!stream.length) {
+                return `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
+                    'No posts to show right now.'))}</p>`;
+            }
+            const newest = stream.find((item) => item.source === 'release');
+            const since = newest ? Number(newest.at) || 0 : 0;
+            const counts = {
+                feature: stream.filter((i) => i.source === 'feature' && (Number(i.at) || 0) >= since).length,
+                site: stream.filter((i) => i.source === 'site' && (Number(i.at) || 0) >= since).length,
+            };
+            const line = (label, value) => `
+                <div class="config-whats-new-line">
+                    <span class="config-whats-new-label">${esc(label)}</span>
+                    <span class="config-whats-new-value">${esc(value)}</span>
+                </div>`;
 
-        this.markNewsRead();
+            const rows = [];
+            if (newest) {
+                const title = newest.titleKey ? this.t(newest.titleKey, newest.title) : newest.title;
+                rows.push(line(this.t('config.overviewNewsSourceRelease', 'release'),
+                    `${title} · ${this.formatNewsDate(newest.at)}`));
+            }
+            if (counts.feature) {
+                rows.push(line(this.t('config.overviewWhatsNewFeatures', 'new settings'), String(counts.feature)));
+            }
+            if (counts.site) {
+                rows.push(line(this.t('config.overviewNewsSourceSite', 'nextdash.cc'), String(counts.site)));
+            }
+            return rows.join('');
+        };
+
+        /*
+         * This card does not mark the stream read.
+         *
+         * It is a summary with a link to it -- the release, a count of new
+         * settings, a count of posts -- and it stayed behind when the stream
+         * moved to About. Marking read here cleared the unread dots for a
+         * reader who had seen a count and not one item, which is the opposite
+         * of what the dots are for. renderAboutNews() marks it, where it is
+         * actually read.
+         */
 
         return `
-            <div class="config-panel config-panel--plain config-news-panel">
-                ${this.renderNewsChips()}
-                ${body}
-                ${this.renderNewsFoot()}
+            <div class="config-panel config-panel--plain config-whats-new">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'What\u2019s new'))}</h3>
+                ${body()}
+                <div class="config-news-foot config-news-foot--link">
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
+                </div>
             </div>`;
     }
 
@@ -3832,7 +3881,7 @@ class DashboardConfig {
         return `
             <li class="config-news-item" data-news-source="${esc(item.source)}">
                 <span class="config-src-chip config-src-chip--${esc(item.source)}">${esc(label)}</span>
-                <h4 class="config-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}${esc(title)}</h4>
+                <h4 class="config-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}<span class="config-news-title-text">${esc(title)}</span></h4>
                 <span class="config-news-when">${esc(this.formatNewsDate(item.at))}</span>
                 ${summary ? `<p class="config-news-summary">${esc(summary)}</p>` : ''}
                 ${action ? `<span class="config-news-action">${action}</span>` : ''}
@@ -3863,29 +3912,26 @@ class DashboardConfig {
             </div>`;
     }
 
-    /** How much is shown, and where the rest is. */
-    renderNewsFoot() {
+
+    /**
+     * Why a source is missing, under the list.
+     *
+     * The site's posts can be switched off from the chips above, and the fetch
+     * can fail — and an empty stream with no word about either reads as "there
+     * is no news", which is a different claim. The old foot also counted a
+     * window; there is none here, so it counts nothing.
+     */
+    renderNewsFoot(shownCount, totalCount) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const stream = this._newsStream;
-        if (stream === undefined) return '';
-        const filter = this.newsFilter || 'all';
-        const matching = stream.filter((item) => filter === 'all' || item.source === filter).length;
-        // The same figure the list above uses, or the foot would count rows the
-        // reader cannot see.
-        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 14;
-        const shown = Math.min(matching, limit);
         const offline = this._siteNewsEnabled === false
             ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')
             : (this._siteNewsFailed
                 ? this.t('config.overviewNewsSiteUnavailable', 'Site news is unavailable.')
                 : '');
-
+        if (!offline) return '';
         return `
             <div class="config-news-foot">
-                <button type="button" class="config-btn config-btn--small"
-                        data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
-                <span class="config-field-hint">${esc(this.t('config.overviewNewsShown', '{shown} of {total} shown')
-                    .replace('{shown}', String(shown)).replace('{total}', String(matching)))}${offline ? ` · ${esc(offline)}` : ''}</span>
+                <span class="config-field-hint">${esc(offline)}</span>
             </div>`;
     }
 
@@ -3947,9 +3993,7 @@ class DashboardConfig {
             this._siteNewsFailed = siteNews.failed === true;
             this._newsStream = news.buildStream({ site: siteNews, releases, features });
             this._newsUnread = news.unreadCount(this._newsStream, this._newsSeenAt);
-            if (this.isActiveView() && this.section === 'overview') {
-                this.repaintOverview();
-            }
+            this.repaintNews();
             this.syncNewsBadge();
             if (this.isActiveView() && this.section === 'about') {
                 // About → News & features draws the same stream, and without
@@ -3984,7 +4028,7 @@ class DashboardConfig {
     setNewsFilter(source) {
         const next = window.DashboardNewsStream?.SOURCES?.includes(source) ? source : 'all';
         this.newsFilter = this.newsFilter === next ? 'all' : next;
-        this.repaintOverview();
+        this.repaintNews();
     }
 
     /**
@@ -4105,6 +4149,32 @@ class DashboardConfig {
             this._latestRelease = { ...first, ...release };
         } catch {
             this._latestRelease = null;
+        }
+    }
+
+    /**
+     * Redraw whichever surface is showing the news stream.
+     *
+     * The stream moved from the overview to About -> News & features, and
+     * repaintOverview() returns early anywhere but the overview -- so a setting
+     * the stream reads (the date format, the site-news switch, a source filter)
+     * changed the data and left the panel on screen showing the old draw until
+     * the reader navigated away and back.
+     */
+    repaintNews() {
+        if (!this.isActiveView()) return;
+        if (this.section === 'overview') {
+            this.repaintOverview();
+            return;
+        }
+        if (this.section !== 'about' || this.aboutTab !== 'news') return;
+        const body = document.getElementById('config-view-body');
+        if (!body) return;
+        body.innerHTML = this.renderAbout();
+        const container = document.getElementById('dashboard-layout');
+        if (container) {
+            this.bindTileActions(container);
+            this.bindOverviewActions(container);
         }
     }
 
@@ -8309,7 +8379,6 @@ class DashboardConfig {
             image: this.t('config.backgroundImage', 'Image'),
         }[bgType] || bgType;
 
-        const layoutModern = s.layoutVersion === 'modern';
         const density = s.densityMode || 'comfortable';
         const densityLabel = {
             comfortable: this.t('config.densityComfortable', 'Comfortable'),
@@ -8343,14 +8412,6 @@ class DashboardConfig {
                 detail: bgType !== 'none' && Number.isFinite(Number(s.backgroundOpacity))
                     ? `${Math.round(Number(s.backgroundOpacity) * 100)}%`
                     : '',
-            },
-            {
-                key: 'layout', tone: layoutModern ? 'warn' : 'neutral',
-                label: this.t('config.tileLayout', 'Layout'),
-                value: layoutModern
-                    ? this.t('config.layoutModern', 'Modern')
-                    : this.t('config.layoutClassic', 'Classic'),
-                detail: layoutModern ? this.t('config.layoutBetaShort', 'Early beta') : '',
             },
             {
                 key: 'density', tone: 'neutral',
@@ -8519,6 +8580,19 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>
+                <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
+                    <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
+                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
+                    ${this.appearanceAff('randomThemeMode')}
+                </div>
+                <div class="config-actions" style="margin-top:14px">
+                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
@@ -8534,6 +8608,11 @@ class DashboardConfig {
                     <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
                 </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackdropTitle', 'Backdrop'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceBackdropNote', 'What is behind the content, under your own background image.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeBackdropLabel', 'Theme backdrop'))}</span>
                     <select class="config-select" data-appearance-select="themeBackdrop">
@@ -8550,15 +8629,12 @@ class DashboardConfig {
                     <p class="config-panel-note">${esc(this.t('config.backgroundPatternNote', 'The texture behind the dashboard. Left to the theme, most ask for dots and a few ask for something that suits them. Lines and hatch cover more of the page than dots do, so they read heavier on a light theme.'))}</p>
                     ${this.appearanceAff('backgroundPattern')}
                 </div>
-                <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
-                    <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
-                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
-                    ${this.appearanceAff('randomThemeMode')}
-                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsNote', 'How far the icons on your bookmark rows are pulled toward the theme.'))}</p>
                 ${this.renderIconStyling()}
-                <div class="config-actions" style="margin-top:14px">
-                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
-                </div>
             </div>
 
             <div class="config-panel">
@@ -8696,34 +8772,12 @@ class DashboardConfig {
     renderAppearanceLayoutBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
-        // Bookmarks layout first and the layout version last: the grid is what
-        // people come here to change, while the version switch is a one-off
-        // that mostly wants to be found rather than stepped over on the way
-        // down the tab. The button bar left for a tab of its own.
+        // The button bar has a tab of its own; what is left here is the grid.
         return `
             ${this.renderChangedFilterBar('appearance', 'layout')}
             ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.layoutVersionDescIntro', 'Choose a layout style. Classic is recommended; Modern is still in early beta.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
-                    <div class="config-choices" role="group">
-                        ${['classic', 'modern'].map((version) => `
-                        <button type="button" class="config-choice config-choice--art${layout === version ? ' is-active' : ''}" data-appearance-layout="${version}" aria-pressed="${layout === version}">
-                            ${window.SettingArt?.render?.('layoutVersion', version) || ''}
-                            <span class="config-choice-label">${esc(this.t(version === 'classic' ? 'config.layoutClassic' : 'config.layoutModern', version === 'classic' ? 'Classic' : 'Modern'))}</span>
-                        </button>`).join('')}
-                    </div>
-                    ${this.appearanceAff('layoutVersion')}
-                    ${layout === 'modern'
-                        ? `<p class="config-field-warning">${esc(this.t('config.layoutVersionBetaNotice', 'Modern is still in early beta and not finished yet. Classic is recommended for the best experience.'))}</p>`
-                        : ''}
-                    <p class="config-field-hint">${esc(this.t(`config.layoutVersionDesc.${layout}`, ''))}</p>
-                </div>
-            </div>`;
+`;
     }
 
     renderAppearanceDisplayBody() {
@@ -9151,9 +9205,6 @@ class DashboardConfig {
                 this.releaseConfigTypeScale();
                 this.setFontSize(size);
             });
-        });
-        container.querySelectorAll('[data-appearance-layout]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setLayout(btn.getAttribute('data-appearance-layout')));
         });
         container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
@@ -10329,7 +10380,6 @@ class DashboardConfig {
                 this.persistAppearance();
                 break;
             case 'launcherIconSize': this.setLauncherIconSize(value); break;
-            case 'layoutVersion': this.setLayout(value); break;
             case 'randomThemeMode': this.setRandomThemeMode(value); break;
             default:
                 // Fall back to a plain settings write + repaint for any field
@@ -10398,13 +10448,6 @@ class DashboardConfig {
         if (!DashboardConfig.FONT_SIZES.includes(size)) return;
         this.dash.settings.fontSize = size;
         this.dash.applyFontSize?.();
-        this.persistAppearance();
-    }
-
-    setLayout(version) {
-        if (version !== 'classic' && version !== 'modern') return;
-        this.dash.settings.layoutVersion = version;
-        window.ThemeLoader?.applyLayoutVersion?.(version);
         this.persistAppearance();
     }
 
@@ -10725,12 +10768,12 @@ class DashboardConfig {
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
-        layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
         layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         shortcutDisplay: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: 'always' },
+        rowHighlight: { def: 'subtle' },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
@@ -10801,8 +10844,8 @@ class DashboardConfig {
         showHealthDashboard: { def: true },
         showAddBookmarkButton: { def: true },
         showSearchButton: { def: true },
-        showFindersButton: { def: true },
-        showCommandsButton: { def: true },
+        showFindersButton: { def: false },
+        showCommandsButton: { def: false },
         buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
@@ -11107,22 +11150,43 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'general',
+                // Three subjects lived here under one heading that named none of
+                // them: the language, what the keyboard does, and what a click
+                // does. Eight switches deep, "General" is a label for whatever
+                // was left over, and a reader looking for the key legend had no
+                // reason to look under it.
                 title: t('config.generalGroupGeneral', 'General'),
-                note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
+                note: t('config.generalGroupGeneralNote', 'The language, and what the dashboard remembers between visits.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
                         opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'), opt('zh', '中文'), opt('es', 'Español'),
                     ] },
-                    bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
+                    bool('rememberScrollPosition', 'config.rememberScrollPositionLabel', 'Come back to where you were on a page'),
+                    { ...bool('lockLayout', 'config.lockLayoutLabel', 'Lock layout'), special: 'render', badge: true },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupKeyboard', 'Keyboard'),
+                note: t('config.generalGroupKeyboardNote', 'Whether the keyboard works outside the dashboard, and whether it explains itself.'),
+                controls: [
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
                     { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
-                    // Beside the other two discoverability switches rather than
-                    // under Appearance: what it controls is whether the keyboard
-                    // explains itself, not how the grid looks.
+                    // Here rather than under Appearance: what it controls is
+                    // whether the keyboard explains itself, not how the grid
+                    // looks.
                     { ...bool('showGridKeyLegend', 'config.gridKeyLegendLabel', 'Show a key legend under the bookmarks'), special: 'render' },
-                    bool('rememberScrollPosition', 'config.rememberScrollPositionLabel', 'Come back to where you were on a page'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'general',
+                title: t('config.generalGroupLinks', 'Opening links'),
+                note: t('config.generalGroupLinksNote', 'What a click on a bookmark does, and which addresses are allowed to be one.'),
+                controls: [
+                    bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
-                    { ...bool('lockLayout', 'config.lockLayoutLabel', 'Lock layout'), special: 'render', badge: true },
                 ],
             },
             {
@@ -11161,8 +11225,13 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'datetime',
-                title: t('config.generalGroupDateTime', 'Date, time & weather'),
-                note: t('config.generalGroupDateTimeNote', 'The clock, date line, and weather shown above the bookmarks.'),
+                // Three subjects, and the weather is five of the eleven fields
+                // on its own -- a reader setting a date format scrolled past a
+                // location, a unit and a refresh interval to reach the clock.
+                // The line above the bookmarks is still one line; what is
+                // split here is the settings behind it.
+                title: t('config.generalGroupDateTime', 'Date & time'),
+                note: t('config.generalGroupDateTimeNote', 'The clock and date line shown above the bookmarks.'),
                 controls: [
                     { field: 'dateFormat', type: 'select', label: t('config.dateFormatLabel', 'Date format'), special: 'datetime', options: [
                         opt('short-slash', '31/12/2026'), opt('short-dash', '31-12-2026'), opt('mm-slash', '12/31/2026'),
@@ -11173,6 +11242,14 @@ class DashboardConfig {
                     ] },
                     bool('showDate', 'config.showDateLabel', 'Show the date'),
                     bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'datetime',
+                title: t('config.generalGroupWeather', 'Weather'),
+                note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
+                controls: [
                     bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
                     { field: 'weatherSource', type: 'select', label: t('config.weatherSourceLabel', 'Weather source'), special: 'datetime', options: [
                         opt('manual', t('config.weatherSourceManual', 'Manual location')), opt('auto', t('config.weatherSourceAuto', 'Automatic (by IP)')),
@@ -11182,6 +11259,14 @@ class DashboardConfig {
                     ] },
                     { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
                     { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'datetime',
+                title: t('config.generalGroupCalendar', 'Calendar'),
+                note: t('config.generalGroupCalendarNote', 'A feed to read your next appointments from. Two addresses because the widget and the date line ask for different things.'),
+                controls: [
                     { field: 'calendarUrl', type: 'text', label: t('config.calendarUrlLabel', 'Calendar URL (iCal)'), special: 'datetime' },
                     { field: 'calendarIcsUrl', type: 'text',
                       label: t('config.calendarIcsUrlLabel', 'Calendar feed URL (.ics)'), special: 'datetime' },
@@ -11312,6 +11397,27 @@ class DashboardConfig {
                             },
                         ],
                     },
+                    {
+                        field: 'rowHighlight',
+                        type: 'cards',
+                        // 'chrome' for the same reason shortcutDisplay is: the
+                        // setting is a body attribute the CSS reads, so without
+                        // it the choice only arrives on the next reload.
+                        special: 'chrome',
+                        label: t('config.rowHighlightLabel', 'How a row lights up'),
+                        options: [
+                            {
+                                value: 'subtle',
+                                label: t('config.rowHighlightSubtle', 'Subtle'),
+                                body: t('config.rowHighlightSubtleBody', 'The accent reaches a little way in from the left edge. Enough to see which row you are on without the colour becoming the thing you look at.'),
+                            },
+                            {
+                                value: 'strong',
+                                label: t('config.rowHighlightStrong', 'Strong'),
+                                body: t('config.rowHighlightStrongBody', 'The same light from the same edge, carried much further across the row. Easier to pick out at a glance or from a distance, and the row name reads against the accent rather than against the page.'),
+                            },
+                        ],
+                    },
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
                     bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),
@@ -11432,8 +11538,13 @@ class DashboardConfig {
             {
                 section: 'behavior',
                 tab: 'search',
-                title: t('config.generalGroupSearch', 'Search'),
-                note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
+                // New keys rather than the old ones: generalGroupSearch reads
+                // "Search" in every locale, which was right while this was the
+                // whole tab and is wrong now that Suggestions and The panel
+                // stand beside it. A fallback cannot override a locale that
+                // already answers, so the rename needs a key of its own.
+                title: t('config.generalGroupTyping', 'Typing'),
+                note: t('config.generalGroupTypingNote', 'What a keystroke does: when a shortcut opens, and which mode a bare letter searches in.'),
                 controls: [
                     {
                         field: 'shortcutOpenMode',
@@ -11461,9 +11572,30 @@ class DashboardConfig {
                         ],
                     },
                     bool('interleaveMode', 'config.interleaveMode', 'Switch Search Mode'),
+                ],
+            },
+            {
+                // What the list offers, as against how the panel behaves. The
+                // two used to sit in one seven-field block under a heading that
+                // said "Search" and therefore said nothing: the card explaining
+                // three ways to open a shortcut ended up beside a switch for a
+                // hint banner.
+                section: 'behavior',
+                tab: 'search',
+                title: t('config.generalGroupSuggestions', 'Suggestions'),
+                note: t('config.generalGroupSuggestionsNote', 'What the list offers while you type, beyond the bookmarks whose names match.'),
+                controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'search',
+                title: t('config.generalGroupSearchPanel', 'The panel'),
+                note: t('config.generalGroupSearchPanelNote', 'How the overlay itself behaves once it is open.'),
+                controls: [
                     bool('keepSearchOpenWhenEmpty', 'config.keepSearchOpenWhenEmpty', 'Keep search open when empty'),
                     bool('showSearchFlowBanner', 'config.showSearchFlowBanner', 'Show the search flow hint'),
                 ],
@@ -26642,12 +26774,23 @@ class DashboardConfig {
         const catalogue = (this._overviewFeatures || [])
             .filter((feature) => !stream.some((item) => item.titleKey === feature.titleKey));
 
+        /*
+         * Reading the stream is what marks it read.
+         *
+         * It used to happen in the overview's own renderer, which is where the
+         * stream used to be. Reading is here now, so the dots clear here --
+         * marking them anywhere else would clear them for a page nobody looked
+         * at.
+         */
+        this.markNewsRead();
+
         return `
             <div class="config-panel config-panel--plain config-news-panel">
                 ${this.renderNewsChips()}
                 ${shown.length
                     ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
                     : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter', 'Nothing from this source yet.'))}</p>`}
+                ${this.renderNewsFoot(shown.length, stream.length)}
             </div>
             ${(filter === 'all' || filter === 'feature') && catalogue.length ? `
             <div class="config-panel config-panel--plain">

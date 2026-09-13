@@ -57,6 +57,14 @@
             const res = await fetch(`/api/system/metrics?${query.toString()}`);
             if (!res.ok) return null;
             const data = await res.json();
+            /*
+             * When this answer was actually read.
+             *
+             * Stamped here rather than at draw time, and kept on the cached
+             * entry: a redraw between two beats must report the age of the
+             * figure it is showing, not the moment it happened to repaint.
+             */
+            if (data && typeof data === 'object') data._fetchedAt = Date.now();
             dash._widgetSystem[key] = data;
             return data;
         } catch (_error) {

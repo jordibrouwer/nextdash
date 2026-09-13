@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,6 +21,9 @@
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/shared/escape-html.js"}}"></script>
     <script src="{{asset "js/shared/clock-format.js"}}"></script>
+    <!-- The shared figure-with-a-caption. Not deferred: config's statistics
+         build their markup from it during a synchronous render. -->
+    <script src="{{asset "js/shared/stat-tile.js"}}"></script>
     <script src="{{asset "js/shared/tag-suggestions.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-catalogue.js"}}" defer></script>
     <script src="{{asset "js/settings-sanitize.js"}}"></script>
@@ -55,26 +58,23 @@
          after the CSS bundle had downloaded and parsed. -->
     <!-- bundle:css -->
     <link rel="stylesheet" href="{{asset "css/theme.css"}}">
-    <!-- Spacing tokens — unscoped (unlike layout-modern-tokens.css below),
-         since classic is the default layout and needs these too. Ahead of
-         everything that reads a --space-* or --density-row-* value. -->
+    <!-- Spacing tokens — unscoped. Ahead of everything that reads a
+         --space-* or --density-row-* value. -->
     <link rel="stylesheet" href="{{asset "css/spacing-tokens.css"}}">
     <!-- Typography, radius and layer tokens — same reasoning, same scope. -->
     <link rel="stylesheet" href="{{asset "css/typography-tokens.css"}}">
     <link rel="stylesheet" href="{{asset "css/radius-tokens.css"}}">
     <link rel="stylesheet" href="{{asset "css/layer-tokens.css"}}">
     <link rel="stylesheet" href="{{asset "css/action-btn-tokens.css"}}">
-    <!-- Depth tokens, derived from the thirteen colours a theme declares. Ahead
-         of layout-modern-tokens.css, which may consume them. -->
+    <!-- Depth tokens, derived from the colours a theme declares. -->
     <link rel="stylesheet" href="{{asset "css/theme-depth.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-ink.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-backdrop.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-character.css"}}">
     <link rel="stylesheet" href="{{asset "css/theme-browser.css"}}">
-    <!-- Modern design tokens load ahead of every view stylesheet, so view CSS
-         that carries its own modern rules can read --layout-* directly. The
-         override files below (layout-modern, overlays-modern) consume these. -->
-    <link rel="stylesheet" href="{{asset "css/layout-modern-tokens.css"}}">
+    <!-- The shared figure-with-a-caption, ahead of both sheets that specialise
+         it: dashboard.css here and config-view.css in the views bundle. -->
+    <link rel="stylesheet" href="{{asset "css/stat-tile.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-bookmark-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/modal.css"}}">
@@ -106,8 +106,6 @@
     <link rel="stylesheet" href="{{asset "css/colors.css"}}">
         <link rel="stylesheet" href="{{asset "css/enhanced-features.css"}}">
     <link rel="stylesheet" href="{{asset "css/mobile-experience.css"}}">
-    <link rel="stylesheet" href="{{asset "css/layout-modern.css"}}">
-    <link rel="stylesheet" href="{{asset "css/overlays-modern.css"}}">
     <link rel="stylesheet" href="{{asset "css/layout-side-rail.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
@@ -145,7 +143,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" data-row-highlight="{{if .RowHighlight}}{{.RowHighlight}}{{else}}subtle{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
         <div class="dashboard-noscript" role="alert">
@@ -278,6 +276,9 @@
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div id="search-matches" class="search-matches"></div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+            <!-- The track sits on a plate of its own so the rule above it runs
+                 the full width of the sheet; see search.css. -->
+            <div class="search-mode-tabs-row">
             <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
                 <button class="search-mode-tab" data-mode="search" type="button" aria-pressed="true">
                     <span class="search-mode-tab-key">&gt;</span>
@@ -291,6 +292,7 @@
                     <span class="search-mode-tab-key">?</span>
                     <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
                 </button>
+            </div>
             </div>
         </div>
     </div>
@@ -390,7 +392,6 @@
     <script src="{{asset "js/theme-browser.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
-    <script src="{{asset "js/layout-version-utils.js"}}" defer></script>
     <script src="{{asset "js/layout-utils.js"}}" defer></script>
     <script src="{{asset "js/shared/config-language.js"}}" defer></script>
     <script src="{{asset "js/shared/last-opened-format.js"}}" defer></script>

@@ -176,6 +176,28 @@ class DashboardUiHelpers {
             ? ''
             : (d.language?.t(`dashboard.${leadKey}`) || '');
         const showLead = leadText && leadText !== `dashboard.${leadKey}`;
+        const shortcutCount = sections.reduce((total, section) => total + section.items.length, 0);
+
+        const groupHtml = sections.map((section, i) => {
+            const isContext = contextIndex >= 0 && i === contextIndex;
+            // Falls back to the first section when the view has no section of
+            // its own, which is the behaviour this always had.
+            const open = contextIndex >= 0 ? isContext : i === 0;
+            return `
+                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
+                        <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
+                        <table class="keyboard-cheat-sheet-table">
+                            <tbody>
+                                ${section.items.map((shortcut) => `
+                                    <tr>
+                                        <td class="keyboard-cheat-sheet-description">${esc(shortcut.description)}</td>
+                                        <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </details>`;
+        });
         const html = `
             <div class="keyboard-cheat-sheet" data-context="${esc(context)}">
                 ${showLead ? `<p class="cheat-sheet-context-lead">${esc(leadText)}</p>` : ''}
@@ -183,27 +205,13 @@ class DashboardUiHelpers {
                        placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
                        aria-label="${esc(filterPlaceholder)}">
                 <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
-                ${sections.map((section, i) => {
-                    const isContext = contextIndex >= 0 && i === contextIndex;
-                    // Falls back to the first section when the view has no section
-                    // of its own, which is the behaviour this always had.
-                    const open = contextIndex >= 0 ? isContext : i === 0;
-                    return `
-                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
-                        <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
-                        <table class="keyboard-cheat-sheet-table">
-                            <tbody>
-                                ${section.items.map((shortcut) => `
-                                    <tr>
-                                        <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
-                                        <td class="keyboard-cheat-sheet-description">${esc(shortcut.description)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </details>
-                `;
-                }).join('')}
+                <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
+                <div class="cheat-sheet-foot">
+                    <span>${esc(d.formatDashboardLabel('cheatsheetCount', { n: shortcutCount },
+                        '{n} shortcuts'))}</span>
+                    <span><span class="cheat-sheet-foot-key">Esc</span> ${esc(
+                        d.formatDashboardLabel('cheatsheetFootClose', {}, 'to close'))}</span>
+                </div>
             </div>
         `;
 
@@ -218,6 +226,25 @@ class DashboardUiHelpers {
                 this._cleanupCheatSheetKeyHandler();
             },
         });
+
+        const cheatHeader = document.querySelector('.keyboard-cheat-sheet-modal .modal-header');
+        if (cheatHeader && !cheatHeader.querySelector('.cheat-sheet-modal-key')) {
+            const chip = document.createElement('span');
+            chip.className = 'cheat-sheet-modal-key';
+            chip.dataset.modalHeaderExtra = 'true';
+            chip.setAttribute('aria-hidden', 'true');
+            chip.textContent = '!';
+            document.getElementById('modal-title')?.after(chip);
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'cheat-sheet-modal-close';
+            close.dataset.modalHeaderExtra = 'true';
+            close.setAttribute('aria-label', d.language?.t('dashboard.close') || 'Close');
+            close.innerHTML = '<span aria-hidden="true">Esc</span> \u00D7';
+            close.addEventListener('click', () => window.AppModal.hide());
+            cheatHeader.appendChild(close);
+        }
 
         const filterInput = document.getElementById('cheat-sheet-filter');
         if (!filterInput) return;

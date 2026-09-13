@@ -8,6 +8,6 @@
 :root {
     --action-btn-bg: color-mix(in srgb, var(--text-primary) 6%, transparent);
     --action-btn-bg-hover: color-mix(in srgb, var(--text-primary) 12%, transparent);
-    --action-btn-color: var(--text-secondary, var(--text-primary));
+    --action-btn-color: var(--text-secondary);
     --action-btn-shadow: 0 1px 2px color-mix(in srgb, var(--text-primary) 10%, transparent);
 }

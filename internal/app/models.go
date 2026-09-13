@@ -419,9 +419,6 @@ type Settings struct {
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
 	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
-	ShowSearchButtonText            bool   `json:"showSearchButtonText"`
-	ShowFindersButtonText           bool   `json:"showFindersButtonText"`
-	ShowCommandsButtonText          bool   `json:"showCommandsButtonText"`
 	ShowStatus                      bool   `json:"showStatus"`
 	ColorizeStatus                  bool   `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
 	MonitorEmphasis                 string `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
@@ -483,7 +480,6 @@ type Settings struct {
 	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
 	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
 	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
-	LayoutVersion                  string                       `json:"layoutVersion"`                            // Dashboard layout version: classic, modern
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
 	 * its greys, the surface ladder, the wash behind the page.
@@ -495,6 +491,21 @@ type Settings struct {
 	 * flat | soft | rich. Empty means rich.
 	 */
 	ThemeDepth string `json:"themeDepth,omitempty"`
+
+	/*
+	 * RowHighlight is how strongly a bookmark row lights up under the pointer
+	 * and under the keyboard cursor.
+	 *
+	 * Both settings are the same gradient, lit from the left edge so a row
+	 * reads as picked up rather than uniformly tinted; they differ in how far
+	 * the accent carries. "subtle" is what the dashboard has always drawn.
+	 * "strong" is the treatment the modern layout brought, lifted into the
+	 * shared layer so it survives that layout being folded away -- it is a
+	 * preference about rows, which is not what a layout version is for.
+	 *
+	 * subtle | strong. Empty means subtle.
+	 */
+	RowHighlight string `json:"rowHighlight,omitempty"`
 
 	/*
 	 * InkGap is how far the derived text colours sit from the surface they are
@@ -558,7 +569,6 @@ type Settings struct {
 	CalendarUrl                 string                     `json:"calendarUrl"`                       // URL for calendar link in date popover (empty = hidden)
 	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`                    // ICS feed address the Calendar widget reads (empty = widget shows nothing)
 	ButtonBarPosition           string                     `json:"buttonBarPosition"`                 // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
-	ShowDockLayoutSelector      bool                       `json:"showDockLayoutSelector"`            // Show layout selector button in side-dock
 	BackgroundOpacity           float64                    `json:"backgroundOpacity"`                 // Background opacity (0.0-1.0)
 	FontWeight                  string                     `json:"fontWeight"`                        // Font weight: normal, 600, bold
 	FontPreset                  string                     `json:"fontPreset"`                        // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -609,17 +619,8 @@ type Settings struct {
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
-	HealthCheckTimeoutSeconds int             `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
-	QuickStart                QuickStartState `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
-	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
-	// Config → General. Empty means "never chosen", which starts on Essentials.
-	// Stored here rather than localStorage so the choice follows the user across
-	// browsers, like every other per-user preference.
-	ConfigGeneralLayer string `json:"configGeneralLayer,omitempty"`
-	// ConfigGeneralPanels records which General sections are expanded, keyed by
-	// panel id (and "sc:<id>" for smart-collection groups). Absent means the
-	// defaults apply: everything collapsed.
-	ConfigGeneralPanels            map[string]bool                  `json:"configGeneralPanels,omitempty"`
+	HealthCheckTimeoutSeconds      int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	QuickStart                     QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
@@ -986,6 +987,39 @@ type ThemeColors struct {
 	AccentError   string `json:"accentError"`
 
 	/*
+	 * AccentInfo is the fourth semantic colour: not good, not a warning, not
+	 * wrong -- a kind of thing. It tells the news stream's feature rows from
+	 * its posts, a filter completion from a finder in the search list, and
+	 * marks the note field you are typing in.
+	 *
+	 * The stylesheet has asked for it in seven places since long before this
+	 * field existed, and nothing ever answered: every one of those uses fell
+	 * through to a hard-coded #60A5FA, so a paper theme and a green terminal
+	 * both carried the same foreign blue. Left empty it is derived from the
+	 * palette (see themeAccentInfo), which is what the other 218 of the 222
+	 * built-in themes rely on.
+	 */
+	AccentInfo string `json:"accentInfo,omitempty"`
+
+	/*
+	 * SurfaceStep is how far apart the rungs of the surface ladder sit, as a
+	 * multiplier on the 3/6/9% of text colour each one mixes in.
+	 *
+	 * The rungs themselves stay derived rather than declarable, and that is
+	 * deliberate: they are mixed from background-primary, text-primary and the
+	 * accent, they scale on --theme-depth, and theme-ink.css derives the
+	 * secondary and tertiary ink *from* surface-2. A theme that named a
+	 * surface outright would take its own depth control out of service and
+	 * move the ink floor with it. How far apart the steps sit is the part a
+	 * palette can have an opinion about without any of that following.
+	 *
+	 * 0.6 to 1.8, with 1 the ladder as it was. Left empty it is derived from
+	 * how much room the palette has between its page and its ink -- see
+	 * themeSurfaceStep.
+	 */
+	SurfaceStep float64 `json:"surfaceStep,omitempty"`
+
+	/*
 	 * Character. Everything above is colour; everything below is what a theme
 	 * is allowed to be besides a palette.
 	 *
@@ -1255,44 +1289,46 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// Initialize settings if file doesn't exist
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
-			CurrentPage:                  1,
-			Theme:                        defaultThemeID,
-			OpenInNewTab:                 true,
-			AnalyticsOptIn:               false,
-			EnableSessionTips:            true,
-			EnableTagSuggestionNotice:    true,
-			EnableHealthReviewNotice:     true,
-			ShowShortcutTooltips:         false,
-			ShowGridKeyLegend:            true,
-			ShortcutOpenMode:             "instant",
-			RememberScrollPosition:       true,
-			DetectSoftNotFound:           true,
-			ColumnsPerRow:                3,
-			FontSize:                     "m",
-			ShowTitle:                    true,
-			ShowDate:                     true,
-			ShowTime:                     true,
-			TimeFormat:                   "24h",
-			DateFormat:                   "short-slash",
-			ShowWeatherWithDate:          false,
-			WeatherSource:                "manual",
-			WeatherLocation:              "",
-			WeatherUnit:                  "celsius",
-			WeatherRefreshMinutes:        30,
-			ShowConfigButton:             true,
-			ShowHealthDashboard:          true,
-			ShowSearchButton:             true,
-			ShowAddBookmarkButton:        true,
-			ShowFindersButton:            true,
-			ShowCommandsButton:           true,
+			CurrentPage:               1,
+			Theme:                     defaultThemeID,
+			OpenInNewTab:              true,
+			AnalyticsOptIn:            false,
+			EnableSessionTips:         true,
+			EnableTagSuggestionNotice: true,
+			EnableHealthReviewNotice:  true,
+			ShowShortcutTooltips:      false,
+			ShowGridKeyLegend:         true,
+			ShortcutOpenMode:          "instant",
+			RememberScrollPosition:    true,
+			DetectSoftNotFound:        true,
+			ColumnsPerRow:             3,
+			FontSize:                  "m",
+			ShowTitle:                 true,
+			ShowDate:                  true,
+			ShowTime:                  true,
+			TimeFormat:                "24h",
+			DateFormat:                "short-slash",
+			ShowWeatherWithDate:       false,
+			WeatherSource:             "manual",
+			WeatherLocation:           "",
+			WeatherUnit:               "celsius",
+			WeatherRefreshMinutes:     30,
+			ShowConfigButton:          true,
+			ShowHealthDashboard:       true,
+			ShowSearchButton:          true,
+			ShowAddBookmarkButton:     true,
+			// Off by default. Search, commands and finders are one panel
+			// that changes mode on a key, and the pills at its foot say so
+			// now -- three doors to one room is two more than it needs. The
+			// search button stays, and both of these are one toggle away in
+			// Config for anyone who wants them back.
+			ShowFindersButton:            false,
+			ShowCommandsButton:           false,
 			ShowRecentButton:             false,
 			ShowTagCloudButton:           true,
 			ShowSearchFlowBanner:         true,
 			ShowCheatSheetButton:         false,
 			ShowCollapseAllButton:        false,
-			ShowSearchButtonText:         true,
-			ShowFindersButtonText:        true,
-			ShowCommandsButtonText:       true,
 			ShowStatus:                   true,
 			ColorizeStatus:               true,
 			MonitorEmphasis:              "problems",
@@ -1335,8 +1371,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:       true,
 			SortMethod:                   "order",
 			LayoutPreset:                 "default",
-			LayoutVersion:                "classic",
 			ThemeDepth:                   "rich",
+			RowHighlight:                 "subtle",
 			InkGap:                       defaultInkGap,
 			ThemeBackdrop:                "on",
 			BackgroundPattern:            "auto",
@@ -1385,7 +1421,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
 			ButtonBarPosition:              "bottom-right",
-			ShowDockLayoutSelector:         true,
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",
@@ -3290,15 +3325,12 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowHealthDashboard:            true,
 			ShowSearchButton:               true,
 			ShowAddBookmarkButton:          true,
-			ShowFindersButton:              true,
-			ShowCommandsButton:             true,
+			ShowFindersButton:              false,
+			ShowCommandsButton:             false,
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
 			ShowCollapseAllButton:          false,
-			ShowSearchButtonText:           true,
-			ShowFindersButtonText:          true,
-			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
 			MonitorEmphasis:                "problems",
@@ -3369,8 +3401,8 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:              defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:             defaultBookmarkArchiveUrl,
 			LayoutPreset:                   "default",
-			LayoutVersion:                  "classic",
 			ThemeDepth:                     "rich",
+			RowHighlight:                   "subtle",
 			InkGap:                         defaultInkGap,
 			ThemeBackdrop:                  "on",
 			BackgroundPattern:              "auto",
@@ -3507,12 +3539,16 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
 			settings.ShowAddBookmarkButton = true
 		}
-		if _, ok := rawSettings["showFindersButton"]; !ok {
-			settings.ShowFindersButton = true
-		}
-		if _, ok := rawSettings["showCommandsButton"]; !ok {
-			settings.ShowCommandsButton = true
-		}
+		/*
+		 * Not flipped on when the key is absent.
+		 *
+		 * Search, commands and finders became one panel that changes mode on a
+		 * key, so both buttons default to off in defaultSettings -- and this
+		 * block said the opposite for a settings file that simply predates the
+		 * key, which is every upgraded install. Two answers to what the default
+		 * is, and the client's own FIELD_META agreed with this one. Both are
+		 * one toggle away in Config for anyone who wants them back.
+		 */
 		// Health is always available and can no longer be disabled. Force it on
 		// regardless of any legacy stored value so users who previously turned it
 		// off get it back.
@@ -3668,9 +3704,29 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
 		}
-		// "glass" was removed; stored glass settings normalize to classic here.
-		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern") {
-			settings.LayoutVersion = "classic"
+		/*
+		 * The modern layout is folded away, and the one thing it brought that
+		 * the shared layer could not is carried across.
+		 *
+		 * Modern lit a bookmark row much further than classic does. Everything
+		 * else it changed -- bigger radii, more opaque surfaces, a softer
+		 * shadow -- is either expressible through --theme-radius-scale or is
+		 * something the depth ladder now does better, so the row treatment is
+		 * all that has to survive. An install that had it keeps it.
+		 *
+		 * Only where the reader never answered for themselves: somebody on
+		 * modern who went and chose subtle meant subtle.
+		 *
+		 * Read from the raw map, which is all there is: the field itself is
+		 * gone. The "glass" layout was retired the same way before it.
+		 */
+		if raw, ok := rawSettings["layoutVersion"]; ok {
+			var stored string
+			if json.Unmarshal(raw, &stored) == nil && stored == "modern" {
+				if _, chosen := rawSettings["rowHighlight"]; !chosen {
+					settings.RowHighlight = "strong"
+				}
+			}
 		}
 		/*
 		 * A depth this build does not know is soft, not an empty string: the
@@ -3684,6 +3740,11 @@ func (fs *FileStore) GetSettings() Settings {
 		case "flat", "soft", "rich", "glass":
 		default:
 			settings.ThemeDepth = "rich"
+		}
+		switch settings.RowHighlight {
+		case "subtle", "strong":
+		default:
+			settings.RowHighlight = "subtle"
 		}
 		switch settings.BackgroundPattern {
 		case "auto", "dots", "grid", "lines", "hatch", "none":
@@ -3717,9 +3778,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// this leaves their choice alone.
 		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
 			settings.ButtonBarPosition = "bottom-right"
-		}
-		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {
-			settings.ShowDockLayoutSelector = true
 		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"

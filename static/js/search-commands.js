@@ -44,9 +44,10 @@ class SearchCommandsComponent {
                 label: 'Look & layout',
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
-                    'theme', 'layoutversion', 'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
-                    'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
-                    'shortcuts', 'locklayout',
+                    'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
+                    'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
+                    'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
+                    'buttons', 'shortcuts', 'locklayout',
                 ],
             },
             {
@@ -73,6 +74,12 @@ class SearchCommandsComponent {
             'new': this.handleNewCommand.bind(this),
             'remove': this.handleRemoveCommand.bind(this),
             'theme': this.handleThemeCommand.bind(this),
+            'depth': this.handleDepthCommand.bind(this),
+            'contrast': this.handleContrastCommand.bind(this),
+            'backdrop': this.handleBackdropCommand.bind(this),
+            'pattern': this.handlePatternCommand.bind(this),
+            'harmonize': this.handleHarmonizeCommand.bind(this),
+            'rows': this.handleRowHighlightCommand.bind(this),
             'fontsize': this.handleFontSizeCommand.bind(this),
             'columns': this.handleColumnsCommand.bind(this),
             'width': this.handleWidthCommand.bind(this),
@@ -80,7 +87,6 @@ class SearchCommandsComponent {
             'saved': this.handleSavedSearchesCommand.bind(this),
             'history': this.handleHistoryCommand.bind(this),
             'sort': this.handleSortCommand.bind(this),
-            'layoutversion': this.handleLayoutVersionCommand.bind(this),
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
@@ -2216,56 +2222,6 @@ class SearchCommandsComponent {
         return this._paletteRefresh(`sort:${next}`);
     }
 
-    handleLayoutVersionCommand(args) {
-        const versionQuery = (args[0] || '').toLowerCase();
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) {
-            return [];
-        }
-
-        const versions = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.getLayoutVersions()
-            : ['classic', 'modern'];
-
-        const currentVersion = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
-            : (dashboard.settings.layoutVersion || 'classic');
-
-        if (!versionQuery) {
-            return versions.map((version) => ({
-                ...this._markCurrentRow(version, version === currentVersion),
-                shortcut: ':LAYOUTVERSION',
-                stateId: `layoutversion:${version}`,
-                action: () => this.applyLayoutVersion(dashboard, version),
-                type: 'command'
-            }));
-        }
-
-        if (versionQuery === 'toggle') {
-            const order = ['classic', 'modern'];
-            const index = order.indexOf(currentVersion);
-            const next = order[(index + 1) % order.length];
-            return [{
-                name: `Toggle to ${next}`,
-                shortcut: ':LAYOUTVERSION',
-                stateId: `layoutversion:${next}`,
-                action: () => this.applyLayoutVersion(dashboard, next),
-                type: 'command'
-            }];
-        }
-
-        const matches = versions.filter((version) => version.startsWith(versionQuery));
-        if (matches.length === 0) return [];
-
-        return matches.map((version) => ({
-            ...this._markCurrentRow(version, version === currentVersion),
-            shortcut: ':LAYOUTVERSION',
-            stateId: `layoutversion:${version}`,
-            action: () => this.applyLayoutVersion(dashboard, version),
-            type: 'command'
-        }));
-    }
-
     handleLayoutCommand(args, fullQuery) {
         const layout = (args[0] || '').toLowerCase();
         const dashboard = window.dashboardInstance;
@@ -2325,6 +2281,202 @@ class SearchCommandsComponent {
             stateId: `density:${mode}`,
             action: () => this.applyDensityMode(dashboard, mode),
             type: 'command'
+        }));
+    }
+
+    /**
+     * The appearance settings that were only reachable through config.
+     *
+     * Depth, contrast, the backdrop and its texture, favicon harmonisation and
+     * how far a row lights up are all things people try on, look at, and try
+     * again -- which is exactly what a command palette is for and exactly what
+     * a trip into config is bad at. They are one shape, so they are built from
+     * one helper rather than six near-copies.
+     */
+    _appearanceRows({ prefix, shortcut, options, current, apply }) {
+        return options.map(({ value, label }) => ({
+            ...this._markCurrentRow(label || value, value === current),
+            shortcut,
+            stateId: `${prefix}:${value}`,
+            type: 'command',
+            action: () => apply(value),
+        }));
+    }
+
+    /** Filters those rows by what has been typed after the command. */
+    _appearanceCommand(spec, args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').toLowerCase();
+        const options = typed
+            ? spec.options.filter(({ value }) => value.startsWith(typed))
+            : spec.options;
+        if (!options.length) return [];
+        return this._appearanceRows({ ...spec, options, current: spec.current(dashboard) });
+    }
+
+    /**
+     * Writes one appearance setting, applies it, and saves.
+     *
+     * Through ThemeLoader rather than by setting the attribute here: it is the
+     * one place that knows what each of these does to the document, and config
+     * goes through the same door. The palette must not become a second answer
+     * to "what does depth mean".
+     */
+    _applyAppearance(dashboard, key, value, applyFn, stateId) {
+        dashboard.settings[key] = value;
+        applyFn?.(value);
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(stateId);
+    }
+
+    handleDepthCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'depth',
+            shortcut: ':DEPTH',
+            options: [
+                { value: 'flat', label: t('config.themeDepthFlat', 'Flat') },
+                { value: 'soft', label: t('config.themeDepthSoft', 'Soft') },
+                { value: 'rich', label: t('config.themeDepthRich', 'Rich') },
+                { value: 'glass', label: t('config.themeDepthGlass', 'Glass') },
+            ],
+            current: (d) => d.settings.themeDepth || 'rich',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'themeDepth', value,
+                (v) => window.ThemeLoader?.applyThemeDepth?.(v), `depth:${value}`),
+        }, args);
+    }
+
+    /**
+     * Four names for a slider.
+     *
+     * The setting is a lightness step in OKLCH and the config view already
+     * names its bands rather than showing the number. The palette takes the
+     * middle of each band, so picking the same name twice does not drift.
+     */
+    handleContrastCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        const bands = { soft: 0.34, normal: 0.44, high: 0.5, max: 0.56 };
+        const bandOf = (gap) => {
+            const value = Number(gap) || 0.44;
+            if (value < 0.36) return 'soft';
+            if (value < 0.48) return 'normal';
+            if (value < 0.54) return 'high';
+            return 'max';
+        };
+        return this._appearanceCommand({
+            prefix: 'contrast',
+            shortcut: ':CONTRAST',
+            options: [
+                { value: 'soft', label: t('config.inkGapSoft', 'Soft') },
+                { value: 'normal', label: t('config.inkGapNormal', 'Normal') },
+                { value: 'high', label: t('config.inkGapHigh', 'High') },
+                { value: 'max', label: t('config.inkGapMax', 'Maximum') },
+            ],
+            current: (d) => bandOf(d.settings.inkGap),
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'inkGap', bands[value],
+                (v) => window.ThemeLoader?.applyInkGap?.(v), `contrast:${value}`),
+        }, args);
+    }
+
+    handleBackdropCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'backdrop',
+            shortcut: ':BACKDROP',
+            options: [
+                { value: 'on', label: t('config.themeBackdropOn', 'On') },
+                { value: 'off', label: t('config.themeBackdropOff', 'Off') },
+            ],
+            current: (d) => (d.settings.themeBackdrop === 'off' ? 'off' : 'on'),
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'themeBackdrop', value,
+                (v) => window.ThemeLoader?.applyThemeBackdrop?.(v), `backdrop:${value}`),
+        }, args);
+    }
+
+    handlePatternCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'pattern',
+            shortcut: ':PATTERN',
+            options: [
+                { value: 'auto', label: t('config.backgroundPatternAuto', 'Follow the theme') },
+                { value: 'dots', label: t('config.backgroundPatternDots', 'Dots') },
+                { value: 'grid', label: t('config.backgroundPatternGrid', 'Grid') },
+                { value: 'lines', label: t('config.backgroundPatternLines', 'Lines') },
+                { value: 'hatch', label: t('config.backgroundPatternHatch', 'Hatch') },
+                { value: 'none', label: t('config.backgroundPatternNone', 'None') },
+            ],
+            current: (d) => d.settings.backgroundPattern || 'auto',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'backgroundPattern', value,
+                (v) => window.ThemeLoader?.applyBackgroundPattern?.(v), `pattern:${value}`),
+        }, args);
+    }
+
+    handleRowHighlightCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'rows',
+            shortcut: ':ROWS',
+            options: [
+                { value: 'subtle', label: t('config.rowHighlightSubtle', 'Subtle') },
+                { value: 'strong', label: t('config.rowHighlightStrong', 'Strong') },
+            ],
+            current: (d) => (d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle'),
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'rowHighlight', value,
+                () => window.dashboardInstance.setupDOM?.(), `rows:${value}`),
+        }, args);
+    }
+
+    /**
+     * Favicon harmonisation: whether, and how far.
+     *
+     * On one command because they are one question -- "what happens to my
+     * icons" -- and because picking a style with it switched off is a choice
+     * nobody makes on purpose, so a style turns it on.
+     *
+     * Routed through the config module rather than written here: harmonisation
+     * is stored per theme, and which keys a write touches (a custom theme, the
+     * random pool) is logic that lives there. A second copy of it in the
+     * palette would drift.
+     */
+    handleHarmonizeCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const entry = window.ThemeIconStyling?.getThemeIconStylingEntry?.(dashboard.settings) || {};
+        const enabled = entry.enabled === true;
+        const style = entry.style || 'muted';
+
+        const apply = async (patch, stateId) => {
+            const config = await dashboard.config?.load?.();
+            await config?.setIconStyling?.(patch);
+            return this._paletteRefresh(stateId);
+        };
+
+        const options = [
+            { value: 'on', label: t('config.iconStylingOn', 'On'), current: enabled,
+                patch: { enabled: true } },
+            { value: 'off', label: t('config.iconStylingOff', 'Off'), current: !enabled,
+                patch: { enabled: false } },
+            { value: 'muted', label: t('config.iconStylingStyleMuted', 'Muted'), current: enabled && style === 'muted',
+                patch: { enabled: true, style: 'muted' } },
+            { value: 'tinted', label: t('config.iconStylingStyleTinted', 'Tinted'), current: enabled && style === 'tinted',
+                patch: { enabled: true, style: 'tinted' } },
+            { value: 'overlay', label: t('config.iconStylingStyleOverlay', 'Overlay'), current: enabled && style === 'overlay',
+                patch: { enabled: true, style: 'overlay' } },
+        ];
+
+        const typed = (args[0] || '').toLowerCase();
+        const shown = typed ? options.filter((o) => o.value.startsWith(typed)) : options;
+        return shown.map((o) => ({
+            ...this._markCurrentRow(o.label, o.current),
+            shortcut: ':HARMONIZE',
+            stateId: `harmonize:${o.value}`,
+            type: 'command',
+            action: () => apply(o.patch, `harmonize:${o.value}`),
         }));
     }
 
@@ -2527,30 +2679,6 @@ class SearchCommandsComponent {
         return [];
     }
 
-    applyLayoutVersion(dashboard, version) {
-        if (window.LayoutVersionUtils) {
-            window.LayoutVersionUtils.applyLayoutVersion(dashboard.settings, version, {
-                syncDashboard: true,
-                saveDashboard: true
-            });
-        } else {
-            const normalized = (version || 'classic').toLowerCase().trim();
-            const nextVersion = ['classic', 'modern'].includes(normalized) ? normalized : 'classic';
-            dashboard.settings.layoutVersion = nextVersion;
-            document.documentElement.setAttribute('data-layout-version', nextVersion);
-            document.body.setAttribute('data-layout-version', nextVersion);
-            if (typeof dashboard.setupDOM === 'function') {
-                dashboard.setupDOM();
-            }
-            if (typeof dashboard.saveSettings === 'function') {
-                dashboard.saveSettings();
-            }
-        }
-        const applied = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
-            : (dashboard.settings.layoutVersion || 'classic');
-        return this._paletteRefresh(`layoutversion:${applied}`);
-    }
 
     applyLayoutPreset(dashboard, preset) {
         if (window.LayoutUtils) {

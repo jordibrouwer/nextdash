@@ -2403,6 +2403,232 @@ A theme that means silence still declares -1 and gets it.
 The light branch is capped well under the dark one. On paper this is a tinted
 shadow and it is meant to be felt and not seen.
 */
+/*
+What the glass depth step is worth on a theme that never mentioned it.
+
+Both of these are read only under body[data-depth="glass"], and both used to
+fall back to the value that means "not glass at all": fully solid, no blur.
+Four of the 222 built-in themes declare an alpha and two declare a blur, so on
+the other 218 the glass step was a setting that did nothing -- pick it, and the
+dashboard was indistinguishable from rich. A depth step the reader chose should
+do what it says whatever theme is underneath it.
+
+So a theme that says nothing gets the step's own glass rather than none. A
+theme with an opinion still wins, which is how Aurora Glass keeps its deeper
+0.58 and Retro CRT Mk II its near-solid 0.9. And a theme that means solid on
+purpose says so with a negative, the convention themeSurfaceGlow already uses
+for a palette that means silence.
+
+0.72 and 18px rather than something bolder: the tiers in theme-character.css
+scale these down per reading need -- the page ground takes 70% of the alpha, an
+overlay nearly all of it -- so this is the most translucent the page ever gets.
+A step back from the 0.58 Aurora Glass sets for itself, because that theme was
+drawn around being glass and these 218 were not.
+*/
+/*
+The fourth semantic colour, when a theme has not named one.
+
+--accent-info marks a kind rather than a verdict: a feature row against a post
+in the news stream, a filter completion against a finder in the search list,
+the note you are typing in. The stylesheet has asked for it in seven places
+since long before a theme could answer, so all seven fell through to a
+hard-coded #60A5FA -- one blue across a paper theme, a green terminal and 220
+others, belonging to none of them.
+
+Derived rather than added to 222 records by hand, and derived by hue rather
+than by picking a colour: the tone comes from AccentPrimary, so the theme's
+own weight and saturation carry over, and only the hue is chosen. It is the
+hue furthest from the three accents that already mean something -- success,
+warning and error -- because the whole job of this colour is to not be
+mistaken for a verdict. On a green terminal whose primary and success are the
+same green, that lands it well away from both; on a greyscale theme the
+primary has no chroma to give, so info comes out grey too, which is the right
+answer there.
+
+Searched in five-degree steps rather than solved: the objective is the minimum
+of three circular distances, which is not differentiable at the crossings, and
+seventy-two candidates is nothing to walk.
+*/
+func themeAccentInfo(tc ThemeColors) string {
+	if strings.TrimSpace(tc.AccentInfo) != "" {
+		return strings.TrimSpace(tc.AccentInfo)
+	}
+
+	primary := tc.AccentPrimary
+	if primary == "" {
+		primary = tc.AccentSuccess
+	}
+	lightness, chroma, ok := hexOklch(primary)
+	if !ok {
+		// A palette that cannot be read gets the theme's own accent rather
+		// than a blue from nowhere: wrong in the same direction as the rest
+		// of a malformed theme, instead of wrong in a new one.
+		return "var(--accent-primary)"
+	}
+
+	taken := []float64{}
+	for _, c := range []string{tc.AccentSuccess, tc.AccentWarning, tc.AccentError} {
+		if _, chr, good := hexOklch(c); !good || chr < 0.02 {
+			continue
+		}
+		if hue, good := hexOklchHue(c); good {
+			taken = append(taken, hue)
+		}
+	}
+
+	hue := 0.0
+	if h, good := hexOklchHue(primary); good {
+		hue = h
+	}
+	if len(taken) > 0 {
+		best, bestGap := hue, -1.0
+		for candidate := 0.0; candidate < 360; candidate += 5 {
+			gap := 360.0
+			for _, other := range taken {
+				d := math.Abs(candidate - other)
+				if d > 180 {
+					d = 360 - d
+				}
+				if d < gap {
+					gap = d
+				}
+			}
+			if gap > bestGap {
+				best, bestGap = candidate, gap
+			}
+		}
+		hue = best
+	}
+
+	return "oklch(" + formatFloat(math.Round(lightness*1000)/1000) +
+		" " + formatFloat(math.Round(chroma*1000)/1000) +
+		" " + formatFloat(math.Round(hue*10)/10) + ")"
+}
+
+/*
+How far apart the rungs of the surface ladder sit.
+
+Each rung mixes a few per cent of the text colour into the page: 3, 6 and 9,
+scaled by the depth control. Those numbers were chosen against a mid-contrast
+palette, and they are not worth the same everywhere. On a page and an ink that
+sit far apart -- near-black under near-white -- three per cent is a visible
+step. On a palette that keeps its ink close to its ground, three per cent of
+almost nothing is nothing, and every card on those themes reads as flat
+whatever the reader picked.
+
+So the step is scaled by the room the palette actually has. Not by the depth,
+which is the reader's choice and already multiplies this; by the theme's own
+distance between page and ink, which is a property of the palette.
+
+Bounded well inside doubling: this shifts a card against its page, and a step
+large enough to be a colour of its own would fight the accent tint mixed in
+beside it.
+*/
+func themeSurfaceStep(tc ThemeColors) string {
+	if tc.SurfaceStep > 0 {
+		return formatFloat(clampFloat(tc.SurfaceStep, 0.6, 1.8, 1))
+	}
+
+	page, _, okPage := hexOklch(tc.BackgroundPrimary)
+	ink, _, okInk := hexOklch(tc.TextPrimary)
+	if !okPage || !okInk {
+		return "1"
+	}
+
+	// The room retro-crt-dark has: 0.828 in OKLCH lightness between its page
+	// and its ink. It is the default theme and the one the 3/6/9 were drawn
+	// against, so it is what "a step worth one" means -- and it comes out at
+	// exactly 1, which a guessed constant did not. A first pass used 0.62 and
+	// put the median theme at 0.84, flattening most of the collection to fix
+	// the few.
+	room := math.Abs(ink - page)
+	step := 1.0
+	if room > 0 {
+		step = 0.828 / room
+	}
+	return formatFloat(math.Round(clampFloat(step, 0.6, 1.8, 1)*100) / 100)
+}
+
+func themeSurfaceAlpha(tc ThemeColors) string {
+	if tc.SurfaceAlpha < 0 {
+		return "1"
+	}
+	if tc.SurfaceAlpha > 0 {
+		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
+	}
+	return formatFloat(derivedSurfaceAlpha(tc))
+}
+
+/*
+How much of the page a theme can afford to let through.
+
+A flat number for all 218 would make the glass step work, and make every one
+of them glass in the same way -- which is the opposite of what 111 hand-drawn
+palettes are for. Two things about a palette decide this, and both are about
+whether the text on the surface survives the page showing through it.
+
+How light the page is. On a dark theme the ground behind a surface is close to
+black, so what comes through barely moves the surface and pale text holds. On
+a light theme the page is near-white and everything it touches lightens, which
+is where translucency turns text grey -- so a light theme keeps more of itself.
+
+How far the surface already stands from the page. A palette whose secondary
+background is nearly its primary draws a surface you can only just make out;
+letting more through costs it almost nothing and finally gives the step
+something to show. One that steps well clear has a surface worth keeping, so
+it keeps more of it.
+
+Both read as slopes rather than as thresholds. Written as buckets first, and
+182 of the 222 themes came out on the same number -- a flat default wearing a
+formula.
+
+The range runs 0.62 to 0.88. Below that the figures on a widget start
+competing with whatever is behind them; above it the step stops being visible,
+which is the bug this exists to fix.
+*/
+func derivedSurfaceAlpha(tc ThemeColors) float64 {
+	alpha := 0.70
+
+	pageLightness, _, okPage := hexOklch(tc.BackgroundPrimary)
+	if okPage {
+		// Read as a slope and not as two buckets. Thresholds put 182 of the
+		// 222 themes on one number, which is a flat default wearing a formula:
+		// the point of deriving this is that a pale slate and a near-black
+		// terminal should not be glass in the same way.
+		alpha += 0.12 * unitRange(pageLightness)
+	}
+
+	surfaceLightness, _, okSurface := hexOklch(tc.BackgroundSecondary)
+	if okPage && okSurface {
+		// Measured against 0.2, which is about as far as a palette ever steps
+		// between its page and its raised surface; past that it is already a
+		// different colour rather than a step.
+		step := math.Abs(surfaceLightness - pageLightness)
+		alpha += 0.10 * unitRange(step/0.2)
+	}
+
+	// Rounded to the hundredth the CSS will carry, so a derived value reads
+	// like one a theme could have written by hand rather than like arithmetic.
+	return math.Round(clampFloat(alpha, 0.62, 0.88, 0.72)*100) / 100
+}
+
+func themeSurfaceBlur(tc ThemeColors) string {
+	if tc.SurfaceBlur < 0 {
+		return "0"
+	}
+	if tc.SurfaceBlur > 0 {
+		return formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0))
+	}
+	// Blur follows translucency rather than being chosen beside it. The blur is
+	// what keeps text readable over whatever shows through, so the surface that
+	// lets the most through needs the most of it: 0.62 alpha earns 22px, 0.88
+	// earns 12px, and everything between lands on the line -- a palette with
+	// nothing to derive from sits in the middle at 18.
+	alpha := derivedSurfaceAlpha(tc)
+	blur := 22 - (alpha-0.62)*(10/0.26)
+	return formatFloat(math.Round(clampFloat(blur, 12, 22, 18)))
+}
+
 func themeSurfaceGlow(tc ThemeColors) string {
 	if tc.SurfaceGlow < 0 {
 		return "0"
@@ -2484,17 +2710,17 @@ OKLab is worth the twenty lines here: it is the only space in this file where
 "how much colour is this" and "how light is this" are separate questions with
 honest answers. sRGB conflates them and HSL lies about both.
 */
-func hexOklch(color string) (lightness, chroma float64, ok bool) {
+func hexOklab(color string) (lightness, a, b float64, ok bool) {
 	h := strings.TrimSpace(color)
 	if !strings.HasPrefix(h, "#") {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	h = h[1:]
 	if len(h) == 3 {
 		h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
 	}
 	if len(h) != 6 {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	linear := func(part string) (float64, bool) {
 		v, err := strconv.ParseUint(part, 16, 16)
@@ -2509,18 +2735,52 @@ func hexOklch(color string) (lightness, chroma float64, ok bool) {
 	}
 	r, okR := linear(h[0:2])
 	g, okG := linear(h[2:4])
-	b, okB := linear(h[4:6])
+	blue, okB := linear(h[4:6])
 	if !okR || !okG || !okB {
+		return 0, 0, 0, false
+	}
+	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*blue)
+	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*blue)
+	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*blue)
+	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+		1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+		0.0259040371*l + 0.7827717662*m - 0.8086757660*s,
+		true
+}
+
+/*
+The same colour as lightness and chroma, which is what most callers want.
+
+Kept as its own function rather than folded into hexOklab: three of the four
+readers here care about how light and how colourful a colour is and not at all
+about which colour it is, and a third return value they would each discard
+reads as though the hue mattered to them.
+*/
+func hexOklch(color string) (lightness, chroma float64, ok bool) {
+	l, a, b, good := hexOklab(color)
+	if !good {
 		return 0, 0, false
 	}
-	l := math.Cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b)
-	m := math.Cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b)
-	s := math.Cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b)
-	return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
-		math.Hypot(
-			1.9779984951*l-2.4285922050*m+0.4505937099*s,
-			0.0259040371*l+0.7827717662*m-0.8086757660*s,
-		), true
+	return l, math.Hypot(a, b), true
+}
+
+/*
+And as a hue, in degrees.
+
+Only meaningful once there is chroma to have a hue of: a neutral grey reports
+whatever the rounding left in a and b, which is why every caller here checks
+the chroma before it asks.
+*/
+func hexOklchHue(color string) (float64, bool) {
+	_, a, b, ok := hexOklab(color)
+	if !ok {
+		return 0, false
+	}
+	deg := math.Atan2(b, a) * 180 / math.Pi
+	if deg < 0 {
+		deg += 360
+	}
+	return deg, true
 }
 
 /*
@@ -2825,11 +3085,13 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --accent-primary: ` + accentPrimary + `;
     --accent-warning: ` + s.AccentWarning + `;
     --accent-error: ` + s.AccentError + `;
+    --accent-info: ` + themeAccentInfo(tc) + `;
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + themeBackdropImage(selector, s) + `;
-    --theme-surface-alpha: ` + formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1)) + `;
-    --theme-surface-blur: ` + formatFloat(clampFloat(tc.SurfaceBlur, 0, 32, 0)) + `px;
+    --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
+    --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
     --theme-surface-glow: ` + themeSurfaceGlow(tc) + `;
+    --theme-surface-step: ` + themeSurfaceStep(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;

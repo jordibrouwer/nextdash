@@ -4,10 +4,29 @@
  * so it reads as part of the same system.
  */
 
+/*
+ * Above the corner buttons, never over them.
+ *
+ * The card sat at the bottom edge with a z-index of 2147482800, and the two
+ * buttons that live in that corner -- the tag cloud's and What's New -- sit at
+ * 1001 and 1002. So on a first run, which is the only time this card is up,
+ * the card covered both of them: elementFromPoint in the middle of the What's
+ * New button returned .quickstart-actions, and a click on it went to the card.
+ * A new reader could not reach either button until the card was dismissed,
+ * which is exactly the reader the card is for.
+ *
+ * Two rows of the corner stack, in the same expression the tag cloud's own
+ * button uses to sit above What's New. Unconditional: a button position that
+ * moves those two out of the corner leaves the card floating a little high,
+ * which costs a band of empty page -- against a button nobody can press.
+ */
 .quickstart-card {
     position: fixed;
     left: max(1rem, env(safe-area-inset-left));
-    bottom: max(1rem, env(safe-area-inset-bottom));
+    bottom: calc(
+        max(1rem, env(safe-area-inset-bottom))
+        + 2 * (var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem))
+    );
     width: 340px;
     max-width: calc(100vw - 2rem);
     background: var(--background-secondary);
@@ -194,13 +213,13 @@
 
 .quickstart-item-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.35;
     margin-top: var(--space-hairline, 0.05rem);
 }
 
 .quickstart-card.is-complete .quickstart-stripe {
-    background: var(--accent-success, var(--accent-primary));
+    background: var(--accent-success);
 }
 
 /* ---- Compact setup card ---- */
@@ -244,7 +263,7 @@
 
 .quickstart-field-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
     margin: 0 0 var(--space-1-5, 0.35rem);
 }
@@ -315,7 +334,7 @@
 
 .quickstart-radio-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
 }
 
@@ -441,7 +460,7 @@
     margin: var(--space-2, 0.6rem) 0 0;
     width: 100%;
     font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.5;
 }
 
@@ -499,59 +518,10 @@
 
 .analytics-notice-modal-body .analytics-notice-heading:not(:first-child) {
     margin-top: 1.25rem;
-}
-
-/* ─── Modern layout ─────────────────────────────────────────────────────────
-   Scoped to body[data-layout-version="modern"]; classic above is untouched.
-   Tokens come from layout-modern-tokens.css.
-   ------------------------------------------------------------------------- */
-
-/* The card floats over the dashboard, so it follows the overlay grammar in
-   overlays-modern.css (rounded, tinted surface, layered shadow) rather than the
-   flat panel treatment the in-page views use. */
-body[data-layout-version="modern"] .quickstart-card {
-    border-radius: var(--layout-radius-lg);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-lg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-/* The stripe spans the full width at the very top of the card, so a rounded
+}/* The stripe spans the full width at the very top of the card, so a rounded
    card clips its upper corners. Round its own top edge to match. */
-body[data-layout-version="modern"] .quickstart-stripe {
-    border-radius: var(--layout-radius-lg) var(--layout-radius-lg) 0 0;
-}
-
-body[data-layout-version="modern"] .quickstart-item-action {
-    border-radius: var(--layout-radius-sm);
-    transition: background-color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .quickstart-item-action:focus-visible {
-    outline: var(--layout-focus-ring);
-    outline-offset: 1px;
-    box-shadow: none;
-}
-
-body[data-layout-version="modern"] .quickstart-close {
-    border-radius: var(--layout-radius-sm);
-    transition:
-        background-color var(--layout-transition),
-        color var(--layout-transition);
-}
-
-body[data-layout-version="modern"] .quickstart-close:focus-visible {
-    outline: var(--layout-focus-ring);
-    outline-offset: 1px;
-}
 
 @media (prefers-reduced-motion: reduce) {
-    body[data-layout-version="modern"] .quickstart-item-action,
-    body[data-layout-version="modern"] .quickstart-close {
-        transition: none;
-    }
 }
 
 /*
@@ -598,6 +568,6 @@ body[data-layout-version="modern"] .quickstart-close:focus-visible {
 
 .quickstart-setup-link-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
 }

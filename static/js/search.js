@@ -203,15 +203,19 @@ class SearchComponent {
                 const inCommandMode = this.currentQuery.startsWith(':');
                 const inFinderMode = this.currentQuery.startsWith('?');
                 const inGlobalMode = this.currentQuery.startsWith('@');
-                const value = inCommandMode
-                    ? raw
-                    : (inFinderMode || inGlobalMode ? raw.toUpperCase() : raw);
+                // Past the space a finder query is search text, so it keeps
+                // its case and its punctuation -- the same split the key
+                // handler makes. Before the space it is a shortcut, which is
+                // uppercased on screen and matched case-insensitively.
+                const inFinderText = inFinderMode && this.currentQuery.includes(' ');
+                const shouts = (inFinderMode && !inFinderText) || inGlobalMode;
+                const value = shouts ? raw.toUpperCase() : raw;
                 if (value.length > this.currentQuery.length) {
                     // Character added
                     const newChar = value[value.length - 1];
-                    const allowed = inCommandMode || (!inFinderMode && !inGlobalMode)
-                        ? /^[\x20-\x7E]$/.test(newChar)
-                        : /^[A-Z0-9: \?/#\.\-_]$/.test(newChar);
+                    const allowed = shouts
+                        ? /^[A-Z0-9: \?/#\.\-_]$/.test(newChar)
+                        : /^[\x20-\x7E]$/.test(newChar);
                     if (allowed) {
                         this.addToQuery(newChar);
                     }
@@ -339,7 +343,7 @@ class SearchComponent {
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
                 } else if (mode === 'finder') {
-                    this.currentQuery = '?';
+                    this.currentQuery = this.finderModeQuery();
                 } else {
                     this.currentQuery = '';
                     this.commandsComponent.resetState();
@@ -356,6 +360,63 @@ class SearchComponent {
     }
 
     /**
+     * The three keys that name a mode, and what each one opens as.
+     *
+     * Global search (@) is deliberately not among them: it is a scope rather
+     * than a mode, has no pill in the switch, and reads as a variant of search
+     * rather than as a fourth place to be.
+     */
+    static MODE_ENTRY = { '>': '', ':': ':', '?': '?' };
+
+    /**
+     * True while the panel is open on a mode and nothing has been typed into
+     * it yet.
+     *
+     * "Nothing typed" has to allow for what the mode itself put there: the ":"
+     * that opens commands, and in finders the shortcut the entry completes for
+     * you when only one finder is configured -- "?B " is still an empty finder
+     * query, not a search for the letter B.
+     */
+    _isAtModeEntry() {
+        const q = this.currentQuery;
+        if (q === '' || q === ':' || q === '?') return true;
+        return /^\?[A-Za-z0-9]*\s?$/.test(q) && q !== '?';
+    }
+
+    /** The query a mode key opens its mode with. */
+    _modeEntryQuery(key) {
+        return key === '?' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
+    }
+
+    /**
+     * What finder mode looks like as a query, the moment you enter it.
+     *
+     * `?` on its own is a prompt for a shortcut letter, and everything typed
+     * after it is read as that letter until a space arrives -- which is why a
+     * space cannot simply be inserted here: an empty shortcut matches no
+     * finder, so `? jordibrw.nl` searches for nothing at all.
+     *
+     * With exactly one finder configured there is no letter left to choose.
+     * The prompt is asking a question with one possible answer, and the reader
+     * who types their terms straight after the `?` is right to expect them to
+     * land. So the one finder is picked here and the space it needs comes with
+     * it. Two or more, and the question is real again: `?` lists them and
+     * waits, as before.
+     *
+     * Called from all three ways in -- the `?` key, the toolbar button and the
+     * mode tab -- rather than from each of them separately, so a fourth cannot
+     * arrive without it.
+     */
+    finderModeQuery() {
+        const finders = this.findersComponent?.finders;
+        if (!Array.isArray(finders) || finders.length !== 1) {
+            return '?';
+        }
+        const only = finders[0];
+        return only?.shortcut ? `?${String(only.shortcut).toUpperCase()} ` : '?';
+    }
+
+    /**
      * Open the overlay directly in commands (`:`) or finders (`?`) mode.
      *
      * The prefix is set before the first updateSearch() so the open is tracked as
@@ -368,7 +429,7 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
         }
         this.commandsComponent.resetState();
-        this.currentQuery = prefix;
+        this.currentQuery = prefix === '?' ? this.finderModeQuery() : prefix;
         this.updateSearch();
         this.renderSearchMatches();
     }
@@ -691,6 +752,71 @@ class SearchComponent {
             return;
         }
 
+        /*
+         * The mode keys switch mode while the panel is open and empty.
+         *
+         * One panel with three modes is only one panel if the keys that name
+         * them keep working once you are inside it. They did not: ">" opened
+         * into search and from there ":" and "?" switched, but from commands
+         * or finders every mode key was typed into the query instead -- ":"
+         * then "?" left ":?B ", and "?" then ">" left "?B >". The only ways
+         * out were the mouse and Escape.
+         *
+         * Only while nothing has been typed yet. Past that the key is a
+         * character, which is what makes ":new a:b" and a URL's own "?"
+         * possible -- and switching mode under someone mid-sentence would
+         * throw away what they had written.
+         */
+        if (this.searchActive && Object.prototype.hasOwnProperty.call(SearchComponent.MODE_ENTRY, key) && this._isAtModeEntry()) {
+            e.preventDefault();
+            const next = this._modeEntryQuery(key);
+            if (next !== this.currentQuery) {
+                this.commandsComponent.resetState();
+                this.currentQuery = next;
+                this.selectedMatchIndex = 0;
+                this.updateSearch();
+            }
+            return;
+        }
+
+        /*
+         * Inside a command, a printable character is text.
+         *
+         * Ahead of the launcher keys for the same reason the finder branch
+         * below is: a command takes a URL, and a URL is made of the characters
+         * that open modes. Typing ":new https://example.com/a?b=1" produced
+         * "/:new https:/example.com/a?B b=1" -- the first slash was read as
+         * the fuzzy-mode switch and moved to the front, the second was eaten,
+         * and the "?" opened finders inside the command. The command branch
+         * existed all along; it just sat below the launchers.
+         */
+        if (this.currentQuery.startsWith(':') && e.key.length === 1
+                && /^[\x20-\x7E]$/.test(e.key)) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
+        /*
+         * Inside a finder's search text, a printable character is text.
+         *
+         * Ahead of the launcher keys below on purpose. `/`, `@` and `>` all
+         * mean something at the start of a query, and all three turn up inside
+         * an ordinary search -- a path, an address, a comparison. With this
+         * branch below them, typing "a/b" into a finder moved the slash to the
+         * front of the query and swallowed it, which is not a thing anyone can
+         * be expected to work out.
+         *
+         * Only past the space: before it, every character is part of the
+         * shortcut, and the launchers still have their say there.
+         */
+        if (this.currentQuery.startsWith('?') && this.currentQuery.includes(' ')
+                && e.key.length === 1 && /^[\x20-\x7E]$/.test(e.key)) {
+            e.preventDefault();
+            this.addToQuery(e.key);
+            return;
+        }
+
         // Handle > key to open normal search
         if (key === '>') {
             e.preventDefault();
@@ -778,6 +904,18 @@ class SearchComponent {
             e.preventDefault();
             if (!this.currentQuery.startsWith('?')) {
                 this.addToQuery('?');
+                // Still through addToQuery for the `?` itself: it starts the
+                // search session, resets the command state and arms the
+                // shortcut open. Only the prompt it leaves behind is replaced,
+                // and only when there is one finder to replace it with -- the
+                // trailing space cannot be typed, because the guard in
+                // addToQuery swallows a lone space after `?` (an empty
+                // shortcut matches no finder).
+                const entry = this.finderModeQuery();
+                if (entry !== '?' && this.currentQuery.endsWith('?')) {
+                    this.currentQuery = `${this.currentQuery.slice(0, -1)}${entry}`;
+                    this._scheduleUpdateSearch();
+                }
             }
             return;
         }
@@ -830,14 +968,6 @@ class SearchComponent {
         )) {
             e.preventDefault();
             this.addToQuery(' ');
-            return;
-        }
-
-        // In command mode allow all printable characters (needed for URLs: dots, slashes, underscores, etc.)
-        // Use e.key directly to preserve original case for URL paths.
-        if (this.currentQuery.startsWith(':') && e.key.length === 1) {
-            e.preventDefault();
-            this.addToQuery(e.key);
             return;
         }
 
