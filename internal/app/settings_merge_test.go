@@ -36,15 +36,17 @@ func TestMergeSettingsFromBodyUpdatesPresentFields(t *testing.T) {
 	stored := Settings{
 		Theme:               "classic-dark",
 		AllowLocalBookmarks: false,
-		LayoutVersion:       "classic",
+		RowHighlight:        "subtle",
 	}
 
-	merged, err := mergeSettingsFromBody(stored, []byte(`{"layoutVersion":"modern","allowLocalBookmarks":true}`))
+	// Was layoutVersion, which no longer exists: one layout, and the row
+	// treatment that told the two apart is a setting of its own now.
+	merged, err := mergeSettingsFromBody(stored, []byte(`{"rowHighlight":"strong","allowLocalBookmarks":true}`))
 	if err != nil {
 		t.Fatalf("mergeSettingsFromBody: %v", err)
 	}
-	if merged.LayoutVersion != "modern" {
-		t.Fatalf("layoutVersion = %q, want modern", merged.LayoutVersion)
+	if merged.RowHighlight != "strong" {
+		t.Fatalf("rowHighlight = %q, want strong", merged.RowHighlight)
 	}
 	if merged.AllowLocalBookmarks != true {
 		t.Fatalf("allowLocalBookmarks = %v, want true", merged.AllowLocalBookmarks)

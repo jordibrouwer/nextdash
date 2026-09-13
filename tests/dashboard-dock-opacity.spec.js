@@ -74,11 +74,8 @@ test.describe('floating dock opacity', () => {
             null, { timeout: 15_000 });
     });
 
-    test('classic dock buttons and corner FABs are opaque', async ({ page }) => {
-        // The default install: classic, and every surface below is one the user
-        // sees on a first run.
-        expect(await page.getAttribute('body', 'data-layout-version')).toBe('classic');
-
+    test('dock buttons and corner FABs are opaque', async ({ page }) => {
+        // Every surface below is one the user sees on a first run.
         // The dock itself.
         expect(await bgAlpha(page, '#search-button')).toBe(1);
         expect(await bgAlpha(page, '#quick-add-toolbar-btn')).toBe(1);
@@ -99,22 +96,4 @@ test.describe('floating dock opacity', () => {
         expect(await bgAlpha(page, '#search-button')).toBe(1);
     });
 
-    test('the modern layout keeps its translucent face over its own plate',
-        async ({ page }) => {
-            await applySetting(page, 'layoutVersion', 'modern');
-            expect(await page.getAttribute('body', 'data-layout-version')).toBe('modern');
-
-            const alpha = await bgAlpha(page, '#search-button');
-            expect(alpha).not.toBeNull();
-            expect(alpha).toBeLessThan(1);
-        });
-
-    test('the what\'s new FAB is opaque in the modern layout as well',
-        async ({ page }) => {
-            // Modern styles the dock and the / FAB, but never this one -- it
-            // floats over the grid on the same 74% wash in both layouts, so the
-            // fix has to reach it regardless of layout version.
-            await applySetting(page, 'layoutVersion', 'modern');
-            expect(await bgAlpha(page, '#whats-new-btn')).toBe(1);
-        });
 });

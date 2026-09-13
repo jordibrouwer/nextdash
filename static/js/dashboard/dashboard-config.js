@@ -2565,7 +2565,6 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
         { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
-        { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -2632,7 +2631,6 @@ class DashboardConfig {
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
         themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
-        layoutVersion: ['layout', 'modern', 'classic', 'beta'],
         buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
@@ -3056,7 +3054,6 @@ class DashboardConfig {
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
         const groups = {
-            layoutVersion: '[data-appearance-layout]',
             buttonBarPosition: '[data-appearance-barpos]',
             fontWeight: '[data-appearance-weight]',
             backgroundType: '[data-appearance-bg]',
@@ -8329,7 +8326,6 @@ class DashboardConfig {
             image: this.t('config.backgroundImage', 'Image'),
         }[bgType] || bgType;
 
-        const layoutModern = s.layoutVersion === 'modern';
         const density = s.densityMode || 'comfortable';
         const densityLabel = {
             comfortable: this.t('config.densityComfortable', 'Comfortable'),
@@ -8363,14 +8359,6 @@ class DashboardConfig {
                 detail: bgType !== 'none' && Number.isFinite(Number(s.backgroundOpacity))
                     ? `${Math.round(Number(s.backgroundOpacity) * 100)}%`
                     : '',
-            },
-            {
-                key: 'layout', tone: layoutModern ? 'warn' : 'neutral',
-                label: this.t('config.tileLayout', 'Layout'),
-                value: layoutModern
-                    ? this.t('config.layoutModern', 'Modern')
-                    : this.t('config.layoutClassic', 'Classic'),
-                detail: layoutModern ? this.t('config.layoutBetaShort', 'Early beta') : '',
             },
             {
                 key: 'density', tone: 'neutral',
@@ -8731,34 +8719,12 @@ class DashboardConfig {
     renderAppearanceLayoutBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
-        // Bookmarks layout first and the layout version last: the grid is what
-        // people come here to change, while the version switch is a one-off
-        // that mostly wants to be found rather than stepped over on the way
-        // down the tab. The button bar left for a tab of its own.
+        // The button bar has a tab of its own; what is left here is the grid.
         return `
             ${this.renderChangedFilterBar('appearance', 'layout')}
             ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.layoutVersionDescIntro', 'Choose a layout style. Classic is recommended; Modern is still in early beta.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
-                    <div class="config-choices" role="group">
-                        ${['classic', 'modern'].map((version) => `
-                        <button type="button" class="config-choice config-choice--art${layout === version ? ' is-active' : ''}" data-appearance-layout="${version}" aria-pressed="${layout === version}">
-                            ${window.SettingArt?.render?.('layoutVersion', version) || ''}
-                            <span class="config-choice-label">${esc(this.t(version === 'classic' ? 'config.layoutClassic' : 'config.layoutModern', version === 'classic' ? 'Classic' : 'Modern'))}</span>
-                        </button>`).join('')}
-                    </div>
-                    ${this.appearanceAff('layoutVersion')}
-                    ${layout === 'modern'
-                        ? `<p class="config-field-warning">${esc(this.t('config.layoutVersionBetaNotice', 'Modern is still in early beta and not finished yet. Classic is recommended for the best experience.'))}</p>`
-                        : ''}
-                    <p class="config-field-hint">${esc(this.t(`config.layoutVersionDesc.${layout}`, ''))}</p>
-                </div>
-            </div>`;
+`;
     }
 
     renderAppearanceDisplayBody() {
@@ -9186,9 +9152,6 @@ class DashboardConfig {
                 this.releaseConfigTypeScale();
                 this.setFontSize(size);
             });
-        });
-        container.querySelectorAll('[data-appearance-layout]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setLayout(btn.getAttribute('data-appearance-layout')));
         });
         container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
@@ -10364,7 +10327,6 @@ class DashboardConfig {
                 this.persistAppearance();
                 break;
             case 'launcherIconSize': this.setLauncherIconSize(value); break;
-            case 'layoutVersion': this.setLayout(value); break;
             case 'randomThemeMode': this.setRandomThemeMode(value); break;
             default:
                 // Fall back to a plain settings write + repaint for any field
@@ -10433,13 +10395,6 @@ class DashboardConfig {
         if (!DashboardConfig.FONT_SIZES.includes(size)) return;
         this.dash.settings.fontSize = size;
         this.dash.applyFontSize?.();
-        this.persistAppearance();
-    }
-
-    setLayout(version) {
-        if (version !== 'classic' && version !== 'modern') return;
-        this.dash.settings.layoutVersion = version;
-        window.ThemeLoader?.applyLayoutVersion?.(version);
         this.persistAppearance();
     }
 
@@ -10760,7 +10715,6 @@ class DashboardConfig {
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
-        layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
         layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },

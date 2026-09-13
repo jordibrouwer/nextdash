@@ -91,34 +91,6 @@
     border-left: 3px solid var(--accent-warning);
 }
 
-/* Rounded corners would clip a left border, so modern redraws the edge as an
-   inset shadow. Kept here with the edge it belongs to rather than repeated in
-   each view's modern block. */
-body[data-layout-version="modern"] .feed-row {
-    border-radius: var(--layout-radius-md, 12px);
-    border-color: var(--layout-surface-border);
-    background: var(--layout-surface);
-    box-shadow: var(--layout-shadow-sm);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-accent,
-body[data-layout-version="modern"] .feed-row--edge-error,
-body[data-layout-version="modern"] .feed-row--edge-warning {
-    border-left-width: 1px;
-}
-
-body[data-layout-version="modern"] .feed-row--edge-accent {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-primary);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-error {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-error);
-}
-
-body[data-layout-version="modern"] .feed-row--edge-warning {
-    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-warning);
-}
-
 /* The feed itself: a column of cards, no dividers and no striping — the card
    border and the gap do the separating. */
 .feed-list {

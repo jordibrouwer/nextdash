@@ -13,8 +13,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * a softer shadow) either already exists in the shared layer or is something
  * the depth ladder now does better.
  *
- * So it is a setting, not a layout. Anyone can have it, and it survives that
- * layout being folded away.
+ * So it is a setting, not a layout -- which is what let that layout be folded
+ * away without anyone losing their rows.
  */
 
 async function dashboard(page) {
@@ -85,26 +85,4 @@ test.describe('how a row lights up', () => {
             'the page reloaded to apply the setting').toBe(true);
     });
 
-    test('a modern install keeps what it had', async ({ page }) => {
-        await dashboard(page);
-
-        // The strong tier only claims the tokens when it is asked for, so the
-        // modern layout's own values still stand on an install that has not
-        // chosen. Folding that layout away is a later step; it must not change
-        // under anyone before then.
-        const modern = await page.evaluate(() => {
-            document.body.setAttribute('data-row-highlight', 'subtle');
-            document.body.setAttribute('data-layout-version', 'modern');
-            const probe = document.createElement('span');
-            probe.style.background = 'var(--bookmark-row-hover-bg)';
-            document.body.appendChild(probe);
-            const value = window.getComputedStyle(probe).backgroundImage;
-            probe.remove();
-            document.body.setAttribute('data-layout-version', 'classic');
-            return value;
-        });
-        const classic = (await rowTokens(page)).hover;
-
-        expect(modern, 'the modern layout lost its own row treatment').not.toBe(classic);
-    });
 });

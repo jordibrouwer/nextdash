@@ -483,7 +483,6 @@ type Settings struct {
 	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
 	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
 	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
-	LayoutVersion                  string                       `json:"layoutVersion"`                            // Dashboard layout version: classic, modern
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
 	 * its greys, the surface ladder, the wash behind the page.
@@ -1388,7 +1387,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:       true,
 			SortMethod:                   "order",
 			LayoutPreset:                 "default",
-			LayoutVersion:                "classic",
 			ThemeDepth:                   "rich",
 			RowHighlight:                 "subtle",
 			InkGap:                       defaultInkGap,
@@ -3423,7 +3421,6 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:              defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:             defaultBookmarkArchiveUrl,
 			LayoutPreset:                   "default",
-			LayoutVersion:                  "classic",
 			ThemeDepth:                     "rich",
 			RowHighlight:                   "subtle",
 			InkGap:                         defaultInkGap,
@@ -3736,9 +3733,8 @@ func (fs *FileStore) GetSettings() Settings {
 		 * Only where the reader never answered for themselves: somebody on
 		 * modern who went and chose subtle meant subtle.
 		 *
-		 * Read from the raw map rather than from a field, so this keeps
-		 * working once LayoutVersion itself is gone. "glass" was removed
-		 * earlier the same way; anything unknown lands on classic.
+		 * Read from the raw map, which is all there is: the field itself is
+		 * gone. The "glass" layout was retired the same way before it.
 		 */
 		if raw, ok := rawSettings["layoutVersion"]; ok {
 			var stored string
@@ -3747,9 +3743,6 @@ func (fs *FileStore) GetSettings() Settings {
 					settings.RowHighlight = "strong"
 				}
 			}
-		}
-		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern") {
-			settings.LayoutVersion = "classic"
 		}
 		/*
 		 * A depth this build does not know is soft, not an empty string: the

@@ -1,11 +1,9 @@
 /* Spacing tokens — the single scale for padding/margin/gap across the
    dashboard.
 
-   Unlike layout-modern-tokens.css, this is NOT scoped to
-   body[data-layout-version="modern"]: classic is the default layout every
-   fresh install starts on (LayoutVersion defaults to "classic" — see
-   models.go), so a token layer that only modern can reach would help almost
-   nobody. These apply everywhere.
+   Unscoped: these apply everywhere. They outlived a second, layout-scoped
+   token layer that only one of two layouts could reach; there is one layout
+   now and this is the only scale.
 
    Two groups:
 

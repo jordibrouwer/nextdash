@@ -55,14 +55,16 @@ test.describe('dashboard config sync reload', () => {
         await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeVisible();
     });
 
-    test('structure refresh reapplies layout chrome after config bookmark save', async ({ page }) => {
+    test('structure refresh reapplies the chrome after config bookmark save', async ({ page }) => {
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
 
         const result = await page.evaluate(async () => {
             localStorage.setItem('deviceSpecificSettings', 'true');
             localStorage.setItem('dashboardSettings', JSON.stringify({
-                layoutVersion: 'modern',
+                // Any setting the chrome writes onto <body> will do; this one
+                // stood in for layoutVersion when the two layouts became one.
+                rowHighlight: 'strong',
                 showTitle: true,
                 showDate: true,
                 showWeatherWithDate: true,
@@ -70,23 +72,23 @@ test.describe('dashboard config sync reload', () => {
                 showSmartMostUsedCollection: true,
                 showIcons: true,
             }));
-            document.body.setAttribute('data-layout-version', 'classic');
+            document.body.setAttribute('data-row-highlight', 'subtle');
             const d = window.dashboardInstance;
             await d.configSync.refreshAfterConfigStructureUpdate({ type: 'config-saved' });
-            const layout = document.body.getAttribute('data-layout-version');
+            const highlight = document.body.getAttribute('data-row-highlight');
             const smartCount = document.querySelectorAll('#dashboard-layout [data-smart-collection="true"]').length;
             const titleText = document.querySelector('.title')?.textContent?.trim() || '';
             return {
-                layout,
+                highlight,
                 smartCount,
                 titleText,
                 showTitle: d.settings.showTitle,
-                layoutSetting: d.settings.layoutVersion,
+                highlightSetting: d.settings.rowHighlight,
             };
         });
 
-        expect(result.layoutSetting).toBe('modern');
-        expect(result.layout).toBe('modern');
+        expect(result.highlightSetting).toBe('strong');
+        expect(result.highlight).toBe('strong');
         expect(result.showTitle).toBe(true);
         expect(result.smartCount).toBeGreaterThan(0);
         expect(result.titleText.length).toBeGreaterThan(0);

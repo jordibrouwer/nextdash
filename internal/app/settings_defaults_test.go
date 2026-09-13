@@ -470,8 +470,8 @@ either expressible through --theme-radius-scale or is something the depth
 ladder now does better, so the row treatment is all that has to survive the
 layout itself. An install that had it keeps it, without being asked.
 
-Read from the stored file rather than from a field, so it goes on working once
-LayoutVersion is gone from the struct.
+Read from the stored file rather than from a field, which is what lets it keep
+working now that LayoutVersion is gone from the struct entirely.
 */
 func TestGetSettingsCarriesTheModernRowTreatment(t *testing.T) {
 	load := func(t *testing.T, stored map[string]any) Settings {
@@ -497,9 +497,8 @@ func TestGetSettingsCarriesTheModernRowTreatment(t *testing.T) {
 		if settings.RowHighlight != "strong" {
 			t.Errorf("rowHighlight = %q, want strong: the row treatment was lost with the layout", settings.RowHighlight)
 		}
-		// The layout itself is still a legal value at this point; folding it
-		// away is the step after this one. What has to be true first is that
-		// nothing is lost when it goes.
+		// Nothing asserts on the layout itself: there is one layout now, and
+		// the stored key is read for this migration and then ignored.
 	})
 
 	t.Run("an install on classic is left alone", func(t *testing.T) {

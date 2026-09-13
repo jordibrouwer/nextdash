@@ -421,28 +421,6 @@ body.bookmark-inline-edit-active[data-rail] .button-container {
 body.no-animations[data-rail] .button-container {
     transform: none !important;
 }
-
-/* ── Modern layout overrides ─────────────────────────────────────────────────── */
-body[data-layout-version="modern"][data-rail] .button-container {
-    background: var(--layout-surface);
-    border-right-color: var(--layout-surface-border);
-    box-shadow: 2px 0 12px color-mix(in srgb, var(--text-primary) 8%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-body[data-layout-version="modern"][data-rail] .search-button {
-    transition:
-        background-color var(--layout-transition),
-        border-color var(--layout-transition),
-        color var(--layout-transition),
-        transform var(--layout-transition);
-}
-
-body[data-layout-version="modern"][data-rail] .whats-new-btn {
-    background: transparent;
-    border-top-color: var(--layout-surface-border);
-}
 /* ── Mobile: fall back to centered bottom bar ────────────────────────────────── */
 @media (max-width: 768px) {
     body[data-rail] .button-container {

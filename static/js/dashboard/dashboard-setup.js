@@ -61,18 +61,6 @@ class DashboardSetup {
         document.body.setAttribute('data-show-pin-icon', showPinIcon ? 'true' : 'false');
         document.body.setAttribute('data-show-note-icon', showNoteIcon ? 'true' : 'false');
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
-        const layoutVersion = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.normalizeLayoutVersion(d.settings.layoutVersion)
-            : (['classic', 'modern'].includes((d.settings.layoutVersion || '').toLowerCase())
-                ? (d.settings.layoutVersion || 'classic').toLowerCase()
-                : 'classic');
-        d.settings.layoutVersion = layoutVersion;
-        if (window.LayoutVersionUtils) {
-            window.LayoutVersionUtils.applyLayoutVersionToDOM(layoutVersion);
-        } else {
-            document.documentElement.setAttribute('data-layout-version', layoutVersion);
-            document.body.setAttribute('data-layout-version', layoutVersion);
-        }
         document.body.setAttribute('data-density-mode', d.settings.densityMode || 'compact');
         // Vertical gap between category rows. Separate from density, which sizes
         // the bookmark rows themselves — see dashboard.css.

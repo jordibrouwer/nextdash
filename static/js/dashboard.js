@@ -108,7 +108,6 @@ class Dashboard {
             showSiteNews: true,
             categorySortModesMigrated: true,
             layoutPreset: 'default',
-            layoutVersion: 'classic',
             densityMode: 'compact',
             categorySpacing: 'balanced',
             sideMargin: 'balanced',

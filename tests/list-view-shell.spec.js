@@ -460,7 +460,7 @@ test('the filter tablist holds tabs only, and is named by its heading', async ({
 
 /**
  * `--layout-focus-ring` is only ever defined under
- * body[data-layout-version="modern"] (layout-modern-tokens.css). A `var()`
+ * the modern layout, which no longer exists. A `var()`
  * with no fallback that resolves to nothing makes the whole declaration
  * invalid at computed-value time -- which does not fall through to the
  * browser's native ring, it resolves `outline-style` to `none`. `.lvs-filter`
@@ -476,8 +476,6 @@ test('classic layout keeps a focus ring on header actions and the density button
     await openDashboard(page);
     await mountRail(page, { density: true });
 
-    expect(await page.evaluate(() => document.body.getAttribute('data-layout-version')))
-        .not.toBe('modern');
 
     // A dedicated header action, built the way health/inbox build theirs --
     // by hand, not through mount()'s (unused) actions config -- so the CSS

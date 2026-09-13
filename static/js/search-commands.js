@@ -44,7 +44,7 @@ class SearchCommandsComponent {
                 label: 'Look & layout',
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
-                    'theme', 'layoutversion', 'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
+                    'theme', 'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
                     'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
                     'shortcuts', 'locklayout',
                 ],
@@ -80,7 +80,6 @@ class SearchCommandsComponent {
             'saved': this.handleSavedSearchesCommand.bind(this),
             'history': this.handleHistoryCommand.bind(this),
             'sort': this.handleSortCommand.bind(this),
-            'layoutversion': this.handleLayoutVersionCommand.bind(this),
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
@@ -2216,56 +2215,6 @@ class SearchCommandsComponent {
         return this._paletteRefresh(`sort:${next}`);
     }
 
-    handleLayoutVersionCommand(args) {
-        const versionQuery = (args[0] || '').toLowerCase();
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) {
-            return [];
-        }
-
-        const versions = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.getLayoutVersions()
-            : ['classic', 'modern'];
-
-        const currentVersion = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
-            : (dashboard.settings.layoutVersion || 'classic');
-
-        if (!versionQuery) {
-            return versions.map((version) => ({
-                ...this._markCurrentRow(version, version === currentVersion),
-                shortcut: ':LAYOUTVERSION',
-                stateId: `layoutversion:${version}`,
-                action: () => this.applyLayoutVersion(dashboard, version),
-                type: 'command'
-            }));
-        }
-
-        if (versionQuery === 'toggle') {
-            const order = ['classic', 'modern'];
-            const index = order.indexOf(currentVersion);
-            const next = order[(index + 1) % order.length];
-            return [{
-                name: `Toggle to ${next}`,
-                shortcut: ':LAYOUTVERSION',
-                stateId: `layoutversion:${next}`,
-                action: () => this.applyLayoutVersion(dashboard, next),
-                type: 'command'
-            }];
-        }
-
-        const matches = versions.filter((version) => version.startsWith(versionQuery));
-        if (matches.length === 0) return [];
-
-        return matches.map((version) => ({
-            ...this._markCurrentRow(version, version === currentVersion),
-            shortcut: ':LAYOUTVERSION',
-            stateId: `layoutversion:${version}`,
-            action: () => this.applyLayoutVersion(dashboard, version),
-            type: 'command'
-        }));
-    }
-
     handleLayoutCommand(args, fullQuery) {
         const layout = (args[0] || '').toLowerCase();
         const dashboard = window.dashboardInstance;
@@ -2527,30 +2476,6 @@ class SearchCommandsComponent {
         return [];
     }
 
-    applyLayoutVersion(dashboard, version) {
-        if (window.LayoutVersionUtils) {
-            window.LayoutVersionUtils.applyLayoutVersion(dashboard.settings, version, {
-                syncDashboard: true,
-                saveDashboard: true
-            });
-        } else {
-            const normalized = (version || 'classic').toLowerCase().trim();
-            const nextVersion = ['classic', 'modern'].includes(normalized) ? normalized : 'classic';
-            dashboard.settings.layoutVersion = nextVersion;
-            document.documentElement.setAttribute('data-layout-version', nextVersion);
-            document.body.setAttribute('data-layout-version', nextVersion);
-            if (typeof dashboard.setupDOM === 'function') {
-                dashboard.setupDOM();
-            }
-            if (typeof dashboard.saveSettings === 'function') {
-                dashboard.saveSettings();
-            }
-        }
-        const applied = window.LayoutVersionUtils
-            ? window.LayoutVersionUtils.normalizeLayoutVersion(dashboard.settings.layoutVersion)
-            : (dashboard.settings.layoutVersion || 'classic');
-        return this._paletteRefresh(`layoutversion:${applied}`);
-    }
 
     applyLayoutPreset(dashboard, preset) {
         if (window.LayoutUtils) {

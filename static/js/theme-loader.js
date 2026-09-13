@@ -240,45 +240,6 @@
         return fontSize;
     }
     
-    function normalizeLayoutVersion(value) {
-        const normalized = (value || '').toLowerCase().trim();
-        if (normalized === 'modern') {
-            return normalized;
-        }
-        return 'classic';
-    }
-
-    /**
-     * Gets the layoutVersion setting
-     * @returns {string} The layout version ('classic' or 'modern')
-     */
-    function getLayoutVersion() {
-        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let layoutVersion = 'classic';
-
-        if (deviceSpecific) {
-            const parsed = readDeviceLocalSettings();
-            if (parsed) {
-                layoutVersion = parsed.layoutVersion || 'classic';
-            }
-        } else {
-            const htmlAttr = document.documentElement.getAttribute('data-layout-version');
-            if (htmlAttr) {
-                layoutVersion = htmlAttr;
-            }
-        }
-
-        return normalizeLayoutVersion(layoutVersion);
-    }
-
-    function applyLayoutVersion(layoutVersion = 'classic') {
-        const version = normalizeLayoutVersion(layoutVersion);
-        document.documentElement.setAttribute('data-layout-version', version);
-        if (document.body) {
-            document.body.setAttribute('data-layout-version', version);
-        }
-        return version;
-    }
 
     /**
      * Syncs the <meta name="theme-color"> tag to the active theme's resolved
@@ -587,15 +548,12 @@
         }
     }
 
-    // Apply theme, fontSize, and layout version immediately
+    // Apply theme and fontSize immediately
     const theme = getTheme();
     const fontSize = getFontSize();
-    const layoutVersion = getLayoutVersion();
     applyTheme(theme, fontSize);
-    applyLayoutVersion(layoutVersion);
     
     document.addEventListener('DOMContentLoaded', function() {
-        applyLayoutVersion(getLayoutVersion());
         // theme.css is guaranteed parsed by now; correct the meta if the early
         // synchronous applyTheme() ran before the theme variables resolved.
         syncThemeColorMeta();
@@ -631,9 +589,7 @@
             themeUtils().getPairedThemeVariant(themeId, wantsDark),
         resolveDisplayTheme: resolveDisplayTheme,
         getFontSize: getFontSize,
-        getLayoutVersion: getLayoutVersion,
         applyTheme: applyTheme,
-        applyLayoutVersion: applyLayoutVersion,
         applyThemeDepth: applyThemeDepth,
         applyInkGap: applyInkGap,
         applyThemeBackdrop: applyThemeBackdrop,

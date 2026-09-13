@@ -688,7 +688,8 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await page.locator('[data-appearance-tab="layout"]').click();
         await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-layout="classic"]')).toBeVisible();
+        // The layout-version picker stood here until there was one layout.
+        await expect(page.locator('[data-behavior-field="densityMode"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
@@ -1050,7 +1051,7 @@ test.describe('sub-tab deep links', () => {
         await dismissOnboardingIfPresent(page);
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('layout');
-        await expect(page.locator('[data-appearance-layout="classic"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
         await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/appearance/layout');
 
         await page.goto('/#config/behavior/display');

@@ -104,7 +104,6 @@ test.describe('theme glow', () => {
 
         // Classic is where the default sits, and where --layout-shadow-* never
         // resolves: every consumer of it is scoped to the modern layout.
-        expect(await page.evaluate(() => document.body.getAttribute('data-layout-version'))).not.toBe('modern');
         const shadow = await panelShadow(page);
         expect(shadow).not.toBe('none');
         expect(shadow).not.toBe('');

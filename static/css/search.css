@@ -671,8 +671,8 @@ body.no-animations .search-button[data-tooltip]::after {
  * under each group (corners) and keeps the faces translucent against it, which
  * is a whole answer to the same question. Not for the rail either -- there the
  * buttons sit on the rail's own surface. */
-body:not([data-layout-version="modern"]):not([data-rail]) .button-container .search-button,
-body:not([data-layout-version="modern"]):not([data-rail]) .tag-cloud-toggle-btn.search-button {
+body:not([data-rail]) .button-container .search-button,
+body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
     --search-button-under: var(--background-primary);
 }
 
@@ -806,7 +806,6 @@ body[data-button-position="bottom-right"] .btn-group-secondary {
     padding-top: 0;
     border-top: none;
 }
-
 
 
 /* search-flow-hint past niet in de dock */

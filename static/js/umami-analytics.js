@@ -170,7 +170,6 @@
         // Appearance and layout
         ['theme', (s) => themeBucket(s.theme)],
         ['autoDarkMode', flag('autoDarkMode')],
-        ['layoutVersion', pick('layoutVersion', 'classic')],
         ['layoutPreset', pick('layoutPreset', 'default')],
         ['densityMode', pick('densityMode', 'compact')],
         ['categorySpacing', pick('categorySpacing', 'balanced')],

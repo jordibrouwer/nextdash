@@ -51,7 +51,6 @@ test('it reaches stylesheets that never declared a reduced-motion block', async 
     await page.evaluate(() => {
         const d = window.dashboardInstance;
         d.settings.buttonBarPosition = 'side-left';
-        d.settings.layoutVersion = 'modern';
         d.setupDOM?.();
     });
     const btn = page.locator('#search-button').first();
