@@ -419,9 +419,6 @@ type Settings struct {
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
 	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
-	ShowSearchButtonText            bool   `json:"showSearchButtonText"`
-	ShowFindersButtonText           bool   `json:"showFindersButtonText"`
-	ShowCommandsButtonText          bool   `json:"showCommandsButtonText"`
 	ShowStatus                      bool   `json:"showStatus"`
 	ColorizeStatus                  bool   `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
 	MonitorEmphasis                 string `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
@@ -572,7 +569,6 @@ type Settings struct {
 	CalendarUrl                 string                     `json:"calendarUrl"`                       // URL for calendar link in date popover (empty = hidden)
 	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`                    // ICS feed address the Calendar widget reads (empty = widget shows nothing)
 	ButtonBarPosition           string                     `json:"buttonBarPosition"`                 // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
-	ShowDockLayoutSelector      bool                       `json:"showDockLayoutSelector"`            // Show layout selector button in side-dock
 	BackgroundOpacity           float64                    `json:"backgroundOpacity"`                 // Background opacity (0.0-1.0)
 	FontWeight                  string                     `json:"fontWeight"`                        // Font weight: normal, 600, bold
 	FontPreset                  string                     `json:"fontPreset"`                        // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -623,17 +619,8 @@ type Settings struct {
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
-	HealthCheckTimeoutSeconds int             `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
-	QuickStart                QuickStartState `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
-	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
-	// Config → General. Empty means "never chosen", which starts on Essentials.
-	// Stored here rather than localStorage so the choice follows the user across
-	// browsers, like every other per-user preference.
-	ConfigGeneralLayer string `json:"configGeneralLayer,omitempty"`
-	// ConfigGeneralPanels records which General sections are expanded, keyed by
-	// panel id (and "sc:<id>" for smart-collection groups). Absent means the
-	// defaults apply: everything collapsed.
-	ConfigGeneralPanels            map[string]bool                  `json:"configGeneralPanels,omitempty"`
+	HealthCheckTimeoutSeconds      int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	QuickStart                     QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
@@ -1342,9 +1329,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowSearchFlowBanner:         true,
 			ShowCheatSheetButton:         false,
 			ShowCollapseAllButton:        false,
-			ShowSearchButtonText:         true,
-			ShowFindersButtonText:        true,
-			ShowCommandsButtonText:       true,
 			ShowStatus:                   true,
 			ColorizeStatus:               true,
 			MonitorEmphasis:              "problems",
@@ -1437,7 +1421,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
 			ButtonBarPosition:              "bottom-right",
-			ShowDockLayoutSelector:         true,
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",
@@ -3348,9 +3331,6 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
 			ShowCollapseAllButton:          false,
-			ShowSearchButtonText:           true,
-			ShowFindersButtonText:          true,
-			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
 			MonitorEmphasis:                "problems",
@@ -3794,9 +3774,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// this leaves their choice alone.
 		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
 			settings.ButtonBarPosition = "bottom-right"
-		}
-		if _, ok := rawSettings["showDockLayoutSelector"]; !ok {
-			settings.ShowDockLayoutSelector = true
 		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"
