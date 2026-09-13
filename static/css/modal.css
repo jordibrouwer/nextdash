@@ -1361,8 +1361,25 @@ body.no-animations .modal-button.danger.selected {
 
 /* ── Keyboard cheat sheet: accordion style ───────────────────────────────── */
 
+/*
+ * Two columns of groups, the way the overlays spec lays a panel out.
+ *
+ * Fifteen sections in one column made the sheet 968px tall on a 1000px window
+ * -- the whole screen, for a reference you are meant to glance at. The groups
+ * are boxes with their own ground, so they sit beside each other without a
+ * rule between them, and the open one simply makes its own row taller.
+ *
+ * Grid rather than CSS columns: a <details> in a multi-column flow breaks
+ * across the column boundary when it opens.
+ */
 .keyboard-cheat-sheet {
     width: 100%;
+}
+
+.cheat-sheet-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
 }
 
 .cheat-sheet-filter {
@@ -1425,7 +1442,9 @@ body.no-animations .modal-button.danger.selected {
 .cheat-sheet-group-title {
     list-style: none;
     cursor: pointer;
-    padding: var(--space-2, 0.5rem) 0;
+    margin-bottom: var(--space-1, 0.25rem);
+    padding: var(--space-1, 0.25rem) 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
     font-size: var(--text-xs, 0.7rem);
     font-weight: var(--font-weight-bold);
     letter-spacing: 0.06em;
@@ -1475,8 +1494,7 @@ body.no-animations .modal-button.danger.selected {
 .keyboard-cheat-sheet-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
-    margin-bottom: var(--space-2, 0.5rem);
+    margin-bottom: 0;
 }
 
 .keyboard-cheat-sheet-table td {
@@ -1490,23 +1508,31 @@ body.no-animations .modal-button.danger.selected {
     border-bottom: none;
 }
 
+/*
+ * What it does, then what to press.
+ *
+ * The key came first and took 40% of the row, so fifteen sections opened with
+ * a column of keys and the reader looked up what each one was for. The spec
+ * has the row read as a line -- the thing, then the key that does it -- which
+ * is also the order the reader arrives in: they know what they want to do.
+ */
 .keyboard-cheat-sheet-keys {
     font-family: "Source Code Pro", monospace;
-    font-size: var(--text-sm, 0.8rem);
+    font-size: var(--text-xs, 0.72rem);
     font-weight: var(--font-weight-bold);
     color: var(--accent-primary);
-    white-space: normal;
-    word-break: break-word;
-    padding-right: var(--space-4, 1rem);
-    width: 40%;
+    white-space: nowrap;
+    text-align: right;
+    padding-left: var(--space-3, 0.75rem);
+    width: 1%;
 }
 
 .keyboard-cheat-sheet-description {
     color: var(--text-secondary);
-    font-size: var(--text-base, 0.875rem);
+    font-size: var(--text-xs, 0.78rem);
     min-width: 0;
     overflow-wrap: anywhere;
-    width: 60%;
+    width: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1564,7 +1590,8 @@ body:not([data-depth="flat"]) :is(
    now, and two lines where one will do reads as a seam. */
 body:not([data-depth="flat"]) .cheat-sheet-group {
     border-bottom: none;
-    margin-bottom: var(--space-2, 0.5rem);
+    /* The column owns the spacing between groups; a margin here doubles it. */
+    margin-bottom: 0;
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
@@ -1583,4 +1610,103 @@ body:not([data-depth="flat"]) :is(.wn-entries, .wn-earlier) {
 
 body:not([data-depth="flat"]) .wn-earlier {
     border-top: none;
+}
+
+/*
+ * The cheat sheet's header and foot, in the overlays spec's vocabulary.
+ *
+ * The panel named itself and then said "close" three times: a full-width Close
+ * button, an ESC hint under it, and nothing at all in the header. The header
+ * carries the name, the key that opens the sheet and the way out; the foot
+ * says how much is in it.
+ */
+.modal.keyboard-cheat-sheet-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.keyboard-cheat-sheet-modal .modal-title {
+    text-transform: lowercase;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.cheat-sheet-modal-key {
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+}
+
+.cheat-sheet-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.cheat-sheet-modal-close:hover,
+.cheat-sheet-modal-close:focus-visible {
+    opacity: 1;
+}
+
+.modal.keyboard-cheat-sheet-modal .modal-actions,
+#app-modal:has(.keyboard-cheat-sheet-modal) .modal-esc-hint {
+    display: none;
+}
+
+/*
+ * Pinned to the foot of the scrolling sheet.
+ *
+ * One open section is taller than the panel, so a foot in the flow sat under
+ * fifteen groups and was only reachable by scrolling past all of them -- which
+ * is the opposite of what a line saying how to close the thing is for.
+ */
+.cheat-sheet-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-2, 0.5rem);
+    padding-bottom: var(--space-1, 0.25rem);
+    padding-top: var(--space-3, 0.75rem);
+    /*
+     * Opaque, or the rows scroll straight through the line covering them.
+     * --background-modal carries alpha; the same rgb() trick the inline editor
+     * uses takes it off without naming a second colour.
+     */
+    background: var(--background-primary);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+}
+
+.cheat-sheet-foot > span {
+    opacity: 0.6;
+}
+
+@supports (background: rgb(from red r g b)) {
+    .cheat-sheet-foot {
+        background: rgb(from var(--background-modal, var(--background-primary)) r g b / 1);
+    }
+}
+
+.cheat-sheet-foot-key {
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
