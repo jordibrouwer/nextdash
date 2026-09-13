@@ -198,10 +198,24 @@
     grid-template-columns: 1.1rem 3rem 1fr auto;
 }
 
-body[data-list-density="compact"] .feed-row--grid {
+/*
+ * Row height follows the one density setting, not a second one.
+ *
+ * These read data-list-density, which this app no longer has: the rows and the
+ * dashboard's cards are the same reading preference and now share
+ * densityMode. Four values rather than two, because that is what the setting
+ * holds -- and `auto` sits with compact, which is what it resolved to before
+ * anyone could choose it here.
+ */
+body[data-density-mode="compact"] .feed-row--grid,
+body[data-density-mode="auto"] .feed-row--grid {
     padding-block: var(--space-1);
 }
 
-body[data-list-density="comfortable"] .feed-row--grid {
+body[data-density-mode="comfortable"] .feed-row--grid {
     padding-block: var(--space-3);
+}
+
+body[data-density-mode="dense"] .feed-row--grid {
+    padding-block: var(--space-hairline, 0.12rem);
 }

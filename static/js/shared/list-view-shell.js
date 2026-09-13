@@ -287,7 +287,11 @@ class ListViewShell {
             group.setAttribute('role', 'group');
             group.setAttribute('aria-label', t('dashboard.listDensityGroup', 'Row density'));
             const current = () => window.ListDensity.get();
-            const buttons = ['compact', 'comfortable'].map((value) => {
+            // Two buttons for a four-value setting: dense and auto are set in
+            // config, and when one of those is in force neither button reads as
+            // pressed -- which is true, and better than one of them claiming a
+            // value nobody chose.
+            const buttons = window.ListDensity.TOGGLE_DENSITIES.map((value) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'lvs-density-btn';

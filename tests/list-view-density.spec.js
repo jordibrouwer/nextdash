@@ -174,6 +174,9 @@ test('density reaches the inbox row through feed-row.css alone', async ({ page }
     const height = () => page.evaluate(
         () => document.querySelector('.inbox-item').getBoundingClientRect().height);
 
+    // From comfortable, explicitly: the app-wide default is compact, so
+    // clicking compact from the default would measure the same row twice.
+    await page.locator('[data-lvs-density="comfortable"]').click();
     const comfortable = await height();
     await page.locator('[data-lvs-density="compact"]').click();
     const compact = await height();
@@ -181,27 +184,35 @@ test('density reaches the inbox row through feed-row.css alone', async ({ page }
     expect(compact, 'compact is not tighter than comfortable on a real inbox row')
         .toBeLessThan(comfortable);
 
+    /*
+     * The setting the whole app reads, not a key of this view's own.
+     * Density used to live in localStorage for the list views and on the server
+     * for the dashboard, with opposite defaults; it is one server setting now.
+     */
     const stored = await page.evaluate(() => ({
-        ls: localStorage.getItem('nextdash:list-density'),
-        body: document.body.dataset.listDensity,
+        setting: window.dashboardInstance.settings.densityMode,
+        body: document.body.dataset.densityMode,
+        legacy: localStorage.getItem('nextdash:list-density'),
     }));
-    expect(stored).toEqual({ ls: 'compact', body: 'compact' });
+    expect(stored).toEqual({ setting: 'compact', body: 'compact', legacy: null });
 
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
-    expect(await page.evaluate(() => document.body.dataset.listDensity)).toBe('compact');
+    expect(await page.evaluate(() => document.body.dataset.densityMode)).toBe('compact');
 });
 
 test('density is one app-level setting, not one per view', async ({ page }) => {
     await mountWithDensity(page);
-    await page.locator('[data-lvs-density="compact"]').click();
+    // Not compact: that is the default, so a second shell would read it as
+    // pressed whether or not the click reached anything.
+    await page.locator('[data-lvs-density="comfortable"]').click();
 
     // A second shell mounted elsewhere reads the same value.
     const second = await page.evaluate(() => {
         const host = document.createElement('div');
         document.body.appendChild(host);
         window.ListViewShell.mount(host, { id: 'other', title: 'Other', description: '', density: true });
-        return host.querySelector('[data-lvs-density="compact"]').getAttribute('aria-pressed');
+        return host.querySelector('[data-lvs-density="comfortable"]').getAttribute('aria-pressed');
     });
     expect(second, 'the second view did not inherit the density setting').toBe('true');
 });
@@ -222,13 +233,15 @@ test('a view filling its toolbar slot does not wipe the density toggle', async (
     expect(survived.density, 'the view wiped a shell-owned control').toBe(true);
 });
 
-test('unreadable storage falls back to the default without throwing', async ({ page }) => {
+test('a value nobody recognises falls back to the default without throwing', async ({ page }) => {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+
+    // Whatever is asked for, only the four the setting holds are answers.
     const value = await page.evaluate(() => {
-        localStorage.setItem('nextdash:list-density', 'not-a-density');
+        window.ListDensity.set('not-a-density');
         return window.ListDensity.get();
     });
-    expect(value).toBe('comfortable');
+    expect(value).toBe('compact');
 });

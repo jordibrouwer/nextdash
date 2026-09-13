@@ -64,6 +64,13 @@ class DashboardSetup {
         document.body.setAttribute('data-show-note-icon', showNoteIcon ? 'true' : 'false');
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
         document.body.setAttribute('data-density-mode', d.settings.densityMode || 'compact');
+        /*
+         * A density kept in localStorage by the old list-row setting is carried
+         * into this one, once. Here rather than at module load: the push needs
+         * the settings object, and it needs the value above already stamped so
+         * it can tell whether there is anything to carry.
+         */
+        window.ListDensity?.migrate?.();
         // Vertical gap between category rows. Separate from density, which sizes
         // the bookmark rows themselves — see dashboard.css.
         document.body.setAttribute('data-category-spacing', d.settings.categorySpacing || 'balanced');
