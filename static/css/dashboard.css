@@ -260,7 +260,7 @@ body[data-side-margin="airy"] {
     z-index: 9000;
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-6, 0.65rem);
+    border-radius: var(--radius-5, 8px);
     padding: var(--space-1-5, 0.35rem) 0 var(--space-2, 0.45rem);
     min-width: 12rem;
     max-width: min(16rem, calc(100vw - 1rem));
@@ -268,8 +268,39 @@ body[data-side-margin="airy"] {
     overflow-y: auto;
     color: var(--text-primary);
     font-family: var(--font-family-main);
-    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    /*
+     * A drop, not a halo.
+     *
+     * This was 0 4px 18px of --text-primary at 14%, which on a dark theme is a
+     * pale glow under the menu rather than a shadow -- the one surface in the
+     * app lit from below. Black, and deeper, so the menu reads as standing over
+     * the page the way every other floating surface does. Shallower than a
+     * modal's 24/64: a menu is a hand's breadth off the page, not a sheet over
+     * it.
+     */
+    box-shadow: 0 12px 32px color-mix(in srgb, black 45%, transparent);
     animation: datePopoverIn 0.13s ease forwards;
+}
+
+/*
+ * The menus join the depth ladder.
+ *
+ * .move-popover is the one surface every menu in the app wears -- the bookmark
+ * and category menus, config's own, the check-mode menu, and the move, tag and
+ * delete pickers -- and it was drawing the same flat box at rich, glass and
+ * flat alike. The edges and the cast come from the theme now, so the menus are
+ * lit by whatever the reader chose, like the panels and the cards.
+ *
+ * No backdrop-filter, at any depth. Blur on a menu is what gave Safari a
+ * composited layer that hit-tested in front of what it covered and swallowed
+ * the clicks aimed at it; .health-view-menu lost its blur for exactly that and
+ * these must not gain one. Edges and a drop cost no layer.
+ */
+html[data-theme] body:not([data-depth="flat"]) .move-popover {
+    box-shadow:
+        var(--edge-light),
+        var(--edge-dark),
+        0 12px 32px color-mix(in srgb, black calc(45% * var(--theme-depth)), transparent);
 }
 
 /* The category menu sizes to what it holds.
