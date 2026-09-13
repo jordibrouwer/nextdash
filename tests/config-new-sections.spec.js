@@ -288,19 +288,6 @@ test.describe('config: sections restored from the old config', () => {
         await expect.poll(() => page.locator('.config-panel-note').count()).toBeGreaterThanOrEqual(3);
     });
 
-    test('choosing the beta layout warns before you commit to it', async ({ page }) => {
-        await loadDashboard(page);
-        await openSection(page, 'appearance');
-        await page.locator('[data-appearance-tab="layout"]').click();
-
-        await page.locator('[data-appearance-layout="modern"]').click();
-        await expect(page.locator('.config-field-warning')).toBeVisible();
-        await expect(page.locator('.config-field-warning')).toContainText(/beta/i);
-
-        await page.locator('[data-appearance-layout="classic"]').click();
-        await expect(page.locator('.config-field-warning')).toHaveCount(0);
-    });
-
     test('the layout tab offers the preset and per-category limit', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'appearance');

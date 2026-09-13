@@ -178,14 +178,6 @@ test.describe('the settings that are a place, not a size', () => {
         expect(new Set(classes).size).toBe(5);
     });
 
-    test('Classic and Modern are drawn as the difference between them', async ({ page }) => {
-        await openAppearance(page, 'layout');
-        const shapes = page.locator('[data-appearance-layout] .setting-art-layout');
-        await expect(shapes).toHaveCount(2);
-        await expect(page.locator('[data-appearance-layout="classic"] .setting-art-layout')).toHaveClass(/is-classic/);
-        await expect(page.locator('[data-appearance-layout="modern"] .setting-art-layout')).toHaveClass(/is-modern/);
-    });
-
     test('the paste route is drawn, and forks where the setting forks', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
