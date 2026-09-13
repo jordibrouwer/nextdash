@@ -3723,7 +3723,31 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
 		}
-		// "glass" was removed; stored glass settings normalize to classic here.
+		/*
+		 * The modern layout is folded away, and the one thing it brought that
+		 * the shared layer could not is carried across.
+		 *
+		 * Modern lit a bookmark row much further than classic does. Everything
+		 * else it changed -- bigger radii, more opaque surfaces, a softer
+		 * shadow -- is either expressible through --theme-radius-scale or is
+		 * something the depth ladder now does better, so the row treatment is
+		 * all that has to survive. An install that had it keeps it.
+		 *
+		 * Only where the reader never answered for themselves: somebody on
+		 * modern who went and chose subtle meant subtle.
+		 *
+		 * Read from the raw map rather than from a field, so this keeps
+		 * working once LayoutVersion itself is gone. "glass" was removed
+		 * earlier the same way; anything unknown lands on classic.
+		 */
+		if raw, ok := rawSettings["layoutVersion"]; ok {
+			var stored string
+			if json.Unmarshal(raw, &stored) == nil && stored == "modern" {
+				if _, chosen := rawSettings["rowHighlight"]; !chosen {
+					settings.RowHighlight = "strong"
+				}
+			}
+		}
 		if _, ok := rawSettings["layoutVersion"]; !ok || (settings.LayoutVersion != "classic" && settings.LayoutVersion != "modern") {
 			settings.LayoutVersion = "classic"
 		}

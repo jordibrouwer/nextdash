@@ -460,3 +460,67 @@ func TestSaveSettingsDoesNotLoseAFreshMigrationMarker(t *testing.T) {
 	}
 	t.Fatalf("SaveSettings dropped a migration marker set in this same call; raw=%s", raw)
 }
+
+/*
+The modern layout is folded away, and its one distinctive habit travels.
+
+Modern lit a bookmark row much further across than classic does. Everything
+else it changed -- bigger radii, more opaque surfaces, a softer shadow -- is
+either expressible through --theme-radius-scale or is something the depth
+ladder now does better, so the row treatment is all that has to survive the
+layout itself. An install that had it keeps it, without being asked.
+
+Read from the stored file rather than from a field, so it goes on working once
+LayoutVersion is gone from the struct.
+*/
+func TestGetSettingsCarriesTheModernRowTreatment(t *testing.T) {
+	load := func(t *testing.T, stored map[string]any) Settings {
+		t.Helper()
+		tmp := t.TempDir()
+		t.Chdir(tmp)
+		if err := os.MkdirAll(ResolveDataDir(), 0755); err != nil {
+			t.Fatal(err)
+		}
+		body, err := json.Marshal(stored)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(ResolveDataDir(), "settings.json"), body, 0644); err != nil {
+			t.Fatal(err)
+		}
+		return NewStore().GetSettings()
+	}
+
+	t.Run("an install on modern keeps its rows", func(t *testing.T) {
+		settings := load(t, map[string]any{"theme": "retro-crt-dark", "layoutVersion": "modern"})
+
+		if settings.RowHighlight != "strong" {
+			t.Errorf("rowHighlight = %q, want strong: the row treatment was lost with the layout", settings.RowHighlight)
+		}
+		// The layout itself is still a legal value at this point; folding it
+		// away is the step after this one. What has to be true first is that
+		// nothing is lost when it goes.
+	})
+
+	t.Run("an install on classic is left alone", func(t *testing.T) {
+		settings := load(t, map[string]any{"theme": "retro-crt-dark", "layoutVersion": "classic"})
+
+		if settings.RowHighlight != "subtle" {
+			t.Errorf("rowHighlight = %q, want subtle: a classic install had nothing to carry", settings.RowHighlight)
+		}
+	})
+
+	t.Run("and somebody who chose for themselves is not overruled", func(t *testing.T) {
+		// On modern and deliberately subtle. The migration fills a silence; it
+		// does not answer a question the reader already answered.
+		settings := load(t, map[string]any{
+			"theme":         "retro-crt-dark",
+			"layoutVersion": "modern",
+			"rowHighlight":  "subtle",
+		})
+
+		if settings.RowHighlight != "subtle" {
+			t.Errorf("rowHighlight = %q, want subtle: a stated choice was overwritten", settings.RowHighlight)
+		}
+	})
+}
