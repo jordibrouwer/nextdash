@@ -376,7 +376,7 @@
 }
 
 .search-match.filter-completion-entry .search-match-shortcut {
-    color: var(--accent-info, var(--accent-success));
+    color: var(--accent-info);
 }
 
 .search-match.filter-completion-entry .search-match-name {

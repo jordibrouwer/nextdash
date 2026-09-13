@@ -194,13 +194,13 @@
 
 .quickstart-item-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.35;
     margin-top: var(--space-hairline, 0.05rem);
 }
 
 .quickstart-card.is-complete .quickstart-stripe {
-    background: var(--accent-success, var(--accent-primary));
+    background: var(--accent-success);
 }
 
 /* ---- Compact setup card ---- */
@@ -244,7 +244,7 @@
 
 .quickstart-field-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
     margin: 0 0 var(--space-1-5, 0.35rem);
 }
@@ -315,7 +315,7 @@
 
 .quickstart-radio-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
 }
 
@@ -441,7 +441,7 @@
     margin: var(--space-2, 0.6rem) 0 0;
     width: 100%;
     font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.5;
 }
 
@@ -549,6 +549,6 @@
 
 .quickstart-setup-link-hint {
     font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.4;
 }

@@ -36,7 +36,7 @@
 
 .config-setting-promo-inner {
     position: relative;
-    background: var(--background-secondary, var(--card-bg, #1e1e1e));
+    background: var(--background-secondary);
     border: 1px solid var(--border-primary, var(--border-color, rgba(128, 128, 128, 0.35)));
     border-radius: var(--radius-7, 0.75rem);
     padding: var(--space-3, 0.85rem) var(--space-4, 0.95rem) var(--space-4, 0.9rem);
@@ -69,7 +69,7 @@
 .config-setting-promo-body {
     margin: 0 0 var(--space-3, 0.75rem);
     font-size: calc(var(--font-size-text, 14px) * 0.94);
-    color: var(--text-secondary, var(--text-muted, #aaa));
+    color: var(--text-secondary);
     line-height: 1.45;
 }
 
@@ -102,7 +102,7 @@
     position: absolute;
     width: 10px;
     height: 10px;
-    background: var(--background-secondary, var(--card-bg, #1e1e1e));
+    background: var(--background-secondary);
     border: 1px solid var(--border-primary, var(--border-color, rgba(128, 128, 128, 0.35)));
     transform: rotate(45deg);
     box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.08);

@@ -140,7 +140,7 @@ kbd,
 .dashboard-mini-status {
     display: none;
     font-size: calc(var(--font-size-controls) * 0.95);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-family: var(--font-family-main);
     white-space: nowrap;
     overflow: hidden;

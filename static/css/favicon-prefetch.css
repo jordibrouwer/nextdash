@@ -34,7 +34,7 @@
     width: min(22rem, 100%);
     padding: var(--space-4, 1rem) var(--space-4, 1.1rem);
     border: 1px solid var(--border-primary);
-    background: var(--background-secondary, var(--background-primary));
+    background: var(--background-secondary);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
     display: flex;
     flex-direction: column;
@@ -62,7 +62,7 @@
     height: 100%;
     width: 0;
     border-radius: inherit;
-    background: var(--accent-primary, var(--text-primary));
+    background: var(--accent-primary);
     transition: width 0.2s ease;
 }
 

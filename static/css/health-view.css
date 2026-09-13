@@ -137,7 +137,7 @@
     left: 0;
     font-size: var(--text-2xs, 0.6rem);
     line-height: 1;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
     pointer-events: none;
@@ -157,7 +157,7 @@
     padding-left: var(--space-6, 2.1rem);
     margin-top: var(--space-hairline, 0.15rem);
     font-size: var(--text-2xs, 0.6rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.75;
     font-variant-numeric: tabular-nums;
 }
@@ -1080,7 +1080,7 @@
 
 .health-expect-note {
     font-size: var(--text-2xs, 0.68rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     opacity: 0.85;
 }
 
@@ -1179,7 +1179,7 @@
     font-size: var(--text-2xs, 0.66rem);
     white-space: nowrap;
     opacity: 0.75;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 .health-check-interval-label {
     display: block;
@@ -1820,7 +1820,7 @@
     font-weight: var(--font-weight-medium);
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .health-view-menu-label--danger {

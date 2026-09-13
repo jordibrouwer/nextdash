@@ -123,9 +123,9 @@
  * Nought lost is the best news a tile can carry and still belongs in the lost
  * cell, so the tone says which figure this is rather than how alarming it is.
  */
-.stat-tile--bad .stat-tile-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
-.stat-tile--warn .stat-tile-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
-.stat-tile--good .stat-tile-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
+.stat-tile--bad .stat-tile-value { color: var(--accent-error); }
+.stat-tile--warn .stat-tile-value { color: var(--accent-warning); }
+.stat-tile--good .stat-tile-value { color: var(--accent-success); }
 
 /*
  * A nought is not an alarm.
@@ -159,9 +159,9 @@
     color: var(--text-tertiary);
 }
 
-.stat-tile-delta--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
-.stat-tile-delta--warn { color: var(--status-warning, var(--accent-warning, var(--text-secondary))); }
-.stat-tile-delta--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.stat-tile-delta--good { color: var(--accent-success); }
+.stat-tile-delta--warn { color: var(--accent-warning); }
+.stat-tile-delta--bad { color: var(--accent-error); }
 .stat-tile-delta--neutral { color: var(--text-tertiary); }
 
 /* "this week" after the number: the qualifier is what makes a delta mean

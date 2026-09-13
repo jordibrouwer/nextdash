@@ -181,7 +181,7 @@ body[data-side-margin="airy"] {
 
 .date-popover-col-label {
     font-size: var(--text-2xs, 0.62rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     padding-bottom: var(--space-1, 0.25rem);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -197,7 +197,7 @@ body[data-side-margin="airy"] {
 }
 
 .date-popover-day.is-weekend {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .date-popover-day.is-today {
@@ -327,7 +327,7 @@ body[data-side-margin="airy"] {
     font-weight: var(--font-weight-medium);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem) var(--space-1, 0.2rem);
 }
 
@@ -533,7 +533,7 @@ body[data-side-margin="airy"] {
 
 .tag-popover-current-tags-none {
     font-size: calc(var(--font-size-controls) * 0.88);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-style: italic;
 }
 
@@ -559,7 +559,7 @@ body[data-side-margin="airy"] {
 .tag-popover-item-meta {
     flex: 0 0 auto;
     font-size: calc(var(--font-size-controls) * 0.72);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     margin-left: auto;
     padding-left: var(--space-1-5, 0.35rem);
 }
@@ -1925,9 +1925,9 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 .bookmark-preview-card-note {
     margin: var(--space-2, 0.6rem) var(--space-3, 0.8rem) 0;
     padding: var(--space-1-5, 0.38rem) var(--space-2, 0.55rem);
-    border-left: 2px solid var(--accent-primary, var(--text-secondary));
+    border-left: 2px solid var(--accent-primary);
     border-radius: 0 5px 5px 0;
-    background: color-mix(in srgb, var(--accent-primary, var(--text-secondary)) 8%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
     color: var(--text-primary);
     font-size: calc(var(--font-size-controls) * 0.88);
     line-height: 1.4;
@@ -1940,7 +1940,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     font-size: calc(var(--font-size-controls) * 0.66);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--accent-primary, var(--text-secondary));
+    color: var(--accent-primary);
 }
 
 .bookmark-preview-card-note-text {
@@ -4185,7 +4185,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
 }
 
 .bookmark-preview-card:focus-visible {
-    outline: 2px solid var(--accent-primary, var(--text-secondary));
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
 }
 
@@ -5699,9 +5699,9 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * the broken row -- colouring by value would make "0 broken" green and
  * indistinguishable from "12 healthy".
  */
-.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
-.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
-.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
+.dashboard-widget-health-row--bad .dashboard-widget-health-value { color: var(--accent-error); }
+.dashboard-widget-health-row--warn .dashboard-widget-health-value { color: var(--accent-warning); }
+.dashboard-widget-health-row--good .dashboard-widget-health-value { color: var(--accent-success); }
 
 .dashboard-widget-health-label {
     color: var(--text-tertiary);
@@ -5796,11 +5796,11 @@ button.dashboard-widget-row.keyboard-selected {
 }
 
 .dashboard-widget-row--bad .dashboard-widget-row-detail {
-    color: var(--status-error, var(--accent-error, var(--text-primary)));
+    color: var(--accent-error);
 }
 
 .dashboard-widget-row--warn .dashboard-widget-row-detail {
-    color: var(--status-warning, var(--accent-warning, var(--text-primary)));
+    color: var(--accent-warning);
 }
 
 
@@ -5856,17 +5856,17 @@ button.dashboard-widget-row.keyboard-selected {
 }
 
 .dashboard-widget-spark-tick--up {
-    background: var(--status-success, var(--accent-success, var(--text-secondary)));
+    background: var(--accent-success);
 }
 
 .dashboard-widget-spark-tick--down {
-    background: var(--status-error, var(--accent-error, var(--text-primary)));
+    background: var(--accent-error);
 }
 
 /* degraded, as health_uptime.go names it: a bucket where some samples answered
    and some did not. */
 .dashboard-widget-spark-tick--degraded {
-    background: var(--status-warning, var(--accent-warning, var(--text-secondary)));
+    background: var(--accent-warning);
 }
 
 .dashboard-widget-trend {
@@ -6210,9 +6210,9 @@ button.dashboard-widget-stat.keyboard-selected {
 /* Tone by what the figure means, never by how large it is -- the same rule the
    health widget follows, and for the same reason: nought lost is the best news
    the tile can carry and still belongs in the lost cell. */
-.dashboard-widget-stat--bad .dashboard-widget-stat-value { color: var(--status-error, var(--accent-error, var(--text-primary))); }
-.dashboard-widget-stat--warn .dashboard-widget-stat-value { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
-.dashboard-widget-stat--good .dashboard-widget-stat-value { color: var(--status-success, var(--accent-success, var(--text-primary))); }
+.dashboard-widget-stat--bad .dashboard-widget-stat-value { color: var(--accent-error); }
+.dashboard-widget-stat--warn .dashboard-widget-stat-value { color: var(--accent-warning); }
+.dashboard-widget-stat--good .dashboard-widget-stat-value { color: var(--accent-success); }
 
 /*
  * A nought is not an alarm.
@@ -6258,9 +6258,9 @@ button.dashboard-widget-stat.keyboard-selected {
     transition: width 240ms ease;
 }
 
-.dashboard-widget-meter-fill--good { background: var(--status-success, var(--accent-success, var(--text-secondary))); }
-.dashboard-widget-meter-fill--warn { background: var(--status-warning, var(--accent-warning, var(--text-secondary))); }
-.dashboard-widget-meter-fill--bad { background: var(--status-error, var(--accent-error, var(--text-secondary))); }
+.dashboard-widget-meter-fill--good { background: var(--accent-success); }
+.dashboard-widget-meter-fill--warn { background: var(--accent-warning); }
+.dashboard-widget-meter-fill--bad { background: var(--accent-error); }
 
 /* What the tile assumed, or what happens next. Quieter than a row, because it
    is a condition on the figures rather than one of them. */
@@ -6270,9 +6270,9 @@ button.dashboard-widget-stat.keyboard-selected {
     font-size: var(--font-size-small);
 }
 
-.dashboard-widget-footnote--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
-.dashboard-widget-footnote--warn { color: var(--status-warning, var(--accent-warning, var(--text-primary))); }
-.dashboard-widget-footnote--good { color: var(--status-success, var(--accent-success, var(--text-secondary))); }
+.dashboard-widget-footnote--bad { color: var(--accent-error); }
+.dashboard-widget-footnote--warn { color: var(--accent-warning); }
+.dashboard-widget-footnote--good { color: var(--accent-success); }
 
 .dashboard-widget-panel .dashboard-widget-headline {
     margin-bottom: 0;
@@ -6348,7 +6348,7 @@ button.dashboard-widget-stat.keyboard-selected {
  * worse than a stale one that admits it.
  */
 .dashboard-widget-asof--stale {
-    color: var(--status-warning, var(--accent-warning, var(--text-tertiary)));
+    color: var(--accent-warning);
 }
 
 /*
@@ -6377,16 +6377,16 @@ button.dashboard-widget-stat.keyboard-selected {
  */
 .dashboard-widget-stat-delta--good,
 .dashboard-widget-trend-change.is-better {
-    color: var(--status-success, var(--accent-success, var(--text-secondary)));
+    color: var(--accent-success);
 }
 
 .dashboard-widget-stat-delta--warn {
-    color: var(--status-warning, var(--accent-warning, var(--text-secondary)));
+    color: var(--accent-warning);
 }
 
 .dashboard-widget-stat-delta--bad,
 .dashboard-widget-trend-change.is-worse {
-    color: var(--status-error, var(--accent-error, var(--text-primary)));
+    color: var(--accent-error);
 }
 
 .dashboard-widget-trend-change.is-level {

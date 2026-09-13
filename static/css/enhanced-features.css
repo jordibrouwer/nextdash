@@ -60,19 +60,19 @@ kbd {
 .empty-state-hint {
     margin: var(--space-3, 0.85rem) 0 0;
     font-size: calc(var(--font-size-controls) * 0.92);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     line-height: 1.45;
     max-width: 22rem;
 }
 
 .empty-state-action-btn--primary {
-    border-color: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 65%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 14%, var(--background-primary));
+    border-color: color-mix(in srgb, var(--accent-primary) 65%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
     font-weight: var(--font-weight-semibold);
 }
 
 .empty-state-action-btn--primary:hover {
-    background: color-mix(in srgb, var(--accent-primary, var(--text-primary)) 22%, var(--background-primary));
+    background: color-mix(in srgb, var(--accent-primary) 22%, var(--background-primary));
 }
 
 .empty-state-action-btn {
@@ -137,7 +137,7 @@ kbd {
 
 .empty-state-link:hover {
     color: var(--text-primary);
-    border-bottom-color: var(--accent-primary, var(--text-primary));
+    border-bottom-color: var(--accent-primary);
 }
 
 /* ===== Lazy Load Placeholders ===== */

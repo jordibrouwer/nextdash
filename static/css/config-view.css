@@ -857,7 +857,7 @@
 
 /* The same red every other "worse" in the app uses. It read --accent-danger,
    which no theme has ever set, so a bad trend was #c0524a on all 222. */
-.config-stats-trend--bad { color: var(--status-error, var(--accent-error, var(--text-primary))); }
+.config-stats-trend--bad { color: var(--accent-error); }
 
 .config-stats-trend-chart {
     width: 240px;
@@ -1051,7 +1051,7 @@
 }
 
 .config-widget-savebar.is-dirty .config-widget-savebar-state {
-    color: var(--status-warning, var(--text-secondary));
+    color: var(--accent-warning);
 }
 
 .config-btn--danger:hover {
@@ -3190,21 +3190,21 @@ body.no-animations .config-new-features-panel-star {
 /* The sample count beside an uptime percentage: how much the figure rests on,
    which is what separates "100% over 10 checks" from "100% over 3,685". */
 .config-ratio-sub {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
 }
 
 /* A window nothing was recorded in. Not a percentage, so it does not get the
    tabular alignment the numbers rely on. */
 .config-ratio-value--muted {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-style: italic;
 }
 
 /* The breakdown after a count — "Health 2 · Inbox 1" — kept quieter than the
    label it follows so the row still reads as one line. */
 .config-stat-detail-note {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
 }
 
@@ -3883,7 +3883,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-cloud-summary-note {
     font-weight: var(--font-weight-normal);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .config-bm-cloud-body {
@@ -3939,7 +3939,7 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-cloud-count {
     font-size: 0.68em;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
 }
 
@@ -4089,7 +4089,7 @@ body.no-animations .config-new-features-panel-star {
     gap: var(--space-1-5, 0.4rem);
     flex-wrap: wrap;
     font-size: calc(var(--font-size-text) * 0.9);
-    color: var(--accent-warning, var(--text-secondary));
+    color: var(--accent-warning);
 }
 
 .config-bulk-offscreen-text {
@@ -4559,12 +4559,12 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-crud-row.is-active {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    border-color: var(--accent-primary);
 }
 
 .config-crud-row.keyboard-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
 
 /* Tighter top margin than the shared rule's 1rem, since a config section already
@@ -4578,8 +4578,8 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-crud-row.keyboard-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
 
 .config-theme-groups {
@@ -4775,7 +4775,7 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-tag-cloud .tag-cloud-word.is-selected {
-    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    border-color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary, #4A7038) 14%, transparent);
 }
 
@@ -5207,7 +5207,7 @@ button.config-bm-shortcut-pill {
  * worse, and painting it red would be the app having an opinion nobody asked
  * for. That is what config's statistics show, which is why the old --up/--down
  * pair resolved to green-and-grey rather than green-and-red: right call, wrong
- * name, and it read --accent-success where the others read --status-success.
+ * name.
  *
  * --up and --down stay as the neutral pair. --good and --bad join them for
  * the cases that do carry direction.
@@ -5356,7 +5356,7 @@ button.config-bm-shortcut-pill {
     gap: 12px;
     margin-top: var(--space-1, 0.35rem);
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -5529,7 +5529,7 @@ button.config-bm-shortcut-pill {
 .config-widget-empty-hint {
     margin: 0 0 8px;
     max-width: 62ch;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
     text-wrap: pretty;
@@ -5727,7 +5727,7 @@ button.config-bm-shortcut-pill {
 /* How much room is left, so a reader picks by size rather than guessing
    which /mnt/diskN is the big one. */
 .config-widget-chip-size {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small, 0.66rem);
 }
 
@@ -5892,7 +5892,7 @@ button.config-bm-shortcut-pill {
 .config-suggestion-row--rule {
     align-items: center;
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -6126,7 +6126,7 @@ button.config-bm-shortcut-pill {
     align-items: flex-end;
     flex-wrap: wrap;
     padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary, var(--border-color, #e0e0e0));
+    border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary, transparent);
 }
@@ -6154,7 +6154,7 @@ button.config-bm-shortcut-pill {
 .config-suggestion-error {
     margin: 0;
     padding: 0 var(--space-2, 0.55rem);
-    color: var(--accent-error, var(--status-error, var(--text-primary)));
+    color: var(--accent-error, var(--accent-error));
     font-size: calc(var(--font-size-text) * 0.86);
 }
 
@@ -6682,13 +6682,13 @@ button.config-bm-shortcut-pill {
 }
 
 .config-source-chip.is-ready {
-    border-color: var(--status-success, rgba(128, 128, 128, 0.5));
-    color: var(--status-success, var(--text-muted, #888));
+    border-color: var(--accent-success, rgba(128, 128, 128, 0.5));
+    color: var(--accent-success);
 }
 
 .config-source-chip.is-failed {
-    border-color: var(--status-error, rgba(128, 128, 128, 0.5));
-    color: var(--status-error, var(--text-muted, #888));
+    border-color: var(--accent-error, rgba(128, 128, 128, 0.5));
+    color: var(--accent-error);
 }
 
 /* Everything after the summary gets the room the summary does not need. */
@@ -6841,7 +6841,7 @@ button.config-bm-shortcut-pill {
 
 .config-widget-pick-about,
 .config-widget-type-about {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
     text-wrap: pretty;
@@ -6849,7 +6849,7 @@ button.config-bm-shortcut-pill {
 
 .config-widget-pick-footnote {
     margin: 8px 0 0;
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
 }
@@ -6962,7 +6962,7 @@ button.config-bm-shortcut-pill {
 }
 
 .config-widget-custom-point-body {
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.6;
     max-width: 70ch;

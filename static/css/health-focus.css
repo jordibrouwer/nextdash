@@ -128,7 +128,7 @@
 }
 
 .health-focus-opened.is-never {
-    color: var(--accent-warning, var(--text-secondary));
+    color: var(--accent-warning);
 }
 
 .health-focus-badges {
@@ -233,7 +233,7 @@
 .health-focus-preview-empty {
     margin: 0;
     font-size: var(--text-sm, 0.78rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 .health-focus-preview.is-loading .health-focus-preview-body {
@@ -263,7 +263,7 @@
 .health-focus-reason-done {
     text-decoration: none;
     font-size: var(--text-xs, 0.74rem);
-    color: var(--accent-success, var(--text-secondary));
+    color: var(--accent-success);
 }
 
 .health-focus-actions {
@@ -278,7 +278,7 @@
 .health-focus-actions kbd {
     margin-left: var(--space-1-5, 0.4rem);
     padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
-    border: 1px solid var(--border-secondary, var(--border-primary));
+    border: 1px solid var(--border-secondary);
     border-radius: var(--radius-3, 0.25rem);
     background: color-mix(in srgb, var(--text-primary) 6%, transparent);
     font-family: inherit;
@@ -289,7 +289,7 @@
 .health-focus-legend {
     margin: 0;
     font-size: var(--text-xs, 0.74rem);
-    color: var(--text-tertiary, var(--text-secondary));
+    color: var(--text-tertiary);
 }
 
 @keyframes health-focus-fade {
@@ -344,13 +344,13 @@
 
 .health-view-focus-btn:hover {
     color: var(--text-primary);
-    border-color: var(--border-secondary, var(--border-primary));
+    border-color: var(--border-secondary);
 }
 
 .health-view-focus-btn kbd {
     margin-left: var(--space-1, 0.3rem);
     padding: var(--space-hairline, 0.02rem) var(--space-1, 0.28rem);
-    border: 1px solid var(--border-secondary, var(--border-primary));
+    border: 1px solid var(--border-secondary);
     border-radius: var(--radius-3, 0.25rem);
     font-family: inherit;
     font-size: var(--text-2xs, 0.66rem);
