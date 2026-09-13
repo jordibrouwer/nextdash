@@ -354,7 +354,15 @@
             <div class="config-setting-promo-inner">
                 <span class="config-setting-promo-badge">${escapeHtml(badge)}</span>
                 <h3 class="config-setting-promo-title" id="${escapeHtml(titleId)}">${escapeHtml(title)}</h3>
-                <p class="config-setting-promo-body" id="${escapeHtml(bodyId)}">${escapeHtml(body)}</p>
+                <!-- The body carries our own translated markup and nothing else:
+                     a key is a <kbd> chip everywhere in this app, and escaped
+                     it read as the literal text "<kbd>Ctrl+Shift+K</kbd>" in
+                     the middle of a sentence. Opt-in the same way the session
+                     tip and AppNotification do, and for the same reason -- the
+                     string comes from the locale files, never from a bookmark
+                     or anything else a reader typed. The title, badge and
+                     button stay escaped: they have no markup to carry. -->
+                <p class="config-setting-promo-body" id="${escapeHtml(bodyId)}">${body}</p>
                 <button type="button" class="config-setting-promo-dismiss">${escapeHtml(dismiss)}</button>
             </div>`;
 
