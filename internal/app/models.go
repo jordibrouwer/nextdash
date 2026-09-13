@@ -3539,12 +3539,16 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
 			settings.ShowAddBookmarkButton = true
 		}
-		if _, ok := rawSettings["showFindersButton"]; !ok {
-			settings.ShowFindersButton = true
-		}
-		if _, ok := rawSettings["showCommandsButton"]; !ok {
-			settings.ShowCommandsButton = true
-		}
+		/*
+		 * Not flipped on when the key is absent.
+		 *
+		 * Search, commands and finders became one panel that changes mode on a
+		 * key, so both buttons default to off in defaultSettings -- and this
+		 * block said the opposite for a settings file that simply predates the
+		 * key, which is every upgraded install. Two answers to what the default
+		 * is, and the client's own FIELD_META agreed with this one. Both are
+		 * one toggle away in Config for anyone who wants them back.
+		 */
 		// Health is always available and can no longer be disabled. Force it on
 		// regardless of any legacy stored value so users who previously turned it
 		// off get it back.

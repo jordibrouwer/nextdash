@@ -10844,8 +10844,8 @@ class DashboardConfig {
         showHealthDashboard: { def: true },
         showAddBookmarkButton: { def: true },
         showSearchButton: { def: true },
-        showFindersButton: { def: true },
-        showCommandsButton: { def: true },
+        showFindersButton: { def: false },
+        showCommandsButton: { def: false },
         buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
