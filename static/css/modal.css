@@ -1745,8 +1745,17 @@ body:not([data-depth="flat"]) .wn-earlier {
     opacity: 1;
 }
 
-.modal.whats-new-modal .modal-actions,
-#app-modal:has(.whats-new-modal) .modal-esc-hint {
+/*
+ * The real What's New panel, not everything wearing its class.
+ *
+ * The analytics notice borrows `whats-new-modal` for the same shell
+ * (analytics-notice.js passes 'whats-new-modal analytics-notice-modal'), so
+ * hiding the action row by class took its *Turn on* button away with it --
+ * a modal whose whole purpose is that button. `.wn-content` is the release
+ * notes' own body, which only the panel this rule is about renders.
+ */
+.modal.whats-new-modal:has(.wn-content) .modal-actions,
+#app-modal:has(.wn-content) .modal-esc-hint {
     display: none;
 }
 
