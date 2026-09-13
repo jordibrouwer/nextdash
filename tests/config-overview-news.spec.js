@@ -46,11 +46,11 @@ async function openNewsWith(page, items, { enabled = true } = {}) {
 test.describe('the news stream', () => {
     test('mixes the three sources, newest first, each row saying which', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        const rows = page.locator('.config-news-item');
+        const rows = page.locator('.config-news-panel .config-news-item');
         await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 
         const read = await page.evaluate(() => {
-            const items = [...document.querySelectorAll('.config-news-item')];
+            const items = [...document.querySelectorAll('.config-news-panel .config-news-item')];
             return items.map((el) => ({
                 source: el.getAttribute('data-news-source'),
                 title: el.querySelector('.config-news-title')?.textContent.trim(),
@@ -72,29 +72,29 @@ test.describe('the news stream', () => {
 
     test('the source chips narrow it, and say how much of each there is', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const chips = page.locator('.config-src-filter');
         await expect(chips).toHaveCount(4);
 
         await page.locator('[data-news-filter="site"]').click();
-        await expect.poll(() => page.locator('.config-news-item').evaluateAll((els) =>
+        await expect.poll(() => page.locator('.config-news-panel .config-news-item').evaluateAll((els) =>
             [...new Set(els.map((el) => el.getAttribute('data-news-source')))])).toEqual(['site']);
         // This is what keeps a news block in a self-hosted tool from reading as
         // marketing: the site's posts can be filtered out from the row itself.
         await page.locator('[data-news-filter="release"]').click();
-        await expect.poll(() => page.locator('.config-news-item').evaluateAll((els) =>
+        await expect.poll(() => page.locator('.config-news-panel .config-news-item').evaluateAll((els) =>
             [...new Set(els.map((el) => el.getAttribute('data-news-source')))])).toEqual(['release']);
         // Pressing the active chip again goes back to everything.
         await page.locator('[data-news-filter="release"]').click();
-        await expect.poll(() => page.locator('.config-news-item').evaluateAll((els) =>
+        await expect.poll(() => page.locator('.config-news-panel .config-news-item').evaluateAll((els) =>
             [...new Set(els.map((el) => el.getAttribute('data-news-source')))].length))
             .toBeGreaterThan(1);
     });
 
     test('the rows line up: one label width, one title edge, one date edge', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const edges = await page.evaluate(() => {
             const round = (n) => Math.round(n);
@@ -118,7 +118,7 @@ test.describe('the news stream', () => {
 
     test('a post opens on the site, in a new tab', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        const post = page.locator('.config-news-item[data-news-source="site"]').first();
+        const post = page.locator('.config-news-panel .config-news-item[data-news-source="site"]').first();
         await expect(post).toBeVisible({ timeout: 15_000 });
         const link = post.locator('.config-news-go');
         await expect(link).toHaveAttribute('href', POSTS[0].url);
@@ -128,17 +128,17 @@ test.describe('the news stream', () => {
 
     test('the date follows the format the reader chose', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         const withFormat = async (format) => {
             await page.evaluate((f) => {
                 const d = window.dashboardInstance;
                 d.settings.dateFormat = f;
-                d.config.repaintOverview();
+                d.config.repaintNews();
             }, format);
             // The post, not whichever row happens to lead: a release shipped
             // today would otherwise be the one being measured.
-            return (await page.locator('.config-news-item[data-news-source="site"] .config-news-when')
+            return (await page.locator('.config-news-panel .config-news-item[data-news-source="site"] .config-news-when')
                 .first().innerText()).trim();
         };
 
@@ -149,10 +149,10 @@ test.describe('the news stream', () => {
 
     test('the site being unreachable leaves the rest of the stream standing', async ({ page }) => {
         await openNewsWith(page, []);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item').first()).toBeVisible({ timeout: 15_000 });
         // Releases and features need no network, so a NAS behind a firewall
         // still gets a stream — just without the site's half of it.
-        const sources = await page.locator('.config-news-item')
+        const sources = await page.locator('.config-news-panel .config-news-item')
             .evaluateAll((els) => [...new Set(els.map((el) => el.getAttribute('data-news-source')))]);
         expect(sources).not.toContain('site');
         expect(sources.length).toBeGreaterThan(0);
@@ -166,13 +166,16 @@ test.describe('the news stream', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForSelector('.config-news-foot', { timeout: 15_000 });
+        // The stream is on About now, and the tab is clicked rather than named:
+        // openConfigView resets which one is showing.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+        await page.click('[data-about-tab="news"]');
+        await page.waitForSelector('.config-news-panel .config-news-foot', { timeout: 15_000 });
 
         // A failing server used to come back in the same shape as a cleared
         // setting, so a 500 told the reader they had switched the posts off.
-        await expect(page.locator('.config-news-foot')).toContainText(/unavailable/i);
-        await expect(page.locator('.config-news-foot')).not.toContainText(/switched off/i);
+        await expect(page.locator('.config-news-panel .config-news-foot')).toContainText(/unavailable/i);
+        await expect(page.locator('.config-news-panel .config-news-foot')).not.toContainText(/switched off/i);
     });
 
     test('reading the stream clears the dots and the count, there and then', async ({ page }) => {
@@ -180,7 +183,7 @@ test.describe('the news stream', () => {
             localStorage.setItem('nextdash:news-seen-v1', String(Date.now() - 7 * 86400000));
         });
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item').first()).toBeVisible({ timeout: 15_000 });
 
         // Marking it read used to write localStorage only, so the dots came
         // back on every repaint and the rail badge kept its first number until
@@ -232,21 +235,29 @@ test.describe('the news stream', () => {
         await expect.poll(() => page.evaluate(() => location.hash)).toBe('#config/about');
     });
 
-    test('the drill-in carries everything the overview left out', async ({ page }) => {
+    /*
+     * The overview keeps a card, and the card is a way in.
+     *
+     * The stream itself moved to About in v1.10.0, so the old journey -- six
+     * rows on the overview, drill in for the rest -- no longer exists. What
+     * survives it is the part worth keeping: the overview says what the newest
+     * release is and how much is waiting, and one button opens the page that
+     * carries it in full.
+     */
+    test('the overview card is a way into the stream, not a copy of it', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
-        const onOverview = await page.locator('.config-news-item').count();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.waitForSelector('.config-whats-new', { timeout: 15_000 });
 
-        // The stream's own footer button — the v1.3.3 spotlight in the list
-        // leads to the same place, which is the point of it.
-        await page.locator('.config-news-foot [data-overview-go*="aboutTab"]').click();
+        // A summary, not the stream: the card carries no rows of its own.
+        expect(await page.locator('.config-whats-new .config-news-item').count()).toBe(0);
+
+        await page.locator('.config-whats-new [data-overview-go*="aboutTab"]').click();
         await page.waitForSelector('#config-about-body .config-news-item', { timeout: 15_000 });
 
         expect(await page.evaluate(() => window.dashboardInstance.config.aboutTab)).toBe('news');
-        const inDrillIn = await page.locator('#config-about-body .config-news-item').count();
-        // The overview shows six; the drill-in shows the stream in full plus
-        // the undated back catalogue of features.
-        expect(inDrillIn).toBeGreaterThan(onOverview);
+        // The stream in full, plus the undated back catalogue of features.
+        expect(await page.locator('#config-about-body .config-news-item').count()).toBeGreaterThan(1);
         await expect(page.locator('#config-about-body')).toContainText(/switch on/i);
     });
 });
@@ -288,30 +299,36 @@ test.describe('the switch under Behavior → Privacy', () => {
             .toBe(false);
 
         const before = asked;
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        // The stream is on About now, and the tab is clicked rather than named:
+        // openConfigView resets which one is showing.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+        await page.click('[data-about-tab="news"]');
         await page.waitForSelector('.config-news-panel', { timeout: 15_000 });
         await page.waitForTimeout(1200);
         // Cleared means the request is never made, not made and hidden.
         expect(asked).toBe(before);
-        const sources = await page.locator('.config-news-item')
+        const sources = await page.locator('.config-news-panel .config-news-item')
             .evaluateAll((els) => [...new Set(els.map((el) => el.getAttribute('data-news-source')))]);
         expect(sources).not.toContain('site');
     });
 
     test('turning it back on brings the posts back without reopening config', async ({ page }) => {
         await openNewsWith(page, POSTS);
-        await expect(page.locator('.config-news-item[data-news-source="site"]').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-news-panel .config-news-item[data-news-source="site"]').first()).toBeVisible({ timeout: 15_000 });
 
         await openPrivacy(page);
         await page.locator('[data-behavior-field="showSiteNews"]').uncheck();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.showSiteNews)).toBe(false);
         await page.locator('[data-behavior-field="showSiteNews"]').check();
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        // The stream is on About now, and the tab is clicked rather than named:
+        // openConfigView resets which one is showing.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+        await page.click('[data-about-tab="news"]');
         // Without forgetting the promise the off state left behind, the stream
         // would stay site-less until config was reopened — a switch that looks
         // like it does not work.
-        await expect(page.locator('.config-news-item[data-news-source="site"]').first())
+        await expect(page.locator('.config-news-panel .config-news-item[data-news-source="site"]').first())
             .toBeVisible({ timeout: 15_000 });
     });
 });

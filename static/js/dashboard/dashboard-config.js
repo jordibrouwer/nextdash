@@ -3792,13 +3792,22 @@ class DashboardConfig {
             return rows.join('');
         };
 
-        this.markNewsRead();
+        /*
+         * This card does not mark the stream read.
+         *
+         * It is a summary with a link to it -- the release, a count of new
+         * settings, a count of posts -- and it stayed behind when the stream
+         * moved to About. Marking read here cleared the unread dots for a
+         * reader who had seen a count and not one item, which is the opposite
+         * of what the dots are for. renderAboutNews() marks it, where it is
+         * actually read.
+         */
 
         return `
             <div class="config-panel config-panel--plain config-whats-new">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'What\u2019s new'))}</h3>
                 ${body()}
-                <div class="config-news-foot">
+                <div class="config-news-foot config-news-foot--link">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
                 </div>
@@ -3984,9 +3993,7 @@ class DashboardConfig {
             this._siteNewsFailed = siteNews.failed === true;
             this._newsStream = news.buildStream({ site: siteNews, releases, features });
             this._newsUnread = news.unreadCount(this._newsStream, this._newsSeenAt);
-            if (this.isActiveView() && this.section === 'overview') {
-                this.repaintOverview();
-            }
+            this.repaintNews();
             this.syncNewsBadge();
             if (this.isActiveView() && this.section === 'about') {
                 // About → News & features draws the same stream, and without
@@ -4021,7 +4028,7 @@ class DashboardConfig {
     setNewsFilter(source) {
         const next = window.DashboardNewsStream?.SOURCES?.includes(source) ? source : 'all';
         this.newsFilter = this.newsFilter === next ? 'all' : next;
-        this.repaintOverview();
+        this.repaintNews();
     }
 
     /**
@@ -4142,6 +4149,32 @@ class DashboardConfig {
             this._latestRelease = { ...first, ...release };
         } catch {
             this._latestRelease = null;
+        }
+    }
+
+    /**
+     * Redraw whichever surface is showing the news stream.
+     *
+     * The stream moved from the overview to About -> News & features, and
+     * repaintOverview() returns early anywhere but the overview -- so a setting
+     * the stream reads (the date format, the site-news switch, a source filter)
+     * changed the data and left the panel on screen showing the old draw until
+     * the reader navigated away and back.
+     */
+    repaintNews() {
+        if (!this.isActiveView()) return;
+        if (this.section === 'overview') {
+            this.repaintOverview();
+            return;
+        }
+        if (this.section !== 'about' || this.aboutTab !== 'news') return;
+        const body = document.getElementById('config-view-body');
+        if (!body) return;
+        body.innerHTML = this.renderAbout();
+        const container = document.getElementById('dashboard-layout');
+        if (container) {
+            this.bindTileActions(container);
+            this.bindOverviewActions(container);
         }
     }
 
