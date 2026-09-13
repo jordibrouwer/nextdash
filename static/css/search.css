@@ -28,16 +28,29 @@
     transition: opacity 0.2s ease-out, visibility 0s linear 0s;
 }
 
+/*
+ * The command surface, following the overlay spec.
+ *
+ * No padding of its own: the prompt row, the results and the mode switch each
+ * carry theirs, which is what lets the line under the prompt run the full
+ * width of the panel instead of stopping short on both sides.
+ *
+ * The spec's 8px corner rather than 12: a panel that sits on the page and
+ * holds a list of rows reads as a sheet, and a sheet has a tighter corner than
+ * a card. Through the radius token, so a theme's own radius scale still
+ * carries. Blur halved to 8px for the same reason the tiers elsewhere are
+ * graded -- what is behind an overlay you read should stay out of the way
+ * rather than churn.
+ */
 .search-container {
-    padding: var(--space-4, 1rem) 1.25rem var(--space-3, 0.75rem);
     width: min(52rem, calc(100vw - 2.5rem));
     max-width: 100%;
     border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
-    border-radius: var(--layout-radius-md, 12px);
+    border-radius: var(--radius-5, 8px);
     background: color-mix(in srgb, var(--background-modal) 90%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 24px 64px color-mix(in srgb, black 60%, transparent);
     display: flex;
     flex-direction: column;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
@@ -56,24 +69,38 @@
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
+/*
+ * The prompt: a row of its own, ruled off from the results under it.
+ *
+ * It used to be a line with a margin under it inside a padded panel, so what
+ * separated question from answer was white space. A rule the full width of
+ * the sheet is what the spec draws, and it is what makes the panel read as
+ * two parts rather than one column of things.
+ */
 .search-prompt {
     display: flex;
     align-items: center;
+    gap: 0.85rem;
+    padding: var(--space-4, 1rem);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--space-2, 0.5rem);
     justify-content: flex-start;
 }
 
+/*
+ * The mode, as a pill: small, loud and tinted with the accent of the mode it
+ * names. The gap on the row spaces it now, so it carries no margin of its own.
+ */
 .search-prefix {
     font-family: var(--font-family-main);
-    margin-right: var(--space-2, 0.5rem);
     color: var(--accent-success);
-    font-size: 0.65em;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    padding: 0.15em 0.45em;
-    border-radius: var(--layout-radius-sm, 8px);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: var(--radius-3, 4px);
     background: color-mix(in srgb, var(--accent-success) 15%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent-success) 35%, transparent);
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -149,6 +176,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-hairline, 0.15rem);
+    /* The surface has none; the block that scrolls keeps its own. */
+    padding: var(--space-2, 0.5rem) 0;
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
@@ -183,13 +212,19 @@
     min-height: 0;
 }
 
+/*
+ * A row runs the width of the sheet, and the 2px on its left edge is the only
+ * thing that moves when it is the one you are on. It used to be a rounded chip
+ * inset from both sides, which turned that edge into a floating tick.
+ */
 .search-match {
-    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    padding: 0.45rem var(--space-4, 1rem);
+    gap: 0.75rem;
     cursor: pointer;
     transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
     border: none;
     border-left: 2px solid transparent;
-    border-radius: var(--radius-3, 4px);
+    border-radius: 0;
     background: transparent;
     text-align: left;
     display: flex;
@@ -208,8 +243,11 @@
 .search-match:hover,
 .search-match.keyboard-selected {
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     border-left-color: var(--accent-primary);
+    /* The light falls in from the edge that carries the bar, rather than
+       sitting on the row as an even tint. */
+    box-shadow: inset 4px 0 12px -4px color-mix(in srgb, var(--accent-primary) 24%, transparent);
     transform: none;
 }
 
@@ -309,14 +347,17 @@
     display: flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem) var(--space-2, 0.5rem) var(--space-1, 0.2rem);
+    /* Indented to the row column, so a heading and the rows under it start on
+       one line rather than two. */
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem) var(--space-1, 0.25rem);
     cursor: pointer;
     user-select: none;
     margin-top: var(--space-1, 0.25rem);
     border-top: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
-    opacity: 0.55;
-    font-size: var(--text-xs, 0.72rem);
-    letter-spacing: 0.08em;
+    opacity: 0.45;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     transition: opacity 0.15s ease;
 }
@@ -356,10 +397,18 @@
     flex: 1;
 }
 
+/* Pushed to the far edge: the label says what the group is and the figure says
+   how much of it there is, and the two belong at opposite ends of the line. */
+.search-command-group-label {
+    flex: 1;
+    min-width: 0;
+}
+
 .search-command-group-count {
-    font-size: var(--font-size-controls);
+    font-size: var(--text-xs, 0.72rem);
     color: var(--text-tertiary);
     opacity: 0.7;
+    flex-shrink: 0;
 }
 
 .search-match.command-group-child {
@@ -905,12 +954,24 @@ mark.search-highlight {
     display: flex;
     gap: var(--space-1-5, 0.4rem);
     padding: var(--space-1-5, 0.35rem);
-    margin-top: var(--space-2, 0.5rem);
+    /* Centred under a rule of its own: the switch is the foot of the sheet,
+       not the last row of the list. */
+    margin: 0 auto var(--space-3, 0.75rem);
     border: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
     border-radius: var(--radius-6, 10px);
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     flex-shrink: 0;
     width: fit-content;
+}
+
+/* The plate the switch stands on, ruled off from the results above it. */
+.search-mode-tabs-row {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--background-primary) 60%, transparent);
+    flex-shrink: 0;
 }
 
 /* The pill's own outline goes with it: inside a track, two borders around one
@@ -958,20 +1019,23 @@ mark.search-highlight {
 /* Active states — match the search-prefix badge colours */
 .search-mode-tab.active[data-mode="search"] {
     color: var(--accent-success);
-    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-success) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-success) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-success) 12%, transparent);
 }
 
 .search-mode-tab.active[data-mode="command"] {
     color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .search-mode-tab.active[data-mode="finder"] {
     color: var(--accent-secondary);
-    background: color-mix(in srgb, var(--accent-secondary) 12%, transparent);
+    background: color-mix(in srgb, var(--accent-secondary) 15%, transparent);
     border-color: color-mix(in srgb, var(--accent-secondary) 35%, transparent);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--accent-secondary) 12%, transparent);
 }
 
 /* Hide on mobile extra-small to save vertical space */

@@ -276,6 +276,9 @@
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div id="search-matches" class="search-matches"></div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+            <!-- The track sits on a plate of its own so the rule above it runs
+                 the full width of the sheet; see search.css. -->
+            <div class="search-mode-tabs-row">
             <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
                 <button class="search-mode-tab" data-mode="search" type="button" aria-pressed="true">
                     <span class="search-mode-tab-key">&gt;</span>
@@ -289,6 +292,7 @@
                     <span class="search-mode-tab-key">?</span>
                     <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
                 </button>
+            </div>
             </div>
         </div>
     </div>
