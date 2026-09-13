@@ -92,7 +92,13 @@ test.describe('config fields line up in a grid', () => {
      */
     test('a field hint takes its own row under the control', async ({ page }) => {
         await openSection(page, 'appearance');
-        await openSubTab(page, 'data-appearance-tab', 'layout');
+        /*
+         * Button bar, not Layout: the hinted field on the Layout tab was the
+         * Layout version panel, and there is one layout now (v1.10.0). What is
+         * under test is how a hint sits in the field grid, not which tab it is
+         * on -- but it has to be a tab that actually renders one.
+         */
+        await openSubTab(page, 'data-appearance-tab', 'buttonbar');
 
         const stacked = await page.evaluate(() => {
             const hint = document.querySelector('#config-appearance-body .config-field > .config-field-hint');

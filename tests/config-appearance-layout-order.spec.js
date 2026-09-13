@@ -31,16 +31,22 @@ function panelTitles(page) {
 }
 
 test.describe('appearance layout tab ordering', () => {
-    test('Layout version closes the tab, and the button bar is not on it', async ({ page }) => {
+    /*
+     * There is no Layout version panel any more (v1.10.0).
+     *
+     * Classic and modern were folded into one layout, so the panel that used
+     * to close this tab went with the setting. What the tab still has to do is
+     * lead with Bookmarks layout and leave the button bar to its own tab.
+     */
+    test('Bookmarks layout leads, and the button bar is not on this tab', async ({ page }) => {
         await openLayoutTab(page);
 
         const titles = (await panelTitles(page)).map((t) => t.trim());
         const bookmarks = titles.findIndex((t) => t.startsWith('Bookmarks layout'));
-        const version = titles.findIndex((t) => t.startsWith('Layout version'));
 
-        expect(bookmarks, 'Bookmarks layout panel missing').toBeGreaterThanOrEqual(0);
-        expect(version, 'Layout version panel missing').toBeGreaterThanOrEqual(0);
-        expect(bookmarks).toBeLessThan(version);
+        expect(bookmarks, 'Bookmarks layout panel missing').toBe(0);
+        expect(titles.some((t) => t.startsWith('Layout version')),
+            'the Layout version panel is back').toBe(false);
 
         // The bar and its buttons are one errand on one tab now.
         expect(titles.some((t) => t.startsWith('Button bar'))).toBe(false);

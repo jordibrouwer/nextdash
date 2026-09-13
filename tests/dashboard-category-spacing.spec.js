@@ -164,17 +164,16 @@ test.describe('page margins', () => {
 });
 
 test.describe('Appearance → Layout panel order', () => {
-    test('Bookmarks layout leads, with Layout version last', async ({ page }) => {
+    test('Bookmarks layout leads, and the version panel is gone', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             await window.dashboardInstance.config.openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
-        // Ordered by how often a panel is touched: the grid and the button bar
-        // are what people come here to change, while the version switch is a
-        // one-off that wants to be findable rather than stepped over. This used
-        // to open on Layout version.
+        // Ordered by how often a panel is touched: the grid is what people come
+        // here to change. The version switch that used to close the tab is gone
+        // with the layout choice itself (v1.10.0).
         //
         // Categories across columns follows the grid it belongs to: how tall a category
         // gets and how wide it may be are two halves of one question, and both
@@ -189,7 +188,7 @@ test.describe('Appearance → Layout panel order', () => {
         // Button bar left this tab when it was given one of its own (v1.3.0):
         // where the bar sits and which buttons it carries are the same errand,
         // and they now sit together under Button bar.
-        )).toEqual(['Bookmarks layout', 'Categories across columns', 'Layout version']);
+        )).toEqual(['Bookmarks layout', 'Categories across columns']);
     });
 
     test('the moved controls are still bound', async ({ page }) => {

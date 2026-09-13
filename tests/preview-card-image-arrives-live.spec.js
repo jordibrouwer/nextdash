@@ -29,6 +29,17 @@ const PENDING = {
 const FINISHED = { ...PENDING, image: '/data/preview-images/pi-livetest.png' };
 
 // A 1x1 PNG, so the browser really decodes something.
+/*
+ * Count and answer for the bookmark under test, and nothing else.
+ *
+ * These stubs used to answer every /api/bookmark-preview call and step a
+ * counter on each one, so a preview asked for any other row on the page -- the
+ * fixture's own bookmarks -- spent the "first answer is pending" the test
+ * depends on, and the row under test got the finished preview on its very
+ * first ask. Whether another row asks at all is not this file's subject.
+ */
+const forThisBookmark = (route) => route.request().url().includes(encodeURIComponent(PENDING.url));
+
 const PNG = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
     'base64',
@@ -37,6 +48,7 @@ const PNG = Buffer.from(
 test('the picture lands on the open card, with no reload', async ({ page }) => {
     let previewCalls = 0;
     await page.route('**/api/bookmark-preview*', async (route) => {
+        if (!forThisBookmark(route)) return route.continue();
         previewCalls += 1;
         await route.fulfill({
             status: 200,
@@ -102,6 +114,7 @@ test('the picture lands on the open card, with no reload', async ({ page }) => {
 test('a preview with no picture at all is not re-asked forever', async ({ page }) => {
     let previewCalls = 0;
     await page.route('**/api/bookmark-preview*', async (route) => {
+        if (!forThisBookmark(route)) return route.continue();
         previewCalls += 1;
         // No imageSource: this site simply has none, which is most of them.
         await route.fulfill({
@@ -160,6 +173,7 @@ test('a preview with no picture at all is not re-asked forever', async ({ page }
 test('a picture that never arrives does not flood the endpoint', async ({ page }) => {
     let previewCalls = 0;
     await page.route('**/api/bookmark-preview*', async (route) => {
+        if (!forThisBookmark(route)) return route.continue();
         previewCalls += 1;
         // Always pending: the picture is on a host that never answers, which is
         // the case that used to retry forever.

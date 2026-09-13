@@ -250,14 +250,20 @@ test.describe('custom theme editor', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        // Six tiles on one row — one per panel below (config-tiles--text).
+        /*
+         * Five tiles on one row, each naming a setting this section holds.
+         *
+         * It was six: the sixth read the layout version, and there is one
+         * layout now (v1.10.0). What the row is for is unchanged -- the state
+         * of the section at a glance, before opening a tab.
+         */
         const tiles = page.locator('.config-tiles--text .config-tile');
-        await expect(tiles).toHaveCount(6);
+        await expect(tiles).toHaveCount(5);
         const labels = await page.locator('.config-tiles--text .config-tile-label').allTextContents();
         expect(labels.join(' | ')).toMatch(/theme/i);
         expect(labels.join(' | ')).toMatch(/typeface/i);
         expect(labels.join(' | ')).toMatch(/background/i);
-        expect(labels.join(' | ')).toMatch(/layout/i);
+        expect(labels.join(' | ')).toMatch(/density/i);
 
         // Values are words, not the short numbers the stats tiles size for, so
         // they must wrap rather than overflow their box.

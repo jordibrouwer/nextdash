@@ -22,7 +22,7 @@ async function openConfig(page, section) {
 }
 
 test.describe('the spotlight catalogue is data', () => {
-    test('it is fetched, and the carousel shows what it holds', async ({ page }) => {
+    test('it is fetched, and it holds what the panels draw', async ({ page }) => {
         await openConfig(page, 'overview');
         const fetched = await page.evaluate(() => performance.getEntriesByType('resource')
             .some((r) => r.name.includes('overview-features.json')));
@@ -41,12 +41,15 @@ test.describe('the spotlight catalogue is data', () => {
         });
         expect(state.count).toBeGreaterThan(30);
         expect(state.complete).toBe(true);
-        // The carousel that used to draw one of these at a time is gone
-        // (v1.3.3); the overview draws the recent ones as rows in the news
-        // stream and the rest live under About → News & features. What this
-        // file is about is the catalogue being fetched data rather than 42
-        // entries compiled into the config module, which is asserted above.
-        await expect(page.locator('.config-news-panel')).toBeVisible({ timeout: 10_000 });
+        /*
+         * The carousel that used to draw one of these at a time is gone
+         * (v1.3.3), and the stream that replaced it moved off the overview to
+         * About → News & features (v1.10.0). What the overview keeps is a card
+         * that says what the newest release is and links to the rest. This file
+         * is about the catalogue being fetched data rather than 42 entries
+         * compiled into the config module, which is asserted above.
+         */
+        await expect(page.locator('.config-whats-new')).toBeVisible({ timeout: 10_000 });
     });
 });
 
