@@ -208,7 +208,7 @@ class DashboardUiHelpers {
                 <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
                 <div class="cheat-sheet-foot">
                     <span>${esc(d.formatDashboardLabel('cheatsheetCount', { n: shortcutCount },
-                        `${shortcutCount} shortcuts`))}</span>
+                        '{n} shortcuts'))}</span>
                     <span><span class="cheat-sheet-foot-key">Esc</span> ${esc(
                         d.formatDashboardLabel('cheatsheetFootClose', {}, 'to close'))}</span>
                 </div>

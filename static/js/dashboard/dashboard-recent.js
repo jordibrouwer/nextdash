@@ -212,7 +212,7 @@ class DashboardRecent {
                ${openToolbarHtml}
                <div class="recent-bookmarks-modal-foot">
                    <span>${d.escapeHtml(d.formatDashboardLabel('recentShowing', { n: recentBookmarks.length },
-                       `Showing the last ${recentBookmarks.length}`))}</span>
+                       'Showing the last {n}'))}</span>
                    <span><span class="recent-bookmarks-modal-key">\u21B5</span> ${d.escapeHtml(
                        d.formatDashboardLabel('recentFootOpen', {}, 'open'))}</span>
                </div>`
