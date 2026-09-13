@@ -3434,6 +3434,28 @@ body.bookmark-inline-edit-active #dashboard-layout .bookmark-link:not(.bookmark-
     pointer-events: none;
 }
 
+/*
+ * And no backdrop-filter on the cards while a form is open, for the same
+ * reason and against the same bug.
+ *
+ * The blur that caused this originally was on the rows and is long gone. The
+ * glass depth step puts one back at card level: on `glass`, every .category
+ * and every widget body composites. Measured with a form open, five of those
+ * cards overlapped it -- each its own layer, each at full opacity, which is
+ * exactly the arrangement WebKit paints over an unrelated element regardless
+ * of z-index and then hit-tests in front of it.
+ *
+ * Every card, not only the neighbours: the one being edited is behind the
+ * form too, and the form draws its own opaque panel over all of them. What is
+ * lost is the blur behind a card nobody can see for as long as the form is
+ * up, which is the same trade the row blur was.
+ */
+body.bookmark-inline-edit-active #dashboard-layout .category,
+body.bookmark-inline-edit-active #dashboard-layout .dashboard-widget-body {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 body.bookmark-inline-edit-active #shortcut-search:not(.show) {
     opacity: 0.18;
     pointer-events: none;
