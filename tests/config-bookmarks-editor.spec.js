@@ -121,19 +121,6 @@ test.describe('config bookmarks editor', () => {
         await expect(modalSaveBtn(page)).toBeVisible();
     });
 
-    test.skip('category is a dropdown of existing categories and can add a new one', async () => {
-        // The shared bookmark modal lists existing categories only; inline
-        // "new category" creation lives in config structure, not this form.
-    });
-
-    test.skip('a new category is saved to the page, not just onto the bookmark', async () => {
-        // See category test above — modal has no __new__ category flow.
-    });
-
-    test.skip('typing the name of an existing category reuses it instead of duplicating', async () => {
-        // See category test above — modal has no __new__ category flow.
-    });
-
     test('editing and Save persists the change', async ({ page }) => {
         let posted = null;
         await page.route('**/api/bookmarks?page=*', async (route) => {
@@ -257,10 +244,6 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await expect(url).toHaveValue('https://example.com/path');
     });
 
-    test.skip('a new URL pulls the favicon and fills an empty name', async () => {
-        // The shared modal fetches icons on blur but does not auto-fill the name from preview metadata.
-    });
-
     test('a name the user already typed is never overwritten', async ({ page }) => {
         await mockMeta(page, { title: 'Should Not Win' });
         await openBookmarks(page);
@@ -274,34 +257,6 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await expect(form.locator('.bookmark-inline-input').first()).toHaveValue('My own name');
     });
 
-    test.skip('Fetch re-fetches even when an icon is already set', async () => {
-        // Icon fetch UX is covered by dashboard inline-edit specs.
-    });
-
-
-    test.skip('a changed URL refreshes the favicon on blur, even with one already set', async () => {
-        // Icon fetch UX is covered by dashboard inline-edit specs.
-    });
-
-    test.skip('blurring an unchanged URL leaves a hand-picked icon alone', async () => {
-        // Icon fetch UX is covered by dashboard inline-edit specs.
-    });
-
-    test.skip('completing a bare host to https does not count as a URL change', async () => {
-        // Icon fetch UX is covered by dashboard inline-edit specs.
-    });
-
-    test.skip('Save and Revert appear both above and below the form', async () => {
-        // The shared bookmark modal uses a single action bar, not twin save bars.
-    });
-
-    test.skip('the pin uses the themed pill, not a bare checkbox', async () => {
-        // Pin styling is covered by dashboard inline-edit specs.
-    });
-
-    test.skip('name and URL are wider than the paired fields', async () => {
-        // Layout of the shared modal is covered elsewhere.
-    });
 });
 
 /**
@@ -554,22 +509,6 @@ test.describe('bookmark statistics', () => {
         await applyBookmarkStats(page, stats);
     }
 
-    test.skip('the editor shows added, open count and last opened', async () => {
-        // Stats live on config list rows; the shared modal no longer embeds them.
-    });
-
-    test.skip('relative labels interpolate their count', async () => {
-        // Stats live on config list rows; the shared modal no longer embeds them.
-    });
-
-    test.skip('shows when the bookmark was last modified', async () => {
-        // Stats live on config list rows; the shared modal no longer embeds them.
-    });
-
-    test.skip('a bookmark predating updatedAt shows a dash, not an invented date', async () => {
-        // Stats live on config list rows; the shared modal no longer embeds them.
-    });
-
     test('a never-opened bookmark says so instead of showing a blank', async ({ page }) => {
         await openBookmarks(page);
         await expect.poll(async () => {
@@ -584,10 +523,6 @@ test.describe('bookmark statistics', () => {
             await seedStats(page, { openCount: 12, lastOpened: Date.now() - 5 * 60 * 1000 });
             return page.locator('.config-bm-usage').first().innerText();
         }).toContain('12×');
-    });
-
-    test.skip('last checked appears only once the bookmark has been checked', async () => {
-        // Stats live on config list rows; the shared modal no longer embeds them.
     });
 
     test('saving an edit does not clear the statistics', async ({ page }) => {
