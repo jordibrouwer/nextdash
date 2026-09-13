@@ -41,6 +41,8 @@ class DashboardSetup {
             document.body.removeAttribute('data-rail');
         }
 
+        d.publishButtonBarHeight?.();
+
         d.syncTagCloudButtonPlacement();
         d.syncSideRailDiscoverability?.();
 

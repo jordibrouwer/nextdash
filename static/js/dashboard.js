@@ -1507,6 +1507,44 @@ class Dashboard {
         return this.toolbar.setupHeaderEnhancements(...arguments);
     }
 
+    /**
+     * Publishes how tall the button bar is, so the toast can clear it.
+     *
+     * Both are fixed to the same corner when the bar sits bottom-right, and the
+     * toast was landing on top of it -- a shown toast takes pointer events, so
+     * the dock's buttons were unclickable for the twelve seconds a tip is up.
+     * A fixed offset would be a guess: the bar is one row of buttons or two,
+     * depending on how many are switched on and how wide the window is.
+     *
+     * Measured and published rather than computed in CSS, the same way
+     * list-view-shell.js publishes --lvs-header-height, and re-measured when
+     * the bar's own box changes so a wrap to a second row is followed.
+     */
+    publishButtonBarHeight() {
+        const bar = document.querySelector('.button-container');
+        if (!bar) {
+            document.body.style.removeProperty('--button-bar-height');
+            return;
+        }
+        const publish = () => {
+            const height = Math.round(bar.getBoundingClientRect().height);
+            document.body.style.setProperty('--button-bar-height', `${height}px`);
+        };
+        publish();
+        if (this._buttonBarObserver) return;
+        if (typeof ResizeObserver !== 'function') return;
+        // Guarded on the height it already published: a ResizeObserver that
+        // writes a property the observed element's layout depends on will call
+        // itself forever otherwise.
+        this._buttonBarObserver = new ResizeObserver(() => {
+            const height = Math.round(bar.getBoundingClientRect().height);
+            const current = document.body.style.getPropertyValue('--button-bar-height');
+            if (current === `${height}px`) return;
+            document.body.style.setProperty('--button-bar-height', `${height}px`);
+        });
+        this._buttonBarObserver.observe(bar);
+    }
+
     syncTagCloudButtonPlacement() {
         return this.toolbar.syncTagCloudButtonPlacement(...arguments);
     }

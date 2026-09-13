@@ -3,7 +3,7 @@ package app
 
 var precomputedAssetHashes = map[string]string{
 	"css/action-btn-tokens.css":                              "2e17d4f98bf5",
-	"css/app-notification.css":                               "339c0a8b3069",
+	"css/app-notification.css":                               "e6b21d91c702",
 	"css/bookmark-form-modal.css":                            "9529525dd2da",
 	"css/bookmark-form-preview.css":                          "55d219f09044",
 	"css/check-mode-control.css":                             "a18c38343fd4",
@@ -73,7 +73,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard-quickstart.js":                             "57ceb0094b8f",
 	"js/dashboard-tag-cloud.js":                              "a68665a48330",
 	"js/dashboard-trash.js":                                  "249e81eef2ba",
-	"js/dashboard.js":                                        "89661fa4857b",
+	"js/dashboard.js":                                        "f86db3158205",
 	"js/dashboard/dashboard-bookmark-interactions-loader.js": "8fe780f9a642",
 	"js/dashboard/dashboard-bookmark-rows.js":                "dfe25b62db63",
 	"js/dashboard/dashboard-category-add.js":                 "3647a618aa0c",
@@ -113,7 +113,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-recent.js":                       "6db4344ec368",
 	"js/dashboard/dashboard-render-core.js":                  "cc89b0d1046f",
 	"js/dashboard/dashboard-render-incremental.js":           "661385e5976b",
-	"js/dashboard/dashboard-setup.js":                        "81074b2c6aa4",
+	"js/dashboard/dashboard-setup.js":                        "c4baf7ba98f0",
 	"js/dashboard/dashboard-smart-collections.js":            "34eb7a75e993",
 	"js/dashboard/dashboard-smart-why-popover.js":            "e7df867a660c",
 	"js/dashboard/dashboard-structure-create.js":             "a41b124523f2",
