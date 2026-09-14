@@ -30,6 +30,14 @@ class DashboardSetup {
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
         );
+        // Where the clock and the weather are drawn: beside the name, or in a
+        // zone of their own between the name and the pages. CSS reads it off
+        // <body>, so switching it is a repaint rather than a re-render.
+        document.body.setAttribute(
+            'data-header-clock',
+            d.settings.headerClockPlacement === 'own-zone' ? 'own-zone' : 'beside-name'
+        );
+
         d.publishButtonBarHeight?.();
 
         d.syncTagCloudButtonPlacement();

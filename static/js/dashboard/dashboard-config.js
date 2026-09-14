@@ -10861,6 +10861,7 @@ class DashboardConfig {
         showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
         maxPageTabs: { def: 5 },
+        headerClockPlacement: { def: 'beside-name' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
@@ -11320,6 +11321,23 @@ class DashboardConfig {
                     ] },
                     bool('showDate', 'config.showDateLabel', 'Show the date'),
                     bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                ],
+            },
+            {
+                // Where the line is drawn, as against what it says: the three
+                // groups around this one set the date, the temperature and the
+                // feed, and this one is about the header that carries them.
+                section: 'behavior',
+                tab: 'datetime',
+                title: t('config.generalGroupHeaderClock', 'Header'),
+                note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
+                controls: [
+                    { field: 'headerClockPlacement', type: 'select', special: 'chrome',
+                        label: t('config.headerClockPlacementLabel', 'Clock and weather'),
+                        options: [
+                            opt('beside-name', t('config.headerClockBesideName', 'Beside the view name')),
+                            opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
+                        ] },
                 ],
             },
             {

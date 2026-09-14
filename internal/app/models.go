@@ -437,6 +437,7 @@ type Settings struct {
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
 	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
@@ -1347,6 +1348,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowPageInTitle:              false,
 			ShowPageNamesInTabs:          false,
 			MaxPageTabs:                  defaultMaxPageTabs,
+			HeaderClockPlacement:         defaultHeaderClockPlacement,
 			EnableCustomFavicon:          false,
 			CustomFaviconPath:            "",
 			EnableCustomFont:             false,
@@ -2835,6 +2837,18 @@ const (
 	maxPageTabsCap     = 9
 )
 
+// Where the clock and the weather sit in the header.
+//
+// Beside the name they are the second thing read and the column holds both on
+// two lines; in a zone of their own they stand between the name and the pages
+// with room for a larger face. Both are the same two lines -- this is where
+// they are drawn, not what they say.
+const (
+	headerClockBesideName       = "beside-name"
+	headerClockOwnZone          = "own-zone"
+	defaultHeaderClockPlacement = headerClockBesideName
+)
+
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
@@ -2921,6 +2935,11 @@ func clampBookmarkSettings(s *Settings) {
 		if s.AutoBackupIntervalDays > 30 {
 			s.AutoBackupIntervalDays = 30
 		}
+	}
+	// Anything the view does not draw reads as the default, the way every other
+	// named choice in this file does.
+	if s.HeaderClockPlacement != headerClockBesideName && s.HeaderClockPlacement != headerClockOwnZone {
+		s.HeaderClockPlacement = defaultHeaderClockPlacement
 	}
 	// Zero is what an older settings file carries, not a choice: there is no
 	// header without tabs, so it means "never set" and takes the default.
@@ -3371,6 +3390,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowPageInTitle:                false,
 			ShowPageNamesInTabs:            false,
 			MaxPageTabs:                    defaultMaxPageTabs,
+			HeaderClockPlacement:           defaultHeaderClockPlacement,
 			EnableCustomFavicon:            false,
 			CustomFaviconPath:              "",
 			EnableCustomFont:               false,

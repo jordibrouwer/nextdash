@@ -6959,14 +6959,20 @@ body.no-animations .dashboard-widget-stat-key {
 /* ── Left: the name, and the line under it ────────────────────────────────── */
 
 .dashboard-section.section-controls .header-identity {
-    /* The draft's own column: wide enough for a name, and fixed so the middle
-       zone starts in the same place whatever the page is called. */
-    width: 14rem;
+    /* Wide enough for the name and the clock beside it, and fixed so the
+       middle zone starts in the same place whatever the page is called. */
     flex: 0 0 auto;
     gap: 0;
 }
 
 .dashboard-section.section-controls .header-identity .title {
+    /* One line, cut rather than wrapped: a long page name wrapped into the
+       clock beside it and took the row to two lines -- the one thing this
+       header is built not to do. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
     font-size: 1.5rem;
     font-weight: 900;
     line-height: 1;
@@ -6980,37 +6986,120 @@ body.no-animations .dashboard-widget-stat-key {
 }
 
 /*
- * Clock and weather are one line, not two.
+ * The clock reads as text, not as a footnote.
  *
- * They are rendered as two blocks (see renderDateWeatherLine), which is what
- * the popover and the error state hang off, so the line is made here rather
- * than by rewriting what either says.
+ * It was 0.65rem of --text-tertiary at 60% opacity -- the smallest type on the
+ * page in its faintest colour, which on a light theme is barely there at all.
+ * The time now sits beside the name at the reader's own size and the weather
+ * runs under it, both at full strength.
+ *
+ * Laid out with `display: contents` on the wrappers so the two lines
+ * renderDateWeatherLine builds can be placed separately without rewriting what
+ * either of them says -- the popover and the error state still hang off them.
  */
-.dashboard-section.section-controls .header-identity .date {
-    flex-direction: row;
-    flex-wrap: wrap;
+.dashboard-section.section-controls .header-identity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: baseline;
-    gap: 0 0.35rem;
-    margin-top: 2px;
-    font-size: 0.65rem;
-    font-weight: 500;
-    line-height: 1.4;
-    color: var(--text-tertiary);
-    opacity: 0.6;
+    column-gap: var(--space-2, 0.6rem);
+    row-gap: 2px;
+    width: 18rem;
 }
 
-.dashboard-section.section-controls .header-identity .date-time-line,
+.dashboard-section.section-controls .header-identity .title-wrapper {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.dashboard-section.section-controls .header-identity .header-top-primary,
+.dashboard-section.section-controls .header-identity .date {
+    display: contents;
+}
+
+.dashboard-section.section-controls .header-identity .date-time-line {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: calc(var(--font-size-text) * 1.14);
+    font-weight: var(--font-weight-semibold, 600);
+    line-height: 1.2;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
 .dashboard-section.section-controls .header-identity .date-weather-line {
-    font-size: inherit;
-    font-weight: inherit;
-    color: inherit;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: var(--font-size-text);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text-secondary);
 }
 
-/* The separator belongs to the line, not to either half of it. */
-.dashboard-section.section-controls .header-identity .date-time-line + .date-weather-line::before {
-    content: "·";
-    margin-right: 0.35rem;
-    opacity: 0.7;
+/* Everything else the block carries -- the mini status, the tag chip, the
+   "checking status" line -- keeps its own row under the two. */
+.dashboard-section.section-controls .header-identity #dashboard-mini-status,
+.dashboard-section.section-controls .header-identity #tag-filter-indicator,
+.dashboard-section.section-controls .header-identity #status-loading-indicator {
+    grid-column: 1 / -1;
+}
+
+/*
+ * Or a zone of its own, between the name and the pages.
+ *
+ * Same two lines, more room: the clock takes a column beside the name rather
+ * than sharing its 18rem, which is what a larger face needs.
+ */
+/*
+ * The name keeps a fixed column, the clock takes what it needs.
+ *
+ * Left to `auto` the first column followed the view's name -- "config" is
+ * shorter than "main" is longer than "health" -- so the pages moved 26px
+ * sideways every time you switched view.
+ */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-top {
+    grid-template-columns: minmax(0, 9rem) auto minmax(0, 1fr) auto;
+}
+
+/* Every zone may be cut; none may push its neighbour out of the row. */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .title-wrapper,
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-top-primary {
+    min-width: 0;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity {
+    display: contents;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .title-wrapper {
+    grid-column: 1;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-time-line {
+    font-size: calc(var(--font-size-text) * 1.43);
+    color: var(--text-primary);
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-weather-line {
+    grid-column: 2;
+    font-size: calc(var(--font-size-text) * 1.03);
+}
+
+/* The clock's own column: the two lines stack in it, apart from the name. */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .header-top-primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    grid-column: 2;
+    padding-left: var(--space-3, 0.9rem);
+    border-left: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
 }
 
 /* ── Middle: the pages, between the keys that walk them ───────────────────── */

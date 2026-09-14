@@ -32,19 +32,22 @@ const box = (page, selector) => page.evaluate((sel) => {
 test('the view name sits in the header row, not in a band of its own', async ({ page }) => {
     await openDashboard(page);
 
-    const identity = await box(page, '.header-identity');
+    // .header-identity is `display: contents` in the default placement -- the
+    // clock stands in a column of its own -- so it has no box to measure. What
+    // is on the row is the name it wraps.
+    const identity = await box(page, '.title-wrapper');
     const title = await box(page, '.title');
     const header = await box(page, '.header-top');
     const actions = await box(page, '.header-actions');
 
-    expect(identity, 'there is no identity block').not.toBeNull();
+    expect(identity, 'there is no name on the row').not.toBeNull();
     // The row is a band with padding of its own now, so "in the row" is a
     // centre line shared rather than an edge shared: the name and the actions
     // ride the same middle, and the name is the leftmost thing on it.
     const middle = (b) => Math.round(b.y + b.h / 2);
     // The name is the top line of a two-line block, so what rides the row's
     // middle is the block; the name itself sits above it and inside the band.
-    expect(middle(identity), 'the identity block is not on the row').toBeCloseTo(middle(header), -1);
+    expect(middle(identity), 'the name is not on the row').toBeCloseTo(middle(header), -1);
     expect(title.y, 'the name escaped the band').toBeGreaterThanOrEqual(header.y);
     expect(title.x, 'something stands left of the name').toBeLessThan(actions.x);
     // The actions are in the same row, not under it.
@@ -56,22 +59,24 @@ test('the view name sits in the header row, not in a band of its own', async ({ 
         'the title still has a section of its own').toBe(0);
 });
 
-test('the clock is the line under the name, and does not stretch', async ({ page }) => {
+test('the identity block stays two lines tall', async ({ page }) => {
     await openDashboard(page);
 
-    const identity = await box(page, '.header-identity');
+    const identity = await box(page, '.title-wrapper');
     const title = await box(page, '.title');
-    const clock = await box(page, '.header-top-primary');
+    const clock = await box(page, '.date-time-line');
 
-    expect(clock.y, 'the clock is not under the name').toBeGreaterThanOrEqual(title.y + title.h - 2);
+    // The clock shares the name's line now (see the placement test below); what
+    // this holds is that neither of them grows the block.
+    expect(clock.h, `the clock line is ${clock.h}px tall`).toBeLessThan(60);
+    expect(title.h, `the name is ${title.h}px tall`).toBeLessThan(60);
     /*
      * dashboard-enhancements.css gives .header-top-primary `flex: 1 1 12rem`,
      * which meant "take the width left over" while its parent was the header
-     * row. In this column it would mean "take the height left over", and one
-     * line of clock grew to 192px before that was caught.
+     * row. In a column that means "take the height left over", and one line of
+     * clock grew to 192px before that was caught.
      */
-    expect(clock.h, `the clock line is ${clock.h}px tall`).toBeLessThan(60);
-    expect(identity.h, `the identity block is ${identity.h}px tall`).toBeLessThan(110);
+    expect(identity.h, `the name block is ${identity.h}px tall`).toBeLessThan(110);
 });
 
 test('the grid starts higher than it did', async ({ page }) => {
@@ -151,4 +156,53 @@ test('the bar spans the window and its contents span the page', async ({ page })
     await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
     await page.waitForTimeout(900);
     expect(await places(), 'the header shifts when the inbox opens').toEqual(onDashboard);
+});
+
+/*
+ * The clock reads as text, and where it stands is the reader's.
+ *
+ * It was 0.65rem of --text-tertiary at 60% opacity — the smallest type on the
+ * page in its faintest colour, which on a light theme is barely there. It sits
+ * beside the name at the reader's own size now, or in a column of its own, and
+ * the setting that swaps them writes one attribute onto <body>.
+ */
+test('the clock is readable, and its placement is a setting', async ({ page }) => {
+    await openDashboard(page);
+
+    const read = () => page.evaluate(() => {
+        const el = document.querySelector('.date-time-line');
+        if (!el) return null;
+        const c = window.getComputedStyle(el);
+        const title = document.querySelector('.header-identity .title').getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        return {
+            size: parseFloat(c.fontSize),
+            opacity: parseFloat(c.opacity),
+            // Beside the name rather than under it: same line, further right.
+            beside: Math.abs(r.top - title.top) < 12 && r.left > title.left,
+            body: parseFloat(window.getComputedStyle(document.body).fontSize),
+        };
+    });
+
+    // The default: beside the name, at the reader's own size.
+    expect(await page.evaluate(() => document.body.getAttribute('data-header-clock'))).toBe('beside-name');
+    const inline = await read();
+    expect(inline, 'the clock line is not on the page').not.toBeNull();
+    expect(inline.size, 'the clock is smaller than the body text').toBeGreaterThanOrEqual(inline.body);
+    expect(inline.opacity, 'the clock is dimmed').toBe(1);
+    expect(inline.beside, 'the clock is not beside the name').toBe(true);
+
+    // The other placement, through the setting rather than the class.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.headerClockPlacement = 'own-zone';
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(300);
+
+    expect(await page.evaluate(() => document.body.getAttribute('data-header-clock'))).toBe('own-zone');
+    const zone = await read();
+    expect(zone.size, 'a column of its own does not give the clock more room')
+        .toBeGreaterThan(inline.size);
 });
