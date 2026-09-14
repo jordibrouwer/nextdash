@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "Gezondheidsicoon tonen",
     "showPageInTitleLabel": "Paginanaam in de browsertitel tonen",
     "showPageNamesInTabsLabel": "Paginanamen in tabs tonen",
+    "maxPageTabsLabel": "Paginatabs vóór “+N”",
     "showPageTabsLabel": "Paginatabs tonen",
     "showPingLabel": "Reactietijden tonen",
     "showRecentButtonLabel": "Knop recent tonen",

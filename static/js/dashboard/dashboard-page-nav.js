@@ -255,6 +255,13 @@ class DashboardPageNav {
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
         });
+        // Which tabs the strip can show depends on which one is active: the
+        // page you are on is never the one folded away. Switching pages moves
+        // that marker without rebuilding the strip, so the fit has to be taken
+        // again here -- without it, navigating to a folded-away page left the
+        // strip showing the first few and no sign of where you actually were.
+        this.fitPageTabs();
+
         const inboxBtn = document.getElementById('page-nav-inbox-btn');
         if (inboxBtn) {
             const inboxSelected = d.activeView === 'inbox';
@@ -363,6 +370,20 @@ class DashboardPageNav {
 
 
     /**
+     * How many page tabs the strip draws at most.
+     *
+     * The same reading the server does, so a value that has not been round
+     * tripped yet draws the same strip it will after a reload: 3-9, and zero
+     * -- what a settings file written before this setting carries -- means
+     * nobody chose, which is the default rather than the floor.
+     */
+    pageTabCap() {
+        const raw = Math.round(Number(this.dash?.settings?.maxPageTabs));
+        if (!Number.isFinite(raw) || raw === 0) return 5;
+        return Math.min(9, Math.max(3, raw));
+    }
+
+    /**
      * Show the tabs that fit on one line, and count the rest on a chip.
      *
      * The track used to wrap, so a twelfth page added a second row to the
@@ -375,6 +396,11 @@ class DashboardPageNav {
      * The active tab is never the one dropped: you have to be able to see
      * where you are. If it falls outside the budget it takes the place of the
      * last tab that fitted.
+     *
+     * Width is not the only limit. A tab labelled "7" is 28px wide where one
+     * labelled "websites" is 87px, so measuring alone let the same header carry
+     * ten tabs with page names off and four with them on. maxPageTabs is the
+     * count that holds either way; the width pass can still show fewer.
      */
     fitPageTabs() {
         const container = document.getElementById('page-navigation');
@@ -396,13 +422,16 @@ class DashboardPageNav {
         // exists, and a tab is the closest thing to it that does.
         const chipRoom = tabs[0].getBoundingClientRect().width + gap;
 
+        const cap = this.pageTabCap();
+
         let used = 0;
         let shown = 0;
         for (const tab of tabs) {
+            if (shown >= cap) break;
             const width = tab.getBoundingClientRect().width;
             const next = used + width + (shown ? gap : 0);
             // Everything fits, or this one still does with room left for a chip.
-            const isLast = tab === tabs[tabs.length - 1];
+            const isLast = tab === tabs[tabs.length - 1] && tabs.length <= cap;
             if (next <= budget - (isLast ? 0 : chipRoom)) {
                 used = next;
                 shown += 1;
@@ -418,9 +447,13 @@ class DashboardPageNav {
         const hidden = tabs.slice(shown);
         const active = tabs.find((tab) => tab.classList.contains('active'));
         if (active && hidden.includes(active)) {
-            // Swap it in for the last that fitted, keeping the order otherwise.
+            // It trades places with the last tab that fitted, and the trade is
+            // made by hiding one and showing the other -- not by moving either.
+            // A hidden tab takes no room, so the active one still paints in the
+            // slot the displaced tab gave up, directly before the chip. Moving
+            // it would also break setActivePageNavButton, which reads the page
+            // a tab stands for from its position among its siblings.
             const displaced = visible[visible.length - 1];
-            container.insertBefore(active, displaced);
             hidden.splice(hidden.indexOf(active), 1);
             hidden.push(displaced);
         }

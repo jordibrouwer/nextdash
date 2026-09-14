@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "Mostrar el icono de salud",
     "showPageInTitleLabel": "Mostrar el nombre de la página en el título del navegador",
     "showPageNamesInTabsLabel": "Mostrar los nombres de página en las pestañas",
+    "maxPageTabsLabel": "Pestañas de página antes de «+N»",
     "showPageTabsLabel": "Mostrar las pestañas de página",
     "showPingLabel": "Mostrar los tiempos de ping",
     "showRecentButtonLabel": "Mostrar el botón de recientes",

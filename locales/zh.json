@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "显示健康图标",
     "showPageInTitleLabel": "在浏览器标题里显示页面名称",
     "showPageNamesInTabsLabel": "在标签中显示页面名称",
+    "maxPageTabsLabel": "显示“+N”前的页面标签数",
     "showPageTabsLabel": "显示页面标签",
     "showPingLabel": "显示 ping 时间",
     "showRecentButtonLabel": "显示「最近」按钮",

@@ -10782,6 +10782,7 @@ class DashboardConfig {
         // Toolbar & tabs
         showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
+        maxPageTabs: { def: 5 },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
@@ -11501,6 +11502,8 @@ class DashboardConfig {
                 controls: [
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
+                    { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
+                        label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),

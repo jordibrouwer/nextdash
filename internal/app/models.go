@@ -436,6 +436,7 @@ type Settings struct {
 	CustomTitle                     string `json:"customTitle"`                             // Custom page title
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
 	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
@@ -1346,6 +1347,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			CustomTitle:                  "",
 			ShowPageInTitle:              false,
 			ShowPageNamesInTabs:          false,
+			MaxPageTabs:                  defaultMaxPageTabs,
 			EnableCustomFavicon:          false,
 			CustomFaviconPath:            "",
 			EnableCustomFont:             false,
@@ -2824,6 +2826,17 @@ const (
 	defaultCategorySpreadResetScope  = "page"
 )
 
+// How many page tabs the header draws before the rest collapse into a "+N"
+// chip. The strip fits on one line by measuring widths, but a tab labelled with
+// a bare number is a third of the width of one labelled with a name -- so width
+// alone let the same header carry four tabs or ten depending on an unrelated
+// toggle. This is the count that holds either way.
+const (
+	defaultMaxPageTabs = 5
+	minPageTabs        = 3
+	maxPageTabsCap     = 9
+)
+
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
@@ -2910,6 +2923,17 @@ func clampBookmarkSettings(s *Settings) {
 		if s.AutoBackupIntervalDays > 30 {
 			s.AutoBackupIntervalDays = 30
 		}
+	}
+	// Zero is what an older settings file carries, not a choice: there is no
+	// header without tabs, so it means "never set" and takes the default.
+	if s.MaxPageTabs == 0 {
+		s.MaxPageTabs = defaultMaxPageTabs
+	}
+	if s.MaxPageTabs < minPageTabs {
+		s.MaxPageTabs = minPageTabs
+	}
+	if s.MaxPageTabs > maxPageTabsCap {
+		s.MaxPageTabs = maxPageTabsCap
 	}
 	if s.RowTagsMax < 1 {
 		s.RowTagsMax = 1
@@ -3348,6 +3372,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CustomTitle:                    "",
 			ShowPageInTitle:                false,
 			ShowPageNamesInTabs:            false,
+			MaxPageTabs:                    defaultMaxPageTabs,
 			EnableCustomFavicon:            false,
 			CustomFaviconPath:              "",
 			EnableCustomFont:               false,

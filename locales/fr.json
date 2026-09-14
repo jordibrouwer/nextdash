@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "Afficher l'icône d'état",
     "showPageInTitleLabel": "Afficher le nom de la page dans le titre du navigateur",
     "showPageNamesInTabsLabel": "Afficher les noms de page dans les onglets",
+    "maxPageTabsLabel": "Onglets de page avant « +N »",
     "showPageTabsLabel": "Afficher les onglets de page",
     "showPingLabel": "Afficher les temps de réponse",
     "showRecentButtonLabel": "Afficher le bouton Récents",

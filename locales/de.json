@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "Zustandssymbol zeigen",
     "showPageInTitleLabel": "Seitenname im Browsertitel zeigen",
     "showPageNamesInTabsLabel": "Seitennamen in Tabs zeigen",
+    "maxPageTabsLabel": "Seitentabs vor „+N“",
     "showPageTabsLabel": "Seiten-Tabs zeigen",
     "showPingLabel": "Antwortzeiten zeigen",
     "showRecentButtonLabel": "Schaltfläche Kürzlich zeigen",

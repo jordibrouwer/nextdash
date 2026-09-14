@@ -4383,6 +4383,7 @@
     "showHealthDashboardLabel": "Show the health icon",
     "showPageInTitleLabel": "Show the page name in the browser title",
     "showPageNamesInTabsLabel": "Show page names in tabs",
+    "maxPageTabsLabel": "Page tabs shown before “+N”",
     "showPageTabsLabel": "Show page tabs",
     "showPingLabel": "Show ping times",
     "showRecentButtonLabel": "Show the recent button",
