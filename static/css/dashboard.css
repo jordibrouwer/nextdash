@@ -7158,6 +7158,10 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    /* A tab keeps its width. Allowed to shrink, the row squashed every tab
+       past the one that fitted and the names printed over each other instead
+       of the strip folding -- which is what fitPageTabs is for. */
+    flex: 0 0 auto;
     /* Bigger than the draft's 28px: a numbered tab is one character wide, and
        at the draft's size the middle zone read as a row of loose digits rather
        than as the pages of the thing you are looking at. Raised twice since,
@@ -7533,39 +7537,125 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 
 
 /* ── The band as the window narrows ───────────────────────────────────────────
-   The draft's own four steps, in its own order: the keys printed on the action
-   buttons go first, then the clock line, then the track folds to the page you
-   are on, and the hints that walk it go last. Each step gives up the least
-   useful thing still standing.
+   One line, and a fixed order of what it gives up when the zones no longer add
+   up. The step is measured and written onto <body> by fitHeaderZones(); these
+   rules are what each step means. Everything dropped here keeps its key, and
+   the pages panel (`,`) still lists every page.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* 1180 — the keys come off the buttons. The keys still work. */
-@media (max-width: 1180px) {
-    .header-actions .header-shortcuts .search-button-icon {
-        display: none;
-    }
+/* Each step written past the zone's own rules on purpose: those are three
+   classes deep (.dashboard-section.section-controls .header-shortcuts and
+   friends), so a step keyed on one body attribute lost the cascade and hid
+   nothing at all. */
+
+/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. */
+body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="5"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="1"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="2"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="5"] .dashboard-section.section-controls .header-zone-divider {
+    display: none;
 }
 
-/* 920 — the clock and the weather go; the name stays. */
-@media (max-width: 920px) {
-    .dashboard-section.section-controls .header-identity {
-        width: auto;
-    }
-
-    .dashboard-section.section-controls .header-identity .date {
-        display: none;
-    }
+/* 2 — the actions, keys and all. */
+body[data-header-fit="2"] .dashboard-section.section-controls .header-shortcuts,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-shortcuts,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-shortcuts,
+body[data-header-fit="5"] .dashboard-section.section-controls .header-shortcuts {
+    display: none;
 }
 
-/* 780 — the track has already folded to the active page by measurement; what
-   goes here is the room around it. */
-@media (max-width: 780px) {
-    .dashboard-section.section-controls .header-top {
+/* 3 — the pages button; `,` opens the same panel. */
+body[data-header-fit="3"] .dashboard-section.section-controls .pages-link,
+body[data-header-fit="4"] .dashboard-section.section-controls .pages-link,
+body[data-header-fit="5"] .dashboard-section.section-controls .pages-link {
+    display: none;
+}
+
+/* 4 — the strip folds to the page you are on plus the chip (pageTabCap), and
+   the keys that walk it go with the room they took. */
+body[data-header-fit="4"] .dashboard-section.section-controls .page-walk-hint,
+body[data-header-fit="5"] .dashboard-section.section-controls .page-walk-hint {
+    display: none;
+}
+
+/* 5 — the clock and the weather, leaving the name and the switcher.
+   Everything that stands for the clock goes with it: the line itself, the
+   mini status beside it, and the compact date chip the narrow layout puts in
+   its place -- on the smallest window all three were on screen at once. */
+body[data-header-fit="5"] .dashboard-section.section-controls .header-top-primary,
+body[data-header-fit="5"] .dashboard-section.section-controls #date-badge-mobile,
+body[data-header-fit="5"] .dashboard-section.section-controls .date-badge-mobile:not(:empty) {
+    display: none;
+}
+
+/*
+ * The narrow layout is the last rung, whatever the measurement says.
+ *
+ * Below this width the row has the name and the page switcher and nothing
+ * else: the compact chip, the clock line and the mini status all say the time,
+ * and all three were drawn one under the other.
+ */
+@media (max-width: 767px) {
+    /* Written at the clock placement's own weight (body[data-header-clock] …
+       .header-identity .header-top-primary), which is what draws it. */
+    body[data-header-clock] .dashboard-section.section-controls .header-identity .header-top-primary,
+    body[data-header-clock] .dashboard-section.section-controls #date-badge-mobile,
+    body[data-header-clock] .dashboard-section.section-controls .date-badge-mobile:not(:empty),
+    body[data-header-clock] .dashboard-section.section-controls .header-actions,
+    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint {
+        display: none;
+    }
+
+    /* Two zones left, so two tracks: the switcher sits straight after the
+       name instead of holding the place of the columns that are gone. */
+    body[data-header-clock] .dashboard-section.section-controls .header-top {
+        /* The name gives way, not the switcher: at 360px an eight-letter page
+           name plus a tab and a chip is 54px more than there is, and a name
+           that is cut short still says where you are where a switcher pushed
+           off the edge stops working. */
+        grid-template-columns: minmax(0, 1fr) auto;
         padding: 0.5rem 0.75rem;
         gap: var(--space-2, 0.5rem);
     }
 
-    .page-walk-hint {
+    body[data-header-clock] .dashboard-section.section-controls .title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body[data-header-clock] .dashboard-section.section-controls .header-track {
+        justify-content: flex-start;
+    }
+
+    /* The name is the whole left zone here. Its block keeps a second column
+       for the clock, and that column went on claiming 235px of a 520px window
+       with the clock switched off -- so the switcher stood in the middle of
+       the row rather than beside the name. */
+    body[data-header-clock] .dashboard-section.section-controls .header-identity {
+        display: block;
+    }
+}
+
+/* Only the room around them: the template keeps its four tracks, and a zone
+   that is display:none leaves the grid rather than pushing the rest onto a
+   second row -- which is what a two-column override did here. */
+body[data-header-fit="5"] .dashboard-section.section-controls .header-top,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-top {
+    padding: 0.5rem 0.75rem;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* The keys printed on the action buttons are the first thing to go on a narrow
+   window, before the buttons themselves: at 1180 the row still holds them. */
+@media (max-width: 1180px) {
+    .header-actions .header-shortcuts .search-button-icon {
         display: none;
     }
 }

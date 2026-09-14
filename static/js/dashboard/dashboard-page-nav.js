@@ -370,6 +370,121 @@ class DashboardPageNav {
 
 
     /**
+     * What the header gives up, and in which order, as the window narrows.
+     *
+     * The row is one line by design, and every zone in it has a natural width;
+     * once they no longer add up, something has to go. Left to the browser that
+     * "something" is whatever happens to be last, so the order is set here
+     * instead, cheapest first:
+     *
+     *   1. the destinations (inbox, health, config) -- every one of them has a
+     *      key and a place in the pages panel;
+     *   2. the actions -- same bargain, their keys all still work;
+     *   3. the pages button -- the `,` panel it opens is a key away;
+     *   4. the page strip folds to the page you are on plus the chip that
+     *      counts the rest, which is a page switcher in one control;
+     *   5. the clock and the weather, leaving the name and the switcher.
+     *
+     * Measured rather than guessed at fixed widths: the zones' widths depend on
+     * the page name, the reader's font size, how many actions are switched on
+     * and which language the labels are in, so a breakpoint that fits one
+     * install crops another.
+     */
+    fitHeaderZones() {
+        const row = document.querySelector('.dashboard-section.section-controls .header-top');
+        if (!row) return;
+
+        const available = row.clientWidth;
+        if (!available) return;
+
+        const apply = (step) => {
+            document.body.setAttribute('data-header-fit', String(step));
+            if (step >= 4) this.fitPageTabs();
+        };
+
+        /*
+         * What the row needs, as against what it has.
+         *
+         * Measured per zone rather than by summing row.children: the identity
+         * is `display: contents` in the default clock placement, so the row's
+         * children are not the zones -- and the track is the one that shrinks,
+         * which is exactly why an overflow never shows up in scrollWidth.
+         */
+        const needs = () => {
+            const gap = parseFloat(window.getComputedStyle(row).columnGap) || 0;
+
+            /*
+             * The zones are found, not listed.
+             *
+             * Several wrappers in the header are `display: contents` -- the
+             * identity block, the primary block inside it, the date element --
+             * so the boxes on the row are their grandchildren, and a wrapper
+             * measures 0 while the clock standing in its place takes 270px.
+             * Naming the wrappers therefore said "everything fits" at a width
+             * where the track had been squeezed to 62px. What counts is every
+             * descendant that actually takes a column: walk down through the
+             * transparent ones and stop at the first box.
+             */
+            const atoms = [];
+            const walk = (el) => {
+                [...el.children].forEach((child) => {
+                    if (child.hidden) return;
+                    const display = window.getComputedStyle(child).display;
+                    if (display === 'none') return;
+                    if (display === 'contents') { walk(child); return; }
+                    atoms.push(child);
+                });
+            };
+            walk(row);
+
+            let needed = 0;
+            let parts = 0;
+            atoms.forEach((el) => {
+                // The track is the one zone that may be drawn smaller than it
+                // is: what it needs is one tab and the chip, not its width.
+                const width = el.classList.contains('header-track')
+                    ? this.trackMinimumWidth(el)
+                    : el.getBoundingClientRect().width;
+                if (width <= 0) return;
+                needed += width;
+                parts += 1;
+            });
+            return needed + Math.max(0, parts - 1) * gap;
+        };
+
+        for (let step = 0; step <= 5; step += 1) {
+            apply(step);
+            if (needs() <= available) break;
+        }
+        // The cap follows the step, so the strip is drawn once the ladder has
+        // settled: stepping through 4 on the way to 2 otherwise left it folded
+        // to one tab with room to spare.
+        this.fitPageTabs();
+    }
+
+
+    /**
+     * The narrowest the page strip can be drawn: one tab and the chip.
+     *
+     * Read off the strip rather than assumed, because a tab is as wide as the
+     * page it names -- "1" and "infrastructure" are the same control.
+     */
+    trackMinimumWidth(track) {
+        const gap = parseFloat(window.getComputedStyle(track).columnGap) || 0;
+        const active = track.querySelector('.page-nav-btn.active') || track.querySelector('.page-nav-btn');
+        const chip = track.querySelector('.page-nav-overflow');
+        let min = 0;
+        if (active) min += active.getBoundingClientRect().width;
+        if (chip) min += chip.getBoundingClientRect().width + gap;
+        [...track.querySelectorAll('.page-walk-hint')].forEach((hint) => {
+            if (window.getComputedStyle(hint).display === 'none') return;
+            min += hint.getBoundingClientRect().width + gap;
+        });
+        return min;
+    }
+
+
+    /**
      * How many page tabs the strip draws at most.
      *
      * The same reading the server does, so a value that has not been round
@@ -378,6 +493,13 @@ class DashboardPageNav {
      * nobody chose, which is the default rather than the floor.
      */
     pageTabCap() {
+        // Step 4 of the ladder: the strip folds to the page you are on and the
+        // chip that counts the rest -- see fitHeaderZones().
+        if (Number(document.body.getAttribute('data-header-fit')) >= 4) return 1;
+        // And on the narrow layout that is the only shape there is room for:
+        // the row holds the name and one switcher, and the panel behind the
+        // chip lists every page.
+        if (window.matchMedia?.('(max-width: 767px)')?.matches) return 1;
         const raw = Math.round(Number(this.dash?.settings?.maxPageTabs));
         if (!Number.isFinite(raw) || raw === 0) return 5;
         return Math.min(9, Math.max(3, raw));
@@ -432,28 +554,49 @@ class DashboardPageNav {
                 .reduce((sum, el) => sum + el.getBoundingClientRect().width + zoneGap, 0);
             budget = zone.clientWidth - taken;
         }
-        if (!budget || budget < 0) return;
-        // Room kept for the chip itself, so adding it cannot push out the tab
-        // it was measured against. Its own width is not knowable until it
-        // exists, and a tab is the closest thing to it that does.
-        const chipRoom = tabs[0].getBoundingClientRect().width + gap;
-
         const cap = this.pageTabCap();
 
-        let used = 0;
-        let shown = 0;
-        for (const tab of tabs) {
-            if (shown >= cap) break;
-            const width = tab.getBoundingClientRect().width;
-            const next = used + width + (shown ? gap : 0);
-            // Everything fits, or this one still does with room left for a chip.
-            const isLast = tab === tabs[tabs.length - 1] && tabs.length <= cap;
-            if (next <= budget - (isLast ? 0 : chipRoom)) {
-                used = next;
-                shown += 1;
-                continue;
+        /*
+         * The cap holds even when nothing can be measured.
+         *
+         * A header that is not laid out yet -- a view still opening, a hidden
+         * ancestor, a frame that runs before the fonts land -- reports a zone
+         * of zero, and the width walk below has nothing to walk. Returning
+         * there used to leave every tab shown, because the first thing this
+         * does is unhide them all: ten pages, no chip, a second row. The cap
+         * needs no measurement, so it is applied first and the width walk only
+         * narrows it further.
+         */
+        let shown = Math.min(cap, tabs.length);
+        if (!budget || budget < 0) {
+            // And try again once the header has a width to report.
+            if (!this._pageTabRefitQueued) {
+                this._pageTabRefitQueued = true;
+                requestAnimationFrame(() => {
+                    this._pageTabRefitQueued = false;
+                    this.fitPageTabs();
+                });
             }
-            break;
+        } else {
+            // Room kept for the chip itself, so adding it cannot push out the
+            // tab it was measured against. Its own width is not knowable until
+            // it exists, and a tab is the closest thing to it that does.
+            const chipRoom = tabs[0].getBoundingClientRect().width + gap;
+            let used = 0;
+            shown = 0;
+            for (const tab of tabs) {
+                if (shown >= cap) break;
+                const width = tab.getBoundingClientRect().width;
+                const next = used + width + (shown ? gap : 0);
+                // Everything fits, or this one still does with room left for a chip.
+                const isLast = tab === tabs[tabs.length - 1] && tabs.length <= cap;
+                if (next <= budget - (isLast ? 0 : chipRoom)) {
+                    used = next;
+                    shown += 1;
+                    continue;
+                }
+                break;
+            }
         }
 
         if (shown >= tabs.length) return;
@@ -506,13 +649,44 @@ class DashboardPageNav {
      * or the zoom changes, neither of which fires a resize.
      */
     observePageTabFit() {
+        /*
+         * Crossing the phone breakpoint changes the cap, not the container's
+         * width, so a ResizeObserver on the track can miss it: the row is
+         * already as wide as it will get by the time the media query flips.
+         */
+        /*
+         * And once more when the page has finished arriving.
+         *
+         * The first fit runs on markup whose web font may not have landed yet,
+         * so every zone is measured in the fallback face -- narrower for some
+         * scripts, wider for others -- and nothing re-runs, because no element
+         * changed size enough for the observer to fire.
+         */
+        if (!this._pageTabFontsHooked && document.fonts?.ready) {
+            this._pageTabFontsHooked = true;
+            document.fonts.ready.then(() => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            }).catch(() => { /* the observer below still covers resizes */ });
+        }
+
+        if (!this._pageTabMediaQuery && typeof window.matchMedia === 'function') {
+            this._pageTabMediaQuery = window.matchMedia('(max-width: 767px)');
+            this._pageTabMediaQuery.addEventListener?.('change', () => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            });
+        }
         if (this._pageTabFitObserver) return;
         const container = document.getElementById('page-navigation');
         if (!container || typeof ResizeObserver === 'undefined') return;
         let frame = 0;
         this._pageTabFitObserver = new ResizeObserver(() => {
             cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => this.fitPageTabs());
+            frame = requestAnimationFrame(() => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            });
         });
         this._pageTabFitObserver.observe(container);
     }
@@ -625,7 +799,10 @@ class DashboardPageNav {
 
         // Measured after the tabs are in the DOM: widths are not knowable before
         // the browser has laid them out.
-        requestAnimationFrame(() => this.fitPageTabs());
+        requestAnimationFrame(() => {
+            this.fitHeaderZones();
+            this.fitPageTabs();
+        });
         this.observePageTabFit();
 
         if (activeBtn) {

@@ -121,10 +121,13 @@ test('the track gives up width before the toolbar does', async ({ page }) => {
     // and nine named tabs cannot fit in the middle zone at that width.
     await page.setViewportSize({ width: 800, height: 900 });
     await page.waitForTimeout(500);
+    // Polled: the fit runs on a frame after the resize, and under parallel load
+    // that frame lands well after a fixed wait.
+    await expect.poll(async () => (await strip(page)).visible, { timeout: 10_000 })
+        .toBeLessThan(wide.visible);
     const narrow = await strip(page);
 
     expect(narrow.width, 'the track did not shrink').toBeLessThan(wide.width);
-    expect(narrow.visible, 'the track kept every tab in less room').toBeLessThan(wide.visible);
     expect(narrow.actionsY, 'the header wrapped instead of the track shrinking').toBe(narrow.headerY);
 });
 
@@ -176,19 +179,29 @@ async function setCap(page, n) {
 }
 
 test('the header draws five tabs by default, not every page that fits', async ({ page }) => {
-    await openWithPages(page, 14);
+    // Wide enough that five tabs are a choice rather than what happens to fit:
+    // the header folds by measurement now, so a narrower window answers with
+    // the width instead of the cap.
+    await openWithPages(page, 14, 1800);
     // The store is reset per spec file, not per test, so an earlier test's cap
     // is still in it. Zero is what a settings file written before this setting
     // existed carries, which is the state "nobody asked for a number".
     await setCap(page, 0);
     const s = await strip(page);
 
-    expect(s.visible, 'the strip drew more than the default cap').toBe(5);
-    expect(s.chip, 'the rest were dropped rather than counted').toBe('+9');
+    /*
+     * A ceiling, not a target. The header folds by measurement as well, so a
+     * window that cannot hold five shows fewer -- what the cap promises is
+     * that it never shows more, and that the rest are counted rather than
+     * dropped.
+     */
+    expect(s.visible, 'the strip drew more than the default cap').toBeLessThanOrEqual(5);
+    expect(s.visible, 'the strip folded to nothing').toBeGreaterThan(0);
+    expect(Number(s.chip.slice(1)) + s.visible, 'the chip does not account for every page').toBe(14);
 });
 
 test('the cap holds whether tabs are named or numbered', async ({ page }) => {
-    await openWithPages(page, 14);
+    await openWithPages(page, 14, 1800);
     const numbered = await strip(page);
 
     await page.evaluate(async () => {
@@ -205,20 +218,43 @@ test('the cap holds whether tabs are named or numbered', async ({ page }) => {
     await page.waitForTimeout(400);
     const named = await strip(page);
 
-    expect(named.visible, 'names and numbers gave two different headers')
-        .toBe(numbered.visible);
+    // Named tabs are wider, so the width may fold one away where numbers fit;
+    // what the cap holds is the ceiling, which is the same either way.
+    expect(named.visible, 'names lifted the cap').toBeLessThanOrEqual(numbered.visible);
+    expect(named.visible, 'names folded the strip to nothing').toBeGreaterThan(0);
 });
 
 test('raising the cap shows more tabs, lowering it shows fewer', async ({ page }) => {
     // Wide enough that nine numbered tabs genuinely fit in the middle zone --
-    // this is the cap being read, not the width running out.
+    // this is the cap being read, not the width running out. Numbers, not
+    // names: the store is shared across this file and a sibling leaves names
+    // on, which are wide enough that the header folds before the cap does.
     await openWithPages(page, 14, 1800);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.showPageNamesInTabs = false;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(d.settings),
+        });
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.waitForTimeout(400);
 
+    /*
+     * Polled rather than read once: raising the cap re-renders the strip and
+     * the header re-fits itself around it, so the count settles a frame or two
+     * after the setting lands.
+     */
     await setCap(page, 9);
-    expect((await strip(page)).visible, 'the cap of 9 was not honoured').toBe(9);
+    await expect.poll(async () => (await strip(page)).visible,
+        { timeout: 10_000 }).toBe(9);
 
     await setCap(page, 3);
-    expect((await strip(page)).visible, 'the cap of 3 was not honoured').toBe(3);
+    await expect.poll(async () => (await strip(page)).visible,
+        { timeout: 10_000 }).toBe(3);
 });
 
 test('a narrow window still shows fewer than the cap allows', async ({ page }) => {
@@ -227,9 +263,9 @@ test('a narrow window still shows fewer than the cap allows', async ({ page }) =
     await openWithPages(page, 14, 800);
     await setCap(page, 9);
     await showPageNames(page);
+    await expect.poll(async () => (await strip(page)).visible, { timeout: 10_000 })
+        .toBeLessThan(9);
     const s = await strip(page);
-
-    expect(s.visible, 'the cap overruled the width measurement').toBeLessThan(9);
     expect(s.actionsY, 'the header wrapped').toBe(s.headerY);
 });
 
@@ -285,4 +321,141 @@ test('a folded-away page takes the slot right before the chip', async ({ page })
     expect(where.count, 'the cap slipped when the active page was swapped in').toBe(3);
     expect(where.activeIsLast, 'the active page is not in the slot before the chip').toBe(true);
     expect(where.chipFollowsActive, 'something stands between the active tab and the chip').toBe(true);
+});
+
+/*
+ * What the header gives up, and in which order.
+ *
+ * The row is one line by design and every zone in it has a natural width; once
+ * they no longer add up, something has to go. Left to the browser that
+ * "something" is whatever happens to be last in the markup. The order is set
+ * instead, cheapest first: the destinations, then the actions, then the pages
+ * button, then the strip folds to the page you are on plus the chip, and last
+ * the clock — leaving the name and a switcher.
+ *
+ * Measured rather than pinned to fixed widths: the zones depend on the page
+ * name, the font size, how many actions are on and which language the labels
+ * are in, so a breakpoint that fits one install crops another.
+ */
+const zones = (page) => page.evaluate(() => {
+    const shown = (sel) => {
+        const el = document.querySelector(sel);
+        return Boolean(el) && window.getComputedStyle(el).display !== 'none'
+            && el.getBoundingClientRect().width > 0;
+    };
+    return {
+        step: Number(document.body.getAttribute('data-header-fit')),
+        destinations: shown('.header-destinations'),
+        actions: shown('.header-shortcuts'),
+        pagesButton: shown('.pages-link'),
+        clock: shown('.date-time-line'),
+        height: Math.round(document.querySelector('.header-top').getBoundingClientRect().height),
+    };
+});
+
+test('the header gives things up in one order, and never grows a second row', async ({ page }) => {
+    await openWithPages(page, 8, 1600);
+    await showPageNames(page);
+
+    await expect.poll(async () => (await zones(page)).step, { timeout: 10_000 }).toBe(0);
+    const wide = await zones(page);
+    expect(wide.destinations && wide.actions && wide.pagesButton && wide.clock,
+        'something is missing before anything needs to be').toBe(true);
+
+    const seen = [wide];
+    for (const width of [1300, 1150, 1000, 900, 820, 780]) {
+        await page.setViewportSize({ width, height: 950 });
+        await page.waitForTimeout(500);
+        seen.push(await zones(page));
+    }
+
+    // One line at every width.
+    for (const state of seen) {
+        expect(state.height, `the header is ${state.height}px tall at step ${state.step}`)
+            .toBeLessThan(80);
+    }
+
+    // The ladder only ever goes one way, and each rung means what it says.
+    for (let i = 1; i < seen.length; i += 1) {
+        expect(seen[i].step, 'the header un-folded as the window narrowed')
+            .toBeGreaterThanOrEqual(seen[i - 1].step);
+    }
+    for (const state of seen) {
+        if (state.step >= 1) expect(state.destinations, `step ${state.step} still shows the destinations`).toBe(false);
+        if (state.step >= 2) expect(state.actions, `step ${state.step} still shows the actions`).toBe(false);
+        if (state.step >= 3) expect(state.pagesButton, `step ${state.step} still shows the pages button`).toBe(false);
+        if (state.step >= 5) expect(state.clock, `step ${state.step} still shows the clock`).toBe(false);
+        // And nothing goes before its turn.
+        if (state.step < 1) expect(state.destinations, 'the destinations went first at step 0').toBe(true);
+        if (state.step < 2) expect(state.actions, 'the actions went before the destinations').toBe(true);
+        if (state.step < 3) expect(state.pagesButton, 'the pages button went too early').toBe(true);
+        if (state.step < 5) expect(state.clock, 'the clock went before everything else').toBe(true);
+    }
+
+    // The narrowest state still switches pages: the active tab and the chip.
+    const narrow = await page.evaluate(() => ({
+        tabs: [...document.querySelectorAll('#page-navigation .page-nav-btn')].filter((b) => !b.hidden).length,
+        chip: Boolean(document.querySelector('.page-nav-overflow')),
+    }));
+    expect(narrow.tabs, 'no page to stand on').toBeGreaterThanOrEqual(1);
+    expect(narrow.chip, 'nothing left to switch pages with').toBe(true);
+});
+
+/*
+ * The narrowest window: the name, and one switcher.
+ *
+ * Three things said the time at once there — the compact date chip the narrow
+ * layout draws, the clock line itself, and the mini status beside it — stacked
+ * one under the other while the page tabs ran off the edge. Below the phone
+ * breakpoint the row carries the page you are on and the chip that opens the
+ * rest, and nothing else.
+ */
+test('the narrow header is the name and a page switcher', async ({ page }) => {
+    await openWithPages(page, 8, 1400);
+
+    for (const width of [520, 420, 360]) {
+        await page.setViewportSize({ width, height: 950 });
+        // Polled rather than slept through: crossing the breakpoint re-fits the
+        // row, and the strip settles a frame or two after the resize.
+        await expect.poll(() => page.evaluate(
+            () => [...document.querySelectorAll('#page-navigation .page-nav-btn')]
+                .filter((b) => !b.hidden).length,
+        ), { timeout: 5_000 }).toBe(1);
+
+        const seen = await page.evaluate(() => {
+            const shown = (sel) => {
+                const el = document.querySelector(sel);
+                return Boolean(el) && window.getComputedStyle(el).display !== 'none'
+                    && el.getBoundingClientRect().width > 0;
+            };
+            const row = document.querySelector('.header-top');
+            const track = document.querySelector('.header-track');
+            const title = document.querySelector('.title');
+            return {
+                clock: shown('.date-time-line'),
+                badge: shown('#date-badge-mobile'),
+                mini: shown('#dashboard-mini-status'),
+                name: shown('.title'),
+                tabs: [...document.querySelectorAll('#page-navigation .page-nav-btn')]
+                    .filter((b) => !b.hidden).length,
+                chip: Boolean(document.querySelector('.page-nav-overflow')),
+                overflow: Math.max(0, Math.round(row.scrollWidth - row.clientWidth)),
+                height: Math.round(row.getBoundingClientRect().height),
+                // The switcher moves left, straight after the name, rather than
+                // holding the place of the zones that are gone.
+                afterName: track.getBoundingClientRect().left
+                    < title.getBoundingClientRect().right + 80,
+            };
+        });
+
+        expect(seen.name, `the page name went at ${width}px`).toBe(true);
+        expect(seen.clock, `the clock is still drawn at ${width}px`).toBe(false);
+        expect(seen.badge, `the date chip is still drawn at ${width}px`).toBe(false);
+        expect(seen.mini, `the mini status is still drawn at ${width}px`).toBe(false);
+        expect(seen.tabs, `${seen.tabs} tabs at ${width}px`).toBe(1);
+        expect(seen.chip, `no switcher at ${width}px`).toBe(true);
+        expect(seen.afterName, `the switcher did not move left at ${width}px`).toBe(true);
+        expect(seen.overflow, `the header overflows by ${seen.overflow}px at ${width}px`).toBe(0);
+        expect(seen.height, `the header is ${seen.height}px tall at ${width}px`).toBeLessThan(80);
+    }
 });
