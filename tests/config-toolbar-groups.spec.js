@@ -36,7 +36,7 @@ async function openButtonBarTab(page) {
 }
 
 test.describe('the chrome toggles are grouped', () => {
-    test('three panels, and every toggle kept', async ({ page }) => {
+    test('two panels, and every toggle kept', async ({ page }) => {
         await openToolbarTab(page);
 
         const panels = await page.evaluate(() => [
@@ -44,18 +44,21 @@ test.describe('the chrome toggles are grouped', () => {
             ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
         ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) })));
 
-        expect(panels).toHaveLength(3);
-        // One header panel where the header lives, and both halves of the bar
-        // on the tab that also says where the bar sits.
+        expect(panels).toHaveLength(2);
+        // One panel for the header strip, one for the actions in it. The
+        // actions were two groups — "main buttons" and "extras" — which was the
+        // floating bar's own split into a row and a second row beside it.
         const perTab = await page.evaluate(() => ({
             toolbar: window.dashboardInstance.config.panelsFor('appearance', 'toolbar').length,
             buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
         }));
-        expect(perTab).toEqual({ toolbar: 1, buttonbar: 2 });
-        // Not one setting lost or duplicated in the split.
+        expect(perTab).toEqual({ toolbar: 1, buttonbar: 1 });
+        // Not one setting lost or duplicated in the split. maxPageTabs rides
+        // along in the header panel, which is why this is one more than the
+        // toggles named below.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(13);
-        expect(new Set(all).size).toBe(13);
+        expect(all).toHaveLength(14);
+        expect(new Set(all).size).toBe(14);
         expect(all).toEqual(expect.arrayContaining([
             'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showHealthDashboard', 'showConfigButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
@@ -70,17 +73,22 @@ test.describe('the chrome toggles are grouped', () => {
         await expect(page.locator('[data-behavior-bulk-count]').first()).toHaveText(/\d+\D+\d+/);
 
         await page.locator('[data-appearance-tab="buttonbar"]').click();
-        await expect(page.locator('.config-panel-bulk')).toHaveCount(2);
-        await expect(page.locator('[data-behavior-bulk="show"]')).toHaveCount(2);
-        await expect(page.locator('[data-behavior-bulk="hide"]')).toHaveCount(2);
+        await expect(page.locator('.config-panel-bulk')).toHaveCount(1);
+        await expect(page.locator('[data-behavior-bulk="show"]')).toHaveCount(1);
+        await expect(page.locator('[data-behavior-bulk="hide"]')).toHaveCount(1);
     });
 
-    test('the bar tab carries the position control and both toggle groups', async ({ page }) => {
+    test('the action bar tab carries every action toggle and no position picker', async ({ page }) => {
         await openButtonBarTab(page);
-        // Where it sits and what it carries, in the order you decide them.
-        await expect(page.locator('[data-appearance-barpos]')).toHaveCount(5);
+        // The bar had five places it could sit; it is the header now, so the
+        // picker is gone along with the setting behind it.
+        await expect(page.locator('[data-appearance-barpos]')).toHaveCount(0);
         await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeVisible();
         await expect(page.locator('[data-behavior-field="showRecentButton"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showCommandsButton"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showFindersButton"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showCollapseAllButton"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showTagCloudButton"]')).toBeVisible();
         // The header group stayed behind on Toolbar & tabs.
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toHaveCount(0);
     });

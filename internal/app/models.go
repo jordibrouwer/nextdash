@@ -569,7 +569,6 @@ type Settings struct {
 	LauncherIconSize            string                     `json:"launcherIconSize"`                  // Launcher tile icon size: small, normal, large
 	CalendarUrl                 string                     `json:"calendarUrl"`                       // URL for calendar link in date popover (empty = hidden)
 	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`                    // ICS feed address the Calendar widget reads (empty = widget shows nothing)
-	ButtonBarPosition           string                     `json:"buttonBarPosition"`                 // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
 	BackgroundOpacity           float64                    `json:"backgroundOpacity"`                 // Background opacity (0.0-1.0)
 	FontWeight                  string                     `json:"fontWeight"`                        // Font weight: normal, 600, bold
 	FontPreset                  string                     `json:"fontPreset"`                        // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -1422,7 +1421,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// install nobody had touched.
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
-			ButtonBarPosition:              "bottom-right",
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",
@@ -3801,9 +3799,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// of the bookmarks instead of floating over them. Only for a file that
 		// does not name a position -- anyone who chose one has the key, and
 		// this leaves their choice alone.
-		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
-			settings.ButtonBarPosition = "bottom-right"
-		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"
 		}

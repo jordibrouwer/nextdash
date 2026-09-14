@@ -1549,10 +1549,6 @@ class Dashboard {
         return this.toolbar.syncTagCloudButtonPlacement(...arguments);
     }
 
-    syncSideRailDiscoverability() {
-        return this.toolbar.syncSideRailDiscoverability(...arguments);
-    }
-
     refreshAddBookmarkToolbarLabel() {
         return this.toolbar.refreshAddBookmarkToolbarLabel(...arguments);
     }

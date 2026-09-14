@@ -164,20 +164,6 @@ test.describe('help opens with a picture', () => {
 });
 
 test.describe('the settings that are a place, not a size', () => {
-    test('each button-bar position draws the page with the bar in it', async ({ page }) => {
-        // Its own tab since v1.3.0: where the bar sits and what it carries.
-        await openAppearance(page, 'buttonbar');
-        const buttons = page.locator('[data-appearance-barpos]');
-        await expect(buttons).toHaveCount(5);
-        await expect(buttons.locator('.setting-art-screen')).toHaveCount(5);
-
-        // Five names for five places and no page to point at: the drawings have
-        // to differ, or they say nothing the names did not.
-        const classes = await buttons.locator('.setting-art-screen')
-            .evaluateAll((els) => els.map((e) => e.className));
-        expect(new Set(classes).size).toBe(5);
-    });
-
     test('the paste route is drawn, and forks where the setting forks', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');

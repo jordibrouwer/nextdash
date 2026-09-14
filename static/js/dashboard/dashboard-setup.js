@@ -30,21 +30,9 @@ class DashboardSetup {
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
         );
-        const barPosition = d.settings.buttonBarPosition || 'bottom-right';
-        document.body.setAttribute('data-button-position', barPosition);
-        // Side-agnostic hook: layout-side-rail.css keys every rail rule off this
-        // and reads the physical side from variables, so the two rails share one
-        // set of rules instead of mirrored copies.
-        if (barPosition === 'side-left' || barPosition === 'side-right') {
-            document.body.setAttribute('data-rail', barPosition === 'side-left' ? 'left' : 'right');
-        } else {
-            document.body.removeAttribute('data-rail');
-        }
-
         d.publishButtonBarHeight?.();
 
         d.syncTagCloudButtonPlacement();
-        d.syncSideRailDiscoverability?.();
 
         // One attribute, three answers. The row always builds the label when the
         // bookmark has one; whether it is on screen, and whether it stands in
@@ -522,10 +510,7 @@ class DashboardSetup {
             hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
         }
 
-        const isSideRail = document.body.hasAttribute('data-rail');
-        const storageKey = isSideRail
-            ? 'nextdash:search-flow-hint-side-rail-v1'
-            : 'nextdash:search-flow-hint-v2';
+        const storageKey = 'nextdash:search-flow-hint-v2';
         try {
             if (localStorage.getItem(storageKey)) return;
         } catch {}

@@ -91,37 +91,43 @@ test.describe('config fields line up in a grid', () => {
      * column beside it.
      */
     test('a field hint takes its own row under the control', async ({ page }) => {
-        await openSection(page, 'appearance');
         /*
-         * Button bar, not Layout: the hinted field on the Layout tab was the
-         * Layout version panel, and there is one layout now (v1.10.0). What is
-         * under test is how a hint sits in the field grid, not which tab it is
-         * on -- but it has to be a tab that actually renders one.
+         * Measured on a probe rather than on a field config happens to render.
+         * The one hinted field in Appearance was the button bar's position
+         * picker, and there is no bar to place any more -- but the rule that
+         * lays a hint out is still the contract, and this is what it promises:
+         * its own row, from the field's left edge, spanning the grid.
          */
-        await openSubTab(page, 'data-appearance-tab', 'buttonbar');
+        await openSection(page, 'appearance');
 
         const stacked = await page.evaluate(() => {
-            const hint = document.querySelector('#config-appearance-body .config-field > .config-field-hint');
-            if (!hint) return null;
-            const field = hint.parentElement;
-            const control = field.querySelector('.config-choices, .config-select, .config-text');
-            if (!control) return null;
+            const host = document.querySelector('#config-appearance-body');
+            if (!host) return null;
+            const field = document.createElement('div');
+            field.className = 'config-field';
+            field.innerHTML = '<span class="config-field-label">Probe</span>'
+                + '<div class="config-choices"><button type="button" class="config-choice">One</button></div>'
+                + '<p class="config-field-hint">A line about the control above.</p>';
+            host.appendChild(field);
+
+            const hint = field.querySelector('.config-field-hint');
+            const control = field.querySelector('.config-choices');
             const h = hint.getBoundingClientRect();
             const c = control.getBoundingClientRect();
             const f = field.getBoundingClientRect();
             const style = getComputedStyle(hint);
-            return {
+            const out = {
                 below: h.top >= c.bottom - 2,
                 // Starts at the field's own left edge rather than being pushed
-                // into the control column beside the label. Its width is not
-                // checked: .config-field-hint caps itself at 70ch for
-                // readability, so it is legitimately narrower than the row.
+                // into the control column beside the label.
                 startsAtFieldEdge: Math.abs(h.left - f.left) < 3,
                 spans: `${style.gridColumnStart}/${style.gridColumnEnd}`,
             };
+            field.remove();
+            return out;
         });
 
-        expect(stacked, 'no field carrying a hint was rendered').not.toBeNull();
+        expect(stacked, 'the config body was not rendered').not.toBeNull();
         expect(stacked.below).toBe(true);
         expect(stacked.startsAtFieldEdge).toBe(true);
         expect(stacked.spans).toBe('1/-1');

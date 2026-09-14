@@ -28,14 +28,21 @@ async function loadWithReducedMotion(page) {
         document.body.classList.contains('no-animations'))).toBe(false);
 }
 
-test('the OS preference stops the infinite tag-cloud pulse', async ({ page }) => {
+/*
+ * The action icons pulsed while they floated over the grid; in the header that
+ * span is the key on the button's corner and the pulse is gone with the dock.
+ * What is left to measure is the same rule reaching the status dots, which run
+ * for as long as a check is in flight.
+ */
+test('the OS preference stops an infinite animation', async ({ page }) => {
     await loadWithReducedMotion(page);
 
-    const icon = page.locator('.tag-cloud-toggle-btn .search-button-icon').first();
+    const icon = page.locator('.status-loading-dots').first();
     await expect(icon).toHaveCount(1);
 
+    // The animation lives on ::after, which is where the dots are drawn.
     const style = await icon.evaluate((el) => {
-        const c = getComputedStyle(el);
+        const c = getComputedStyle(el, '::after');
         return { duration: c.animationDuration, iterations: c.animationIterationCount };
     });
     // Near-zero rather than `none`, so animationend still fires for the code
@@ -47,12 +54,8 @@ test('the OS preference stops the infinite tag-cloud pulse', async ({ page }) =>
 test('it reaches stylesheets that never declared a reduced-motion block', async ({ page }) => {
     await loadWithReducedMotion(page);
 
-    // layout-side-rail.css has transitions and no reduced-motion rules of its own.
-    await page.evaluate(() => {
-        const d = window.dashboardInstance;
-        d.settings.buttonBarPosition = 'side-left';
-        d.setupDOM?.();
-    });
+    // dashboard.css styles the header actions with transitions of their own and
+    // declares no reduced-motion block; the global rule is what catches them.
     const btn = page.locator('#search-button').first();
     await expect(btn).toBeVisible();
 
@@ -144,8 +147,8 @@ test('without the OS preference the animation still runs', async ({ page }) => {
         d.applyAnimations?.();
     });
 
-    const style = await page.locator('.tag-cloud-toggle-btn .search-button-icon').first().evaluate((el) => {
-        const c = getComputedStyle(el);
+    const style = await page.locator('.status-loading-dots').first().evaluate((el) => {
+        const c = getComputedStyle(el, '::after');
         return { duration: c.animationDuration, iterations: c.animationIterationCount };
     });
     // Guards the blast radius: the rule must not suppress motion for everyone.

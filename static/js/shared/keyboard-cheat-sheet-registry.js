@@ -12,7 +12,7 @@
  *   row     := { keys, cheatKey, fallback, when?, print? }
  *
  * `when(ctx)` decides whether a section or row applies; ctx is
- * { dash, activeView, isSideRail, ... } built by buildContext(). A row with
+ * { dash, activeView, ... } built by buildContext(). A row with
  * `print: true` is also part of the one-page printable sheet, which is a
  * deliberate curated subset rather than the full list — see
  * scripts/generate-cheatsheet.cjs.
@@ -87,17 +87,6 @@
                 { keys: 'Enter / Space', cheatKey: 'navOpenFocused', fallback: 'Open focused bookmark', print: true },
                 { keys: 'Shift + F', cheatKey: 'navGridFilter', fallback: 'Filter the page you are on in place — the layout, the cursor and any selection stay put, and empty categories are hidden while it is open' },
                 { keys: 'Esc', cheatKey: 'navEscClear', fallback: 'Clear selection / close overlay; undo unsaved drag reorder', print: true, printFallback: 'Clear selection / close overlay' },
-            ],
-        },
-        {
-            id: 'sectionLayout',
-            titleKey: 'sectionLayout',
-            titleFallback: 'Layout (side rail)',
-            when: (ctx) => ctx.isSideRail,
-            rows: [
-                { keys: 'Tab', cheatKey: 'layoutSideRailFocus', fallback: 'Toolbar is first in tab order — then page header, then bookmark grid' },
-                { keys: '← / →', cheatKey: 'layoutPageTabScroll', fallback: 'Scroll page tabs horizontally when many pages' },
-                { keys: ':buttonbar bottom', cheatKey: 'layoutSideRailButtonbar', fallback: 'Return button bar to bottom — :buttonbar bottom-left / bottom-right / side-right also work' },
             ],
         },
         {
@@ -387,7 +376,6 @@
                 { keys: ':favicons fetch', printOmit: true, cheatKey: 'caFaviconsFetch', fallback: 'Re-download every bookmark icon across all pages (replaces existing icons)' },
                 { keys: ':preview on/off', printOmit: true, cheatKey: 'caPreview', fallback: 'Toggle hover preview cards' },
                 { keys: ':packed on/off', printOmit: true, cheatKey: 'caPacked', fallback: 'Toggle packed (variable-width) columns' },
-                { keys: ':buttonbar <position>', printOmit: true, cheatKey: 'caButtonbar', fallback: 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left / side-right' },
                 { keys: ':sort <method>', printOmit: true, cheatKey: 'caSort', fallback: 'Sort focused category (shows category name) — order / az / recent' },
                 { keys: ':dark / :title / :lang', printOmit: true, cheatKey: 'caDisplayToggles', fallback: 'Toggle dark mode, dashboard title visibility, or UI language' },
                 { keys: ':animations / :status / :opacity', printOmit: true, cheatKey: 'caDisplayMore', fallback: 'Toggle animations, status monitor, or background opacity' },
@@ -429,7 +417,6 @@
         return {
             dash: d,
             activeView: d.activeView || 'bookmarks',
-            isSideRail: ['side-left', 'side-right'].includes(d.settings?.buttonBarPosition),
             inboxEnabled: Boolean(d.inbox?.isEnabled?.()),
             inboxInPageTabs: d.settings?.inboxShowInPageTabs !== false,
             healthEnabled: Boolean(d.health?.isEnabled?.()),

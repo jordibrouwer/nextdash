@@ -2565,7 +2565,6 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
         { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
-        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
@@ -2631,7 +2630,6 @@ class DashboardConfig {
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
         themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
-        buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
@@ -3054,7 +3052,6 @@ class DashboardConfig {
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
         const groups = {
-            buttonBarPosition: '[data-appearance-barpos]',
             fontWeight: '[data-appearance-weight]',
             backgroundType: '[data-appearance-bg]',
             randomThemeMode: '[data-appearance-randommode]',
@@ -8540,7 +8537,7 @@ class DashboardConfig {
             return shell(this.renderAppearanceLayoutBody());
         }
         if (this.appearanceTab === 'buttonbar') {
-            return shell(this.renderAppearanceButtonBarBody());
+            return shell(this.renderAppearanceActionBarBody());
         }
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
@@ -8724,47 +8721,13 @@ class DashboardConfig {
      * the bar that carries it were separate errands, and the second one was
      * usually found by accident. Toolbar & tabs keeps the header strip, which
      * is a different object.
+     *
+     * It used to open with a five-up picker for where the bar sat -- centre,
+     * either corner, either rail. There is no bar to place any more: the
+     * actions are in the header, so what is left is which of them are drawn.
      */
-    renderAppearanceButtonBarBody() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.dash.settings || {};
-
-        // These five are the only values the server accepts; it silently
-        // rewrites anything else to 'bottom-right'. See models.go.
-        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
-            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom-right';
-        // Short labels: the full ones carry "(default)" and "corner", which is
-        // more than a button in a five-up group can show.
-        const barPositions = [
-            ['bottom', this.t('config.buttonBarPositionBottomShort', 'Center-bottom')],
-            ['bottom-left', this.t('config.buttonBarPositionLeftShort', 'Bottom-left')],
-            ['bottom-right', this.t('config.buttonBarPositionRightShort', 'Bottom-right')],
-            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Rail left')],
-            ['side-right', this.t('config.buttonBarPositionSideRightShort', 'Rail right')],
-        ];
-        // Five names for five places on the page, and no page to point at. Each
-        // button draws the dashboard with the bar where that option puts it.
-        const barChoices = barPositions.map(([val, label]) =>
-            `<button type="button" class="config-choice config-choice--art${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">`
-            + `${window.SettingArt?.render?.('barPosition', val) || ''}`
-            + `<span class="config-choice-label">${esc(label)}</span></button>`
-        ).join('');
-
-        // Where first, then what is on it: the position is the one choice that
-        // changes the shape of the thing the toggles below are describing.
+    renderAppearanceActionBarBody() {
         return `
-            ${this.renderChangedFilterBar('appearance', 'buttonbar')}
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
-                    <div class="config-choices" role="group">${barChoices}</div>
-                    ${this.appearanceAff('buttonBarPosition')}
-                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
-                </div>
-            </div>
 
             ${this.renderControlPanels(this.panelsFor('appearance', 'buttonbar'), 'behavior')}`;
     }
@@ -9223,9 +9186,6 @@ class DashboardConfig {
         if (bgUrl) {
             bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
         }
-        container.querySelectorAll('[data-appearance-barpos]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
-        });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => {
                 const field = input.getAttribute('data-appearance-toggle');
@@ -9457,7 +9417,7 @@ class DashboardConfig {
         const map = {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
-            buttonbar: ['config.appearanceTabButtonBar', 'Button bar'],
+            buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             display: ['config.appearanceTabDisplay', 'Display'],
             toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
@@ -10558,18 +10518,6 @@ class DashboardConfig {
         this.persistAppearance();
     }
 
-    /**
-     * Where the button bar sits. The position is written onto <body> as
-     * data-button-position by setupDOM and the rest is CSS, so reapplying the
-     * chrome is what moves the bar — the same path `:buttonbar` uses.
-     */
-    setButtonBarPosition(position) {
-        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'].includes(position)) return;
-        this.dash.settings.buttonBarPosition = position;
-        this.applyChromeSettings();
-        this.persistAppearance();
-    }
-
     setAppearanceSelect(name, value) {
         if (name === 'fontPreset') {
             this.dash.settings.fontPreset = value;
@@ -10847,7 +10795,6 @@ class DashboardConfig {
         showSearchButton: { def: true },
         showFindersButton: { def: false },
         showCommandsButton: { def: false },
-        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
@@ -11510,32 +11457,24 @@ class DashboardConfig {
                 ],
             },
             {
+                // One list, in the order the buttons stand in the header. They
+                // were two groups -- "main buttons" and "extras" -- which was
+                // the floating bar's own split into a primary row and a second
+                // one beside it. There is one row now, so there is one list.
                 section: 'appearance',
                 tab: 'buttonbar',
-                title: t('config.chromeGroupPrimary', 'Button bar — main buttons'),
-                note: t('config.chromeGroupPrimaryNote', 'The four everyday actions. Hiding one leaves its keyboard shortcut working.'),
+                title: t('config.actionBarGroup', 'The action bar'),
+                note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too.'),
                 bulk: 'chrome',
                 controls: [
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
                     chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
                     chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
-                ],
-            },
-            {
-                section: 'appearance',
-                tab: 'buttonbar',
-                title: t('config.chromeGroupSecondary', 'Button bar — extras'),
-                note: t('config.chromeGroupSecondaryNote', 'The second group, beside the main buttons. With all of these off the group disappears entirely.'),
-                bulk: 'chrome',
-                controls: [
-                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
-                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
-                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                     chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    // The position control sits above these, at the top of
-                    // this tab: where the bar is and what it carries are the
-                    // same errand.
+                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
+                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
+                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                 ],
             },
             {
@@ -13746,7 +13685,7 @@ class DashboardConfig {
             const render = {
                 toolbar: () => this.renderAppearanceToolbarBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
-                buttonbar: () => this.renderAppearanceButtonBarBody(),
+                buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
                 branding: () => this.renderAppearanceBrandingBody(),
             }[this.appearanceTab];

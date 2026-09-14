@@ -384,47 +384,6 @@ test.describe('config: sections restored from the old config', () => {
         await expect.poll(display).toBe('flex');
     });
 
-    /**
-     * The server accepts exactly bottom / bottom-left / bottom-right /
-     * side-left / side-right and silently rewrites anything else to 'bottom'
-     * (models.go). The view once offered invented names (center/left/right), so
-     * the control looked fine, reported "Saved", and changed nothing. Assert the
-     * values themselves, and that each survives the round trip rather than only
-     * reaching the DOM.
-     */
-    test('every button bar position applies live and is accepted by the server', async ({ page }) => {
-        const rejected = [];
-        page.on('response', (r) => {
-            if (r.url().includes('/api/settings') && r.request().method() === 'POST' && r.status() >= 400) {
-                rejected.push(r.status());
-            }
-        });
-        await loadDashboard(page);
-        // A button group at the top of the Button bar tab, above the toggles
-        // that say what the bar carries.
-        await openAppearanceTab(page, 'buttonbar');
-
-        expect(await page.locator('[data-appearance-barpos]')
-            .evaluateAll((els) => els.map((e) => e.getAttribute('data-appearance-barpos'))))
-            .toEqual(['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']);
-
-        for (const value of ['bottom-left', 'bottom-right', 'side-left', 'side-right', 'bottom']) {
-            await page.locator(`[data-appearance-barpos="${value}"]`).click();
-            await expect.poll(() => page.evaluate(() =>
-                document.body.getAttribute('data-button-position'))).toBe(value);
-        }
-        expect(rejected).toEqual([]);
-
-        // The side rail is the one that restyles the whole page, so confirm it
-        // is still set after a reload rather than reset to the default.
-        await page.locator('[data-appearance-barpos="side-left"]').click();
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.settings.buttonBarPosition)).toBe('side-left');
-        await page.reload();
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        expect(await page.evaluate(() => document.body.getAttribute('data-button-position'))).toBe('side-left');
-    });
-
     test('page names in tabs relabels the tabs at once', async ({ page }) => {
         await loadDashboard(page);
         await openAppearanceTab(page, 'toolbar');
@@ -906,4 +865,83 @@ test.describe('statistics tabs', () => {
         expect(labels.nav).toBe('overview');
         expect(labels.tab).toBe('Overview');
     });
+});
+
+/*
+ * Config is the width of the page, and its rail is the one health draws.
+ *
+ * It was capped at 1040px under a header that runs the width of the grid, and
+ * its rail had a type scale, a set of greys and an idea of "active" all of its
+ * own — three views with one job and three answers. Read both off the page
+ * rather than asserting literals: what matters is that they agree.
+ */
+test('config spans the page and its rail matches the list views', async ({ page }) => {
+    await loadDashboard(page);
+    await openSection(page, 'overview');
+    await expect(page.locator('.config-view')).toBeVisible();
+
+    const width = await page.evaluate(() => {
+        const box = (sel) => {
+            const r = document.querySelector(sel).getBoundingClientRect();
+            return { x: Math.round(r.x), right: Math.round(r.right) };
+        };
+        return { view: box('.config-view'), header: box('.header-top') };
+    });
+    expect(width.view, 'config sits in a narrower column than its own header')
+        .toEqual(width.header);
+
+    const rows = await page.evaluate(() => {
+        const read = (el) => {
+            const c = window.getComputedStyle(el);
+            return { padding: c.padding, fontSize: c.fontSize, radius: c.borderTopLeftRadius };
+        };
+        // A probe for the shell's row: health is not open, so its own rail is
+        // not on the page to measure.
+        const probe = document.createElement('button');
+        probe.className = 'lvs-filter';
+        document.querySelector('.config-nav').appendChild(probe);
+        const shell = read(probe);
+        probe.remove();
+        return { config: read(document.querySelector('.config-nav-item')), shell };
+    });
+    expect(rows.config, 'the config rail is drawn differently from the list views')
+        .toEqual(rows.shell);
+});
+
+/*
+ * The rail is a list, not a plate.
+ *
+ * theme-character.css raises every named surface on the depths that have one,
+ * which is right for a tile and wrong for a 200px column of rows: at ten rows
+ * tall the cast read as a hard rule down both sides with a glow on it. Read it
+ * off both rails rather than asserting a literal — what matters is that config
+ * and the list views answer the same.
+ */
+test('neither rail carries a raised plate', async ({ page }) => {
+    await loadDashboard(page);
+    await openSection(page, 'overview');
+    await page.evaluate(() => document.body.setAttribute('data-depth', 'glass'));
+    await page.waitForTimeout(300);
+
+    const config = await page.evaluate(() => {
+        const c = window.getComputedStyle(document.querySelector('.config-nav-column .lvs-group'));
+        return { shadow: c.boxShadow, blur: c.backdropFilter };
+    });
+    expect(config.shadow, 'the config rail is a raised plate').toBe('none');
+    expect(config.blur, 'the config rail is frosted glass').toBe('none');
+
+    // The shell's own rail answers the same, which is what keeps them alike.
+    const shell = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.className = 'lvs-group';
+        const rail = document.createElement('div');
+        rail.className = 'lvs-rail';
+        rail.appendChild(probe);
+        document.querySelector('.config-view').appendChild(rail);
+        const c = window.getComputedStyle(probe);
+        const out = { shadow: c.boxShadow, blur: c.backdropFilter };
+        rail.remove();
+        return out;
+    });
+    expect(shell, 'the two rails are drawn differently').toEqual(config);
 });

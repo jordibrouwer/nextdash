@@ -45,7 +45,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
                     'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
-                    'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
+                    'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
                     'buttons', 'shortcuts', 'locklayout',
                 ],
@@ -95,7 +95,6 @@ class SearchCommandsComponent {
             'previews': this.handlePreviewCardsCommand.bind(this),
             'packed': this.handlePackedColumnsCommand.bind(this),
             'locklayout': this.handleLockLayoutCommand.bind(this),
-            'buttonbar': this.handleButtonBarCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
@@ -2480,44 +2479,6 @@ class SearchCommandsComponent {
         }));
     }
 
-    handleButtonBarCommand(args, fullQuery) {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) return [];
-
-        const t = (key, fb) => (this.language?.t(key) && this.language.t(key) !== key ? this.language.t(key) : fb);
-        const positions = [
-            { value: 'bottom',       label: t('config.buttonBarPositionCmdBottom', 'bottom — centered (default)') },
-            { value: 'bottom-right', label: t('config.buttonBarPositionCmdBottomRight', 'bottom-right — corner dock') },
-            { value: 'bottom-left',  label: t('config.buttonBarPositionCmdBottomLeft', 'bottom-left — corner dock') },
-            { value: 'side-left',    label: t('config.buttonBarPositionCmdSideLeft', 'side-left — vertical rail') },
-            { value: 'side-right',   label: t('config.buttonBarPositionCmdSideRight', 'side-right — vertical rail') },
-        ];
-
-        const current = dashboard.settings.buttonBarPosition || 'bottom';
-        const arg = (args[0] || '').toLowerCase();
-
-        if (!arg) {
-            return positions.map(p => ({
-                ...this._markCurrentRow(p.label, p.value === current),
-                shortcut: ':BUTTONBAR',
-                stateId: `buttonbar:${p.value}`,
-                action: () => this.applyButtonBarPosition(dashboard, p.value),
-                type: 'command'
-            }));
-        }
-
-        const matches = positions.filter(p => p.value.startsWith(arg) || p.label.toLowerCase().includes(arg));
-        if (matches.length === 0) return [];
-
-        return matches.map(p => ({
-            ...this._markCurrentRow(p.label, p.value === current),
-            shortcut: ':BUTTONBAR',
-            stateId: `buttonbar:${p.value}`,
-            action: () => this.applyButtonBarPosition(dashboard, p.value),
-            type: 'command'
-        }));
-    }
-
     handleButtonsCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
@@ -2710,19 +2671,6 @@ class SearchCommandsComponent {
         }
 
         return this._paletteRefresh(`density:${densityMode}`);
-    }
-
-    applyButtonBarPosition(dashboard, position) {
-        const valid = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'];
-        const applied = valid.includes(position) ? position : 'bottom';
-        dashboard.settings.buttonBarPosition = applied;
-        if (typeof dashboard.setupDOM === 'function') {
-            dashboard.setupDOM();
-        }
-        if (typeof dashboard.saveSettings === 'function') {
-            dashboard.saveSettings();
-        }
-        return this._paletteRefresh(`buttonbar:${applied}`);
     }
 
     toggleButtonVisibility(dashboard, settingKey, buttonId) {

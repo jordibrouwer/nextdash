@@ -78,20 +78,6 @@
      * the dashboard around it — which is the whole question this setting asks
      * and the one thing five position names cannot answer.
      */
-    function barPosition(position) {
-        return frame(
-            `<span class="setting-art-screen is-${String(position).replace(/[^a-z-]/g, '')}">`
-            + `<span class="setting-art-screen-body">${col(2)}${col(2)}${col(2)}</span>`
-            + `<span class="setting-art-bar"></span>`
-            + `</span>`,
-            'setting-art-frame--screen'
-        );
-    }
-
-    /**
-     * A short flow: chips joined by arrows. For the settings that are not a
-     * shape but a route — where a pasted URL goes, what promoting leaves behind.
-     */
     function flow(labels) {
         const list = Array.isArray(labels) ? labels : [labels];
         // A branch rather than a line: "ask" ends in two places, and drawing it
@@ -381,7 +367,7 @@
     }
 
     const BUILDERS = {
-        grid, spacing, margins, density, fontSize, barPosition, flow,
+        grid, spacing, margins, density, fontSize, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
         boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
     };
