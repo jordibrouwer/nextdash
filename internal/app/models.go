@@ -405,6 +405,8 @@ type Settings struct {
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
 	ShowHealthDashboard             bool   `json:"showHealthDashboard"`
+	ShowPagesButton                 bool   `json:"showPagesButton"`
+	ShowInboxButton                 bool   `json:"showInboxButton"`
 	ShowSearchButton                bool   `json:"showSearchButton"`
 	ShowAddBookmarkButton           bool   `json:"showAddBookmarkButton"`
 	ShowFindersButton               bool   `json:"showFindersButton"`
@@ -1316,6 +1318,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
+			ShowPagesButton:           true,
+			ShowInboxButton:           true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
 			// Off by default. Search, commands and finders are one panel
@@ -3364,6 +3368,8 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherRefreshMinutes:          30,
 			ShowConfigButton:               true,
 			ShowHealthDashboard:            true,
+			ShowPagesButton:                true,
+			ShowInboxButton:                true,
 			ShowSearchButton:               true,
 			ShowAddBookmarkButton:          true,
 			ShowFindersButton:              false,
@@ -3598,6 +3604,14 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.ShowHealthDashboard = true
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
+		}
+		// Both predate no settings file: a stored file written before they
+		// existed means nobody chose, and the header drew them, so on.
+		if _, ok := rawSettings["showPagesButton"]; !ok {
+			settings.ShowPagesButton = true
+		}
+		if _, ok := rawSettings["showInboxButton"]; !ok {
+			settings.ShowInboxButton = true
 		}
 		if _, ok := rawSettings["showIcons"]; !ok {
 			settings.ShowIcons = true

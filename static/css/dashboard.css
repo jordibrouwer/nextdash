@@ -4848,6 +4848,20 @@ body[data-show-config-button="false"] .config-link {
     display: none;
 }
 
+/* The pages button and the inbox, each on their own switch. The inbox host is
+   filled by dashboard-inbox.js, so it is hidden rather than left out. */
+body[data-show-pages-button="false"] .pages-link,
+/* The rule it stands beside goes with it: a divider with nothing on its left
+   is a line against the edge of the band. The second divider, before the
+   destinations, has its own two neighbours and stays. */
+body[data-show-pages-button="false"] .pages-link + .header-zone-divider {
+    display: none;
+}
+
+body[data-show-inbox-button="false"] #page-nav-inbox-host {
+    display: none;
+}
+
 /* Hide cheatsheet button when showCheatSheetButton is false */
 body[data-show-cheatsheet-button="false"] .help-button {
     display: none;

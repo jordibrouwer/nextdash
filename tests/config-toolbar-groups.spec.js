@@ -58,10 +58,11 @@ test.describe('the chrome toggles are grouped', () => {
         // toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(14);
-        expect(new Set(all).size).toBe(14);
+        expect(all).toHaveLength(16);
+        expect(new Set(all).size).toBe(16);
         expect(all).toEqual(expect.arrayContaining([
-            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showHealthDashboard', 'showConfigButton',
+            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showPagesButton', 'showInboxButton',
+            'showHealthDashboard', 'showConfigButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
         ]));
@@ -93,6 +94,53 @@ test.describe('the chrome toggles are grouped', () => {
         // The header group stayed behind on Toolbar & tabs.
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toHaveCount(0);
     });
+});
+
+/*
+ * The header panel switches what is in the header.
+ *
+ * Three of its toggles had nothing behind them until now: the keys printed
+ * beside the page strip stayed when the strip was switched off, and the pages
+ * button and the inbox could not be switched off at all.
+ */
+test('the header toggles reach the header', async ({ page }) => {
+    await openToolbarTab(page);
+
+    const shown = (sel) => page.evaluate((s) => {
+        const el = document.querySelector(s);
+        if (!el) return false;
+        return window.getComputedStyle(el).display !== 'none'
+            && el.getBoundingClientRect().width > 0;
+    }, sel);
+
+    expect(await shown('.header-track .page-walk-hint')).toBe(true);
+    expect(await shown('.pages-link')).toBe(true);
+
+    await page.locator('[data-behavior-field="showPageTabs"]').uncheck();
+    await expect.poll(() => shown('.header-track .page-walk-hint'),
+        { timeout: 5_000 }).toBe(false);
+
+    await page.locator('[data-behavior-field="showPagesButton"]').uncheck();
+    await expect.poll(() => shown('.pages-link'), { timeout: 5_000 }).toBe(false);
+    // The rule beside it goes too; the one before the destinations stays.
+    await expect.poll(() => shown('.pages-link + .header-zone-divider'),
+        { timeout: 5_000 }).toBe(false);
+    expect(await page.evaluate(() => [...document.querySelectorAll('.header-zone-divider')]
+        .filter((el) => window.getComputedStyle(el).display !== 'none').length)).toBe(1);
+
+    await page.locator('[data-behavior-field="showInboxButton"]').uncheck();
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-show-inbox-button')), { timeout: 5_000 }).toBe('false');
+
+    // And back: the switches go both ways without a reload.
+    await page.locator('[data-behavior-field="showPageTabs"]').check();
+    await expect.poll(() => shown('.header-track .page-walk-hint'),
+        { timeout: 5_000 }).toBe(true);
+    await page.locator('[data-behavior-field="showPagesButton"]').check();
+    await expect.poll(() => shown('.pages-link'), { timeout: 5_000 }).toBe(true);
+    await expect.poll(() => shown('.pages-link + .header-zone-divider'),
+        { timeout: 5_000 }).toBe(true);
+    await page.locator('[data-behavior-field="showInboxButton"]').check();
 });
 
 test.describe('Show all / Hide all', () => {
@@ -137,7 +185,7 @@ test.describe('Show all / Hide all', () => {
         await expect(headerPanel.locator('[data-behavior-bulk="hide"]')).toBeDisabled();
 
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(count).toHaveText(/\b5\D+5\b/);
+        await expect(count).toHaveText(/\b7\D+7\b/);
         await expect(headerPanel.locator('[data-behavior-bulk="show"]')).toBeDisabled();
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeChecked();
     });

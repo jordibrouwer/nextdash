@@ -602,10 +602,18 @@ class DashboardVisual {
             // and the header icons on three different baselines.
             pageNavigation.style.display = d.settings.showPageTabs ? '' : 'none';
         }
-        const inboxHost = document.getElementById('page-nav-inbox-host');
-        if (inboxHost) {
-            inboxHost.style.display = d.settings.showPageTabs ? '' : 'none';
-        }
+        /*
+         * The keys that walk the pages go with the tabs.
+         *
+         * Shift+Left and Shift+Right are what the two hints beside the strip
+         * name, so with the strip switched off they stood in an empty middle
+         * zone pointing at nothing. The keys themselves keep working -- see
+         * the cheat sheet -- it is the printing of them that is tied to the
+         * tabs being drawn.
+         */
+        [...document.querySelectorAll('.header-track .page-walk-hint')].forEach((hint) => {
+            hint.style.display = d.settings.showPageTabs ? '' : 'none';
+        });
     }
 
 

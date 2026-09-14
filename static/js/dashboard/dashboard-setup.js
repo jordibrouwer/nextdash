@@ -19,6 +19,8 @@ class DashboardSetup {
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
+        document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
+        document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
         document.body.setAttribute('data-show-cheatsheet-button', d.settings.showCheatSheetButton !== false);
         document.body.setAttribute('data-show-collapse-all-button', d.settings.showCollapseAllButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', d.settings.showAddBookmarkButton !== false);
