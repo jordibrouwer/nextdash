@@ -7383,13 +7383,14 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     font-weight: 700;
     line-height: 13px;
     text-align: center;
-    /* Carried over from the button, which used to wear it: the key is a note
-       on the glyph, not a second glyph. */
-    opacity: 0.6;
-}
-
-.header-actions .header-shortcuts .search-button:hover .search-button-icon,
-.header-actions .header-shortcuts .search-button:focus-visible .search-button-icon {
+    /*
+     * Undimmed. It carried the 0.6 the button used to wear, and
+     * TestHeaderKeyChipContrastAcrossThemes measured what that cost across the
+     * register: 114 of 224 themes put the key under 3:1, the worst at 2.16.
+     * At full strength the worst is 4.33. The colour is unchanged --
+     * --text-secondary, a step quieter than the glyph it labels -- so the chip
+     * still reads as a note rather than as a second icon.
+     */
     opacity: 1;
 }
 
