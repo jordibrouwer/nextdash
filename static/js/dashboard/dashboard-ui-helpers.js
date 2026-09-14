@@ -405,6 +405,21 @@ class DashboardUiHelpers {
             if (page.color) {
                 leadParts.push(`<span class="page-tab-dot" style="background:${d.escapeHtml(page.color)}" aria-hidden="true"></span>`);
             }
+            // The first page cannot be deleted -- the server refuses it, because
+            // a dashboard with no pages is not a state anything can render.
+            const deletable = Number(page.id) !== 1;
+            const deleteLabel = this.formatDashboardLabel('pageOverviewDeleteAria',
+                { name: pageName, count },
+                `Delete ${pageName} and its ${count} bookmarks`);
+            const deleteBtn = deletable
+                ? `<button type="button" class="page-overview-modal-delete"
+                        data-page-delete="${d.escapeHtml(String(page.id))}"
+                        data-page-count="${count}"
+                        aria-label="${d.escapeHtml(deleteLabel)}"
+                        title="${d.escapeHtml(deleteLabel)}">
+                        <span aria-hidden="true">\u00D7</span>
+                    </button>`
+                : '';
             return `
                 <li class="page-overview-modal-item${isCurrent ? ' is-current' : ''}" data-page-idx="${idx}">
                     <button type="button" class="page-overview-modal-link" data-page-id="${d.escapeHtml(String(page.id))}" aria-current="${isCurrent ? 'page' : 'false'}" aria-label="${d.escapeHtml(ariaLabel)}">
@@ -414,6 +429,7 @@ class DashboardUiHelpers {
                         </span>
                         <span class="page-overview-modal-count">${count}</span>
                     </button>
+                    ${deleteBtn}
                 </li>
             `;
         }).join('');
@@ -504,6 +520,122 @@ class DashboardUiHelpers {
     }
 
 
+    /**
+     * Delete a page from the overview, asked twice.
+     *
+     * Deleting a page takes its bookmarks with it -- the server drops them in
+     * the trash, but the page you are looking at empties either way -- so one
+     * click is not enough of a decision. The row arms first and says what it is
+     * about to take; the second press is the one that does it. Ten seconds
+     * later it disarms itself, and so does moving the cursor, pressing Escape,
+     * or arming a different row.
+     *
+     * The first page is not offered: the server refuses to delete it, because a
+     * dashboard with no pages is not a state anything can draw.
+     */
+    _setupPageOverviewDelete(pages, listRoot) {
+        const d = this.dash;
+        if (!listRoot) return null;
+
+        let armedId = null;
+        let timer = 0;
+
+        const rowFor = (id) => listRoot.querySelector(`.page-overview-modal-delete[data-page-delete="${id}"]`)
+            ?.closest('.page-overview-modal-item');
+
+        const disarm = () => {
+            if (timer) { clearTimeout(timer); timer = 0; }
+            if (armedId === null) return;
+            const row = rowFor(armedId);
+            if (row) {
+                row.classList.remove('is-armed');
+                row.querySelector('.page-overview-modal-confirm')?.remove();
+                const btn = row.querySelector('.page-overview-modal-delete');
+                if (btn) btn.setAttribute('aria-pressed', 'false');
+            }
+            armedId = null;
+        };
+
+        const arm = (id) => {
+            if (Number(id) === 1) return;
+            if (armedId !== null && Number(armedId) === Number(id)) {
+                void confirmDelete(id);
+                return;
+            }
+            disarm();
+            const row = rowFor(id);
+            if (!row) return;
+            armedId = Number(id);
+            row.classList.add('is-armed');
+            const btn = row.querySelector('.page-overview-modal-delete');
+            if (btn) btn.setAttribute('aria-pressed', 'true');
+
+            const count = Number(btn?.dataset.pageCount || 0);
+            const note = document.createElement('p');
+            note.className = 'page-overview-modal-confirm';
+            note.setAttribute('role', 'alert');
+            note.textContent = this.formatDashboardLabel('pageOverviewDeleteConfirm', { n: count },
+                count === 1
+                    ? 'Delete this page and 1 bookmark? Press again.'
+                    : `Delete this page and ${count} bookmarks? Press again.`);
+            row.appendChild(note);
+
+            timer = window.setTimeout(disarm, 10_000);
+        };
+
+        const confirmDelete = async (id) => {
+            disarm();
+            const leaving = d.samePageId(id, d.currentPageId);
+            try {
+                const res = await dashFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            } catch {
+                d.showNotification?.(
+                    this.formatDashboardLabel('pageOverviewDeleteFailed', {}, 'Could not delete the page.'),
+                    'error',
+                );
+                return;
+            }
+
+            d.pages = (d.pages || []).filter((p) => Number(p.id) !== Number(id));
+            await d.loadAllBookmarks?.();
+            d.pageNav?.renderPageNavigation?.();
+            d.showNotification?.(
+                this.formatDashboardLabel('pageOverviewDeleted', {}, 'Page deleted.'),
+                'success',
+            );
+
+            // The page you were on has gone; the panel would otherwise stand
+            // over a grid that is still drawing it.
+            if (leaving && d.pages.length > 0) {
+                window.AppModal?.hide?.();
+                await d.requestPageNavigation(d.pages[0].id);
+                return;
+            }
+            if (d.pages.length === 0) {
+                window.AppModal?.hide?.();
+                return;
+            }
+            // Redraw the panel over the pages that are left.
+            window.AppModal?.hide?.();
+            await this.showPageOverlay();
+        };
+
+        listRoot.querySelectorAll('.page-overview-modal-delete').forEach((btn) => {
+            btn.setAttribute('aria-pressed', 'false');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                arm(btn.getAttribute('data-page-delete'));
+            });
+        });
+
+        const api = { arm, disarm, isArmed: () => armedId !== null };
+        this._pageOverviewDelete = api;
+        return api;
+    }
+
+
     _setupPageOverviewKeyboardNav(pages, listRoot) {
         const d = this.dash;
         this._cleanupPageOverviewKeyHandler();
@@ -528,6 +660,10 @@ class DashboardUiHelpers {
             if (pages.length === 0) {
                 return;
             }
+            // Moving the cursor takes the safety catch off nothing: an armed row
+            // you have walked away from is a delete waiting for a keystroke it
+            // was never aimed at.
+            this._pageOverviewDelete?.disarm?.();
             focusedIndex = ((idx % ringSize) + ringSize) % ringSize;
             const onNewPage = focusedIndex === newPageIndex;
             items().forEach((el, i) => {
@@ -561,6 +697,8 @@ class DashboardUiHelpers {
             });
         });
 
+        const remove = this._setupPageOverviewDelete(pages, listRoot);
+
         this._pageOverviewKeyHandler = (e) => {
             if (!this.isPageOverviewModalOpen()) {
                 this._cleanupPageOverviewKeyHandler();
@@ -582,6 +720,24 @@ class DashboardUiHelpers {
                 e.preventDefault();
                 e.stopPropagation();
                 create?.open();
+                return;
+            }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const page = pages[focusedIndex];
+                if (page && focusedIndex !== newPageIndex) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    remove?.arm(page.id);
+                }
+                return;
+            }
+            if (e.key === 'Escape' && remove?.isArmed()) {
+                // The armed row owns Escape: backing out of a delete is not the
+                // same gesture as closing the panel, and doing both at once
+                // would leave you unsure which one you had cancelled.
+                e.preventDefault();
+                e.stopPropagation();
+                remove.disarm();
                 return;
             }
             if (e.key === 'ArrowDown') {

@@ -103,3 +103,82 @@ test('the page you are on takes the focus, not the way out', async ({ page }) =>
     expect(focused.isLink, 'focus did not land in the list').toBe(true);
     expect(focused.isCurrent, 'focus landed on a page you are not on').toBe(true);
 });
+
+/*
+ * Deleting a page from the panel, asked twice.
+ *
+ * A page takes its bookmarks with it — the server drops them in the trash, but
+ * the page empties either way — so one press is not enough of a decision. The
+ * row arms and says what it is about to take; the second press is the one that
+ * does it. The first page is never offered: the server refuses to delete it,
+ * because a dashboard with no pages is not a state anything can draw.
+ */
+test.describe('deleting a page from the overview', () => {
+    async function seedAndOpen(page) {
+        await openPages(page);
+        await page.keyboard.press('Escape');
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const pages = [...d.pages.filter((p) => p.name !== 'doomed'), { id: 7001, name: 'doomed' }];
+            const saved = await api('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pages),
+            });
+            if (!saved.ok) throw new Error(`seeding failed: ${saved.status}`);
+            await d.loadData();
+            d.pageNav?.renderPageNavigation?.();
+        });
+        await page.keyboard.press(',');
+        await page.waitForSelector('#app-modal.show .page-overview-modal', { timeout: 10_000 });
+        return page.locator('.page-overview-modal-item', { hasText: 'doomed' });
+    }
+
+    test('the first page carries no delete at all', async ({ page }) => {
+        await seedAndOpen(page);
+        await expect(page.locator('.page-overview-modal-item').first()
+            .locator('.page-overview-modal-delete')).toHaveCount(0);
+    });
+
+    test('one press arms the row and names what goes with it', async ({ page }) => {
+        // Watch the wire, not the model: the delete is a round trip, so reading
+        // `pages` straight after the click sees the state from before it either
+        // way -- a single-press delete would have passed this test.
+        const deletes = [];
+        page.on('request', (r) => {
+            if (r.method() === 'DELETE' && r.url().includes('/api/pages/')) deletes.push(r.url());
+        });
+
+        const row = await seedAndOpen(page);
+        await row.locator('.page-overview-modal-delete').click();
+
+        await expect(row).toHaveClass(/is-armed/);
+        await expect(row.locator('.page-overview-modal-confirm')).toBeVisible();
+
+        await page.waitForTimeout(800);
+        expect(deletes, 'one press deleted the page').toEqual([]);
+        expect(await page.evaluate(() => window.dashboardInstance.pages.some((p) => p.name === 'doomed')))
+            .toBe(true);
+    });
+
+    test('Escape takes the safety catch off, not the panel', async ({ page }) => {
+        const row = await seedAndOpen(page);
+        await row.locator('.page-overview-modal-delete').click();
+        await expect(row).toHaveClass(/is-armed/);
+
+        await page.keyboard.press('Escape');
+        await expect(row).not.toHaveClass(/is-armed/);
+        await expect(page.locator('#app-modal.show .page-overview-modal')).toBeVisible();
+    });
+
+    test('the second press deletes the page', async ({ page }) => {
+        const row = await seedAndOpen(page);
+        await row.locator('.page-overview-modal-delete').click();
+        await row.locator('.page-overview-modal-delete').click();
+
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.pages.some((p) => p.name === 'doomed'),
+        ), { timeout: 10_000 }).toBe(false);
+    });
+});
