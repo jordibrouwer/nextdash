@@ -172,6 +172,18 @@
     <div class="dashboard-section section-controls">
         <div class="container">
             <div class="header-top">
+                <!--
+                    The view name and the clock are one block: the name says
+                    where you are and the line under it is ambient. They were
+                    two rows -- a 32px strip of clock and buttons, then a 60px
+                    band holding nothing but the name -- so the grid started
+                    92px down the page for one word.
+                -->
+                <div class="header-identity">
+                    <div class="title-wrapper skeleton-hide-while-loading">
+                        <h1 class="title"></h1>
+                        <p class="title-breadcrumb" hidden></p>
+                    </div>
                 <div class="header-top-primary skeleton-hide-while-loading">
                     <div id="date-element" class="date"></div>
                     <div id="dashboard-mini-status" class="dashboard-mini-status" aria-live="polite"></div>
@@ -180,6 +192,7 @@
                         <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
                         <span class="status-loading-dots"></span>
                     </div>
+                </div>
                 </div>
                 <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" data-i18n-aria="dashboard.dateBadgeAria" aria-label="Date and time"></div>
                 <div class="header-actions skeleton-hide-while-loading">
@@ -216,16 +229,6 @@
                     </div>{{end}}
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Container 2: Title -->
-    <div class="dashboard-section section-title">
-        <div class="container">
-            <div class="title-wrapper skeleton-hide-while-loading">
-                <h1 class="title"></h1>
-                <p class="title-breadcrumb" hidden></p>
             </div>
         </div>
     </div>

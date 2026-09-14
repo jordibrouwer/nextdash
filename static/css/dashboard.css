@@ -54,11 +54,6 @@ body {
     padding-bottom: 0;
 }
 
-.dashboard-section.section-title {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
 .dashboard-section.section-content {
     padding-top: 0;
     padding-bottom: 8rem;
@@ -100,7 +95,37 @@ body[data-side-margin="airy"] {
 .header-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    /* The identity block is two lines tall and the actions are one, so they
+       align on the top rather than on a centre neither of them shares. */
+    align-items: flex-start;
+    gap: var(--space-4, 1rem);
+}
+
+/*
+ * Identity: the view name, and the clock under it.
+ *
+ * These were a 32px strip of clock and buttons with a 60px band under it that
+ * held nothing but the name, so the grid began 92px down the page to say one
+ * word. One block now: the name owns the left edge and the clock is the quiet
+ * line beneath it.
+ */
+.header-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-hairline, 0.15rem);
+    min-width: 0;
+}
+
+/*
+ * The clock line does not stretch.
+ *
+ * dashboard-enhancements.css gives .header-top-primary `flex: 1 1 12rem`,
+ * which was right while its parent was the header row -- it meant "take the
+ * width left over". Its parent is this column now, so the same declaration
+ * means "take the height left over", and one line of clock grew to 192px.
+ */
+.header-identity > .header-top-primary {
+    flex: 0 0 auto;
 }
 
 .date {
@@ -631,6 +656,8 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 }
 
 .title {
+    margin: 0;
+    line-height: 1.05;
     font-size: var(--font-size-title);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-black);
