@@ -7168,6 +7168,18 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 
 /* ── A page is a box with its key on it ───────────────────────────────────── */
 
+/*
+ * The corners of the band are soft, not square.
+ *
+ * Every control in the header -- the tabs, the chip that counts what is
+ * folded away, the action group and its buttons, the destinations -- was on
+ * --radius-3, which at 40px tall reads as a corner that was meant to be
+ * square and missed. They are all on --radius-6 now, and the keys printed on
+ * them on --radius-4, so the family keeps its proportions. The token scales
+ * with --theme-radius-scale, so a theme that asks for square corners (Retro
+ * CRT Mk II) still gets them.
+ */
+
 .header-track .page-nav-btn {
     display: inline-flex;
     align-items: center;
@@ -7184,7 +7196,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     min-width: 2.6rem;
     padding: 0 1rem;
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--radius-6, 10px);
     /* The same surface the action group takes, so the two groups in the band
        are made of one material. On glass this is the see-through step; on the
        other depths it falls back to the block colour. */
@@ -7235,7 +7247,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     height: 40px;
     padding: 0 0.75rem;
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--radius-6, 10px);
     background: var(--surface-glass-page, var(--background-secondary));
     color: var(--text-tertiary);
     font-family: var(--font-family-main);
@@ -7257,7 +7269,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 
 .page-nav-overflow-key {
     padding: 1px 5px;
-    border-radius: 3px;
+    border-radius: var(--radius-4, 6px);
     background: color-mix(in srgb, var(--text-primary) 10%, transparent);
     color: var(--text-secondary);
     font-size: 0.68rem;
@@ -7294,7 +7306,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     gap: 5px;
     padding: 5px;
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--radius-6, 10px);
     background: var(--surface-glass-page, var(--background-secondary));
 }
 
@@ -7307,7 +7319,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     height: 28px;
     padding: 0;
     border: none;
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--radius-6, 10px);
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
@@ -7365,8 +7377,10 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 /*
  * The key sits on the corner of the button it belongs to.
  *
- * Opaque, with a ring of the band's own colour around it: a translucent chip
- * over an icon is two drawings in the same 10 pixels and neither survives it.
+ * Opaque, so it reads over the glyph it labels: a translucent chip over an
+ * icon is two drawings in the same 10 pixels and neither survives it. It wore
+ * a hairline ring as well, which at this size is a box drawn around a single
+ * character -- the ground it paints already separates it.
  */
 .header-actions .header-shortcuts .search-button-icon {
     position: absolute;
@@ -7374,9 +7388,8 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     right: -4px;
     min-width: 12px;
     padding: 0 3px;
-    border-radius: 3px;
+    border-radius: var(--radius-4, 6px);
     background: var(--background-primary);
-    box-shadow: 0 0 0 1px var(--border-primary);
     color: var(--text-secondary);
     font-family: var(--font-family-main);
     font-size: 0.58rem;
@@ -7422,7 +7435,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     height: 40px;
     padding: 0;
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 4px);
+    border-radius: var(--radius-6, 10px);
     background: var(--surface-glass-page, var(--background-secondary));
     color: var(--text-tertiary);
     overflow: visible;
