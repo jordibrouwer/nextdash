@@ -16,7 +16,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * that is worth pinning, because moving the markup is exactly the kind of
  * change that quietly couples them.
  */
-const IDS = ['quick-add-toolbar-btn', 'search-button', 'recent-bookmarks-button', 'help-button'];
+const IDS = ['quick-add-toolbar-btn', 'search-button', 'help-button'];
 
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1500, height: 900 });
@@ -62,34 +62,36 @@ test('the header stays one row, and nothing is pushed off it', async ({ page }) 
 test('switching a button off does not switch off its key', async ({ page }) => {
     await openDashboard(page);
 
-    // Recent bookmarks is on * and has a button. Turn the button off.
+    // The cheat sheet is on ! and has a button. Turn the button off.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
-        d.settings.showRecentButton = false;
+        d.settings.showCheatSheetButton = false;
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await expect(page.locator('#recent-bookmarks-button')).toBeHidden();
+    await expect(page.locator('#help-button')).toBeHidden();
 
     // The key still opens it: the button is a way in, not the only one.
-    await page.keyboard.press('Shift+Digit8');
-    await expect(page.locator('#app-modal.show .recent-bookmarks-modal'))
+    await page.keyboard.press('Shift+Digit1');
+    await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal'))
         .toBeVisible({ timeout: 15_000 });
 });
 
 /*
- * Commands, finders and fold-all are not in the header at all.
+ * Commands, finders, fold-all and recent bookmarks are not in the header.
  *
- * Four buttons is a row you can read; seven was a strip. Their keys are
- * untouched — : and ? open the panel and . folds the categories from anywhere
- * — which is the same bargain every switched-off button already makes.
+ * Three buttons is a row you can read; seven was a strip. Their keys are
+ * untouched — : and ? open the panel, . folds the categories and * opens the
+ * recents, from anywhere — which is the same bargain every switched-off button
+ * already makes.
  */
-test('the row carries four actions, and not the other three', async ({ page }) => {
+test('the row carries three actions, and not the other four', async ({ page }) => {
     await openDashboard(page);
 
-    const inHeader = await page.evaluate(() => ['commands-button', 'finders-button', 'collapse-all-button']
-        .map((id) => Boolean(document.querySelector(`.header-shortcuts #${id}`))));
-    expect(inHeader, 'a button that left the header is back in it').toEqual([false, false, false]);
+    const gone = ['commands-button', 'finders-button', 'collapse-all-button', 'recent-bookmarks-button'];
+    const inHeader = await page.evaluate((ids) =>
+        ids.map((id) => Boolean(document.querySelector(`.header-shortcuts #${id}`))), gone);
+    expect(inHeader, 'a button that left the header is back in it').toEqual([false, false, false, false]);
 });
 
 test('the buttons the reader turned off are not drawn', async ({ page }) => {
@@ -102,14 +104,14 @@ test('the buttons the reader turned off are not drawn', async ({ page }) => {
      */
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
-        d.settings.showRecentButton = false;
+        d.settings.showAddBookmarkButton = false;
         d.settings.showCheatSheetButton = false;
         d.setupDOM?.();
         await d.saveSettings?.();
     });
     await page.waitForTimeout(300);
 
-    const hidden = await page.evaluate(() => ['recent-bookmarks-button', 'help-button']
+    const hidden = await page.evaluate(() => ['quick-add-toolbar-btn', 'help-button']
         .map((id) => window.getComputedStyle(document.getElementById(id)).display));
     expect(hidden, 'a button the setting hides is drawn anyway').toEqual(['none', 'none']);
 });
@@ -120,8 +122,7 @@ async function showEveryAction(page) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
-            showAddBookmarkButton: true, showSearchButton: true,
-            showRecentButton: true, showCheatSheetButton: true,
+            showAddBookmarkButton: true, showSearchButton: true, showCheatSheetButton: true,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
@@ -135,8 +136,7 @@ async function showEveryAction(page) {
  * The buttons arrive in the two groups the dock split them into, and which of
  * them are drawn is a setting — so an order taken from the DOM would change as
  * buttons are switched on and off. Add comes first because it is the one that
- * makes something, then search, then the two panels that answer a question
- * about the collection.
+ * makes something, then search, then the sheet that says what every key does.
  */
 test('the actions are always in the same order', async ({ page }) => {
     await openDashboard(page);
@@ -151,7 +151,7 @@ test('the actions are always in the same order', async ({ page }) => {
             .map((b) => b.key)
             .join(' '));
 
-    expect(keys).toBe('+ > * !');
+    expect(keys).toBe('+ > !');
 });
 
 /*
@@ -191,7 +191,7 @@ test('an action shows its key, not a word', async ({ page }) => {
 
     // The word survives for a screen reader, in the button's own aria-label.
     const label = await page.evaluate(() => {
-        const btn = document.querySelector('.header-shortcuts #recent-bookmarks-button');
+        const btn = document.querySelector('.header-shortcuts #help-button');
         return { wordShown: window.getComputedStyle(btn.querySelector('.search-button-label')).display,
                  named: (btn.getAttribute('aria-label') || '').length > 0 };
     });
