@@ -7311,15 +7311,17 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
+    /* The same ink as the destinations beside them. They carried a 0.6 on top
+       of it, so two rows of the same colour read as two colours -- the actions
+       a shade fainter than the pages, inbox, health and config buttons they
+       sit next to. The keys keep the weight they had; see below. */
     color: var(--text-tertiary);
-    opacity: 0.6;
     overflow: visible;
     transition: opacity 0.2s, color 0.2s, background 0.2s;
 }
 
 .header-actions .header-shortcuts .search-button:hover,
 .header-actions .header-shortcuts .search-button:focus-visible {
-    opacity: 1;
     color: var(--text-primary);
     background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
     box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
@@ -7370,6 +7372,13 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     font-weight: 700;
     line-height: 13px;
     text-align: center;
+    /* Carried over from the button, which used to wear it: the key is a note
+       on the glyph, not a second glyph. */
+    opacity: 0.6;
+}
+
+.header-actions .header-shortcuts .search-button:hover .search-button-icon,
+.header-actions .header-shortcuts .search-button:focus-visible .search-button-icon {
     opacity: 1;
 }
 
