@@ -137,7 +137,6 @@ test('the bar spans the window and its contents span the page', async ({ page })
         return {
             row: x('.header-top'),
             track: x('.header-track'),
-            pages: x('.pages-link'),
             // Hidden in a view rather than removed, so its box still holds the
             // place of everything right of it.
             actions: x('.header-shortcuts'),

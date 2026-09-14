@@ -399,7 +399,7 @@ class DashboardPageNav {
 
         const apply = (step) => {
             document.body.setAttribute('data-header-fit', String(step));
-            if (step >= 4) this.fitPageTabs();
+            if (step >= 3) this.fitPageTabs();
         };
 
         /*
@@ -452,7 +452,7 @@ class DashboardPageNav {
             return needed + Math.max(0, parts - 1) * gap;
         };
 
-        for (let step = 0; step <= 5; step += 1) {
+        for (let step = 0; step <= 4; step += 1) {
             apply(step);
             if (needs() <= available) break;
         }
@@ -493,9 +493,9 @@ class DashboardPageNav {
      * nobody chose, which is the default rather than the floor.
      */
     pageTabCap() {
-        // Step 4 of the ladder: the strip folds to the page you are on and the
+        // Step 3 of the ladder: the strip folds to the page you are on and the
         // chip that counts the rest -- see fitHeaderZones().
-        if (Number(document.body.getAttribute('data-header-fit')) >= 4) return 1;
+        if (Number(document.body.getAttribute('data-header-fit')) >= 3) return 1;
         // And on the narrow layout that is the only shape there is room for:
         // the row holds the name and one switcher, and the panel behind the
         // chip lists every page.

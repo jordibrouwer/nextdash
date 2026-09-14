@@ -131,7 +131,7 @@ async function showEveryAction(page) {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
             showAddBookmarkButton: true, showSearchButton: true, showTagCloudButton: true,
-            showRecentButton: true, showCheatSheetButton: true,
+            showRecentButton: true, showCheatSheetButton: true, showPagesButton: true,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
@@ -147,8 +147,8 @@ async function showEveryAction(page) {
  * The buttons arrive in the two groups the dock split them into, and which of
  * them are drawn is a setting — so an order taken from the DOM would change as
  * buttons are switched on and off. Add comes first because it is the one that
- * makes something, then search, then what you opened last, then the sheet that
- * says what every key does.
+ * makes something, then search, then what you opened last, then the pages, then
+ * the sheet that says what every key does.
  */
 test('the actions are always in the same order', async ({ page }) => {
     await openDashboard(page);
@@ -163,7 +163,9 @@ test('the actions are always in the same order', async ({ page }) => {
             .map((b) => b.key)
             .join(' '));
 
-    expect(keys).toBe('+ > / * !');
+    // Pages sits after recents: both open a panel you came for, and the sheet
+    // that lists every key stays last.
+    expect(keys).toBe('+ > / * , !');
 });
 
 /*
@@ -192,7 +194,7 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
         return {
             action: read(document.querySelector('.header-shortcuts #search-button')),
             group: read(document.querySelector('.header-shortcuts')),
-            destination: read(document.querySelector('.pages-link--icon .pages-link-anchor')),
+            destination: read(document.querySelector('.header-destinations .config-link-anchor')),
         };
     });
 
@@ -249,6 +251,7 @@ test('the surround goes when the last action does', async ({ page }) => {
             showAddBookmarkButton: false, showSearchButton: false, showTagCloudButton: false,
             showCommandsButton: false, showFindersButton: false,
             showRecentButton: false, showCollapseAllButton: false, showCheatSheetButton: false,
+            showPagesButton: false,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
@@ -447,17 +450,21 @@ test('the destinations are as big as the action group', async ({ page }) => {
         };
         return {
             group: height('.header-shortcuts'),
-            pages: height('.pages-link-anchor'),
             health: height('.health-link-anchor'),
             config: height('.config-link-anchor'),
-            // One hairline between the pages and what you do, one between that
-            // and where you go.
+            // One hairline, between what you do and where you go. The one in
+            // front of the actions went with the standalone pages button: a
+            // rule needs something on both sides of it.
             dividers: document.querySelectorAll('.header-zone-divider').length,
+            // And the pages button is an action, in the group with the rest.
+            pagesInGroup: Boolean(document.querySelector('.header-shortcuts #page-overview-header-btn')),
+            pagesStandalone: document.querySelectorAll('.pages-link').length,
         };
     });
 
-    expect(seen.pages, 'the pages button is drawn smaller than the actions').toBe(seen.group);
     expect(seen.health).toBe(seen.group);
     expect(seen.config).toBe(seen.group);
-    expect(seen.dividers, 'the header is missing one of its two hairlines').toBe(2);
+    expect(seen.dividers, 'the header kept a rule with nothing on one side of it').toBe(1);
+    expect(seen.pagesInGroup, 'the pages button is not in the action group').toBe(true);
+    expect(seen.pagesStandalone, 'the standalone pages button is still drawn').toBe(0);
 });

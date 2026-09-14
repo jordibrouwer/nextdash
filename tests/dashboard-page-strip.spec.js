@@ -347,7 +347,6 @@ const zones = (page) => page.evaluate(() => {
         step: Number(document.body.getAttribute('data-header-fit')),
         destinations: shown('.header-destinations'),
         actions: shown('.header-shortcuts'),
-        pagesButton: shown('.pages-link'),
         clock: shown('.date-time-line'),
         height: Math.round(document.querySelector('.header-top').getBoundingClientRect().height),
     };
@@ -359,7 +358,7 @@ test('the header gives things up in one order, and never grows a second row', as
 
     await expect.poll(async () => (await zones(page)).step, { timeout: 10_000 }).toBe(0);
     const wide = await zones(page);
-    expect(wide.destinations && wide.actions && wide.pagesButton && wide.clock,
+    expect(wide.destinations && wide.actions && wide.clock,
         'something is missing before anything needs to be').toBe(true);
 
     const seen = [wide];
@@ -383,13 +382,11 @@ test('the header gives things up in one order, and never grows a second row', as
     for (const state of seen) {
         if (state.step >= 1) expect(state.destinations, `step ${state.step} still shows the destinations`).toBe(false);
         if (state.step >= 2) expect(state.actions, `step ${state.step} still shows the actions`).toBe(false);
-        if (state.step >= 3) expect(state.pagesButton, `step ${state.step} still shows the pages button`).toBe(false);
-        if (state.step >= 5) expect(state.clock, `step ${state.step} still shows the clock`).toBe(false);
+        if (state.step >= 4) expect(state.clock, `step ${state.step} still shows the clock`).toBe(false);
         // And nothing goes before its turn.
         if (state.step < 1) expect(state.destinations, 'the destinations went first at step 0').toBe(true);
         if (state.step < 2) expect(state.actions, 'the actions went before the destinations').toBe(true);
-        if (state.step < 3) expect(state.pagesButton, 'the pages button went too early').toBe(true);
-        if (state.step < 5) expect(state.clock, 'the clock went before everything else').toBe(true);
+        if (state.step < 4) expect(state.clock, 'the clock went before everything else').toBe(true);
     }
 
     // The narrowest state still switches pages: the active tab and the chip.

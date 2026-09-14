@@ -208,22 +208,17 @@
                     <span class="page-walk-hint" aria-hidden="true">&#8679;&#8594;</span>
                 </div>
                 <div class="header-actions skeleton-hide-while-loading">
-                    <div class="pages-link pages-link--icon">
-                        <button type="button" id="page-overview-header-btn" class="pages-link-anchor page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" data-i18n-tooltip="dashboard.pagesOverview" aria-label="Choose a page" title="pages">
-                            <svg class="pages-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                <rect x="3" y="3" width="7" height="7" rx="1"/>
-                                <rect x="14" y="3" width="7" height="7" rx="1"/>
-                                <rect x="3" y="14" width="7" height="7" rx="1"/>
-                                <rect x="14" y="14" width="7" height="7" rx="1"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <span class="header-zone-divider" aria-hidden="true"></span>
                     <!--
-                        The seven actions, in the header rather than floating over
-                        the grid. Same ids, so every handler and every keyboard
+                        The actions, in the header rather than floating over the
+                        grid. Same ids, so every handler and every keyboard
                         shortcut is unchanged; the data-show-* attributes still
                         decide which of them is drawn.
+
+                        The pages button is one of them now. It stood on its own
+                        beside the group, in its own 40px box with a rule between
+                        the two -- one button, drawn twice the size of the eight
+                        beside it, for a panel that is no more important than
+                        recents or the cheat sheet.
                     -->
                     <div class="header-shortcuts">
                 <div class="btn-group btn-group-primary">
@@ -277,6 +272,16 @@
                         </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
                         <span class="search-button-icon" aria-hidden="true">*</span>
+                    </button>
+                    <button id="page-overview-header-btn" type="button" class="search-button page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" data-i18n-tooltip="dashboard.pagesOverview" aria-label="Choose a page" data-tooltip=", pages">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerPagesLabel">pages</span>
+                        <span class="search-button-icon" aria-hidden="true">,</span>
                     </button>
                     <button id="help-button" type="button" class="search-button help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
                         <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">

@@ -168,8 +168,8 @@ body .page-swipe-hint {
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
 }
 
-/* Pages overview icon chrome lives in dashboard.css (.pages-link--icon), shared
-   with inbox, health, and config; spacing is .header-actions gap throughout. */
+/* The pages button is one of the header actions (.search-button in
+   dashboard.css); inbox, health and config share the destination chrome. */
 
 .search-button-labeled {
     display: flex;

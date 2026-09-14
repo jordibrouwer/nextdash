@@ -734,7 +734,7 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
  * Each action is the reader's to switch off, and all three off leaves a border
  * with no buttons in it -- so the surround goes when the last one does.
  */
-body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-commands-button="false"][data-show-finders-button="false"][data-show-tag-cloud-button="false"][data-show-recent-button="false"][data-show-collapse-all-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
+body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-commands-button="false"][data-show-finders-button="false"][data-show-tag-cloud-button="false"][data-show-recent-button="false"][data-show-pages-button="false"][data-show-collapse-all-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
     display: none;
 }
 
@@ -752,6 +752,7 @@ body[data-show-search-button="false"] .header-shortcuts #search-button,
 body[data-show-commands-button="false"] .header-shortcuts #commands-button,
 body[data-show-finders-button="false"] .header-shortcuts #finders-button,
 body[data-show-recent-button="false"] .header-shortcuts .recent-button,
+body[data-show-pages-button="false"] .header-shortcuts #page-overview-header-btn,
 body[data-show-collapse-all-button="false"] .header-shortcuts #collapse-all-button,
 body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
@@ -764,7 +765,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
  * plate at 74% over nothing, a label beside every icon, a wider box -- which
  * beside the flat destination buttons read as two different kinds of thing in
  * one bar. They are the same kind of thing: something you press in the header.
- * So they take the destinations' treatment exactly (see .pages-link--icon and
+ * So they take the destinations' treatment exactly (see .health-link--icon and
  * friends above): transparent, secondary ink, the same padding and corner, and
  * the same 2px underline that says which one you are on.
  */
@@ -853,8 +854,9 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 .header-actions .header-shortcuts #finders-button          { order: 4; }
 .header-actions .header-shortcuts #tag-cloud-toggle-btn    { order: 5; }
 .header-actions .header-shortcuts #recent-bookmarks-button { order: 6; }
-.header-actions .header-shortcuts #collapse-all-button     { order: 7; }
-.header-actions .header-shortcuts #help-button             { order: 8; }
+.header-actions .header-shortcuts #page-overview-header-btn { order: 7; }
+.header-actions .header-shortcuts #collapse-all-button     { order: 8; }
+.header-actions .header-shortcuts #help-button             { order: 9; }
 
 /*
  * The groups dissolve, so every button is a sibling of every other.
@@ -1646,13 +1648,11 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 /* Icon variant: pages, health, config, and inbox (in the destination cluster)
    share one chrome; spacing is .header-actions / .header-destinations gap. */
-.pages-link--icon,
 .health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
-.pages-link--icon .pages-link-anchor,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
@@ -1665,20 +1665,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
-.pages-link--icon .pages-link-anchor {
-    font-family: var(--font-family-main);
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-secondary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.pages-link--icon .pages-link-anchor:hover,
 .health-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
@@ -1686,21 +1672,14 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     text-shadow: none;
 }
 
-.pages-link--icon .pages-link-anchor:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-}
-
 /* Active state matched to .page-nav-btn.active: header destinations are the
    same kind of tab as page tabs, so "you are here" must look the same. */
-.pages-link--icon .pages-link-anchor,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
 
-.pages-link--icon .pages-link-anchor.active,
 .health-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
@@ -1711,7 +1690,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     border-bottom-right-radius: 0;
 }
 
-.pages-link--icon .pages-link-icon,
 .health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
@@ -4848,16 +4826,9 @@ body[data-show-config-button="false"] .config-link {
     display: none;
 }
 
-/* The pages button and the inbox, each on their own switch. The inbox host is
-   filled by dashboard-inbox.js, so it is hidden rather than left out. */
-body[data-show-pages-button="false"] .pages-link,
-/* The rule it stands beside goes with it: a divider with nothing on its left
-   is a line against the edge of the band. The second divider, before the
-   destinations, has its own two neighbours and stays. */
-body[data-show-pages-button="false"] .pages-link + .header-zone-divider {
-    display: none;
-}
-
+/* The inbox, on its own switch. Its host is filled by dashboard-inbox.js, so
+   it is hidden rather than left out. The pages button is one of the actions
+   now and hides with them, further up. */
 body[data-show-inbox-button="false"] #page-nav-inbox-host {
     display: none;
 }
@@ -7423,7 +7394,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
  * not. The outer size is what the eye compares, so that is what matches:
  * 28 + 2x5 of padding + 2x1 of border.
  */
-.dashboard-section.section-controls .header-actions .pages-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7442,7 +7412,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
-.dashboard-section.section-controls .header-actions .pages-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -7451,7 +7420,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
-.dashboard-section.section-controls .header-actions .pages-link-icon,
 .dashboard-section.section-controls .header-actions .health-link-icon,
 .dashboard-section.section-controls .header-actions .config-link-icon {
     width: 18px;
@@ -7551,7 +7519,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
  */
 .header-track .page-nav-btn,
 .header-track .page-nav-overflow,
-.dashboard-section.section-controls .header-actions .pages-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7575,7 +7542,6 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 .header-actions .header-shortcuts .search-button:active,
 .header-track .page-nav-btn:active,
 .header-track .page-nav-overflow:active,
-.dashboard-section.section-controls .header-actions .pages-link-anchor:active,
 .dashboard-section.section-controls .header-actions .health-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
@@ -7601,44 +7567,39 @@ body[data-header-fit="1"] .dashboard-section.section-controls .header-destinatio
 body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations,
 body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations,
 body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations,
-body[data-header-fit="5"] .dashboard-section.section-controls .header-destinations,
 body[data-header-fit="1"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="2"] .dashboard-section.section-controls .header-zone-divider,
 body[data-header-fit="3"] .dashboard-section.section-controls .header-zone-divider,
-body[data-header-fit="4"] .dashboard-section.section-controls .header-zone-divider,
-body[data-header-fit="5"] .dashboard-section.section-controls .header-zone-divider {
+body[data-header-fit="4"] .dashboard-section.section-controls .header-zone-divider {
     display: none;
 }
 
 /* 2 — the actions, keys and all. */
 body[data-header-fit="2"] .dashboard-section.section-controls .header-shortcuts,
 body[data-header-fit="3"] .dashboard-section.section-controls .header-shortcuts,
-body[data-header-fit="4"] .dashboard-section.section-controls .header-shortcuts,
-body[data-header-fit="5"] .dashboard-section.section-controls .header-shortcuts {
+body[data-header-fit="4"] .dashboard-section.section-controls .header-shortcuts {
     display: none;
 }
 
-/* 3 — the pages button; `,` opens the same panel. */
-body[data-header-fit="3"] .dashboard-section.section-controls .pages-link,
-body[data-header-fit="4"] .dashboard-section.section-controls .pages-link,
-body[data-header-fit="5"] .dashboard-section.section-controls .pages-link {
+/* 3 — the strip folds to the page you are on plus the chip (pageTabCap), and
+   the keys that walk it go with the room they took.
+
+   This was rung 4 while the pages button stood on its own between the track
+   and the actions and had a rung of its own. It is one of the actions now, so
+   rung 2 already takes it and there is nothing left for a rung of its own to
+   give up. */
+body[data-header-fit="3"] .dashboard-section.section-controls .page-walk-hint,
+body[data-header-fit="4"] .dashboard-section.section-controls .page-walk-hint {
     display: none;
 }
 
-/* 4 — the strip folds to the page you are on plus the chip (pageTabCap), and
-   the keys that walk it go with the room they took. */
-body[data-header-fit="4"] .dashboard-section.section-controls .page-walk-hint,
-body[data-header-fit="5"] .dashboard-section.section-controls .page-walk-hint {
-    display: none;
-}
-
-/* 5 — the clock and the weather, leaving the name and the switcher.
+/* 4 — the clock and the weather, leaving the name and the switcher.
    Everything that stands for the clock goes with it: the line itself, the
    mini status beside it, and the compact date chip the narrow layout puts in
    its place -- on the smallest window all three were on screen at once. */
-body[data-header-fit="5"] .dashboard-section.section-controls .header-top-primary,
-body[data-header-fit="5"] .dashboard-section.section-controls #date-badge-mobile,
-body[data-header-fit="5"] .dashboard-section.section-controls .date-badge-mobile:not(:empty) {
+body[data-header-fit="4"] .dashboard-section.section-controls .header-top-primary,
+body[data-header-fit="4"] .dashboard-section.section-controls #date-badge-mobile,
+body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile:not(:empty) {
     display: none;
 }
 
@@ -7694,8 +7655,8 @@ body[data-header-fit="5"] .dashboard-section.section-controls .date-badge-mobile
 /* Only the room around them: the template keeps its four tracks, and a zone
    that is display:none leaves the grid rather than pushing the rest onto a
    second row -- which is what a two-column override did here. */
-body[data-header-fit="5"] .dashboard-section.section-controls .header-top,
-body[data-header-fit="4"] .dashboard-section.section-controls .header-top {
+body[data-header-fit="4"] .dashboard-section.section-controls .header-top,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-top {
     padding: 0.5rem 0.75rem;
     gap: var(--space-2, 0.5rem);
 }

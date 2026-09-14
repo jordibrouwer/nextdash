@@ -61,8 +61,8 @@ test.describe('the chrome toggles are grouped', () => {
         expect(all).toHaveLength(16);
         expect(new Set(all).size).toBe(16);
         expect(all).toEqual(expect.arrayContaining([
-            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showPagesButton', 'showInboxButton',
-            'showHealthDashboard', 'showConfigButton',
+            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showInboxButton',
+            'showHealthDashboard', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
         ]));
@@ -91,6 +91,8 @@ test.describe('the chrome toggles are grouped', () => {
         await expect(page.locator('[data-behavior-field="showFindersButton"]')).toBeVisible();
         await expect(page.locator('[data-behavior-field="showCollapseAllButton"]')).toBeVisible();
         await expect(page.locator('[data-behavior-field="showTagCloudButton"]')).toBeVisible();
+        // The pages button is an action now, so its switch stands with them.
+        await expect(page.locator('[data-behavior-field="showPagesButton"]')).toBeVisible();
         // The header group stayed behind on Toolbar & tabs.
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toHaveCount(0);
     });
@@ -99,9 +101,10 @@ test.describe('the chrome toggles are grouped', () => {
 /*
  * The header panel switches what is in the header.
  *
- * Three of its toggles had nothing behind them until now: the keys printed
- * beside the page strip stayed when the strip was switched off, and the pages
- * button and the inbox could not be switched off at all.
+ * Its toggles had nothing behind them until now: the keys printed beside the
+ * page strip stayed when the strip was switched off, and the inbox could not
+ * be switched off at all. The pages button moved to the action bar with the
+ * rest of the actions, and its switch went with it.
  */
 test('the header toggles reach the header', async ({ page }) => {
     await openToolbarTab(page);
@@ -114,19 +117,10 @@ test('the header toggles reach the header', async ({ page }) => {
     }, sel);
 
     expect(await shown('.header-track .page-walk-hint')).toBe(true);
-    expect(await shown('.pages-link')).toBe(true);
 
     await page.locator('[data-behavior-field="showPageTabs"]').uncheck();
     await expect.poll(() => shown('.header-track .page-walk-hint'),
         { timeout: 5_000 }).toBe(false);
-
-    await page.locator('[data-behavior-field="showPagesButton"]').uncheck();
-    await expect.poll(() => shown('.pages-link'), { timeout: 5_000 }).toBe(false);
-    // The rule beside it goes too; the one before the destinations stays.
-    await expect.poll(() => shown('.pages-link + .header-zone-divider'),
-        { timeout: 5_000 }).toBe(false);
-    expect(await page.evaluate(() => [...document.querySelectorAll('.header-zone-divider')]
-        .filter((el) => window.getComputedStyle(el).display !== 'none').length)).toBe(1);
 
     await page.locator('[data-behavior-field="showInboxButton"]').uncheck();
     await expect.poll(() => page.evaluate(
@@ -135,10 +129,6 @@ test('the header toggles reach the header', async ({ page }) => {
     // And back: the switches go both ways without a reload.
     await page.locator('[data-behavior-field="showPageTabs"]').check();
     await expect.poll(() => shown('.header-track .page-walk-hint'),
-        { timeout: 5_000 }).toBe(true);
-    await page.locator('[data-behavior-field="showPagesButton"]').check();
-    await expect.poll(() => shown('.pages-link'), { timeout: 5_000 }).toBe(true);
-    await expect.poll(() => shown('.pages-link + .header-zone-divider'),
         { timeout: 5_000 }).toBe(true);
     await page.locator('[data-behavior-field="showInboxButton"]').check();
 });
@@ -202,7 +192,7 @@ test.describe('Show all / Hide all', () => {
         await expect(headerPanel.locator('[data-behavior-bulk="hide"]')).toBeDisabled();
 
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(count).toHaveText(/\b7\D+7\b/);
+        await expect(count).toHaveText(/\b6\D+6\b/);
         await expect(headerPanel.locator('[data-behavior-bulk="show"]')).toBeDisabled();
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeChecked();
     });

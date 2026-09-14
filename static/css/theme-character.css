@@ -127,7 +127,6 @@ html[data-theme] body[data-depth="glass"] {
 
 /* Chrome: knoppen, tabs, de balk. Weinig tekst, veel doorkijk. */
 html[data-theme] body[data-depth="glass"] :is(
-    .pages-link--icon .pages-link-anchor,
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
@@ -337,7 +336,6 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
         .config-tile,
     .config-panel,
     .config-choices,
-    .pages-link--icon .pages-link-anchor,
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],

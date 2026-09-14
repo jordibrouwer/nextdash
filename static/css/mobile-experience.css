@@ -144,8 +144,7 @@ body[data-mobile-layout="true"] .header-actions {
     flex-shrink: 0;
 }
 
-body[data-mobile-layout="true"] #page-overview-header-btn,
-body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor {
+body[data-mobile-layout="true"] #page-overview-header-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -156,8 +155,7 @@ body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor {
     -webkit-tap-highlight-color: transparent;
 }
 
-body[data-mobile-layout="true"] #page-overview-header-btn:active,
-body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor:active {
+body[data-mobile-layout="true"] #page-overview-header-btn:active {
     background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
 }
 
@@ -185,8 +183,7 @@ body[data-mobile-layout="true"] .config-link--icon {
 }
 
 body[data-mobile-layout="true"] .config-link a:active,
-body[data-mobile-layout="true"] #page-overview-header-btn:active,
-body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor:active {
+body[data-mobile-layout="true"] #page-overview-header-btn:active {
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     color: var(--text-primary);
     border-color: var(--text-primary);
