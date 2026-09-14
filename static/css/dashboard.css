@@ -686,6 +686,14 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     align-items: center;
     gap: var(--header-control-gap);
     margin-left: auto;
+    /* One line: the track inside it shrinks rather than the row breaking. */
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+/* The destinations keep their width; the track is what gives. */
+.header-actions > :not(.page-navigation) {
+    flex: 0 0 auto;
 }
 
 /* inbox · health · config — same gap as between page tabs and the pages icon. */
@@ -1119,10 +1127,72 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 }
 
 /* ── Page navigation ─────────────────────────────────────────────────────── */
+/*
+ * The page track keeps a footprint, however many pages there are.
+ *
+ * It wrapped, so a twelfth page added a second row to the header and moved the
+ * toolbar icons down with it -- the one part of the bar that should never move
+ * was the part that moved most. It is one line now, bounded, and what does not
+ * fit is counted on a chip at its end (see fitPageTabs in
+ * dashboard-page-nav.js). The cap is a share of the header rather than a fixed
+ * pixel width, so a narrow window gives the track less before the tabs
+ * themselves have to shrink.
+ */
 .page-navigation {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--space-1, 0.25rem);
+    /*
+     * The room that is left, not a share of the window.
+     *
+     * A viewport-relative cap let the track claim 52vw while the toolbar still
+     * needed its own width, so at 900px the header ran out of room and wrapped
+     * -- the actions dropped onto a second row, which is exactly what bounding
+     * the track was meant to prevent. Shrinking is what the track does: it
+     * gives up width first and folds the tabs that no longer fit.
+     */
+    flex: 0 1 auto;
+    /*
+     * A floor, so the track cannot be squeezed out of existence. Without it
+     * the flex shrink took it to two pixels at 760px and the strip became a
+     * chip with nothing beside it -- the active page has to stay visible, and
+     * that needs room for one tab and the count.
+     */
+    min-width: min(9rem, 100%);
+    overflow: hidden;
+}
+
+/* A tab that does not fit is out of the flow, not merely clipped: a clipped
+   tab is still focusable, and tabbing to something you cannot see is worse
+   than not having it. */
+.page-nav-btn[hidden] {
+    display: none;
+}
+
+/*
+ * The count of what the track could not show.
+ *
+ * Reads as one of the tabs rather than as a control of its own -- it is the
+ * rest of the same list -- and opens the page overview, which is where the
+ * whole list lives.
+ */
+.page-nav-overflow {
+    flex: 0 0 auto;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-semibold);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.page-nav-overflow:hover,
+.page-nav-overflow:focus-visible {
+    color: var(--text-primary);
 }
 
 .page-swipe-hint {

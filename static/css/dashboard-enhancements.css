@@ -125,7 +125,12 @@ kbd,
 /* Dashboard discoverability: header, mobile bar, mini status */
 
 .header-top {
-    flex-wrap: wrap;
+    /*
+     * One row down to the phone breakpoint. It wrapped, so a track that grew
+     * carried the toolbar onto a second line; the track is bounded now and
+     * shrinks instead (see .page-navigation in dashboard.css).
+     */
+    flex-wrap: nowrap;
     gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
 }
 

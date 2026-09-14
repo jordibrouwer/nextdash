@@ -362,6 +362,105 @@ class DashboardPageNav {
     }
 
 
+    /**
+     * Show the tabs that fit on one line, and count the rest on a chip.
+     *
+     * The track used to wrap, so a twelfth page added a second row to the
+     * header and carried the toolbar icons down with it. It is one line now,
+     * which means something has to decide what does not fit -- and a tab that
+     * does not fit is hidden rather than clipped, because a clipped tab is
+     * still focusable and tabbing to something invisible is worse than not
+     * having it at all.
+     *
+     * The active tab is never the one dropped: you have to be able to see
+     * where you are. If it falls outside the budget it takes the place of the
+     * last tab that fitted.
+     */
+    fitPageTabs() {
+        const container = document.getElementById('page-navigation');
+        if (!container) return;
+
+        const chip = container.querySelector('.page-nav-overflow');
+        if (chip) chip.remove();
+        const tabs = [...container.querySelectorAll('.page-nav-btn')];
+        tabs.forEach((tab) => { tab.hidden = false; });
+        if (!tabs.length) return;
+
+        const budget = container.clientWidth;
+        if (!budget) return;
+
+        // The gap between tabs counts towards the budget as much as the tabs do.
+        const gap = parseFloat(window.getComputedStyle(container).columnGap) || 0;
+        // Room kept for the chip itself, so adding it cannot push out the tab
+        // it was measured against. Its own width is not knowable until it
+        // exists, and a tab is the closest thing to it that does.
+        const chipRoom = tabs[0].getBoundingClientRect().width + gap;
+
+        let used = 0;
+        let shown = 0;
+        for (const tab of tabs) {
+            const width = tab.getBoundingClientRect().width;
+            const next = used + width + (shown ? gap : 0);
+            // Everything fits, or this one still does with room left for a chip.
+            const isLast = tab === tabs[tabs.length - 1];
+            if (next <= budget - (isLast ? 0 : chipRoom)) {
+                used = next;
+                shown += 1;
+                continue;
+            }
+            break;
+        }
+
+        if (shown >= tabs.length) return;
+        if (shown < 1) shown = 1;
+
+        const visible = tabs.slice(0, shown);
+        const hidden = tabs.slice(shown);
+        const active = tabs.find((tab) => tab.classList.contains('active'));
+        if (active && hidden.includes(active)) {
+            // Swap it in for the last that fitted, keeping the order otherwise.
+            const displaced = visible[visible.length - 1];
+            container.insertBefore(active, displaced);
+            hidden.splice(hidden.indexOf(active), 1);
+            hidden.push(displaced);
+        }
+        hidden.forEach((tab) => { tab.hidden = true; });
+
+        const d = this.dash;
+        const more = document.createElement('button');
+        more.type = 'button';
+        // Deliberately not .page-nav-btn: fitPageTabs runs again on resize, and
+        // a chip wearing the tab class would be measured as a tab and then
+        // hidden behind a second chip.
+        more.className = 'page-nav-overflow';
+        more.textContent = `+${hidden.length}`;
+        more.setAttribute('aria-label',
+            d.formatDashboardLabel('pageTabsOverflow', { n: hidden.length }, `${hidden.length} more pages`));
+        more.title = more.getAttribute('aria-label');
+        // The whole list already has a home; the chip is a way to it.
+        more.addEventListener('click', () => d.showPageOverlay?.());
+        container.appendChild(more);
+    }
+
+    /**
+     * Re-measure when the header's width changes.
+     *
+     * Bound once, and to the container rather than to the window: the track's
+     * cap is a share of the viewport, so it also moves when a side panel opens
+     * or the zoom changes, neither of which fires a resize.
+     */
+    observePageTabFit() {
+        if (this._pageTabFitObserver) return;
+        const container = document.getElementById('page-navigation');
+        if (!container || typeof ResizeObserver === 'undefined') return;
+        let frame = 0;
+        this._pageTabFitObserver = new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => this.fitPageTabs());
+        });
+        this._pageTabFitObserver.observe(container);
+    }
+
     renderPageNavigation() {
         const d = this.dash;
         const container = document.getElementById('page-navigation');
@@ -467,6 +566,11 @@ class DashboardPageNav {
             this.updateInboxTabBadge();
             this.syncInboxTabHighlight();
         }
+
+        // Measured after the tabs are in the DOM: widths are not knowable before
+        // the browser has laid them out.
+        requestAnimationFrame(() => this.fitPageTabs());
+        this.observePageTabFit();
 
         if (activeBtn) {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
