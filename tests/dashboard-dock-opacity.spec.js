@@ -74,26 +74,27 @@ test.describe('floating dock opacity', () => {
             null, { timeout: 15_000 });
     });
 
-    test('dock buttons and corner FABs are opaque', async ({ page }) => {
-        // Every surface below is one the user sees on a first run.
-        // The dock itself.
-        expect(await bgAlpha(page, '#search-button')).toBe(1);
-        expect(await bgAlpha(page, '#quick-add-toolbar-btn')).toBe(1);
-        expect(await bgAlpha(page, '#commands-button')).toBe(1);
-
-        // The two corner FABs, which float over the grid with no plate at all.
+    /*
+     * What floats still has to be opaque; what does not, no longer must.
+     *
+     * The action buttons moved into the header, where they sit on the header's
+     * own surface -- there is nothing of the grid behind them to read through,
+     * which is the whole reason the dock's buttons had to be solid. The two
+     * corner buttons still float over the grid with no plate at all, so the
+     * rule that was written for them still is about them.
+     */
+    test('the corner FABs are opaque', async ({ page }) => {
         expect(await bgAlpha(page, '#tag-cloud-toggle-btn')).toBe(1);
         expect(await bgAlpha(page, '#whats-new-btn')).toBe(1);
     });
 
-    test('the corner dock positions are covered too', async ({ page }) => {
-        // bottom-left and bottom-right drop the container's own box entirely,
-        // so the buttons are the only thing between the page and the eye.
-        await applySetting(page, 'buttonBarPosition', 'bottom-left');
-        expect(await bgAlpha(page, '#search-button')).toBe(1);
-
-        await applySetting(page, 'buttonBarPosition', 'bottom-right');
-        expect(await bgAlpha(page, '#search-button')).toBe(1);
+    test('the header actions read against the header, not against the grid', async ({ page }) => {
+        // They are inside .header-shortcuts, which carries the plate; a button
+        // drawing its own opaque box inside it would read as five plates.
+        const onPlate = await page.evaluate(() => Boolean(
+            document.querySelector('.header-shortcuts #search-button')));
+        expect(onPlate, 'the action buttons are not on the header plate').toBe(true);
+        expect(await bgAlpha(page, '.header-shortcuts')).toBeGreaterThan(0);
     });
 
 });

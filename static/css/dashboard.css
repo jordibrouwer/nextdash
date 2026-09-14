@@ -689,6 +689,61 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     /* One line: the track inside it shrinks rather than the row breaking. */
     flex-wrap: nowrap;
     min-width: 0;
+    /*
+     * Takes the room the identity block does not.
+     *
+     * Content-sized, it stayed at its own intrinsic width while the header had
+     * 750px going spare, and the seven action buttons that moved in here
+     * overflowed it by 120px -- the config icon was pushed off the screen with
+     * free space beside it. It grows to fill instead, and the track inside it
+     * is what gives when there is genuinely not enough.
+     */
+    flex: 1 1 auto;
+    justify-content: flex-end;
+}
+
+/*
+ * The actions, as one control rather than a bar floating over the grid.
+ *
+ * They sat in .button-container, a slab pinned to a corner of the viewport,
+ * which meant the things you do here lived somewhere else from the places you
+ * go. One surround, one row, beside the destinations they are not: a hairline
+ * between the two groups says which is which.
+ *
+ * Which of them are drawn is still the reader's, through the same
+ * data-show-* attributes -- and the keys keep working whatever is shown,
+ * because the handlers are on the document and never asked.
+ */
+.header-shortcuts {
+    display: flex;
+    align-items: center;
+    gap: var(--space-hairline, 0.15rem);
+    flex: 0 0 auto;
+    padding: 2px;
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+/*
+ * Written past the dock's own rules on purpose.
+ *
+ * search.css stacks .btn-group into a column for the corner positions
+ * (body[data-button-position="bottom-right"] and friends), which outranks a
+ * plain .header-shortcuts .btn-group -- and the header inherited a layout
+ * meant for a bar pinned to a corner, so the buttons came out one above the
+ * other. Those rules go when the floating bar does; until then this has to
+ * out-specify them.
+ */
+.header-actions .header-shortcuts .btn-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-hairline, 0.15rem);
+}
+
+/* A group with nothing left in it must not leave its gap behind. */
+.header-actions .header-shortcuts .btn-group:empty {
+    display: none;
 }
 
 /* The destinations keep their width; the track is what gives. */
@@ -4731,7 +4786,13 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
 body:has(#dashboard-layout.health-layout) .button-container,
-body:has(#dashboard-layout.inbox-layout) .button-container {
+body:has(#dashboard-layout.inbox-layout) .button-container,
+/* The actions moved into the header; the scoping had to move with them, or
+   Health and Inbox draw a fold-all and an add-bookmark for a grid that is not
+   there. The destinations beside them stay: those are how you leave. */
+body:has(#dashboard-layout.config-layout) .header-shortcuts,
+body:has(#dashboard-layout.health-layout) .header-shortcuts,
+body:has(#dashboard-layout.inbox-layout) .header-shortcuts {
     display: none;
 }
 

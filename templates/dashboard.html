@@ -210,6 +210,46 @@
                             </svg>
                         </button>
                     </div>
+                    <!--
+                        The seven actions, in the header rather than floating over
+                        the grid. Same ids, so every handler and every keyboard
+                        shortcut is unchanged; the data-show-* attributes still
+                        decide which of them is drawn.
+                    -->
+                    <div class="header-shortcuts">
+                <div class="btn-group btn-group-primary">
+                    <button id="quick-add-toolbar-btn" type="button" class="search-button search-button-labeled add-bookmark-button" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark" data-tooltip="+ bookmark">
+                        <span class="search-button-icon">+</span>
+                        <span class="search-button-label" data-i18n="dashboard.addBookmarkShort">bookmark</span>
+                    </button>
+                    <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
+                        <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+                        <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
+                    </button>
+                    <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands" data-tooltip=": commands">
+                        <span class="search-button-icon">:</span>
+                        <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
+                    </button>
+                    <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders" data-tooltip="? finders">
+                        <span class="search-button-icon">?</span>
+                        <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
+                    </button>
+                </div>
+                <div class="btn-group btn-group-secondary">
+                    <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
+                        <span class="search-button-icon">*</span>
+                        <span class="search-button-label" data-i18n="dashboard.recentLabel">recent</span>
+                    </button>
+                    <button id="help-button" type="button" class="search-button search-button-labeled help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
+                        <span class="search-button-icon">!</span>
+                        <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
+                    </button>
+                    <button id="collapse-all-button" type="button" class="search-button search-button-labeled collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Collapse or expand all categories" data-tooltip=". collapse all">
+                        <span class="search-button-icon">.</span>
+                        <span class="search-button-label" data-i18n="dashboard.collapseAllLabel">fold</span>
+                    </button>
+                </div>
+                    </div>
                     <div class="header-destinations">
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
@@ -304,38 +344,6 @@
     <div class="button-container">
         <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
             <span class="search-flow-hint-text"><span class="sfh-seg"><kbd class="search-flow-chip">&gt;</kbd><span class="sfh-seg-label" data-i18n="dashboard.searchLabel">search</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">:</kbd><span class="sfh-seg-label" data-i18n="dashboard.commandsLabel">commands</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">?</kbd><span class="sfh-seg-label" data-i18n="dashboard.findersLabel">finders</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">+</kbd><span class="sfh-seg-label" data-i18n="dashboard.addBookmarkShort">bookmark</span></span><span class="sfh-seg sfh-seg-swipe hidden">&nbsp;·&nbsp;</span><span class="sfh-seg sfh-seg-swipe hidden" data-i18n="dashboard.swipePagesHint">swipe pages</span></span>
-        </div>
-        <div class="btn-group btn-group-primary">
-            <button id="quick-add-toolbar-btn" type="button" class="search-button search-button-labeled add-bookmark-button" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark" data-tooltip="+ bookmark">
-                <span class="search-button-icon">+</span>
-                <span class="search-button-label" data-i18n="dashboard.addBookmarkShort">bookmark</span>
-            </button>
-            <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
-                <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
-                <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
-            </button>
-            <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands" data-tooltip=": commands">
-                <span class="search-button-icon">:</span>
-                <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
-            </button>
-            <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders" data-tooltip="? finders">
-                <span class="search-button-icon">?</span>
-                <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
-            </button>
-        </div>
-        <div class="btn-group btn-group-secondary">
-            <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
-                <span class="search-button-icon">*</span>
-                <span class="search-button-label" data-i18n="dashboard.recentLabel">recent</span>
-            </button>
-            <button id="help-button" type="button" class="search-button search-button-labeled help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
-                <span class="search-button-icon">!</span>
-                <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
-            </button>
-            <button id="collapse-all-button" type="button" class="search-button search-button-labeled collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Collapse or expand all categories" data-tooltip=". collapse all">
-                <span class="search-button-icon">.</span>
-                <span class="search-button-label" data-i18n="dashboard.collapseAllLabel">fold</span>
-            </button>
         </div>
     </div>
 
