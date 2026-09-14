@@ -89,12 +89,16 @@ test.describe('floating dock opacity', () => {
     });
 
     test('the header actions read against the header, not against the grid', async ({ page }) => {
-        // They are inside .header-shortcuts, which carries the plate; a button
-        // drawing its own opaque box inside it would read as five plates.
-        const onPlate = await page.evaluate(() => Boolean(
+        /*
+         * No plate, no box, no wash: an action in the header is drawn like the
+         * destinations beside it, which are flat. The dock's opaque treatment
+         * was for buttons floating over the grid, and these are not.
+         */
+        const inHeader = await page.evaluate(() => Boolean(
             document.querySelector('.header-shortcuts #search-button')));
-        expect(onPlate, 'the action buttons are not on the header plate').toBe(true);
-        expect(await bgAlpha(page, '.header-shortcuts')).toBeGreaterThan(0);
+        expect(inHeader, 'the action buttons left the header').toBe(true);
+        expect(await bgAlpha(page, '#search-button'),
+            'a header action still carries the dock plate').toBe(0);
     });
 
 });
