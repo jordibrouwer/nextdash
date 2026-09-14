@@ -717,9 +717,25 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 .header-shortcuts {
     display: flex;
     align-items: center;
-    gap: var(--header-control-gap, 0.5rem);
+    /* Tighter than the gap between destinations: these are one control with
+       several buttons in it, and the surround is what says so. */
+    gap: var(--space-1, 0.25rem);
     flex: 0 0 auto;
     min-width: 0;
+    padding: 0.15rem 0.25rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+}
+
+/*
+ * An empty surround is a box around nothing.
+ *
+ * Each action is the reader's to switch off, and all three off leaves a border
+ * with no buttons in it -- so the surround goes when the last one does.
+ */
+body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-recent-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
+    display: none;
 }
 
 /*
@@ -733,6 +749,7 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
  */
 body[data-show-add-bookmark-button="false"] .header-shortcuts #quick-add-toolbar-btn,
 body[data-show-search-button="false"] .header-shortcuts #search-button,
+body[data-show-recent-button="false"] .header-shortcuts .recent-button,
 body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
@@ -753,10 +770,12 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     align-items: center;
     flex-wrap: nowrap;
     gap: var(--space-1, 0.3rem);
-    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
-    border-radius: var(--layout-radius-sm, 8px);
+    /* Inside a surround of its own, so tighter than a destination standing on
+       the bare header: the padding that reads as room around a lone icon reads
+       as a gap inside a box. */
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-3, 4px);
     border: none;
-    border-bottom: 2px solid transparent;
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
@@ -771,9 +790,11 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     transition: color 0.3s ease;
 }
 
+/* Inside the surround a button can take a fill on hover without competing
+   with the bar: the box already bounds it. */
 .header-actions .header-shortcuts .search-button:hover {
     color: var(--text-primary);
-    background: transparent;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
     text-shadow: none;
     transform: none;
 }
@@ -784,21 +805,32 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 }
 
 /*
- * The key is the label.
+ * The word, then the key that does the same thing.
  *
- * Every destination beside them is an icon alone; a word after each action
- * would make the actions the loudest half of a bar whose subject is neither.
- * The word is still there for a screen reader -- it is the button's own
- * aria-label -- and for a pointer, in the tooltip each already carries.
+ * A row of bare glyphs asks the reader to already know what + and > and ! do,
+ * which is the thing a header is worst at teaching. Each action says what it
+ * is and then shows the key, so the key is learned from the button rather than
+ * from the manual -- the order the cheat sheet itself uses.
  */
 .header-actions .header-shortcuts .search-button-label {
-    display: none;
+    display: inline;
+    white-space: nowrap;
+    text-transform: lowercase;
 }
 
+/*
+ * The key reads as a key: quieter than the word it follows, in the same
+ * tabular face the cheat sheet and the overlay foots use for a keycap.
+ */
 .header-actions .header-shortcuts .search-button-icon {
     font-family: var(--font-family-main);
     font-size: var(--font-size-controls);
     line-height: 1;
+    color: var(--text-tertiary);
+}
+
+.header-actions .header-shortcuts .search-button:hover .search-button-icon {
+    color: var(--text-secondary);
 }
 
 /*
@@ -807,13 +839,15 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
  * The buttons arrive in two groups left over from the dock, and which of them
  * are drawn is a setting -- so their order cannot come from the DOM or it
  * changes as buttons are switched on and off. Add first, because it is the one
- * that makes something, then search, then the sheet that says what every key
- * does. Commands, finders, fold-all and recent bookmarks are not here: their
- * keys still work from anywhere, and the row is shorter for it.
+ * that makes something, then search, then the list of what you opened last,
+ * then the sheet that says what every key does. Commands, finders and fold-all
+ * are not here: their keys still work from anywhere, and the row is shorter
+ * for it.
  */
-.header-actions .header-shortcuts #quick-add-toolbar-btn { order: 1; }
-.header-actions .header-shortcuts #search-button         { order: 2; }
-.header-actions .header-shortcuts #help-button           { order: 3; }
+.header-actions .header-shortcuts #quick-add-toolbar-btn   { order: 1; }
+.header-actions .header-shortcuts #search-button           { order: 2; }
+.header-actions .header-shortcuts #recent-bookmarks-button { order: 3; }
+.header-actions .header-shortcuts #help-button             { order: 4; }
 
 /*
  * Written past the dock's own rules on purpose.

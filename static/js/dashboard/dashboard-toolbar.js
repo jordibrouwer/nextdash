@@ -599,7 +599,12 @@ class DashboardToolbar {
         const btn = document.getElementById('quick-add-toolbar-btn');
         const label = btn?.querySelector('.search-button-label');
         if (!label) return;
-        label.textContent = d.language?.t('dashboard.addBookmarkShort') || 'bookmark';
+        // The header names the action in full -- "add bookmark", not the
+        // "bookmark" the floating bar used, where the + beside it was the verb.
+        // Written here as well as in the template because this runs on a
+        // language change and on every mobile/desktop switch, and it was
+        // putting the old word back.
+        label.textContent = d.language?.t('dashboard.headerAddLabel') || 'add bookmark';
     }
 
 

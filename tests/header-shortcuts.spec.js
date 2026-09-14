@@ -78,20 +78,20 @@ test('switching a button off does not switch off its key', async ({ page }) => {
 });
 
 /*
- * Commands, finders, fold-all and recent bookmarks are not in the header.
+ * Commands, finders and fold-all are not in the header.
  *
- * Three buttons is a row you can read; seven was a strip. Their keys are
- * untouched — : and ? open the panel, . folds the categories and * opens the
- * recents, from anywhere — which is the same bargain every switched-off button
- * already makes.
+ * Four buttons is a row you can read; seven was a strip. The keys of the three
+ * that left are untouched — : and ? open their panel and . folds the categories
+ * from anywhere — which is the same bargain every switched-off button already
+ * makes.
  */
-test('the row carries three actions, and not the other four', async ({ page }) => {
+test('the row carries four actions, and not the other three', async ({ page }) => {
     await openDashboard(page);
 
-    const gone = ['commands-button', 'finders-button', 'collapse-all-button', 'recent-bookmarks-button'];
+    const gone = ['commands-button', 'finders-button', 'collapse-all-button'];
     const inHeader = await page.evaluate((ids) =>
         ids.map((id) => Boolean(document.querySelector(`.header-shortcuts #${id}`))), gone);
-    expect(inHeader, 'a button that left the header is back in it').toEqual([false, false, false, false]);
+    expect(inHeader, 'a button that left the header is back in it').toEqual([false, false, false]);
 });
 
 test('the buttons the reader turned off are not drawn', async ({ page }) => {
@@ -122,7 +122,8 @@ async function showEveryAction(page) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
-            showAddBookmarkButton: true, showSearchButton: true, showCheatSheetButton: true,
+            showAddBookmarkButton: true, showSearchButton: true,
+            showRecentButton: true, showCheatSheetButton: true,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
@@ -136,7 +137,8 @@ async function showEveryAction(page) {
  * The buttons arrive in the two groups the dock split them into, and which of
  * them are drawn is a setting — so an order taken from the DOM would change as
  * buttons are switched on and off. Add comes first because it is the one that
- * makes something, then search, then the sheet that says what every key does.
+ * makes something, then search, then what you opened last, then the sheet that
+ * says what every key does.
  */
 test('the actions are always in the same order', async ({ page }) => {
     await openDashboard(page);
@@ -151,7 +153,7 @@ test('the actions are always in the same order', async ({ page }) => {
             .map((b) => b.key)
             .join(' '));
 
-    expect(keys).toBe('+ > !');
+    expect(keys).toBe('+ > * !');
 });
 
 /*
@@ -162,6 +164,10 @@ test('the actions are always in the same order', async ({ page }) => {
  * flat destination buttons read as two kinds of thing in one bar. Read off the
  * destinations rather than asserting literals: what matters is that the two
  * agree, not what either happens to be.
+ *
+ * The ink is what has to agree. The box does not: the actions stand inside a
+ * surround of their own, so they sit tighter in it than a lone destination sits
+ * on the bare header — which is the surround's own padding doing the spacing.
  */
 test('an action is drawn like the destinations beside it', async ({ page }) => {
     await openDashboard(page);
@@ -170,8 +176,8 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
     const [action, destination] = await page.evaluate(() => {
         const read = (el) => {
             const s = window.getComputedStyle(el);
-            return { background: s.backgroundColor, color: s.color, radius: s.borderTopLeftRadius,
-                     padding: s.padding, fontSize: s.fontSize, fontWeight: s.fontWeight };
+            return { background: s.backgroundColor, color: s.color,
+                     fontSize: s.fontSize, fontWeight: s.fontWeight, fontFamily: s.fontFamily };
         };
         return [read(document.querySelector('.header-shortcuts #search-button')),
                 read(document.querySelector('.pages-link--icon .pages-link-anchor'))];
@@ -179,22 +185,101 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
 
     expect(action.background, 'the action still carries the dock plate').toBe(destination.background);
     expect(action.color).toBe(destination.color);
-    expect(action.radius).toBe(destination.radius);
-    expect(action.padding).toBe(destination.padding);
     expect(action.fontSize).toBe(destination.fontSize);
     expect(action.fontWeight).toBe(destination.fontWeight);
+    expect(action.fontFamily).toBe(destination.fontFamily);
 });
 
-test('an action shows its key, not a word', async ({ page }) => {
+/*
+ * The actions are one control, and the surround is what says so.
+ *
+ * Three bare glyphs beside the destinations read as six destinations; the
+ * design draws a box around the three that do something, and leaves the places
+ * you can go standing on the header itself.
+ */
+test('the actions stand in a surround, the destinations do not', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
 
-    // The word survives for a screen reader, in the button's own aria-label.
-    const label = await page.evaluate(() => {
-        const btn = document.querySelector('.header-shortcuts #help-button');
-        return { wordShown: window.getComputedStyle(btn.querySelector('.search-button-label')).display,
-                 named: (btn.getAttribute('aria-label') || '').length > 0 };
+    const seen = await page.evaluate(() => {
+        const read = (el) => {
+            const s = window.getComputedStyle(el);
+            return { width: s.borderTopWidth, style: s.borderTopStyle, radius: s.borderTopLeftRadius };
+        };
+        return {
+            group: read(document.querySelector('.header-shortcuts')),
+            destinations: read(document.querySelector('.header-destinations')),
+        };
     });
-    expect(label.wordShown, 'the labels are back beside the icons').toBe('none');
-    expect(label.named, 'the button has no accessible name').toBe(true);
+
+    expect(parseFloat(seen.group.width), 'the actions have no surround').toBeGreaterThan(0);
+    expect(seen.group.style, 'the surround is not drawn').not.toBe('none');
+    expect(parseFloat(seen.group.radius), 'the surround has square corners').toBeGreaterThan(0);
+    expect(parseFloat(seen.destinations.width), 'the destinations were boxed in too').toBe(0);
+});
+
+test('the surround goes when the last action does', async ({ page }) => {
+    await openDashboard(page);
+
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, {
+            showAddBookmarkButton: false, showSearchButton: false,
+            showRecentButton: false, showCheatSheetButton: false,
+        });
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(300);
+
+    const drawn = await page.evaluate(() =>
+        window.getComputedStyle(document.querySelector('.header-shortcuts')).display);
+    expect(drawn, 'an empty box is left standing in the header').toBe('none');
+});
+
+/*
+ * Each action shows its key, then says what it is.
+ *
+ * They were three bare glyphs for a while, which asks the reader to already
+ * know what +, > and ! do — the one thing a header is worst at teaching. The
+ * key leads and the word explains it, the way the cheat sheet prints a row.
+ */
+test('an action shows its key and then names itself', async ({ page }) => {
+    await openDashboard(page);
+    await showEveryAction(page);
+
+    const read = await page.evaluate(() => {
+        const one = (id) => {
+            const btn = document.querySelector(`.header-shortcuts #${id}`);
+            const label = btn.querySelector('.search-button-label');
+            const icon = btn.querySelector('.search-button-icon');
+            return {
+                word: label.textContent.trim(),
+                key: icon.textContent.trim(),
+                shown: window.getComputedStyle(label).display !== 'none',
+                // The key is written before the word, in the DOM and so on screen.
+                keyFirst: icon.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING,
+                named: (btn.getAttribute('aria-label') || '').length > 0,
+            };
+        };
+        return {
+            add: one('quick-add-toolbar-btn'),
+            search: one('search-button'),
+            recents: one('recent-bookmarks-button'),
+            cheat: one('help-button'),
+        };
+    });
+
+    expect(read.add.word, 'the add button does not say what it adds').toBe('add bookmark');
+    expect(read.search.word).toBe('search');
+    expect(read.recents.word).toBe('recents');
+    expect(read.cheat.word).toBe('cheat');
+    expect([read.add.key, read.search.key, read.recents.key, read.cheat.key])
+        .toEqual(['+', '>', '*', '!']);
+
+    for (const [name, one] of Object.entries(read)) {
+        expect(one.shown, `the ${name} button is a bare glyph again`).toBe(true);
+        expect(Boolean(one.keyFirst), `the ${name} button shows its word before its key`).toBe(true);
+        expect(one.named, `the ${name} button has no accessible name`).toBe(true);
+    }
 });
