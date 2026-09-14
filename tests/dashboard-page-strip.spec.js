@@ -67,6 +67,10 @@ async function showPageNames(page) {
 }
 
 const strip = (page) => page.evaluate(() => {
+    const centre = (el) => {
+        const r = el.getBoundingClientRect();
+        return r.top + r.height / 2;
+    };
     const track = document.querySelector('.page-navigation');
     const rect = track.getBoundingClientRect();
     const chip = track.querySelector('.page-nav-overflow');
@@ -74,9 +78,13 @@ const strip = (page) => page.evaluate(() => {
         width: Math.round(rect.width),
         height: Math.round(rect.height),
         visible: [...track.querySelectorAll('.page-nav-btn')].filter((b) => !b.hidden).length,
-        chip: chip ? chip.textContent.trim() : null,
-        actionsY: Math.round(document.querySelector('.header-actions').getBoundingClientRect().top),
-        headerY: Math.round(document.querySelector('.header-top').getBoundingClientRect().top),
+        // The chip carries its count, a caret and the key that opens the
+        // panel; the count is the part that says how many are folded away.
+        chip: chip ? chip.querySelector('.page-nav-overflow-count').textContent.trim() : null,
+        // The band has padding of its own, so "one row" is a shared centre
+        // line, not a shared top edge.
+        actionsY: Math.round(centre(document.querySelector('.header-actions'))),
+        headerY: Math.round(centre(document.querySelector('.header-top'))),
     };
 });
 
@@ -109,7 +117,9 @@ test('the track gives up width before the toolbar does', async ({ page }) => {
     await setCap(page, 9);
     await showPageNames(page);
     const wide = await strip(page);
-    await page.setViewportSize({ width: 900, height: 900 });
+    // 800: the desktop header still applies (the phone scroller starts at 767)
+    // and nine named tabs cannot fit in the middle zone at that width.
+    await page.setViewportSize({ width: 800, height: 900 });
     await page.waitForTimeout(500);
     const narrow = await strip(page);
 
@@ -200,7 +210,9 @@ test('the cap holds whether tabs are named or numbered', async ({ page }) => {
 });
 
 test('raising the cap shows more tabs, lowering it shows fewer', async ({ page }) => {
-    await openWithPages(page, 14);
+    // Wide enough that nine numbered tabs genuinely fit in the middle zone --
+    // this is the cap being read, not the width running out.
+    await openWithPages(page, 14, 1800);
 
     await setCap(page, 9);
     expect((await strip(page)).visible, 'the cap of 9 was not honoured').toBe(9);
@@ -210,9 +222,11 @@ test('raising the cap shows more tabs, lowering it shows fewer', async ({ page }
 });
 
 test('a narrow window still shows fewer than the cap allows', async ({ page }) => {
-    // 880px: the desktop header still applies, the phone scroller starts at 767.
-    await openWithPages(page, 14, 880);
+    // 800px: the desktop header still applies, the phone scroller starts at 767.
+    // With names on, a tab is wide enough that the zone runs out first.
+    await openWithPages(page, 14, 800);
     await setCap(page, 9);
+    await showPageNames(page);
     const s = await strip(page);
 
     expect(s.visible, 'the cap overruled the width measurement').toBeLessThan(9);

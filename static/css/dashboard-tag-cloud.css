@@ -28,7 +28,7 @@ body[data-show-tag-cloud-button="false"] #tag-cloud-toggle-btn,
     pointer-events: auto;
 }
 
-.tag-cloud-toggle-btn .search-button-icon {
+body:not(:has(.header-shortcuts)) .tag-cloud-toggle-btn .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
     animation-delay: 6.4s;
 }
@@ -394,27 +394,4 @@ body.no-animations .tag-cloud-wordcloud--live .tag-cloud-word {
     outline-offset: 2px;
     border-color: var(--accent-primary);
     color: var(--text-primary);
-}
-
-/* Dock corners */
-body[data-button-position="bottom-left"] .tag-cloud-toggle-btn.search-button {
-    left: auto;
-    right: var(--corner-fab-edge);
-}
-
-body[data-button-position="bottom-left"] .tag-cloud-modal {
-    transform-origin: bottom right;
-}
-
-body[data-button-position="bottom-right"] .tag-cloud-toggle-btn.search-button {
-    left: var(--corner-fab-edge);
-    right: auto;
-}
-
-body[data-button-position="bottom-right"] .tag-cloud-modal {
-    transform-origin: bottom left;
-}
-
-body[data-button-position="side-left"] .tag-cloud-modal {
-    transform-origin: top left;
 }

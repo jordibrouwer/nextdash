@@ -63,41 +63,40 @@ const VIEWS = [
     { name: 'inbox', open: openInbox, layoutClass: 'inbox-layout' },
 ];
 
-test.describe('quick-action toolbar is scoped to the bookmarks dashboard', () => {
-    test('the toolbar and What\'s New are visible on the dashboard', async ({ page }) => {
+test.describe('the header actions, and what the keys do inside a view', () => {
+    test('the four actions stand in the header on the dashboard', async ({ page }) => {
         await loadDashboard(page);
-        // Five of the seven are off by default on a fresh install (see
-        // settings_defaults_test.go): Recent, Help and Fold-all because the
-        // bar would be crowded, Commands and Finders because the search panel
-        // shows its three modes as one switch and does not need two more
-        // doors. Their group collapses when they are all off, so switch every
-        // one on to check that each can actually appear.
+        // Two of the four are off on a fresh install (see
+        // settings_defaults_test.go): Recent and Help, from when the bar would
+        // have been crowded. Switch them on to check each can appear.
         await page.evaluate(() => {
             const d = window.dashboardInstance;
             d.settings.showRecentButton = true;
             d.settings.showCheatSheetButton = true;
-            d.settings.showCollapseAllButton = true;
-            d.settings.showCommandsButton = true;
-            d.settings.showFindersButton = true;
             d.setupDOM();
         });
-        await expect(page.locator('.button-container')).toBeVisible();
+        await expect(page.locator('.header-shortcuts')).toBeVisible();
         await expect(page.locator('#quick-add-toolbar-btn')).toBeVisible();
         await expect(page.locator('#search-button')).toBeVisible();
-        await expect(page.locator('#commands-button')).toBeVisible();
-        await expect(page.locator('#finders-button')).toBeVisible();
         await expect(page.locator('#recent-bookmarks-button')).toBeVisible();
         await expect(page.locator('#help-button')).toBeVisible();
-        await expect(page.locator('#collapse-all-button')).toBeVisible();
         await expect(page.locator('#whats-new-btn')).toBeVisible();
     });
 
+    /*
+     * They stay in every view.
+     *
+     * While they were a dock pinned over the grid they belonged to the grid,
+     * and config, health and inbox hid them. In the header they are chrome like
+     * the destinations beside them — and hiding them left a hole in the row,
+     * because everything to their right kept its place.
+     */
     for (const { name, open, layoutClass } of VIEWS) {
-        test(`the toolbar is gone in ${name}, What's New stays`, async ({ page }) => {
+        test(`the actions stay in the header in ${name}`, async ({ page }) => {
             await open(page);
             await expect(page.locator(`#dashboard-layout.${layoutClass}`)).toBeVisible();
-            await expect(page.locator('.button-container')).toBeHidden();
-            await expect(page.locator('#search-button')).toBeHidden();
+            await expect(page.locator('.header-shortcuts')).toBeVisible();
+            await expect(page.locator('#search-button')).toBeVisible();
             await expect(page.locator('#whats-new-btn')).toBeVisible();
         });
     }

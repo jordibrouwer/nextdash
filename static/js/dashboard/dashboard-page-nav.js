@@ -412,11 +412,27 @@ class DashboardPageNav {
         tabs.forEach((tab) => { tab.hidden = false; });
         if (!tabs.length) return;
 
-        const budget = container.clientWidth;
-        if (!budget) return;
-
         // The gap between tabs counts towards the budget as much as the tabs do.
         const gap = parseFloat(window.getComputedStyle(container).columnGap) || 0;
+
+        // The room to fill is the zone's, not the track's own.
+        //
+        // The track is content-sized so the walk hints stay beside the tabs
+        // rather than at the far ends of the header, which means its width is
+        // whatever its tabs happen to need -- measuring against that says
+        // "everything fits" while the last tab runs off the header. What is
+        // actually available is the zone minus the hints standing in it.
+        const zone = container.closest('.header-track');
+        let budget = container.clientWidth;
+        if (zone) {
+            const zoneStyle = window.getComputedStyle(zone);
+            const zoneGap = parseFloat(zoneStyle.columnGap) || 0;
+            const taken = [...zone.children]
+                .filter((el) => el !== container && !el.hidden)
+                .reduce((sum, el) => sum + el.getBoundingClientRect().width + zoneGap, 0);
+            budget = zone.clientWidth - taken;
+        }
+        if (!budget || budget < 0) return;
         // Room kept for the chip itself, so adding it cannot push out the tab
         // it was measured against. Its own width is not knowable until it
         // exists, and a tab is the closest thing to it that does.
@@ -466,7 +482,14 @@ class DashboardPageNav {
         // a chip wearing the tab class would be measured as a tab and then
         // hidden behind a second chip.
         more.className = 'page-nav-overflow';
-        more.textContent = `+${hidden.length}`;
+        // Count, chevron, key: what is folded away, that it opens downward, and
+        // the key that opens it without the pointer.
+        more.innerHTML = ''
+            + `<span class="page-nav-overflow-count">+${hidden.length}</span>`
+            + '<svg class="page-nav-overflow-caret" viewBox="0 0 24 24" width="12" height="12" fill="none"'
+            + ' stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>'
+            + '<span class="page-nav-overflow-key" aria-hidden="true">,</span>';
         more.setAttribute('aria-label',
             d.formatDashboardLabel('pageTabsOverflow', { n: hidden.length }, `${hidden.length} more pages`));
         more.title = more.getAttribute('aria-label');
@@ -676,6 +699,19 @@ class DashboardPageNav {
         label.className = 'page-tab-label';
         label.textContent = d.settings.showPageNamesInTabs ? page.name : (index + 1).toString();
         btn.appendChild(label);
+
+        // The key that switches to this page, printed small and high beside its
+        // name -- the way a footnote marks a line. Only with names shown: a
+        // numbered tab already *is* its key, and 1 with a superscript 1 beside
+        // it says the same thing twice. Only the first nine, because that is
+        // how many keys there are.
+        if (d.settings.showPageNamesInTabs && index < 9) {
+            const key = document.createElement('sup');
+            key.className = 'page-tab-key';
+            key.setAttribute('aria-hidden', 'true');
+            key.textContent = String(index + 1);
+            btn.appendChild(key);
+        }
 
         // With names switched off the tab reads as a bare "1", which is what a
         // screen reader announces and what a tooltip would have said too. The

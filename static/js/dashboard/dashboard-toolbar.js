@@ -9,7 +9,7 @@ class DashboardToolbar {
     /**
      * The buttons that have a key, and which key.
      *
-     * One list feeds three things: the hover tooltip, the side-rail legend, and
+     * One list feeds two things: the hover tooltip and
      * the aria-keyshortcuts stamped on the buttons themselves. They used to be
      * three lists, which is how the header row ended up with tooltips and no
      * aria at all.
@@ -82,7 +82,6 @@ class DashboardToolbar {
         const d = this.dash;
         this.setupToolbarKbdTooltips();
         this.syncShortcutAriaHints();
-        this.syncSideRailDiscoverability();
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
             helpButton.addEventListener('click', () => {
@@ -287,14 +286,7 @@ class DashboardToolbar {
             tip.classList.add('is-visible');
             tip.setAttribute('aria-hidden', 'false');
             tip.dataset.for = btn.id || 'toolbar-btn';
-            const isSideRail = document.body.hasAttribute('data-rail');
-            if (isSideRail) {
-                tip.classList.add('toolbar-kbd-tooltip--side-rail');
-                tip.classList.remove('toolbar-kbd-tooltip--below');
-                tip.style.left = `${rect.right + 8}px`;
-                tip.style.top = `${rect.top + rect.height / 2}px`;
-            } else {
-                tip.classList.remove('toolbar-kbd-tooltip--side-rail');
+            {
                 // The toolbar sits at the bottom of the window, so its tooltips
                 // open upwards. The header icons sit at the top, where that same
                 // direction runs off the screen and the popover gets clipped —
@@ -411,6 +403,37 @@ class DashboardToolbar {
 
     setupHeaderEnhancements() {
         const d = this.dash;
+
+        /*
+         * Health and config open in place, whatever the address looks like.
+         *
+         * They are anchors to `/#health` and `/#config`, which is a hash change
+         * -- and therefore a soft route -- only while the address has nothing
+         * else in it. Come from the inbox or a health filter and the URL
+         * carries a query string (ib_filter, hv_sort and friends), so the same
+         * click changes the path *and* the query: the browser reloads the whole
+         * app, and the view you asked for arrives after a blank page. The href
+         * stays for middle-click, for Copy link address, and for anyone with
+         * JavaScript off; the click is handled here instead.
+         *
+         * Delegated on the document rather than bound to the anchors: both are
+         * re-created by dashboard-visual when the chrome settings change.
+         */
+        document.addEventListener('click', (e) => {
+            const anchor = e.target?.closest?.('.config-link-anchor, .health-link-anchor');
+            if (!anchor) return;
+            // Leave the browser's own gestures alone: a modified click or a
+            // middle button is someone asking for a second tab.
+            if (e.defaultPrevented || e.button !== 0) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            if (anchor.classList.contains('config-link-anchor')) {
+                void d.config?.openConfigView?.();
+            } else {
+                void d.health?.openHealthView?.();
+            }
+        });
+
         document.getElementById('page-overview-header-btn')?.addEventListener('click', () => {
             d.showPageOverlay();
         });
@@ -433,164 +456,22 @@ class DashboardToolbar {
         const wrap = document.getElementById('dashboard-tag-cloud-wrap');
         if (!toggle || !wrap) return;
 
-        const container = document.querySelector('.button-container');
-        const isSideRail = (d.settings?.buttonBarPosition || document.body.getAttribute('data-button-position')) === 'side-left';
-        if (isSideRail && container) {
-            // Direct child of .button-container — not inside .btn-group-secondary, which is
-            // display:none when Recent and Help are both hidden (fresh-install defaults).
-            if (toggle.parentElement !== container) {
-                container.appendChild(toggle);
+        // The header is where the actions are. It stands between search and
+        // recents there, which is the order the keys are learned in: find
+        // something, browse by tag, then what you opened last.
+        const shortcuts = document.querySelector('.header-shortcuts');
+        if (shortcuts) {
+            if (toggle.parentElement !== shortcuts) {
+                shortcuts.appendChild(toggle);
             }
-            this.syncSideRailDiscoverability();
             return;
         }
 
+        // No header to stand in (the phone layout builds its own): back in the
+        // wrap it came from, which is where its modal is anchored.
         if (toggle.parentElement !== wrap) {
             wrap.insertBefore(toggle, wrap.firstChild);
         }
-        this.syncSideRailDiscoverability();
-    }
-
-
-    syncSideRailDiscoverability() {
-        const d = this.dash;
-        const legendId = 'side-rail-legend';
-        const storageKey = 'nextdash:side-rail-legend-v1';
-        const isSideRail = document.body.hasAttribute('data-rail');
-        const canShow = isSideRail
-            && !d.isCoarsePointer()
-            && window.MobileExperience?.isMobileLayout?.() !== true
-            && window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false;
-
-        let legend = document.getElementById(legendId);
-        if (!canShow) {
-            if (legend) legend.hidden = true;
-            if (d._sideRailLegendTimer) {
-                clearTimeout(d._sideRailLegendTimer);
-                d._sideRailLegendTimer = null;
-            }
-            return;
-        }
-
-        const dismissLegend = ({ persist = true } = {}) => {
-            if (!legend) return;
-            legend.classList.add('is-dismissing');
-            if (d._sideRailLegendTimer) {
-                clearTimeout(d._sideRailLegendTimer);
-                d._sideRailLegendTimer = null;
-            }
-            setTimeout(() => {
-                legend.hidden = true;
-                legend.classList.remove('is-dismissing');
-            }, 360);
-            if (persist) {
-                try { localStorage.setItem(storageKey, '1'); } catch { /* ignore */ }
-            }
-        };
-
-        const isToolbarControlVisible = (btn) => {
-            if (!btn) return false;
-            const style = window.getComputedStyle(btn);
-            return style.display !== 'none' && style.visibility !== 'hidden';
-        };
-
-        const buildLegendItems = () => {
-            const t = (key, fallback) => {
-                const fullKey = `dashboard.${key}`;
-                const value = d.language?.t?.(fullKey);
-                return value && value !== fullKey ? value : fallback;
-            };
-            const defs = [
-                { id: 'quick-add-toolbar-btn', key: '+', labelKey: 'addBookmarkShort', fallback: 'bookmark' },
-                { id: 'search-button', key: '>', labelKey: 'searchLabel', fallback: 'search' },
-                { id: 'finders-button', key: '?', labelKey: 'findersLabel', fallback: 'finders' },
-                { id: 'commands-button', key: ':', labelKey: 'commandsLabel', fallback: 'commands' },
-                { id: 'recent-bookmarks-button', key: '*', labelKey: 'tooltipRecent', fallback: 'recent' },
-                { id: 'tag-cloud-toggle-btn', key: '/', labelKey: 'tagCloudToggleAria', fallback: 'tag cloud' },
-                { id: 'help-button', key: '!', labelKey: 'tooltipCheatsheet', fallback: 'cheatsheet' },
-                { id: 'collapse-all-button', key: '.', labelKey: 'collapseAllLabel', fallback: 'fold' },
-                // What's new is left out rather than listed: it has no key, and
-                // the ★ that stood here was the button's own glyph printed in
-                // the same chip as the real keys beside it — a key to press,
-                // read literally.
-            ];
-            return defs
-                .map((def) => {
-                    const btn = document.getElementById(def.id);
-                    if (!isToolbarControlVisible(btn)) return null;
-                    return {
-                        key: def.key,
-                        label: t(def.labelKey, def.fallback),
-                    };
-                })
-                .filter(Boolean);
-        };
-
-        if (!legend) {
-            legend = document.createElement('aside');
-            legend.id = legendId;
-            legend.className = 'side-rail-legend';
-            legend.setAttribute('role', 'complementary');
-            legend.hidden = true;
-            document.body.appendChild(legend);
-        }
-
-        const items = buildLegendItems();
-        if (!items.length) {
-            legend.hidden = true;
-            return;
-        }
-
-        legend.replaceChildren();
-        const title = document.createElement('p');
-        title.className = 'side-rail-legend-title';
-        title.textContent = d.language?.t('dashboard.sideRailLegendTitle') || 'Side rail';
-        legend.appendChild(title);
-
-        const list = document.createElement('ul');
-        list.className = 'side-rail-legend-list';
-        items.forEach((item) => {
-            const li = document.createElement('li');
-            li.className = 'side-rail-legend-item';
-            const key = document.createElement('span');
-            key.className = 'side-rail-legend-key';
-            key.textContent = item.key;
-            const label = document.createElement('span');
-            label.className = 'side-rail-legend-label';
-            label.textContent = item.label;
-            li.append(key, label);
-            list.appendChild(li);
-        });
-        legend.appendChild(list);
-
-        const foot = document.createElement('p');
-        foot.className = 'side-rail-legend-foot';
-        foot.textContent = d.language?.t('dashboard.sideRailLegendHover') || 'Hover any icon for shortcuts';
-        legend.appendChild(foot);
-
-        const dismissBtn = document.createElement('button');
-        dismissBtn.type = 'button';
-        dismissBtn.className = 'side-rail-legend-dismiss';
-        dismissBtn.textContent = d.language?.t('dashboard.sideRailLegendDismiss') || 'Got it';
-        dismissBtn.addEventListener('click', () => dismissLegend());
-        legend.appendChild(dismissBtn);
-
-        let shouldShow = false;
-        try {
-            shouldShow = !localStorage.getItem(storageKey);
-        } catch {
-            shouldShow = true;
-        }
-
-        if (!shouldShow || d.onboardingStartedInSession || d.settings?.onboardingCompleted !== true) {
-            legend.hidden = true;
-            return;
-        }
-
-        legend.hidden = false;
-        legend.classList.remove('is-dismissing');
-        if (d._sideRailLegendTimer) clearTimeout(d._sideRailLegendTimer);
-        d._sideRailLegendTimer = setTimeout(() => dismissLegend(), 14_000);
     }
 
 

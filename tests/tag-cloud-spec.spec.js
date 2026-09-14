@@ -84,3 +84,71 @@ test.describe('the word cloud', () => {
         expect(after, 'the figure did not move when a tag was switched on').not.toBe(before);
     });
 });
+
+/*
+ * It hangs under the button, and stays inside the window.
+ *
+ * The cloud was anchored to a corner FAB: it pinned itself by its bottom edge
+ * and worked out whether to open upward. From the header — the top of the
+ * window — that threw it against the far corner, and the two ways in landed in
+ * different places, because the key and the button reached the placement code
+ * in different states. One dropdown now, from either.
+ */
+test.describe('where the cloud opens', () => {
+    async function readCloud(page) {
+        // The cloud scales in when it opens, and a box read mid-animation is a
+        // smaller box in a different place -- which is a moving target, not a
+        // placement. Let it settle first.
+        await page.waitForTimeout(400);
+        return page.evaluate(() => {
+            const modal = document.getElementById('tag-cloud-modal');
+            const button = document.getElementById('tag-cloud-toggle-btn');
+            const m = modal.getBoundingClientRect();
+            const b = button.getBoundingClientRect();
+            return {
+                top: Math.round(m.top), left: Math.round(m.left),
+                right: Math.round(m.right), bottom: Math.round(m.bottom),
+                buttonBottom: Math.round(b.bottom), buttonRight: Math.round(b.right),
+                width: Math.round(document.documentElement.clientWidth),
+                height: Math.round(window.innerHeight),
+            };
+        });
+    }
+
+    test('under the button, whole, whichever way it is opened', async ({ page }) => {
+        await openCloud(page);
+        const viaCode = await readCloud(page);
+
+        // Under the button rather than over the page it belongs to.
+        expect(viaCode.top, 'the cloud does not hang from the button')
+            .toBeGreaterThanOrEqual(viaCode.buttonBottom);
+        // Whole: nothing of it is outside the window on either axis.
+        expect(viaCode.left, 'the cloud runs off the left edge').toBeGreaterThanOrEqual(0);
+        expect(viaCode.right, 'the cloud runs off the right edge').toBeLessThanOrEqual(viaCode.width);
+        expect(viaCode.bottom, 'the cloud runs off the bottom').toBeLessThanOrEqual(viaCode.height);
+
+        // The key and the button put it in the same place.
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(
+            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
+        )).toBe(false);
+
+        await page.locator('#tag-cloud-toggle-btn').click();
+        await expect.poll(() => page.evaluate(
+            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
+        )).toBe(true);
+        const viaButton = await readCloud(page);
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        await page.keyboard.press('/');
+        await expect.poll(() => page.evaluate(
+            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
+        )).toBe(true);
+        const viaKey = await readCloud(page);
+
+        expect({ top: viaKey.top, left: viaKey.left },
+            'the key and the button open the cloud in different places')
+            .toEqual({ top: viaButton.top, left: viaButton.left });
+    });
+});

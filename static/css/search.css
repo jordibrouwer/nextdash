@@ -700,31 +700,6 @@ body.no-animations .search-button[data-tooltip]::after {
     user-select: none;
 }
 
-/* The classic dock has no plate of its own -- .button-container is deliberately
-   border-less, fill-less and blur-less -- so these buttons are the only thing
-   between the page and the eye. At 74% over nothing, a scrolled grid reads
-   straight through them: bookmark names run across the icons.
- *
- * The fix composites the same 74% over --background-primary instead of over
- * transparent. The face keeps exactly the colour it has today wherever the dock
- * sits over empty page, so nothing about the design changes -- it just stops
- * being a window.
- *
- * It moves a variable rather than the background itself on purpose. An override
- * specific enough to name the dock would also outrank `.search-button:hover`,
- * which sets `background` flat out, and the rest state would win over the hover
- * state. Feeding the base declaration instead leaves every interaction rule
- * exactly as specific as it was.
- *
- * Not for the modern layout: it puts a blurred plate under the row (centre) or
- * under each group (corners) and keeps the faces translucent against it, which
- * is a whole answer to the same question. Not for the rail either -- there the
- * buttons sit on the rail's own surface. */
-body:not([data-rail]) .button-container .search-button,
-body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
-    --search-button-under: var(--background-primary);
-}
-
 .search-button:hover {
     background: var(--background-secondary);
     color: var(--text-primary);
@@ -767,12 +742,21 @@ body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
     100% { opacity: 1; }
 }
 
-#search-button .search-button-icon,
-.add-bookmark-button .search-button-icon,
-.commands-button .search-button-icon,
-.finders-button .search-button-icon,
-.recent-button .search-button-icon,
-.help-button .search-button-icon {
+/*
+ * Not in the header.
+ *
+ * The pulse was a hint for a glyph floating over the grid; in the header that
+ * same span is the key printed on the button's corner, and a keycap that
+ * blinks every ten seconds reads as a fault rather than an invitation.
+ */
+body:not(:has(.header-shortcuts)) :is(
+    #search-button,
+    .add-bookmark-button,
+    .commands-button,
+    .finders-button,
+    .recent-button,
+    .help-button
+) .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
 }
 #search-button .search-button-icon         { animation-delay: 1s;   }
@@ -823,95 +807,9 @@ body.no-animations .search-match.keyboard-selected {
     display: contents;
 }
 
-
-/* ─── Side-dock: gedeeld (left + right) ──────────────────────────────────── */
-body[data-button-position="bottom-left"] .button-container,
-body[data-button-position="bottom-right"] .button-container {
-    flex-direction: row;
-    align-items: flex-end;
-    width: auto;
-    padding: 0;
-    gap: var(--space-1-5, 0.35rem);
-    border-radius: 0;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: none;
-    box-shadow: none;
-    left: unset;
-    transform: none;
-    bottom: 1.5rem;
-}
-
-body[data-button-position="bottom-left"] .btn-group,
-body[data-button-position="bottom-right"] .btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.3rem);
-}
-
-body[data-button-position="bottom-left"] .btn-group-secondary,
-body[data-button-position="bottom-right"] .btn-group-secondary {
-    padding-top: 0;
-    border-top: none;
-}
-
-
-/* search-flow-hint past niet in de dock */
-body[data-button-position="bottom-left"] .search-flow-hint,
-body[data-button-position="bottom-right"] .search-flow-hint {
-    display: none !important;
-}
-
-/* ─── Rechter-dock ───────────────────────────────────────────────────────── */
-body[data-button-position="bottom-right"] .button-container {
-    right: 1rem;
-}
-body[data-button-position="bottom-right"] .btn-group-secondary { order: 0; }
-body[data-button-position="bottom-right"] .btn-group-primary   { order: 1; }
-
-/* ─── Linker-dock ────────────────────────────────────────────────────────── */
-body[data-button-position="bottom-left"] .button-container {
-    left: 1rem;
-}
-body[data-button-position="bottom-left"] .btn-group-primary   { order: 0; }
-body[data-button-position="bottom-left"] .btn-group-secondary { order: 1; }
-
-/* ─── Tooltips richting omdraaien in side-dock ───────────────────────────── */
-body[data-button-position="bottom-left"] .search-button[data-tooltip]::after {
-    bottom: auto;
-    top: 50%;
-    left: calc(100% + 8px);
-    transform: translateY(-50%);
-}
-body[data-button-position="bottom-right"] .search-button[data-tooltip]::after {
-    bottom: auto;
-    top: 50%;
-    right: calc(100% + 8px);
-    left: auto;
-    transform: translateY(-50%);
-}
-
-
-/* ─── Hover-richting: weg van de rand ────────────────────────────────────── */
-body[data-button-position="bottom-right"] .search-button:hover {
-    transform: translateX(-2px);
-}
-body[data-button-position="bottom-left"] .search-button:hover {
-    transform: translateX(2px);
-}
-body[data-button-position="bottom-right"] .search-button:active,
-body[data-button-position="bottom-left"] .search-button:active {
-    transform: translateX(0);
-}
-
 /* Ensure button container remains centered when animations are disabled */
 body.no-animations .button-container {
     transform: translateX(-50%) !important;
-}
-/* Side rail: no-animations must not re-center the rail */
-body.no-animations[data-button-position="side-left"] .button-container {
-    transform: none !important;
 }
 
 body.no-animations .shortcut-search,
@@ -1158,20 +1056,6 @@ body.no-animations .search-history-chip,
 body.no-animations .search-history-chip-remove,
 body.no-animations .search-history-remove {
     transition: none !important;
-}
-
-/* Side rail / corner docks: keep centered placement */
-body[data-button-position="side-left"] .shortcut-search,
-body[data-button-position="bottom-left"] .shortcut-search,
-body[data-button-position="bottom-right"] .shortcut-search {
-    justify-content: center;
-    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
-}
-
-body[data-button-position="side-left"] .shortcut-search .search-container,
-body[data-button-position="bottom-left"] .shortcut-search .search-container,
-body[data-button-position="bottom-right"] .shortcut-search .search-container {
-    max-height: calc(100vh - 2rem);
 }
 
 .search-command-chip {

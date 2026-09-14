@@ -38,11 +38,17 @@ test('the view name sits in the header row, not in a band of its own', async ({ 
     const actions = await box(page, '.header-actions');
 
     expect(identity, 'there is no identity block').not.toBeNull();
-    // The name is inside the header row, and starts at its left edge.
-    expect(title.y).toBe(header.y);
-    expect(title.x).toBe(header.x);
+    // The row is a band with padding of its own now, so "in the row" is a
+    // centre line shared rather than an edge shared: the name and the actions
+    // ride the same middle, and the name is the leftmost thing on it.
+    const middle = (b) => Math.round(b.y + b.h / 2);
+    // The name is the top line of a two-line block, so what rides the row's
+    // middle is the block; the name itself sits above it and inside the band.
+    expect(middle(identity), 'the identity block is not on the row').toBeCloseTo(middle(header), -1);
+    expect(title.y, 'the name escaped the band').toBeGreaterThanOrEqual(header.y);
+    expect(title.x, 'something stands left of the name').toBeLessThan(actions.x);
     // The actions are in the same row, not under it.
-    expect(actions.y).toBe(header.y);
+    expect(middle(actions), 'the actions dropped off the row').toBeCloseTo(middle(header), -1);
     expect(actions.x).toBeGreaterThan(title.x + title.w);
 
     // And the band that used to hold the name is gone entirely.
@@ -75,4 +81,74 @@ test('the grid starts higher than it did', async ({ page }) => {
     // the space between them. The header now carries both.
     const grid = await box(page, '#dashboard-layout');
     expect(grid.y, `the grid starts at ${grid.y}px`).toBeLessThan(148);
+});
+
+/*
+ * The bar is chrome; what is in it belongs to the page.
+ *
+ * As a card the header was an island: 1309px of slab with a corner and a cast,
+ * floating over content 1040px wide that carries no card of its own — and in a
+ * view a second card started right under it. It runs edge to edge now, with one
+ * hairline, and its contents sit on the page's own vertical: the grid's on the
+ * dashboard, the panel's in config.
+ */
+test('the bar spans the window and its contents span the page', async ({ page }) => {
+    await openDashboard(page);
+
+    const onGrid = await page.evaluate(() => {
+        const box = (sel) => {
+            const r = document.querySelector(sel).getBoundingClientRect();
+            return { x: Math.round(r.x), right: Math.round(r.right) };
+        };
+        const bar = box('.dashboard-section.section-controls');
+        return {
+            bar,
+            // The page's own width: html reserves a stable scrollbar gutter
+            // (theme.css), so edge to edge means body's edges, not the
+            // viewport's 11px-wider ones.
+            page: Math.round(document.body.clientWidth),
+            barSpansWindow: bar.x === 0 && Math.abs(bar.right - document.body.clientWidth) <= 1,
+            row: box('.header-top'),
+            grid: box('#dashboard-layout'),
+            radius: window.getComputedStyle(document.querySelector('.header-top')).borderTopLeftRadius,
+        };
+    });
+
+    expect(onGrid.barSpansWindow,
+        `the bar runs ${onGrid.bar.x}-${onGrid.bar.right} in a ${onGrid.page}px window`).toBe(true);
+    expect(onGrid.row, 'the header does not share the grid’s column').toEqual(onGrid.grid);
+    expect(parseFloat(onGrid.radius), 'the header row is still a card').toBe(0);
+
+    // And the dashboard's positions are the positions, in every view: the row
+    // followed each view's own column for a while, so the add button and the
+    // config icon moved as you walked between them.
+    const places = async () => page.evaluate(() => {
+        const x = (sel) => {
+            const el = document.querySelector(sel);
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return r.width ? Math.round(r.x) : null;
+        };
+        return {
+            row: x('.header-top'),
+            track: x('.header-track'),
+            pages: x('.pages-link'),
+            // Hidden in a view rather than removed, so its box still holds the
+            // place of everything right of it.
+            actions: x('.header-shortcuts'),
+            health: x('.health-link'),
+            config: x('.config-link'),
+        };
+    });
+
+    const onDashboard = await places();
+
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+    await page.waitForSelector('.config-view', { timeout: 20_000 });
+    await page.waitForTimeout(500);
+    expect(await places(), 'the header shifts when config opens').toEqual(onDashboard);
+
+    await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
+    await page.waitForTimeout(900);
+    expect(await places(), 'the header shifts when the inbox opens').toEqual(onDashboard);
 });

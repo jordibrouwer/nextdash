@@ -734,7 +734,7 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
  * Each action is the reader's to switch off, and all three off leaves a border
  * with no buttons in it -- so the surround goes when the last one does.
  */
-body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-recent-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
+body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-commands-button="false"][data-show-finders-button="false"][data-show-tag-cloud-button="false"][data-show-recent-button="false"][data-show-collapse-all-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
     display: none;
 }
 
@@ -749,7 +749,10 @@ body[data-show-add-bookmark-button="false"][data-show-search-button="false"][dat
  */
 body[data-show-add-bookmark-button="false"] .header-shortcuts #quick-add-toolbar-btn,
 body[data-show-search-button="false"] .header-shortcuts #search-button,
+body[data-show-commands-button="false"] .header-shortcuts #commands-button,
+body[data-show-finders-button="false"] .header-shortcuts #finders-button,
 body[data-show-recent-button="false"] .header-shortcuts .recent-button,
+body[data-show-collapse-all-button="false"] .header-shortcuts #collapse-all-button,
 body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
@@ -846,19 +849,13 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
  */
 .header-actions .header-shortcuts #quick-add-toolbar-btn   { order: 1; }
 .header-actions .header-shortcuts #search-button           { order: 2; }
-.header-actions .header-shortcuts #recent-bookmarks-button { order: 3; }
-.header-actions .header-shortcuts #help-button             { order: 4; }
+.header-actions .header-shortcuts #commands-button         { order: 3; }
+.header-actions .header-shortcuts #finders-button          { order: 4; }
+.header-actions .header-shortcuts #tag-cloud-toggle-btn    { order: 5; }
+.header-actions .header-shortcuts #recent-bookmarks-button { order: 6; }
+.header-actions .header-shortcuts #collapse-all-button     { order: 7; }
+.header-actions .header-shortcuts #help-button             { order: 8; }
 
-/*
- * Written past the dock's own rules on purpose.
- *
- * search.css stacks .btn-group into a column for the corner positions
- * (body[data-button-position="bottom-right"] and friends), which outranks a
- * plain .header-shortcuts .btn-group -- and the header inherited a layout
- * meant for a bar pinned to a corner, so the buttons came out one above the
- * other. Those rules go when the floating bar does; until then this has to
- * out-specify them.
- */
 /*
  * The groups dissolve, so every button is a sibling of every other.
  *
@@ -4917,14 +4914,13 @@ body:has(#dashboard-layout.inbox-layout) .button-container,
 /* The actions moved into the header; the scoping had to move with them, or
    Health and Inbox draw a fold-all and an add-bookmark for a grid that is not
    there. The destinations beside them stay: those are how you leave. */
-body:has(#dashboard-layout.config-layout) .header-shortcuts,
-body:has(#dashboard-layout.health-layout) .header-shortcuts,
-body:has(#dashboard-layout.inbox-layout) .header-shortcuts {
-    display: none;
-}
-
-/* Side rail: / tag cloud is a direct .button-container child (not inside secondary group) */
-body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn.is-eligible {
+/*
+ * The actions stand in every view.
+ *
+ * They were hidden in config, health and inbox, from back when they were a
+ * dock that belonged to the grid. In the header they are chrome like the
+ * destinations beside them: add, search, recents and the cheat sheet all open
+ * over whatever view you are in{
     display: flex !important;
 }
 
@@ -5254,42 +5250,11 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
 }
 
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    max-height: calc(100vh - 4rem);
-}
-
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
-}
-
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) {
-    justify-content: center;
-    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
-}
-
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    max-height: calc(100vh - 2rem);
 }
 
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
@@ -6924,4 +6889,649 @@ button.dashboard-widget-stat.keyboard-selected {
 
 body.no-animations .dashboard-widget-stat-key {
     transition: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The header band — the three-zone design, as drawn.
+
+   Taken from the Superdesign draft "nextDash — Responsive Header Evolution"
+   at 1500px: one slab holding three zones, left to right. The name and the
+   clock on the left in a fixed column; the pages in the middle, centred,
+   between the two keys that walk them; what you do and where you go on the
+   right, the actions boxed together and the destinations standing free.
+
+   The numbers below are the draft's own: 0.6rem/1.25rem of padding, 28px
+   controls, 4px corners inside an 8px slab, and a page tab that carries its
+   key as a superscript.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * The bar runs the width of the window; its contents run the width of the page.
+ *
+ * As a card it was an island: 1309px of slab with an 8px corner and a cast,
+ * floating over content 1040px wide that carries no card of its own -- and in
+ * config, inbox and health a second card started 24px below it, so the top of
+ * every view was two loose plates. Edge to edge with one hairline under it, it
+ * is chrome rather than a card, and there is no rim left to misalign.
+ *
+ * What still has to line up is what is *in* it: the name sits on the same
+ * vertical as the first column of the grid, and in a view on the same vertical
+ * as the panel. That is --header-column, set per view below.
+ */
+.dashboard-section.section-controls {
+    /*
+     * No fill of its own: the page's background runs straight through.
+     *
+     * A slab here was a second surface over the theme's own -- pattern,
+     * gradient and tint all stopped at the top of the page and started again
+     * below the bar. One hairline is enough to say where the chrome ends, and
+     * the controls carry their own plates.
+     */
+    background: transparent;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    /* The air under the header belongs to the page, not to the bar: as padding
+       it was inside the fill and the hairline sat 24px below the controls. */
+    padding-bottom: 0;
+    margin-bottom: var(--space-5, 1.5rem);
+}
+
+.dashboard-section.section-controls .header-top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    /* 10px rather than the draft's 9.6: at 0.6rem the row landed on a half
+       pixel, and the hairline under every control in it was the half that got
+       rounded away. */
+    padding: 0.625rem 0;
+    /* The page's own column, and centred in the bar the way the page is
+       centred on the screen. */
+    width: 100%;
+    max-width: var(--header-column, none);
+    margin-inline: auto;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/*
+ * One header, one position, whatever view is open.
+ *
+ * It followed each view's own column for a while -- 1040px in config, 68rem in
+ * the list views -- which meant the add button and the config icon moved as
+ * you walked between them: the same control in three places depending on where
+ * you had been. The dashboard is the one that sets it, and every view loads
+ * the header on those positions. --header-column stays unset, so the row keeps
+ * the page container's width.
+ */
+
+/* ── Left: the name, and the line under it ────────────────────────────────── */
+
+.dashboard-section.section-controls .header-identity {
+    /* The draft's own column: wide enough for a name, and fixed so the middle
+       zone starts in the same place whatever the page is called. */
+    width: 14rem;
+    flex: 0 0 auto;
+    gap: 0;
+}
+
+.dashboard-section.section-controls .header-identity .title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    opacity: 1;
+}
+
+.dashboard-section.section-controls .header-identity .title-breadcrumb {
+    font-size: 0.65rem;
+    margin-top: 2px;
+}
+
+/*
+ * Clock and weather are one line, not two.
+ *
+ * They are rendered as two blocks (see renderDateWeatherLine), which is what
+ * the popover and the error state hang off, so the line is made here rather
+ * than by rewriting what either says.
+ */
+.dashboard-section.section-controls .header-identity .date {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.35rem;
+    margin-top: 2px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+}
+
+.dashboard-section.section-controls .header-identity .date-time-line,
+.dashboard-section.section-controls .header-identity .date-weather-line {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+}
+
+/* The separator belongs to the line, not to either half of it. */
+.dashboard-section.section-controls .header-identity .date-time-line + .date-weather-line::before {
+    content: "·";
+    margin-right: 0.35rem;
+    opacity: 0.7;
+}
+
+/* ── Middle: the pages, between the keys that walk them ───────────────────── */
+
+.header-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+/*
+ * Shift+Arrow moves a page at a time, and has since long before anything said
+ * so. Printed at either end of the track, quiet enough to ignore.
+ */
+.page-walk-hint {
+    flex: 0 0 auto;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0.4;
+}
+
+/*
+ * The track fills the middle zone rather than sizing to its tabs.
+ *
+ * fitPageTabs measures against this element's own width, so a content-sized
+ * track reports "everything fits" however far past the header it runs -- the
+ * last tab was clipped in half and no chip was drawn at all. Filling the zone
+ * makes the measurement the honest one, and the tabs stay centred in it.
+ */
+.header-track .page-navigation {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow: hidden;
+    /* Sized by its tabs, so the walk hints stand beside them rather than at the
+       ends of the zone. What fits is measured against the zone -- see
+       fitPageTabs, which reads this element's parent. */
+    flex: 0 1 auto;
+}
+
+/* ── A page is a box with its key on it ───────────────────────────────────── */
+
+.header-track .page-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Bigger than the draft's 28px: a numbered tab is one character wide, and
+       at the draft's size the middle zone read as a row of loose digits rather
+       than as the pages of the thing you are looking at. Raised twice since,
+       because the pages are the one thing in this bar you aim at by name. */
+    height: 40px;
+    min-width: 2.6rem;
+    padding: 0 1rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    /* The same surface the action group takes, so the two groups in the band
+       are made of one material. On glass this is the see-through step; on the
+       other depths it falls back to the block colour. */
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Written at the zone's own weight: the rule above is two classes and would
+   otherwise re-display a tab that fitPageTabs has folded away. */
+.header-track .page-nav-btn[hidden] {
+    display: none;
+}
+
+.header-track .page-nav-btn:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+
+.header-track .page-nav-btn.active {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+}
+
+.header-track .page-tab-key {
+    margin-left: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 400;
+    opacity: 0.5;
+    vertical-align: super;
+}
+
+/* ── What did not fit ─────────────────────────────────────────────────────── */
+
+.header-track .page-nav-overflow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.header-track .page-nav-overflow:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+
+.page-nav-overflow-caret {
+    flex: 0 0 auto;
+    opacity: 0.7;
+}
+
+.page-nav-overflow-key {
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+/* ── Right: what you do, then where you go ────────────────────────────────── */
+
+.dashboard-section.section-controls .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+}
+
+/* One between the pages and what you do, one between that and where you go. */
+.header-zone-divider {
+    width: 1px;
+    height: 24px;
+    flex: 0 0 auto;
+    background: var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/* The actions are one box of 28px squares, the way the draft draws them. */
+.dashboard-section.section-controls .header-shortcuts {
+    display: flex;
+    align-items: center;
+    /* Room for the key that sits on each button's corner: butted together, the
+       marks landed on the neighbour's icon and neither could be read. The
+       padding is what keeps those marks inside the group -- at 3px the last
+       one hung past the page's own edge on a 1280 window. */
+    gap: 5px;
+    padding: 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    background: var(--surface-glass-page, var(--background-secondary));
+}
+
+.header-actions .header-shortcuts .search-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-3, 4px);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    overflow: visible;
+    transition: opacity 0.2s, color 0.2s, background 0.2s;
+}
+
+.header-actions .header-shortcuts .search-button:hover,
+.header-actions .header-shortcuts .search-button:focus-visible {
+    opacity: 1;
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+    transform: none;
+}
+
+.header-action-glyph {
+    flex: 0 0 auto;
+    pointer-events: none;
+}
+
+/*
+ * The word is the accessible name, not a thing on screen.
+ *
+ * Five 28px squares is what the draft draws; a word beside each would be a
+ * strip again. Each button keeps its aria-label and its tooltip, so the word
+ * is a hover or a screen reader away.
+ */
+.header-actions .header-shortcuts .search-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/*
+ * The key sits on the corner of the button it belongs to.
+ *
+ * Opaque, with a ring of the band's own colour around it: a translucent chip
+ * over an icon is two drawings in the same 10 pixels and neither survives it.
+ */
+.header-actions .header-shortcuts .search-button-icon {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 12px;
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--background-primary);
+    box-shadow: 0 0 0 1px var(--border-primary);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 13px;
+    text-align: center;
+    opacity: 1;
+}
+
+/* ── The destinations: the same square, standing on the band ──────────────── */
+
+.header-destinations {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/*
+ * A destination is the size of the group of actions beside it.
+ *
+ * They were 28px squares standing next to a box that measures 40 -- the same
+ * button, drawn smaller, because one of them had a surround and the other did
+ * not. The outer size is what the eye compares, so that is what matches:
+ * 28 + 2x5 of padding + 2x1 of border.
+ */
+.dashboard-section.section-controls .header-actions .pages-link-anchor,
+.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .config-link-anchor,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 4px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    overflow: visible;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.dashboard-section.section-controls .header-actions .pages-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .config-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.dashboard-section.section-controls .header-actions .pages-link-icon,
+.dashboard-section.section-controls .header-actions .health-link-icon,
+.dashboard-section.section-controls .header-actions .config-link-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/*
+ * A count rides the corner of the square it counts for.
+ *
+ * Health drew its count as a pill standing beside the icon, which made the
+ * health link twice the width of every other destination and the only one
+ * whose width moved with its data. The draft puts both counts on the corner of
+ * their own square: 14px, filled, white on the colour that says what it is.
+ */
+.dashboard-section.section-controls .header-actions .page-inbox-badge,
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    left: auto;
+    bottom: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 16px, not the draft's 14: two digits at 14px is a number you can see but
+       not read. The ring in the band's colour is what lifts it off the icon. */
+    min-width: 16px;
+    width: auto;
+    height: 16px;
+    padding: 0 4px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--background-secondary) 92%, transparent),
+        0 1px 3px color-mix(in srgb, #000 40%, transparent);
+    z-index: 2;
+}
+
+.dashboard-section.section-controls .header-actions .page-inbox-badge {
+    background: var(--accent-primary);
+    color: var(--background-primary);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+    background: var(--accent-error);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-warn {
+    background: var(--accent-warning);
+    color: var(--text-on-warning, #000);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-down {
+    background: var(--accent-error);
+    color: #fff;
+}
+
+/* ── Depth: the band is a slab, the groups are plates on it ───────────────────
+   The draft is a glass design: every surface carries a lit top edge, a dark
+   bottom one, and a shadow whose depth says how far off the page it sits. All
+   of it scales with --theme-depth, so "flat" in Appearance flattens the header
+   the way it flattens everything else.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * One plate, wherever it stands.
+ *
+ * The action group and the page tabs were built with two different casts --
+ * the group's shadow read as a raised plate and the tabs' as a hairline, so
+ * one half of the band looked pressed and the other drawn. This is the single
+ * recipe both take, and the destinations with them.
+ */
+.dashboard-section.section-controls .header-top {
+    --header-plate-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(12% * var(--theme-depth, 1)), transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 calc(22% * var(--theme-depth, 1)), transparent),
+        0 1px 5px color-mix(in srgb, #000 calc(25% * var(--theme-depth, 1)), transparent);
+}
+
+.dashboard-section.section-controls .header-shortcuts {
+    box-shadow: var(--header-plate-shadow);
+}
+
+/* A page tab is a plate too, one step shallower than the group beside it. */
+/*
+ * The tabs, the chip and the destinations take the group's plate.
+ *
+ * Each carries both edges: the top was lit and the bottom was not, so on a row
+ * that lands on a half pixel the bottom hairline was the half that got rounded
+ * away -- a box with no floor.
+ */
+.header-track .page-nav-btn,
+.header-track .page-nav-overflow,
+.dashboard-section.section-controls .header-actions .pages-link-anchor,
+.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .config-link-anchor,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    box-shadow: var(--header-plate-shadow);
+}
+
+/* The page you are on is lit from inside rather than raised. */
+/* The page you are on keeps the plate and adds the bloom. */
+.header-track .page-nav-btn.active {
+    box-shadow:
+        var(--header-plate-shadow),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+}
+
+/*
+ * Pressing puts a control back into its plate.
+ *
+ * The lit edge moves from the top to the inside and the shadow under it goes,
+ * which is the whole gesture -- raised, then pushed in.
+ */
+.header-actions .header-shortcuts .search-button:active,
+.header-track .page-nav-btn:active,
+.header-track .page-nav-overflow:active,
+.dashboard-section.section-controls .header-actions .pages-link-anchor:active,
+.dashboard-section.section-controls .header-actions .health-link-anchor:active,
+.dashboard-section.section-controls .header-actions .config-link-anchor:active {
+    box-shadow:
+        inset 0 1px 3px color-mix(in srgb, #000 calc(45% * var(--theme-depth, 1)), transparent);
+    transform: translateY(calc(0.5px * var(--theme-depth, 1)));
+}
+
+
+/* ── The band as the window narrows ───────────────────────────────────────────
+   The draft's own four steps, in its own order: the keys printed on the action
+   buttons go first, then the clock line, then the track folds to the page you
+   are on, and the hints that walk it go last. Each step gives up the least
+   useful thing still standing.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 1180 — the keys come off the buttons. The keys still work. */
+@media (max-width: 1180px) {
+    .header-actions .header-shortcuts .search-button-icon {
+        display: none;
+    }
+}
+
+/* 920 — the clock and the weather go; the name stays. */
+@media (max-width: 920px) {
+    .dashboard-section.section-controls .header-identity {
+        width: auto;
+    }
+
+    .dashboard-section.section-controls .header-identity .date {
+        display: none;
+    }
+}
+
+/* 780 — the track has already folded to the active page by measurement; what
+   goes here is the room around it. */
+@media (max-width: 780px) {
+    .dashboard-section.section-controls .header-top {
+        padding: 0.5rem 0.75rem;
+        gap: var(--space-2, 0.5rem);
+    }
+
+    .page-walk-hint {
+        display: none;
+    }
+}
+
+
+/*
+ * The tag cloud is an action like the others.
+ *
+ * It was a corner FAB: fixed to the viewport, with a bottom-left anchor and a
+ * pulse on its glyph. In the row it is a 28px square between search and
+ * recents. The !important undoes dashboard-tag-cloud.css's own !important,
+ * which hid it outside the grid -- it stands in every view now, and pressing
+ * it from one goes back to the page it filters (see onToggleClick).
+ */
+.header-actions .header-shortcuts .tag-cloud-toggle-btn.search-button {
+    /* relative, not static: the key on its corner is positioned against this
+       button, and with no containing block of its own the chip fell back to
+       whatever was positioned above it and landed at the page's right edge. */
+    position: relative;
+    z-index: auto;
+    left: auto;
+    bottom: auto;
+    padding: 0;
+    pointer-events: auto;
+}
+
+body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:not(.is-eligible) {
+    display: inline-flex !important;
+}
+
+/*
+ * The destination you are in is lit.
+ *
+ * Health, config and the inbox tab all carry `active` while their view is open
+ * (setActivePageNavButton, syncHealthLinkActiveState, syncConfigLinkActiveState)
+ * and nothing in the header read it -- so the bar looked the same whether you
+ * were on the grid or three views deep. Same treatment the active page tab
+ * takes, because it says the same thing.
+ */
+.dashboard-section.section-controls .header-actions .health-link-anchor.active,
+.dashboard-section.section-controls .header-actions .config-link-anchor.active,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow:
+        var(--header-plate-shadow),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
 }

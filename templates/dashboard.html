@@ -106,7 +106,6 @@
     <link rel="stylesheet" href="{{asset "css/colors.css"}}">
         <link rel="stylesheet" href="{{asset "css/enhanced-features.css"}}">
     <link rel="stylesheet" href="{{asset "css/mobile-experience.css"}}">
-    <link rel="stylesheet" href="{{asset "css/layout-side-rail.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
@@ -195,11 +194,20 @@
                 </div>
                 </div>
                 <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" data-i18n-aria="dashboard.dateBadgeAria" aria-label="Date and time"></div>
-                <div class="header-actions skeleton-hide-while-loading">
+                <!--
+                    The middle zone: the pages, and on either side the key that
+                    walks them. Shift+Arrow has always moved a page at a time;
+                    the hint is the first thing in the header that says so.
+                -->
+                <div class="header-track skeleton-hide-while-loading">
+                    <span class="page-walk-hint" aria-hidden="true">&#8679;&#8592;</span>
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
+                    <span class="page-walk-hint" aria-hidden="true">&#8679;&#8594;</span>
+                </div>
+                <div class="header-actions skeleton-hide-while-loading">
                     <div class="pages-link pages-link--icon">
                         <button type="button" id="page-overview-header-btn" class="pages-link-anchor page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" data-i18n-tooltip="dashboard.pagesOverview" aria-label="Choose a page" title="pages">
                             <svg class="pages-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -210,6 +218,7 @@
                             </svg>
                         </button>
                     </div>
+                    <span class="header-zone-divider" aria-hidden="true"></span>
                     <!--
                         The seven actions, in the header rather than floating over
                         the grid. Same ids, so every handler and every keyboard
@@ -219,25 +228,67 @@
                     <div class="header-shortcuts">
                 <div class="btn-group btn-group-primary">
                     <button id="quick-add-toolbar-btn" type="button" class="search-button add-bookmark-button" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark" data-tooltip="+ bookmark">
-                        <span class="search-button-icon">+</span>
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M12 5v14"/>
+                        </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerAddLabel">add bookmark</span>
+                        <span class="search-button-icon" aria-hidden="true">+</span>
                     </button>
                     <button id="search-button" type="button" class="search-button" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
-                        <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m20 20-3.9-3.9"/>
+                        </svg>
                         <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
+                        <span class="search-button-icon" data-i18n="dashboard.searchPrefix" aria-hidden="true">></span>
                     </button>
                 </div>
                 <div class="btn-group btn-group-secondary">
+                    <button id="commands-button" type="button" class="search-button commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands" data-tooltip=": commands">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="m5 8 4 4-4 4"/>
+                            <path d="M13 16h6"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
+                        <span class="search-button-icon" aria-hidden="true">:</span>
+                    </button>
+                    <button id="finders-button" type="button" class="search-button finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders" data-tooltip="? finders">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/>
+                            <path d="M12 17h.01"/>
+                            <circle cx="12" cy="12" r="9"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
+                        <span class="search-button-icon" aria-hidden="true">?</span>
+                    </button>
+                    <button id="collapse-all-button" type="button" class="search-button collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Fold every category" data-tooltip=". fold all">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="m7 9 5-5 5 5"/>
+                            <path d="m7 15 5 5 5-5"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.collapseAllLabel">fold all</span>
+                        <span class="search-button-icon" aria-hidden="true">.</span>
+                    </button>
                     <button id="recent-bookmarks-button" type="button" class="search-button recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
-                        <span class="search-button-icon">*</span>
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            <path d="M12 7v5l3.5 2"/>
+                        </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
+                        <span class="search-button-icon" aria-hidden="true">*</span>
                     </button>
                     <button id="help-button" type="button" class="search-button help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
-                        <span class="search-button-icon">!</span>
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <rect x="2" y="6" width="20" height="12" rx="2"/>
+                            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+                        </svg>
                         <span class="search-button-label" data-i18n="dashboard.headerCheatLabel">cheat</span>
+                        <span class="search-button-icon" aria-hidden="true">!</span>
                     </button>
                 </div>
                     </div>
+                    <span class="header-zone-divider" aria-hidden="true"></span>
                     <div class="header-destinations">
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
@@ -349,7 +400,12 @@
             data-tooltip="/ tags"
             title="/ tags"
         >
-            <span class="search-button-icon">/</span>
+            <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5Z"/>
+                <path d="M7.5 7.5h.01"/>
+            </svg>
+            <span class="search-button-label" data-i18n="dashboard.headerTagsLabel">tags</span>
+            <span class="search-button-icon" aria-hidden="true">/</span>
         </button>
         <div id="tag-cloud-modal-backdrop" class="tag-cloud-modal-backdrop" hidden aria-hidden="true"></div>
         <div
@@ -420,7 +476,6 @@
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
     <script src="{{asset "js/fresh-tutorial.js"}}" defer></script>
     <script src="{{asset "js/fresh-notice.js"}}" defer></script>
-    <script src="{{asset "js/side-rail-notice.js"}}" defer></script>
     <script src="{{asset "js/theme-browser-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>

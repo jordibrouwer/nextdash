@@ -47,7 +47,12 @@ test('the header stays one row, and nothing is pushed off it', async ({ page }) 
         const r = config.getBoundingClientRect();
         return {
             overflow: Math.round(actions.scrollWidth - actions.clientWidth),
-            sameRow: Math.round(actions.getBoundingClientRect().top) === Math.round(header.getBoundingClientRect().top),
+            // The row is a band with padding, so one row means one shared
+            // centre line rather than one shared top edge.
+            sameRow: Math.abs(
+                (actions.getBoundingClientRect().top + actions.getBoundingClientRect().height / 2)
+                - (header.getBoundingClientRect().top + header.getBoundingClientRect().height / 2),
+            ) < 4,
             configOnScreen: r.width > 0 && r.right <= window.innerWidth,
         };
     });
@@ -78,20 +83,23 @@ test('switching a button off does not switch off its key', async ({ page }) => {
 });
 
 /*
- * Commands, finders and fold-all are not in the header.
+ * Eight actions, and every one of them switchable.
  *
- * Four buttons is a row you can read; seven was a strip. The keys of the three
- * that left are untouched — : and ? open their panel and . folds the categories
- * from anywhere — which is the same bargain every switched-off button already
- * makes.
+ * Commands, finders and fold-all spent a while with a setting that controlled
+ * nothing: their buttons had gone with the floating bar while their toggles
+ * stayed in config. They are back in the row, which is what makes those
+ * settings mean something again.
  */
-test('the row carries four actions, and not the other three', async ({ page }) => {
+test('every action the settings offer is in the row', async ({ page }) => {
     await openDashboard(page);
 
-    const gone = ['commands-button', 'finders-button', 'collapse-all-button'];
-    const inHeader = await page.evaluate((ids) =>
-        ids.map((id) => Boolean(document.querySelector(`.header-shortcuts #${id}`))), gone);
-    expect(inHeader, 'a button that left the header is back in it').toEqual([false, false, false]);
+    const ids = [
+        'quick-add-toolbar-btn', 'search-button', 'commands-button', 'finders-button',
+        'tag-cloud-toggle-btn', 'recent-bookmarks-button', 'collapse-all-button', 'help-button',
+    ];
+    const inHeader = await page.evaluate((list) =>
+        list.filter((id) => !document.querySelector(`.header-shortcuts #${id}`)), ids);
+    expect(inHeader, 'these actions are not in the header').toEqual([]);
 });
 
 test('the buttons the reader turned off are not drawn', async ({ page }) => {
@@ -122,11 +130,13 @@ async function showEveryAction(page) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
-            showAddBookmarkButton: true, showSearchButton: true,
+            showAddBookmarkButton: true, showSearchButton: true, showTagCloudButton: true,
             showRecentButton: true, showCheatSheetButton: true,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
+        window.DashboardTagCloud?.syncFromSettings?.();
+        d.toolbar?.syncTagCloudButtonPlacement?.();
     });
     await page.waitForTimeout(400);
 }
@@ -153,7 +163,7 @@ test('the actions are always in the same order', async ({ page }) => {
             .map((b) => b.key)
             .join(' '));
 
-    expect(keys).toBe('+ > * !');
+    expect(keys).toBe('+ > / * !');
 });
 
 /*
@@ -173,21 +183,33 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
 
-    const [action, destination] = await page.evaluate(() => {
+    const seen = await page.evaluate(() => {
         const read = (el) => {
             const s = window.getComputedStyle(el);
-            return { background: s.backgroundColor, color: s.color,
+            return { background: s.backgroundColor, color: s.color, width: s.width, height: s.height,
                      fontSize: s.fontSize, fontWeight: s.fontWeight, fontFamily: s.fontFamily };
         };
-        return [read(document.querySelector('.header-shortcuts #search-button')),
-                read(document.querySelector('.pages-link--icon .pages-link-anchor'))];
+        return {
+            action: read(document.querySelector('.header-shortcuts #search-button')),
+            group: read(document.querySelector('.header-shortcuts')),
+            destination: read(document.querySelector('.pages-link--icon .pages-link-anchor')),
+        };
     });
 
-    expect(action.background, 'the action still carries the dock plate').toBe(destination.background);
-    expect(action.color).toBe(destination.color);
-    expect(action.fontSize).toBe(destination.fontSize);
-    expect(action.fontWeight).toBe(destination.fontWeight);
-    expect(action.fontFamily).toBe(destination.fontFamily);
+    // The ink is shared: an action reads as the same kind of control.
+    expect(seen.action.color).toBe(seen.destination.color);
+    expect(seen.action.fontSize).toBe(seen.destination.fontSize);
+    expect(seen.action.fontWeight).toBe(seen.destination.fontWeight);
+    expect(seen.action.fontFamily).toBe(seen.destination.fontFamily);
+    // Not the square: an action is 28px inside a surround that measures 40, and
+    // a destination is the 40 -- see 'the destinations are as big as the action
+    // group' below, which is where that comparison belongs.
+    // The surface belongs to the group the actions stand in, not to each
+    // button -- that is what makes four buttons read as one control -- and it
+    // is made of the same material a destination is.
+    expect(seen.action.background, 'an action carries a plate of its own').toBe('rgba(0, 0, 0, 0)');
+    expect(seen.group.background, 'the group and the destinations are different materials')
+        .toBe(seen.destination.background);
 });
 
 /*
@@ -224,11 +246,13 @@ test('the surround goes when the last action does', async ({ page }) => {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
-            showAddBookmarkButton: false, showSearchButton: false,
-            showRecentButton: false, showCheatSheetButton: false,
+            showAddBookmarkButton: false, showSearchButton: false, showTagCloudButton: false,
+            showCommandsButton: false, showFindersButton: false,
+            showRecentButton: false, showCollapseAllButton: false, showCheatSheetButton: false,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
+        window.DashboardTagCloud?.syncFromSettings?.();
     });
     await page.waitForTimeout(300);
 
@@ -238,13 +262,15 @@ test('the surround goes when the last action does', async ({ page }) => {
 });
 
 /*
- * Each action shows its key, then says what it is.
+ * Each action is an icon with its key on the corner.
  *
- * They were three bare glyphs for a while, which asks the reader to already
- * know what +, > and ! do — the one thing a header is worst at teaching. The
- * key leads and the word explains it, the way the cheat sheet prints a row.
+ * This is the draft's own action group: five 28px squares in one box, each
+ * marked with the key that does the same thing. The word is still the button's
+ * accessible name and its tooltip — it is how the icon is learned — but it is
+ * not printed beside it, because four words in a row is the strip this header
+ * was drawn to replace.
  */
-test('an action shows its key and then names itself', async ({ page }) => {
+test('an action shows its key and names itself to a screen reader', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
 
@@ -253,12 +279,15 @@ test('an action shows its key and then names itself', async ({ page }) => {
             const btn = document.querySelector(`.header-shortcuts #${id}`);
             const label = btn.querySelector('.search-button-label');
             const icon = btn.querySelector('.search-button-icon');
+            const glyph = btn.querySelector('.header-action-glyph');
+            const labelStyle = window.getComputedStyle(label);
             return {
                 word: label.textContent.trim(),
                 key: icon.textContent.trim(),
-                shown: window.getComputedStyle(label).display !== 'none',
-                // The key is written before the word, in the DOM and so on screen.
-                keyFirst: icon.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING,
+                // Clipped rather than display:none, so it still reaches a
+                // screen reader while taking no room in the row.
+                readable: labelStyle.display !== 'none' && labelStyle.clipPath !== 'none',
+                drawn: Boolean(glyph),
                 named: (btn.getAttribute('aria-label') || '').length > 0,
             };
         };
@@ -278,8 +307,157 @@ test('an action shows its key and then names itself', async ({ page }) => {
         .toEqual(['+', '>', '*', '!']);
 
     for (const [name, one] of Object.entries(read)) {
-        expect(one.shown, `the ${name} button is a bare glyph again`).toBe(true);
-        expect(Boolean(one.keyFirst), `the ${name} button shows its word before its key`).toBe(true);
+        expect(one.drawn, `the ${name} button has no icon`).toBe(true);
+        expect(one.readable, `the ${name} button's word is hidden from a screen reader`).toBe(true);
         expect(one.named, `the ${name} button has no accessible name`).toBe(true);
     }
+});
+
+/*
+ * One plate, wherever it stands in the band.
+ *
+ * The action group and the page tabs were drawn with two different casts — the
+ * group's read as a raised plate, the tabs' as a hairline — so half the band
+ * looked pressed into it and half looked printed on it. Read the three off the
+ * page rather than asserting a literal shadow: what matters is that they agree.
+ */
+test('the groups in the band are all the same plate', async ({ page }) => {
+    await openDashboard(page);
+    await showEveryAction(page);
+    // A second page, so there is a tab that is not the one you are on: the
+    // active tab carries the bloom on top of the plate and would not compare.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const pages = [...d.pages, { id: 4242, name: 'elsewhere' }];
+        await api('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pages),
+        });
+        await d.loadData();
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.waitForTimeout(400);
+
+    const seen = await page.evaluate(() => {
+        const shadow = (sel) => {
+            const el = document.querySelector(sel);
+            return el ? window.getComputedStyle(el).boxShadow : null;
+        };
+        return {
+            group: shadow('.header-shortcuts'),
+            tab: shadow('.header-track .page-nav-btn:not(.active)'),
+            chip: shadow('.header-track .page-nav-overflow'),
+            destination: shadow('.config-link-anchor'),
+        };
+    });
+
+    expect(seen.group, 'the action group has no plate at all').not.toBe('none');
+    expect(seen.tab, 'a page tab is drawn flatter than the actions beside it').toBe(seen.group);
+    expect(seen.destination, 'a destination is drawn flatter than the actions').toBe(seen.group);
+    // The chip only exists when something is folded away; when it is there it
+    // is a tab like any other.
+    if (seen.chip) {
+        expect(seen.chip, 'the overflow chip is drawn flatter than the tabs').toBe(seen.group);
+    }
+});
+
+
+/*
+ * The destination you are in is lit.
+ *
+ * Health, config and the inbox tab have carried `active` while their view is
+ * open for as long as they have existed, and the header read none of it — the
+ * bar looked the same on the grid as three views deep, which is the one thing
+ * a destination is for.
+ */
+test('the destination you are in is the lit one', async ({ page }) => {
+    await openDashboard(page);
+
+    const read = (sel) => page.evaluate((s) => {
+        const el = document.querySelector(s);
+        if (!el) return null;
+        const c = window.getComputedStyle(el);
+        return { active: el.classList.contains('active'), background: c.backgroundColor, border: c.borderTopColor };
+    }, sel);
+
+    const resting = await read('.health-link-anchor');
+    expect(resting.active, 'health is marked active on the dashboard').toBe(false);
+
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV2', { persist: false });
+    });
+    await page.keyboard.press('Shift+H');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+    await page.waitForTimeout(400);
+
+    const lit = await read('.health-link-anchor');
+    expect(lit.active, 'health is not marked active in its own view').toBe(true);
+    expect(lit.background, 'the health icon looks the same inside health as outside it')
+        .not.toBe(resting.background);
+    expect(lit.border, 'the lit destination keeps the resting border').not.toBe(resting.border);
+});
+
+/*
+ * The tag cloud is one of the actions.
+ *
+ * It was a corner FAB, fixed to the bottom-left of the window and gone
+ * entirely outside the grid. It stands between search and recents now — find
+ * something, browse by tag, then what you opened last — and it is in the row in
+ * every view, because a control that comes and goes moves everything beside it.
+ */
+test('the tag cloud stands between search and recents', async ({ page }) => {
+    await openDashboard(page);
+    await showEveryAction(page);
+
+    const seen = await page.evaluate(() => {
+        const btn = document.querySelector('.header-shortcuts #tag-cloud-toggle-btn');
+        if (!btn) return null;
+        const c = window.getComputedStyle(btn);
+        return {
+            inRow: true,
+            fixed: c.position === 'fixed',
+            key: btn.querySelector('.search-button-icon')?.textContent.trim(),
+            glyph: Boolean(btn.querySelector('.header-action-glyph')),
+        };
+    });
+
+    expect(seen, 'the tag cloud button is not in the action row').not.toBeNull();
+    expect(seen.fixed, 'it is still pinned to the corner of the window').toBe(false);
+    expect(seen.key, 'it does not show its key').toBe('/');
+    expect(seen.glyph, 'it has no icon like the actions beside it').toBe(true);
+});
+
+/*
+ * A destination is the size of the actions beside it.
+ *
+ * They were 28px squares next to a group that measures 40 — the same button
+ * drawn smaller, because one of them had a surround and the other did not. The
+ * outer size is what the eye compares, so that is what has to match.
+ */
+test('the destinations are as big as the action group', async ({ page }) => {
+    await openDashboard(page);
+    await showEveryAction(page);
+
+    const seen = await page.evaluate(() => {
+        const height = (sel) => {
+            const el = document.querySelector(sel);
+            return el ? Math.round(el.getBoundingClientRect().height) : null;
+        };
+        return {
+            group: height('.header-shortcuts'),
+            pages: height('.pages-link-anchor'),
+            health: height('.health-link-anchor'),
+            config: height('.config-link-anchor'),
+            // One hairline between the pages and what you do, one between that
+            // and where you go.
+            dividers: document.querySelectorAll('.header-zone-divider').length,
+        };
+    });
+
+    expect(seen.pages, 'the pages button is drawn smaller than the actions').toBe(seen.group);
+    expect(seen.health).toBe(seen.group);
+    expect(seen.config).toBe(seen.group);
+    expect(seen.dividers, 'the header is missing one of its two hairlines').toBe(2);
 });

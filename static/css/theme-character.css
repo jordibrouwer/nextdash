@@ -131,7 +131,14 @@ html[data-theme] body[data-depth="glass"] :is(
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
-    :not([data-button-position="side-left"]) .button-container,
+    /* De kop: de tabs, de chip en het actieblok zijn chrome zoals de knoppen
+       hierboven. Zonder deze regels stond het actieblok wel op glas en de
+       pagina's ernaast als kale omlijning -- twee materialen in een balk. */
+    .header-track .page-nav-btn,
+    .header-track .page-nav-overflow,
+    .header-shortcuts,
+    .header-destinations .health-link-anchor,
+    .header-destinations .config-link-anchor,
     .button-container,
     .search-button,
     .btn-group,
@@ -331,7 +338,6 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
-    :not([data-button-position="side-left"]) .button-container,
     .search-button,
     .btn-group,
     .tag-cloud-toggle-btn.search-button,
@@ -342,7 +348,6 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
     .quickstart-card,
     .inbox-item,
     .lvs-summary,
-    .lvs-group,
     .lvs-filter,
     .health-view-item,
     .health-monitor-stat,
