@@ -7331,6 +7331,17 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 .header-action-glyph {
     flex: 0 0 auto;
     pointer-events: none;
+    /*
+     * The same weight as a destination's icon, not just the same colour.
+     *
+     * They carry the same ink, but these were drawn at 16px with a 2px stroke
+     * against the 18px and 2.2 of the pages, inbox, health and config buttons
+     * beside them -- thinner lines covering fewer pixels read as a paler grey,
+     * which is the difference the colour alone did not explain.
+     */
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.2;
 }
 
 /*
