@@ -987,14 +987,23 @@ class SearchComponent {
             }
         }
 
-        // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
+        /*
+         * Which characters may start a query, and which may join one.
+         *
+         * A digit never starts one. 0-9 belong to the pages: 1-9 switch to the
+         * page they number and 0 opens the inbox, and the ones with no page
+         * behind them stay reserved rather than falling through to this palette
+         * -- a key that switches pages on one install and opens a search box on
+         * the next is a key you cannot learn. They are still typed *into* a
+         * query once it is open, which is what the first branch is for.
+         */
         if (this.searchActive) {
             if (!/^[A-Z0-9\-\._]$/.test(key)) {
                 return;
             }
         } else {
             if (this.interleaveMode) {
-                if (!/^[A-Z0-9/\-]$/.test(key)) {
+                if (!/^[A-Z/\-]$/.test(key)) {
                     return;
                 }
             } else {

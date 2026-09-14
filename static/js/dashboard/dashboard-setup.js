@@ -327,9 +327,12 @@ class DashboardSetup {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
+                // Swallowed either way: with the inbox off there is nothing for
+                // 0 to open, and letting it through put the shortcut palette on
+                // screen instead -- see the digit branch below.
+                e.preventDefault();
+                e.stopPropagation();
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     void d.inbox.openInboxView();
                 }
                 return;
@@ -404,15 +407,29 @@ class DashboardSetup {
                 }
 
                 const pageIndex = parseInt(key, 10) - 1;
-                
-                // Check if this page exists
+
                 if (pageIndex < d.pages.length) {
                     e.preventDefault();
                     e.stopPropagation();
 
                     const page = d.pages[pageIndex];
                     void d.requestPageNavigation(page.id);
+                    return;
                 }
+
+                /*
+                 * A digit with no page behind it is still the pages' key.
+                 *
+                 * Left to fall through it reached the shortcut palette, so 5 on
+                 * a two-page install opened a search box while 2 switched pages
+                 * -- the same key doing two unrelated things depending on how
+                 * many pages you happen to have, and changing meaning the
+                 * moment you add one. Swallowed here instead: 1-9 switch pages
+                 * or do nothing at all.
+                 */
+                e.preventDefault();
+                e.stopPropagation();
+                return;
             }
 
             // Handle Shift + Arrow keys for page navigation

@@ -95,3 +95,71 @@ test('the guard claims a digit only when it names a page', async ({ page }) => {
     expect(verdicts.beyond, 'one past the end names nothing, so the palette keeps it').toBe(false);
     expect(verdicts.far, 'a digit far beyond the pages belongs to the palette').toBe(false);
 });
+
+/*
+ * Every digit belongs to the pages, whether or not it has one.
+ *
+ * Left to fall through, 5 on a two-page install opened the shortcut palette
+ * while 2 switched pages — the same key doing two unrelated things depending on
+ * how many pages you happen to have, and changing meaning the moment you add
+ * one. 1-9 switch or do nothing; 0 opens the inbox or does nothing. Digits are
+ * still typed *into* a query once it is open, which is the second test here.
+ */
+test('a digit with no page behind it does nothing at all', async ({ page }) => {
+    await openDashboard(page);
+    await ensureTwoPages(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        // 0 is the inbox's legacy key while the inbox is on; switch it off so
+        // this is about the digits with nothing behind them.
+        d.settings.inboxEnabled = false;
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(300);
+
+    for (const key of ['5', '8', '0']) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(250);
+        await page.keyboard.press(key);
+        await page.waitForTimeout(600);
+
+        const seen = await page.evaluate(() => ({
+            open: document.getElementById('shortcut-search')?.classList.contains('show') === true,
+            query: window.dashboardInstance?.searchComponent?.currentQuery ?? '',
+        }));
+        expect(seen.open, `${key} opened the palette`).toBe(false);
+        expect(seen.query, `${key} reached the query`).toBe('');
+    }
+});
+
+test('a digit still types into a query that is already open', async ({ page }) => {
+    await openDashboard(page);
+
+    await page.keyboard.press('>');
+    await expect.poll(() => page.evaluate(
+        () => document.getElementById('shortcut-search')?.classList.contains('show') === true,
+    )).toBe(true);
+
+    await page.keyboard.press('5');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance?.searchComponent?.currentQuery,
+    )).toBe('5');
+});
+
+test('0 still opens the inbox while the inbox is on', async ({ page }) => {
+    await openDashboard(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.inboxEnabled = true;
+        d.settings.inboxShowInPageTabs = true;
+        await d.saveSettings?.();
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.waitForTimeout(400);
+
+    await page.keyboard.press('0');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
+    expect(await page.evaluate(
+        () => document.getElementById('shortcut-search')?.classList.contains('show') === true,
+    ), 'the palette opened over the inbox').toBe(false);
+});
