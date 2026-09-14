@@ -1444,6 +1444,11 @@ class DashboardConfig {
                 return false;
         }
 
+        // Each branch above rewrites the body, which renders a fresh filter bar
+        // and a fresh intro. Without this the band kept the previous tab's copy
+        // and the new one stayed in the body -- two of each on one page.
+        this._fillShellHeadFromSection(container || document);
+
         this.syncSubTabStrip(ctx.attr, tab);
         const focusTarget = document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`);
         focusTarget?.focus();
@@ -1583,18 +1588,105 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Move the section's own line and its filter into the band.
+     *
+     * Both are rendered by the section — every renderSection() branch opens
+     * with a `.config-view-intro` and most with a changed-filter bar — and both
+     * belong in the header the shell draws: health and the inbox put their
+     * description on the left of that band and their controls on the right, and
+     * config's stood empty with a breadcrumb in it while the same two things
+     * sat loose above the panels.
+     *
+     * Done here rather than in twenty renderers: the band is one element, the
+     * pieces are already on the page, and a renderer that forgets to opt in
+     * simply leaves its half of the band empty.
+     */
+    _fillShellHeadFromSection(container = document, { reset = false } = {}) {
+        const head = container.querySelector('.config-view-head');
+        const body = container.querySelector('#config-view-body');
+        if (!head || !body) return;
+
+        const description = head.querySelector('.lvs-description');
+        /*
+         * The section's opening line, wherever that section chose to put it.
+         *
+         * Most render a `.config-view-intro` as the body's first child;
+         * Bookmarks wraps its line in a header block of its own with a count
+         * beside it. Both are the same sentence -- "what this section is" --
+         * and both belong on the band. A panel's own intro deeper in the tree
+         * is not: that describes the panel, not the section.
+         */
+        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'))
+            || body.querySelector(':scope > .config-bm-header .config-bm-subtitle');
+        /*
+         * A repaint that renders no intro of its own must not wipe the line the
+         * section already put there -- a sub-tab renders the body, not the
+         * section's opening sentence. `reset` marks the call that *is* a new
+         * section, where the old line is exactly what has to go.
+         */
+        if (description && intro) {
+            description.textContent = intro.textContent.trim();
+            description.hidden = false;
+            intro.remove();
+        } else if (description && (reset || !description.textContent.trim())) {
+            description.textContent = reset ? '' : description.textContent;
+            description.hidden = !description.textContent.trim();
+        }
+
+        const actions = head.querySelector('.lvs-header-actions');
+        // Rendered here from state rather than lifted out of the body.
+        //
+        // It used to be the body's markup, moved up after the fact -- and the
+        // body is rewritten on every change, so the node under the pointer was
+        // replaced mid-click and its handler went with it. One direction now:
+        // the band draws the bar, the body draws the settings.
+        const context = this._changedFilterContext();
+        const markup = context ? this.renderChangedFilterBar(context.section, context.tab) : '';
+        if (actions && actions.innerHTML.trim() !== markup.trim()) {
+            actions.innerHTML = markup;
+        }
+        const bar = null;
+        // Only swapped when the body actually rendered one: this runs again on
+        // every repaint, and clearing the band unconditionally threw away the
+        // bar it had just been given -- leaving neither. On a new section the
+        // old bar goes either way: Bookmarks has no filter, and Appearance's
+        // was still sitting there.
+        // Nothing in the body draws one any more; a stale copy from an older
+        // render would be a second count disagreeing about the same tab.
+        body.querySelectorAll('.config-changed-bar').forEach((el) => el.remove());
+    }
+
+
+    /**
+     * The section and tab the "only changed" filter answers for, or null.
+     *
+     * Appearance and Behavior carry schema panels and therefore a count worth
+     * offering; the rest (Overview, Bookmarks, Structure, Help, About) have
+     * nothing to filter, and their side of the band stays empty.
+     */
+    _changedFilterContext() {
+        if (this.section === 'appearance') {
+            const tab = ['general', 'layout', 'buttonbar', 'display', 'toolbar'].includes(this.appearanceTab)
+                ? this.appearanceTab
+                : null;
+            return tab ? { section: 'appearance', tab } : null;
+        }
+        if (this.section === 'behavior') {
+            return { section: 'behavior', tab: this.behaviorTab };
+        }
+        return null;
+    }
+
+
     /** Refresh section title in the panel head and dashboard header breadcrumb. */
     updateConfigShellHead() {
         const title = document.querySelector('.config-view-section-title');
         if (title) title.textContent = this.sectionLabel(this.section);
-        const crumb = document.querySelector('.config-view-head-breadcrumb');
-        if (crumb) {
-            const trail = this.headerBreadcrumb();
-            // A trail with no separator is just the section name again, which
-            // the heading directly above already says.
-            crumb.textContent = trail;
-            crumb.hidden = !trail.includes(' › ');
-        }
+        // The line under the name is the section's own description now, put
+        // there by _fillShellHeadFromSection; the trail it used to carry said
+        // the section name the heading already carries and the tab the strip
+        // below already names.
         this.dash.pageNav?.updatePageTitle?.();
         this.dash.pageNav?.updateDocumentTitle?.();
     }
@@ -1628,12 +1720,6 @@ class DashboardConfig {
         if (!panel || !title) return false;
         const esc = (v) => this.dash.escapeHtml(v);
         title.textContent = this.sectionLabel(this.section);
-        const crumb = container.querySelector('.config-view-head-breadcrumb');
-        if (crumb) {
-            const text = this.headerBreadcrumb();
-            crumb.textContent = text;
-            crumb.hidden = !text.includes(' › ');
-        }
         const main = container.querySelector('.config-view-main');
         if (main) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
         panel.innerHTML = this.renderSection();
@@ -1642,6 +1728,10 @@ class DashboardConfig {
 
     /** Everything both render paths do once the markup is in place. */
     afterRender(container) {
+        // The band takes the section's own line and its filter before anything
+        // binds to them: both move rather than being copied, so a handler bound
+        // to the original would be bound to a node that is no longer there.
+        this._fillShellHeadFromSection(container, { reset: true });
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
@@ -3185,31 +3275,61 @@ class DashboardConfig {
 
         return `
             <div class="config-view">
+                <!--
+                    The rail health and the inbox draw: named groups of rows,
+                    not one loose column of buttons. The heading sits outside
+                    the tablist -- a role="tablist" admits nothing but tabs, so
+                    it names the strip through aria-labelledby instead, the same
+                    way the shell does it.
+                -->
                 <div class="config-nav-column">
-                <nav class="config-nav" role="tablist" aria-label="${esc(this.t('config.sectionsNavAria', 'Config sections'))}">
-                    ${nav}
-                </nav>
-                <button type="button" class="config-nav-item config-nav-search"
-                        data-config-action="settings-jump"
-                        data-config-setting-promo-anchor="settingsJump"
-                        tabindex="0"
-                        aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
-                        title="${esc(`${searchLabel} (${searchShortcut})`)}">
-                    ${esc(searchLabel)}
-                    <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
-                </button>
+                <div class="lvs-group">
+                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
+                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
+                        ${nav}
+                    </nav>
+                </div>
+                <div class="lvs-group">
+                    <button type="button" class="config-nav-item config-nav-search"
+                            data-config-action="settings-jump"
+                            data-config-setting-promo-anchor="settingsJump"
+                            tabindex="0"
+                            aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
+                            title="${esc(`${searchLabel} (${searchShortcut})`)}">
+                        ${esc(searchLabel)}
+                        <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
+                    </button>
+                </div>
+                </div>
+                <!--
+                    The band health and the inbox stand under, worn here too: the
+                    section name and its trail sat loose above the panel, so
+                    walking between config and a view moved the first line of
+                    content up and down the page. A row of the grid rather than
+                    the first thing in the panel, because that is where the shell
+                    puts it -- see .lvs-header in list-view-shell.css.
+
+                    The save state itself lives on <body>, not here: the view
+                    animates with a transform on arrival, which would make it a
+                    containing block and pin the fixed indicator to the wrong
+                    place. See ensureSaveStateHost().
+                -->
+                <div class="config-view-head lvs-header">
+                    <div class="lvs-header-text">
+                        <h2 class="config-view-section-title lvs-title">${esc(this.sectionLabel(this.section))}</h2>
+                        <!--
+                            The section's own line, moved here after the body is
+                            rendered (see _fillShellHeadFromSection). It replaces
+                            the breadcrumb the band used to carry: the rail marks
+                            the section, the sub-tab strip names the tab, and a
+                            trail repeating both said nothing the page did not.
+                        -->
+                        <p class="config-view-head-breadcrumb lvs-description" hidden></p>
+                    </div>
+                    <div class="lvs-header-actions"></div>
                 </div>
                 <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
                      aria-labelledby="${activeNavId}">
-                    <div class="config-view-head">
-                        <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
-                        <p class="config-view-head-breadcrumb"${this.headerBreadcrumb().includes(' › ') ? '' : ' hidden'}>${esc(this.headerBreadcrumb())}</p>
-                        <!-- The save state itself lives on <body>, not here: this
-                             container animates with a transform on view change,
-                             which would make it a containing block and pin the
-                             fixed indicator to the wrong place. See
-                             ensureSaveStateHost(). -->
-                    </div>
                     <div class="config-view-body" id="config-view-body">
                         ${this.renderSection()}
                     </div>
@@ -8547,7 +8667,6 @@ class DashboardConfig {
         }
 
         return shell(`
-            ${this.renderChangedFilterBar('appearance', 'general')}
             ${tiles}
 
             <div class="config-panel">
@@ -8682,8 +8801,7 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderChangedFilterBar('appearance', 'toolbar')
-            + this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
+        return this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
     }
 
     /** The branding panel, appended to Display since it lost its own tab. */
@@ -8737,7 +8855,6 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         // The button bar has a tab of its own; what is left here is the grid.
         return `
-            ${this.renderChangedFilterBar('appearance', 'layout')}
             ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
 `;
@@ -8747,7 +8864,6 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
-            ${this.renderChangedFilterBar('appearance', 'display')}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
@@ -9098,6 +9214,16 @@ class DashboardConfig {
     }
 
     bindAppearanceControls(container) {
+        /*
+         * The band is painted before anything binds, not after.
+         *
+         * Every appearance repaint lands here, and the band redraws its filter
+         * bar from state -- so painting it at the end replaced the very node
+         * the binder below had just wired, and the toggle was dead from the
+         * first repaint onward.
+         */
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
+
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
             void this.switchAppearanceTab(tab);
         });
@@ -9341,6 +9467,9 @@ class DashboardConfig {
         if (tab !== 'custom-themes') this.clearThemePreview();
         this.render();
         if (tab === 'custom-themes') await this.openCustomThemes();
+        // openCustomThemes paints its own body after render, so the band is
+        // filled again here rather than only in afterRender.
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
     }
 
     /** Persist a settings change and repaint the appearance section. */
@@ -9643,6 +9772,7 @@ class DashboardConfig {
         host.innerHTML = this.renderCustomThemes();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindAppearanceControls(container);
+        this._fillShellHeadFromSection(container || document);
     }
 
     /**
@@ -12371,14 +12501,27 @@ class DashboardConfig {
 
     /** The "Only changed" toggle above a tab of settings. */
     bindChangedFilter(container) {
-        container.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+        /*
+         * The bar stands in the band, which is outside the body a repaint hands
+         * in -- so binding to the container alone left the toggle dead on every
+         * path that rewrites only the body. Bound once per element, because
+         * this runs again on each repaint and a second listener would count the
+         * click twice.
+         */
+        const scopes = [container];
+        const head = document.querySelector('.config-view-head');
+        if (head && !container.contains(head)) scopes.push(head);
+
+        scopes.forEach((scope) => scope.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            if (btn.dataset.changedBound === '1') return;
+            btn.dataset.changedBound = '1';
             btn.addEventListener('click', () => {
                 this.changedOnly = !this.changedOnly;
                 this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
                 this.repaintActiveControlPanels();
             });
-        });
-        container.querySelectorAll('[data-settings-filter]').forEach((field) => {
+        }));
+        scopes.forEach((scope) => scope.querySelectorAll('[data-settings-filter]').forEach((field) => {
             if (field.dataset.filterBound === '1') return;
             field.dataset.filterBound = '1';
             let debounce = null;
@@ -12406,7 +12549,7 @@ class DashboardConfig {
                 field.value = '';
                 this.repaintActiveControlPanels();
             });
-        });
+        }));
     }
 
     /**
@@ -13036,8 +13179,7 @@ class DashboardConfig {
         // cannot come from the schema; they are appended to the General tab so
         // the whole of onboarding sits together as it did in the old config.
         const trailing = (this.behaviorTab === 'general' && !this.changedOnly) ? this.renderOnboardingActions() : '';
-        return this.renderChangedFilterBar('behavior', this.behaviorTab)
-            + lead
+        return lead
             + this.renderControlPanels(panels, 'behavior')
             + trailing;
     }

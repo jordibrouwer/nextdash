@@ -158,7 +158,11 @@ html[data-theme] body[data-depth="glass"] :is(
     .quickstart-card,
     .inbox-item,
     .lvs-summary,
-    .lvs-group,
+    /* .lvs-group staat hier bewust niet: een rail is een lijst, geen plaat. Op
+       200px breed en tien rijen hoog leest de slagschaduw als een harde rand
+       met gloed langs beide zijden -- de rijen dragen hun eigen hover en hun
+       eigen actieve staat. Config's rail draagt dezelfde klassen, dus beide
+       zien er hetzelfde uit. */
     .lvs-filter,
     .health-view-item,
     .health-monitor-stat
@@ -297,7 +301,6 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     .config-panel,
     .config-choices,
     .lvs-summary,
-    .lvs-group,
     .quickstart-card,
     .health-monitor-stat
 ) {
@@ -357,3 +360,5 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
         -webkit-backdrop-filter: none;
     }
 }
+
+

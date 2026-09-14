@@ -51,24 +51,73 @@
 .config-view {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
+    /* Named, like the shell's own grid: the band spans both columns and the
+       rail and the panel sit under it. Left to auto-placement the band landed
+       in a third row, in the second column. */
+    /* The shell's own names: .lvs-header carries `grid-area: header`, so an
+       area called anything else is an implicit one and the band is placed after
+       the columns -- which put it at the bottom right corner of the view. */
+    grid-template-areas:
+        "header header"
+        "rail main";
     gap: 28px;
-    max-width: 1040px;
+    /* The width of the page, like health and the inbox: they were capped at
+       68rem and 1040px while the header above them runs the width of the grid,
+       so each view sat in a column of its own. */
+    max-width: 100%;
     margin: 0 auto;
-    padding: 8px 0 48px;
+    /* No top padding: the band is the first thing, and it starts where the
+       shell's own band starts in health and the inbox. */
+    padding: 0 0 48px;
 }
 
 @media (max-width: 720px) {
     .config-view {
         grid-template-columns: minmax(0, 1fr);
+        /* One column, so the areas have to be redeclared: a two-column template
+           against a one-column grid is invalid, and the whole thing falls back
+           to auto-placement -- which stacked the rail into a 6px sliver. */
+        grid-template-areas:
+            "header"
+            "rail"
+            "main";
         gap: 18px;
     }
 }
 
 /* ── Section navigation ─────────────────────────────────────────────────── */
 
+/*
+ * The rail's own heading, and the two rules in the list.
+ *
+ * "Config sections" is two steps up from the rows it names, with a line under
+ * it -- it is a heading, not another destination. The second line falls between
+ * Widgets and Statistics, which is where the rail turns from the things you set
+ * to the things it tells you.
+ */
+.config-nav-column .lvs-group-title {
+    font-size: calc(var(--font-size-text) * 1.14);
+    letter-spacing: 0;
+    color: var(--text-primary);
+    padding-bottom: var(--space-1-5, 0.35rem);
+    margin-bottom: var(--space-1, 0.25rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-nav .config-nav-item[data-config-section="stats"] {
+    margin-top: var(--space-2, 0.5rem);
+    padding-top: calc(var(--space-1) + var(--space-2, 0.5rem));
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: 0 0 var(--layout-radius-sm) var(--layout-radius-sm);
+}
+
+
 .config-nav-column {
+    grid-area: rail;
     display: flex;
     flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-2);
     position: sticky;
     top: 8px;
     align-self: start;
@@ -94,6 +143,34 @@
  * scrolls sideways is the bug this is meant to avoid.
  */
 @media (max-width: 720px) {
+    /*
+     * The rail's groups are a column of rows on a wide screen; in the strip the
+     * nav is the only thing in them and has to keep the whole width. The
+     * shell's own narrow rule turns .lvs-group into a row, which squeezed the
+     * scroller down to 6px and left every section outside its own box.
+     */
+    .config-nav-column .lvs-group {
+        display: block;
+        min-width: 0;
+    }
+
+    .config-nav-column .lvs-group-title {
+        display: none;
+    }
+
+    /* In the strip the rule falls between two buttons side by side, so it is a
+       left edge rather than a top one -- as a top border it pushed that button
+       onto a second line. */
+    .config-nav .config-nav-item[data-config-section="stats"] {
+        margin-top: 0;
+        padding-top: var(--space-1);
+        border-top: 0;
+        margin-left: var(--space-2, 0.5rem);
+        padding-left: calc(var(--space-2) + var(--space-2, 0.5rem));
+        border-left: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+        border-radius: var(--layout-radius-sm);
+    }
+
     .config-nav-column {
         position: static;
         /* The strip is edge-to-edge, so its scrollbar and the fade below can
@@ -121,6 +198,10 @@
 
     .config-nav .config-nav-item {
         flex: none;
+        /* The rail row fills its column on a wide screen; in the strip each
+           button is its own width, or one of them fills the scroller and the
+           rest sit outside it. */
+        width: auto;
         scroll-snap-align: start;
         white-space: nowrap;
     }
@@ -133,36 +214,53 @@
  * one line rather than every name being kept short enough for the widest
  * language. The full name stays available as a tooltip.
  */
+/*
+ * The same row health and the inbox draw.
+ *
+ * Config's rail had its own type scale, its own greys (--text-muted, a
+ * --hover-bg of flat grey) and its own idea of active (bold, a grey wash) --
+ * three views with one job and three answers. This is .lvs-filter /
+ * .lvs-section from list-view-shell.css, to the declaration.
+ */
 .config-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    width: 100%;
     text-align: left;
-    padding: 9px 12px;
+    padding: var(--space-1) var(--space-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: none;
-    border-radius: var(--radius-5, 8px);
+    border: 0;
+    border-radius: var(--layout-radius-sm);
     background: transparent;
-    color: var(--text-muted, #777);
+    color: var(--text-secondary);
     font: inherit;
-    font-size: calc(var(--font-size-text) * 1.029);
+    /* The reader's own text size, which is what the rows beside it are set in:
+       --text-sm is a fixed step, so a rail written against it stayed put while
+       every other word on the page grew -- and at 0.8rem it read as a caption
+       rather than as the list you navigate by. */
+    font-size: var(--font-size-text);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
 }
 
 .config-nav-item:hover {
-    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
-    color: var(--text-color, inherit);
+    background: var(--background-secondary);
 }
 
 .config-nav-item.is-active {
-    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
-    color: var(--accent-color, var(--text-color, inherit));
-    font-weight: 600;
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    font-weight: 500;
 }
 
+/* The fallback is load-bearing -- see the note on .lvs-filter:focus-visible. */
 .config-nav-item:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 1px;
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
 }
 
 .config-nav-search {
@@ -189,6 +287,7 @@
 /* ── Section body ───────────────────────────────────────────────────────── */
 
 .config-view-main {
+    grid-area: main;
     min-width: 0;
 }
 
@@ -392,7 +491,7 @@
 .config-crud-toolbar--view .config-select {
     padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     border-radius: var(--radius-4, 0.4rem);
-    background: var(--background-primary);
+    background: var(--card-bg, color-mix(in srgb, var(--background-secondary) 55%, transparent));
     color: var(--text-secondary);
     font-size: var(--text-sm, 0.8rem);
 }
@@ -2771,20 +2870,59 @@ body.no-animations .config-new-features-panel-star {
 
 /* ── Save state ──────────────────────────────────────────────────────────── */
 
+/*
+ * The head is the shell's band now (.lvs-header): it spans both columns, the
+ * way the shell's own header spans the rail and the list, and the layout comes
+ * from list-view-shell.css. What is left here is the two lines inside it.
+ */
 .config-view-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
+    grid-area: header;
 }
 
-/* Full-width so it breaks onto its own line under the heading rather than
-   trailing beside it, and sits directly above the section intro. */
+.config-view-head .config-view-section-title {
+    margin: 0;
+}
+
 .config-view-head-breadcrumb {
-    flex-basis: 100%;
-    margin: 0 0 4px;
+    margin: 2px 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
+}
+
+.config-view-head-breadcrumb[hidden] {
+    display: none;
+}
+
+/*
+ * The filter and the search box ride the band's right edge, where health and
+ * the inbox keep their own actions. They were a full-width strip above the
+ * panels, so the band above it said one word and held nothing.
+ */
+.config-view-head .lvs-header-actions .config-changed-bar {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    /* One line: wrapped, the search box dropped under the toggle and the band
+       grew from 58px to nearly a hundred. */
+    flex-wrap: nowrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-view-head .lvs-header-actions .config-settings-filter {
+    max-width: 14rem;
+}
+
+.config-view-head .lvs-header-actions .config-btn,
+.config-view-head .lvs-header-actions .config-changed-count {
+    white-space: nowrap;
+}
+
+/* The count between them is the first thing to give when the window narrows. */
+@media (max-width: 1100px) {
+    .config-view-head .lvs-header-actions .config-changed-count {
+        display: none;
+    }
 }
 
 .config-view-head-breadcrumb[hidden] {
