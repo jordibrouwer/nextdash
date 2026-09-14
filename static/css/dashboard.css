@@ -5302,6 +5302,80 @@ body.no-animations:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:
 }
 
 /* Page overview modal — centered compact shell */
+/*
+ * The pages panel wears the same chrome as recent bookmarks.
+ *
+ * Both are a short list you open with one key and leave with another, so they
+ * are drawn the same: the name with its key beside it, a way out on the right,
+ * the rows in one slab, and a thin foot. It named itself and then said "close"
+ * three times -- a full-width button, an ESC hint under it, and nothing in the
+ * header.
+ */
+.modal.page-overview-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.page-overview-modal .modal-title {
+    text-transform: lowercase;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.page-overview-modal-key {
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+}
+
+.page-overview-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.page-overview-modal-close:hover,
+.page-overview-modal-close:focus-visible {
+    opacity: 1;
+}
+
+.modal.page-overview-modal .modal-actions,
+#app-modal:has(.page-overview-modal) .modal-esc-hint {
+    display: none;
+}
+
+.page-overview-modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    opacity: 0.6;
+}
+
+.page-overview-modal-footkey {
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     justify-content: center;
     align-items: center;

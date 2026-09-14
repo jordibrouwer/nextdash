@@ -421,6 +421,14 @@ class DashboardUiHelpers {
         // The overlay is where pages are chosen, so it is also where a new one is
         // made. The row wears the item shape but is marked as an action, and it
         // sits outside the listbox: it is not a page you can navigate to.
+        const footHtml = `
+            <div class="page-overview-modal-foot">
+                <span>${d.escapeHtml(this.formatDashboardLabel('pageOverviewCount', { n: pages.length },
+                    pages.length === 1 ? '1 page' : `${pages.length} pages`))}</span>
+                <span><span class="page-overview-modal-footkey">\u21B5</span> ${d.escapeHtml(
+                    this.formatDashboardLabel('pageOverviewFootOpen', {}, 'open'))}</span>
+            </div>`;
+
         const newLabel = this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page');
         const newRow = `
             <div class="page-overview-modal-actions">
@@ -436,7 +444,7 @@ class DashboardUiHelpers {
             </div>
         `;
 
-        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>${newRow}`;
+        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>${newRow}${footHtml}`;
     }
 
 
@@ -637,6 +645,15 @@ class DashboardUiHelpers {
             confirmText,
             showCancel: false,
             modalClass: 'page-overview-modal',
+            /*
+             * The page you are on takes the focus, not the way out.
+             *
+             * AppModal focuses the first focusable thing it finds, and the
+             * close button in the header is now the first -- so opening the
+             * panel put the cursor on "leave" and the first arrow key had to
+             * travel back into the list.
+             */
+            initialFocusSelector: '.page-overview-modal-item.is-current .page-overview-modal-link',
             modalMaxWidth: '22rem',
             modalWidth: 'min(22rem, calc(100vw - 2.5rem))',
             onHide: () => {
@@ -647,6 +664,34 @@ class DashboardUiHelpers {
                 }
             },
         });
+
+        /*
+         * The header names the key and carries the way out, as the other
+         * overlays do. The panel said "close" three times before this: a
+         * full-width button, an ESC hint under it, and nothing at all beside
+         * its name. Marked as header furniture so the next panel to use this
+         * one shell does not inherit it -- see AppModal.show.
+         */
+        const header = document.querySelector('#app-modal .page-overview-modal .modal-header');
+        if (header && !header.querySelector('.page-overview-modal-key')) {
+            const chip = document.createElement('span');
+            chip.className = 'page-overview-modal-key';
+            chip.dataset.modalHeaderExtra = 'true';
+            chip.setAttribute('aria-hidden', 'true');
+            chip.textContent = ',';
+            document.getElementById('modal-title')?.after(chip);
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'page-overview-modal-close';
+            close.dataset.modalHeaderExtra = 'true';
+            close.setAttribute('aria-label', closeLabel && closeLabel !== 'dashboard.closePageOverview'
+                ? closeLabel : 'Close');
+            close.innerHTML = '<span aria-hidden="true">Esc</span> \u00D7';
+            close.addEventListener('click', () => window.AppModal.hide());
+            header.appendChild(close);
+        }
+
 
         const listRoot = document.querySelector('#app-modal .page-overview-modal-list');
         this._setupPageOverviewKeyboardNav(pages, listRoot);
