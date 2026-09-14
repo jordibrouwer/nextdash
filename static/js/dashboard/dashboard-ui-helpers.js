@@ -419,8 +419,8 @@ class DashboardUiHelpers {
         }).join('');
 
         // The overlay is where pages are chosen, so it is also where a new one is
-        // made. The row wears the item shape but is marked as an action, and it
-        // sits outside the listbox: it is not a page you can navigate to.
+        // made. It is a button rather than another row: the list holds places to
+        // go, this is a thing to do, and it sits outside the listbox.
         const footHtml = `
             <div class="page-overview-modal-foot">
                 <span>${d.escapeHtml(this.formatDashboardLabel('pageOverviewCount', { n: pages.length },
@@ -432,14 +432,10 @@ class DashboardUiHelpers {
         const newLabel = this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page');
         const newRow = `
             <div class="page-overview-modal-actions">
-                <button type="button" class="page-overview-modal-link page-overview-modal-new" id="page-overview-new-page">
-                    <span class="page-overview-modal-lead">
-                        <span class="page-overview-modal-num page-overview-modal-plus" aria-hidden="true">+</span>
-                    </span>
-                    <span class="page-overview-modal-body">
-                        <span class="page-overview-modal-name">${d.escapeHtml(newLabel)}</span>
-                    </span>
-                    <span class="page-overview-modal-count page-overview-modal-hintkey" aria-hidden="true">n</span>
+                <button type="button" class="page-overview-modal-new" id="page-overview-new-page">
+                    <span class="page-overview-modal-plus" aria-hidden="true">+</span>
+                    <span class="page-overview-modal-newlabel">${d.escapeHtml(newLabel)}</span>
+                    <span class="page-overview-modal-hintkey" aria-hidden="true">n</span>
                 </button>
             </div>
         `;

@@ -1094,19 +1094,42 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 }
 
 /* ─── "New page" — the overlay's one action ──────────────────────────────────
-   It borrows .page-overview-modal-link for its shape so it lines up with the
-   pages above, and is set apart by the rule above it and a muted, dashed
-   border: a thing to do, not a page to go to. */
+   A button, not another row: the list above holds places to go and this is a
+   thing to do. It wears the accent chip the header key wears, so the two marks
+   the overlay makes in the accent colour are the same object at two sizes. */
 
 .page-overview-modal-actions {
-    margin-top: var(--space-2, 0.55rem);
-    padding-top: var(--space-2, 0.55rem);
-    border-top: 1px solid var(--border-primary);
+    display: flex;
+    padding: 0 var(--space-2, 0.5rem) var(--space-2, 0.5rem);
 }
 
 .page-overview-modal-new {
-    border-style: dashed;
-    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+    padding: 0.3rem 0.5rem 0.3rem 0.45rem;
+    border: none;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold, 600);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s ease;
+}
+
+.page-overview-modal-new:hover,
+.page-overview-modal-new:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    outline: none;
+}
+
+.page-overview-modal-new:focus-visible {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
 }
 
 .page-overview-modal-new[hidden] {
@@ -1114,19 +1137,27 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 }
 
 .page-overview-modal-plus {
-    font-size: 1em;
-    color: var(--text-secondary);
+    font-size: 1.05em;
+    line-height: 1;
 }
 
-/* The shortcut hint sits where a page shows its bookmark count. */
+/* The shortcut hint reads the way the foot's ↵ does, in the accent rather than
+   the text colour because it sits inside the tinted chip. */
 .page-overview-modal-hintkey {
-    opacity: 0.75;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.85;
 }
 
 /* The name row takes the button's place inside the same action block, so
    opening it does not change the modal's height. */
 .page-overview-modal-actions .bookmark-inline-create {
     display: flex;
+    /* The action block is a flex row for the button's sake; the name row that
+       takes its place still wants the whole width. */
+    flex: 1 1 100%;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1-5, 0.35rem);
