@@ -2604,7 +2604,10 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 .whats-new-btn {
     position: fixed;
     bottom: var(--corner-fab-edge);
-    left: var(--corner-fab-edge);
+    /* Right, not left: the left corner is where the page's own content starts,
+       and the actions it belongs beside all sit at the right end of the bar. */
+    right: var(--corner-fab-edge);
+    left: auto;
     z-index: 1001;
     padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
     border: none;
@@ -2688,7 +2691,10 @@ body.no-animations .whats-new-btn-update-dot {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 6px);
-    left: 0;
+    /* Hung from the same edge the button is pinned to, so it opens inward
+       instead of off the screen. */
+    right: 0;
+    left: auto;
     white-space: nowrap;
     padding: var(--space-1, 0.2rem) var(--space-2, 0.5rem);
     background: var(--background-secondary);
@@ -2713,21 +2719,6 @@ body.no-animations .whats-new-btn-update-dot {
     .whats-new-btn[data-tooltip]::after {
         display: none;
     }
-}
-/* Linker-dock: what's new naar rechts (tegenover de knoppenbalk) */
-body[data-button-position="bottom-left"] .whats-new-btn {
-    left: auto;
-    right: var(--corner-fab-edge);
-}
-body[data-button-position="bottom-left"] .whats-new-btn[data-tooltip]::after {
-    left: auto;
-    right: 0;
-}
-
-/* Rechter-dock: what's new expliciet links (tegenover de knoppenbalk) */
-body[data-button-position="bottom-right"] .whats-new-btn {
-    left: var(--corner-fab-edge);
-    right: auto;
 }
 
 /* Density overrides (can be combined with layout presets) */

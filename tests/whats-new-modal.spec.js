@@ -254,3 +254,46 @@ test.describe("what's new modal", () => {
         await expect(closeBtn).not.toHaveText('Confirm');
     });
 });
+
+/*
+ * The star sits in the bottom-right corner, and the toast stands clear of it.
+ *
+ * It was bottom-left, where the page's own content starts; the actions it
+ * belongs beside are all at the right end of the bar. The notification host is
+ * pinned to that same corner, so it had to be lifted — a toast covering the
+ * button for as long as it is on screen is a button you cannot press, and the
+ * toasts that carry an Undo are exactly the ones you reach past it for.
+ */
+test('the what\'s-new button is in the bottom-right corner, under the toast', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    const fab = await page.evaluate(() => {
+        const r = document.getElementById('whats-new-btn').getBoundingClientRect();
+        return {
+            fromRight: Math.round(document.body.clientWidth - r.right),
+            fromBottom: Math.round(window.innerHeight - r.bottom),
+            fromLeft: Math.round(r.left),
+        };
+    });
+    expect(fab.fromRight, 'the star is not in the right corner').toBeLessThan(40);
+    expect(fab.fromBottom, 'the star is not at the bottom').toBeLessThan(40);
+    expect(fab.fromLeft, 'the star is still on the left').toBeGreaterThan(200);
+
+    await page.evaluate(() => window.dashboardInstance.showNotification('Bookmark deleted.', 'success'));
+    await expect.poll(() => page.evaluate(
+        () => document.getElementById('app-notification')?.classList.contains('show') === true,
+    )).toBe(true);
+    await page.waitForTimeout(400);
+
+    const overlap = await page.evaluate(() => {
+        const box = (sel) => document.querySelector(sel).getBoundingClientRect();
+        const toast = box('#app-notification');
+        const star = box('#whats-new-btn');
+        return toast.bottom > star.top && toast.right > star.left && toast.left < star.right;
+    });
+    expect(overlap, 'the toast covers the button').toBe(false);
+});
