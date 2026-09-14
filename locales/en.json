@@ -4931,7 +4931,7 @@
     "overviewNewFeatureBookmarkPagesHow": "Choose a page in the filter dropdown to scope categories and deep-link with #config/bookmarks/<pageId>. With All pages, categories show as Page · Category.",
     "appearanceTabLayout": "Layout",
     "appearanceTabDisplay": "Display",
-    "appearanceTabToolbar": "Toolbar & tabs",
+    "appearanceTabHeaderButtons": "Header and buttons",
     "appearanceDisplayQuickTitle": "Quick display options",
     "appearanceDisplayQuickNote": "Everyday bookmark row options. Toolbar and tab visibility live on their own tab.",
     "tileMonitored": "Monitored",

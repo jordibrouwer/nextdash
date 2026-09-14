@@ -224,7 +224,7 @@ test.describe('config: sections restored from the old config', () => {
      */
     test('the header toggles live on the toolbar tab', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'toolbar');
+        await openAppearanceTab(page, 'header');
         for (const f of ['showPageTabs', 'showTitle', 'showConfigButton', 'showHealthDashboard']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
@@ -355,9 +355,9 @@ test.describe('config: sections restored from the old config', () => {
             ['buttonbar', 'showCommandsButton', 'data-show-commands-button'],
             ['buttonbar', 'showRecentButton', 'data-show-recent-button'],
             ['buttonbar', 'showCheatSheetButton', 'data-show-cheatsheet-button'],
-            ['toolbar', 'showConfigButton', 'data-show-config-button'],
-            ['toolbar', 'showHealthDashboard', 'data-show-health-dashboard'],
-            ['toolbar', 'showTitle', 'data-show-title'],
+            ['header', 'showConfigButton', 'data-show-config-button'],
+            ['header', 'showHealthDashboard', 'data-show-health-dashboard'],
+            ['header', 'showTitle', 'data-show-title'],
         ];
         for (const [tab, field, attr] of pairs) {
             await openAppearanceTab(page, tab);
@@ -371,7 +371,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('hiding page tabs takes effect at once and can be undone', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'toolbar');
+        await openAppearanceTab(page, 'header');
 
         const display = () => page.evaluate(() =>
             getComputedStyle(document.getElementById('page-navigation')).display);
@@ -386,7 +386,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('page names in tabs relabels the tabs at once', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'toolbar');
+        await openAppearanceTab(page, 'header');
 
         const label = () => page.evaluate(() =>
             document.querySelector('.page-nav-btn .page-tab-label')?.textContent);

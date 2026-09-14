@@ -57,7 +57,7 @@ test.describe('custom theme editor', () => {
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="display"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-tab="toolbar"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-tab="header"]')).toBeVisible();
         // Branding is one panel — a toggle, a text field and an upload — so it
         // lives on Display rather than owning a tab of its own.
         await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);

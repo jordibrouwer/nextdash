@@ -23,8 +23,8 @@ async function openToolbarTab(page) {
     await waitForConfigReady(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 15_000 });
-    await page.locator('[data-appearance-tab="toolbar"]').click();
-    await expect(page.locator('[data-appearance-tab="toolbar"]')).toHaveAttribute('aria-selected', 'true');
+    await page.locator('[data-appearance-tab="header"]').click();
+    await expect(page.locator('[data-appearance-tab="header"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.config-panel-bulk').first()).toBeVisible();
 }
 
@@ -40,7 +40,7 @@ test.describe('the chrome toggles are grouped', () => {
         await openToolbarTab(page);
 
         const panels = await page.evaluate(() => [
-            ...window.dashboardInstance.config.panelsFor('appearance', 'toolbar'),
+            ...window.dashboardInstance.config.panelsFor('appearance', 'header'),
             ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
         ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) })));
 
@@ -49,7 +49,7 @@ test.describe('the chrome toggles are grouped', () => {
         // actions were two groups — "main buttons" and "extras" — which was the
         // floating bar's own split into a row and a second row beside it.
         const perTab = await page.evaluate(() => ({
-            toolbar: window.dashboardInstance.config.panelsFor('appearance', 'toolbar').length,
+            toolbar: window.dashboardInstance.config.panelsFor('appearance', 'header').length,
             buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
         }));
         expect(perTab).toEqual({ toolbar: 1, buttonbar: 1 });
@@ -141,6 +141,23 @@ test('the header toggles reach the header', async ({ page }) => {
     await expect.poll(() => shown('.pages-link + .header-zone-divider'),
         { timeout: 5_000 }).toBe(true);
     await page.locator('[data-behavior-field="showInboxButton"]').check();
+});
+
+/*
+ * The tab is `header` now, and was `toolbar` when it was called "Toolbar &
+ * tabs" -- so a saved link, or a browser tab left open across the change,
+ * still carries the old word.
+ */
+test('the old address still opens the header tab', async ({ page }) => {
+    await page.goto('/#config/appearance/toolbar');
+    await page.waitForSelector('.config-view', { timeout: 15_000 });
+    await dismissBlockingOverlays(page);
+    await expect(page.locator('[data-appearance-tab="header"]'))
+        .toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeVisible();
+    // And the address is rewritten to the name the tab has now.
+    await expect.poll(() => page.evaluate(() => window.location.hash))
+        .toBe('#config/appearance/header');
 });
 
 test.describe('Show all / Hide all', () => {

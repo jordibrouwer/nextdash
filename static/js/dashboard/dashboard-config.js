@@ -336,7 +336,10 @@ class DashboardConfig {
             return DashboardConfig.BM_TABS.includes(match[2]) ? match[2] : null;
         }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
-        return tabs && tabs.includes(match[2]) ? match[2] : null;
+        const tab = match[1] === 'appearance'
+            ? (DashboardConfig.APPEARANCE_TAB_ALIASES[match[2]] || match[2])
+            : match[2];
+        return tabs && tabs.includes(tab) ? tab : null;
     }
 
     /** Page filter encoded as `#config/bookmarks/<pageId>`. */
@@ -1667,7 +1670,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'layout', 'buttonbar', 'display', 'toolbar'].includes(this.appearanceTab)
+            const tab = ['general', 'layout', 'buttonbar', 'display', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -8662,7 +8665,7 @@ class DashboardConfig {
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
-        if (this.appearanceTab === 'toolbar') {
+        if (this.appearanceTab === 'header') {
             return shell(this.renderAppearanceToolbarBody());
         }
 
@@ -8801,7 +8804,7 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
+        return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior');
     }
 
     /** The branding panel, appended to Display since it lost its own tab. */
@@ -9420,7 +9423,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'buttonbar', 'display', 'toolbar'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'display', 'header'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -9548,7 +9551,7 @@ class DashboardConfig {
             layout: ['config.appearanceTabLayout', 'Layout'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             display: ['config.appearanceTabDisplay', 'Display'],
-            toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
+            header: ['config.appearanceTabHeaderButtons', 'Header and buttons'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -11592,9 +11595,9 @@ class DashboardConfig {
              */
             {
                 section: 'appearance',
-                tab: 'toolbar',
+                tab: 'header',
                 title: t('config.chromeGroupHeader', 'Header'),
-                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the two icons on the right.'),
+                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the buttons on the right.'),
                 bulk: 'chrome',
                 controls: [
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
@@ -13653,7 +13656,7 @@ class DashboardConfig {
     }
 
     /**
-     * Reapply the header/toolbar chrome so a Toolbar & tabs toggle shows up at
+     * Reapply the header chrome so a Header and buttons toggle shows up at
      * once, without a reload.
      *
      * These settings are not read at render time: setupDOM writes them onto
@@ -13847,7 +13850,7 @@ class DashboardConfig {
         if (this.section === 'appearance') {
             const body = document.getElementById('config-appearance-body');
             const render = {
-                toolbar: () => this.renderAppearanceToolbarBody(),
+                header: () => this.renderAppearanceToolbarBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
@@ -13937,7 +13940,17 @@ class DashboardConfig {
     // questions people ask about it — where it sits, which of the four main
     // buttons it carries, which extras — were answered two tabs apart, so
     // changing the bar meant finding it twice.
-    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'display', 'toolbar', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'display', 'header', 'custom-themes'];
+
+    /*
+     * What a tab used to be called still opens it.
+     *
+     * The header tab was `toolbar` while it was named "Toolbar & tabs", and
+     * that word is in every link anyone saved, in the location config
+     * remembers between visits, and in the address bar of a tab left open
+     * across the change.
+     */
+    static APPEARANCE_TAB_ALIASES = { toolbar: 'header' };
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 

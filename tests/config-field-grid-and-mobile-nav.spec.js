@@ -185,7 +185,7 @@ test.describe('the settings schema declares its section', () => {
         const appearance = [...new Set(
             panels.filter((p) => p.section === 'appearance').map((p) => p.tab)
         )].sort();
-        expect(appearance).toEqual(['buttonbar', 'display', 'layout', 'toolbar']);
+        expect(appearance).toEqual(['buttonbar', 'display', 'header', 'layout']);
     });
 
     test('panelsFor keeps a shared tab name in its own section', async ({ page }) => {
@@ -196,7 +196,7 @@ test.describe('the settings schema declares its section', () => {
             return {
                 behaviorGeneral: cfg.panelsFor('behavior', 'general').map((p) => p.title),
                 appearanceGeneral: cfg.panelsFor('appearance', 'general').map((p) => p.title),
-                appearanceToolbar: cfg.panelsFor('appearance', 'toolbar').map((p) => p.title),
+                appearanceToolbar: cfg.panelsFor('appearance', 'header').map((p) => p.title),
                 behaviorToolbar: cfg.panelsFor('behavior', 'toolbar').map((p) => p.title),
             };
         });
@@ -216,7 +216,7 @@ test.describe('the settings schema declares its section', () => {
         await expect(page.locator('[data-behavior-field="statusRecheckIntervalMinutes"]')).toBeVisible();
 
         await openSection(page, 'appearance');
-        await openSubTab(page, 'data-appearance-tab', 'toolbar');
+        await openSubTab(page, 'data-appearance-tab', 'header');
         await expect(page.locator('[data-behavior-field="showConfigButton"]')).toBeVisible();
 
         await openSubTab(page, 'data-appearance-tab', 'layout');

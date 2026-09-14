@@ -89,6 +89,9 @@ class DashboardConfigLoader {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
+            // Mirrors DashboardConfig.APPEARANCE_TAB_ALIASES: a location saved
+            // while the header tab was called "toolbar" still opens it.
+            if (section === 'appearance' && subTab === 'toolbar') subTab = 'header';
             return { section, subTab: subTab || null };
         } catch {
             return null;

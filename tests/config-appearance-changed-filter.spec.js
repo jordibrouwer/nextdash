@@ -85,7 +85,7 @@ const toggle = '.config-view-head [data-config-action="toggle-changed"]';
 test.describe('appearance only-changed filter', () => {
     // Branding is not a tab: one toggle, a text field and an upload live on
     // Display rather than owning a tab of their own.
-    for (const tab of ['general', 'layout', 'buttonbar', 'display', 'toolbar']) {
+    for (const tab of ['general', 'layout', 'buttonbar', 'display', 'header']) {
         test(`the ${tab} tab offers the filter`, async ({ page }) => {
             await openAppearance(page, tab);
             await expect(page.locator(bar)).toBeVisible();

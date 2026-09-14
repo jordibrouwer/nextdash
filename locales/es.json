@@ -4931,7 +4931,7 @@
     "overviewNewFeatureBookmarkPagesHow": "Elige una página en el desplegable del filtro para acotar las categorías y enlazar con #config/bookmarks/<pageId>. Con Todas las páginas, las categorías se ven como Página · Categoría.",
     "appearanceTabLayout": "Disposición",
     "appearanceTabDisplay": "Pantalla",
-    "appearanceTabToolbar": "Barra y pestañas",
+    "appearanceTabHeaderButtons": "Encabezado y botones",
     "appearanceDisplayQuickTitle": "Opciones rápidas de pantalla",
     "appearanceDisplayQuickNote": "Opciones del día a día de las filas de marcadores. Lo que se ve de la barra y las pestañas está en su propia pestaña.",
     "tileMonitored": "Vigilados",

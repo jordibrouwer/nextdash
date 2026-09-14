@@ -4926,7 +4926,7 @@
     "smartMostUsedLimitInfoMessage": "Hoeveel bookmarks de collectie Meest gebruikt hoogstens toont.\n\n• Onbeperkt toont alles wat matcht\n• Beïnvloedt alleen de weergave; er wordt niets verwijderd",
     "appearanceTabLayout": "Indeling",
     "appearanceTabDisplay": "Weergave",
-    "appearanceTabToolbar": "Werkbalk & tabs",
+    "appearanceTabHeaderButtons": "Header en knoppen",
     "appearanceDisplayQuickTitle": "Snelle weergave-opties",
     "appearanceDisplayQuickNote": "Alledaagse opties voor bladwijzerrijen. Zichtbaarheid van werkbalk en tabs staat op een eigen tabblad.",
     "tileMonitored": "Gemonitord",

@@ -4931,7 +4931,7 @@
     "overviewNewFeatureBookmarkPagesHow": "在过滤下拉框里选一个页面，就能把分类限定在它上面，并用 #config/bookmarks/<pageId> 做深链接。选「所有页面」时，分类显示成「页面 · 分类」。",
     "appearanceTabLayout": "布局",
     "appearanceTabDisplay": "显示",
-    "appearanceTabToolbar": "工具栏与标签",
+    "appearanceTabHeaderButtons": "标题栏和按钮",
     "appearanceDisplayQuickTitle": "快捷显示选项",
     "appearanceDisplayQuickNote": "日常的书签行选项。工具栏和标签的显隐在它们自己的标签页里。",
     "tileMonitored": "监控中",
