@@ -395,6 +395,28 @@ class DashboardUiHelpers {
      * needs and a tab stop everybody meets. Past that the list is something to
      * search rather than to read.
      */
+    /**
+     * Where a panel that hangs from the header has to sit.
+     *
+     * The band's bottom edge is the sheet's top edge; the header row is its
+     * width and its centre line. Measured rather than written down -- the
+     * band's height is the reader's, and the row follows the page's container
+     * at every width -- and published so the placement is one rule in CSS
+     * rather than a second layout in JavaScript. Both sheets use it: the pages
+     * panel and recents.
+     */
+    static publishHeaderSheetAnchor() {
+        const band = document.querySelector('.dashboard-section.section-controls');
+        const row = document.querySelector('.header-top');
+        if (!band || !row) return;
+        const bandBox = band.getBoundingClientRect();
+        const rowBox = row.getBoundingClientRect();
+        const style = document.body.style;
+        style.setProperty('--header-sheet-top', `${Math.round(bandBox.bottom)}px`);
+        style.setProperty('--header-sheet-width', `${Math.round(rowBox.width)}px`);
+        style.setProperty('--header-sheet-mid', `${Math.round(rowBox.x + rowBox.width / 2)}px`);
+    }
+
     static PAGE_FILTER_FROM = 8;
 
     /**
@@ -935,19 +957,7 @@ class DashboardUiHelpers {
          * height is the reader's -- the clock placement and the font size both
          * move it -- and published as a property CSS can read.
          */
-        const band = document.querySelector('.dashboard-section.section-controls');
-        const row = document.querySelector('.header-top');
-        if (band && row) {
-            const bandBox = band.getBoundingClientRect();
-            const rowBox = row.getBoundingClientRect();
-            const style = document.body.style;
-            style.setProperty('--pages-sheet-top', `${Math.round(bandBox.bottom)}px`);
-            // The page's own column, read off the header row rather than from a
-            // token: the row already follows the container at every width, and
-            // the sheet is supposed to line up with it, not with a number.
-            style.setProperty('--pages-sheet-width', `${Math.round(rowBox.width)}px`);
-            style.setProperty('--pages-sheet-mid', `${Math.round(rowBox.x + rowBox.width / 2)}px`);
-        }
+        DashboardUiHelpers.publishHeaderSheetAnchor();
 
         /*
          * Wide enough for a grid, or as wide as what it holds.
@@ -964,7 +974,7 @@ class DashboardUiHelpers {
             htmlMessage: this._buildPageOverviewHtml(pages, allBookmarks),
             confirmText,
             showCancel: false,
-            modalClass: `page-overview-modal page-overview-sheet${grid ? ' is-grid' : ' is-compact'}`,
+            modalClass: `page-overview-modal header-sheet page-overview-sheet${grid ? ' is-grid' : ' is-compact'}`,
             /*
              * The page you are on takes the focus, not the way out.
              *

@@ -2145,25 +2145,25 @@ body:not([data-depth="flat"]) .wn-earlier {
    the rows out in a grid; under that it is as wide as what it holds.
    ────────────────────────────────────────────────────────────────────────── */
 
-.modal-overlay:has(.page-overview-sheet) {
+.modal-overlay:has(.header-sheet) {
     /* The sheet places itself against the band; the overlay stops centring it. */
     justify-content: flex-start;
     align-items: stretch;
 }
 
-.modal.page-overview-sheet {
+.modal.header-sheet {
     position: fixed;
-    top: var(--pages-sheet-top, 96px);
+    top: var(--header-sheet-top, 96px);
     /* On the strip's own centre line, which is the header row's: published by
        showPageOverlay so the sheet follows the row at every width. */
-    left: var(--pages-sheet-mid, 50%);
+    left: var(--header-sheet-mid, 50%);
     transform: translateX(-50%) translateY(-6px);
     margin: 0;
     /* Square where it meets the band, round where it leaves the page. */
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-top: 0;
-    max-height: min(70vh, calc(100vh - var(--pages-sheet-top, 96px) - 2rem));
+    max-height: min(70vh, calc(100vh - var(--header-sheet-top, 96px) - 2rem));
     padding: var(--space-3, 0.8rem) var(--space-4, 1.15rem) var(--space-3, 0.8rem);
 }
 
@@ -2176,13 +2176,13 @@ body:not([data-depth="flat"]) .wn-earlier {
  * animation of its own instead: the same short fall, with the centring carried
  * through every frame.
  */
-.modal-overlay.show .modal.page-overview-sheet,
-.modal-overlay.show .modal.page-overview-sheet.from-origin {
-    animation: pages-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+.modal-overlay.show .modal.header-sheet,
+.modal-overlay.show .modal.header-sheet.from-origin {
+    animation: header-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
     transform: translateX(-50%) translateY(0);
 }
 
-@keyframes pages-sheet-drop {
+@keyframes header-sheet-drop {
     from {
         transform: translateX(-50%) translateY(-8px);
         opacity: 0;
@@ -2193,27 +2193,27 @@ body:not([data-depth="flat"]) .wn-earlier {
     }
 }
 
-body.no-animations .modal-overlay.show .modal.page-overview-sheet,
-body.no-animations .modal-overlay.show .modal.page-overview-sheet.from-origin {
+body.no-animations .modal-overlay.show .modal.header-sheet,
+body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
     animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .modal-overlay.show .modal.page-overview-sheet,
-    .modal-overlay.show .modal.page-overview-sheet.from-origin {
+    .modal-overlay.show .modal.header-sheet,
+    .modal-overlay.show .modal.header-sheet.from-origin {
         animation: none;
     }
 }
 
 /* Wide: the page's own column, the same width the grid below it has. */
-.modal.page-overview-sheet.is-grid {
-    width: min(var(--pages-sheet-width, 60rem), calc(100vw - 2.5rem));
+.modal.header-sheet.is-grid {
+    width: min(var(--header-sheet-width, 60rem), calc(100vw - 2.5rem));
     max-width: calc(100vw - 2.5rem);
 }
 
 /* Narrow: as wide as the rows it holds, with a floor so two short names do not
    draw a sheet the size of a tooltip. */
-.modal.page-overview-sheet.is-compact {
+.modal.header-sheet.is-compact {
     width: max-content;
     min-width: min(26rem, calc(100vw - 2.5rem));
     max-width: min(52rem, calc(100vw - 2.5rem));
