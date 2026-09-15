@@ -130,3 +130,100 @@ test.describe('appearance in the command palette', () => {
         expect(listed[0].toLowerCase()).toContain('hatch');
     });
 });
+
+
+/*
+ * The rest of the same panel: the glow, the two drawings and the seven
+ * toggles.
+ *
+ * Depth, contrast, the backdrop and the pattern were here from the start; the
+ * settings added since sat only in config, so a reader working from the
+ * keyboard had to open a view to answer a question the palette answers for
+ * everything beside it.
+ */
+test.describe('the header and surfaces settings', () => {
+    async function openPalette(page, query) {
+        await dashboard(page);
+        await page.evaluate((q) => {
+            const sc = window.dashboardInstance.searchComponent;
+            sc.currentQuery = q;
+            sc.updateSearch();
+        }, query);
+        await page.waitForTimeout(250);
+    }
+
+    const rows = (page) => page.evaluate(
+        () => (window.dashboardInstance.searchComponent.searchMatches || [])
+            .map((m) => m.name || m.label || '').filter(Boolean),
+    );
+
+    const pick = (page, needle) => page.evaluate((text) => {
+        const sc = window.dashboardInstance.searchComponent;
+        const match = (sc.searchMatches || []).find((m) => (m.name || '').startsWith(text));
+        if (!match?.action) throw new Error(`no row starting with ${text}`);
+        return match.action();
+    }, needle);
+
+    test(':glow sets the glow, and says which one is on', async ({ page }) => {
+        await openPalette(page, ':glow');
+
+        // Rows carry the label, with a tick on the one in force.
+        expect((await rows(page)).join(' ').toLowerCase()).toContain('off');
+        expect((await rows(page)).join(' ').toLowerCase()).toContain('full');
+
+        await pick(page, 'Full');
+        await expect.poll(() => page.evaluate(
+            () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('full');
+    });
+
+    test(':buttonstyle switches the header drawing', async ({ page }) => {
+        await openPalette(page, ':buttonstyle');
+
+        await pick(page, 'Each in its own box');
+        await expect.poll(() => page.evaluate(
+            () => document.body.getAttribute('data-header-buttons')), { timeout: 5_000 }).toBe('plated');
+    });
+
+    test(':switcher picks how the pages are drawn', async ({ page }) => {
+        await openPalette(page, ':switcher');
+
+        await pick(page, 'Plain text');
+        await expect.poll(() => page.evaluate(
+            () => document.body.getAttribute('data-page-switcher')), { timeout: 5_000 }).toBe('text');
+    });
+
+    test(':maxtabs offers three to nine', async ({ page }) => {
+        await openPalette(page, ':maxtabs');
+
+        const listed = await rows(page);
+        expect(listed).toHaveLength(7);
+
+        await pick(page, '7');
+        await expect.poll(() => page.evaluate(
+            () => Number(window.dashboardInstance.settings.maxPageTabs)), { timeout: 5_000 }).toBe(7);
+    });
+
+    test(':header toggles the seven controls of the panel', async ({ page }) => {
+        await openPalette(page, ':header');
+
+        const listed = await rows(page);
+        expect(listed).toHaveLength(7);
+        expect(listed.join(' ')).toContain('inbox');
+
+        await pick(page, 'inbox');
+        await expect.poll(() => page.evaluate(
+            () => document.body.getAttribute('data-show-inbox-button')), { timeout: 5_000 }).toBe('false');
+    });
+
+    test(':buttons reaches the pages and fold-all buttons too', async ({ page }) => {
+        await openPalette(page, ':buttons');
+
+        const listed = (await rows(page)).join(' ');
+        expect(listed).toContain('pages');
+        expect(listed).toContain('foldall');
+
+        await pick(page, 'pages');
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.settings.showPagesButton), { timeout: 5_000 }).toBe(true);
+    });
+});

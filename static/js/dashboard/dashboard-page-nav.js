@@ -278,6 +278,7 @@ class DashboardPageNav {
         // The inbox tab is built here, so this is where the destination cluster
         // can go from empty to occupied.
         d.visual?.syncHeaderZoneDividers?.();
+        this.syncPageWalkButtons();
     }
 
 
@@ -503,6 +504,39 @@ class DashboardPageNav {
      * been round tripped yet draws the same switcher it will after a reload --
      * the same reading the server does.
      */
+    /**
+     * The two keys printed beside the strip are buttons as well.
+     *
+     * They have always said what Shift+Left and Shift+Right do; a reader with a
+     * pointer had to take that as advice rather than as a control. They walk
+     * one page now, and they stop at the ends: the keys wrap around, a button
+     * that looks pressable and does nothing does not. With one page there is
+     * nowhere to walk, so both are disabled.
+     */
+    syncPageWalkButtons() {
+        const d = this.dash;
+        const buttons = [...document.querySelectorAll('.header-track .page-walk-hint')];
+        if (!buttons.length) return;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        const at = pages.findIndex((page) => d.samePageId(page.id, d.currentPageId));
+        buttons.forEach((btn) => {
+            const step = btn.dataset.pageWalk === 'prev' ? -1 : 1;
+            const target = at < 0 ? -1 : at + step;
+            const page = target >= 0 && target < pages.length ? pages[target] : null;
+            btn.disabled = !page;
+            btn.setAttribute('aria-disabled', page ? 'false' : 'true');
+            if (!btn.dataset.walkBound) {
+                btn.dataset.walkBound = '1';
+                btn.addEventListener('click', () => {
+                    const pos = pages.findIndex((p) => d.samePageId(p.id, d.currentPageId));
+                    const next = this.dash.pages?.[pos + step];
+                    if (next) void this.requestPageNavigation(next.id);
+                });
+            }
+        });
+    }
+
+
     pageSwitcherStyle() {
         const raw = this.dash?.settings?.pageSwitcherStyle;
         return raw === 'text' || raw === 'compact' ? raw : 'segmented';
@@ -823,6 +857,8 @@ class DashboardPageNav {
             this.updateInboxTabBadge();
             this.syncInboxTabHighlight();
         }
+
+        this.syncPageWalkButtons();
 
         // Measured after the tabs are in the DOM: widths are not knowable before
         // the browser has laid them out.

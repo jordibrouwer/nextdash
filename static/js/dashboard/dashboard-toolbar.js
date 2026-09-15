@@ -142,6 +142,26 @@ class DashboardToolbar {
             // not "a modal is open, keep out". toggleRecentBookmarksModal()
             // refuses to stack on top of another modal by itself; swallowing the
             // key here as well keeps it from reaching anything behind.
+            /*
+             * `*` opens the panel in its recents mode.
+             *
+             * The recents panel is still there for anyone who switches its
+             * button back on; what the key reaches is the mode, because two
+             * surfaces for one list is the thing the header was carrying.
+             */
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*'
+                && d.settings?.showRecentButton === false) {
+                if (!d.isBookmarksView() || d.isModalOpen()) {
+                    return;
+                }
+                if (d.searchComponent?.isActive?.()) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                d.searchComponent?.openInRecentMode?.();
+                return;
+            }
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
                 // Recent bookmarks is a dashboard button; inert in a
                 // full-container view. (! stays live everywhere -- see below --

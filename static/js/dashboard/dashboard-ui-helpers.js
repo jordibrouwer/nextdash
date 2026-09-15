@@ -388,6 +388,16 @@ class DashboardUiHelpers {
     }
 
 
+    /*
+     * How many pages it takes before the panel offers a filter.
+     *
+     * Eight rows fit in one look; a filter above them is a control nobody
+     * needs and a tab stop everybody meets. Past that the list is something to
+     * search rather than to read.
+     */
+    static PAGE_FILTER_FROM = 8;
+
+
     _buildPageOverviewHtml(pages, allBookmarks) {
         const d = this.dash;
         const listLabel = this.formatDashboardLabel('pagesOverviewAria', {}, 'Page overview');
@@ -445,18 +455,64 @@ class DashboardUiHelpers {
                     this.formatDashboardLabel('pageOverviewFootOpen', {}, 'open'))}</span>
             </div>`;
 
+        /*
+         * One page is not a list with one thing in it.
+         *
+         * A reader who has never made a second page opens this to find a single
+         * row and a small dashed cell under it -- the panel answering a question
+         * they have not asked yet. With one page the offer is the point, so it
+         * is drawn at full width with the one line of explanation that says what
+         * a page is for. Past that it goes back to being the last entry.
+         */
+        const alone = pages.length === 1;
         const newLabel = this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page');
+        const newHint = alone
+            ? `<span class="page-overview-modal-newhint">${d.escapeHtml(this.formatDashboardLabel(
+                'pageOverviewNewPageHint', {},
+                'Pages keep separate sets of bookmarks; the digits 1-9 switch between them.'))}</span>`
+            : '';
         const newRow = `
-            <div class="page-overview-modal-actions">
+            <div class="page-overview-modal-actions${alone ? ' is-alone' : ''}">
                 <button type="button" class="page-overview-modal-new" id="page-overview-new-page">
                     <span class="page-overview-modal-plus" aria-hidden="true">+</span>
                     <span class="page-overview-modal-newlabel">${d.escapeHtml(newLabel)}</span>
                     <span class="page-overview-modal-hintkey" aria-hidden="true">n</span>
                 </button>
+                ${newHint}
             </div>
         `;
 
-        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>${newRow}${footHtml}`;
+        /*
+         * The filter, for the readers who have enough pages to need one.
+         *
+         * Under eight it is a line of chrome above a list you can already read
+         * in one look, so it is not drawn at all. Past eight it is the fastest
+         * way in: it takes focus when the panel opens, and typing narrows the
+         * rows. The digits keep jumping to the page they name, filtered or not
+         * -- the number belongs to the page, not to its place in the list.
+         */
+        const filterHtml = pages.length > DashboardUiHelpers.PAGE_FILTER_FROM
+            ? `<div class="page-overview-modal-filterbar">
+                    <input type="search" class="page-overview-modal-filter" id="page-overview-filter"
+                        autocomplete="off" spellcheck="false"
+                        placeholder="${d.escapeHtml(this.formatDashboardLabel('pageOverviewFilterPlaceholder', {}, 'filter pages…'))}"
+                        aria-label="${d.escapeHtml(this.formatDashboardLabel('pageOverviewFilterAria', {}, 'Filter pages by name'))}">
+                </div>`
+            : '';
+
+        /*
+         * The new-page entry continues the list without joining it.
+         *
+         * It sat in a tinted block of its own under the panel -- a gap, a
+         * second surface and a second set of corners for one more line. It now
+         * stands on the same slab, flush against the rows, with the hairline
+         * its neighbours carry. It stays OUTSIDE the listbox: a listbox holds
+         * options, and this is a button, so a screen reader must not count it
+         * as one more page to choose.
+         */
+        return `${filterHtml}<div class="page-overview-modal-slab">`
+            + `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`
+            + `${newRow}</div>${footHtml}`;
     }
 
 
@@ -665,6 +721,16 @@ class DashboardUiHelpers {
             // was never aimed at.
             this._pageOverviewDelete?.disarm?.();
             focusedIndex = ((idx % ringSize) + ringSize) % ringSize;
+            // A hidden row is not a stop: with a filter on, walking past one
+            // would land the cursor on something nobody can see.
+            const visible = (i) => i === newPageIndex || !items()[i]?.hidden;
+            if (!visible(focusedIndex)) {
+                const step = idx >= 0 ? 1 : -1;
+                for (let n = 0; n < ringSize; n += 1) {
+                    focusedIndex = ((focusedIndex + step) % ringSize + ringSize) % ringSize;
+                    if (visible(focusedIndex)) break;
+                }
+            }
             const onNewPage = focusedIndex === newPageIndex;
             items().forEach((el, i) => {
                 el.classList.toggle('is-focused', !onNewPage && i === focusedIndex);
@@ -699,6 +765,31 @@ class DashboardUiHelpers {
 
         const remove = this._setupPageOverviewDelete(pages, listRoot);
 
+        /*
+         * Filtering hides rows; it does not renumber them.
+         *
+         * `3` means the third page whatever is on screen, so the filter only
+         * decides what is drawn. Walking with the arrows skips what is hidden,
+         * which is why setFocus is told which rows are still there rather than
+         * counting them itself.
+         */
+        const filterInput = document.getElementById('page-overview-filter');
+        if (filterInput) {
+            const apply = () => {
+                const needle = filterInput.value.trim().toLowerCase();
+                let firstVisible = -1;
+                items().forEach((el, i) => {
+                    const name = (el.querySelector('.page-overview-modal-name')?.textContent || '').toLowerCase();
+                    const hit = !needle || name.includes(needle);
+                    el.hidden = !hit;
+                    if (hit && firstVisible < 0) firstVisible = i;
+                });
+                this._pageOverviewDelete?.disarm?.();
+                if (needle && firstVisible >= 0) setFocus(firstVisible);
+            };
+            filterInput.addEventListener('input', apply);
+        }
+
         this._pageOverviewKeyHandler = (e) => {
             if (!this.isPageOverviewModalOpen()) {
                 this._cleanupPageOverviewKeyHandler();
@@ -708,6 +799,18 @@ class DashboardUiHelpers {
             // a character someone may be typing into it. The row handles its own
             // Enter and Escape.
             if (create?.isOpen()) {
+                return;
+            }
+            /*
+             * The filter line owns the characters while it has focus.
+             *
+             * `,`, `n` and the digits are the panel's keys, and every one of
+             * them is also a letter someone may be typing into the filter. The
+             * keys that mean the same thing either way -- the arrows, Enter,
+             * Escape -- stay with the panel.
+             */
+            const typing = document.activeElement?.id === 'page-overview-filter';
+            if (typing && e.key.length === 1) {
                 return;
             }
             if (e.key === ',') {
@@ -805,9 +908,21 @@ class DashboardUiHelpers {
              * panel put the cursor on "leave" and the first arrow key had to
              * travel back into the list.
              */
-            initialFocusSelector: '.page-overview-modal-item.is-current .page-overview-modal-link',
-            modalMaxWidth: '22rem',
-            modalWidth: 'min(22rem, calc(100vw - 2.5rem))',
+            /*
+             * The filter takes the keyboard when there is one.
+             *
+             * With enough pages to earn a filter, typing is the way in; without
+             * it the page you are on is where the cursor belongs. Decided here
+             * rather than by a focus() after the fact, which raced the modal's
+             * own first focus and lost about half the time.
+             */
+            initialFocusSelector: pages.length > DashboardUiHelpers.PAGE_FILTER_FROM
+                ? '#page-overview-filter'
+                : '.page-overview-modal-item.is-current .page-overview-modal-link',
+            // 26rem, not 22: the rows are 44px tall now, and a name plus its
+            // count plus the delete control at the end needs the width.
+            modalMaxWidth: '26rem',
+            modalWidth: 'min(26rem, calc(100vw - 2.5rem))',
             onHide: () => {
                 this._cleanupPageOverviewKeyHandler();
                 const restoreTarget = document.getElementById('page-overview-header-btn');

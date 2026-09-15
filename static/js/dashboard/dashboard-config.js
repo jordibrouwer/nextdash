@@ -10941,10 +10941,10 @@ class DashboardConfig {
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'segmented' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
-        showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
+        showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: false },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
         showDashboardButton: { info: ['showDashboardButtonInfoTitle', 'showDashboardButtonInfoMessage'], def: true },
-        showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
+        showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: false },
         // Search
         shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'instant' },
         rememberScrollPosition: { info: ['rememberScrollPositionInfoTitle', 'rememberScrollPositionInfoMessage'], def: true },
@@ -11006,8 +11006,8 @@ class DashboardConfig {
         pushNotifyBackup: { def: false },
         pushNotifySubject: { def: '' },
         // Toolbar & chrome
-        showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
-        showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
+        showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: false },
+        showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: false },
         showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: false },
         showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
         showHealthDashboard: { info: ['showHealthDashboardInfoTitle', 'showHealthDashboardInfoMessage'], def: true },
@@ -11716,7 +11716,7 @@ class DashboardConfig {
                 section: 'appearance',
                 tab: 'buttonbar',
                 title: t('config.actionBarGroup', 'The action bar'),
-                note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too.'),
+                note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.'),
                 bulk: 'chrome',
                 controls: [
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),

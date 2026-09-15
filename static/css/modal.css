@@ -40,6 +40,45 @@
     opacity: 1;
 }
 
+/*
+ * Out of the control that opened it.
+ *
+ * ModalOrigin (modal.js) writes the offset from the panel's centre to the
+ * button's; the panel plays that distance back in 160ms. A keyframe rather
+ * than a transition: the class and `.show` land in the same tick, and a
+ * transition started from a state the browser never painted does nothing at
+ * all -- which is what "no animation" looked like.
+ */
+@keyframes modal-from-origin {
+    from {
+        transform:
+            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
+            scale(0.4);
+        opacity: 0;
+    }
+    to {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-overlay.show .modal.from-origin {
+    animation: modal-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: center;
+}
+
+/* Reduced motion and the no-animations setting: the panel simply appears where
+   it belongs. The origin is a nicety, and a nicety is the first thing to go. */
+body.no-animations .modal-overlay.show .modal.from-origin {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay.show .modal.from-origin {
+        animation: none;
+    }
+}
+
 /* 36rem, not the 52rem the cheat sheet uses: this modal is one column of prose,
    and at 52rem its lines ran to ~84 characters — well past the 45–75 where the
    eye still finds the next line reliably. It sat at 40rem (~61 characters) and
@@ -968,8 +1007,8 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 
 /* Page overview — compact centered modal (dashboard header pages button) */
 .modal.page-overview-modal {
-    max-width: min(22rem, calc(100vw - 2.5rem));
-    width: min(22rem, calc(100vw - 2.5rem));
+    max-width: min(26rem, calc(100vw - 2.5rem));
+    width: min(26rem, calc(100vw - 2.5rem));
     margin: auto;
     max-height: min(70vh, calc(100vh - 4rem));
     overflow: hidden;
@@ -981,7 +1020,20 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .modal.page-overview-modal .modal-body {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    /*
+     * One scrollbar, and it belongs to the rows.
+     *
+     * The list scrolls itself (max-height below), so a scrolling body put a
+     * second bar beside the first the moment the pages outgrew the panel --
+     * two tracks for one list, and the outer one moved the filter and the foot
+     * out of view along with it.
+     *
+     * A column, so the parts that must stay -- the filter, the new-page entry
+     * and the foot -- keep their height and the rows take whatever is left.
+     */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     padding-right: var(--space-1, 0.2rem);
     /* The last child ends flush with this scroll box, and overflow clipping eats
        the final pixel row — the name input's bottom border went missing. A pixel
@@ -1000,20 +1052,60 @@ body.no-animations .wn-earlier-chevron { transition: none; }
  * (see the :is() list below, which the recents list and the cheat sheet's
  * groups already stand on); only the layout is here.
  */
+/* AppModal wraps htmlMessage in .modal-text, so the column passes through it:
+   without this the slab is laid out inside a block of content height and the
+   body overflows however tall the panel is. */
+.modal.page-overview-modal .modal-body > .modal-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/*
+ * One slab, holding the rows and the way to make another page.
+ *
+ * The surface used to sit on the list itself, so the new-page entry stood on a
+ * block of its own under it -- a gap, a second set of corners and a second
+ * shadow for one more line. The slab is the wrapper now; the list scrolls
+ * inside it and the entry sits flush under the last row.
+ */
+.page-overview-modal-slab {
+    display: flex;
+    flex-direction: column;
+    /* Takes the room the filter and the foot leave, and gives it to the rows. */
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
 .page-overview-modal-list {
     list-style: none;
     margin: 0;
-    padding: var(--space-2, 0.5rem);
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    max-height: min(52vh, 24rem);
+    gap: 0;
+    /* No fixed ceiling: the panel's own max-height decides how tall it gets,
+       and the rows scroll inside whatever that leaves. A 52vh cap here meant
+       the body overflowed on a short window and grew a second scrollbar. */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
 }
 
 .page-overview-modal-item {
     margin: 0;
     padding: 0;
+    /* One line between rows rather than a gap: a gap makes every row an object, a
+       rule makes them a list. */
+    border-top: 1px solid var(--hairline, var(--border-primary));
+}
+
+.page-overview-modal-item:first-child,
+.page-overview-modal-item[hidden] + .page-overview-modal-item {
+    border-top: none;
 }
 
 .page-overview-modal-link {
@@ -1023,7 +1115,11 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     gap: 0.6rem;
     width: 100%;
     margin: 0;
-    padding: 0.3rem 0.5rem;
+    /* 52px of row: a list you aim at with a pointer, one vertical run of
+       targets, no diagonal travel between two columns -- and room for the name
+       at the size everything else on the page is read at. */
+    min-height: 52px;
+    padding: 0.6rem 0.65rem;
     border: none;
     border-radius: var(--radius-3, 4px);
     background: transparent;
@@ -1032,6 +1128,8 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     font-size: var(--font-size-controls);
     text-align: left;
     color: var(--text-primary);
+    /* The name is the thing being chosen, so it is read rather than scanned. */
+    font-size: var(--font-size-text);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     transition: background 0.1s ease, color 0.1s ease;
@@ -1061,12 +1159,31 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     font-weight: var(--font-weight-semibold);
 }
 
+/*
+ * The page you are on, said on the row rather than only in its name.
+ *
+ * The focused row already carries an accent bar on its left edge; this is the
+ * same mark held permanently for the current page, with the wash behind it, so
+ * "where I am" survives walking the list with the arrows.
+ */
+.page-overview-modal-item.is-current .page-overview-modal-link {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.page-overview-modal-item[hidden] {
+    display: none;
+}
+
+/* A fixed column for the number, left aligned: the names then start on one
+   vertical line whether a page is 1 or 10. */
 .page-overview-modal-lead {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1, 0.25rem);
+    width: 1.5rem;
     min-width: 1.5rem;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .page-overview-modal-num {
@@ -1086,11 +1203,70 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     text-overflow: ellipsis;
 }
 
+/* The count is a fact about the page, not part of its name: a pill holds it
+   apart, the way a badge does elsewhere in the app. */
 .page-overview-modal-count {
-    font-size: 0.82em;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    font-size: 0.78em;
     color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+.page-overview-modal-item.is-current .page-overview-modal-count {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
+}
+
+/* ─── The filter, past eight pages ───────────────────────────────────────────
+   Drawn only when the list is long enough to search rather than read; see
+   PAGE_FILTER_FROM in dashboard-ui-helpers.js. It takes focus when the panel
+   opens, so typing narrows at once. */
+
+.page-overview-modal-filterbar {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.page-overview-modal-filter {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+}
+
+.page-overview-modal-filter:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.page-overview-modal-filter::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* ─── One page: the offer is the point ───────────────────────────────────────
+   With a single page the panel is not a list to choose from, so the New page
+   entry stops being a small row at the foot and becomes what the panel is for,
+   with the one line that says what a page is. */
+
+.page-overview-modal-actions.is-alone .page-overview-modal-new {
+    justify-content: center;
+    padding-block: var(--space-3, 0.75rem);
+}
+
+.page-overview-modal-newhint {
+    display: block;
+    margin-top: var(--space-2, 0.5rem);
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    line-height: 1.4;
+    text-align: center;
 }
 
 /* ─── Deleting a page — asked twice ──────────────────────────────────────────
@@ -1134,12 +1310,27 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    /*
+     * Out of sight until the row is the one being acted on.
+     *
+     * A cross on every row is a delete offered ten times over, and it sat
+     * beside the count competing with it. Hover, the keyboard cursor and focus
+     * each bring it back -- see the rule below -- so the pointer and the
+     * keyboard reach it the same way.
+     */
+    /*
+     * Out of sight until the row is the one being acted on, but never out of
+     * reach: the box stays where it is and keeps taking the pointer, so aiming
+     * at it is the same gesture whether or not it has faded in yet. Hiding it
+     * with pointer-events made the target appear under the cursor mid-click.
+     */
+    opacity: 0;
+    transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
 }
 
 .page-overview-modal-item:hover .page-overview-modal-delete,
 .page-overview-modal-item.is-focused .page-overview-modal-delete,
+.page-overview-modal-item.is-armed .page-overview-modal-delete,
 .page-overview-modal-delete:focus-visible {
     opacity: 1;
     border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
@@ -1187,23 +1378,46 @@ body.no-animations .wn-earlier-chevron { transition: none; }
    thing to do. It wears the accent chip the header key wears, so the two marks
    the overlay makes in the accent colour are the same object at two sizes. */
 
+/* The last entry on the slab, and drawn as one of its rows: same height, same
+   padding, the same 1.5rem lead column so the + stands where the page numbers
+   do, and the same hairline above it. No padding of its own -- the slab already
+   carries it, and a wrapper with room around it made the entry taller than
+   every row above it. */
 .page-overview-modal-actions {
     display: flex;
-    padding: 0 var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    padding: 0;
+    border-top: 1px solid var(--hairline, var(--border-primary));
 }
 
+.page-overview-modal-actions.is-alone {
+    border-top: none;
+}
+
+/* The same three columns a page row stands in -- lead, name, chip -- rather
+   than a flex run, so the + lands under the numbers and the key lands under
+   the counts instead of near them. */
 .page-overview-modal-new {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: 0.6rem;
+    width: 100%;
+    /* Fixed, not a minimum: the chip and the label together were pushing the
+       entry past the rows it stands under. */
+    height: 52px;
     margin: 0;
-    padding: 0.3rem 0.5rem 0.3rem 0.45rem;
+    /* Right padding matches a row's: the rows keep 2.1rem clear for the delete
+       cross, so a plain 0.65rem here put the key chip a cross-width further
+       right than every count above it. */
+    padding: 0 2.1rem 0 0.65rem;
     border: none;
     border-radius: var(--radius-3, 4px);
-    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    /* No tint of its own: it is the last row of the list, and a filled chip
+       under a run of plain rows read as a second object stuck to the panel. */
+    background: transparent;
     color: var(--accent-primary);
     font: inherit;
-    font-size: var(--font-size-controls);
+    font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold, 600);
     cursor: pointer;
     touch-action: manipulation;
@@ -1213,7 +1427,7 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 
 .page-overview-modal-new:hover,
 .page-overview-modal-new:focus-visible {
-    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     outline: none;
 }
 
@@ -1225,18 +1439,26 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     display: none;
 }
 
+/* The lead column, where the page numbers stand: same width, same edge. */
 .page-overview-modal-plus {
+    display: block;
+    text-align: left;
     font-size: 1.05em;
     line-height: 1;
 }
 
+.page-overview-modal-newlabel {
+    text-align: left;
+}
+
 /* The shortcut hint reads the way the foot's ↵ does, in the accent rather than
-   the text colour because it sits inside the tinted chip. */
+   the text colour because it sits inside the tinted chip -- and it takes the
+   count pill's box, so the right-hand column has one edge rather than two. */
 .page-overview-modal-hintkey {
-    padding: 0.1rem 0.35rem;
-    border-radius: 2px;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
-    font-size: var(--font-size-small, 0.72rem);
+    font-size: 0.78em;
     opacity: 0.85;
 }
 
@@ -1715,7 +1937,7 @@ body.no-animations .modal-button.danger.selected {
 body:not([data-depth="flat"]) :is(
     .cheat-sheet-group,
     .recent-bookmarks-modal-list,
-    .page-overview-modal-list,
+    .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,
     .wn-earlier

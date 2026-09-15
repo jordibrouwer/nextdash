@@ -421,6 +421,7 @@ type Settings struct {
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
+	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
 	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
@@ -1338,7 +1339,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
-			ShowPagesButton:           true,
+			ShowPagesButton:           false,
 			ShowInboxButton:           true,
 			ShowDashboardButton:       true,
 			ShowSearchButton:          true,
@@ -1350,10 +1351,10 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// Config for anyone who wants them back.
 			ShowFindersButton:            false,
 			ShowCommandsButton:           false,
-			ShowRecentButton:             true,
-			ShowTagCloudButton:           true,
+			ShowRecentButton:             false,
+			ShowTagCloudButton:           false,
 			ShowSearchFlowBanner:         true,
-			ShowCheatSheetButton:         true,
+			ShowCheatSheetButton:         false,
 			ShowCollapseAllButton:        false,
 			ShowStatus:                   true,
 			ColorizeStatus:               true,
@@ -1405,6 +1406,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			GlowStrength:                 "off",
 			SurfaceDefaultsMigrated:      true,
 			DepthDefaultFlatMigrated:     true,
+			LauncherDefaultsMigrated:     true,
+			TagCloudDefaultMigrated:      true,
 			RowHighlight:                 "subtle",
 			InkGap:                       defaultInkGap,
 			ThemeBackdrop:                "on",
@@ -3441,17 +3444,17 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherRefreshMinutes:          30,
 			ShowConfigButton:               true,
 			ShowHealthDashboard:            true,
-			ShowPagesButton:                true,
+			ShowPagesButton:                false,
 			ShowInboxButton:                true,
 			ShowDashboardButton:            true,
 			ShowSearchButton:               true,
 			ShowAddBookmarkButton:          true,
 			ShowFindersButton:              false,
 			ShowCommandsButton:             false,
-			ShowRecentButton:               true,
-			ShowTagCloudButton:             true,
+			ShowRecentButton:               false,
+			ShowTagCloudButton:             false,
 			ShowSearchFlowBanner:           true,
-			ShowCheatSheetButton:           true,
+			ShowCheatSheetButton:           false,
 			ShowCollapseAllButton:          false,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
@@ -3531,6 +3534,8 @@ func (fs *FileStore) GetSettings() Settings {
 			GlowStrength:                   "off",
 			SurfaceDefaultsMigrated:        true,
 			DepthDefaultFlatMigrated:       true,
+			LauncherDefaultsMigrated:       true,
+			TagCloudDefaultMigrated:        true,
 			RowHighlight:                   "subtle",
 			InkGap:                         defaultInkGap,
 			ThemeBackdrop:                  "on",
@@ -3916,6 +3921,27 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ThemeDepth = "flat"
 			settings.DepthDefaultFlatMigrated = true
 		}
+		/*
+		 * Four buttons that became modes.
+		 *
+		 * Tags, recents and the cheat sheet are standing in the search panel
+		 * now, and the pages button opens the panel the page tabs already are.
+		 * Each keeps its key and each keeps its toggle in Config -- this only
+		 * moves the answer for readers who never chose one, and only once, so
+		 * switching a button back on sticks.
+		 */
+		if !settings.LauncherDefaultsMigrated {
+			// The tag-cloud pass above turns its button on for an install that
+			// predates it; this one is later and says where the tags live now,
+			// so it also closes that pass off rather than fighting it on every
+			// load.
+			settings.TagCloudDefaultMigrated = true
+			settings.ShowTagCloudButton = false
+			settings.ShowRecentButton = false
+			settings.ShowCheatSheetButton = false
+			settings.ShowPagesButton = false
+			settings.LauncherDefaultsMigrated = true
+		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
 		default:
@@ -4114,6 +4140,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
 			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
+			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}

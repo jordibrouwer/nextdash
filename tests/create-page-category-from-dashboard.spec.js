@@ -41,9 +41,15 @@ async function deleteCategoryByName(page, pageId, name) {
     }, { targetPageId: pageId, targetName: name });
 }
 
-/** Open the pages overlay the way the header button does. */
+/**
+ * Open the pages overlay the way a reader does.
+ *
+ * Through `,` rather than the header button: the button ships off now -- the
+ * panel it opens is one of the search panel's modes -- and a test that reaches
+ * for it is testing a setting rather than the overlay.
+ */
 async function openPageOverview(page) {
-    await page.locator('#page-overview-header-btn').click();
+    await page.keyboard.press(',');
     await expect(page.locator('#app-modal .page-overview-modal-list')).toBeVisible();
 }
 

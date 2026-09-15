@@ -456,3 +456,120 @@ test('the narrow header is the name and a page switcher', async ({ page }) => {
         expect(seen.height, `the header is ${seen.height}px tall at ${width}px`).toBeLessThan(80);
     }
 });
+
+/*
+ * The two keys beside the strip are buttons as well.
+ *
+ * They have always said what Shift+Left and Shift+Right do, and a reader with a
+ * pointer could only read them. They walk one page now, and they stop at the
+ * ends rather than wrapping: a control that looks pressable and does nothing is
+ * worse than one that says it cannot.
+ */
+test('the walk hints move a page, and go dead at the ends', async ({ page }) => {
+    await openWithPages(page, 3);
+
+    const prev = page.locator('.header-track .page-walk-hint[data-page-walk="prev"]');
+    const next = page.locator('.header-track .page-walk-hint[data-page-walk="next"]');
+    const current = () => page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+    const ids = await page.evaluate(() => window.dashboardInstance.pages.map((p) => Number(p.id)));
+
+    // On the first page there is nothing to the left.
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(ids[0]);
+    await expect(prev).toBeDisabled();
+    await expect(next).toBeEnabled();
+
+    await next.click();
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(ids[1]);
+    await expect(prev).toBeEnabled();
+
+    // Walk to the end -- the store may carry pages an earlier test left behind,
+    // so the last one is wherever the button stops rather than the third.
+    for (let i = 0; i < ids.length + 2 && await next.isEnabled(); i += 1) {
+        await next.click();
+        await page.waitForTimeout(150);
+    }
+    // Nothing to the right of the last one: the keys wrap, these do not.
+    await expect(next).toBeDisabled();
+    expect(await current()).toBe(ids[ids.length - 1]);
+
+    await prev.click();
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(ids[ids.length - 2]);
+});
+
+test('with one page both hints are dead', async ({ page }) => {
+    await openWithPages(page, 1);
+    // Trimmed through the route that removes a page: seeding only ever adds,
+    // and the pages an earlier test made are still in the store.
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        for (const id of d.pages.slice(1).map((p) => p.id)) {
+            await api(`/api/pages/${id}`, { method: 'DELETE' });
+        }
+        await d.loadData();
+        await d.pageNav?.requestPageNavigation?.(d.pages[0].id);
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.pages.length), { timeout: 10_000 }).toBe(1);
+
+    await expect(page.locator('.header-track .page-walk-hint[data-page-walk="prev"]')).toBeDisabled();
+    await expect(page.locator('.header-track .page-walk-hint[data-page-walk="next"]')).toBeDisabled();
+});
+
+/*
+ * And it keeps its place, whatever stands to the left of it.
+ *
+ * The left zone was `auto`, so its width was whatever the identity happened to
+ * be: "config" against "main", the clock beside the name against the clock in
+ * a column of its own. Every one of those moved the strip sideways -- a change
+ * of clock placement in Behavior shifted the pages by 40px, and switching to a
+ * view with a longer name shifted them again. The zone is a width now, and a
+ * name too long for it is cut rather than paid for by the strip.
+ */
+test('the strip stands in the same place whatever the name and the clock do', async ({ page }) => {
+    await openWithPages(page, 4);
+
+    const at = () => page.evaluate(() => {
+        const r = document.querySelector('.header-track').getBoundingClientRect();
+        return Math.round(r.x);
+    });
+    const placeClock = async (value) => {
+        await page.evaluate(async (v) => {
+            const d = window.dashboardInstance;
+            d.settings.headerClockPlacement = v;
+            d.setupDOM?.();
+            await d.saveSettings?.();
+        }, value);
+        await page.waitForTimeout(300);
+    };
+    const rename = async (name) => {
+        await page.evaluate((value) => {
+            document.querySelector('.header-identity .title').textContent = value;
+        }, name);
+        await page.waitForTimeout(200);
+    };
+
+    await placeClock('beside-name');
+    const beside = await at();
+
+    await placeClock('own-zone');
+    expect(await at(), 'the clock placement moved the strip').toBe(beside);
+
+    await rename('infrastructure-and-monitoring');
+    expect(await at(), 'a long name pushed the strip').toBe(beside);
+
+    await placeClock('beside-name');
+    await rename('x');
+    expect(await at(), 'a short name pulled the strip back').toBe(beside);
+
+    // What gives: the name is cut inside the zone it was given.
+    const title = await page.evaluate(() => {
+        const el = document.querySelector('.header-identity .title');
+        el.textContent = 'infrastructure-and-monitoring-and-everything-else';
+        const cs = window.getComputedStyle(el);
+        return { overflow: cs.textOverflow, wrap: cs.whiteSpace };
+    });
+    expect(title.overflow, 'a name too long for the zone is not cut').toBe('ellipsis');
+    expect(title.wrap, 'a long name wraps the header to two lines').toBe('nowrap');
+});

@@ -25,11 +25,14 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("fresh install: showHealthDashboard should be true")
 	}
-	if !settings.ShowRecentButton {
-		t.Fatal("fresh install: showRecentButton should be true")
+	// Tags, recents, the cheat sheet and pages live in the search panel now, so
+	// none of the four ships as a button in the bar. Each keeps its key and its
+	// toggle; see the launcher pass in GetSettings.
+	if settings.ShowRecentButton {
+		t.Fatal("fresh install: showRecentButton should be false")
 	}
-	if !settings.ShowCheatSheetButton {
-		t.Fatal("fresh install: showCheatSheetButton should be true")
+	if settings.ShowCheatSheetButton {
+		t.Fatal("fresh install: showCheatSheetButton should be false")
 	}
 	// Search, commands and finders are one panel that switches mode on a key,
 	// and the pills at its foot now show that. Three separate doors to it in
@@ -85,11 +88,11 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("migration: missing showHealthDashboard should default to true")
 	}
-	if !settings.ShowRecentButton {
-		t.Fatal("migration: missing showRecentButton should default to true")
+	if settings.ShowRecentButton {
+		t.Fatal("migration: showRecentButton moves into the search panel")
 	}
-	if !settings.ShowCheatSheetButton {
-		t.Fatal("migration: missing showCheatSheetButton should default to true")
+	if settings.ShowCheatSheetButton {
+		t.Fatal("migration: showCheatSheetButton moves into the search panel")
 	}
 	if !settings.AutoBackupEnabled {
 		t.Fatal("migration: missing autoBackupEnabled should default to true")

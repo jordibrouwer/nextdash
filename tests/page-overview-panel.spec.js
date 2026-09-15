@@ -46,7 +46,7 @@ test('a page is a row in one slab, not a card of its own', async ({ page }) => {
 
     const row = await page.evaluate(() => {
         const link = document.querySelector('.page-overview-modal-link');
-        const list = document.querySelector('.page-overview-modal-list');
+        const list = document.querySelector('.page-overview-modal-slab');
         const cs = window.getComputedStyle(link);
         /*
          * The resting colour comes off a probe, not off a row.
@@ -65,6 +65,7 @@ test('a page is a row in one slab, not a card of its own', async ({ page }) => {
             height: Math.round(link.getBoundingClientRect().height),
             borderWidth: parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth),
             background: resting,
+            depth: document.body.getAttribute('data-depth'),
             listHasGround: window.getComputedStyle(list).backgroundColor !== 'rgba(0, 0, 0, 0)',
         };
     });
@@ -72,8 +73,18 @@ test('a page is a row in one slab, not a card of its own', async ({ page }) => {
     expect(row.borderWidth, 'the row draws its own box').toBe(0);
     expect(row.background, 'a resting row paints its own ground')
         .toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
-    expect(row.height, `a row is ${row.height}px tall`).toBeLessThan(40);
-    expect(row.listHasGround, 'the list has no slab under it').toBe(true);
+    // 44px: one vertical run of pointer targets, which is what the panel is
+    // for. Measured with a tolerance because the row is min-height plus its
+    // own padding, and a theme's radius scale moves the last pixel.
+    expect(row.height, `a row is ${row.height}px tall`).toBeGreaterThanOrEqual(42);
+    expect(row.height, `a row is ${row.height}px tall`).toBeLessThan(52);
+    /*
+     * The slab under the rows is a depth cue, and flat is the depth that draws
+     * none -- which is what an install now starts on. On any other depth the
+     * list carries the same surface the recents panel does.
+     */
+    expect(row.listHasGround, `the slab does not follow the depth (${row.depth})`)
+        .toBe(row.depth !== 'flat');
 });
 
 test('the foot counts the pages instead of repeating Esc', async ({ page }) => {
@@ -181,4 +192,258 @@ test.describe('deleting a page from the overview', () => {
             () => window.dashboardInstance.pages.some((p) => p.name === 'doomed'),
         ), { timeout: 10_000 }).toBe(false);
     });
+});
+
+/*
+ * One column, a filter past eight pages, and the one-page case.
+ *
+ * The panel is the list of places you can go, so it is drawn as a single run of
+ * 44px rows rather than as a grid: one vertical path for the pointer, no
+ * diagonal travel. A filter appears only when there are more pages than fit in
+ * one look, and with a single page the panel stops being a list at all — what
+ * it offers is the second page.
+ */
+test.describe('the shape of the panel', () => {
+    async function seedPages(page, count) {
+        await page.evaluate(async (n) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const d = window.dashboardInstance;
+            const pages = [...d.pages];
+            for (let i = pages.length; i < n; i += 1) {
+                pages.push({ id: 6100 + i, name: `page-${i}` });
+            }
+            const saved = await api('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pages.slice(0, n)),
+            });
+            if (!saved.ok) throw new Error(`seeding pages failed: ${saved.status}`);
+            await d.loadData();
+            d.pageNav?.renderPageNavigation?.();
+        }, count);
+        await page.waitForTimeout(300);
+    }
+
+    test('the rows are one column, and the current one is marked down its edge', async ({ page }) => {
+        await openPages(page);
+
+        const seen = await page.evaluate(() => {
+            const rows = [...document.querySelectorAll('.page-overview-modal-link')];
+            const xs = new Set(rows.map((el) => Math.round(el.getBoundingClientRect().x)));
+            const current = document.querySelector('.page-overview-modal-item.is-current .page-overview-modal-link');
+            return {
+                columns: xs.size,
+                rows: rows.length,
+                currentShadow: current ? window.getComputedStyle(current).boxShadow : null,
+            };
+        });
+
+        expect(seen.columns, 'the rows are not in one column').toBe(1);
+        expect(seen.currentShadow, 'the current page carries no mark').not.toBe('none');
+    });
+
+    test('no filter with a few pages, a filter with many', async ({ page }) => {
+        await openPages(page);
+        await expect(page.locator('#page-overview-filter'), 'a filter for three pages').toHaveCount(0);
+
+        await page.keyboard.press('Escape');
+        await seedPages(page, 10);
+        await page.keyboard.press(',');
+        await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
+
+        const filter = page.locator('#page-overview-filter');
+        await expect(filter).toBeVisible();
+        // It takes the keyboard, so typing narrows at once.
+        await expect.poll(() => page.evaluate(
+            () => document.activeElement?.id), { timeout: 5_000 }).toBe('page-overview-filter');
+
+        await filter.fill('page-7');
+        await expect.poll(() => page.evaluate(
+            () => [...document.querySelectorAll('.page-overview-modal-item')]
+                .filter((el) => !el.hidden).length,
+        ), { timeout: 5_000 }).toBe(1);
+    });
+
+    test('a digit still means the page it names, filtered or not', async ({ page }) => {
+        await openPages(page);
+        await page.keyboard.press('Escape');
+        await seedPages(page, 10);
+        const third = await page.evaluate(() => Number(window.dashboardInstance.pages[2].id));
+
+        await page.keyboard.press(',');
+        await page.waitForSelector('#page-overview-filter', { timeout: 10_000 });
+        await page.locator('#page-overview-filter').fill('page-9');
+        await page.waitForTimeout(200);
+
+        // The filter hides rows; it does not renumber them.
+        await page.keyboard.press('3');
+        await expect.poll(() => page.evaluate(
+            () => Number(window.dashboardInstance.currentPageId)), { timeout: 10_000 }).toBe(third);
+    });
+
+    test('with one page the panel offers the second one', async ({ page }) => {
+        await openPages(page);
+        await page.keyboard.press('Escape');
+        /*
+         * Trimmed through the route the panel itself uses: POSTing a shorter
+         * list leaves the pages in place -- the server treats a page as a thing
+         * with bookmarks behind it, so removing one is its own request.
+         */
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const d = window.dashboardInstance;
+            const extras = d.pages.slice(1).map((p) => p.id);
+            for (const id of extras) {
+                await api(`/api/pages/${id}`, { method: 'DELETE' });
+            }
+            await d.loadData();
+            await d.pageNav?.requestPageNavigation?.(d.pages[0].id);
+            d.pageNav?.renderPageNavigation?.();
+        });
+
+        // Polled rather than slept through: the panel is built from d.pages, so
+        // opening it before loadData() has landed draws the list it replaced.
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.pages.length), { timeout: 10_000 }).toBe(1);
+
+        await page.keyboard.press(',');
+        await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
+
+        await expect(page.locator('.page-overview-modal-actions.is-alone')).toHaveCount(1);
+        await expect(page.locator('.page-overview-modal-newhint')).toBeVisible();
+        expect((await page.locator('.page-overview-modal-foot').innerText())).toMatch(/\b1 page\b/);
+        // And still no filter: one row needs no searching.
+        await expect(page.locator('#page-overview-filter')).toHaveCount(0);
+    });
+});
+
+/*
+ * One slab, and the new-page entry is the row at the end of it.
+ *
+ * It used to stand in a tinted block under the list: a gap, a second surface
+ * and a second set of corners for one more line, which read as something stuck
+ * to the panel rather than part of it.
+ */
+test('the new-page entry is the last row on the same slab', async ({ page }) => {
+    await openPages(page);
+
+    const seen = await page.evaluate(() => {
+        const slab = document.querySelector('.page-overview-modal-slab');
+        const rows = [...document.querySelectorAll('.page-overview-modal-link')];
+        const last = rows[rows.length - 1].getBoundingClientRect();
+        const neu = document.getElementById('page-overview-new-page');
+        const box = neu.getBoundingClientRect();
+        return {
+            insideSlab: slab.contains(neu),
+            // Outside the listbox: it is a button, not one more page to choose.
+            insideList: Boolean(document.querySelector('.page-overview-modal-list #page-overview-new-page')),
+            gap: Math.round(box.top - last.bottom),
+            height: Math.round(box.height),
+            rowHeight: Math.round(last.height),
+            background: window.getComputedStyle(neu).backgroundColor,
+        };
+    });
+
+    expect(seen.insideSlab, 'the entry stands off the slab').toBe(true);
+    expect(seen.insideList, 'a screen reader counts it as a page').toBe(false);
+    expect(seen.gap, `${seen.gap}px between the last row and the entry`).toBeLessThanOrEqual(2);
+    expect(seen.height, 'the entry is a different size from a row').toBe(seen.rowHeight);
+    expect(seen.background, 'the entry paints a ground of its own')
+        .toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+});
+
+/*
+ * And it stands in the same three columns a page does.
+ *
+ * The + belongs under the numbers and the key under the counts. The rows keep
+ * 2.1rem clear on the right for the delete cross, so an entry padded like an
+ * ordinary button put its key a cross-width further out than every count above
+ * it -- close enough to look like a mistake rather than a difference.
+ */
+test('the new-page entry lines up with the rows above it', async ({ page }) => {
+    await openPages(page);
+    // Two pages, so the entry is the last row of a list rather than the wide
+    // offer the one-page case draws -- that one is centred on purpose.
+    await page.keyboard.press('Escape');
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        if (d.pages.length < 2) {
+            const saved = await api('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([...d.pages, { id: 7410, name: 'second' }]),
+            });
+            if (!saved.ok) throw new Error(`seeding a page failed: ${saved.status}`);
+            await d.loadData();
+            d.pageNav?.renderPageNavigation?.();
+        }
+    });
+    await page.keyboard.press(',');
+    await page.waitForSelector('.page-overview-modal', { timeout: 10_000 });
+
+    const seen = await page.evaluate(() => {
+        const edges = (sel) => {
+            const r = document.querySelector(sel).getBoundingClientRect();
+            return { left: Math.round(r.left), right: Math.round(r.right) };
+        };
+        return {
+            num: edges('.page-overview-modal-num'),
+            plus: edges('.page-overview-modal-plus'),
+            count: edges('.page-overview-modal-count'),
+            key: edges('.page-overview-modal-hintkey'),
+        };
+    });
+
+    expect(Math.abs(seen.plus.left - seen.num.left),
+        `the + starts ${seen.plus.left - seen.num.left}px from the numbers`).toBeLessThanOrEqual(1);
+    expect(Math.abs(seen.key.right - seen.count.right),
+        `the key ends ${seen.key.right - seen.count.right}px from the counts`).toBeLessThanOrEqual(1);
+});
+
+/*
+ * One scrollbar, and it is the rows'.
+ *
+ * The list scrolls itself, so a scrolling modal body put a second track beside
+ * the first as soon as the pages outgrew the panel -- and the outer one carried
+ * the filter and the foot out of view with it.
+ */
+test('a long list scrolls the rows, not the panel', async ({ page }) => {
+    await openPages(page);
+    await page.keyboard.press('Escape');
+    // A short window, so the panel's own max-height bites: this is the case
+    // that used to put a second scrollbar beside the list's own.
+    await page.setViewportSize({ width: 1500, height: 620 });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        const pages = [...d.pages];
+        for (let i = pages.length; i < 14; i += 1) pages.push({ id: 6300 + i, name: `page-${i}` });
+        const saved = await api('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pages),
+        });
+        if (!saved.ok) throw new Error(`seeding pages failed: ${saved.status}`);
+        await d.loadData();
+        d.pageNav?.renderPageNavigation?.();
+    });
+    await page.keyboard.press(',');
+    await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
+
+    const seen = await page.evaluate(() => {
+        const scrolls = (el) => el.scrollHeight - el.clientHeight > 2;
+        const body = document.querySelector('.modal.page-overview-modal .modal-body');
+        const list = document.querySelector('.page-overview-modal-list');
+        return {
+            bodyScrolls: scrolls(body),
+            listScrolls: scrolls(list),
+            footVisible: document.querySelector('.page-overview-modal-foot')
+                .getBoundingClientRect().height > 0,
+        };
+    });
+
+    expect(seen.listScrolls, 'the rows do not scroll, so nothing is being tested').toBe(true);
+    expect(seen.bodyScrolls, 'the panel grew a second scrollbar').toBe(false);
+    expect(seen.footVisible, 'the foot was scrolled out of the panel').toBe(true);
 });

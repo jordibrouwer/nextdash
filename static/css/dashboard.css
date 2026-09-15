@@ -6925,7 +6925,17 @@ body.no-animations .dashboard-widget-stat-key {
 
 .dashboard-section.section-controls .header-top {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    /*
+     * The left zone is a width, not a measurement of what stands in it.
+     *
+     * At `auto` the column followed the identity, and the identity is three
+     * different widths: "config" against "main", the clock beside the name
+     * against the clock in a column of its own. The pages moved sideways with
+     * every one of them. One width for the zone, whatever it holds, and the
+     * strip stays where the reader left it.
+     */
+    --header-identity-width: 28rem;
+    grid-template-columns: var(--header-identity-width) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-4, 1rem);
     /* 10px rather than the draft's 9.6: at 0.6rem the row landed on a half
@@ -7000,7 +7010,7 @@ body.no-animations .dashboard-widget-stat-key {
     align-items: baseline;
     column-gap: var(--space-2, 0.6rem);
     row-gap: 2px;
-    width: 18rem;
+    width: 100%;
 }
 
 .dashboard-section.section-controls .header-identity .title-wrapper {
@@ -7054,7 +7064,14 @@ body.no-animations .dashboard-widget-stat-key {
  * sideways every time you switched view.
  */
 body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-top {
-    grid-template-columns: minmax(0, 9rem) auto minmax(0, 1fr) auto;
+    /* The same left zone, split in two: the name keeps its 9rem and the clock
+       takes the rest of it, so both placements hand the strip the same edge to
+       start from. */
+    grid-template-columns:
+        9rem
+        calc(var(--header-identity-width) - 9rem - var(--space-4, 1rem))
+        minmax(0, 1fr)
+        auto;
 }
 
 /* Every zone may be cut; none may push its neighbour out of the row. */
@@ -7074,11 +7091,21 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
 body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-time-line {
     font-size: calc(var(--font-size-text) * 1.43);
     color: var(--text-primary);
+    /* The zone is a width now: a long line is cut here rather than widening
+       the column the strip starts after. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-weather-line {
     grid-column: 2;
     font-size: calc(var(--font-size-text) * 1.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 /* The clock's own column: the two lines stack in it, apart from the name. */
@@ -7115,6 +7142,11 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
  */
 .page-walk-hint {
     flex: 0 0 auto;
+    /* A button now, walking one page; it was a printed hint, and the reset is
+       what keeps it looking like one. */
+    border: none;
+    cursor: pointer;
+    font: inherit;
     padding: 2px 4px;
     border-radius: 3px;
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
@@ -7126,7 +7158,22 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     line-height: 1;
     white-space: nowrap;
     opacity: 0.4;
+    transition: opacity 0.15s ease, color 0.15s ease;
 }
+
+.page-walk-hint:hover:not(:disabled),
+.page-walk-hint:focus-visible:not(:disabled) {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+/* At the first page, or the last: the keys wrap around, the buttons do not --
+   one that looks pressable and does nothing is worse than one that says so. */
+.page-walk-hint:disabled {
+    opacity: 0.15;
+    cursor: default;
+}
+
 
 /*
  * The track fills the middle zone rather than sizing to its tabs.
