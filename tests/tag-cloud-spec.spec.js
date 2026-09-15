@@ -193,3 +193,4 @@ test('escape leaves the cloud on the grid, not on the button', async ({ page }) 
     expect(landed.onRow, 'the focus is not on a bookmark').toBe(true);
     expect(landed.index, 'there is no cursor to walk on from').toBeGreaterThanOrEqual(0);
 });
+

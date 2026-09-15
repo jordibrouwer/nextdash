@@ -532,6 +532,18 @@
 
         openModal() {
             if (!this.isEligible() || !this.modal) return;
+            /*
+             * The wrap is what carries the cloud, and it is hidden until it is
+             * told it is eligible.
+             *
+             * The class that shows it is written by syncFromSettings, which
+             * runs when the setting changes and on a view switch -- so a cloud
+             * opened in the same tick the setting was turned on drew itself
+             * inside a `display: none` parent: a modal that is open, has its
+             * tags in it, answers the keyboard, and is nowhere on screen.
+             * Asked here as well, where it costs one class toggle.
+             */
+            this.syncFromSettings();
             window.nextdashTrack?.('modal:tag-cloud');
             if (this._closeTimerId) {
                 clearTimeout(this._closeTimerId);
