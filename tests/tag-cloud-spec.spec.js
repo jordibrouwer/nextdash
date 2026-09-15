@@ -152,3 +152,44 @@ test.describe('where the cloud opens', () => {
             .toEqual({ top: viaButton.top, left: viaButton.left });
     });
 });
+
+/*
+ * Closing the cloud puts the reader back on the grid.
+ *
+ * Escape sent the focus to the button in the action bar, which is the one
+ * place the reader was not: the bar lit a control they were done with, and
+ * every arrow key after it walked the bar instead of the bookmarks.
+ */
+test('escape leaves the cloud on the grid, not on the button', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 1000 });
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        window.dashboardInstance.settings.showTagCloudButton = true;
+        window.dashboardInstance.setupDOM?.();
+    });
+
+    // Through the key the reader presses, not through openModal().
+    await page.locator('body').press('/');
+    await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
+    await page.locator('body').press('Escape');
+    await page.waitForTimeout(400);
+
+    const landed = await page.evaluate(() => {
+        const active = document.activeElement;
+        const kn = window.dashboardInstance.keyboardNavigation;
+        return {
+            onToggle: !!active?.closest?.('#tag-cloud-toggle'),
+            onRow: !!active?.closest?.('.bookmark-link'),
+            lit: document.querySelectorAll('.bookmark-link.keyboard-focus, .bookmark-link.kbd-selected').length,
+            index: kn.currentIndex,
+        };
+    });
+
+    expect(landed.onToggle, 'the focus stayed on the button in the bar').toBe(false);
+    expect(landed.onRow, 'the focus is not on a bookmark').toBe(true);
+    expect(landed.index, 'there is no cursor to walk on from').toBeGreaterThanOrEqual(0);
+});

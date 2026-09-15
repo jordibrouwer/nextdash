@@ -600,7 +600,14 @@
                 if (focusBookmarks) {
                     this.restoreBookmarkFocus();
                 } else if (document.activeElement?.closest?.('#tag-cloud-modal')) {
-                    this.toggle?.focus?.();
+                    // The grid is where the reader was, and the button in the
+                    // bar is not: sending the focus back up there leaves a
+                    // lit control behind and costs a walk back down.
+                    const kn = window.dashboardInstance?.keyboardNavigation;
+                    document.activeElement.blur?.();
+                    if (!kn?.focusRowAfterOverlay?.(kn.currentIndex)) {
+                        this.toggle?.focus?.();
+                    }
                 }
             };
             if (!animate || !this.modalOpen) {
