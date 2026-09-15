@@ -5213,7 +5213,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     -webkit-backdrop-filter: blur(3px);
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+/* Not a sheet: one that hangs from the header sizes itself against the header
+   row, and a selector this specific would out-shout it. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     width: min(52rem, calc(100vw - 2.5rem));
@@ -8401,3 +8403,120 @@ body[data-header-buttons="plain"] .header-zone-divider {
 
 /* Last on the row, whatever the buttons in front of it are ordered to. */
 .header-actions .header-shortcuts .header-action-overflow { order: 99; }
+
+/* ── Recents as a sheet under the header ──────────────────────────────────────
+   Same bargain the pages panel makes: it is opened from the band and answers a
+   question about the page under it, so it hangs from the band rather than
+   floating over a dimmed screen. The chrome -- the anchor, the square top
+   corners, the drop -- is .header-sheet in modal.css; what is here is the list.
+
+   And the list is drawn the way every list in the product is drawn: rows of
+   52px with the key the reader would type at the head of each one. It was a
+   27rem column of 27px lines, which is what a narrow panel wants and what a
+   band across the page cannot use.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.modal.recents-sheet .recent-bookmarks-modal-list {
+    gap: 0;
+    padding: 0;
+    max-height: min(52vh, 24rem);
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-item {
+    min-height: 52px;
+    padding: 0 var(--space-3, 0.8rem);
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    gap: var(--space-3, 0.75rem);
+    /* key, favicon, name, category, how long ago, opens */
+    grid-template-columns: 4.5ch 1.1rem minmax(0, 1fr) auto auto auto;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-name {
+    font-size: var(--font-size-controls);
+}
+
+/*
+ * The key column stands whether or not the bookmark has one, so the names line
+ * up down the column instead of each starting where the one above it ended.
+ */
+.recent-bookmarks-modal-shortcut {
+    min-width: 4.5ch;
+    color: var(--accent-primary);
+    font-size: calc(var(--font-size-controls) * 0.78);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-recency,
+.modal.recents-sheet .recent-bookmarks-modal-opens {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Wide: the rows lay out across the page's column, three at most. */
+.modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.modal.recents-sheet.is-grid .recent-bookmarks-modal-item {
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+@media (max-width: 1100px) {
+    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Narrow: as wide as what it holds, rows side by side while they fit. */
+.modal.recents-sheet.is-compact .recent-bookmarks-modal-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.modal.recents-sheet.is-compact .recent-bookmarks-modal-item {
+    flex: 1 1 18rem;
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/*
+ * The actions and the foot run the sheet's width, on one line each.
+ *
+ * In a 27rem panel the buttons stacked over their hint; across the page they
+ * are a row with the command that does the same thing at the far end, the way
+ * the pages sheet puts its count and its keys at either end of the foot.
+ */
+.modal.recents-sheet .recent-bookmarks-modal-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4, 1rem);
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.modal.recents-sheet .recent-bookmarks-open-hint {
+    margin: 0;
+    text-align: right;
+}
+
+/*
+ * One bookmark is not a list, and none is not an empty list: with a single
+ * entry the row is the action, so the buttons that open "the last five" have
+ * nothing to act on; with none the panel says what fills it rather than
+ * drawing an empty box with a key hint under it.
+ */
+.modal.recents-sheet.is-single .recent-bookmarks-modal-toolbar,
+.modal.recents-sheet.is-empty .recent-bookmarks-modal-toolbar,
+.modal.recents-sheet.is-empty .recent-bookmarks-modal-foot {
+    display: none;
+}

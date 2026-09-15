@@ -91,9 +91,24 @@ test.describe('the recent bookmarks panel', () => {
         });
 
         expect(shape.sameLine, 'the category is on its own line under the name').toBe(true);
-        expect(shape.height, `a row is ${shape.height}px tall`).toBeLessThan(40);
-        // Ten outlined cards are ten borders competing with the panel's own.
-        expect(shape.borderWidth, 'the row draws its own box').toBe(0);
+        // 52px: the row every list in the product draws, since the panel became
+        // a sheet across the page rather than a narrow column.
+        expect(shape.height, `a row is ${shape.height}px tall`).toBeLessThanOrEqual(54);
+        /*
+         * A hairline under a row is the list's own rule, the way the pages
+         * sheet draws it; what must not come back is the box around each one --
+         * ten outlined cards are ten borders competing with the panel's own.
+         */
+        const box = await page.evaluate(() => {
+            const cs = window.getComputedStyle(document.querySelector('.recent-bookmarks-modal-item'));
+            return {
+                top: parseFloat(cs.borderTopWidth),
+                left: parseFloat(cs.borderLeftWidth),
+                radius: parseFloat(cs.borderTopLeftRadius),
+            };
+        });
+        expect(box.top + box.left, 'the row draws its own box').toBe(0);
+        expect(box.radius, 'the row is a card again').toBe(0);
     });
 
     test('the rows share one slab rather than each bringing a box', async ({ page }) => {
@@ -129,16 +144,29 @@ test.describe('the recent bookmarks panel', () => {
             'the rank numbers are back').toBe(0);
     });
 
-    test('the header names the key, and the panel is narrow', async ({ page }) => {
+    test('the header names the key, and the panel follows the header row', async ({ page }) => {
         await openRecent(page);
 
         const chip = await page.locator('.recent-bookmarks-modal-key').first().textContent();
         expect((chip || '').trim(), 'the header does not name the key that opens it').toBe('*');
 
-        const width = await page.evaluate(() =>
-            Math.round(document.querySelector('.recent-bookmarks-modal').getBoundingClientRect().width));
-        // A list you read down, not a sheet you read across.
-        expect(width, `the panel is ${width}px wide`).toBeLessThan(520);
+        /*
+         * It was a 440px column you read down. It hangs from the header band
+         * now and takes that band's own width, because it is opened from the
+         * bar in it -- the same bargain the pages panel makes.
+         */
+        const seen = await page.evaluate(() => {
+            const panel = document.querySelector('.recent-bookmarks-modal').getBoundingClientRect();
+            const row = document.querySelector('.header-top').getBoundingClientRect();
+            return {
+                width: Math.round(panel.width),
+                rowWidth: Math.round(row.width),
+                mid: Math.round(panel.x + panel.width / 2),
+                rowMid: Math.round(row.x + row.width / 2),
+            };
+        });
+        expect(seen.width, `the panel is ${seen.width}px wide`).toBe(seen.rowWidth);
+        expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
     });
 
     test('the foot says what is on screen instead of a button saying close', async ({ page }) => {
