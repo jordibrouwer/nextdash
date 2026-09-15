@@ -350,20 +350,20 @@ test('the groups in the band are all the same plate', async ({ page }) => {
         };
         return {
             group: shadow('.header-shortcuts'),
+            // The default switcher is one segmented control, so the box in the
+            // middle of the band is the shell -- the segments inside it are
+            // flat, the way the buttons inside the action group are.
+            switcher: shadow('#page-navigation'),
             tab: shadow('.header-track .page-nav-btn:not(.active)'),
-            chip: shadow('.header-track .page-nav-overflow'),
             destination: shadow('.config-link-anchor'),
         };
     });
 
     expect(seen.group, 'the action group has no plate at all').not.toBe('none');
-    expect(seen.tab, 'a page tab is drawn flatter than the actions beside it').toBe(seen.group);
+    expect(seen.switcher, 'the page switcher is drawn flatter than the actions beside it')
+        .toBe(seen.group);
     expect(seen.destination, 'a destination is drawn flatter than the actions').toBe(seen.group);
-    // The chip only exists when something is folded away; when it is there it
-    // is a tab like any other.
-    if (seen.chip) {
-        expect(seen.chip, 'the overflow chip is drawn flatter than the tabs').toBe(seen.group);
-    }
+    expect(seen.tab, 'a segment carries a plate of its own inside the shell').toBe('none');
 });
 
 

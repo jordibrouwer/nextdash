@@ -440,6 +440,7 @@ type Settings struct {
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
 	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
@@ -1353,6 +1354,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowPageNamesInTabs:          false,
 			MaxPageTabs:                  defaultMaxPageTabs,
 			HeaderClockPlacement:         defaultHeaderClockPlacement,
+			PageSwitcherStyle:            defaultPageSwitcherStyle,
 			EnableCustomFavicon:          false,
 			CustomFaviconPath:            "",
 			EnableCustomFont:             false,
@@ -2853,6 +2855,25 @@ const (
 	defaultHeaderClockPlacement = headerClockBesideName
 )
 
+/*
+How the pages are drawn in the middle of the header.
+
+Three weights for the same control. Segmented is one shell with the pages as
+flat segments inside it -- a single box in the band rather than one box per
+page. Text drops the box entirely and marks the page you are on with the
+underline the destinations use. Compact is one button naming the page you are
+on, with the panel behind it for the rest.
+
+What they share: the same tabs, the same keys, the same panel on `,`. This is
+how much room the switcher takes, not what it can do.
+*/
+const (
+	pageSwitcherSegmented    = "segmented"
+	pageSwitcherText         = "text"
+	pageSwitcherCompact      = "compact"
+	defaultPageSwitcherStyle = pageSwitcherSegmented
+)
+
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
@@ -2944,6 +2965,11 @@ func clampBookmarkSettings(s *Settings) {
 	// named choice in this file does.
 	if s.HeaderClockPlacement != headerClockBesideName && s.HeaderClockPlacement != headerClockOwnZone {
 		s.HeaderClockPlacement = defaultHeaderClockPlacement
+	}
+	switch s.PageSwitcherStyle {
+	case pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
+	default:
+		s.PageSwitcherStyle = defaultPageSwitcherStyle
 	}
 	// Zero is what an older settings file carries, not a choice: there is no
 	// header without tabs, so it means "never set" and takes the default.
@@ -3397,6 +3423,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowPageNamesInTabs:            false,
 			MaxPageTabs:                    defaultMaxPageTabs,
 			HeaderClockPlacement:           defaultHeaderClockPlacement,
+			PageSwitcherStyle:              defaultPageSwitcherStyle,
 			EnableCustomFavicon:            false,
 			CustomFaviconPath:              "",
 			EnableCustomFont:               false,

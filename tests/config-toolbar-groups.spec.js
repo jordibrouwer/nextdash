@@ -53,13 +53,13 @@ test.describe('the chrome toggles are grouped', () => {
             buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
         }));
         expect(perTab).toEqual({ toolbar: 1, buttonbar: 1 });
-        // Not one setting lost or duplicated in the split. maxPageTabs rides
-        // along in the header panel, which is why this is one more than the
-        // toggles named below; the clock's placement sits with the clock, in
+        // Not one setting lost or duplicated in the split. maxPageTabs and the
+        // page switcher's style ride along in the header panel, which is why
+        // this is two more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(16);
-        expect(new Set(all).size).toBe(16);
+        expect(all).toHaveLength(17);
+        expect(new Set(all).size).toBe(17);
         expect(all).toEqual(expect.arrayContaining([
             'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showInboxButton',
             'showHealthDashboard', 'showConfigButton', 'showPagesButton',

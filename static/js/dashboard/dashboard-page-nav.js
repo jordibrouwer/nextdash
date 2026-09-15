@@ -492,7 +492,23 @@ class DashboardPageNav {
      * -- what a settings file written before this setting carries -- means
      * nobody chose, which is the default rather than the floor.
      */
+    /**
+     * How the pages are drawn: 'segmented', 'text' or 'compact'.
+     *
+     * Read from the settings rather than from <body>, so a value that has not
+     * been round tripped yet draws the same switcher it will after a reload --
+     * the same reading the server does.
+     */
+    pageSwitcherStyle() {
+        const raw = this.dash?.settings?.pageSwitcherStyle;
+        return raw === 'text' || raw === 'compact' ? raw : 'segmented';
+    }
+
+
     pageTabCap() {
+        // The compact switcher is one tab by definition: it names the page you
+        // are on and the panel behind it holds the rest.
+        if (this.pageSwitcherStyle() === 'compact') return 1;
         // Step 3 of the ladder: the strip folds to the page you are on and the
         // chip that counts the rest -- see fitHeaderZones().
         if (Number(document.body.getAttribute('data-header-fit')) >= 3) return 1;
@@ -732,6 +748,13 @@ class DashboardPageNav {
             pageBtn.addEventListener('mouseenter', prefetchPage, { passive: true });
             pageBtn.addEventListener('focus', prefetchPage, { passive: true });
             pageBtn.addEventListener('click', async () => {
+                // The compact switcher is a way into the list, not a tab: the
+                // one control on the row names the page you are on, so pressing
+                // it opens the panel that holds every page.
+                if (this.pageSwitcherStyle() === 'compact') {
+                    d.showPageOverlay?.();
+                    return;
+                }
                 const switched = await this.requestPageNavigation(page.id);
                 if (!switched) {
                     return;

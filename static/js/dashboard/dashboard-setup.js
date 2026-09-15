@@ -39,6 +39,15 @@ class DashboardSetup {
             'data-header-clock',
             d.settings.headerClockPlacement === 'own-zone' ? 'own-zone' : 'beside-name'
         );
+        // How much room the pages take in the middle of the band: one segmented
+        // control, plain text with an underline, or a single button naming the
+        // page you are on. CSS reads it off <body>; the compact one also takes
+        // a cap of one tab, which dashboard-page-nav.js reads from the setting.
+        const switcher = d.settings.pageSwitcherStyle;
+        document.body.setAttribute(
+            'data-page-switcher',
+            switcher === 'text' || switcher === 'compact' ? switcher : 'segmented'
+        );
 
         d.publishButtonBarHeight?.();
 

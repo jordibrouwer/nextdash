@@ -10865,6 +10865,7 @@ class DashboardConfig {
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
         maxPageTabs: { def: 5 },
         headerClockPlacement: { def: 'beside-name' },
+        pageSwitcherStyle: { def: 'segmented' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { def: true },
         showInboxButton: { def: true },
@@ -11602,6 +11603,13 @@ class DashboardConfig {
                 controls: [
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
+                    { field: 'pageSwitcherStyle', type: 'select', special: 'chrome',
+                        label: t('config.pageSwitcherStyleLabel', 'Page switcher'),
+                        options: [
+                            opt('segmented', t('config.pageSwitcherSegmented', 'One segmented control')),
+                            opt('text', t('config.pageSwitcherText', 'Plain text, underlined')),
+                            opt('compact', t('config.pageSwitcherCompact', 'One button with a list')),
+                        ] },
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),

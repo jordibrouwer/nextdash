@@ -7248,6 +7248,156 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     opacity: 0.85;
 }
 
+/* ── Three weights for the same switcher ──────────────────────────────────────
+   Everything above draws a page as its own 40px box. That is the loudest
+   thing in a band whose other controls are 28px transparent icons, so it is
+   one of three settings now (pageSwitcherStyle, Appearance -> Header and
+   buttons). Written at the zone's own weight, because the rules above are
+   two classes deep and would otherwise win.
+
+   The tabs, the keys and the panel on `,` are the same in all three. This is
+   how much room the switcher takes, not what it can do.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Segmented (the default): one shell, the pages flat inside it.
+   The shell is the box the tabs used to carry one each -- the same material,
+   the same corner, the same 40px outer height as a destination -- and a
+   segment inside it is 28px, which is what an action measures. */
+body[data-page-switcher="segmented"] .header-track .page-navigation {
+    height: 40px;
+    align-items: center;
+    gap: 2px;
+    padding: 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    box-shadow: var(--header-plate-shadow);
+}
+
+body[data-page-switcher="segmented"] .header-track .page-nav-btn,
+body[data-page-switcher="segmented"] .header-track .page-nav-overflow {
+    height: 28px;
+    min-width: 2.1rem;
+    padding: 0 0.75rem;
+    /* No edge at all, not a transparent one: the shell is the box, and a
+       segment that keeps a hairline of its own is the old drawing wearing a
+       coat of paint. */
+    border: none;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.85rem;
+}
+
+body[data-page-switcher="segmented"] .header-track .page-nav-btn:hover,
+body[data-page-switcher="segmented"] .header-track .page-nav-overflow:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+}
+
+/* The wash marks the segment; the shell already carries the edge and the
+   cast, so the tab adds neither. */
+body[data-page-switcher="segmented"] .header-track .page-nav-btn.active {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+/* Text: no box at all. The page you are on takes the 2px underline the
+   destinations use, so "you are here" is said the same way in both halves of
+   the band. */
+body[data-page-switcher="text"] .header-track .page-navigation {
+    gap: 0.75rem;
+    overflow: visible;
+}
+
+body[data-page-switcher="text"] .header-track .page-nav-btn,
+body[data-page-switcher="text"] .header-track .page-nav-overflow {
+    position: relative;
+    height: 32px;
+    min-width: 0;
+    padding: 0 0.15rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.9rem;
+}
+
+body[data-page-switcher="text"] .header-track .page-nav-btn:hover,
+body[data-page-switcher="text"] .header-track .page-nav-overflow:hover {
+    background: transparent;
+    color: var(--text-primary);
+}
+
+body[data-page-switcher="text"] .header-track .page-nav-btn.active {
+    background: transparent;
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+body[data-page-switcher="text"] .header-track .page-nav-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.35rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent-primary);
+}
+
+/* The chip is a word among words here, not a control: the key it carries is
+   the same `,` printed on everything else that opens the panel. */
+body[data-page-switcher="text"] .header-track .page-nav-overflow-key {
+    background: transparent;
+    padding: 0;
+}
+
+/* Compact: one button naming the page you are on.
+   pageTabCap() returns 1 for this style and the click opens the panel (see
+   dashboard-page-nav.js), so what stands in the zone is a single control the
+   size of an action, with a caret saying there is a list behind it. */
+body[data-page-switcher="compact"] .header-track .page-nav-btn {
+    height: 28px;
+    min-width: 0;
+    padding: 0 0.65rem;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+body[data-page-switcher="compact"] .header-track .page-nav-btn:hover {
+    border-color: var(--border-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+body[data-page-switcher="compact"] .header-track .page-nav-btn.active {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+/* Drawn rather than set in a glyph: two borders on a rotated square is a
+   chevron at any size, and it takes the button's own ink. */
+body[data-page-switcher="compact"] .header-track .page-nav-btn.active::after {
+    content: '';
+    width: 5px;
+    height: 5px;
+    margin: -3px 0 0 0.45rem;
+    border-right: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    transform: rotate(45deg);
+    opacity: 0.6;
+}
+
+/* The count would say the same thing the caret says. */
+body[data-page-switcher="compact"] .header-track .page-nav-overflow {
+    display: none;
+}
+
 /* ── Right: what you do, then where you go ────────────────────────────────── */
 
 .dashboard-section.section-controls .header-actions {
