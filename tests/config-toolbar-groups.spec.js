@@ -53,15 +53,15 @@ test.describe('the chrome toggles are grouped', () => {
             buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
         }));
         expect(perTab).toEqual({ toolbar: 1, buttonbar: 1 });
-        // Not one setting lost or duplicated in the split. maxPageTabs and the
-        // page switcher's style ride along in the header panel, which is why
-        // this is two more than the toggles named below; the clock's placement sits with the clock, in
+        // Not one setting lost or duplicated in the split. maxPageTabs, the
+        // page switcher's style and the button style ride along in the header
+        // panel, which is why this is three more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(18);
-        expect(new Set(all).size).toBe(18);
+        expect(all).toHaveLength(19);
+        expect(new Set(all).size).toBe(19);
         expect(all).toEqual(expect.arrayContaining([
-            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
+            'headerButtonStyle', 'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
             'showInboxButton', 'showHealthDashboard', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',

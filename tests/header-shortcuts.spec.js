@@ -27,6 +27,29 @@ async function openDashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
+/**
+ * The plated header: every control in a box of its own.
+ *
+ * It is one of two answers now (headerButtonStyle) and the plain one ships by
+ * default — bare glyphs with a rule under the current one. What this file
+ * measures is the boxes, the plates and the hairline between the groups, so it
+ * asks for the drawing it is about rather than testing whichever is default.
+ */
+async function usePlatedHeader(page) {
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.headerButtonStyle = 'plated';
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(d.settings),
+        });
+        d.setupDOM?.();
+    });
+    await page.waitForTimeout(250);
+}
+
 test('every action button is in the header', async ({ page }) => {
     await openDashboard(page);
 
@@ -224,6 +247,7 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
 test('the actions stand in a surround, the destinations do not', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
+    await usePlatedHeader(page);
 
     const seen = await page.evaluate(() => {
         const read = (el) => {
@@ -252,6 +276,7 @@ test('the actions stand in a surround, the destinations do not', async ({ page }
 test('the hairline needs something on both sides of it', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
+    await usePlatedHeader(page);
 
     const rules = () => page.evaluate(() => [...document.querySelectorAll('.header-zone-divider')]
         .filter((el) => window.getComputedStyle(el).display !== 'none').length);
@@ -294,6 +319,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
 
 test('the surround goes when the last action does', async ({ page }) => {
     await openDashboard(page);
+    await usePlatedHeader(page);
 
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
@@ -377,6 +403,7 @@ test('an action shows its key and names itself to a screen reader', async ({ pag
 test('the groups in the band are all the same plate', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
+    await usePlatedHeader(page);
     // A second page, so there is a tab that is not the one you are on: the
     // active tab carries the bloom on top of the plate and would not compare.
     await page.evaluate(async () => {
@@ -427,6 +454,10 @@ test('the groups in the band are all the same plate', async ({ page }) => {
  */
 test('the destination you are in is the lit one', async ({ page }) => {
     await openDashboard(page);
+    // Measured on the plated header, where the mark is a wash and an edge; the
+    // plain one says the same thing with the rule under the icon, which
+    // header-button-style.spec.js covers.
+    await usePlatedHeader(page);
 
     const read = (sel) => page.evaluate((s) => {
         const el = document.querySelector(s);
@@ -492,6 +523,7 @@ test('the tag cloud stands between search and recents', async ({ page }) => {
 test('the destinations are as big as the action group', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
+    await usePlatedHeader(page);
 
     const seen = await page.evaluate(() => {
         const height = (sel) => {

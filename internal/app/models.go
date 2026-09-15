@@ -444,6 +444,7 @@ type Settings struct {
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
+	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
 	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
@@ -1374,6 +1375,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			MaxPageTabs:                  defaultMaxPageTabs,
 			HeaderClockPlacement:         defaultHeaderClockPlacement,
 			PageSwitcherStyle:            defaultPageSwitcherStyle,
+			HeaderButtonStyle:            defaultHeaderButtonStyle,
 			EnableCustomFavicon:          false,
 			CustomFaviconPath:            "",
 			EnableCustomFont:             false,
@@ -2889,6 +2891,24 @@ on, with the panel behind it for the rest.
 What they share: the same tabs, the same keys, the same panel on `,`. This is
 how much room the switcher takes, not what it can do.
 */
+/*
+How the header's controls are drawn.
+
+Plain is the header as it was before the three-zone draft: bare glyphs on the
+band, with a 2px rule under the one you are on and nothing around any of them.
+Plated is the draft's own answer: every control in a box of its own, on the
+theme's glass surface, with an edge and a cast.
+
+One answer for all three groups -- the page tabs, the actions and the
+destinations -- because a header with two of them plated and one bare reads as
+a mistake rather than as a choice.
+*/
+const (
+	headerButtonsPlain       = "plain"
+	headerButtonsPlated      = "plated"
+	defaultHeaderButtonStyle = headerButtonsPlain
+)
+
 const (
 	pageSwitcherSegmented    = "segmented"
 	pageSwitcherText         = "text"
@@ -2992,6 +3012,11 @@ func clampBookmarkSettings(s *Settings) {
 	case pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
 	default:
 		s.PageSwitcherStyle = defaultPageSwitcherStyle
+	}
+	switch s.HeaderButtonStyle {
+	case headerButtonsPlain, headerButtonsPlated:
+	default:
+		s.HeaderButtonStyle = defaultHeaderButtonStyle
 	}
 	// Zero is what an older settings file carries, not a choice: there is no
 	// header without tabs, so it means "never set" and takes the default.
@@ -3448,6 +3473,7 @@ func (fs *FileStore) GetSettings() Settings {
 			MaxPageTabs:                    defaultMaxPageTabs,
 			HeaderClockPlacement:           defaultHeaderClockPlacement,
 			PageSwitcherStyle:              defaultPageSwitcherStyle,
+			HeaderButtonStyle:              defaultHeaderButtonStyle,
 			EnableCustomFavicon:            false,
 			CustomFaviconPath:              "",
 			EnableCustomFont:               false,

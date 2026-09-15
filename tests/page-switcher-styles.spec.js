@@ -39,6 +39,26 @@ async function openWithPages(page, count = 3) {
         dash.pageNav?.renderPageNavigation?.();
     }, count);
     await page.waitForTimeout(500);
+    /*
+     * The plated header, which is what the three switcher styles are drawn on.
+     *
+     * headerButtonStyle ships plain -- bare glyphs, a rule under the current
+     * one -- and that strips the shell, the segments' wash and the chip's box,
+     * which are exactly what this file measures. The two settings are
+     * independent; the plain drawing is covered by header-button-style.spec.js.
+     */
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.headerButtonStyle = 'plated';
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(d.settings),
+        });
+        d.setupDOM?.();
+    });
+    await page.waitForTimeout(250);
 }
 
 /** Through the setting, the way config writes it — not by setting the attribute. */

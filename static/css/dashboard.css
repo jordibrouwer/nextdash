@@ -7943,3 +7943,90 @@ body.no-animations .bookmark-open-progress-track {
         background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
     }
 }
+
+/* ── Plain, or plated ─────────────────────────────────────────────────────────
+   Two answers to the same question, and the reader picks (headerButtonStyle,
+   Appearance -> Header and buttons).
+
+   Plated is everything above: every control in a box of its own, on the glass
+   surface, with an edge and a cast. Plain is the header as it was before the
+   three-zone draft -- bare glyphs on the band, nothing around them, and a 2px
+   accent rule under the one you are on.
+
+   Written last in the file and at the same weight as the rules it undoes, so
+   it wins by order rather than by piling on selectors. One answer for all
+   three groups: a header with two of them plated and one bare reads as a
+   mistake rather than as a choice.
+   ────────────────────────────────────────────────────────────────────────── */
+
+body[data-header-buttons="plain"] .header-track .page-navigation,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-shortcuts {
+    border: none;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    height: auto;
+}
+
+body[data-header-buttons="plain"] .header-track .page-nav-btn,
+body[data-header-buttons="plain"] .header-track .page-nav-overflow,
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    border: none;
+    /* The rule that says where you are, kept transparent so nothing moves when
+       it lights up. */
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text-tertiary);
+}
+
+body[data-header-buttons="plain"] .header-track .page-nav-btn:hover,
+body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+    color: var(--text-primary);
+}
+
+/* The page you are on, the view you are in: one rule, in the theme's accent. */
+body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
+    border-bottom-color: var(--accent-primary);
+    background: none;
+    box-shadow: none;
+    color: var(--text-primary);
+}
+
+/* Pressed still says pressed, without a plate to sink into. */
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
+body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
+    box-shadow: none;
+    transform: none;
+    opacity: 0.7;
+}
+
+/* The zones sit closer together with no boxes between them, and the rule that
+   separated the two groups has nothing to separate. */
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-shortcuts {
+    gap: var(--space-2, 0.5rem);
+}
+
+body[data-header-buttons="plain"] .header-zone-divider {
+    display: none;
+}

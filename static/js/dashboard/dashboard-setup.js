@@ -77,6 +77,13 @@ class DashboardSetup {
         // control, plain text with an underline, or a single button naming the
         // page you are on. CSS reads it off <body>; the compact one also takes
         // a cap of one tab, which dashboard-page-nav.js reads from the setting.
+        // Plain glyphs with a rule under the current one, or a plate around
+        // every control: one answer for the tabs, the actions and the
+        // destinations alike. CSS reads it off <body>.
+        document.body.setAttribute(
+            'data-header-buttons',
+            d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'
+        );
         const switcher = d.settings.pageSwitcherStyle;
         document.body.setAttribute(
             'data-page-switcher',

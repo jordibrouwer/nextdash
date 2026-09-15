@@ -10939,6 +10939,7 @@ class DashboardConfig {
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         headerClockPlacement: { def: 'beside-name' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'segmented' },
+        headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -11683,6 +11684,12 @@ class DashboardConfig {
                 note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the buttons on the right.'),
                 bulk: 'chrome',
                 controls: [
+                    { field: 'headerButtonStyle', type: 'select', special: 'chrome',
+                        label: t('config.headerButtonStyleLabel', 'Button style'),
+                        options: [
+                            opt('plain', t('config.headerButtonsPlain', 'Plain, underlined when current')),
+                            opt('plated', t('config.headerButtonsPlated', 'Each in its own box')),
+                        ] },
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
                     { field: 'pageSwitcherStyle', type: 'select', special: 'chrome',
