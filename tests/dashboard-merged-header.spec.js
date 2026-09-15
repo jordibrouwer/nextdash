@@ -89,6 +89,63 @@ test('the grid starts higher than it did', async ({ page }) => {
 });
 
 /*
+ * The bar sits at the top of the window, and draws no line under itself.
+ *
+ * Both were left over from the card: 2rem of air above it lifted it off the
+ * page, and a hairline said where the chrome ended. The bar runs edge to edge
+ * with no fill of its own now, so the air only pushed the grid down and the
+ * line was the loudest thing on a page that draws none. What stays the same is
+ * the gap under it -- the reader's eye measures the distance between the bar
+ * and the first row, not the padding above it.
+ */
+test('the bar starts at the top and carries no rule, and the grid keeps its distance', async ({ page }) => {
+    await openDashboard(page);
+
+    const measured = await page.evaluate(() => {
+        const section = document.querySelector('.dashboard-section.section-controls');
+        const row = document.querySelector('.header-top');
+        const grid = document.querySelector('#dashboard-layout');
+        const cs = window.getComputedStyle(section);
+        const probe = document.createElement('div');
+        probe.style.marginBottom = 'var(--space-5, 1.5rem)';
+        document.body.appendChild(probe);
+        const step = parseFloat(window.getComputedStyle(probe).marginBottom);
+        probe.remove();
+        return {
+            above: Math.round(row.getBoundingClientRect().top),
+            rule: parseFloat(cs.borderBottomWidth),
+            margin: parseFloat(cs.marginBottom),
+            step,
+            // From the bar's own edge: the row inside it is a different height
+            // depending on where the clock stands, and the distance the reader
+            // sees is the one under the bar.
+            gap: Math.round(grid.getBoundingClientRect().top - section.getBoundingClientRect().bottom),
+        };
+    });
+
+    // Enough that the row does not touch the window's edge, and no more.
+    expect(measured.above, `the row starts ${measured.above}px down`).toBeLessThanOrEqual(12);
+    expect(measured.rule, 'the hairline under the header is back').toBe(0);
+    /*
+     * And the page still breathes under it.
+     *
+     * The band that carried the view's name used to stand between the bar and
+     * the grid -- 60px of nothing, which is what made the top of the page calm.
+     * Folding the name into the header row took the band away and the air with
+     * it, and the columns ended up hard against the controls. Measured against
+     * the row's own height rather than written down, because the reader's
+     * density and font size move both.
+     */
+    expect(measured.margin, `the air under the header is ${measured.margin}px`)
+        .toBeGreaterThanOrEqual(48);
+    // And nothing of the bar's own is left between the two: what the reader
+    // sees under it is that margin, give or take whatever the page itself puts
+    // above its first row.
+    expect(measured.gap, `the grid moved up into the header: ${JSON.stringify(measured)}`)
+        .toBeGreaterThanOrEqual(Math.round(measured.margin));
+});
+
+/*
  * The bar is chrome; what is in it belongs to the page.
  *
  * As a card the header was an island: 1309px of slab with a corner and a cast,
@@ -205,3 +262,4 @@ test('the clock is readable, and its placement is a setting', async ({ page }) =
     expect(zone.size, 'a column of its own does not give the clock more room')
         .toBeGreaterThan(inline.size);
 });
+

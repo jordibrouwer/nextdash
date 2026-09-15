@@ -50,7 +50,15 @@ body {
 }
 
 .dashboard-section.section-controls {
-    padding-top: var(--space-6, 2rem);
+    /*
+     * The bar starts at the top of the window.
+     *
+     * 2rem of air above it was there to lift a card off the page; the bar runs
+     * edge to edge now and carries no card, so the air was only pushing the
+     * grid down. What is left is enough for the row not to touch the window's
+     * own edge.
+     */
+    padding-top: var(--space-2, 0.5rem);
     padding-bottom: 0;
 }
 
@@ -6916,11 +6924,29 @@ body.no-animations .dashboard-widget-stat-key {
      * the controls carry their own plates.
      */
     background: transparent;
-    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    /*
+     * No rule under it either.
+     *
+     * The hairline was what said where the chrome ended while the bar was a
+     * slab over the page. With no fill and no card there is nothing to close
+     * off, and a line the full width of the window is the loudest thing on a
+     * page whose own content draws none. The gap below is unchanged: it takes
+     * over the pixel the rule used to occupy.
+     */
+    border-bottom: 0;
     /* The air under the header belongs to the page, not to the bar: as padding
        it was inside the fill and the hairline sat 24px below the controls. */
     padding-bottom: 0;
-    margin-bottom: var(--space-5, 1.5rem);
+    /*
+     * The page used to breathe here.
+     *
+     * The band that held the view's name stood between the bar and the grid,
+     * so 60px of nothing separated the chrome from the first category. Folding
+     * the name into the header row took the band away and the air with it, and
+     * the columns ended up hard against the controls. The air is the point,
+     * not the band: it is measured out here instead.
+     */
+    margin-bottom: calc(var(--space-7, 3rem) + var(--space-3, 0.75rem));
 }
 
 .dashboard-section.section-controls .header-top {
