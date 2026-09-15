@@ -2317,7 +2317,12 @@ class SearchComponent {
     _beginSearchSession() {
         if (this.searchActive) return;
         this._searchOpenerElement = document.activeElement;
-        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        // Remembered before the selection is cleared, because clearing it is
+        // what loses the row -- closeSearch() puts the cursor back there.
+        const nav = window.dashboardInstance?.keyboardNavigation;
+        this._gridCursorBeforeSearch = Number.isFinite(nav?.currentIndex) ? nav.currentIndex : -1;
+        this._searchSessionOpen = true;
+        nav?.clearSelection?.({ restoreFocus: false });
         // The open event is fired from _trackModeOpen(), which knows whether this
         // is a plain search, commands, or finders — see updateSearch().
         this.searchActive = true;
@@ -2423,6 +2428,41 @@ class SearchComponent {
 
         const opener = this._searchOpenerElement;
         this._searchOpenerElement = null;
+        /*
+         * Only a session that was open has focus to give back.
+         *
+         * closeSearch() is called on every Escape the panel might have been
+         * open for -- it is cheaper than asking first -- so without this the
+         * key moved focus to #search-button on a dashboard where search had
+         * never been opened at all, and (since this block now puts the cursor
+         * on the grid) re-selected a row the same Escape had just dropped.
+         */
+        const hadSession = this._searchSessionOpen === true;
+        this._searchSessionOpen = false;
+        if (!hadSession) {
+            this._gridCursorBeforeSearch = -1;
+            return;
+        }
+        /*
+         * On the dashboard, focus belongs to the grid rather than to the button
+         * the panel was opened from.
+         *
+         * Handing it back to #search-button left the ring on a header icon with
+         * nothing selected underneath it: the next arrow key started from the
+         * top of the page, and the row the reader had been on was gone. The row
+         * they were on comes back; a reader who had not picked one gets the
+         * first row on the page.
+         */
+        const cursor = this._gridCursorBeforeSearch;
+        this._gridCursorBeforeSearch = -1;
+        const nav = window.dashboardInstance?.keyboardNavigation;
+        if (
+            window.dashboardInstance?.isBookmarksView?.() === true
+            && !this.isAppModalOpen()
+            && nav?.focusRowAfterOverlay?.(cursor)
+        ) {
+            return;
+        }
         const fallback = document.getElementById('search-button');
         if (window.FocusTrapUtils?.focusIfConnected) {
             window.FocusTrapUtils.focusIfConnected(opener, fallback);

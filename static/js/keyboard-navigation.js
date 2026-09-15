@@ -1438,10 +1438,13 @@ class KeyboardNavigation {
                     break;
                 }
                 if (this.currentIndex >= 0) {
-                    this.clearSelection();
+                    // Without restoreFocus the cursor simply goes: handing
+                    // focus to the first row instead puts it straight back,
+                    // because focusin moves the cursor to whatever takes focus.
+                    this.clearSelection({ restoreFocus: false });
                     break;
                 }
-                this.clearSelection();
+                this.clearSelection({ restoreFocus: false });
                 this._escapeFallback();
                 break;
 
@@ -1889,6 +1892,40 @@ class KeyboardNavigation {
         
         return bestMatch;
     }
+
+    /**
+     * Put the cursor back on the grid after an overlay closes.
+     *
+     * An overlay takes the selection with it when it opens (see
+     * _beginSearchSession in search.js, which clears it so the highlight does
+     * not sit under the panel), and handed focus back to the button it was
+     * opened from -- so closing search left the ring on a header icon and the
+     * next arrow key started from the top of the page again. The row you were
+     * on is where you were; the first row is where a reader starts.
+     *
+     * @param {number} [preferredIndex] the stop to go back to, if it is still there
+     * @returns {boolean} whether a stop took the cursor
+     */
+    focusRowAfterOverlay(preferredIndex) {
+        if (this.dashboard?.isBookmarksView?.() === false) {
+            return false;
+        }
+        this.updateNavigableElements();
+        if (!this.navigableElements.length) {
+            return false;
+        }
+        const wanted = Number(preferredIndex);
+        const index = Number.isFinite(wanted) && wanted >= 0
+            ? Math.min(wanted, this.navigableElements.length - 1)
+            : 0;
+        this.currentIndex = index;
+        // The cursor arrived by keyboard: the next arrow key continues from it
+        // rather than starting over.
+        this._selectionFromKeyboard = true;
+        this.highlightCurrentElement({ focus: true });
+        return true;
+    }
+
 
     highlightCurrentElement(options = {}) {
         const doFocus = options.focus !== false;
