@@ -99,8 +99,11 @@ html[data-theme] body[data-depth="glass"] {
      * themakeuze is: wat tekst draagt om op te handelen staat op vaste grond,
      * en haalt zijn diepte uit zijn randen en zijn schaduw.
      */
+    /* Chrome draagt nauwelijks tekst, dus die trede mag het verst open: 62%
+       in plaats van 70%. De twee tredes eronder blijven waar ze staan, want
+       daar wordt wel gelezen. */
     --surface-glass-page: color-mix(in srgb,
-        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 70%), transparent);
+        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 62%), transparent);
     --surface-glass-slab: color-mix(in srgb,
         var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 88%), transparent);
     /* Vast, niet meeschalend: een theme mag zijn blokken zo dun maken als het
@@ -114,9 +117,51 @@ html[data-theme] body[data-depth="glass"] {
      * genoeg van over om zijn rand van de pagina te scheiden; meer zou over
      * zijn eigen tekst heen wassen.
      */
-    --glass-blur-page: var(--theme-surface-blur, 0px);
+    /*
+     * Licht valt de andere kant op als de pagina zelf licht is.
+     *
+     * Op een donker theme is wat doorschijnt donker, en dat mag iets opgetild:
+     * dan leest het vlak als glas met licht erachter. Op een licht theme is het
+     * wit, en optrekken wast de tekst weg -- daar hoort het juist iets omlaag.
+     * --ink-dir zegt welke van de twee (1 donker, -1 licht), dus dit rekent het
+     * uit in plaats van het per theme te herhalen: 1.06 tegen 0.98.
+     */
+    --glass-brightness: calc(1.02 + 0.04 * var(--ink-dir, 1));
+
+    --glass-blur-page: calc(var(--theme-surface-blur, 0px) * 1.25);
     --glass-blur-slab: calc(var(--theme-surface-blur, 0px) * 0.6);
     --glass-blur-overlay: calc(var(--theme-surface-blur, 0px) * 0.25);
+
+    /*
+     * Glas hangt, het ligt niet.
+     *
+     * De slagschaduw is dezelfde als die van rich, en dat leest als plastic:
+     * een doorzichtig vlak met een massieve schaduw eronder is geen glas maar
+     * een gekleurd plaatje. Zestig procent van de val, zodat het vlak nog los
+     * staat van de pagina zonder erop te drukken.
+     */
+    --surface-cast: 0 calc(1.2px * var(--theme-depth)) calc(6px * var(--theme-depth))
+        color-mix(in srgb, black calc(14% * var(--theme-depth)), transparent);
+
+    /*
+     * En iets om doorheen te kijken.
+     *
+     * Dit is waar glas op valt of staat: blur van een egale pagina levert niets
+     * op, dus zonder verloop achter de vlakken is doorzichtigheid alleen een
+     * lichtere kleur. De twee wolken die elke diepte al tekent staan hier
+     * sterker en krijgen een derde, laag in beeld, zodat een vlak halverwege de
+     * pagina ook iets te vertonen heeft.
+     */
+    --depth-wash:
+        radial-gradient(70rem 50rem at 10% -14%,
+            color-mix(in srgb, var(--accent-primary) calc(13% * var(--theme-depth)), transparent),
+            transparent 70%),
+        radial-gradient(58rem 40rem at 98% 4%,
+            color-mix(in srgb, var(--accent-warning) calc(9% * var(--theme-depth)), transparent),
+            transparent 70%),
+        radial-gradient(60rem 42rem at 40% 105%,
+            color-mix(in srgb, var(--accent-success) calc(7% * var(--theme-depth)), transparent),
+            transparent 72%);
 }
 
 /* ── De drie tredes, toegepast ──────────────────────────────────────────
@@ -143,8 +188,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .btn-group,
     .tag-cloud-toggle-btn.search-button
 ) {
-    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 /* Blokken en rails: een lijst om te lezen, geen venster om door te kijken. */
@@ -166,8 +211,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .health-view-item,
     .health-monitor-stat
 ) {
-    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 /* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
@@ -176,8 +221,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .search-container,
     .bookmark-form-modal-dialog
 ) {
-    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 /*
@@ -204,15 +249,15 @@ html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category
 html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
     background-color: color-mix(in srgb,
         var(--surface-2) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {
     background-color: color-mix(in srgb,
         var(--surface-1) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -264,7 +309,9 @@ html[data-theme] body:not([data-depth="flat"]) {
     --glow-y: calc(6px + 4px * var(--theme-glow-lift, 1));
     --glow-blur: calc(18px + 8px * var(--theme-glow-lift, 1));
     --glow-spread: calc(-6px - 6px * var(--theme-glow-lift, 1));
-    --glow-pct: calc(34% + 16% * var(--theme-glow-lift, 1));
+    /* Dezelfde knop als de bloom in theme-depth.css: één sterkte voor beide
+       gloeilagen, zodat "rustiger" niet op twee plekken apart hoeft. */
+    --glow-pct: calc((34% + 16% * var(--theme-glow-lift, 1)) * var(--glow-strength, 0));
 
     --surface-glow-ring:
         0 var(--glow-y) var(--glow-blur) var(--glow-spread)
@@ -277,7 +324,7 @@ html[data-theme] body:not([data-depth="flat"]) {
    --layout-shadow-* zijn die van de moderne layout. */
 
 html[data-theme] body:not([data-depth="flat"]) {
-    --edge-light: var(--edge-top), var(--surface-glow-ring);
+    --edge-light: var(--edge-top), var(--edge-side), var(--surface-glow-ring);
 }
 
 /* ── Gloed in classic ────────────────────────────────────────────────────

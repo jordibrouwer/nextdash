@@ -8715,16 +8715,23 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
-                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'flat') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
                     </select>
                     <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
                     ${this.appearanceAff('themeDepth')}
                 </div>
                 <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.glowStrengthLabel', 'Glow'))}</span>
+                    <select class="config-select" data-appearance-select="glowStrength">
+                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.glowStrength || 'off') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Off is the default; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
+                    ${this.appearanceAff('glowStrength')}
+                </div>
+                <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
                     <input type="range" class="config-range" data-appearance-range="inkGap" min="0.30" max="0.58" step="0.01" value="${inkGap}">
-                    <span class="config-range-value">${inkGapLabel}</span>
-                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
+                    <span class="config-range-value">${inkGapLabel}</span>                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
                 </div>
             </div>
@@ -9347,7 +9354,7 @@ class DashboardConfig {
             });
             range.addEventListener('change', () => void this.saveSettingsWithFeedback());
         }
-        const inkRange = container.querySelector('[data-appearance-range="inkGap"]');
+                const inkRange = container.querySelector('[data-appearance-range="inkGap"]');
         if (inkRange) {
             inkRange.addEventListener('input', () => {
                 // Applied before it is saved, same reason as the depth control:
@@ -10680,8 +10687,17 @@ class DashboardConfig {
             this.persistAppearance();
             return;
         }
+        if (name === 'glowStrength') {
+            const strength = ['off', 'soft', 'full'].includes(value) ? value : 'off';
+            this.dash.settings.glowStrength = strength;
+            // Applied before it is saved, like the depth below it: the control
+            // exists to be seen.
+            window.ThemeLoader?.applyGlowStrength?.(strength);
+            this.persistAppearance();
+            return;
+        }
         if (name === 'themeDepth') {
-            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'rich';
+            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'flat';
             this.dash.settings.themeDepth = depth;
             // Applied before it is saved: the point of the control is seeing the
             // difference, and a round trip to the server is a second of nothing.

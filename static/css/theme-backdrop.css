@@ -54,11 +54,17 @@ html[data-theme] body[data-theme-backdrop="off"] {
 
 /*
  * data-depth="flat" is de stand waarin een lezer heeft gezegd dat hij geen
- * lagen wil. De achtergrond blijft, maar halveert: hij hoort bij het theme, en
- * flat gaat over diepte, niet over kleur.
+ * lagen wil. De achtergrond blijft: hij hoort bij het theme, en flat gaat over
+ * diepte, niet over kleur.
+ *
+ * Deze regel zette hem op `none`, wat betekende dat de keuze hierboven in flat
+ * niets meer deed -- aan en uit gaven dezelfde vlakke kleur, dus de dropdown
+ * leek stuk. Wat hier wél weg mag is de dieptewas: dat zijn de lagen waar flat
+ * over gaat. Bij depth 0 rekenen die wolken zich toch al tot volledig
+ * doorzichtig uit, dus dit is de bedoeling opgeschreven, niet een tweede knop.
  */
 html[data-theme] body[data-theme-backdrop="on"][data-depth="flat"] {
-    background-image: none;
+    background-image: var(--theme-backdrop, none);
     background-color: var(--background-primary);
 }
 

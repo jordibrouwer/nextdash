@@ -419,6 +419,8 @@ type Settings struct {
 	ShortcutTooltipsOffMigrated     bool   `json:"shortcutTooltipsOffMigrated,omitempty"`     // one-time: default the toolbar shortcut hints to off
 	ShortcutOpenModeInstantMigrated bool   `json:"shortcutOpenModeInstantMigrated,omitempty"` // one-time: undo v1.2.0's "Enter opens" default
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
+	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
+	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
 	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
@@ -494,9 +496,24 @@ type Settings struct {
 	 * every one of these is measured against — somebody who liked the old look
 	 * has to be able to say so in one control rather than by not upgrading.
 	 *
-	 * flat | soft | rich. Empty means rich.
+	 * flat | soft | rich | glass. Empty means flat.
 	 */
 	ThemeDepth string `json:"themeDepth,omitempty"`
+
+	/*
+	 * GlowStrength is how much of the accent glow is drawn, on the depths that
+	 * draw one at all.
+	 *
+	 * Two layers answer to it: the ambient ring under a resting surface and
+	 * the state bloom on what is focused or selected. Both are the theme's own
+	 * accent, and on a saturated palette at rich or glass they carried far
+	 * enough to read as a halo -- which is decoration competing with the thing
+	 * it decorates.
+	 *
+	 * off | soft | full. Empty means off: the glow is an effect, and an effect
+	 * that ships on is one every reader has to find the switch for.
+	 */
+	GlowStrength string `json:"glowStrength,omitempty"`
 
 	/*
 	 * RowHighlight is how strongly a bookmark row lights up under the pointer
@@ -1382,7 +1399,10 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:       true,
 			SortMethod:                   "order",
 			LayoutPreset:                 "default",
-			ThemeDepth:                   "rich",
+			ThemeDepth:                   "flat",
+			GlowStrength:                 "off",
+			SurfaceDefaultsMigrated:      true,
+			DepthDefaultFlatMigrated:     true,
 			RowHighlight:                 "subtle",
 			InkGap:                       defaultInkGap,
 			ThemeBackdrop:                "on",
@@ -3480,7 +3500,10 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:              defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:             defaultBookmarkArchiveUrl,
 			LayoutPreset:                   "default",
-			ThemeDepth:                     "rich",
+			ThemeDepth:                     "flat",
+			GlowStrength:                   "off",
+			SurfaceDefaultsMigrated:        true,
+			DepthDefaultFlatMigrated:       true,
 			RowHighlight:                   "subtle",
 			InkGap:                         defaultInkGap,
 			ThemeBackdrop:                  "on",
@@ -3829,7 +3852,42 @@ func (fs *FileStore) GetSettings() Settings {
 		switch settings.ThemeDepth {
 		case "flat", "soft", "rich", "glass":
 		default:
-			settings.ThemeDepth = "rich"
+			settings.ThemeDepth = "flat"
+		}
+		switch settings.GlowStrength {
+		case "off", "soft", "full":
+		default:
+			settings.GlowStrength = "off"
+		}
+		/*
+		 * The three Surfaces answers, set once for everybody.
+		 *
+		 * New installs get them from the defaults above; an install that
+		 * predates the glow dial has no answer at all, and one that has been
+		 * running since before the depth ladder has whichever answer it drifted
+		 * to. This puts all three on the same footing — backdrop on, glow off,
+		 * depth rich — and then never touches them again, so a reader who
+		 * changes one keeps it.
+		 */
+		if !settings.SurfaceDefaultsMigrated {
+			settings.ThemeBackdrop = "on"
+			settings.GlowStrength = "off"
+			settings.ThemeDepth = "flat"
+			settings.SurfaceDefaultsMigrated = true
+			settings.DepthDefaultFlatMigrated = true
+		}
+		/*
+		 * And the depth again, once.
+		 *
+		 * The pass above shipped with rich. Flat is the answer now: no tint in
+		 * the greys, no raised surfaces, no wash behind the page -- the theme's
+		 * colours and nothing drawn on top of them. An install that already
+		 * took the first pass has to be moved on as well, and only once, so it
+		 * gets a marker of its own rather than re-running the whole block.
+		 */
+		if !settings.DepthDefaultFlatMigrated {
+			settings.ThemeDepth = "flat"
+			settings.DepthDefaultFlatMigrated = true
 		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
@@ -4027,6 +4085,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
+			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
+			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}

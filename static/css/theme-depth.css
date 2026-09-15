@@ -41,6 +41,18 @@ body {
     --theme-depth: 1;
 }
 
+html[data-theme] body[data-glow="off"] {
+    --glow-strength: 0;
+}
+
+html[data-theme] body[data-glow="soft"] {
+    --glow-strength: 0.6;
+}
+
+html[data-theme] body[data-glow="full"] {
+    --glow-strength: 1;
+}
+
 html[data-theme] body[data-depth="flat"] {
     --theme-tint: 0%;
     --theme-depth: 0;
@@ -118,7 +130,18 @@ html[data-theme] body {
        nothing at all. One percentage, one place. */
     --edge-top: inset 0 1px 0 color-mix(in srgb,
         var(--text-primary) calc(16% * var(--theme-depth)), transparent);
-    --edge-light: var(--edge-top);
+    /*
+     * And the same light down the left edge, at two thirds.
+     *
+     * A lit top edge alone is a highlight with no source; a second line down
+     * the side puts the light somewhere -- top left, where every interface
+     * since the first one has kept it -- and the surface stops reading as a
+     * rectangle with a stripe on it. Weaker than the top, because a face
+     * turned away from the light is what makes the direction legible.
+     */
+    --edge-side: inset 1px 0 0 color-mix(in srgb,
+        var(--text-primary) calc(10% * var(--theme-depth)), transparent);
+    --edge-light: var(--edge-top), var(--edge-side);
 
     /*
      * And the shaded bottom edge, which is the other half of the same cue.
@@ -153,8 +176,19 @@ html[data-theme] body {
      * Scaled by --theme-depth, so flat resolves it to a fully transparent
      * colour and paints nothing.
      */
+    /*
+     * How much of both glows is drawn, as a multiplier the reader sets.
+     *
+     * The strength lives here rather than in each glow, so "quieter" is one
+     * number for the state bloom and the ambient ring alike -- and a theme that
+     * asks for no glow at all still paints none, because zero times anything is
+     * zero. 1 is what shipped, 0.6 is the quiet middle, and the default is 0:
+     * an effect that ships on is one every reader has to find the switch for.
+     */
+    --glow-strength: 0;
+
     --bloom: 0 0 12px color-mix(in srgb,
-        var(--accent-primary) calc(40% * var(--theme-depth)), transparent);
+        var(--accent-primary) calc(40% * var(--theme-depth) * var(--glow-strength, 0)), transparent);
 
     /*
      * And the shadow the surface casts.
@@ -210,6 +244,7 @@ html[data-theme] body {
            de kleurbeweging die deze voorkeur weg wil hebben. Dat geldt net zo
            voor de toestandsbloom: de focus-outline draagt de betekenis al. */
         --theme-surface-glow: 0;
+        --glow-strength: 0;
         --bloom: none;
     }
 }
