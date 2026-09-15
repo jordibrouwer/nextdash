@@ -139,7 +139,7 @@ test('text drops the box and underlines the page you are on', async ({ page }) =
     expect(seen.underline, 'nothing says which page you are on').toBe(true);
 });
 
-test('compact is one button, and it opens the panel', async ({ page }) => {
+test('compact is one button, and it opens its own list', async ({ page }) => {
     await openWithPages(page);
     await chooseStyle(page, 'compact');
     const seen = await read(page);
@@ -149,8 +149,14 @@ test('compact is one button, and it opens the panel', async ({ page }) => {
     expect(seen.chipDrawn, 'the count is drawn beside the caret that says the same thing').toBe(false);
     expect(seen.active.height, `the button is ${seen.active.height}px tall`).toBe(28);
 
-    // Pressing it opens the list rather than re-selecting the page it names.
+    /*
+     * Pressing it opens the list rather than re-selecting the page it names --
+     * a menu under the control now, where it used to be the full pages panel
+     * over the page. The panel is still one row away, in the menu's foot.
+     */
     await page.locator('#page-navigation .page-nav-btn.active').click();
+    await expect(page.locator('.page-switcher-menu')).toBeVisible();
+    await page.locator('.page-switcher-all').click();
     await expect(page.locator('#app-modal.show .page-overview-modal')).toBeVisible();
 });
 

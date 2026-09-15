@@ -698,6 +698,15 @@ class DashboardPageNav {
         hidden.forEach((tab) => { tab.hidden = true; });
 
         const d = this.dash;
+        /*
+         * Compact has no chip: the control is the way in.
+         *
+         * The chip counts what the row could not show and opens the full
+         * panel. In compact nothing is shown but the page you are on, so the
+         * count would be "every other page" -- which the control beside it
+         * already offers, in a menu, without a modal.
+         */
+        if (this.pageSwitcherStyle() === 'compact') return;
         const more = document.createElement('button');
         more.type = 'button';
         // Deliberately not .page-nav-btn: fitPageTabs runs again on resize, and
@@ -815,7 +824,7 @@ class DashboardPageNav {
                 // one control on the row names the page you are on, so pressing
                 // it opens the panel that holds every page.
                 if (this.pageSwitcherStyle() === 'compact') {
-                    d.showPageOverlay?.();
+                    this.togglePageSwitcherMenu(pageBtn);
                     return;
                 }
                 const switched = await this.requestPageNavigation(page.id);
@@ -978,6 +987,17 @@ class DashboardPageNav {
             btn.appendChild(key);
         }
 
+        /*
+         * Compact is one control naming the page you are on, and what it does
+         * is open the list of pages.
+         */
+        if (this.pageSwitcherStyle() === 'compact') {
+            // The caret itself is drawn in CSS, on the active tab; what is said
+            // here is what it means -- this control opens something.
+            btn.setAttribute('aria-haspopup', 'menu');
+            btn.setAttribute('aria-expanded', this._pageSwitcherMenu ? 'true' : 'false');
+        }
+
         // With names switched off the tab reads as a bare "1", which is what a
         // screen reader announces and what a tooltip would have said too. The
         // page's own name is the useful part, so it is carried here regardless
@@ -991,6 +1011,285 @@ class DashboardPageNav {
                 `Page ${index + 1}`);
         btn.setAttribute('aria-label', accessible);
         btn.title = accessible;
+    }
+
+    /**
+     * The compact switcher's own list.
+     *
+     * Compact used to be one tab that opened the full pages panel -- a modal
+     * over the page, with its own scroll and its own way out, to answer "which
+     * page am I going to". The list is short and the question is small, so it
+     * is answered where it is asked: a menu under the control, on the surface
+     * every other menu in the product stands on.
+     */
+    static SWITCHER_FILTER_FROM = 8;
+
+    togglePageSwitcherMenu(anchorEl) {
+        if (this._pageSwitcherMenu) {
+            this.closePageSwitcherMenu();
+            return;
+        }
+        this.openPageSwitcherMenu(anchorEl);
+    }
+
+    closePageSwitcherMenu({ focusAnchor = false } = {}) {
+        const menu = this._pageSwitcherMenu;
+        if (!menu) return;
+        this._pageSwitcherMenu = null;
+        menu.remove();
+        document.removeEventListener('pointerdown', this._pageSwitcherOutside, true);
+        window.removeEventListener('keydown', this._pageSwitcherKeys, true);
+        window.removeEventListener('resize', this._pageSwitcherReflow);
+        this._pageSwitcherOutside = null;
+        this._pageSwitcherKeys = null;
+        this._pageSwitcherReflow = null;
+        const anchor = this._pageSwitcherAnchor;
+        this._pageSwitcherAnchor = null;
+        anchor?.setAttribute('aria-expanded', 'false');
+        if (focusAnchor) anchor?.focus?.({ preventScroll: true });
+    }
+
+    openPageSwitcherMenu(anchorEl) {
+        const d = this.dash;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        if (!anchorEl || !pages.length) return;
+
+        const menu = document.createElement('div');
+        // The one menu surface in the product: the context menus, the move
+        // picker and the check-mode popover all stand on it, and it is the one
+        // that carries no backdrop-filter -- blur on a menu is what gave Safari
+        // a composited layer that hit-tests in front of what it covers.
+        menu.className = 'move-popover page-switcher-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label',
+            d.formatDashboardLabel('pageTabsAria', {}, 'Dashboard pages'));
+
+        const withFilter = pages.length > DashboardPageNav.SWITCHER_FILTER_FROM;
+        if (withFilter) {
+            const filterWrap = document.createElement('div');
+            filterWrap.className = 'page-switcher-filter';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'page-switcher-filter-input';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.placeholder = d.formatDashboardLabel('pageOverviewFilter', {}, 'Filter pages…');
+            input.setAttribute('aria-label', input.placeholder);
+            filterWrap.appendChild(input);
+            menu.appendChild(filterWrap);
+        }
+
+        const list = document.createElement('div');
+        list.className = 'page-switcher-list';
+        menu.appendChild(list);
+
+        pages.forEach((page, index) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'page-switcher-item';
+            row.setAttribute('role', 'menuitem');
+            const current = d.isBookmarksView() && d.samePageId(page.id, d.currentPageId);
+            if (current) {
+                row.classList.add('is-current');
+                row.setAttribute('aria-current', 'page');
+            }
+            row.dataset.pageName = String(page.name || '').toLowerCase();
+            row.innerHTML = ''
+                + `<span class="page-switcher-item-name"></span>`
+                + (index < 9 ? `<span class="page-switcher-item-key">${index + 1}</span>` : '');
+            row.querySelector('.page-switcher-item-name').textContent = page.name || String(index + 1);
+            row.addEventListener('click', async () => {
+                this.closePageSwitcherMenu();
+                await this.requestPageNavigation(page.id);
+            });
+            list.appendChild(row);
+        });
+
+        const foot = document.createElement('div');
+        foot.className = 'page-switcher-foot';
+
+        const addRow = document.createElement('button');
+        addRow.type = 'button';
+        addRow.className = 'page-switcher-item page-switcher-add';
+        addRow.setAttribute('role', 'menuitem');
+        addRow.innerHTML = ''
+            + `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel('pageOverviewNewPage', {}, 'New page'))}</span>`
+            + '<span class="page-switcher-item-key">⇧N</span>';
+        addRow.addEventListener('click', () => this._openSwitcherCreateRow(menu, addRow));
+        foot.appendChild(addRow);
+
+        const allRow = document.createElement('button');
+        allRow.type = 'button';
+        allRow.className = 'page-switcher-item page-switcher-all';
+        allRow.setAttribute('role', 'menuitem');
+        allRow.innerHTML = ''
+            + `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel('pageSwitcherAllPages', {}, 'All pages'))}</span>`
+            + '<span class="page-switcher-item-key">,</span>';
+        allRow.addEventListener('click', () => {
+            this.closePageSwitcherMenu();
+            d.showPageOverlay?.();
+        });
+        foot.appendChild(allRow);
+        menu.appendChild(foot);
+
+        document.body.appendChild(menu);
+        this._pageSwitcherMenu = menu;
+        this._pageSwitcherAnchor = anchorEl;
+        anchorEl.setAttribute('aria-expanded', 'true');
+        this._positionPageTabPopover(menu, anchorEl, { initial: true });
+
+        this._pageSwitcherReflow = () => this._positionPageTabPopover(menu, anchorEl);
+        window.addEventListener('resize', this._pageSwitcherReflow);
+
+        this._pageSwitcherOutside = (e) => {
+            if (menu.contains(e.target) || anchorEl.contains(e.target)) return;
+            this.closePageSwitcherMenu();
+        };
+        document.addEventListener('pointerdown', this._pageSwitcherOutside, true);
+
+        /*
+         * On the window, in the capture phase: the grid's own navigation
+         * listens on document in capture as well, and it was bound first --
+         * so an arrow pressed with this menu open moved the cursor through the
+         * bookmarks behind it and Enter opened one. The window sees the event
+         * before the document does.
+         */
+        this._pageSwitcherKeys = (e) => this._handleSwitcherKey(e, menu);
+        window.addEventListener('keydown', this._pageSwitcherKeys, true);
+
+        const filterInput = menu.querySelector('.page-switcher-filter-input');
+        if (filterInput) {
+            filterInput.addEventListener('input', () => this._applySwitcherFilter(menu, filterInput.value));
+        }
+        /*
+         * After the frame, because the click that opened this is not finished:
+         * the browser focuses the button it was pressed on once the handler
+         * returns, so anything focused here is focused and then let go of.
+         */
+        requestAnimationFrame(() => {
+            if (this._pageSwitcherMenu !== menu) return;
+            const target = filterInput
+                || menu.querySelector('.page-switcher-item.is-current')
+                || menu.querySelector('.page-switcher-item');
+            target?.focus({ preventScroll: true });
+        });
+    }
+
+    _escapeSwitcher(text) {
+        const div = document.createElement('div');
+        div.textContent = String(text ?? '');
+        return div.innerHTML;
+    }
+
+    /** Rows the filter left standing, in the order they are drawn. */
+    _switcherRows(menu) {
+        return [...menu.querySelectorAll('.page-switcher-item')]
+            .filter((row) => !row.hidden && row.offsetParent !== null);
+    }
+
+    _applySwitcherFilter(menu, term) {
+        const needle = String(term || '').trim().toLowerCase();
+        menu.querySelectorAll('.page-switcher-list .page-switcher-item').forEach((row) => {
+            row.hidden = needle.length > 0 && !row.dataset.pageName.includes(needle);
+        });
+        this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+    }
+
+    _handleSwitcherKey(e, menu) {
+        if (!this._pageSwitcherMenu) return;
+        const rows = this._switcherRows(menu);
+        const at = rows.indexOf(document.activeElement);
+        // Everything below belongs to the menu while it is open; nothing behind
+        // it may act on the same key.
+        const mine = () => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        };
+
+        if (e.key === 'Escape') {
+            mine();
+            this.closePageSwitcherMenu({ focusAnchor: true });
+            return;
+        }
+        if (e.key === 'Tab') {
+            this.closePageSwitcherMenu();
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            mine();
+            if (!rows.length) return;
+            const step = e.key === 'ArrowDown' ? 1 : -1;
+            const next = at < 0
+                ? (step > 0 ? 0 : rows.length - 1)
+                : (at + step + rows.length) % rows.length;
+            rows[next].focus({ preventScroll: true });
+            return;
+        }
+        if (e.key === 'Home' || e.key === 'End') {
+            if (!rows.length) return;
+            mine();
+            rows[e.key === 'Home' ? 0 : rows.length - 1].focus({ preventScroll: true });
+            return;
+        }
+
+        /*
+         * Enter and Space act on the row the keyboard is on. The button would
+         * do that by itself, but the grid behind the menu answers Enter too,
+         * and it is listening in the same phase.
+         */
+        if ((e.key === 'Enter' || e.key === ' ') && at >= 0) {
+            mine();
+            rows[at].click();
+        }
+    }
+
+    /**
+     * Add a page without leaving the menu.
+     *
+     * The same inline row the pages panel uses -- one implementation of "name
+     * it, press enter" rather than a second one that drifts from it.
+     */
+    _openSwitcherCreateRow(menu, trigger) {
+        const d = this.dash;
+        if (!window.InlineCreateRow) {
+            this.closePageSwitcherMenu();
+            d.showPageOverlay?.();
+            return;
+        }
+        const ui = window.InlineCreateRow.create({
+            kind: 'page',
+            placeholder: d.configLabel?.('newPageNamePlaceholder', 'Page name') || 'Page name',
+            labels: {
+                create: d.configLabel?.('create', 'Create') || 'Create',
+                cancel: d.formatDashboardLabel('cancel', {}, 'Cancel'),
+                group: d.formatDashboardLabel('pageOverviewNewPage', {}, 'New page'),
+            },
+        });
+        ui.box.classList.add('page-switcher-create');
+        trigger.hidden = true;
+        menu.querySelector('.page-switcher-foot').insertBefore(ui.box, trigger);
+        ui.box.hidden = false;
+        this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+        ui.input.focus({ preventScroll: true });
+
+        window.InlineCreateRow.wire(ui, {
+            submit: async (name) => {
+                const created = await d.structureCreate.createPageFromForm(name);
+                if (created.error) return created.error;
+                this.closePageSwitcherMenu();
+                await d.requestPageNavigation(created.id);
+                return null;
+            },
+            onCancel: () => {
+                ui.box.remove();
+                trigger.hidden = false;
+                trigger.focus({ preventScroll: true });
+                this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+            },
+        });
     }
 
     /**

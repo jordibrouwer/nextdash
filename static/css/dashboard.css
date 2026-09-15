@@ -8219,3 +8219,110 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-sh
 body[data-header-buttons="plain"] .header-zone-divider {
     display: none;
 }
+
+/* ── The compact switcher's menu ──────────────────────────────────────────────
+   Compact used to be one tab that opened the full pages panel: a modal over
+   the page, with its own scroll and its own way out, to answer "which page am
+   I going to". The list is short and the question is small, so it is answered
+   where it is asked -- under the control, on the same surface the context
+   menus use.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.page-switcher-menu {
+    min-width: 13rem;
+    max-width: min(18rem, calc(100vw - 1rem));
+    padding: var(--space-1-5, 0.35rem);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    /* The list scrolls, not the menu: the filter above it and the two rows
+       under it stay in place while the pages move. */
+    overflow: hidden;
+}
+
+.page-switcher-filter {
+    padding: 0 0 var(--space-1, 0.25rem);
+}
+
+.page-switcher-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-4, 6px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.9);
+}
+
+.page-switcher-filter-input:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.page-switcher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: min(50vh, 15rem);
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.page-switcher-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.95);
+    text-align: left;
+    cursor: pointer;
+}
+
+.page-switcher-item:hover,
+.page-switcher-item:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+/* The page you are on, marked the way the strip marks it. */
+.page-switcher-item.is-current {
+    color: var(--text-primary);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.page-switcher-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page-switcher-item-key {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Under a hairline: these two are about the list rather than in it. */
+.page-switcher-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: var(--space-1, 0.25rem);
+    padding-top: var(--space-1, 0.25rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.page-switcher-create {
+    padding: var(--space-1, 0.25rem) 0;
+}
