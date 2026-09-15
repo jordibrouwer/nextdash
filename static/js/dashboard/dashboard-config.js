@@ -8601,7 +8601,6 @@ class DashboardConfig {
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
             : 0.44;
-        const inkGapLabel = esc(this.inkGapLabelFor(inkGap));
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -8730,8 +8729,10 @@ class DashboardConfig {
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
-                    <input type="range" class="config-range" data-appearance-range="inkGap" min="0.30" max="0.58" step="0.01" value="${inkGap}">
-                    <span class="config-range-value">${inkGapLabel}</span>                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
+                    <select class="config-select" data-appearance-select="inkGap">
+                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
                 </div>
             </div>
@@ -9353,18 +9354,6 @@ class DashboardConfig {
                 if (out) out.textContent = `${Math.round(val * 100)}%`;
             });
             range.addEventListener('change', () => void this.saveSettingsWithFeedback());
-        }
-                const inkRange = container.querySelector('[data-appearance-range="inkGap"]');
-        if (inkRange) {
-            inkRange.addEventListener('input', () => {
-                // Applied before it is saved, same reason as the depth control:
-                // the whole point is watching the text lift while you drag.
-                const val = window.ThemeLoader?.applyInkGap?.(inkRange.value) ?? Number(inkRange.value);
-                this.dash.settings.inkGap = val;
-                const out = inkRange.parentElement?.querySelector('.config-range-value');
-                if (out) out.textContent = this.inkGapLabelFor(val);
-            });
-            inkRange.addEventListener('change', () => void this.saveSettingsWithFeedback());
         }
                 const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
         if (titleInput) {
@@ -10481,6 +10470,39 @@ class DashboardConfig {
                 break;
             case 'launcherIconSize': this.setLauncherIconSize(value); break;
             case 'randomThemeMode': this.setRandomThemeMode(value); break;
+            /*
+             * The five that paint themselves.
+             *
+             * Each of these is drawn by an attribute or a custom property
+             * rather than by a re-render, so writing the settings object alone
+             * left the page exactly as it was and the ↺ looked broken. Same
+             * appliers the selects above them call.
+             */
+            case 'themeDepth':
+                this.dash.settings.themeDepth = value;
+                window.ThemeLoader?.applyThemeDepth?.(value);
+                this.persistAppearance();
+                break;
+            case 'glowStrength':
+                this.dash.settings.glowStrength = value;
+                window.ThemeLoader?.applyGlowStrength?.(value);
+                this.persistAppearance();
+                break;
+            case 'inkGap':
+                this.dash.settings.inkGap = DashboardConfig.inkGapStepFor(value);
+                window.ThemeLoader?.applyInkGap?.(this.dash.settings.inkGap);
+                this.persistAppearance();
+                break;
+            case 'themeBackdrop':
+                this.dash.settings.themeBackdrop = value;
+                window.ThemeLoader?.applyThemeBackdrop?.(value);
+                this.persistAppearance();
+                break;
+            case 'backgroundPattern':
+                this.dash.settings.backgroundPattern = value;
+                window.ThemeLoader?.applyBackgroundPattern?.(value);
+                this.persistAppearance();
+                break;
             default:
                 // Fall back to a plain settings write + repaint for any field
                 // without a dedicated live setter.
@@ -10687,6 +10709,14 @@ class DashboardConfig {
             this.persistAppearance();
             return;
         }
+        if (name === 'inkGap') {
+            const gap = DashboardConfig.inkGapStepFor(value);
+            this.dash.settings.inkGap = gap;
+            // Applied before it is saved, like the two controls above it.
+            window.ThemeLoader?.applyInkGap?.(gap);
+            this.persistAppearance();
+            return;
+        }
         if (name === 'glowStrength') {
             const strength = ['off', 'soft', 'full'].includes(value) ? value : 'off';
             this.dash.settings.glowStrength = strength;
@@ -10715,6 +10745,33 @@ class DashboardConfig {
      * next band: below 0.36 some themes fall under 4.5:1, above 0.50 the faint
      * text starts competing with the bookmark names.
      */
+    /*
+     * Text contrast, as four answers rather than a slider.
+     *
+     * The value is a lightness step in OKLCH and the slider let you pick any of
+     * twenty-nine of them -- which is twenty-nine answers to a question with
+     * four meanings, drawn unlike the two controls above it. These are the
+     * midpoints of the bands inkGapLabelFor already named, so a dashboard that
+     * was set with the slider keeps the word it had.
+     */
+    static INK_GAP_STEPS = [
+        [0.34, 'inkGapSoft', 'Soft'],
+        [0.44, 'inkGapNormal', 'Normal'],
+        [0.51, 'inkGapHigh', 'High'],
+        [0.58, 'inkGapMax', 'Maximum'],
+    ];
+
+    /** The step a stored number belongs to, so the select can show it. */
+    static inkGapStepFor(gap) {
+        const value = Number(gap);
+        if (!Number.isFinite(value)) return 0.44;
+        if (value < 0.36) return 0.34;
+        if (value < 0.48) return 0.44;
+        if (value < 0.54) return 0.51;
+        return 0.58;
+    }
+
+
     inkGapLabelFor(gap) {
         if (gap < 0.36) return this.t('config.inkGapSoft', 'Soft');
         if (gap < 0.48) return this.t('config.inkGapNormal', 'Normal');
@@ -10879,13 +10936,13 @@ class DashboardConfig {
         // Toolbar & tabs
         showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
-        maxPageTabs: { def: 5 },
+        maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         headerClockPlacement: { def: 'beside-name' },
-        pageSwitcherStyle: { def: 'segmented' },
+        pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'segmented' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
-        showPagesButton: { def: true },
-        showInboxButton: { def: true },
-        showDashboardButton: { def: true },
+        showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
+        showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
+        showDashboardButton: { info: ['showDashboardButtonInfoTitle', 'showDashboardButtonInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
         shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'instant' },
@@ -10932,6 +10989,14 @@ class DashboardConfig {
         pasteDestination: { def: 'ask' },
         monitorEmphasis: { def: 'problems' },
         theme: { def: 'retro-crt-dark' },
+        // Appearance → Theme: the three Surfaces answers and the two Backdrop
+        // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
+        // is why these five were the only controls on the page without one.
+        themeDepth: { def: 'flat' },
+        glowStrength: { def: 'off' },
+        inkGap: { def: 0.44 },
+        themeBackdrop: { def: 'on' },
+        backgroundPattern: { def: 'auto' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
@@ -10940,15 +11005,15 @@ class DashboardConfig {
         pushNotifyBackup: { def: false },
         pushNotifySubject: { def: '' },
         // Toolbar & chrome
-        showRecentButton: { def: false },
-        showCheatSheetButton: { def: false },
-        showCollapseAllButton: { def: false },
-        showConfigButton: { def: true },
-        showHealthDashboard: { def: true },
-        showAddBookmarkButton: { def: true },
-        showSearchButton: { def: true },
-        showFindersButton: { def: false },
-        showCommandsButton: { def: false },
+        showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
+        showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
+        showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: false },
+        showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
+        showHealthDashboard: { info: ['showHealthDashboardInfoTitle', 'showHealthDashboardInfoMessage'], def: true },
+        showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
+        showSearchButton: { info: ['showSearchButtonInfoTitle', 'showSearchButtonInfoMessage'], def: true },
+        showFindersButton: { info: ['showFindersButtonInfoTitle', 'showFindersButtonInfoMessage'], def: false },
+        showCommandsButton: { info: ['showCommandsButtonInfoTitle', 'showCommandsButtonInfoMessage'], def: false },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },

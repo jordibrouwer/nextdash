@@ -78,10 +78,12 @@ test.describe('appearance controls apply live', () => {
         await expect.poll(shadow).not.toBe('none');
     });
 
-    test('text contrast moves while the slider is dragged', async ({ page }) => {
+    test('text contrast moves the moment it is chosen', async ({ page }) => {
         await appearanceControls(page);
-        const range = page.locator('[data-appearance-range="inkGap"]');
-        await range.waitFor({ timeout: 20_000 });
+        // A select now, drawn like Depth and Glow above it: the slider offered
+        // twenty-nine steps for a question with four answers.
+        const select = page.locator('[data-appearance-select="inkGap"]');
+        await select.waitFor({ timeout: 20_000 });
 
         // Read off a painted element, not off the property: --text-tertiary is
         // an oklch(from ...) expression and comes back as its own text, the
@@ -96,13 +98,11 @@ test.describe('appearance controls apply live', () => {
         });
 
         const before = await faint();
-        // fill() on a range fires input, which is the event the preview hangs
-        // on -- change alone would only prove the save path works.
-        await range.fill('0.3');
+        await select.selectOption('0.34');
         await expect.poll(faint).not.toBe(before);
         const low = await faint();
 
-        await range.fill('0.58');
+        await select.selectOption('0.58');
         await expect.poll(faint).not.toBe(low);
 
         expect(await stillLive(page), 'the page reloaded to apply the contrast').toBe(true);

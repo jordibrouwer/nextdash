@@ -25,11 +25,11 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("fresh install: showHealthDashboard should be true")
 	}
-	if settings.ShowRecentButton {
-		t.Fatal("fresh install: showRecentButton should be false")
+	if !settings.ShowRecentButton {
+		t.Fatal("fresh install: showRecentButton should be true")
 	}
-	if settings.ShowCheatSheetButton {
-		t.Fatal("fresh install: showCheatSheetButton should be false")
+	if !settings.ShowCheatSheetButton {
+		t.Fatal("fresh install: showCheatSheetButton should be true")
 	}
 	// Search, commands and finders are one panel that switches mode on a key,
 	// and the pills at its foot now show that. Three separate doors to it in

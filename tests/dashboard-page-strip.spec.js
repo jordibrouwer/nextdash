@@ -290,7 +290,7 @@ test('the server refuses a cap outside 3-9', async ({ page }) => {
     expect(stored.high, '40 tabs were accepted').toBe(9);
     expect(stored.low, '1 tab was accepted').toBe(3);
     // An older settings file carries no value at all, which arrives as 0.
-    expect(stored.zero, 'a settings file without the field lost its tabs').toBe(5);
+    expect(stored.zero, 'a settings file without the field lost its tabs').toBe(4);
 });
 
 test('a folded-away page takes the slot right before the chip', async ({ page }) => {

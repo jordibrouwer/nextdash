@@ -86,14 +86,14 @@ test.describe('config info + reset affordances', () => {
                 .filter(([, m]) => m && m.def !== undefined && !m.info)
                 .map(([field]) => field);
         });
-        // Toolbar toggles are self-describing ("Show recent button"), so they
-        // are the deliberate exception rather than an oversight.
+        // The action bar and the header panel used to be the exception here --
+        // "Show the recent button" was taken as self-describing. It says what
+        // the button is, not what it does or which key does the same, so every
+        // one of them carries an ℹ now and none of them is listed below.
         const allowed = new Set([
-            'showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard',
-            'showAddBookmarkButton', 'showSearchButton', 'showFindersButton', 'showCommandsButton',
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
             'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup',
-            'pushNotifyRelease', 'pushNotifySubject', 'showCollapseAllButton',
+            'pushNotifyRelease', 'pushNotifySubject',
             // Listed in FIELD_META for the ↺ button and the changed-settings
             // count, with a comment saying they carry no ℹ of their own: a
             // field with no `def` reports itself unchanged whatever it holds.
@@ -121,6 +121,17 @@ test.describe('config info + reset affordances', () => {
             // Two choice cards with a sentence on each, like shortcutDisplay
             // and monitorEmphasis above: the explanation is the control.
             'rowHighlight',
+            /*
+             * Appearance → Theme, and the header panel beside it.
+             *
+             * Every one of these is a select or a number with a
+             * .config-panel-note under it saying what it does — the paragraph
+             * beside Depth, Glow, Text contrast and the two Backdrop controls
+             * is longer than an ℹ dialog would be, and it is on screen while
+             * you are choosing rather than behind a button.
+             */
+            'themeDepth', 'glowStrength', 'inkGap', 'themeBackdrop', 'backgroundPattern',
+            'headerClockPlacement',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

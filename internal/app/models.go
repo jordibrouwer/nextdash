@@ -1349,10 +1349,10 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// Config for anyone who wants them back.
 			ShowFindersButton:            false,
 			ShowCommandsButton:           false,
-			ShowRecentButton:             false,
+			ShowRecentButton:             true,
 			ShowTagCloudButton:           true,
 			ShowSearchFlowBanner:         true,
-			ShowCheatSheetButton:         false,
+			ShowCheatSheetButton:         true,
 			ShowCollapseAllButton:        false,
 			ShowStatus:                   true,
 			ColorizeStatus:               true,
@@ -2860,7 +2860,7 @@ const (
 // alone let the same header carry four tabs or ten depending on an unrelated
 // toggle. This is the count that holds either way.
 const (
-	defaultMaxPageTabs = 5
+	defaultMaxPageTabs = 4
 	minPageTabs        = 3
 	maxPageTabsCap     = 9
 )
@@ -3424,6 +3424,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowFindersButton:              false,
 			ShowCommandsButton:             false,
 			ShowRecentButton:               true,
+			ShowTagCloudButton:             true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
 			ShowCollapseAllButton:          false,
