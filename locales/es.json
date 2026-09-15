@@ -2016,6 +2016,7 @@
   "config": {
     "title": "configuración",
     "health": "salud",
+    "dashboardLink": "panel",
     "backToDashboard": "← volver al panel",
     "saveChanges": "Guardar",
     "saveShort": "Guardar",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "Mostrar el botón de comandos",
     "showConfigButtonLabel": "Mostrar el botón de configuración",
     "showPagesButtonLabel": "Mostrar el botón de páginas",
+    "showDashboardButtonLabel": "Mostrar el botón del panel",
     "showInboxButtonLabel": "Mostrar el botón de la bandeja de entrada",
     "showDateLabel": "Mostrar la fecha",
     "showFindersButtonLabel": "Mostrar el botón de buscadores",

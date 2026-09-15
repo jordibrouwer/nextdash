@@ -58,11 +58,11 @@ test.describe('the chrome toggles are grouped', () => {
         // this is two more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(17);
-        expect(new Set(all).size).toBe(17);
+        expect(all).toHaveLength(18);
+        expect(new Set(all).size).toBe(18);
         expect(all).toEqual(expect.arrayContaining([
-            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showInboxButton',
-            'showHealthDashboard', 'showConfigButton', 'showPagesButton',
+            'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
+            'showInboxButton', 'showHealthDashboard', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
         ]));
@@ -126,11 +126,17 @@ test('the header toggles reach the header', async ({ page }) => {
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-show-inbox-button')), { timeout: 5_000 }).toBe('false');
 
+    expect(await shown('.dashboard-link')).toBe(true);
+    await page.locator('[data-behavior-field="showDashboardButton"]').uncheck();
+    await expect.poll(() => shown('.dashboard-link'), { timeout: 5_000 }).toBe(false);
+
     // And back: the switches go both ways without a reload.
     await page.locator('[data-behavior-field="showPageTabs"]').check();
     await expect.poll(() => shown('.header-track .page-walk-hint'),
         { timeout: 5_000 }).toBe(true);
     await page.locator('[data-behavior-field="showInboxButton"]').check();
+    await page.locator('[data-behavior-field="showDashboardButton"]').check();
+    await expect.poll(() => shown('.dashboard-link'), { timeout: 5_000 }).toBe(true);
 });
 
 /*
@@ -192,7 +198,7 @@ test.describe('Show all / Hide all', () => {
         await expect(headerPanel.locator('[data-behavior-bulk="hide"]')).toBeDisabled();
 
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(count).toHaveText(/\b6\D+6\b/);
+        await expect(count).toHaveText(/\b7\D+7\b/);
         await expect(headerPanel.locator('[data-behavior-bulk="show"]')).toBeDisabled();
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeChecked();
     });

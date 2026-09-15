@@ -294,6 +294,31 @@ class DashboardVisual {
 
 
     /**
+     * Mark the dashboard icon as the view you are in.
+     *
+     * The other three destinations light up while their view is open; this one
+     * is lit whenever a page of bookmarks is what you are looking at, which is
+     * the state the other three are not in. It is a link to the dashboard, not
+     * to a page, so the mark says "you are here" rather than "this is page 2".
+     */
+    syncDashboardLinkActiveState() {
+        const d = this.dash;
+        const anchor = document.querySelector('.dashboard-link a.dashboard-link-anchor');
+        if (!anchor) {
+            return;
+        }
+        const active = d.isBookmarksView?.() === true;
+        anchor.classList.toggle('active', active);
+        // aria-current, not aria-selected: this is a link, not a tab in a tablist.
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
+        }
+    }
+
+
+    /**
      * Mark the header config icon as the current view, mirroring the health icon.
      * Config is reached from a header link rather than a page tab, so
      * setActivePageNavButton never reaches it.
@@ -590,6 +615,39 @@ class DashboardVisual {
         // Fallback: reduced-motion and no-animations kill the animation, so
         // animationend never fires — clear the class on a timer regardless.
         setTimeout(done, 2000);
+    }
+
+
+    /**
+     * A rule needs something on both sides of it.
+     *
+     * The band has one hairline left, between what you do and where you go, and
+     * both halves are the reader's to empty: switch every action off and the
+     * surround goes, switch off the dashboard, inbox, health and config icons
+     * and the cluster goes -- and the rule stayed either way, a line standing
+     * against the edge of the band with nothing beside it.
+     *
+     * Measured rather than derived from the settings: the inbox draws only when
+     * the feature is on and health only when it is enabled, so "is anything
+     * drawn on this side" is a question about the page, not about the toggles.
+     */
+    syncHeaderZoneDividers() {
+        const row = document.querySelector('.dashboard-section.section-controls .header-actions');
+        if (!row) return;
+        const drawn = (el) => {
+            if (!el || el.hidden) return false;
+            if (window.getComputedStyle(el).display === 'none') return false;
+            return el.getBoundingClientRect().width > 0;
+        };
+        const hasContent = (host) => {
+            if (!drawn(host)) return false;
+            return [...host.children].some(drawn);
+        };
+        const left = drawn(row.querySelector('.header-shortcuts'));
+        const right = hasContent(row.querySelector('.header-destinations'));
+        row.querySelectorAll('.header-zone-divider').forEach((rule) => {
+            rule.hidden = !(left && right);
+        });
     }
 
 

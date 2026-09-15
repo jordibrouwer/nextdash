@@ -295,6 +295,20 @@
                     </div>
                     <span class="header-zone-divider" aria-hidden="true"></span>
                     <div class="header-destinations">
+                    <!--
+                        The way back. The other three leave the dashboard; this
+                        one returns to it, at the page you were last on, so the
+                        cluster reads as four places rather than three exits.
+                    -->
+                    <div class="dashboard-link dashboard-link--icon">
+                        <a href="/" id="dashboard-home-link" class="dashboard-link-anchor" data-i18n-aria="dashboard.dashboardLink" data-i18n-tooltip="dashboard.dashboardLink" aria-label="dashboard" title="dashboard">
+                            <svg class="dashboard-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M3 10.5 12 4l9 6.5"/>
+                                <path d="M5.5 10v9.5h13V10"/>
+                                <path d="M10 19.5V14h4v5.5"/>
+                            </svg>
+                        </a>
+                    </div>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
                         <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">

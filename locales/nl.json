@@ -2016,6 +2016,7 @@
   "config": {
     "title": "configuratie",
     "health": "health",
+    "dashboardLink": "dashboard",
     "backToDashboard": "← terug naar dashboard",
     "saveChanges": "Opslaan",
     "saveShort": "Opslaan",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "Knop commando's tonen",
     "showConfigButtonLabel": "Knop configuratie tonen",
     "showPagesButtonLabel": "Knop pagina's tonen",
+    "showDashboardButtonLabel": "Knop dashboard tonen",
     "showInboxButtonLabel": "Knop inbox tonen",
     "showDateLabel": "Datum tonen",
     "showFindersButtonLabel": "Knop finders tonen",

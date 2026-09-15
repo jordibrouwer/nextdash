@@ -407,6 +407,7 @@ type Settings struct {
 	ShowHealthDashboard             bool   `json:"showHealthDashboard"`
 	ShowPagesButton                 bool   `json:"showPagesButton"`
 	ShowInboxButton                 bool   `json:"showInboxButton"`
+	ShowDashboardButton             bool   `json:"showDashboardButton"`
 	ShowSearchButton                bool   `json:"showSearchButton"`
 	ShowAddBookmarkButton           bool   `json:"showAddBookmarkButton"`
 	ShowFindersButton               bool   `json:"showFindersButton"`
@@ -1321,6 +1322,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowHealthDashboard:       true,
 			ShowPagesButton:           true,
 			ShowInboxButton:           true,
+			ShowDashboardButton:       true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
 			// Off by default. Search, commands and finders are one panel
@@ -3396,6 +3398,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowHealthDashboard:            true,
 			ShowPagesButton:                true,
 			ShowInboxButton:                true,
+			ShowDashboardButton:            true,
 			ShowSearchButton:               true,
 			ShowAddBookmarkButton:          true,
 			ShowFindersButton:              false,
@@ -3639,6 +3642,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showInboxButton"]; !ok {
 			settings.ShowInboxButton = true
+		}
+		if _, ok := rawSettings["showDashboardButton"]; !ok {
+			settings.ShowDashboardButton = true
 		}
 		if _, ok := rawSettings["showIcons"]; !ok {
 			settings.ShowIcons = true

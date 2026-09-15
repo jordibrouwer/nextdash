@@ -242,6 +242,56 @@ test('the actions stand in a surround, the destinations do not', async ({ page }
     expect(parseFloat(seen.destinations.width), 'the destinations were boxed in too').toBe(0);
 });
 
+/*
+ * And the rule goes when either side of it does.
+ *
+ * One hairline stands between what you do and where you go. Empty the actions
+ * and it was a line against the surround that was no longer there; empty the
+ * destinations and it was a line against the edge of the band.
+ */
+test('the hairline needs something on both sides of it', async ({ page }) => {
+    await openDashboard(page);
+    await showEveryAction(page);
+
+    const rules = () => page.evaluate(() => [...document.querySelectorAll('.header-zone-divider')]
+        .filter((el) => window.getComputedStyle(el).display !== 'none').length);
+    const apply = (settings) => page.evaluate(async (patch) => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, patch);
+        d.setupDOM?.();
+        await d.saveSettings?.();
+        window.DashboardTagCloud?.syncFromSettings?.();
+    }, settings);
+
+    expect(await rules(), 'the band lost its hairline with both sides drawn').toBe(1);
+
+    await apply({
+        showAddBookmarkButton: false, showSearchButton: false, showTagCloudButton: false,
+        showCommandsButton: false, showFindersButton: false, showRecentButton: false,
+        showCollapseAllButton: false, showCheatSheetButton: false, showPagesButton: false,
+    });
+    await expect.poll(rules, { timeout: 5_000 }).toBe(0);
+
+    // One action back is enough to give the rule a side again.
+    await apply({ showSearchButton: true });
+    await expect.poll(rules, { timeout: 5_000 }).toBe(1);
+
+    // And the other way round: the actions stand, the destinations do not.
+    await apply({
+        showDashboardButton: false, showInboxButton: false,
+        showConfigButton: false, showHealthDashboard: false,
+    });
+    await expect.poll(rules, { timeout: 5_000 }).toBe(0);
+
+    // Settings live on the server for the whole file, so put the header back
+    // the way the tests after this one expect to find it.
+    await apply({
+        showDashboardButton: true, showInboxButton: true,
+        showConfigButton: true, showHealthDashboard: true,
+    });
+    await expect.poll(rules, { timeout: 5_000 }).toBe(1);
+});
+
 test('the surround goes when the last action does', async ({ page }) => {
     await openDashboard(page);
 

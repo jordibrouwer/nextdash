@@ -2016,6 +2016,7 @@
   "config": {
     "title": "配置",
     "health": "健康",
+    "dashboardLink": "仪表板",
     "backToDashboard": "← 返回仪表板",
     "saveChanges": "保存",
     "saveShort": "保存",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "显示「命令」按钮",
     "showConfigButtonLabel": "显示「配置」按钮",
     "showPagesButtonLabel": "显示页面按钮",
+    "showDashboardButtonLabel": "显示仪表板按钮",
     "showInboxButtonLabel": "显示收件箱按钮",
     "showDateLabel": "显示日期",
     "showFindersButtonLabel": "显示「查找器」按钮",

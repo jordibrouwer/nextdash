@@ -21,6 +21,7 @@ class DashboardSetup {
         document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
         document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
         document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
+        document.body.setAttribute('data-show-dashboard-button', d.settings.showDashboardButton !== false);
         document.body.setAttribute('data-show-cheatsheet-button', d.settings.showCheatSheetButton !== false);
         document.body.setAttribute('data-show-collapse-all-button', d.settings.showCollapseAllButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', d.settings.showAddBookmarkButton !== false);
@@ -109,6 +110,9 @@ class DashboardSetup {
 
         // Control page tabs visibility dynamically
         d.updatePageTabsVisibility();
+        // After the three above: each of them decides whether one side of the
+        // band draws anything, and the rule between them follows that.
+        d.visual?.syncHeaderZoneDividers?.();
         this.initializeButtonTipsRotation();
 
         // Apply columns setting

@@ -1648,11 +1648,13 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 /* Icon variant: pages, health, config, and inbox (in the destination cluster)
    share one chrome; spacing is .header-actions / .header-destinations gap. */
+.dashboard-link--icon,
 .health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
+.dashboard-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
@@ -1665,6 +1667,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
+.dashboard-link--icon a:hover,
 .health-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
@@ -1674,12 +1677,14 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 /* Active state matched to .page-nav-btn.active: header destinations are the
    same kind of tab as page tabs, so "you are here" must look the same. */
+.dashboard-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
 
+.dashboard-link--icon a.active,
 .health-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
@@ -1690,6 +1695,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     border-bottom-right-radius: 0;
 }
 
+.dashboard-link--icon .dashboard-link-icon,
 .health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
@@ -4833,6 +4839,12 @@ body[data-show-inbox-button="false"] #page-nav-inbox-host {
     display: none;
 }
 
+/* The way back is the reader's too: the page tabs, `1`-`9` and Escape all
+   reach the dashboard without it. */
+body[data-show-dashboard-button="false"] .dashboard-link {
+    display: none;
+}
+
 /* Hide cheatsheet button when showCheatSheetButton is false */
 body[data-show-cheatsheet-button="false"] .help-button {
     display: none;
@@ -7408,12 +7420,19 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
     justify-content: flex-end;
 }
 
-/* One between the pages and what you do, one between that and where you go. */
+/* Between what you do and where you go. */
 .header-zone-divider {
     width: 1px;
     height: 24px;
     flex: 0 0 auto;
     background: var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/* syncHeaderZoneDividers() hides it when either side of it is empty; `display`
+   is set on the element here so the flex gap goes with the rule rather than
+   leaving a hole where it stood. */
+.header-zone-divider[hidden] {
+    display: none;
 }
 
 /* The actions are one box of 28px squares, the way the draft draws them. */
@@ -7544,6 +7563,7 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
  * not. The outer size is what the eye compares, so that is what matches:
  * 28 + 2x5 of padding + 2x1 of border.
  */
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7562,6 +7582,7 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
     transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -7669,6 +7690,7 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
  */
 .header-track .page-nav-btn,
 .header-track .page-nav-overflow,
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7692,6 +7714,7 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
 .header-actions .header-shortcuts .search-button:active,
 .header-track .page-nav-btn:active,
 .header-track .page-nav-overflow:active,
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
 .dashboard-section.section-controls .header-actions .health-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
@@ -7854,6 +7877,7 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  * were on the grid or three views deep. Same treatment the active page tab
  * takes, because it says the same thing.
  */
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 .dashboard-section.section-controls .header-actions .health-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {

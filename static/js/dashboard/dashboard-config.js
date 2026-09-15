@@ -10869,6 +10869,7 @@ class DashboardConfig {
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { def: true },
         showInboxButton: { def: true },
+        showDashboardButton: { def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
         shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'instant' },
@@ -11613,6 +11614,7 @@ class DashboardConfig {
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
                     chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),

@@ -2016,6 +2016,7 @@
   "config": {
     "title": "configuration",
     "health": "health",
+    "dashboardLink": "dashboard",
     "backToDashboard": "← back to dashboard",
     "saveChanges": "Save",
     "saveShort": "Save",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "Show the commands button",
     "showConfigButtonLabel": "Show the config button",
     "showPagesButtonLabel": "Show the pages button",
+    "showDashboardButtonLabel": "Show the dashboard button",
     "showInboxButtonLabel": "Show the inbox button",
     "showDateLabel": "Show the date",
     "showFindersButtonLabel": "Show the finders button",

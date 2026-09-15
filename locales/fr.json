@@ -2016,6 +2016,7 @@
   "config": {
     "title": "configuration",
     "health": "health",
+    "dashboardLink": "tableau de bord",
     "backToDashboard": "← retour au tableau de bord",
     "saveChanges": "Enregistrer",
     "saveShort": "Enregistrer",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "Afficher le bouton des commandes",
     "showConfigButtonLabel": "Afficher le bouton de configuration",
     "showPagesButtonLabel": "Afficher le bouton des pages",
+    "showDashboardButtonLabel": "Afficher le bouton du tableau de bord",
     "showInboxButtonLabel": "Afficher le bouton de la boîte de réception",
     "showDateLabel": "Afficher la date",
     "showFindersButtonLabel": "Afficher le bouton des finders",

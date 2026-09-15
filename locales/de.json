@@ -2016,6 +2016,7 @@
   "config": {
     "title": "Konfiguration",
     "health": "health",
+    "dashboardLink": "Dashboard",
     "backToDashboard": "← zurück zum Dashboard",
     "saveChanges": "Speichern",
     "saveShort": "Speichern",
@@ -4359,6 +4360,7 @@
     "showCommandsButtonLabel": "Schaltfläche Befehle zeigen",
     "showConfigButtonLabel": "Schaltfläche Konfiguration zeigen",
     "showPagesButtonLabel": "Seiten-Schaltfläche anzeigen",
+    "showDashboardButtonLabel": "Dashboard-Schaltfläche anzeigen",
     "showInboxButtonLabel": "Inbox-Schaltfläche anzeigen",
     "showDateLabel": "Datum zeigen",
     "showFindersButtonLabel": "Schaltfläche Finder zeigen",

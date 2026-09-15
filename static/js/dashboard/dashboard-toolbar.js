@@ -420,7 +420,9 @@ class DashboardToolbar {
          * re-created by dashboard-visual when the chrome settings change.
          */
         document.addEventListener('click', (e) => {
-            const anchor = e.target?.closest?.('.config-link-anchor, .health-link-anchor');
+            const anchor = e.target?.closest?.(
+                '.config-link-anchor, .health-link-anchor, .dashboard-link-anchor'
+            );
             if (!anchor) return;
             // Leave the browser's own gestures alone: a modified click or a
             // middle button is someone asking for a second tab.
@@ -429,8 +431,20 @@ class DashboardToolbar {
             e.preventDefault();
             if (anchor.classList.contains('config-link-anchor')) {
                 void d.config?.openConfigView?.();
-            } else {
+            } else if (anchor.classList.contains('health-link-anchor')) {
                 void d.health?.openHealthView?.();
+            } else {
+                /*
+                 * Back to the dashboard, at the page you left it on.
+                 *
+                 * currentPageId is not cleared while a view is open -- health,
+                 * the inbox and config are drawn over the dashboard rather than
+                 * instead of it -- so the page you were last on is still there
+                 * to return to. requestPageNavigation rebuilds the grid when it
+                 * is coming from a view, which is why the href never has to be
+                 * followed: `/` would be a full reload of the whole app.
+                 */
+                void d.pageNav?.requestPageNavigation?.(d.currentPageId);
             }
         });
 

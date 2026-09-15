@@ -274,6 +274,10 @@ class DashboardPageNav {
         // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
+        d.visual?.syncDashboardLinkActiveState?.();
+        // The inbox tab is built here, so this is where the destination cluster
+        // can go from empty to occupied.
+        d.visual?.syncHeaderZoneDividers?.();
     }
 
 
