@@ -2879,6 +2879,10 @@ const (
 const (
 	headerClockBesideName       = "beside-name"
 	headerClockOwnZone          = "own-zone"
+	// The way it was drawn before the header was merged into one row: the
+	// clock and the weather on a line of their own, with the view's name in
+	// large type under them.
+	headerClockClassic          = "classic"
 	defaultHeaderClockPlacement = headerClockBesideName
 )
 
@@ -3008,7 +3012,9 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	// Anything the view does not draw reads as the default, the way every other
 	// named choice in this file does.
-	if s.HeaderClockPlacement != headerClockBesideName && s.HeaderClockPlacement != headerClockOwnZone {
+	switch s.HeaderClockPlacement {
+	case headerClockBesideName, headerClockOwnZone, headerClockClassic:
+	default:
 		s.HeaderClockPlacement = defaultHeaderClockPlacement
 	}
 	switch s.PageSwitcherStyle {

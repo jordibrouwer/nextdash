@@ -11426,6 +11426,7 @@ class DashboardConfig {
                         options: [
                             opt('beside-name', t('config.headerClockBesideName', 'Beside the view name')),
                             opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
+                            opt('classic', t('config.headerClockClassic', 'On their own line, name underneath')),
                         ] },
                 ],
             },

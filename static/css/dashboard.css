@@ -7107,6 +7107,103 @@ body.no-animations .dashboard-widget-stat-key {
  * sideways every time you switched view.
  */
 /*
+ * Classic: the clock on a line of its own, the name in large type under it.
+ *
+ * How the top of the page was drawn before the header became one row -- a
+ * quiet line of clock and weather, then the view's name at --font-size-title
+ * with the grid under it. Folding the name into the row made the header
+ * shorter, which is what most of the work in this header was for; this is here
+ * because the tall version is calmer to look at, and that is a preference
+ * rather than a fact.
+ *
+ * The row keeps its three columns and gains a second line: the pages and the
+ * destinations stay on the first, beside the clock, and the name spans the
+ * full width underneath them.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-top {
+    row-gap: var(--space-2, 0.5rem);
+    align-items: start;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity {
+    display: contents;
+}
+
+/* First line: the clock at the left, the pages in the middle, the
+   destinations at the right -- the three columns the row already has. The two
+   lines of the clock stay one block, so the weather sits under the time rather
+   than under the tallest thing on the row. */
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-top-primary {
+    /* The default placement makes this `display: contents` so the two lines
+       can be placed apart; here they belong together, so it is a box again. */
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity .date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-time-line {
+    font-size: calc(var(--font-size-text) * 1.14);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line {
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-track,
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-actions {
+    grid-row: 1;
+}
+
+/* Second line: the name, in the type it had, spanning the row. */
+body[data-header-clock="classic"] .dashboard-section.section-controls .title-wrapper {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .title {
+    /* Two thirds of the old title: the band it used to stand in is gone, so
+       the name no longer has to fill one -- it only has to read as the name of
+       the page, above a grid that starts right under it. */
+    font-size: calc(var(--font-size-title, 3rem) * 0.66);
+    font-weight: var(--font-weight-black, 900);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    opacity: 0.8;
+}
+
+/*
+ * The name is already the air between the controls and the grid.
+ *
+ * The other two placements need the full gap under the bar because the row
+ * ends at the controls; here a line of large type stands between them, so the
+ * same gap on top of it left a hole.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls {
+    margin-bottom: var(--space-4, 1rem);
+}
+
+/* Everything else the block carries keeps its own line under the name. */
+body[data-header-clock="classic"] .dashboard-section.section-controls #dashboard-mini-status,
+body[data-header-clock="classic"] .dashboard-section.section-controls #tag-filter-indicator,
+body[data-header-clock="classic"] .dashboard-section.section-controls #status-loading-indicator {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+/*
  * The row keeps its three columns; the split happens inside the identity.
  *
  * As four columns on the row the clock widened the left of the header and the

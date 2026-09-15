@@ -263,3 +263,105 @@ test('the clock is readable, and its placement is a setting', async ({ page }) =
         .toBeGreaterThan(inline.size);
 });
 
+/*
+ * And the tall top of the page is still on offer.
+ *
+ * Folding the view's name into the header row is what made the bar short, and
+ * short is what most of this header was for -- but the old top, with the clock
+ * on a quiet line and the name in large type under it, is calmer to look at.
+ * That is a preference rather than a fact, so it is a third value of the
+ * setting that already says where the clock stands.
+ */
+test('the classic placement puts the clock on its own line with the name under it', async ({ page }) => {
+    await openDashboard(page);
+
+    /*
+     * A busy row, because that is where this goes wrong: the fitter hides the
+     * clock and the actions when the row asks for more width than it has, and
+     * a name spanning the whole row counted towards that.
+     */
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const d = window.dashboardInstance;
+        const pages = [...d.pages];
+        for (let i = pages.length; i < 5; i += 1) {
+            pages.push({ id: 900 + i, name: `infrastructure-${i}` });
+        }
+        await api('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pages),
+        });
+        d.settings.showPageNamesInTabs = true;
+        d.settings.headerClockPlacement = 'classic';
+        d.setupDOM?.();
+        await d.loadData();
+        d.pageNav?.renderPageNavigation?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(600);
+
+    expect(await page.evaluate(() => document.body.getAttribute('data-header-clock'))).toBe('classic');
+
+    const shape = await page.evaluate(() => {
+        const r = (sel) => {
+            const el = document.querySelector(sel);
+            if (!el) return null;
+            const b = el.getBoundingClientRect();
+            return { x: Math.round(b.x), y: Math.round(b.y), bottom: Math.round(b.bottom), w: Math.round(b.width) };
+        };
+        const title = document.querySelector('.header-identity .title');
+        return {
+            clock: r('.date-time-line'),
+            weather: r('.date-weather-line'),
+            title: r('.header-identity .title'),
+            track: r('.header-track'),
+            actions: r('.header-actions'),
+            titleSize: parseFloat(window.getComputedStyle(title).fontSize),
+            bodySize: parseFloat(window.getComputedStyle(document.body).fontSize),
+        };
+    });
+
+    /*
+     * The weather sits under the time when there is one -- a store with no
+     * location set draws the clock alone, and that is not what this is about.
+     */
+    if (shape.weather) {
+        expect(shape.weather.y - shape.clock.bottom, 'the two clock lines drifted apart')
+            .toBeLessThanOrEqual(6);
+        expect(shape.weather.x, 'the weather is not under the time').toBe(shape.clock.x);
+    }
+
+    // The name is a line of its own, under them, in the title's type.
+    expect(shape.title.y, 'the name is not under the clock')
+        .toBeGreaterThanOrEqual((shape.weather || shape.clock).bottom);
+    expect(shape.title.x, 'the name left the left edge').toBe(shape.clock.x);
+    // Bigger than the page's own type, and not the full title size the band
+    // it used to stand in called for.
+    expect(shape.titleSize, `the name is ${shape.titleSize}px`)
+        .toBeGreaterThan(shape.bodySize * 1.5);
+    expect(shape.titleSize, `the name is ${shape.titleSize}px`)
+        .toBeLessThan(shape.bodySize * 3);
+
+    /*
+     * And the controls keep the first line to themselves. The fitter counts
+     * what competes for the row's width: a name spanning the whole row was
+     * counted among them and the ladder started hiding the clock and the
+     * actions on a window with room to spare.
+     */
+    expect(shape.track.y, 'the pages dropped off the first line').toBe(shape.clock.y);
+    expect(shape.actions.w, 'the actions were folded away').toBeGreaterThan(0);
+    expect(shape.track.x, 'the pages overlap the clock').toBeGreaterThan(shape.clock.x);
+
+    /*
+     * And the grid follows the name closely: the line of large type is itself
+     * what separates the controls from the columns, so the full gap the other
+     * placements need would leave a hole under it.
+     */
+    const below = await page.evaluate(() => {
+        const title = document.querySelector('.header-identity .title').getBoundingClientRect();
+        const grid = document.querySelector('#dashboard-layout').getBoundingClientRect();
+        return Math.round(grid.top - title.bottom);
+    });
+    expect(below, `the grid starts ${below}px under the name`).toBeLessThanOrEqual(40);
+});

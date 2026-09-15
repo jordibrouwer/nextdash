@@ -71,7 +71,9 @@ class DashboardSetup {
         // <body>, so switching it is a repaint rather than a re-render.
         document.body.setAttribute(
             'data-header-clock',
-            d.settings.headerClockPlacement === 'own-zone' ? 'own-zone' : 'beside-name'
+            ['own-zone', 'classic'].includes(d.settings.headerClockPlacement)
+                ? d.settings.headerClockPlacement
+                : 'beside-name'
         );
         // How much room the pages take in the middle of the band: one segmented
         // control, plain text with an underline, or a single button naming the

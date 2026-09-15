@@ -434,9 +434,34 @@ class DashboardPageNav {
             const walk = (el) => {
                 [...el.children].forEach((child) => {
                     if (child.hidden) return;
-                    const display = window.getComputedStyle(child).display;
-                    if (display === 'none') return;
-                    if (display === 'contents') { walk(child); return; }
+                    const style = window.getComputedStyle(child);
+                    if (style.display === 'none') return;
+                    if (style.display === 'contents') { walk(child); return; }
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
+                    if (style.gridColumn === '1 / -1') return;
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
                     atoms.push(child);
                 });
             };
