@@ -95,6 +95,9 @@ class DashboardSetup {
         d.publishButtonBarHeight?.();
 
         d.syncTagCloudButtonPlacement();
+        // After the data-show-* attributes above: which actions are on the bar
+        // at all is their answer, and the fold takes what is left.
+        d.syncHeaderActionOverflow?.();
 
         // One attribute, three answers. The row always builds the label when the
         // bookmark has one; whether it is on screen, and whether it stands in

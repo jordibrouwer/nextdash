@@ -155,6 +155,9 @@ async function showEveryAction(page) {
         Object.assign(d.settings, {
             showAddBookmarkButton: true, showSearchButton: true, showTagCloudButton: true,
             showRecentButton: true, showCheatSheetButton: true, showPagesButton: true,
+            // Room for all six on the bar: past the reader's cap the rest fold
+            // behind one control, and this is about the order they stand in.
+            maxHeaderActions: 8,
         });
         d.setupDOM?.();
         await d.saveSettings?.();

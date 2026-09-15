@@ -47,7 +47,7 @@ class SearchCommandsComponent {
                     'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
                     'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
-                    'buttons', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs',
+                    'buttons', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
                     'shortcuts', 'locklayout',
                 ],
             },
@@ -96,6 +96,7 @@ class SearchCommandsComponent {
             'buttonstyle': this.handleButtonStyleCommand.bind(this),
             'switcher': this.handlePageSwitcherCommand.bind(this),
             'maxtabs': this.handleMaxTabsCommand.bind(this),
+            'maxactions': this.handleMaxActionsCommand.bind(this),
             'favicons': this.handleFaviconCommand.bind(this),
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
@@ -2683,6 +2684,23 @@ class SearchCommandsComponent {
             type: 'command',
             current: n === current,
             action: () => this._applyChromeSetting('maxPageTabs', n, `maxtabs:${n}`),
+        }));
+    }
+
+    /** How many actions stand in the bar before the rest fold behind "+N". */
+    handleMaxActionsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const current = Math.min(8, Math.max(3, Math.round(Number(dashboard.settings.maxHeaderActions) || 4)));
+        const values = [3, 4, 5, 6, 7, 8].filter((n) => !typed || String(n).startsWith(typed));
+        return values.map((n) => ({
+            name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
+            shortcut: ':MAXACTIONS',
+            stateId: `maxactions:${n}`,
+            type: 'command',
+            current: n === current,
+            action: () => this._applyChromeSetting('maxHeaderActions', n, `maxactions:${n}`),
         }));
     }
 

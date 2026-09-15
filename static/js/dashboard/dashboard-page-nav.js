@@ -490,6 +490,9 @@ class DashboardPageNav {
         // settled: stepping through 4 on the way to 2 otherwise left it folded
         // to one tab with room to spare.
         this.fitPageTabs();
+        // The actions read the same rung: past the first one, each fold takes
+        // one more button off the bar and puts it behind the "+N".
+        this.dash.syncHeaderActionOverflow?.();
     }
 
 
@@ -1290,6 +1293,17 @@ class DashboardPageNav {
                 this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
             },
         });
+    }
+
+    /**
+     * Anchor a popover under a control, for anyone outside this module.
+     *
+     * The placement rules -- below unless that runs off the bottom, nudged
+     * back inside on both axes -- belong to no one control in particular, and
+     * a second copy of them would drift from this one.
+     */
+    positionPopover(popover, anchorEl, options = {}) {
+        return this._positionPageTabPopover(popover, anchorEl, options);
     }
 
     /**

@@ -1545,6 +1545,14 @@ class Dashboard {
         this._buttonBarObserver.observe(bar);
     }
 
+    syncHeaderActionOverflow() {
+        return this.toolbar.syncHeaderActionOverflow(...arguments);
+    }
+
+    closeHeaderActionMenu() {
+        return this.toolbar.closeHeaderActionMenu(...arguments);
+    }
+
     syncTagCloudButtonPlacement() {
         return this.toolbar.syncTagCloudButtonPlacement(...arguments);
     }

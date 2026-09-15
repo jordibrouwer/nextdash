@@ -8326,3 +8326,70 @@ body[data-header-buttons="plain"] .header-zone-divider {
 .page-switcher-create {
     padding: var(--space-1, 0.25rem) 0;
 }
+
+/* ── The actions that did not fit ─────────────────────────────────────────────
+   The bar can hold nine buttons and most readers use three or four. Past the
+   reader's own cap the rest stand behind one control that says how many it
+   holds -- the same bargain the page tabs make with their "+N" chip. The
+   folded buttons stay in the DOM: the menu opens them by pressing them, so
+   what each action does is written once.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.header-shortcuts .search-button.is-folded {
+    display: none;
+}
+
+.header-action-overflow .header-action-overflow-count {
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+    margin-left: 0.15rem;
+}
+
+.header-action-menu {
+    min-width: 12rem;
+    padding: var(--space-1-5, 0.35rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.header-action-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.95);
+    text-align: left;
+    cursor: pointer;
+}
+
+.header-action-item:hover,
+.header-action-item:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.header-action-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The key that does the same thing without the menu. */
+.header-action-item-key {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Last on the row, whatever the buttons in front of it are ordered to. */
+.header-actions .header-shortcuts .header-action-overflow { order: 99; }

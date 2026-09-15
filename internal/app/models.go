@@ -443,6 +443,7 @@ type Settings struct {
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (3-8)
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
@@ -1374,6 +1375,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowPageInTitle:              false,
 			ShowPageNamesInTabs:          false,
 			MaxPageTabs:                  defaultMaxPageTabs,
+			MaxHeaderActions:             defaultMaxHeaderActions,
 			HeaderClockPlacement:         defaultHeaderClockPlacement,
 			PageSwitcherStyle:            defaultPageSwitcherStyle,
 			HeaderButtonStyle:            defaultHeaderButtonStyle,
@@ -2876,6 +2878,20 @@ const (
 // two lines; in a zone of their own they stand between the name and the pages
 // with room for a larger face. Both are the same two lines -- this is where
 // they are drawn, not what they say.
+/*
+How many actions the header shows before it folds the rest away.
+
+The bar holds up to nine buttons and most readers use three or four of
+them. Past this many the rest go behind one control that says how many it
+holds -- the same bargain the page tabs make with their "+N" chip, and for
+the same reason: a row of nine identical glyphs is a row nobody reads.
+*/
+const (
+	minHeaderActions        = 3
+	maxHeaderActionsCap     = 8
+	defaultMaxHeaderActions = 4
+)
+
 const (
 	headerClockBesideName       = "beside-name"
 	headerClockOwnZone          = "own-zone"
@@ -3037,6 +3053,16 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	if s.MaxPageTabs > maxPageTabsCap {
 		s.MaxPageTabs = maxPageTabsCap
+	}
+	// Zero reads as "never set" here for the same reason it does above.
+	if s.MaxHeaderActions == 0 {
+		s.MaxHeaderActions = defaultMaxHeaderActions
+	}
+	if s.MaxHeaderActions < minHeaderActions {
+		s.MaxHeaderActions = minHeaderActions
+	}
+	if s.MaxHeaderActions > maxHeaderActionsCap {
+		s.MaxHeaderActions = maxHeaderActionsCap
 	}
 	if s.RowTagsMax < 1 {
 		s.RowTagsMax = 1
@@ -3480,6 +3506,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowPageInTitle:                false,
 			ShowPageNamesInTabs:            false,
 			MaxPageTabs:                    defaultMaxPageTabs,
+			MaxHeaderActions:               defaultMaxHeaderActions,
 			HeaderClockPlacement:           defaultHeaderClockPlacement,
 			PageSwitcherStyle:              defaultPageSwitcherStyle,
 			HeaderButtonStyle:              defaultHeaderButtonStyle,

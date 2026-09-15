@@ -484,6 +484,252 @@ class DashboardToolbar {
     }
 
 
+    /**
+     * Fold the actions the header cannot show into one control.
+     *
+     * The bar can hold nine buttons and most readers use three or four. Past
+     * the reader's own cap the rest go behind a control that says how many it
+     * holds -- the same bargain the page tabs make with their "+N" chip.
+     *
+     * Which buttons exist at all is still each `data-show-*` setting's answer:
+     * one that is switched off is not on the bar and not in the menu either.
+     * The folded ones stay in the DOM, hidden, because the menu opens them by
+     * clicking them -- one implementation of what each action does.
+     */
+    static HEADER_ACTION_MIN = 3;
+
+    headerActionCap() {
+        const d = this.dash;
+        const raw = Math.round(Number(d.settings?.maxHeaderActions));
+        const chosen = Number.isFinite(raw) && raw > 0 ? raw : 4;
+        const capped = Math.min(8, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
+        /*
+         * A narrow row folds one more away per rung of the header's own
+         * ladder: fitHeaderZones has already decided the row is too full, and
+         * an action behind the control is still one key away.
+         */
+        const step = Number(document.body.getAttribute('data-header-fit')) || 0;
+        return Math.max(DashboardToolbar.HEADER_ACTION_MIN, capped - Math.max(0, step - 1));
+    }
+
+    /**
+     * The action buttons a reader has left switched on, in the order drawn.
+     *
+     * Drawn, not written: the bar sets each button's place with `order` in
+     * CSS, so the first four on screen are not the first four in the markup.
+     * Folding by source order took the wrong four away.
+     */
+    headerActionButtons() {
+        const bar = document.querySelector('.header-shortcuts');
+        if (!bar) return [];
+        const place = (btn) => {
+            const value = Number(window.getComputedStyle(btn).order);
+            return Number.isFinite(value) ? value : 0;
+        };
+        return [...bar.querySelectorAll('button.search-button')]
+            .filter((btn) => !btn.classList.contains('header-action-overflow'))
+            .filter((btn) => {
+                if (btn.hidden) return false;
+                // Folded buttons are hidden by this very rule, so they are read
+                // as shown: what decides is the setting behind them.
+                if (btn.classList.contains('is-folded')) return true;
+                return window.getComputedStyle(btn).display !== 'none';
+            })
+            .sort((a, b) => place(a) - place(b));
+    }
+
+    syncHeaderActionOverflow() {
+        const bar = document.querySelector('.header-shortcuts');
+        if (!bar) return;
+        /*
+         * Unfold first, then look.
+         *
+         * A folded button is hidden by the fold's own rule, so asking whether
+         * it is drawn answers "no" for the button the reader switched off and
+         * "no" for the one this method put away -- and the one switched off
+         * then stayed in the menu. Cleared here, so what is read is each
+         * `data-show-*` setting's own answer.
+         */
+        bar.querySelectorAll('.is-folded').forEach((btn) => btn.classList.remove('is-folded'));
+        const buttons = this.headerActionButtons();
+        const cap = this.headerActionCap();
+
+        buttons.forEach((btn, index) => {
+            btn.classList.toggle('is-folded', index >= cap);
+        });
+
+        const folded = buttons.filter((btn) => btn.classList.contains('is-folded'));
+        let more = bar.querySelector('.header-action-overflow');
+
+        if (!folded.length) {
+            this.closeHeaderActionMenu();
+            more?.remove();
+            return;
+        }
+
+        if (!more) {
+            more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'search-button header-action-overflow';
+            more.setAttribute('aria-haspopup', 'menu');
+            more.setAttribute('aria-expanded', 'false');
+            more.innerHTML = ''
+                + '<svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none"'
+                + ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+                + ' aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>'
+                + '<span class="header-action-overflow-count"></span>';
+            more.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleHeaderActionMenu(more);
+            });
+            bar.appendChild(more);
+        }
+        // Last in the bar, whatever was appended to it since.
+        if (more.nextElementSibling) bar.appendChild(more);
+
+        const label = this.dash.formatDashboardLabel('headerActionsOverflow', { n: folded.length },
+            `${folded.length} more actions`);
+        more.querySelector('.header-action-overflow-count').textContent = `+${folded.length}`;
+        more.setAttribute('aria-label', label);
+        more.title = label;
+
+        if (this._headerActionMenu) this.renderHeaderActionMenu(more);
+    }
+
+    toggleHeaderActionMenu(anchorEl) {
+        if (this._headerActionMenu) {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        this.openHeaderActionMenu(anchorEl);
+    }
+
+    closeHeaderActionMenu({ focusAnchor = false } = {}) {
+        const menu = this._headerActionMenu;
+        if (!menu) return;
+        this._headerActionMenu = null;
+        menu.remove();
+        window.removeEventListener('keydown', this._headerActionKeys, true);
+        document.removeEventListener('pointerdown', this._headerActionOutside, true);
+        window.removeEventListener('resize', this._headerActionReflow);
+        this._headerActionKeys = null;
+        this._headerActionOutside = null;
+        this._headerActionReflow = null;
+        const anchor = this._headerActionAnchor;
+        this._headerActionAnchor = null;
+        anchor?.setAttribute('aria-expanded', 'false');
+        if (focusAnchor) anchor?.focus?.({ preventScroll: true });
+    }
+
+    openHeaderActionMenu(anchorEl) {
+        const menu = document.createElement('div');
+        menu.className = 'move-popover header-action-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', anchorEl.getAttribute('aria-label') || 'More actions');
+        document.body.appendChild(menu);
+        this._headerActionMenu = menu;
+        this._headerActionAnchor = anchorEl;
+        anchorEl.setAttribute('aria-expanded', 'true');
+        this.renderHeaderActionMenu(anchorEl);
+
+        this._headerActionReflow = () => this.dash.pageNav?.positionPopover?.(menu, anchorEl);
+        window.addEventListener('resize', this._headerActionReflow);
+
+        this._headerActionOutside = (e) => {
+            if (menu.contains(e.target) || anchorEl.contains(e.target)) return;
+            this.closeHeaderActionMenu();
+        };
+        document.addEventListener('pointerdown', this._headerActionOutside, true);
+
+        // On the window in capture, for the reason the page switcher's menu is:
+        // the grid's own navigation listens on document and was bound first.
+        this._headerActionKeys = (e) => this._handleHeaderActionKey(e, menu);
+        window.addEventListener('keydown', this._headerActionKeys, true);
+
+        requestAnimationFrame(() => {
+            if (this._headerActionMenu !== menu) return;
+            menu.querySelector('.header-action-item')?.focus({ preventScroll: true });
+        });
+    }
+
+    renderHeaderActionMenu(anchorEl) {
+        const menu = this._headerActionMenu;
+        if (!menu) return;
+        menu.innerHTML = '';
+        const folded = this.headerActionButtons().filter((btn) => btn.classList.contains('is-folded'));
+        if (!folded.length) {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        folded.forEach((btn) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'header-action-item';
+            row.setAttribute('role', 'menuitem');
+            const name = btn.querySelector('.search-button-label')?.textContent?.trim()
+                || btn.getAttribute('aria-label') || '';
+            const key = btn.querySelector('.search-button-icon')?.textContent?.trim() || '';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'header-action-item-name';
+            nameEl.textContent = name;
+            row.appendChild(nameEl);
+            if (key) {
+                const keyEl = document.createElement('span');
+                keyEl.className = 'header-action-item-key';
+                keyEl.textContent = key;
+                row.appendChild(keyEl);
+            }
+            row.addEventListener('click', () => {
+                this.closeHeaderActionMenu();
+                // The button is what knows what the action does; this is a way
+                // to press it rather than a second copy of it.
+                btn.click();
+            });
+            menu.appendChild(row);
+        });
+        this.dash.pageNav?.positionPopover?.(menu, anchorEl, { initial: true });
+    }
+
+    _handleHeaderActionKey(e, menu) {
+        if (!this._headerActionMenu) return;
+        const rows = [...menu.querySelectorAll('.header-action-item')];
+        const at = rows.indexOf(document.activeElement);
+        const mine = () => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        };
+
+        if (e.key === 'Escape') {
+            mine();
+            this.closeHeaderActionMenu({ focusAnchor: true });
+            return;
+        }
+        if (e.key === 'Tab') {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            mine();
+            if (!rows.length) return;
+            const step = e.key === 'ArrowDown' ? 1 : -1;
+            const next = at < 0
+                ? (step > 0 ? 0 : rows.length - 1)
+                : (at + step + rows.length) % rows.length;
+            rows[next].focus({ preventScroll: true });
+            return;
+        }
+        if ((e.key === 'Home' || e.key === 'End') && rows.length) {
+            mine();
+            rows[e.key === 'Home' ? 0 : rows.length - 1].focus({ preventScroll: true });
+            return;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && at >= 0) {
+            mine();
+            rows[at].click();
+        }
+    }
+
     syncTagCloudButtonPlacement() {
         const d = this.dash;
         const toggle = document.getElementById('tag-cloud-toggle-btn');
