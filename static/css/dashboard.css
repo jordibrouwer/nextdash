@@ -688,6 +688,10 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     display: none;
 }
 
+.dashboard-section.section-controls .header-actions {
+    justify-self: end;
+}
+
 .header-actions {
     --header-control-gap: var(--space-2, 0.5rem);
     display: flex;
@@ -6961,7 +6965,17 @@ body.no-animations .dashboard-widget-stat-key {
      * strip stays where the reader left it.
      */
     --header-identity-width: 28rem;
-    grid-template-columns: var(--header-identity-width) minmax(0, 1fr) auto;
+    /*
+     * Three columns, and the two outer ones are equal by construction: the
+     * strip in the middle therefore stands on the centre of the row whatever
+     * is beside it. A fixed left column held it still but not central -- the
+     * actions on the right are narrower than the identity on the left, so the
+     * free space between them was not centred on the page.
+     *
+     * The outer columns take 0 as their floor: neither may push the other off
+     * the row, and both cut their own content instead.
+     */
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
     gap: var(--space-4, 1rem);
     /* 10px rather than the draft's 9.6: at 0.6rem the row landed on a half
@@ -7036,7 +7050,10 @@ body.no-animations .dashboard-widget-stat-key {
     align-items: baseline;
     column-gap: var(--space-2, 0.6rem);
     row-gap: 2px;
-    width: 100%;
+    /* As wide as it needs up to its own ceiling, and never wider than the
+       column it stands in. */
+    width: min(var(--header-identity-width), 100%);
+    justify-self: start;
 }
 
 .dashboard-section.section-controls .header-identity .title-wrapper {
@@ -7089,15 +7106,16 @@ body.no-animations .dashboard-widget-stat-key {
  * shorter than "main" is longer than "health" -- so the pages moved 26px
  * sideways every time you switched view.
  */
-body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-top {
-    /* The same left zone, split in two: the name keeps its 9rem and the clock
-       takes the rest of it, so both placements hand the strip the same edge to
-       start from. */
-    grid-template-columns:
-        9rem
-        calc(var(--header-identity-width) - 9rem - var(--space-4, 1rem))
-        minmax(0, 1fr)
-        auto;
+/*
+ * The row keeps its three columns; the split happens inside the identity.
+ *
+ * As four columns on the row the clock widened the left of the header and the
+ * strip moved with it. The name and the clock share the identity's own grid
+ * now, so both placements hand the middle column the same edges.
+ */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    align-items: center;
 }
 
 /* Every zone may be cut; none may push its neighbour out of the row. */
@@ -7106,7 +7124,8 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-t
     min-width: 0;
 }
 
-body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity {
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .header-top-primary,
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date {
     display: contents;
 }
 

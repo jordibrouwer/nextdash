@@ -563,6 +563,22 @@ test('the strip stands in the same place whatever the name and the clock do', as
     await rename('x');
     expect(await at(), 'a short name pulled the strip back').toBe(beside);
 
+    /*
+     * And the place it stands still in is the middle of the row.
+     *
+     * Holding it still was the first half: with a fixed left zone the strip
+     * stopped moving, but the zone was wider than the actions on the other
+     * side, so what it stood still on was 77px right of centre. The two outer
+     * columns are equal now, which is what makes the middle one the middle.
+     */
+    const centred = await page.evaluate(() => {
+        const mid = (el) => { const r = el.getBoundingClientRect(); return r.x + r.width / 2; };
+        return Math.round(
+            mid(document.querySelector('.header-track')) - mid(document.querySelector('.header-top')),
+        );
+    });
+    expect(centred, `the strip sits ${centred}px off the centre of the row`).toBe(0);
+
     // What gives: the name is cut inside the zone it was given.
     const title = await page.evaluate(() => {
         const el = document.querySelector('.header-identity .title');
