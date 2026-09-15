@@ -3102,6 +3102,16 @@ class SearchComponent {
             this._openBookmarkTimer = null;
         }
 
+        // Waiting on the other end is the reader's business: the row it came
+        // from wears a spinner and the band grows a line until this tab is
+        // taken away. See markBookmarkOpening() in dashboard-visual.js.
+        if (!(window.hyprMode && window.hyprMode.isEnabled())) {
+            window.dashboardInstance?.visual?.markBookmarkOpening?.({
+                bookmark,
+                newTab: Boolean(newTab || this.settings.openInNewTab),
+            });
+        }
+
         // Small delay to ensure search is closed before opening bookmark
         this._openBookmarkTimer = setTimeout(() => {
             this._openBookmarkTimer = null;

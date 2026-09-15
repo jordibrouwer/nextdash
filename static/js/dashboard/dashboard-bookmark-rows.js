@@ -2196,6 +2196,7 @@ class DashboardBookmarkRows {
                     return;
                 }
                 recordOpen(row);
+                d.visual?.markBookmarkOpening?.({ row, newTab: true });
                 return;
             }
 
@@ -2226,6 +2227,14 @@ class DashboardBookmarkRows {
                 return;
             }
             recordOpen(row);
+            // Hypr mode hands the address to the window manager and this tab
+            // stays put, so there is nothing to wait for.
+            if (!(window.hyprMode && window.hyprMode.isEnabled())) {
+                d.visual?.markBookmarkOpening?.({
+                    row,
+                    newTab: hit.link.target === '_blank',
+                });
+            }
             if (grid.classList.contains('layout-launcher')) {
                 this.restartRowAnimation(row, 'bookmark-pulse');
             }

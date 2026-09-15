@@ -2017,6 +2017,8 @@
     "title": "Konfiguration",
     "health": "health",
     "dashboardLink": "Dashboard",
+    "bookmarkOpening": "wird geöffnet…",
+    "bookmarkOpenSlow": "warte weiterhin auf {name}",
     "backToDashboard": "← zurück zum Dashboard",
     "saveChanges": "Speichern",
     "saveShort": "Speichern",

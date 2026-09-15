@@ -2017,6 +2017,8 @@
     "title": "configuración",
     "health": "salud",
     "dashboardLink": "panel",
+    "bookmarkOpening": "abriendo…",
+    "bookmarkOpenSlow": "seguimos esperando a {name}",
     "backToDashboard": "← volver al panel",
     "saveChanges": "Guardar",
     "saveShort": "Guardar",

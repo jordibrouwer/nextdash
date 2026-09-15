@@ -2017,6 +2017,8 @@
     "title": "配置",
     "health": "健康",
     "dashboardLink": "仪表板",
+    "bookmarkOpening": "正在打开…",
+    "bookmarkOpenSlow": "仍在等待 {name}",
     "backToDashboard": "← 返回仪表板",
     "saveChanges": "保存",
     "saveShort": "保存",

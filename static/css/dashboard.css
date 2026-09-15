@@ -7888,3 +7888,58 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
         var(--header-plate-shadow),
         0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
 }
+
+
+/* ── The line under the band ─────────────────────────────────────────────────
+   The second half of "waiting on a bookmark": a 2px rule under the header,
+   drawn while an open is in flight. It is the convention every browser uses
+   for the same wait, so it needs no explaining -- and unlike the row's own
+   spinner it is visible from a scrolled page, from health, and from the inbox.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.bookmark-open-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.dashboard-section.section-controls {
+    position: relative;
+}
+
+.bookmark-open-progress-track {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--accent-primary),
+        transparent
+    );
+    animation: bookmark-open-progress-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes bookmark-open-progress-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(340%); }
+}
+
+/* Standing still rather than sweeping: a band across the left third still says
+   "in flight", and nothing on the page moves. */
+body.no-animations .bookmark-open-progress-track {
+    animation: none;
+    background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-open-progress-track {
+        animation: none;
+        background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    }
+}

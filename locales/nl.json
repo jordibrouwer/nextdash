@@ -2017,6 +2017,8 @@
     "title": "configuratie",
     "health": "health",
     "dashboardLink": "dashboard",
+    "bookmarkOpening": "openen…",
+    "bookmarkOpenSlow": "nog aan het wachten op {name}",
     "backToDashboard": "← terug naar dashboard",
     "saveChanges": "Opslaan",
     "saveShort": "Opslaan",

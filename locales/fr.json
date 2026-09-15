@@ -2017,6 +2017,8 @@
     "title": "configuration",
     "health": "health",
     "dashboardLink": "tableau de bord",
+    "bookmarkOpening": "ouverture…",
+    "bookmarkOpenSlow": "toujours en attente de {name}",
     "backToDashboard": "← retour au tableau de bord",
     "saveChanges": "Enregistrer",
     "saveShort": "Enregistrer",
