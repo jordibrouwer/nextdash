@@ -11703,7 +11703,7 @@ class DashboardConfig {
                         ] },
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
-                    { field: 'maxHeaderActions', type: 'number', min: 3, max: 8, step: 1, special: 'chrome',
+                    { field: 'maxHeaderActions', type: 'number', min: 2, max: 8, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),

@@ -496,7 +496,7 @@ class DashboardToolbar {
      * The folded ones stay in the DOM, hidden, because the menu opens them by
      * clicking them -- one implementation of what each action does.
      */
-    static HEADER_ACTION_MIN = 3;
+    static HEADER_ACTION_MIN = 2;
 
     headerActionCap() {
         const d = this.dash;

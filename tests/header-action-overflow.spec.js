@@ -82,6 +82,48 @@ test('past the cap the rest fold behind a control that counts them', async ({ pa
     expect(wide.chip, 'the control is still there with nothing behind it').toBeNull();
 });
 
+test('two is a cap the reader may choose', async ({ page }) => {
+    await openWithActions(page, { cap: 2 });
+
+    const seen = await bar(page);
+    // The floor is two, not three: a reader who wants the bar down to the one
+    // or two actions they press is asking for what this does, only more of it.
+    expect(seen.shown, `${seen.shown} actions on the bar`).toBe(2);
+    expect(seen.chip, 'nothing folded at a cap of two').toBe(`+${seen.folded.length}`);
+
+    // And below the floor it stops: one is not on offer.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.maxHeaderActions = 1;
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(300);
+    expect((await bar(page)).shown, 'the bar went below its floor').toBe(2);
+});
+
+/*
+ * Whatever folds, the two that make something stay.
+ *
+ * Add comes first because it is the one that makes something, then search --
+ * the order the bar has always drawn them in. The fold takes from the end, so
+ * a cap of two leaves exactly those two: what a reader loses to the menu is
+ * the tail of the row, never its head.
+ */
+test('add and search are the two that stay on the bar', async ({ page }) => {
+    for (const cap of [2, 3, 4]) {
+        await openWithActions(page, { cap });
+        const first = await page.evaluate(() => [...document.querySelectorAll('.header-shortcuts button.search-button')]
+            .filter((btn) => !btn.classList.contains('header-action-overflow'))
+            .filter((btn) => !btn.classList.contains('is-folded')
+                && window.getComputedStyle(btn).display !== 'none')
+            .sort((a, b) => a.getBoundingClientRect().x - b.getBoundingClientRect().x)
+            .slice(0, 2)
+            .map((btn) => btn.querySelector('.search-button-icon')?.textContent?.trim()));
+        expect(first, `at a cap of ${cap} the bar starts with ${first.join(' ')}`).toEqual(['+', '>']);
+    }
+});
+
 test('the menu presses the button it names', async ({ page }) => {
     await openWithActions(page, { cap: 3 });
 

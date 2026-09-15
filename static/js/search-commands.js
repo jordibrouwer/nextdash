@@ -2692,8 +2692,8 @@ class SearchCommandsComponent {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
         const typed = (args[0] || '').trim();
-        const current = Math.min(8, Math.max(3, Math.round(Number(dashboard.settings.maxHeaderActions) || 4)));
-        const values = [3, 4, 5, 6, 7, 8].filter((n) => !typed || String(n).startsWith(typed));
+        const current = Math.min(8, Math.max(2, Math.round(Number(dashboard.settings.maxHeaderActions) || 4)));
+        const values = [2, 3, 4, 5, 6, 7, 8].filter((n) => !typed || String(n).startsWith(typed));
         return values.map((n) => ({
             name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
             shortcut: ':MAXACTIONS',

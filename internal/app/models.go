@@ -2887,7 +2887,7 @@ holds -- the same bargain the page tabs make with their "+N" chip, and for
 the same reason: a row of nine identical glyphs is a row nobody reads.
 */
 const (
-	minHeaderActions        = 3
+	minHeaderActions        = 2
 	maxHeaderActionsCap     = 8
 	defaultMaxHeaderActions = 4
 )
