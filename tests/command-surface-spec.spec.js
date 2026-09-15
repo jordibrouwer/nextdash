@@ -86,15 +86,16 @@ test.describe('the command surface', () => {
         expect(selected.boxShadow, `no inward bloom: ${selected.boxShadow}`).toContain('inset');
     });
 
-    test('the switch stands centred on a plate of its own', async ({ page }) => {
+    test('the scopes stand in a rail beside the list, and the one in force carries a bar', async ({ page }) => {
         await openCommands(page);
 
-        const plate = await style(page, '.search-mode-tabs-row', ['justifyContent', 'borderTopWidth']);
-        expect(plate, 'the switch has no plate').not.toBeNull();
-        expect(plate.justifyContent).toBe('center');
-        expect(parseFloat(plate.borderTopWidth), 'no rule above the switch').toBeGreaterThan(0);
+        const rail = await style(page, '.search-scope-rail', ['borderRightWidth', 'flexDirection']);
+        expect(rail, 'the panel has no rail').not.toBeNull();
+        // A column of kinds, ruled off from the results it governs.
+        expect(rail.flexDirection).toBe('column');
+        expect(parseFloat(rail.borderRightWidth), 'nothing separates the rail from the list').toBeGreaterThan(0);
 
-        const active = await style(page, '.search-mode-tab.active', ['boxShadow']);
-        expect(active.boxShadow, `the lit position does not glow: ${active.boxShadow}`).toContain('inset');
+        const active = await style(page, '.search-scope.active', ['boxShadow']);
+        expect(active.boxShadow, `the scope in force is not marked: ${active.boxShadow}`).toContain('inset');
     });
 });

@@ -54,6 +54,20 @@ async function openRecent(page) {
     await dismissBlockingOverlays(page);
     await seedRecent(page, 6);
 
+    /*
+     * This panel belongs to the recents button, and the button is off by
+     * default since the header was rebuilt -- with it off, `*` opens the
+     * search panel in its recents mode instead. Switch the button on, which is
+     * what anyone still using this panel has done.
+     */
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.showRecentButton = true;
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(200);
+
     // Through the key someone presses, not through the renderer.
     await page.keyboard.press('Shift+Digit8');
     await page.waitForSelector('.recent-bookmarks-modal-item', { timeout: 20_000 });
@@ -84,6 +98,10 @@ test.describe('the recent bookmarks panel', () => {
 
     test('the rows share one slab rather than each bringing a box', async ({ page }) => {
         await openRecent(page);
+        // The slab is a depth cue, and the default depth is flat, which draws
+        // none -- so this is asked of a step that draws depth at all.
+        await page.evaluate(() => document.body.setAttribute('data-depth', 'rich'));
+        await page.waitForTimeout(150);
 
         const same = await page.evaluate(() => {
             const bg = (el) => window.getComputedStyle(el).backgroundColor;

@@ -47,7 +47,8 @@ class SearchCommandsComponent {
                     'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
                     'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
-                    'buttons', 'shortcuts', 'locklayout',
+                    'buttons', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs',
+                    'shortcuts', 'locklayout',
                 ],
             },
             {
@@ -90,6 +91,11 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
+            'header': this.handleHeaderCommand.bind(this),
+            'glow': this.handleGlowCommand.bind(this),
+            'buttonstyle': this.handleButtonStyleCommand.bind(this),
+            'switcher': this.handlePageSwitcherCommand.bind(this),
+            'maxtabs': this.handleMaxTabsCommand.bind(this),
             'favicons': this.handleFaviconCommand.bind(this),
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
@@ -184,6 +190,19 @@ class SearchCommandsComponent {
         this.resetTransientState();
         this.expandedGroups.clear();
         this.contextBookmark = null;
+    }
+
+    /**
+     * Open every group.
+     *
+     * A bare `:` used to answer with five closed headings: two keystrokes
+     * before a single command was on screen, in a panel whose whole point is
+     * that one keystroke is enough. The headings stay -- they are what says
+     * which kind of thing each command touches -- but they start open, and
+     * collapsing one is still the reader's.
+     */
+    expandAllGroups() {
+        this.commandGroups.forEach((group) => this.expandedGroups.add(group.id));
     }
 
     resetTransientState() {
@@ -643,6 +662,45 @@ class SearchCommandsComponent {
         }
 
         return [];
+    }
+
+    /**
+     * Commands whose name answers a plain word, for the one list.
+     *
+     * The panel used to ask this question only after a `:` had been typed, so
+     * a reader who did not already know that "inbox" is also a command never
+     * met it. Names are matched from the front first and then anywhere, which
+     * is the order a reader expects: `:page` before `:homepage`.
+     *
+     * @param {string} query what was typed, without any prefix
+     * @param {number} limit how many rows to hand back
+     */
+    matchCommandNames(query, limit = 5) {
+        const needle = String(query || '').trim().toLowerCase();
+        if (!needle) return [];
+        const names = Object.keys(this.availableCommands);
+        const starts = names.filter((name) => name.startsWith(needle));
+        const inside = names.filter((name) => !name.startsWith(needle) && name.includes(needle));
+        const groupOf = (name) => this.commandGroups.find((g) => g.commands.includes(name));
+        return [...starts, ...inside].slice(0, limit).map((name) => {
+            const group = groupOf(name);
+            return {
+                name: '',
+                shortcut: `:${name.toUpperCase()}`,
+                completion: `:${name.toUpperCase()} `,
+                meta: group ? this._t(group.labelKey, group.label) : null,
+                type: 'command-completion',
+                scope: 'commands',
+            };
+        });
+    }
+
+    /** How many commands a plain word would answer with, uncapped. */
+    countCommandNames(query) {
+        const needle = String(query || '').trim().toLowerCase();
+        if (!needle) return 0;
+        return Object.keys(this.availableCommands)
+            .filter((name) => name.includes(needle)).length;
     }
 
     toggleGroup(groupId) {
@@ -2491,11 +2549,16 @@ class SearchCommandsComponent {
             cheatsheet: 'showCheatSheetButton',
             search: 'showSearchButton',
             tagcloud: 'showTagCloudButton',
+            pages: 'showPagesButton',
+            foldall: 'showCollapseAllButton',
         };
 
         const buttonAliases = {
             'tag-cloud': 'tagcloud',
             tags: 'tagcloud',
+            'fold-all': 'foldall',
+            fold: 'foldall',
+            page: 'pages',
         };
 
         const buttonName = buttonAliases[(args[0] || '').toLowerCase()] || (args[0] || '').toLowerCase();
@@ -2511,6 +2574,134 @@ class SearchCommandsComponent {
         const explicitState = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
 
         return matchingButtons.map((name) => this._buildButtonRow(name, buttons[name], dashboard, explicitState));
+    }
+
+
+    /*
+     * Appearance → Header and buttons, from the palette.
+     *
+     * The panel's own controls are a select and seven toggles; these are the
+     * same seven, named by what they show rather than by their setting key.
+     * The three selects beside them have commands of their own -- :buttonstyle,
+     * :switcher and :maxtabs -- because a value is not an on and an off.
+     */
+    handleHeaderCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const toggles = {
+            tabs: 'showPageTabs',
+            names: 'showPageNamesInTabs',
+            title: 'showTitle',
+            dashboard: 'showDashboardButton',
+            inbox: 'showInboxButton',
+            health: 'showHealthDashboard',
+            config: 'showConfigButton',
+        };
+        const aliases = { pagetabs: 'tabs', pagenames: 'names', home: 'dashboard' };
+
+        const typed = aliases[(args[0] || '').toLowerCase()] || (args[0] || '').toLowerCase();
+        const stateArg = (args[1] || '').toLowerCase();
+        const names = Object.keys(toggles).filter((name) => !typed || name.startsWith(typed));
+        if (!names.length) return [];
+
+        const explicit = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
+        return names.map((name) => {
+            const key = toggles[name];
+            const enabled = dashboard.settings[key] !== false;
+            return {
+                name: `${name} (${this._stateOnOff(enabled)})`,
+                shortcut: ':HEADER',
+                stateId: `header:${name}`,
+                type: 'command',
+                current: enabled,
+                action: () => this.setButtonVisibility(
+                    dashboard, key, explicit !== null ? explicit : !enabled, `header-${name}`),
+            };
+        });
+    }
+
+    /** How much of the theme's own colour carries around a surface. */
+    handleGlowCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'glow',
+            shortcut: ':GLOW',
+            options: [
+                { value: 'off', label: t('config.glowStrengthOff', 'Off') },
+                { value: 'soft', label: t('config.glowStrengthSoft', 'Soft') },
+                { value: 'full', label: t('config.glowStrengthFull', 'Full') },
+            ],
+            current: (d) => d.settings.glowStrength || 'off',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'glowStrength', value,
+                (v) => window.ThemeLoader?.applyGlowStrength?.(v), `glow:${value}`),
+        }, args);
+    }
+
+    /** Plain glyphs with a rule under the current one, or a plate around each. */
+    handleButtonStyleCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'buttonstyle',
+            shortcut: ':BUTTONSTYLE',
+            options: [
+                { value: 'plain', label: t('config.headerButtonsPlain', 'Plain, underlined when current') },
+                { value: 'plated', label: t('config.headerButtonsPlated', 'Each in its own box') },
+            ],
+            current: (d) => (d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'),
+            apply: (value) => this._applyChromeSetting('headerButtonStyle', value, `buttonstyle:${value}`),
+        }, args);
+    }
+
+    /** How the pages are drawn in the middle of the header. */
+    handlePageSwitcherCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'switcher',
+            shortcut: ':SWITCHER',
+            options: [
+                { value: 'segmented', label: t('config.pageSwitcherSegmented', 'One segmented control') },
+                { value: 'text', label: t('config.pageSwitcherText', 'Plain text, underlined') },
+                { value: 'compact', label: t('config.pageSwitcherCompact', 'One button with a list') },
+            ],
+            current: (d) => d.settings.pageSwitcherStyle || 'segmented',
+            apply: (value) => this._applyChromeSetting('pageSwitcherStyle', value, `switcher:${value}`),
+        }, args);
+    }
+
+    /** How many page tabs the header draws before the rest fold onto the chip. */
+    handleMaxTabsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const current = Math.min(9, Math.max(3, Math.round(Number(dashboard.settings.maxPageTabs) || 4)));
+        const values = [3, 4, 5, 6, 7, 8, 9].filter((n) => !typed || String(n).startsWith(typed));
+        return values.map((n) => ({
+            name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
+            shortcut: ':MAXTABS',
+            stateId: `maxtabs:${n}`,
+            type: 'command',
+            current: n === current,
+            action: () => this._applyChromeSetting('maxPageTabs', n, `maxtabs:${n}`),
+        }));
+    }
+
+    /**
+     * Write a setting the header reads off <body>, and redraw the chrome.
+     *
+     * setupDOM writes the attributes and renderPageNavigation rebuilds the
+     * tabs; config's own controls go through the same two, so the palette and
+     * the panel cannot drift apart.
+     */
+    _applyChromeSetting(key, value, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[key] = value;
+        dashboard.setupDOM?.();
+        dashboard.renderPageNavigation?.();
+        dashboard.pageNav?.setActivePageNavButton?.(dashboard.currentPageId);
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
     }
 
 

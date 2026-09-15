@@ -3,19 +3,31 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The action bar is a surface, not a loose row of buttons.
+ * The plate belongs to the buttons, and goes when they do.
  *
- * It is the one free-floating control surface in the product -- always there,
- * over whatever is on the page -- and the redesign gives it a plate of its
- * own: airier than any other surface, lifted by a deep shadow rather than by
- * a glow. That is what makes it read as chrome instead of as content.
+ * .button-container was the free-floating control surface at the bottom of the
+ * screen, and every depth step that draws depth gave it a plate: airy fill,
+ * blur, deep shadow. The actions then moved into the header, and what was left
+ * in the container was the flow hint, which is positioned against it rather
+ * than laid out in it -- so the plate shrank to its own padding and drew a
+ * 24px bubble at the bottom of the page, over the grid, with nothing in it.
  *
- * theme-character.css already lists .button-container among the surfaces that
- * take a backdrop blur on the glass depth step. It never did: search.css
- * loads later and sets `background: transparent` with `backdrop-filter: none`,
- * so the rule was dead. This is that rule made true, on every depth step that
- * draws depth at all.
+ * The plate is drawn only while there are buttons to put on it. The container
+ * stays, because the hint is anchored to it, and takes no clicks.
  */
+
+/** Put a button back in the bar: the plate exists for buttons. */
+async function fillBar(page) {
+    await page.evaluate(() => {
+        const bar = document.querySelector('.button-container');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'search-button';
+        button.textContent = 'x';
+        bar.appendChild(button);
+    });
+    await page.waitForTimeout(100);
+}
 
 async function openDashboard(page, depth) {
     await page.setViewportSize({ width: 1400, height: 900 });
@@ -47,6 +59,7 @@ const paints = (colour) => colour !== ''
 test.describe('the action bar plate', () => {
     test('carries a plate on a depth step that draws depth', async ({ page }) => {
         await openDashboard(page, 'rich');
+        await fillBar(page);
         const bar = await barStyle(page);
 
         expect(paints(bar.background), `the bar has no plate: ${bar.background}`).toBe(true);
@@ -64,6 +77,7 @@ test.describe('the action bar plate', () => {
 
     test('the plate is airier than a block, and lifted rather than lit', async ({ page }) => {
         await openDashboard(page, 'glass');
+        await fillBar(page);
 
         const compared = await page.evaluate(() => {
             const alpha = (colour) => {
@@ -85,5 +99,38 @@ test.describe('the action bar plate', () => {
 
         expect(compared.barAlpha, 'the bar is no airier than a block')
             .toBeLessThan(compared.slab);
+    });
+
+    /*
+     * The shipped layout: every action lives in the header, so the bar holds
+     * only the hint and must not paint anything at all.
+     */
+    test('an empty bar is nothing on the page', async ({ page }) => {
+        await openDashboard(page, 'rich');
+
+        const bar = await page.evaluate(() => {
+            const el = document.querySelector('.button-container');
+            const style = window.getComputedStyle(el);
+            const r = el.getBoundingClientRect();
+            return {
+                background: style.backgroundColor,
+                padding: style.paddingTop,
+                shadow: style.boxShadow,
+                pointer: style.pointerEvents,
+                buttons: el.querySelectorAll('button, a').length,
+                // The point the bubble was drawn at.
+                hits: document.elementFromPoint(
+                    Math.round(r.x + r.width / 2),
+                    Math.round(r.y + r.height / 2),
+                )?.className?.toString?.() || '',
+            };
+        });
+
+        expect(bar.buttons, 'the bar holds buttons after all').toBe(0);
+        expect(paints(bar.background), `the empty bar drew a plate: ${bar.background}`).toBe(false);
+        expect(parseFloat(bar.padding), 'the empty bar keeps the plate’s padding').toBe(0);
+        expect(bar.shadow, 'the empty bar is lifted off the page').toBe('none');
+        expect(bar.pointer, 'the empty bar still takes clicks').toBe('none');
+        expect(bar.hits, 'the empty bar is over the grid').not.toContain('button-container');
     });
 });

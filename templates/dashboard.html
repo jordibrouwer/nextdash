@@ -200,12 +200,12 @@
                     the hint is the first thing in the header that says so.
                 -->
                 <div class="header-track skeleton-hide-while-loading">
-                    <span class="page-walk-hint" aria-hidden="true">&#8679;&#8592;</span>
+                    <button type="button" class="page-walk-hint" data-page-walk="prev" data-i18n-aria="dashboard.pageWalkPrev" aria-label="Previous page">&#8679;&#8592;</button>
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
-                    <span class="page-walk-hint" aria-hidden="true">&#8679;&#8594;</span>
+                    <button type="button" class="page-walk-hint" data-page-walk="next" data-i18n-aria="dashboard.pageWalkNext" aria-label="Next page">&#8679;&#8594;</button>
                 </div>
                 <div class="header-actions skeleton-hide-while-loading">
                     <!--
@@ -375,26 +375,57 @@
                         data-i18n-aria="dashboard.searchClearAria" aria-label="Clear search">&times;</button>
             </div>
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
-            <div id="search-matches" class="search-matches"></div>
+            <div class="search-body">
+                <!--
+                    The rail says what there is to find before anything is
+                    chosen: one row per kind, with the key that scopes to it and
+                    how many of that kind the current query answers. The pills
+                    that used to do this sat under the list, at the far end of
+                    the panel from the line that sets the mode.
+                -->
+                <nav id="search-scope-rail" class="search-scope-rail"
+                     data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
+                    <button class="search-mode-tab search-scope" data-mode="search" type="button" aria-pressed="true">
+                        <span class="search-mode-tab-key">&gt;</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.scopeAll">everything</span>
+                        <span class="search-scope-count" data-scope-count="all"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="command" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">:</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
+                        <span class="search-scope-count" data-scope-count="commands"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="finder" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">?</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
+                        <span class="search-scope-count" data-scope-count="finders"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="tag" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">/</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.tagsLabel">tags</span>
+                        <span class="search-scope-count" data-scope-count="tags"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="recent" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">*</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
+                        <span class="search-scope-count" data-scope-count="recent"></span>
+                    </button>
+                    <span class="search-scope-rule" aria-hidden="true"></span>
+                    <!--
+                        The cheat sheet is documentation rather than a list of
+                        results, so this one is a door: it opens the sheet and
+                        leaves the panel in the scope it was in.
+                    -->
+                    <button class="search-mode-tab search-scope search-mode-tab--door" data-mode="keys" type="button">
+                        <span class="search-mode-tab-key">!</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.headerCheatLabel">keys</span>
+                        <span class="search-scope-count"></span>
+                    </button>
+                    <span class="search-scope-hint" data-i18n="dashboard.scopeRailHint">tab switches</span>
+                </nav>
+                <div id="search-matches" class="search-matches"></div>
+            </div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-            <!-- The track sits on a plate of its own so the rule above it runs
-                 the full width of the sheet; see search.css. -->
-            <div class="search-mode-tabs-row">
-            <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
-                <button class="search-mode-tab" data-mode="search" type="button" aria-pressed="true">
-                    <span class="search-mode-tab-key">&gt;</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.searchLabel">search</span>
-                </button>
-                <button class="search-mode-tab" data-mode="command" type="button" aria-pressed="false">
-                    <span class="search-mode-tab-key">:</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
-                </button>
-                <button class="search-mode-tab" data-mode="finder" type="button" aria-pressed="false">
-                    <span class="search-mode-tab-key">?</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
-                </button>
-            </div>
-            </div>
         </div>
     </div>
 

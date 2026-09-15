@@ -129,9 +129,11 @@ test.describe('the header actions, and what the keys do inside a view', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
 
         // A digit switches pages, which also returns to the bookmarks grid --
-        // the toolbar should be back too.
+        // the actions should be back too. They live in the header band now;
+        // .button-container is the empty anchor the flow hint hangs from and
+        // has no box of its own to be visible by.
         await page.keyboard.press('1');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
-        await expect(page.locator('.button-container')).toBeVisible();
+        await expect(page.locator('.header-shortcuts')).toBeVisible();
     });
 });
