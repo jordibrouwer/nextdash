@@ -1197,8 +1197,65 @@ class KeyboardNavigation {
         this.syncGridActiveDescendant();
     }
 
+    /**
+     * Letters the grid keeps for itself.
+     *
+     * j/k are the cursor, x ticks a row, g arms the jump chord. A bookmark
+     * whose shortcut is one of these is still reachable the way it always was
+     * -- open search and type it -- but on the grid the key does its own job,
+     * because a reader who is walking rows with j cannot have j mean "open the
+     * bookmark called jellyfin" halfway down the page.
+     */
+    static GRID_RESERVED_LETTERS = new Set(['j', 'k', 'x', 'g']);
+
+    /**
+     * A bookmark's own key, pressed while the cursor is on the grid.
+     *
+     * Shortcuts have always been search's: you open the panel, type the letter
+     * and it opens. On the grid the same letter opened the panel with the
+     * letter typed into it instead -- one more key and a panel in the way, for
+     * a bookmark the reader had already named. With the cursor on a row the
+     * letter opens the bookmark; with no cursor it still starts a search, which
+     * is what Escape leaves you with.
+     *
+     * @returns {boolean} whether the key was spent on a bookmark
+     */
+    _openShortcutFromGrid(key) {
+        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
+            return false;
+        }
+        const letter = key.toLowerCase();
+        if (KeyboardNavigation.GRID_RESERVED_LETTERS.has(letter)) {
+            return false;
+        }
+        const search = this.dashboard?.searchComponent;
+        const bookmark = search?.shortcuts?.get?.(letter);
+        if (!bookmark || !bookmark.url) {
+            return false;
+        }
+        // Through search's own opener: it records the open, honours Hypr mode
+        // and closes anything search has on screen, which is what a shortcut
+        // typed into the panel does.
+        search.openBookmark(bookmark);
+        return true;
+    }
+
+
     handleKeyPress(e) {
         const key = e.key;
+
+        // A bookmark's own key wins while the cursor is on the grid -- except
+        // the handful of letters the grid itself uses, which are checked inside.
+        if (
+            this._gridNavActive()
+            && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+            && !this._gPressed
+            && this._openShortcutFromGrid(key)
+        ) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
 
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {
