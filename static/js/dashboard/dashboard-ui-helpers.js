@@ -397,6 +397,13 @@ class DashboardUiHelpers {
      */
     static PAGE_FILTER_FROM = 8;
 
+    /**
+     * Past this many pages the sheet spans the page's column and lays the rows
+     * out in a grid. Three: that is one full row of the widest layout, so the
+     * fourth page is the first that would leave a hole in it.
+     */
+    static PAGE_SHEET_GRID_FROM = 3;
+
 
     _buildPageOverviewHtml(pages, allBookmarks) {
         const d = this.dash;
@@ -712,6 +719,24 @@ class DashboardUiHelpers {
         const newPageIndex = create ? pages.length : -1;
         const ringSize = create ? pages.length + 1 : pages.length;
 
+        /*
+         * How many pages stand on a line, counted off the layout.
+         *
+         * The sheet lays the rows out across the page's column now, so ↓ from
+         * the first row must land on the row under it rather than on its
+         * neighbour -- which is what a step of one gives you in a grid, and is
+         * why vertical navigation stopped working. Counted rather than
+         * configured: the number falls out of the sheet's width, and the
+         * filter can take rows out of the line at any moment.
+         */
+        const columnsAcross = () => {
+            const drawn = items().filter((el) => !el.hidden && el.offsetParent !== null);
+            if (drawn.length < 2) return 1;
+            const top = Math.round(drawn[0].getBoundingClientRect().top);
+            const across = drawn.filter((el) => Math.abs(Math.round(el.getBoundingClientRect().top) - top) <= 2).length;
+            return Math.max(1, across);
+        };
+
         const setFocus = (idx) => {
             if (pages.length === 0) {
                 return;
@@ -845,8 +870,14 @@ class DashboardUiHelpers {
             }
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setFocus(focusedIndex + 1);
+                setFocus(focusedIndex + columnsAcross());
             } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setFocus(focusedIndex - columnsAcross());
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setFocus(focusedIndex + 1);
+            } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
                 setFocus(focusedIndex - 1);
             } else if (e.key === 'Enter' || e.key === ' ') {
@@ -894,12 +925,46 @@ class DashboardUiHelpers {
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
+        /*
+         * The panel hangs from the header rather than floating over the page.
+         *
+         * It is opened from the strip and it answers a question the strip
+         * asks, so it drops out of the band the strip stands in: the band's
+         * bottom edge and the panel's top edge are one line, and the panel is
+         * centred on the strip. The top is measured here because the band's
+         * height is the reader's -- the clock placement and the font size both
+         * move it -- and published as a property CSS can read.
+         */
+        const band = document.querySelector('.dashboard-section.section-controls');
+        const row = document.querySelector('.header-top');
+        if (band && row) {
+            const bandBox = band.getBoundingClientRect();
+            const rowBox = row.getBoundingClientRect();
+            const style = document.body.style;
+            style.setProperty('--pages-sheet-top', `${Math.round(bandBox.bottom)}px`);
+            // The page's own column, read off the header row rather than from a
+            // token: the row already follows the container at every width, and
+            // the sheet is supposed to line up with it, not with a number.
+            style.setProperty('--pages-sheet-width', `${Math.round(rowBox.width)}px`);
+            style.setProperty('--pages-sheet-mid', `${Math.round(rowBox.x + rowBox.width / 2)}px`);
+        }
+
+        /*
+         * Wide enough for a grid, or as wide as what it holds.
+         *
+         * Past a handful of pages the rows lay out in columns across the
+         * page's own width -- one column of nine rows is a list you scroll to
+         * read. Under that the panel is the width of its contents, because a
+         * 1300px band holding two names is a table with nothing in it.
+         */
+        const grid = pages.length > DashboardUiHelpers.PAGE_SHEET_GRID_FROM;
+
         window.AppModal.show({
             title,
             htmlMessage: this._buildPageOverviewHtml(pages, allBookmarks),
             confirmText,
             showCancel: false,
-            modalClass: 'page-overview-modal',
+            modalClass: `page-overview-modal page-overview-sheet${grid ? ' is-grid' : ' is-compact'}`,
             /*
              * The page you are on takes the focus, not the way out.
              *
@@ -919,10 +984,12 @@ class DashboardUiHelpers {
             initialFocusSelector: pages.length > DashboardUiHelpers.PAGE_FILTER_FROM
                 ? '#page-overview-filter'
                 : '.page-overview-modal-item.is-current .page-overview-modal-link',
-            // 26rem, not 22: the rows are 44px tall now, and a name plus its
-            // count plus the delete control at the end needs the width.
-            modalMaxWidth: '26rem',
-            modalWidth: 'min(26rem, calc(100vw - 2.5rem))',
+            /*
+             * The width is the sheet's own business (see page-overview-sheet
+             * in modal.css): the grid takes the page's column, the compact
+             * states take what they hold. Passing a width here would write an
+             * inline style that outranks both.
+             */
             onHide: () => {
                 this._cleanupPageOverviewKeyHandler();
                 const restoreTarget = document.getElementById('page-overview-header-btn');

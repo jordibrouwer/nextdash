@@ -5382,7 +5382,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     -webkit-backdrop-filter: blur(3px);
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal {
+/* Not the sheet: it sizes itself against the header row it hangs from, and a
+   selector this specific would out-shout it. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     width: min(22rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;

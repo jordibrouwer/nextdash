@@ -2135,3 +2135,168 @@ body:not([data-depth="flat"]) .wn-earlier {
     border-radius: 2px;
     background: color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
+
+/* ── The pages sheet ──────────────────────────────────────────────────────────
+   The panel is opened from the page strip and answers the question the strip
+   asks, so it drops out of the band the strip stands in rather than floating
+   in the middle of the screen: the band's bottom edge and the sheet's top edge
+   are one line, the sheet is centred on the strip, and only its bottom corners
+   are round. Past a handful of pages it spans the page's own column and lays
+   the rows out in a grid; under that it is as wide as what it holds.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.modal-overlay:has(.page-overview-sheet) {
+    /* The sheet places itself against the band; the overlay stops centring it. */
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.modal.page-overview-sheet {
+    position: fixed;
+    top: var(--pages-sheet-top, 96px);
+    /* On the strip's own centre line, which is the header row's: published by
+       showPageOverlay so the sheet follows the row at every width. */
+    left: var(--pages-sheet-mid, 50%);
+    transform: translateX(-50%) translateY(-6px);
+    margin: 0;
+    /* Square where it meets the band, round where it leaves the page. */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 0;
+    max-height: min(70vh, calc(100vh - var(--pages-sheet-top, 96px) - 2rem));
+    padding: var(--space-3, 0.8rem) var(--space-4, 1.15rem) var(--space-3, 0.8rem);
+}
+
+/*
+ * The sheet drops out of the band, and keeps its own centring while it does.
+ *
+ * The shared open animation animates `transform` from the control that was
+ * pressed, which overwrites the translate that puts this panel on the strip's
+ * centre line -- the sheet landed half its own width to the right. It gets an
+ * animation of its own instead: the same short fall, with the centring carried
+ * through every frame.
+ */
+.modal-overlay.show .modal.page-overview-sheet,
+.modal-overlay.show .modal.page-overview-sheet.from-origin {
+    animation: pages-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform: translateX(-50%) translateY(0);
+}
+
+@keyframes pages-sheet-drop {
+    from {
+        transform: translateX(-50%) translateY(-8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+body.no-animations .modal-overlay.show .modal.page-overview-sheet,
+body.no-animations .modal-overlay.show .modal.page-overview-sheet.from-origin {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay.show .modal.page-overview-sheet,
+    .modal-overlay.show .modal.page-overview-sheet.from-origin {
+        animation: none;
+    }
+}
+
+/* Wide: the page's own column, the same width the grid below it has. */
+.modal.page-overview-sheet.is-grid {
+    width: min(var(--pages-sheet-width, 60rem), calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+}
+
+/* Narrow: as wide as the rows it holds, with a floor so two short names do not
+   draw a sheet the size of a tooltip. */
+.modal.page-overview-sheet.is-compact {
+    width: max-content;
+    min-width: min(26rem, calc(100vw - 2.5rem));
+    max-width: min(52rem, calc(100vw - 2.5rem));
+}
+
+/*
+ * The rows lay out across the sheet.
+ *
+ * One column of nine rows is a list you scroll to read; three columns of three
+ * is a list you take in at once. The cells keep the row's own height, so what
+ * changes is how they are arranged, not what a row is.
+ */
+/*
+ * Three columns at most, fewer when the sheet is narrow.
+ *
+ * A minimum in rem lets a wide sheet fit four or five, and five names side by
+ * side is a table again. The floor is a share of the sheet instead, so the
+ * count falls out of the width: three across the page's column, two on a
+ * half-width window, one on a phone.
+ */
+.modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
+    gap: 0;
+    /*
+     * The rows scroll, and they are the only thing that does.
+     *
+     * In one column the <ul> was the scroller; here the list is the grid's
+     * cells (display: contents) and has no box to scroll, so the slab holding
+     * them takes the job -- otherwise the whole sheet grew a scrollbar and
+     * took the filter and the foot out of view with it.
+     */
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* The list is the grid's cells rather than a box inside one cell. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-list {
+    display: contents;
+}
+
+/* The way to make a page is the last cell, not a row under the grid. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-actions {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 1100px) {
+    .modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* The hairlines follow the grid: every cell carries the line under it, and the
+   ones that are not in the first column carry the line beside it. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-item {
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.page-overview-sheet.is-compact .page-overview-modal-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.modal.page-overview-sheet.is-compact .page-overview-modal-item {
+    flex: 1 1 14rem;
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/* The way to make a page is the last cell of the grid rather than a row under
+   it: same height, same hairlines, a + where a page carries its number. */
+.modal.page-overview-sheet .page-overview-modal-actions:not(.is-alone) {
+    border-top: 0;
+}
+
+.modal.page-overview-sheet .page-overview-modal-foot {
+    padding-left: 0;
+    padding-right: 0;
+}

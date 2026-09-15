@@ -73,11 +73,12 @@ test('a page is a row in one slab, not a card of its own', async ({ page }) => {
     expect(row.borderWidth, 'the row draws its own box').toBe(0);
     expect(row.background, 'a resting row paints its own ground')
         .toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
-    // 44px: one vertical run of pointer targets, which is what the panel is
-    // for. Measured with a tolerance because the row is min-height plus its
-    // own padding, and a theme's radius scale moves the last pixel.
+    // 52px: one run of pointer targets, which is what the panel is for, at the
+    // height the sheet's grid draws them. Measured with a tolerance because the
+    // row is min-height plus its own padding, and a theme's radius scale moves
+    // the last pixel.
     expect(row.height, `a row is ${row.height}px tall`).toBeGreaterThanOrEqual(42);
-    expect(row.height, `a row is ${row.height}px tall`).toBeLessThan(52);
+    expect(row.height, `a row is ${row.height}px tall`).toBeLessThanOrEqual(54);
     /*
      * The slab under the rows is a depth cue, and flat is the depth that draws
      * none -- which is what an install now starts on. On any other depth the
@@ -418,7 +419,9 @@ test('a long list scrolls the rows, not the panel', async ({ page }) => {
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const d = window.dashboardInstance;
         const pages = [...d.pages];
-        for (let i = pages.length; i < 14; i += 1) pages.push({ id: 6300 + i, name: `page-${i}` });
+        // Enough to overflow a grid, not just a column: the sheet lays the rows
+        // out across the page's width now, so fourteen of them fit.
+        for (let i = pages.length; i < 46; i += 1) pages.push({ id: 6300 + i, name: `page-${i}` });
         const saved = await api('/api/pages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -434,10 +437,16 @@ test('a long list scrolls the rows, not the panel', async ({ page }) => {
     const seen = await page.evaluate(() => {
         const scrolls = (el) => el.scrollHeight - el.clientHeight > 2;
         const body = document.querySelector('.modal.page-overview-modal .modal-body');
+        /*
+         * Whichever box holds the rows: in the sheet's grid the list is the
+         * cells themselves (display: contents) and the slab around them is the
+         * scroller; in one column the list still is.
+         */
         const list = document.querySelector('.page-overview-modal-list');
+        const slab = document.querySelector('.page-overview-modal-slab');
         return {
             bodyScrolls: scrolls(body),
-            listScrolls: scrolls(list),
+            listScrolls: scrolls(list) || scrolls(slab),
             footVisible: document.querySelector('.page-overview-modal-foot')
                 .getBoundingClientRect().height > 0,
         };
