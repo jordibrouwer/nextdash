@@ -8053,7 +8053,13 @@ body[data-header-fit="3"] .dashboard-section.section-controls .header-top {
     pointer-events: auto;
 }
 
-body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:not(.is-eligible) {
+/*
+ * In a view the cloud has nothing to filter, and the button keeps its place
+ * rather than letting the row shift under the reader -- which is what the
+ * `!important` is for. Not when the fold has put it away: then it has no place
+ * on the row to keep.
+ */
+body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:not(.is-eligible):not(.is-folded) {
     display: inline-flex !important;
 }
 

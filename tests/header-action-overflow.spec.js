@@ -42,8 +42,12 @@ async function openWithActions(page, { cap = 4 } = {}) {
 }
 
 const bar = (page) => page.evaluate(() => {
-    const drawn = (btn) => !btn.classList.contains('is-folded')
-        && window.getComputedStyle(btn).display !== 'none';
+    /*
+     * What is on the bar is what is drawn, not what is unmarked: the fold is a
+     * class, and a rule elsewhere can out-shout it. Asking the class would have
+     * agreed with the fold about a button the reader could still see.
+     */
+    const drawn = (btn) => window.getComputedStyle(btn).display !== 'none';
     const buttons = [...document.querySelectorAll('.header-shortcuts button.search-button')]
         .filter((btn) => !btn.classList.contains('header-action-overflow'));
     const chip = document.querySelector('.header-action-overflow');
@@ -122,6 +126,36 @@ test('add and search are the two that stay on the bar', async ({ page }) => {
             .map((btn) => btn.querySelector('.search-button-icon')?.textContent?.trim()));
         expect(first, `at a cap of ${cap} the bar starts with ${first.join(' ')}`).toEqual(['+', '>']);
     }
+});
+
+/*
+ * And the cap holds in a view as well.
+ *
+ * In config, health and the inbox the tag cloud has nothing to filter, so its
+ * button keeps its place with `display: inline-flex !important` rather than
+ * letting the row shift under the reader. That beat the fold's own rule: at a
+ * cap of two the bar drew three buttons the moment you left the dashboard.
+ */
+test('a folded action stays folded in a view', async ({ page }) => {
+    await openWithActions(page, { cap: 2 });
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.showTagCloudButton = true;
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
+    await page.waitForTimeout(300);
+
+    expect((await bar(page)).shown, 'the cap does not hold on the dashboard').toBe(2);
+
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+    await page.waitForSelector('.config-view', { timeout: 20_000 });
+    await page.waitForTimeout(600);
+
+    const inView = await bar(page);
+    expect(inView.shown, `${inView.shown} actions on the bar in config`).toBe(2);
+    expect(inView.folded, 'the tag cloud button came back out of the fold')
+        .toContain('tag-cloud-toggle-btn');
 });
 
 test('the menu presses the button it names', async ({ page }) => {
