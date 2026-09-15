@@ -1437,7 +1437,12 @@ class KeyboardNavigation {
                     this.dashboard.multiSelect.clear();
                     break;
                 }
+                if (this.currentIndex >= 0) {
+                    this.clearSelection();
+                    break;
+                }
                 this.clearSelection();
+                this._escapeFallback();
                 break;
 
             case 'g':
@@ -1466,6 +1471,77 @@ class KeyboardNavigation {
                 break;
         }
     }
+
+    /**
+     * Escape with nothing left to close: home, then search.
+     *
+     * Every overlay in the dashboard answers Escape, and the key travels the
+     * whole chain when none of them is open (see the census at the top of this
+     * file) -- so on a bare grid it reached this file, cleared a cursor that was
+     * not there, and stopped. Two steps out of that dead end:
+     *
+     *   - On any page but the first, it is the way home, the same way Escape
+     *     leaves config or the inbox. `1` already goes there; this is the key
+     *     you press when you do not remember which page you are on.
+     *   - On the first page there is nowhere further out, so it opens search --
+     *     the thing you reach for when the dashboard in front of you is not
+     *     what you were looking for.
+     *
+     * Every other reading of Escape has already had its turn by the time this
+     * runs: a modal or an active search returns before handleKeyPress, the
+     * multi-select clears above, and a cursor on a row is dropped first.
+     */
+    _escapeFallback() {
+        const dash = this.dashboard;
+        if (!dash || dash.isBookmarksView?.() !== true) {
+            return;
+        }
+        // An inline edit is a thing on screen even though it is not an overlay:
+        // leaving the page under it would throw the text away.
+        if (dash.isInlineEditActive?.() || dash.isModalOpen?.() || dash.searchComponent?.isActive?.()) {
+            return;
+        }
+        const first = dash.pages?.[0];
+        if (first && !dash.samePageId?.(first.id, dash.currentPageId)) {
+            /*
+             * The ring goes with the page.
+             *
+             * closeSearch() hands focus back to #search-button, so the button
+             * keeps the focus ring long after the panel is gone -- and pressing
+             * Escape on a page while that ring sits in the header reads as "the
+             * key focused search" rather than "the key went home". Nothing on
+             * the header should hold focus once the page under it changes.
+             */
+            const dropHeaderFocus = () => {
+                const active = document.activeElement;
+                if (active && active !== document.body && active.closest?.('.section-controls')) {
+                    active.blur();
+                }
+            };
+            dropHeaderFocus();
+            // Through the same request a tab click makes, so an unsaved inline
+            // edit is confirmed and the history entry is written once. The
+            // second pass is for the header the navigation redraws underneath
+            // it, which can put the ring back on the button it rebuilt.
+            void Promise.resolve(dash.pageNav?.requestPageNavigation?.(first.id))
+                .then(dropHeaderFocus);
+            return;
+        }
+        /*
+         * Already home: the way out of the dashboard is the way into everything
+         * in it.
+         *
+         * Opened on the next turn of the loop, not here. This runs in the
+         * capture phase, and search.js has its own Escape listener further down
+         * the chain -- opening the panel inside the keystroke meant the same
+         * press closed it again, so the key did nothing at all.
+         */
+        setTimeout(() => {
+            if (dash.searchComponent?.isActive?.()) return;
+            dash.searchComponent?.openSearchInterface?.();
+        }, 0);
+    }
+
 
     /** Open the "name your category" row, if the dashboard can take it now. */
     _openCategoryAdd() {
