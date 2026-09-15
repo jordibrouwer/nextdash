@@ -318,6 +318,29 @@
      */
 }
 
+/*
+ * Solid once the page is moving under it.
+ *
+ * At rest the band is 55% of the surface, which is what makes it read as part
+ * of the page rather than as a strip laid over it. That only holds while there
+ * is page under it: scroll, and rows and tiles pass behind the title, the
+ * filter and the search box, and the words in the band stop being readable.
+ *
+ * data-scrolled is written onto <body> by bindScrolledState() in
+ * dashboard-setup.js -- one fact about the window, so the inbox, health and
+ * config all answer to it. Back at the top, or after a reload, it is 55% again.
+ */
+body[data-scrolled="true"] .lvs-header {
+    background: color-mix(in srgb, var(--background-secondary) 96%, transparent);
+    border-bottom: 1px solid var(--hairline, var(--border-primary));
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+body.no-animations [data-scrolled] .lvs-header,
+body.no-animations .lvs-header {
+    transition: none;
+}
+
 /* The theme's own light, on the depths that have any. */
 html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);

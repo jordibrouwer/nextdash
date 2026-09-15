@@ -6,9 +6,42 @@ class DashboardSetup {
         this.dash = dashboard;
     }
 
+    /**
+     * Says whether the page has been scrolled away from the top.
+     *
+     * The view header is a sticky band drawn at 55% of the surface, which reads
+     * as part of the page while the page starts under it -- and as a smear once
+     * rows are passing behind it. This is the one fact the CSS needs to paint it
+     * solid while that is true, and it is a fact about the window rather than
+     * about the inbox, health or config in particular, so it is answered once
+     * here instead of three times over there.
+     *
+     * Bound once and never removed: the handler is a comparison and an attribute
+     * write, and the page it is bound to outlives every view.
+     */
+    bindScrolledState() {
+        if (this._scrolledStateBound) return;
+        this._scrolledStateBound = true;
+        const sync = () => {
+            const y = window.scrollY || document.documentElement.scrollTop || 0;
+            document.body.setAttribute('data-scrolled', y > 4 ? 'true' : 'false');
+        };
+        window.addEventListener('scroll', sync, { passive: true });
+        // A reload starts at the top, and so does the back/forward cache after
+        // the browser restores the scroll position -- hence both.
+        window.addEventListener('pageshow', sync);
+        this._syncScrolledState = sync;
+        sync();
+    }
+
+
     setupDOM() {
         const d = this.dash;
         d.updateDateVisibility();
+        this.bindScrolledState();
+        // Opening a view scrolls the page back to the top, and that happens
+        // without a scroll event to hear about it.
+        this._syncScrolledState?.();
 
         document.body.setAttribute('data-show-title', d.settings.showTitle);
         // How far a row's accent carries when it lights up. Written here as
