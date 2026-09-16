@@ -34,7 +34,7 @@ async function resetLogSettings(page) {
 }
 
 /**
- * Opens Data & backups → Server log, the way the tab is reached in the app.
+ * Opens Logs → Server logs, the way the section is reached in the app.
  */
 async function openServerLogTab(page) {
     await markWhatsNewSeen(page);
@@ -46,9 +46,9 @@ async function openServerLogTab(page) {
     await resetLogSettings(page);
     await page.evaluate(async () => {
         const config = window.dashboardInstance.config;
-        await config.openConfigView('data-backups');
+        await config.openConfigView('logs');
         const c = config.instance || config;
-        c.dbTab = 'logs';
+        c.logsTab = 'server';
         c.render();
     });
 }
@@ -191,9 +191,9 @@ test('a search is only sent to the server once the search channel is on', async 
     // On: reopen Config, tick the box, and repeat the same round trip.
     await page.evaluate(async () => {
         const config = window.dashboardInstance.config;
-        await config.openConfigView('data-backups');
+        await config.openConfigView('logs');
         const c = config.instance || config;
-        c.dbTab = 'logs';
+        c.logsTab = 'server';
         c.render();
     });
     await expect(searchChannel).toBeVisible({ timeout: 15_000 });
@@ -261,4 +261,39 @@ test('collapsing a category through the real toggle sends track-nav', async ({ p
         () => requests.some((r) => r.action === 'category-collapse' || r.action === 'category-expand'),
         { timeout: 15_000 },
     ).toBe(true);
+});
+
+// The server log left Data & backups for its own top-level section — this
+// walks the real route in: the `<` shortcut, then the rail item, rather than
+// setting state by hand the way openServerLogTab() above does for speed.
+test('Logs sits between Help and About, opens from the rail, and the old link still lands there', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    await page.keyboard.press('<');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
+        { timeout: 10_000 }).toBe('config');
+
+    const sections = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-config-section]')].map((b) => b.getAttribute('data-config-section')));
+    expect(sections.indexOf('logs')).toBeGreaterThan(sections.indexOf('help'));
+    expect(sections.indexOf('logs')).toBeLessThan(sections.indexOf('about'));
+
+    await page.locator('[data-config-section="logs"]').click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section),
+        { timeout: 10_000 }).toBe('logs');
+    await expect(page.locator('[data-logs-tab="server"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-log-output]')).toBeVisible({ timeout: 15_000 });
+
+    // The old Data & backups → Server log link still has to work.
+    await page.goto('/#config/data-backups/logs');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config?.section),
+        { timeout: 15_000 }).toBe('logs');
+    await expect(page.locator('[data-log-output]')).toBeVisible({ timeout: 15_000 });
 });

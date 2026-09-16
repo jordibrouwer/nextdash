@@ -4696,14 +4696,92 @@ body.no-animations .config-new-features-panel-star {
 @media (prefers-reduced-motion: reduce) {
 }
 
+/* ── Server log section layout ───────────────────────────────────────────── */
+
+/*
+ * The log panel and its two settings panels side by side rather than stacked:
+ * the viewer is the thing being read continuously, so it gets the width and
+ * the settings that are set once and left alone go beside it, not above it.
+ * A flex row rather than grid tracks: the ratio only has to be roughly 2:1,
+ * and the fixed clamp on the side column is a plain min/max-width.
+ */
+.config-log-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.config-log-main.config-panel {
+    flex: 2 1 0;
+    min-width: 0;
+    margin-top: 0;
+}
+
+.config-log-side {
+    flex: 1 1 280px;
+    min-width: 280px;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    /* Same offset the section rail sticks at, so the two agree while scrolling. */
+    position: sticky;
+    top: 8px;
+}
+
+.config-log-side .config-panel {
+    margin-top: 0;
+}
+
+/* Narrower than this, 2:1 stops being a row and becomes a squeeze. */
+@media (max-width: 1100px) {
+    .config-log-layout {
+        flex-direction: column;
+    }
+
+    .config-log-side {
+        position: static;
+        top: auto;
+        max-width: none;
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/*
+ * Activity trail's channels split into three labelled blocks (Changes, Usage,
+ * Client) instead of one flat list of seventeen boxes — the grouping is
+ * decided in dashboard-config.js, this is just the heading that names each
+ * block.
+ */
+.config-log-channel-group {
+    margin-top: 16px;
+}
+
+.config-log-channel-group:first-of-type {
+    margin-top: 8px;
+}
+
+.config-log-channel-group-title {
+    margin: 0 0 4px;
+    font-size: calc(var(--font-size-text) * 0.86);
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, var(--text-muted, #888));
+}
+
 /* ── Server log viewer ───────────────────────────────────────────────────── */
 
 /*
- * A scrolling tail inside the panel rather than a growing page: the log can be
- * two thousand lines, and the buttons under it have to stay reachable.
+ * A scrolling tail that fills the height the panel has to give it, rather
+ * than a fixed box: the log is the one thing in the section read continuously,
+ * so it is worth more of the screen than a few hundred pixels. The 420px this
+ * replaces was sized for a viewer stacked under two other panels; beside them
+ * instead, there is a full viewport of room above the actions row.
  */
 .config-log-view {
-    max-height: 420px;
+    height: calc(100vh - 420px);
+    min-height: 320px;
     overflow-y: auto;
     margin: 12px 0;
     padding: 8px 10px;

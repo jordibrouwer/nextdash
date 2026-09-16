@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * The server log viewer on Data & backups → Server log.
+ * The server log viewer on Logs → Server logs.
  *
  * Deliberately short: the buffer, parsing and retention are covered by Go tests
  * in log_buffer_test.go. What only a browser can show is that the tab renders
@@ -35,8 +35,7 @@ async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } 
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
-    await page.locator('[data-db-tab="logs"]').click();
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('logs'));
     await expect(page.locator('[data-log-output]')).toBeVisible();
 
     const toggle = page.locator('[data-log-toggle="capture"]');
@@ -64,7 +63,7 @@ async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } 
     }
 }
 
-test.describe('Data & backups → Server log', () => {
+test.describe('Logs → Server logs', () => {
     test('shows captured lines, with tiles and controls', async ({ page }) => {
         await openLogs(page);
 
@@ -233,14 +232,55 @@ test.describe('Data & backups → Server log', () => {
         expect(await hasTimer()).toBe(true);
 
         // This is the whole risk of a polling view: leaving must take the timer
-        // with it, or it keeps fetching behind whatever is opened next.
-        await page.locator('[data-db-tab="backups"]').click();
+        // with it, or it keeps fetching behind whatever is opened next. Logs is
+        // its own section now, so leaving means the rail, not a sub-tab.
+        await page.locator('[data-config-section="data-backups"]').click();
         expect(await hasTimer()).toBe(false);
 
-        await page.locator('[data-db-tab="logs"]').click();
+        await page.locator('[data-config-section="logs"]').click();
         await page.locator('[data-log-select="interval"]').selectOption('2');
         expect(await hasTimer()).toBe(true);
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         expect(await hasTimer()).toBe(false);
+    });
+
+    test('at 1440px, the log sits beside a narrow settings column with three channel groups', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await openLogs(page);
+
+        const main = page.locator('.config-log-main');
+        const side = page.locator('.config-log-side');
+        await expect(main).toBeVisible();
+        await expect(side).toBeVisible();
+
+        const [mainBox, sideBox] = await Promise.all([main.boundingBox(), side.boundingBox()]);
+        expect(mainBox.x).toBeLessThan(sideBox.x);
+        expect(sideBox.width).toBeLessThanOrEqual(380);
+
+        await expect(page.locator('.config-log-channel-group-title')).toHaveText(['Changes', 'Usage', 'Client']);
+
+        // Open detail sits directly after the Bookmarks opened checkbox, not
+        // tacked on after the whole channel list.
+        const usageOrder = await page.evaluate(() => {
+            const group = [...document.querySelectorAll('.config-log-channel-group')]
+                .find((g) => g.querySelector('.config-log-channel-group-title')?.textContent === 'Usage');
+            return [...group.querySelectorAll('[data-activity-channel], [data-activity-open-detail]')]
+                .map((el) => el.getAttribute('data-activity-channel') || 'open-detail');
+        });
+        expect(usageOrder).toEqual(['open', 'open-detail', 'search', 'keys', 'nav', 'session']);
+    });
+
+    test('at 900px, the settings column drops below the log', async ({ page }) => {
+        await page.setViewportSize({ width: 900, height: 900 });
+        await openLogs(page);
+
+        const main = page.locator('.config-log-main');
+        const side = page.locator('.config-log-side');
+        const [mainBox, sideBox] = await Promise.all([main.boundingBox(), side.boundingBox()]);
+        expect(sideBox.y).toBeGreaterThanOrEqual(mainBox.y + mainBox.height - 1);
+
+        const hasHorizontalScroll = await page.evaluate(() =>
+            document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+        expect(hasHorizontalScroll).toBe(false);
     });
 });
