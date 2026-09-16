@@ -137,6 +137,6 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         })).toBeFalsy();
 
         await page.locator('[data-bm-tab="list"]').click();
-        await expect(page.locator('#config-bm-filter-chips')).not.toContainText('tag-suggestions', { timeout: 15_000 });
+        await expect(page.locator('#config-bm-rail-facets')).not.toContainText('tag-suggestions', { timeout: 15_000 });
     });
 });

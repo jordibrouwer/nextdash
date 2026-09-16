@@ -1,4 +1,5 @@
 // @ts-check
+const { expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
@@ -20,4 +21,35 @@ async function openBookmarks(page) {
     await page.waitForSelector('#config-bm-workbench #config-bm-list .config-bm-row', { timeout: 15_000 });
 }
 
-module.exports = { openBookmarks };
+/** Config → Bookmarks over a fixed set of rows, served by route. */
+async function openBookmarksWithRows(page, bookmarks) {
+    await page.route('**/api/bookmarks?all=true', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(bookmarks),
+        });
+    });
+    await page.route('**/api/bookmarks?page=*', async (route) => {
+        if (route.request().method() !== 'GET') return route.fallback();
+        const pageId = new URL(route.request().url()).searchParams.get('page');
+        const rows = bookmarks.filter((b) => String(b.pageId) === String(pageId));
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(rows),
+        });
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate((rows) => {
+        window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
+        window.dashboardInstance.allBookmarks = rows;
+        return window.dashboardInstance.config.openConfigView('bookmarks');
+    }, bookmarks);
+    await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible({ timeout: 10_000 });
+}
+
+module.exports = { openBookmarks, openBookmarksWithRows };

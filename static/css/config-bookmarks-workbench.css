@@ -207,3 +207,181 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 .config-bm-health-dot.is-healthy { background: var(--accent-success); }
 .config-bm-health-dot.is-broken { background: var(--accent-error); }
 .config-bm-health-dot.is-down { background: var(--accent-warning); }
+
+/* ── List ─────────────────────────────────────────────────────────────── */
+
+.config-bm-feed {
+    display: flex;
+    flex-direction: column;
+}
+
+.config-bm-row,
+.config-bm-group-head {
+    background: var(--bm-slab-bg);
+    padding-inline: var(--space-2, 0.5rem);
+}
+
+.config-bm-row {
+    display: grid;
+    /* The name column carries a floor: CSS Grid hands a fixed-max track
+       (tags) its full share before a bare `1fr` ever sees a pixel, so
+       without a floor here a narrow panel starves the title to 0 width —
+       invisible, not just cramped. Tags is the one allowed to lose the
+       argument and clip. */
+    grid-template-columns: 16px 18px minmax(6rem, 1fr) minmax(0, 9rem) 3rem 3rem 4.5rem;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    height: var(--bm-row-h);
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: default;
+}
+
+.config-bm-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--bm-head-h);
+    box-sizing: border-box;
+    /* The gap above a slab is drawn inside the head's own fixed height, so
+       the window's arithmetic stays exact. */
+    border-top: var(--space-2, 0.5rem) solid transparent;
+    background-clip: padding-box;
+    border-radius: calc(var(--bm-slab-radius) + var(--space-2, 0.5rem)) calc(var(--bm-slab-radius) + var(--space-2, 0.5rem)) 0 0;
+    font-size: var(--font-size-small);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-feed:not(.is-grouped) .config-bm-row.is-group-start {
+    border-radius: var(--bm-slab-radius) var(--bm-slab-radius) 0 0;
+}
+
+.config-bm-row.is-group-end {
+    border-radius: 0 0 var(--bm-slab-radius) var(--bm-slab-radius);
+}
+
+.config-bm-feed:not(.is-grouped) .config-bm-row.is-group-start.is-group-end {
+    border-radius: var(--bm-slab-radius);
+}
+
+html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
+    box-shadow: 0 6px 14px -10px var(--shadow-color, rgba(0, 0, 0, 0.5));
+}
+
+.config-bm-group-select {
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.config-bm-group-head:hover .config-bm-group-select,
+.config-bm-group-select:focus-visible {
+    opacity: 1;
+}
+
+.config-bm-group-count {
+    margin-left: 0.4em;
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+}
+
+.config-bm-row:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--bm-slab-bg));
+}
+
+.config-bm-row.is-checked {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--bm-slab-bg));
+}
+
+.config-bm-row.keyboard-selected {
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--bm-slab-bg));
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.config-bm-tick-cell,
+.config-bm-icon-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/*
+ * `.config-bm-tick` is the one class this row shares with the pre-workbench
+ * card (kept per the interfaces contract). That card hid an unchecked box
+ * until `.config-bm-item` was hovered or selected — classes this row never
+ * carries — so without this override the box is just permanently invisible
+ * here. #config-bm-list beats that rule's specificity outright (an id
+ * against any number of classes) regardless of which stylesheet loads last.
+ */
+#config-bm-list .config-bm-tick {
+    opacity: 1;
+}
+
+.config-bm-name {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.config-bm-name .config-bm-health-dot {
+    align-self: center;
+}
+
+.config-bm-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.config-bm-domain,
+.config-bm-crumb {
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Gives up its width before the title does, under the same pressure —
+       the name a bookmark carries matters more than its domain. */
+    flex-shrink: 3;
+}
+
+.config-bm-crumb {
+    font-family: inherit;
+    opacity: 0.7;
+}
+
+.config-bm-tags {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+    overflow: hidden;
+}
+
+.config-bm-tag {
+    padding: 1px 7px;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-3, var(--background-secondary));
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+.config-bm-key--empty {
+    opacity: 0.35;
+}
+
+.config-bm-opens,
+.config-bm-last {
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    text-align: right;
+    white-space: nowrap;
+}

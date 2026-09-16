@@ -268,6 +268,144 @@
     bindWorkbench(container) {
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
     },
+
+    workbenchGrouped() {
+        return (this.bmSort ?? this.defaultBookmarksSort()) === 'page';
+    },
+
+    workbenchGroupKey(b) {
+        return `${b.pageId}::${b.category || ''}`;
+    },
+
+    workbenchGroupLabel(b) {
+        const page = this.pageLabel(b.pageId);
+        if (!b.category) return page;
+        return `${page} › ${this.railCategoryLabel(b.pageId, b.category)}`;
+    },
+
+    workbenchItems() {
+        const all = this.visibleBookmarks();
+        const rows = all.slice(0, this.bookmarkVisibleLimit(all.length));
+        const token = JSON.stringify([this._bmVisibleToken, rows.length]);
+        if (this._bmItemsToken === token && this._bmItemsRows === all && this._bmItems) return this._bmItems;
+        const items = global.BookmarkWorkbenchModel.buildItems(rows, {
+            grouped: this.workbenchGrouped(),
+            groupKey: (b) => this.workbenchGroupKey(b),
+            groupLabel: (b) => this.workbenchGroupLabel(b),
+        });
+        this._bmItemsToken = token;
+        this._bmItemsRows = all;
+        this._bmItems = items;
+        return items;
+    },
+
+    renderWorkbenchRow(item, ctx) {
+        const esc = ctx.esc;
+        const b = item.bookmark;
+        const key = this.bookmarkKey(b);
+        const ticked = this.bmSelected.has(key);
+        const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
+        const domain = this.formatBookmarkUrlDisplay(b.url);
+        const state = this.bookmarkHealthState(b);
+        const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
+        const TAGS_SHOWN = 2;
+        const tagChips = tags.slice(0, TAGS_SHOWN)
+            .map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
+            + (tags.length > TAGS_SHOWN ? `<span class="config-bm-tag config-bm-tag--more">+${tags.length - TAGS_SHOWN}</span>` : '');
+        const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
+            || { label: '—', never: true };
+        const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb">${esc(this.workbenchGroupLabel(b))}</span>`;
+        const classes = ['config-bm-row'];
+        if (ticked) classes.push('is-checked');
+        if (item.groupStart) classes.push('is-group-start');
+        if (item.groupEnd) classes.push('is-group-end');
+        const feed = global.BookmarkFeedRow;
+        return `
+            <div class="${classes.join(' ')}" data-bm-key="${esc(key)}" role="row" tabindex="-1"
+                 aria-selected="${ticked ? 'true' : 'false'}" aria-posinset="${item.index + 1}" aria-setsize="${ctx.setSize}">
+                <label class="config-bm-tick-cell" role="gridcell">
+                    <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
+                           aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
+                </label>
+                <span class="config-bm-icon-cell" role="gridcell">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                <span class="config-bm-name" role="gridcell">
+                    <span class="config-bm-health-dot is-${esc(state)}" title="${esc(this.railHealthLabel(state))}"></span>
+                    <span class="config-bm-title">${esc(title)}</span>
+                    <span class="config-bm-domain">${esc(domain)}</span>
+                    ${b.pinned ? `<span class="config-bm-pin" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">📌</span>` : ''}
+                    ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
+                    ${crumb}
+                </span>
+                <span class="config-bm-tags" role="gridcell">${tagChips}</span>
+                <span class="config-bm-key" role="gridcell">${b.shortcut
+                    ? `<kbd>${esc(b.shortcut)}</kbd>`
+                    : '<span class="config-bm-key--empty" aria-hidden="true">+</span>'}</span>
+                <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
+                <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
+            </div>`;
+    },
+
+    renderWorkbenchGroupHead(item, esc) {
+        return `
+            <div class="config-bm-group-head" data-bm-group="${esc(item.key)}" role="row">
+                <span class="config-bm-group-label" role="rowheader">${esc(item.label)}
+                    <span class="config-bm-group-count">${item.count}</span></span>
+                <button type="button" class="config-bm-group-select" data-bm-select-group="${esc(item.key)}">${esc(this.t('config.bmSelectGroup', 'select group'))}</button>
+            </div>`;
+    },
+
+    /** The rows themselves, re-rendered on every search/filter/edit change. */
+    renderBookmarksList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        this._bmDuplicateUrls = null;
+        const dupes = this.ensureDuplicateUrlSet();
+        if (!(this.dash.allBookmarks || []).length) {
+            return `
+                <div class="config-panel-empty config-panel-empty--action">
+                    <p>${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>
+                    <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
+                </div>`;
+        }
+        const all = this.visibleBookmarks();
+        if (!all.length) {
+            return `
+                <div class="config-panel-empty config-panel-empty--action">
+                    <p>${esc(this.bookmarksEmptyReason())}</p>
+                    ${this.bookmarksFiltersActive() ? `<button type="button" class="config-btn" data-bm-empty-clear>${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>` : ''}
+                    <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
+                </div>`;
+        }
+        const items = this.workbenchItems();
+        const rowCount = items.filter((i) => i.type === 'row').length;
+        const ctx = {
+            esc,
+            grouped: this.workbenchGrouped(),
+            setSize: all.length,
+            isDuplicate: (b) => {
+                const url = this.canonicalStatsUrlKey(b.url);
+                return Boolean(url && dupes.has(url));
+            },
+        };
+        const win = this.bookmarkRowWindow();
+        const slice = win ? items.slice(win.start, win.end) : items;
+        const body = slice.map((item) => (item.type === 'head'
+            ? this.renderWorkbenchGroupHead(item, esc)
+            : this.renderWorkbenchRow(item, ctx))).join('');
+        const spacer = (px) => (px > 0 ? `<div class="config-bm-spacer" aria-hidden="true" style="height:${Math.round(px)}px"></div>` : '');
+        const more = all.length > rowCount
+            ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
+               <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
+                   .replace('{shown}', String(rowCount)).replace('{total}', String(all.length)))}</p>`
+            : '';
+        return `<div class="config-bm-feed${ctx.grouped ? ' is-grouped' : ''}" role="grid" aria-rowcount="${all.length}"
+                     aria-label="${esc(this.t('config.bookmarks', 'Bookmarks'))}" data-bm-rows="${rowCount}">${win ? spacer(win.above) : ''}${body}${win ? spacer(win.below) : ''}${more}</div>`;
+    },
+
+    workbenchItemHeights() {
+        const styles = getComputedStyle(document.getElementById('config-bm-workbench') || document.documentElement);
+        const px = (name, fallback) => parseFloat(styles.getPropertyValue(name)) || fallback;
+        return { rowHeight: px('--bm-row-h', 44), headHeight: px('--bm-head-h', 32) };
+    },
     });
 
     global.DashboardConfigWorkbenchReady = true;

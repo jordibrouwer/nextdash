@@ -64,20 +64,13 @@ const openConfigBookmarks = async (page) => {
 };
 
 test.describe('the three views share one row', () => {
-    test('every feed row is built from the shared card', async ({ page }) => {
+    // Config → Bookmarks stopped being one of the three here: the workbench
+    // redesign gave it a fixed-height grid row of its own (.config-bm-row),
+    // built for a windowed list with group slabs rather than the shared
+    // feed-row card Health and Inbox still use. Only the Inbox/Health half of
+    // this claim still holds, so that is what is left asserted.
+    test('the health and inbox rows are still built from the shared card', async ({ page }) => {
         await openDashboard(page);
-        await openConfigBookmarks(page);
-
-        const row = await page.evaluate(() => {
-            const el = document.querySelector('.config-bm-item');
-            return el ? { shared: el.classList.contains('feed-row'), own: el.classList.contains('config-bm-item') } : null;
-        });
-        expect(row).not.toBeNull();
-        // Both: the shared card carries the look, the view class carries its own
-        // additions and is what the tests and sibling modules select on.
-        expect(row.shared).toBe(true);
-        expect(row.own).toBe(true);
-
         await openInbox(page);
         expect(await page.evaluate(() => {
             const el = document.querySelector('.inbox-item');
@@ -106,18 +99,6 @@ test.describe('the three views share one row', () => {
         expect(declarations['css/health-view.css']).toBe(false);
         expect(declarations['css/dashboard-inbox.css']).toBe(false);
         expect(declarations['css/config-view.css']).toBe(false);
-    });
-
-    test('Config → Bookmarks and Inbox render the same card', async ({ page }) => {
-        await openDashboard(page);
-        await openConfigBookmarks(page);
-        const config = await boxOf(page, '.config-bm-item');
-
-        await openInbox(page);
-        const inbox = await boxOf(page, '.inbox-item');
-        test.skip(inbox === null, 'the fixture inbox is empty');
-
-        expect(config).toEqual(inbox);
     });
 });
 

@@ -152,6 +152,7 @@ class DashboardConfig {
         this.bmSort = null;
         this.bmVisibleLimit = this.bmPageSize();
         this.bmSelected = new Set();
+        this.bmSelectAnchor = null;
         /** Rows with an in-flight network action (recheck, favicon refresh, …). */
         this._bmBusyKeys = new Set();
         /** Per-page category lists for the bookmarks section dropdowns. */
@@ -2197,7 +2198,7 @@ class DashboardConfig {
         this._bmKeyboardKey = null;
         document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
-            row.removeAttribute('aria-selected');
+            row.removeAttribute('aria-current');
         });
     }
 
@@ -2210,15 +2211,16 @@ class DashboardConfig {
             const selected = key !== null && key === this._bmKeyboardKey;
             row.classList.toggle('keyboard-selected', selected);
             if (selected) {
-                row.setAttribute('aria-selected', 'true');
+                row.setAttribute('aria-current', 'true');
                 row.scrollIntoView({
                     block: 'nearest',
                     behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
                 });
             } else {
-                row.removeAttribute('aria-selected');
+                row.removeAttribute('aria-current');
             }
         });
+        this.repaintWorkbenchPanel?.();
     }
 
     syncBookmarkKeyboardSelectionAfterRender() {
@@ -2261,7 +2263,7 @@ class DashboardConfig {
     moveBookmarkKeyboardSelectionWindowed(delta) {
         const all = this.visibleBookmarks();
         const shown = this.bookmarkVisibleLimit(all.length);
-        if (!this.bookmarkRowWindow(shown)) return false;
+        if (!this.bookmarkRowWindow()) return false;
 
         const rows = all.slice(0, shown);
         if (!rows.length) return false;
@@ -2274,7 +2276,7 @@ class DashboardConfig {
             else if (index >= keys.length) index = 0;
         }
         this._bmKeyboardKey = keys[index];
-        this.scrollBookmarkRowIntoWindow(index, keys.length);
+        this.scrollBookmarkRowIntoWindow(index);
         this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
         return true;
     }
@@ -2285,17 +2287,21 @@ class DashboardConfig {
      * A third of the way down rather than at the very edge: landing a selection
      * on the last visible pixel is the reason "the next one" feels like a jump.
      */
-    scrollBookmarkRowIntoWindow(index, total) {
+    scrollBookmarkRowIntoWindow(rowIndex) {
         const list = document.getElementById('config-bm-list');
-        if (!list) return;
+        const model = window.BookmarkWorkbenchModel;
+        if (!list || !model) return;
+        const items = this.workbenchItems();
+        const itemIndex = items.findIndex((i) => i.type === 'row' && i.index === rowIndex);
+        if (itemIndex < 0) return;
+        const { rowHeight, headHeight } = this.workbenchItemHeights();
         const host = this.bookmarkListScrollHost();
-        const rowHeight = this.bookmarkRowHeight();
         const box = list.getBoundingClientRect();
         const viewport = host ? host.clientHeight : window.innerHeight;
         const listTop = host
             ? host.scrollTop + (box.top - host.getBoundingClientRect().top)
             : window.scrollY + box.top;
-        const rowTop = listTop + index * rowHeight;
+        const rowTop = listTop + model.itemOffset(items, itemIndex, rowHeight, headHeight);
         const current = host ? host.scrollTop : window.scrollY;
         const above = rowTop < current + rowHeight;
         const below = rowTop > current + viewport - rowHeight * 2;
@@ -2305,7 +2311,7 @@ class DashboardConfig {
         else window.scrollTo(0, target);
         // The scroll listener repaints on the next frame; the selection has to
         // land on rows that exist now, so the window is drawn here as well.
-        const next = this.bookmarkRowWindow(total);
+        const next = this.bookmarkRowWindow();
         this._bmWindowKey = next ? `${next.start}-${next.end}` : 'all';
         this.repaintBookmarkRowsOnly();
     }
@@ -2364,10 +2370,20 @@ class DashboardConfig {
     refreshBookmarkUsageLine(key, bookmark) {
         if (!key || !bookmark) return;
         const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
-        const col = row?.querySelector('.config-bm-usage-col');
-        if (!col) return;
-        col.innerHTML = this.renderBookmarkUsageLine(bookmark);
-        col.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
+        if (!row) return;
+        // The slab row splits what the old combined usage line said into two
+        // columns; both are updated so an open shows up without a full repaint.
+        const opens = row.querySelector('.config-bm-opens');
+        const last = row.querySelector('.config-bm-last');
+        if (opens) {
+            opens.textContent = String(Number(bookmark.openCount || 0));
+            opens.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
+        }
+        if (last) {
+            const formatted = window.formatLastOpened?.(bookmark.lastOpened, { t: this.lastOpenedTranslator() })
+                || { label: '—', never: true };
+            last.textContent = formatted.label;
+        }
     }
 
     appendBookmarkKeyboardLegend(host) {
@@ -2525,7 +2541,7 @@ class DashboardConfig {
         if (onRowControl) {
             return false;
         }
-        if ((e.key === 'Enter' || e.key === ' ') && this._bmKeyboardKey) {
+        if (e.key === 'Enter' && this._bmKeyboardKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.openBookmarkByKey(this._bmKeyboardKey);
@@ -2546,22 +2562,22 @@ class DashboardConfig {
             return true;
         }
         if (this._bmKeyboardKey) {
+            if (e.key === 'x' || e.key === ' ') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleBookmarkSelection(this._bmKeyboardKey);
+                return true;
+            }
+            if (e.key === 'X') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.selectBookmarkRange(this._bmKeyboardKey);
+                return true;
+            }
             if (e.key === 'e') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
-                return true;
-            }
-            if (e.key === 'm') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.toggleBookmarkMenu(this._bmKeyboardKey, 'more');
-                return true;
-            }
-            if (e.key === 'c') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.toggleBookmarkMenu(this._bmKeyboardKey, 'check');
                 return true;
             }
             if (e.key === 'd') {
@@ -20239,6 +20255,9 @@ class DashboardConfig {
 
     resetBookmarkVisibleLimit() {
         this.bmVisibleLimit = this.bmPageSize();
+        // A new filter is a new list: last scroll position from the old one
+        // must not be read as "already scrolled" here.
+        this._bmLoadMoreLastScrollTop = undefined;
     }
 
     /**
@@ -20697,60 +20716,33 @@ class DashboardConfig {
      * (a second line of tags), and the average is what the spacers want.
      */
     bookmarkRowHeight() {
-        if (this._bmRowHeight) return this._bmRowHeight;
-        const rows = document.querySelectorAll('#config-bm-list .config-bm-row');
-        if (rows.length >= 2) {
-            const first = rows[0].getBoundingClientRect();
-            const last = rows[rows.length - 1].getBoundingClientRect();
-            const span = last.bottom - first.top;
-            const measured = span / rows.length;
-            if (measured > 20 && measured < 400) {
-                this._bmRowHeight = measured;
-                return measured;
-            }
-        }
-        // Until there is something to measure: the row's own min-height plus its
-        // gap, which is what the stylesheet asks for.
-        return 56;
+        return this.workbenchItemHeights?.().rowHeight || 44;
     }
 
     /**
-     * Which slice of the loaded rows to draw, or null for all of them.
-     *
-     * Null below the threshold — a short list costs nothing to draw whole, and
-     * spacers on it would be arithmetic in exchange for nothing — and null while
-     * a row is expanded into its editor, whose height the spacers cannot know.
+     * Which slice of the list's items (rows and group headers) to draw, or
+     * null for all of them. Heights are fixed by the stylesheet, so the
+     * spacers are exact.
      */
-    bookmarkRowWindow(total) {
-        const MIN_TO_WINDOW = 120;
-        const OVERSCAN = 25;
-        if (!Number.isFinite(total) || total <= MIN_TO_WINDOW) return null;
-
+    bookmarkRowWindow() {
+        const model = window.BookmarkWorkbenchModel;
+        if (!model || typeof this.workbenchItems !== 'function') return null;
+        const items = this.workbenchItems();
         const host = this.bookmarkListScrollHost();
-        const rowHeight = this.bookmarkRowHeight();
         const list = document.getElementById('config-bm-list');
-        // Where the list starts relative to whatever scrolls: the page, or a
-        // pane inside it.
         let offset = 0;
         let viewport = window.innerHeight;
         if (list) {
             const box = list.getBoundingClientRect();
             if (host) {
-                const hostBox = host.getBoundingClientRect();
-                offset = host.scrollTop + (box.top - hostBox.top);
+                offset = host.scrollTop + (box.top - host.getBoundingClientRect().top);
                 viewport = host.clientHeight;
             } else {
                 offset = window.scrollY + box.top;
             }
         }
-        const scrollTop = host ? host.scrollTop : window.scrollY;
-        const first = Math.floor(Math.max(0, scrollTop - offset) / rowHeight);
-        const rowsInView = Math.ceil(viewport / rowHeight);
-        const start = Math.max(0, first - OVERSCAN);
-        const end = Math.min(total, first + rowsInView + OVERSCAN);
-        // A window that would cover almost everything is not worth its spacers.
-        if (start === 0 && end >= total) return null;
-        return { start, end };
+        const scrollTop = (host ? host.scrollTop : window.scrollY) - offset;
+        return model.itemWindow(items, { scrollTop, viewport, ...this.workbenchItemHeights() });
     }
 
     /**
@@ -20773,9 +20765,7 @@ class DashboardConfig {
             frame = requestAnimationFrame(() => {
                 frame = 0;
                 if (this.section !== 'bookmarks' || !this.isActiveView()) return;
-                const rows = this.visibleBookmarks();
-                const shown = this.bookmarkVisibleLimit(rows.length);
-                const next = this.bookmarkRowWindow(shown);
+                const next = this.bookmarkRowWindow();
                 const key = next ? `${next.start}-${next.end}` : 'all';
                 if (key === this._bmWindowKey) return;
                 this._bmWindowKey = key;
@@ -21858,6 +21848,43 @@ class DashboardConfig {
         return hidden;
     }
 
+    toggleBookmarkSelection(key) {
+        if (!key) return;
+        if (this.bmSelected.has(key)) this.bmSelected.delete(key);
+        else this.bmSelected.add(key);
+        this.bmSelectAnchor = key;
+        this.afterSelectionChange();
+    }
+
+    /** Tick everything between the anchor and `key`, in the order the list shows. */
+    selectBookmarkRange(key) {
+        const keys = this.visibleBookmarks().map((b) => this.bookmarkKey(b));
+        const anchor = keys.includes(this.bmSelectAnchor) ? this.bmSelectAnchor : key;
+        window.BookmarkWorkbenchModel.rangeKeys(keys, anchor, key).forEach((k) => this.bmSelected.add(k));
+        this.bmSelectAnchor = key;
+        this.afterSelectionChange();
+    }
+
+    /** Every row of a page › category group, drawn or not. */
+    selectBookmarkGroup(groupKey) {
+        this.visibleBookmarks()
+            .filter((b) => this.workbenchGroupKey(b) === groupKey)
+            .forEach((b) => this.bmSelected.add(this.bookmarkKey(b)));
+        this.afterSelectionChange();
+    }
+
+    afterSelectionChange() {
+        document.querySelectorAll('#config-bm-list .config-bm-row').forEach((row) => {
+            const on = this.bmSelected.has(this.bookmarkRowKey(row));
+            row.classList.toggle('is-checked', on);
+            row.setAttribute('aria-selected', on ? 'true' : 'false');
+            const box = row.querySelector('.config-bm-tick');
+            if (box) box.checked = on;
+        });
+        this.repaintBulkToolbar();
+        this.repaintWorkbenchPanel?.();
+    }
+
 
 
 
@@ -22564,11 +22591,11 @@ class DashboardConfig {
     renderBookmarkKeyboardLegend() {
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
-            ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
-            ['o', this.t('config.bookmarksKeyOpen', 'open')],
+            ['x', this.t('config.bmKeySelect', 'select')],
+            ['⇧x', this.t('config.bmKeyRange', 'range')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
-            ['m', this.t('config.bookmarksKeyMore', 'more')],
-            ['c', this.t('config.bookmarksKeyCheckMode', 'checking')],
+            ['i', this.t('config.bmKeyPanel', 'panel')],
+            ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
@@ -22828,142 +22855,39 @@ class DashboardConfig {
     bindBookmarkRows(root) {
         this.bookmarkContextMenu()?.bindList(root);
         const listRoot = root.querySelector('#config-bm-list') || root;
-        // Name and shortcut, edited where they are read. Going through the full
-        // form for a typo or a two-letter shortcut is four clicks and a dialog
-        // over the list you were reading; here the row stays in place, Enter
-        // saves and Escape puts the old value back.
-        listRoot.querySelectorAll('[data-bm-inline]').forEach((el) => {
-            const start = () => this.startInlineBookmarkEdit(el);
-            el.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
-            // A shortcut pill is a button, so a single click is the natural way
-            // in; the title is a heading, where a click means "select the row".
-            if (el.getAttribute('data-bm-inline') === 'shortcut') {
-                el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
-            }
-        });
-        listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) this.openBookmarkByKey(key);
-            });
-        });
-        listRoot.querySelectorAll('[data-feed-action="edit"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) void this.openBookmarkEditModal(key);
-            });
-        });
-        listRoot.querySelectorAll('[data-feed-action="recheck"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) void this.recheckBookmarkByKey(key);
-            });
-        });
-        listRoot.querySelectorAll('.health-view-more-btn').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-menu-toggle');
-                if (key) this.toggleBookmarkMenu(key, 'more');
-            });
-        });
-        listRoot.querySelectorAll('.health-check-mode').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-menu-toggle');
-                if (key) this.toggleBookmarkMenu(key, 'check');
-            });
-        });
-        // One listener for every row's menu items, on the list itself: the items
-        // do not exist until a menu is opened (see fillBookmarkMenu), and fifty
-        // rows no longer mean a hundred handlers.
-        if (!listRoot.dataset.menuDelegated) {
-            listRoot.dataset.menuDelegated = 'true';
-            listRoot.addEventListener('click', (e) => {
-                const modeItem = e.target.closest?.('[data-check-mode]');
-                if (modeItem && listRoot.contains(modeItem)) {
-                    e.stopPropagation();
-                    const key = modeItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
-                    const mode = modeItem.getAttribute('data-check-mode');
-                    if (key && mode) void this.setBookmarkCheckMode(key, mode);
-                    return;
-                }
-                const actionItem = e.target.closest?.('[data-bm-menu-action]');
-                if (actionItem && listRoot.contains(actionItem)) {
-                    e.stopPropagation();
-                    const key = actionItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
-                    const action = actionItem.getAttribute('data-bm-menu-action');
-                    if (!key || !action) return;
-                    /*
-                     * Through the context menu's dispatcher, because the menu
-                     * is now built from its list: Edit, Pin, the filters and
-                     * Select are actions this one never knew, and run() falls
-                     * through to handleBookmarkMenuAction for the rest anyway.
-                     * A submenu entry is anchored to the item that opened it,
-                     * so the second menu appears where the reader clicked.
-                     */
-                    const menu = this.bookmarkContextMenu();
-                    const bookmark = this.findBookmarkByKey(key);
-                    if (menu?.run && bookmark) {
-                        if (action === 'check-mode') {
-                            const box = actionItem.getBoundingClientRect();
-                            menu._anchor = { x: Math.round(box.right), y: Math.round(box.top) };
-                        }
-                        this.closeBookmarkMenus();
-                        void menu.run(action, key, bookmark);
-                        return;
-                    }
-                    this.handleBookmarkMenuAction(action, key);
-                }
-            });
-        }
-        listRoot.querySelectorAll('[data-bm-tick]').forEach((box) => {
-            box.addEventListener('change', () => {
-                const key = box.getAttribute('data-bm-tick');
-                if (box.checked) this.bmSelected.add(key);
-                else this.bmSelected.delete(key);
-                this.repaintBulkToolbar();
-                box.closest('.config-bm-item')?.classList.toggle('is-checked', box.checked);
-            });
-        });
         listRoot.querySelectorAll('.health-view-item-icon-img').forEach((img) => {
             window.BookmarkFeedRow?.bindIconFallback?.(img);
         });
-        listRoot.querySelectorAll('[data-bm-filter-page]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const pageId = btn.getAttribute('data-bm-filter-page');
-                if (pageId) void this.filterBookmarksByPage(pageId);
-            });
+        // Delegated once per host: rows are replaced on every repaint.
+        if (listRoot.dataset.bmRowsWired === '1') return;
+        listRoot.dataset.bmRowsWired = '1';
+        listRoot.addEventListener('change', (e) => {
+            const box = e.target.closest('[data-bm-tick]');
+            if (!box) return;
+            const key = box.getAttribute('data-bm-tick');
+            if (box.checked) this.bmSelected.add(key);
+            else this.bmSelected.delete(key);
+            this.bmSelectAnchor = key;
+            this.afterSelectionChange();
         });
-        listRoot.querySelectorAll('[data-bm-row-key]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-bm-row-key');
-                const b = key ? this.findBookmarkByKey(key) : null;
-                if (b) this.filterBookmarksByCategory(b);
-            });
+        listRoot.addEventListener('click', (e) => {
+            const group = e.target.closest('[data-bm-select-group]');
+            if (group) {
+                this.selectBookmarkGroup(group.getAttribute('data-bm-select-group'));
+                return;
+            }
+            const tick = e.target.closest('.config-bm-tick-cell');
+            const row = e.target.closest('.config-bm-row');
+            if (tick && row && e.shiftKey) {
+                e.preventDefault();
+                this.selectBookmarkRange(this.bookmarkRowKey(row));
+            }
         });
-        listRoot.querySelectorAll('[data-bm-filter-tag]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.filterBookmarksByTag(btn.getAttribute('data-bm-filter-tag'));
-            });
+        listRoot.addEventListener('dblclick', (e) => {
+            if (e.target.closest('button, label, input, select, a')) return;
+            const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
+            if (key) this.openBookmarkByKey(key);
         });
-        listRoot.querySelectorAll('.config-bm-row').forEach((row) => {
-            row.addEventListener('dblclick', (e) => {
-                if (e.target.closest('button, label, input, select, a')) return;
-                const key = row.getAttribute('data-bm-key');
-                if (key) this.openBookmarkByKey(key);
-            });
-        });
-        if (!listRoot.dataset.configBmPointerWired) {
-            listRoot.dataset.configBmPointerWired = '1';
-            listRoot.addEventListener('click', (e) => {
-                if (!e.target.closest('.health-view-menu') && !e.target.closest('[aria-haspopup="menu"]')) {
-                    this.closeBookmarkMenus();
-                }
-            });
-        }
     }
 
     /**
@@ -23334,9 +23258,18 @@ class DashboardConfig {
      * DOM within a couple of seconds without anyone scrolling, and the 50-row
      * page size did nothing.
      *
-     * Each batch now needs a fresh scroll. `_bmLoadMoreArmed` is lowered as soon
-     * as one page is added and only raised again by a scroll on the list's own
-     * host, so an idle screen stays at the size it was rendered with.
+     * Each batch now needs a fresh scroll. That used to be tracked with a flag
+     * a 'scroll' listener raised, but the slab rows are short enough that the
+     * sentinel can cross into the viewport within the same tick the scroll
+     * starts, sometimes before the listener that arms it has run — and the
+     * windowing scroll handler can itself trigger a rebuild of this observer
+     * mid-gesture, which restarts an event-based arm sequence from scratch and
+     * eats the very report it was meant to catch.
+     *
+     * So "a fresh scroll" is read off the scroll position itself rather than
+     * an event: `_bmLoadMoreLastScrollTop` survives across rebuilds of this
+     * observer, so a load-more still fires once the position genuinely moves,
+     * however many times setup ran in between.
      */
     setupBookmarkLoadMore(host) {
         const sentinel = host?.querySelector('[data-bm-load-more]');
@@ -23345,39 +23278,20 @@ class DashboardConfig {
         sentinel.removeAttribute('aria-hidden');
         this._bmLoadMoreObserver?.disconnect?.();
         const root = this.bookmarkListScrollHost();
-        this.armBookmarkLoadMore(root);
+        const scrollTopNow = () => (root ? root.scrollTop : window.scrollY);
+        if (this._bmLoadMoreLastScrollTop === undefined) this._bmLoadMoreLastScrollTop = scrollTopNow();
         this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
-            if (!this._bmLoadMoreArmed) return;
+            const current = scrollTopNow();
+            const scrolled = current !== this._bmLoadMoreLastScrollTop;
+            this._bmLoadMoreLastScrollTop = current;
+            if (!scrolled) return;
             if (!entries.some((e) => e.isIntersecting)) return;
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
-            this._bmLoadMoreArmed = false;
             this.bmVisibleLimit += this.bmPageSize();
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
-    }
-
-    /**
-     * Re-arm the loader on the next scroll of the list's scroll host.
-     *
-     * `root` is whichever element actually scrolls, or null when that is the
-     * viewport. Window is listened to either way: a scroll container can still
-     * be carried up the page by an outer scroll, and with a null root the
-     * window listener is the only one that fires.
-     */
-    armBookmarkLoadMore(root) {
-        if (this._bmLoadMoreScrollTarget) {
-            this._bmLoadMoreScrollTarget.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-            window.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-        }
-        this._bmLoadMoreArmed = false;
-        this._bmLoadMoreScrollHandler = () => {
-            this._bmLoadMoreArmed = true;
-        };
-        this._bmLoadMoreScrollTarget = root || document;
-        this._bmLoadMoreScrollTarget.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
-        window.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
     }
 
     repaintBookmarksList() {

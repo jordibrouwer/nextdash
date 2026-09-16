@@ -1,36 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
-
-async function openBookmarksWithRows(page, bookmarks) {
-    await page.route('**/api/bookmarks?all=true', async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(bookmarks),
-        });
-    });
-    await page.route('**/api/bookmarks?page=*', async (route) => {
-        if (route.request().method() !== 'GET') return route.fallback();
-        const pageId = new URL(route.request().url()).searchParams.get('page');
-        const rows = bookmarks.filter((b) => String(b.pageId) === String(pageId));
-        await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(rows),
-        });
-    });
-    await page.goto('/');
-    await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
-    await dismissOnboardingIfPresent(page);
-    await dismissBlockingOverlays(page);
-    await page.evaluate((rows) => {
-        window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
-        window.dashboardInstance.allBookmarks = rows;
-        return window.dashboardInstance.config.openConfigView('bookmarks');
-    }, bookmarks);
-    await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible({ timeout: 10_000 });
-}
+const { openBookmarksWithRows } = require('./config-bookmarks-helpers');
 
 test.describe('config bookmarks keyboard navigation', () => {
     test('j and k move between bookmark rows and highlight the selection', async ({ page }) => {
@@ -120,5 +90,44 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
         await expect(page.locator('[data-config-section="bookmarks"]')).toHaveAttribute('aria-selected', 'true');
+    });
+
+    test('x and Space tick the row under the cursor, shift+x ticks a range', async ({ page }) => {
+        await openBookmarksWithRows(page, [
+            { name: 'A', url: 'https://a.example', pageId: 1 },
+            { name: 'B', url: 'https://b.example', pageId: 1 },
+            { name: 'C', url: 'https://c.example', pageId: 1 },
+            { name: 'D', url: 'https://d.example', pageId: 1 },
+        ]);
+        // Not a click inside the list itself: with four rows sharing one page
+        // and no category they draw as a single slab, and a click on
+        // #config-bm-list can land on a row and pre-empt the cursor the test
+        // means to walk onto with j. The toolbar count is real UI, just not
+        // part of the row grid.
+        await page.locator('#config-bm-count').click();
+        await page.keyboard.press('j');
+        await page.keyboard.press('x');
+        const selected = () => page.evaluate(() => [...window.dashboardInstance.config.bmSelected].sort());
+        await expect.poll(selected).toEqual(['1::https://a.example']);
+
+        await page.keyboard.press('j');
+        await page.keyboard.press('j');
+        await page.keyboard.press('Shift+X');
+        await expect.poll(selected).toEqual(['1::https://a.example', '1::https://b.example', '1::https://c.example']);
+
+        await page.keyboard.press('j');
+        await page.keyboard.press(' ');
+        await expect.poll(async () => (await selected()).length).toBe(4);
+        await page.keyboard.press(' ');
+        await expect.poll(async () => (await selected()).length).toBe(3);
+    });
+
+    test('m and c no longer open row menus', async ({ page }) => {
+        await openBookmarksWithRows(page, [{ name: 'A', url: 'https://a.example', pageId: 1 }]);
+        await page.locator('#config-bm-list').click();
+        await page.keyboard.press('j');
+        await page.keyboard.press('m');
+        await page.keyboard.press('c');
+        await expect(page.locator('#config-bm-list .health-view-menu:not([hidden])')).toHaveCount(0);
     });
 });

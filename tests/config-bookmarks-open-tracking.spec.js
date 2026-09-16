@@ -24,13 +24,13 @@ async function openBookmarksPanel(page) {
     await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await expect(page.locator('#config-bm-list')).toBeVisible();
-    // The actions bar expands from 0fr on hover; without this the button slides
-    // out from under the cursor and the click lands on the row behind it.
+    // The keyboard cursor scrolls smoothly by default; without this a scroll
+    // mid-test can still be animating when the next assertion reads the DOM.
     await page.evaluate(() => document.body.classList.add('no-animations'));
 }
 
 /**
- * Hover the first row so its actions bar is out, and hand back the Open button.
+ * Hover the first row, and hand back something to open it with.
  *
  * The hover is also where a background reload tends to land: it replaces the
  * whole allBookmarks array, so anything seeded into those objects beforehand is
@@ -50,7 +50,9 @@ async function armFirstRow(page) {
         window.__bmArr = now;
         return settled;
     }, null, { timeout: 15_000 });
-    return { row, openBtn: row.locator('[data-feed-action="open"]') };
+    // The slab row has no dedicated Open button; a double-click on the title
+    // is the row's own way of opening it, same as Enter after `j`.
+    return { row, openBtn: row.locator('.config-bm-title') };
 }
 
 /** Give the first row an old open, so a fresh one is visibly different. */
@@ -67,9 +69,12 @@ async function seedStaleOpen(page) {
     });
 }
 
-function usageText(page) {
-    return page.locator('#config-bm-list .config-bm-row').first()
-        .locator('.config-bm-usage-col').innerText();
+/** The opens count and the last-opened label, the slab row's two usage columns. */
+async function usageText(page) {
+    const row = page.locator('#config-bm-list .config-bm-row').first();
+    const opens = await row.locator('.config-bm-opens').innerText();
+    const last = await row.locator('.config-bm-last').innerText();
+    return `${opens} ${last}`;
 }
 
 test.describe('config bookmarks — opening a row', () => {
@@ -80,14 +85,14 @@ test.describe('config bookmarks — opening a row', () => {
         await page.route('**/api/track-open', (route) =>
             route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' }));
 
-        expect(await usageText(page)).toContain('2×');
+        expect(await usageText(page)).toContain('2');
 
-        await openBtn.click();
+        await openBtn.dblclick();
 
         await expect.poll(() => page.evaluate(() => window.__opened.length)).toBeGreaterThan(0);
         // The label and the count both move, in the row already on screen.
         await expect.poll(() => usageText(page)).toContain('just opened');
-        expect(await usageText(page)).toContain('3×');
+        expect(await usageText(page)).toContain('3');
     });
 
     test('opening a row records the open server-side', async ({ page }) => {
@@ -100,7 +105,7 @@ test.describe('config bookmarks — opening a row', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
         });
 
-        await openBtn.click();
+        await openBtn.dblclick();
 
         await expect.poll(() => posted).not.toBeNull();
         const body = JSON.parse(posted);
@@ -134,7 +139,7 @@ test.describe('config bookmarks — opening a row', () => {
         const before = await order();
         expect(before.length).toBeGreaterThan(0);
 
-        await openBtn.click();
+        await openBtn.dblclick();
         await page.waitForTimeout(700);
 
         // Still there, and now showing the open that just happened.

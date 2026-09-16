@@ -1108,7 +1108,7 @@ test.describe('sub-tab deep links', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         const pageId = await page.evaluate(() => String(window.dashboardInstance.pages[0]?.id || ''));
-        await page.selectOption('#config-bm-page', pageId);
+        await page.click(`#config-bm-rail [data-bm-rail="page"][data-value="${pageId}"]`);
         await expect(page.locator('.config-view-breadcrumb')).toHaveCount(0);
         // The dashboard heading names the view; the trail sits in the panel head
         // with the section it describes, and carries the page filter.

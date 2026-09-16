@@ -6085,7 +6085,11 @@
     "bmShowMore": "+{n} more",
     "bmShowFewer": "fewer",
     "bmAllTags": "all",
-    "bmEmptyHealth": "No bookmark is in that state right now."
+    "bmEmptyHealth": "No bookmark is in that state right now.",
+    "bmSelectGroup": "select group",
+    "bmKeySelect": "select",
+    "bmKeyRange": "range",
+    "bmKeyPanel": "panel"
   },
   "colors": {
     "title": "theme customization",

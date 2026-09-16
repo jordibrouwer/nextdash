@@ -93,16 +93,14 @@ async function openEditor(page, { icon = '' } = {}) {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await expect(page.locator('#config-bm-list')).toBeVisible();
 
-    // Through the row's own Edit button. The list repaints itself, so look the
-    // button up and click it in one go rather than holding a locator across
-    // two calls.
-    await expect.poll(async () => page.evaluate(() => {
-        const btn = document.querySelector('#config-bm-list [data-feed-action="edit"]');
-        if (!btn) return 'not yet';
-        btn.scrollIntoView({ block: 'center' });
-        btn.click();
-        return 'clicked';
-    }), { timeout: 15_000 }).toBe('clicked');
+    // Through the list's own `e` shortcut, on the row the cursor lands on
+    // first — the slab row has no dedicated Edit button any more.
+    await expect
+        .poll(() => page.locator('#config-bm-list .config-bm-row').count())
+        .toBeGreaterThan(0);
+    await page.locator('#config-bm-list').click();
+    await page.keyboard.press('j');
+    await page.keyboard.press('e');
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 }
 
