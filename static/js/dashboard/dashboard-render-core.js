@@ -1234,6 +1234,7 @@ class DashboardRenderCore {
             d.collapsedCategories[key] = target;
         });
         d.saveCollapsedStates();
+        window.nextdashTrackNav?.(target ? 'category-collapse' : 'category-expand', 'all');
     }
 
     initializeCategoryReorder() {
@@ -2676,6 +2677,7 @@ class DashboardRenderCore {
             titleElement.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             d.collapsedCategories[collapsedKey] = collapsed;
             d.saveCollapsedStates();
+            window.nextdashTrackNav?.(collapsed ? 'category-collapse' : 'category-expand');
         };
 
         titleElement.addEventListener('click', (e) => {

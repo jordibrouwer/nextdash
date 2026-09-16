@@ -1077,6 +1077,7 @@ class DashboardHealth {
         if ((e.key === 'R' || e.key === 'r' || e.key === '?') && !onRowControl && !isSearch) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('R');
             void this.refreshReportFromKeyboard();
             return true;
         }

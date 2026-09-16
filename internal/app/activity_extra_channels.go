@@ -61,11 +61,16 @@ const (
 // exists in inbox.go; reused here rather than redefined.
 
 // activityNavActions is the fixed set of things nav.activity can report — a
-// page switch, a category folding open or closed, or a layout change. Free
-// text here would make "which of the three happened" a string comparison
-// instead of a field a query can group by.
+// bookmark-page switch, a category folding open or closed, a layout change,
+// or a switch between dashboard/health/inbox/config. "page" and "view" are
+// deliberately separate: switching pages 1-9 and switching from the grid to
+// Health are both "the reader went somewhere else" but not the same
+// question, and a reader filtering the trail for one should not have to
+// exclude the other by hand. Free text here would make "which happened" a
+// string comparison instead of a field a query can group by.
 var activityNavActions = map[string]bool{
 	"page":              true,
+	"view":              true,
 	"category-expand":   true,
 	"category-collapse": true,
 	"layout":            true,

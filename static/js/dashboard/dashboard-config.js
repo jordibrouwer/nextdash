@@ -1254,6 +1254,7 @@ class DashboardConfig {
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('Ctrl/Cmd + Shift + K');
             this.openSettingsJump();
             return true;
         }
@@ -13628,6 +13629,9 @@ class DashboardConfig {
             return;
         }
         d.settings[field] = value;
+        if (field === 'layoutPreset' || field === 'columnsPerRow') {
+            window.nextdashTrackNav?.('layout', field);
+        }
         // Which settings people actually change. The field name is a fixed enum
         // so it is safe to report; the value is not (titles, webhook URLs and
         // custom text are free-form and can be personal). Booleans are the one

@@ -3508,6 +3508,7 @@ class SearchComponent {
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
                 } else if (match.type === 'finder') {
+                    window.nextdashRecordKey?.(match.shortcut);
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
                     this.closeSearch();
@@ -3661,6 +3662,7 @@ class SearchComponent {
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
             } else if (selectedMatch.type === 'finder') {
+                window.nextdashRecordKey?.(selectedMatch.shortcut);
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
                 this.closeSearch();
@@ -3999,6 +4001,7 @@ class SearchComponent {
         const known = this.commandsComponent?.availableCommands;
         if (!known || !Object.prototype.hasOwnProperty.call(known, name)) return;
         window.nextdashTrack?.('command', { name });
+        window.nextdashRecordKey?.(':' + name);
     }
 
     invokeCommand(match) {

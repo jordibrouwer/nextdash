@@ -342,6 +342,7 @@ class DashboardSetup {
             if (e.key === 'F1') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('! or F1');
                 d.showKeyboardCheatSheet();
                 return;
             }
@@ -349,6 +350,7 @@ class DashboardSetup {
             if (e.key === ',') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.(',');
                 d.showPageOverlay();
                 return;
             }
@@ -358,6 +360,7 @@ class DashboardSetup {
             if (e.key === '<' || (e.code === 'Comma' && e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('<');
                 window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                 // Same destination as Shift+S: the config view, in place. This
                 // used to navigate to the standalone /config page with a full
@@ -375,6 +378,7 @@ class DashboardSetup {
             if (e.key === '&') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('&');
                 d.showOmnibox();
                 return;
             }
@@ -415,6 +419,7 @@ class DashboardSetup {
                 if (d.health?.isEnabled?.()) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + H');
                     void d.health.openHealthView();
                 }
                 return;
@@ -428,6 +433,7 @@ class DashboardSetup {
             if (e.shiftKey && e.code === 'KeyQ') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + Q');
                 void d.toggleSearchMode?.();
                 return;
             }
@@ -436,6 +442,7 @@ class DashboardSetup {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + I');
                     void d.inbox.openInboxView();
                 }
                 return;
@@ -448,6 +455,7 @@ class DashboardSetup {
                 if (d.config?.openConfigView) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + S');
                     window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                     void d.config.openConfigView();
                 }
@@ -464,6 +472,7 @@ class DashboardSetup {
                 if (d.config?.openThemeBrowser) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + A');
                     window.nextdashTrack?.('nav:theme-browser-shortcut');
                     void d.config.openThemeBrowser();
                 }
@@ -479,6 +488,7 @@ class DashboardSetup {
                 if (pageIndex < d.pages.length) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('1–9');
 
                     const page = d.pages[pageIndex];
                     void d.requestPageNavigation(page.id);

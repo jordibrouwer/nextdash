@@ -1817,6 +1817,7 @@ class DashboardInbox {
         if (e.key === 'R') {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('R');
             void this.refreshFromKeyboard();
             return true;
         }

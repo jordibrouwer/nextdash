@@ -1043,6 +1043,7 @@ class Dashboard {
             return previous;
         }
         this.activeView = view;
+        window.nextdashTrackNav?.('view', view);
         // Leaving config stamps where you were, whichever route took you out —
         // the header buttons and page tabs switch view without config being
         // asked, and the five-minute expiry is measured from this moment rather

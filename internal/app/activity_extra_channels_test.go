@@ -150,6 +150,24 @@ func TestTrackNavAcceptsKnownActionAndDropsUnknown(t *testing.T) {
 	}
 }
 
+// "view" (switching between the bookmark grid, Health, Inbox and Config) is
+// deliberately a different action from "page" (switching bookmark pages
+// 1-9) — see the comment on activityNavActions.
+func TestTrackNavAcceptsViewAction(t *testing.T) {
+	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{activityCategoryNav: true}})
+	h := newTrackOpenTestHandlers(t)
+
+	lines := captureActivityLogs(t, func() {
+		rec := postJSON(t, h.TrackNav, "/api/track-nav", map[string]any{"action": "view", "detail": "health"})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+		}
+	})
+	if len(lines) != 1 || !strings.Contains(lines[0], `"event":"nav.view"`) || !strings.Contains(lines[0], `"detail":"health"`) {
+		t.Fatalf("expected a nav.view line with detail=health, got %v", lines)
+	}
+}
+
 func TestTrackNavOffByDefault(t *testing.T) {
 	resetActivityLogForTest(activityLogConfig{enabled: map[string]bool{}})
 	h := newTrackOpenTestHandlers(t)

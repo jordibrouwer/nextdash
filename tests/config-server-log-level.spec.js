@@ -208,3 +208,57 @@ test('a search is only sent to the server once the search channel is on', async 
     await expect.poll(() => requests.length, { timeout: 15_000 }).toBe(1);
     expect(requests[0].query.toLowerCase()).toContain('search-on');
 });
+
+// '<' opens config — one of the global shortcuts nextdashRecordKey aggregates
+// rather than sending per press. pagehide is the flush this drives, since a
+// real 30s interval is too slow for a test.
+test('a real shortcut is aggregated and flushed to track-keys', async ({ page }) => {
+    await openServerLogTab(page);
+
+    const requests = [];
+    await page.route('**/api/track-keys', async (route) => {
+        requests.push(route.request().postDataJSON());
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+    });
+
+    const keysChannel = page.locator('[data-activity-channel="keys"]');
+    await expect(keysChannel).toBeVisible({ timeout: 15_000 });
+    await keysChannel.check();
+    await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 5_000 }).toBe('bookmarks');
+
+    await page.keyboard.press('<');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 5_000 }).toBe('config');
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+
+    await expect.poll(() => requests.length, { timeout: 15_000 }).toBe(1);
+    expect(requests[0].keys).toHaveProperty('<');
+});
+
+// The real per-category toggle, not a settings write — this is the click a
+// reader actually makes.
+test('collapsing a category through the real toggle sends track-nav', async ({ page }) => {
+    await openServerLogTab(page);
+
+    const requests = [];
+    await page.route('**/api/track-nav', async (route) => {
+        requests.push(route.request().postDataJSON());
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+    });
+
+    const navChannel = page.locator('[data-activity-channel="nav"]');
+    await expect(navChannel).toBeVisible({ timeout: 15_000 });
+    await navChannel.check();
+    await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+
+    const title = page.locator('#dashboard-layout .category:not([data-smart-collection="true"]) .category-title').first();
+    await expect(title).toBeVisible({ timeout: 10_000 });
+    await title.click();
+
+    // Leaving Config to reach the grid is its own "view" nav line, sent
+    // before this click — the category toggle is whichever one names it.
+    await expect.poll(
+        () => requests.some((r) => r.action === 'category-collapse' || r.action === 'category-expand'),
+        { timeout: 15_000 },
+    ).toBe(true);
+});
