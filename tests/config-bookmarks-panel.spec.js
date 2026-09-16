@@ -199,7 +199,8 @@ test.describe('the bookmark panel', () => {
 
     test('Shift+E opens the full dialog, and the legend says so', async ({ page }) => {
         await openBookmarks(page);
-        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('⇧e');
+        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('Shift E');
+        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('edit in dialog');
         await focusFirstRow(page);
         await page.keyboard.press('Shift+E');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
@@ -282,6 +283,31 @@ test.describe('the bookmark panel', () => {
             return el?.getAttribute('data-bm-group') || '';
         });
         expect(group.startsWith(`${target}::`)).toBe(true);
+    });
+
+    test('the header shows the whole name, and the dialog button its keys', async ({ page }) => {
+        await openBookmarks(page);
+        const key = await focusFirstRow(page);
+        await page.keyboard.press('e');
+        const panel = page.locator('#config-bm-panel');
+        await panel.locator('[data-bm-field="name"]').fill('Cal');
+        await page.keyboard.press('Tab');
+        await expect(panel.locator('.config-bm-panel-title')).toHaveText('Cal');
+        const title = panel.locator('.config-bm-panel-title');
+        expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+        expect(await title.textContent()).not.toContain('…');
+        const edit = panel.locator('[data-bm-panel-action="edit-dialog"]');
+        await expect(edit).toContainText('Shift');
+        await expect(edit.locator('kbd')).toHaveText(['Shift', 'E']);
+        await expect(edit).toHaveAttribute('title', /Shift\+E/);
+        // Both actions stay inside the panel.
+        const box = await panel.boundingBox();
+        for (const btn of await panel.locator('.config-bm-panel-actions .config-btn').all()) {
+            const b = await btn.boundingBox();
+            expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1);
+        }
+        expect(key).toBeTruthy();
+        await expect(page.locator('#config-bm-rail .config-bm-rail-item').first()).toHaveAttribute('title', /\S/);
     });
 
     test('changing the category keeps the panel on the bookmark', async ({ page }) => {

@@ -125,4 +125,40 @@ test.describe('groups in the bookmark list', () => {
         await page.locator('[data-bm-select-group]').first().click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmSelected.size)).toBe(400);
     });
+
+    test('a long category name is shown whole, in the group head and in the crumb', async ({ page }) => {
+        // Wide enough for the title and the whole crumb side by side.
+        await page.setViewportSize({ width: 1920, height: 900 });
+        const name = 'selfhost-with-a-long-name';
+        // Served by route, like the rows: the page's categories name the id.
+        await page.route('**/api/categories?page=1', (route) => (route.request().method() === 'GET'
+            ? route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([{ id: 'shl', name, sortMode: 'order' }]),
+            })
+            : route.fallback()));
+        await openBookmarksWithRows(page, [
+            { name: 'Nextcloud with a fairly long bookmark name', url: 'https://cloud.example', pageId: 1, category: 'shl', openCount: 2 },
+            { name: 'Plex', url: 'https://plex.example', pageId: 1, category: '', openCount: 1 },
+        ]);
+        const fits = (loc) => loc.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+
+        await page.selectOption('#config-bm-sort', 'page');
+        const label = page.locator('#config-bm-list .config-bm-group-head[data-bm-group$="::shl"] .config-bm-group-label');
+        await expect(label).toContainText(name, { ignoreCase: true });
+        expect(await fits(label)).toBe(true);
+
+        await page.selectOption('#config-bm-sort', 'opens');
+        const crumb = page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-crumb');
+        await expect(crumb).toHaveText(new RegExp(` › ${name}$`));
+        expect(await fits(crumb)).toBe(true);
+        const box = await crumb.boundingBox();
+        const cell = await page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-name').boundingBox();
+        expect(box.x + box.width).toBeLessThanOrEqual(cell.x + cell.width + 1);
+        await expect(crumb).toHaveAttribute('title', new RegExp(`${name}$`));
+        // The title gives way, but is still there.
+        const title = page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-title');
+        expect((await title.boundingBox()).width).toBeGreaterThan(0);
+    });
 });

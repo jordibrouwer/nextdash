@@ -6114,8 +6114,9 @@
     "bmBulkDone": "Bookmarks updated.",
     "bmBulkUndone": "Changes put back.",
     "bmFieldInterval": "Interval",
-    "bmKeyEditDialog": "edit dialog",
-    "bmEditDialog": "Edit…"
+    "bmKeyEditDialog": "edit in dialog",
+    "bmEditDialog": "Edit in dialog",
+    "bmEditDialogTitle": "Open the full edit dialog (Shift+E)"
   },
   "colors": {
     "title": "theme customization",

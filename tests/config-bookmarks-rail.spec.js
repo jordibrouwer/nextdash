@@ -135,4 +135,40 @@ test.describe('the bookmarks workbench', () => {
         await expect(firstPage).toHaveClass(/is-empty/);
         await expect(firstPage.locator('.config-bm-rail-count')).toHaveText('0');
     });
+
+    test('a long category name is shown whole, wrapped rather than cut', async ({ page }) => {
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        const pages = await (await page.request.get('/api/pages')).json();
+        const pid = pages[0].id;
+        const catsBefore = await (await page.request.get(`/api/categories?page=${pid}`)).json();
+        const bmsBefore = await (await page.request.get(`/api/bookmarks?page=${pid}`)).json();
+        const name = 'selfhost-with-a-long-name';
+        const id = 'rail-long-name-fixture';
+        try {
+            // Fixture setup over the API: a category and one bookmark in it.
+            await page.request.post(`/api/categories?page=${pid}`, {
+                data: [...catsBefore, { id, name, sortMode: 'order' }], headers,
+            });
+            await page.request.post(`/api/bookmarks?page=${pid}`, {
+                data: [...bmsBefore, { name: 'Long name fixture', url: 'https://example.com/long-name', category: id }],
+                headers,
+            });
+            await openBookmarks(page);
+            const item = page.locator(`#config-bm-rail [data-bm-rail="category"][data-value$="${id}"]`);
+            await expect(item).toHaveAttribute('title', new RegExp(`${name} \\(1\\)$`));
+            const label = item.locator('.config-bm-rail-label');
+            await expect(label).toHaveText(new RegExp(`${name}$`));
+            expect(await label.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+            const rail = page.locator('#config-bm-rail');
+            const fit = await rail.evaluate((el) => ({
+                vertical: el.scrollHeight <= el.clientHeight + 1,
+                horizontal: el.scrollWidth <= el.clientWidth + 1,
+            }));
+            expect(fit).toEqual({ vertical: true, horizontal: true });
+            expect((await rail.boundingBox()).width).toBeLessThanOrEqual(180);
+        } finally {
+            await page.request.post(`/api/bookmarks?page=${pid}`, { data: bmsBefore, headers });
+            await page.request.post(`/api/categories?page=${pid}`, { data: catsBefore, headers });
+        }
+    });
 });

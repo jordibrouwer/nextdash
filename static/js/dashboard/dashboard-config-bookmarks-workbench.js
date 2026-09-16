@@ -109,7 +109,8 @@
         const tags = this.bookmarkTagFilters();
         const entry = (kind, value, label, n, on, extra = '') => `
             <button type="button" class="config-bm-rail-item${on ? ' is-on' : ''}${n ? '' : ' is-empty'}"
-                    data-bm-rail="${kind}" data-value="${esc(value)}" aria-pressed="${on ? 'true' : 'false'}">
+                    data-bm-rail="${kind}" data-value="${esc(value)}" aria-pressed="${on ? 'true' : 'false'}"
+                    title="${esc(`${label} (${n})`)}">
                 ${extra}<span class="config-bm-rail-label">${esc(label)}</span>
                 <span class="config-bm-rail-count">${n}</span>
             </button>`;
@@ -122,7 +123,7 @@
         // Tokens: what is on, each removable.
         const tokens = [];
         const token = (key, label) => tokens.push(
-            `<button type="button" class="config-bm-rail-token" data-bm-rail-clear="${esc(key)}">${esc(label)}<span aria-hidden="true">×</span></button>`);
+            `<button type="button" class="config-bm-rail-token" data-bm-rail-clear="${esc(key)}" title="${esc(label)}">${esc(label)}<span aria-hidden="true">×</span></button>`);
         if (this.bmCleanupFilter) token('cleanup', this.cleanupFilterLabel(this.bmCleanupFilter));
         if (this.bmPageFilter) token('page', this.pageLabel(this.bmPageFilter));
         if (this.bmCategoryFilter) {
@@ -353,11 +354,16 @@
             `<input type="text" class="config-text" data-bm-field="${name}" value="${esc(value ?? '')}" data-original="${esc(value ?? '')}" ${extra}>`;
         const feed = global.BookmarkFeedRow;
         return `
-            <header class="config-bm-panel-head">
-                <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
-                <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
-                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog">${esc(this.t('config.bmEditDialog', 'Edit…'))} <kbd>⇧E</kbd></button>
-                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
+            <header class="config-bm-panel-head config-bm-panel-head--single">
+                <div class="config-bm-panel-heading">
+                    <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                    <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
+                </div>
+                <div class="config-bm-panel-actions">
+                    <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog"
+                            title="${esc(this.t('config.bmEditDialogTitle', 'Open the full edit dialog (Shift+E)'))}">${esc(this.t('config.bmEditDialog', 'Edit in dialog'))} <kbd>Shift</kbd><kbd>E</kbd></button>
+                </div>
             </header>
             <div class="config-bm-panel-fields">
                 ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
@@ -1103,7 +1109,8 @@
         const added = b.createdAt
             ? (global.formatLastOpened?.(b.createdAt, { t: this.lastOpenedTranslator() })?.label || '—')
             : '—';
-        const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb">${esc(this.workbenchGroupLabel(b))}</span>`;
+        const crumbLabel = ctx.grouped ? '' : this.workbenchGroupLabel(b);
+        const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb" title="${esc(crumbLabel)}">${esc(crumbLabel)}</span>`;
         const classes = ['config-bm-row'];
         if (ticked) classes.push('is-checked');
         if (item.groupStart) classes.push('is-group-start');

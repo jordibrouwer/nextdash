@@ -118,7 +118,8 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
 .config-bm-rail-token {
     display: inline-flex;
     gap: 0.3em;
-    align-items: center;
+    align-items: flex-start;
+    white-space: normal;
     border: 0;
     border-radius: var(--radius-3, 4px);
     padding: 1px 6px;
@@ -168,7 +169,8 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 
 .config-bm-rail-item {
     display: flex;
-    align-items: center;
+    /* A label that wraps keeps its count on the first line. */
+    align-items: flex-start;
     gap: 6px;
     width: 100%;
     border: 0;
@@ -199,12 +201,20 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 .config-bm-rail-label {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Wrapped, never cut: "main › selfhost-2" and "main › selfhost-3" only
+       differ at the end. */
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-rail-item .config-bm-health-dot {
+    margin-top: 0.45em;
 }
 
 .config-bm-rail-count {
+    flex: none;
     font-family: var(--font-family-mono, ui-monospace, monospace);
     font-size: var(--font-size-small);
     color: var(--text-secondary);
@@ -304,6 +314,18 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 .config-bm-group-head:hover .config-bm-group-select,
 .config-bm-group-select:focus-visible {
     opacity: 1;
+}
+
+.config-bm-group-label {
+    /* The head spans the whole list, so the name gets all the room it needs
+       rather than an ellipsis ("main › selfhost-2" vs "-3"). */
+    flex: none;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.config-bm-group-head .config-bm-group-select {
+    margin-left: auto;
 }
 
 .config-bm-group-count {
@@ -411,6 +433,13 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 .config-bm-crumb {
     font-family: inherit;
     opacity: 0.7;
+    /* Where the row lives is never shrunk: the domain gives way first, then
+       the title. A cell narrower than the crumb itself still clips it at the
+       cell's edge; the full text is its tooltip. */
+    flex: none;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 /* The drawn pin the context menus use; currentColor follows the theme. */
@@ -522,6 +551,43 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* One bookmark: the name gets a line of its own (two at most), the actions the
+   line under it, so neither is squeezed down to a letter in a 260px panel. */
+.config-bm-panel-head--single {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.config-bm-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.config-bm-panel-head--single .config-bm-panel-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.config-bm-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-panel-actions .config-btn {
+    max-width: 100%;
+}
+
+.config-bm-panel-actions kbd + kbd {
+    margin-left: 2px;
 }
 
 .config-bm-panel-fields {

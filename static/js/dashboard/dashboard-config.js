@@ -22365,9 +22365,9 @@ class DashboardConfig {
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['x', this.t('config.bmKeySelect', 'select')],
-            ['⇧x', this.t('config.bmKeyRange', 'range')],
+            ['Shift X', this.t('config.bmKeyRange', 'range')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
-            ['⇧e', this.t('config.bmKeyEditDialog', 'edit dialog')],
+            ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
