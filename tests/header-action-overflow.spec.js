@@ -90,20 +90,49 @@ test('two is a cap the reader may choose', async ({ page }) => {
     await openWithActions(page, { cap: 2 });
 
     const seen = await bar(page);
-    // The floor is two, not three: a reader who wants the bar down to the one
-    // or two actions they press is asking for what this does, only more of it.
     expect(seen.shown, `${seen.shown} actions on the bar`).toBe(2);
     expect(seen.chip, 'nothing folded at a cap of two').toBe(`+${seen.folded.length}`);
 
-    // And below the floor it stops: one is not on offer.
+    // Below zero it stops: the floor is an empty bar, not a negative one.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
-        d.settings.maxHeaderActions = 1;
+        d.settings.maxHeaderActions = -1;
         d.setupDOM?.();
         await d.saveSettings?.();
     });
     await page.waitForTimeout(300);
-    expect((await bar(page)).shown, 'the bar went below its floor').toBe(2);
+    expect((await bar(page)).shown, 'the bar went below its floor').toBe(0);
+});
+
+/*
+ * Zero is an answer.
+ *
+ * A reader who drives the dashboard by key has no use for the row at all, and
+ * zero used to be read as "never set" and turned back into four. Set through
+ * the field in Config, the way a reader does it.
+ */
+test('zero from Config puts every action behind the control', async ({ page }) => {
+    await openWithActions(page, { cap: 2 });
+    await page.keyboard.press('Shift+Comma');
+    await page.click('[data-config-section="appearance"]');
+    await page.click('[data-appearance-tab="header"]');
+    const field = page.locator('xpath=//input[@type="number" and @data-behavior-field="maxHeaderActions"]');
+    await expect(field).toHaveAttribute('min', '0');
+    await field.fill('0');
+    await field.press('Tab');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.maxHeaderActions)).toBe(0);
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    const seen = await bar(page);
+    expect(seen.shown, `${seen.shown} actions on the bar`).toBe(0);
+    expect(seen.chip, 'the control does not hold every action').toBe(`+${seen.folded.length}`);
+    expect(seen.folded.length).toBeGreaterThan(0);
+
+    // And it survives a reload: the server keeps zero rather than the default.
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.maxHeaderActions)).toBe(0);
 });
 
 /*

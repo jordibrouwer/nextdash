@@ -496,12 +496,15 @@ class DashboardToolbar {
      * The folded ones stay in the DOM, hidden, because the menu opens them by
      * clicking them -- one implementation of what each action does.
      */
-    static HEADER_ACTION_MIN = 2;
+    // Zero is allowed: every action behind the one control.
+    static HEADER_ACTION_MIN = 0;
+
+    static HEADER_ACTION_DEFAULT = 2;
 
     headerActionCap() {
         const d = this.dash;
         const raw = Math.round(Number(d.settings?.maxHeaderActions));
-        const chosen = Number.isFinite(raw) && raw > 0 ? raw : 4;
+        const chosen = Number.isFinite(raw) ? raw : DashboardToolbar.HEADER_ACTION_DEFAULT;
         const capped = Math.min(8, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
         /*
          * A narrow row folds one more away per rung of the header's own
