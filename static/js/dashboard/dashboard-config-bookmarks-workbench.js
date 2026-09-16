@@ -452,7 +452,10 @@
             this._bmPanelTempOpen = !collapsed;
         }
         const root = document.getElementById('config-bm-workbench');
+        const changed = root && root.classList.contains('is-panel-collapsed') !== collapsed;
         root?.classList.toggle('is-panel-collapsed', collapsed);
+        // Rows change width, and the folded layout adds cells.
+        if (changed) this.fitWorkbenchTags(document.getElementById('config-bm-list'));
         const toggle = document.querySelector('#config-bm-panel [data-bm-panel-toggle]');
         if (toggle) toggle.outerHTML = this.renderWorkbenchPanelToggle();
     },
@@ -994,6 +997,15 @@
             + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
+        const cm = global.CheckMode;
+        const checkMode = cm?.of?.(b) || 'off';
+        const checkMeta = cm?.meta?.(checkMode);
+        const checkLabel = checkMode === 'off' || !checkMeta
+            ? '—'
+            : checkMeta.badge + (checkMode === 'monitor' ? ` · ${cm.intervalLabel(cm.intervalOf(b))}` : '');
+        const added = b.createdAt
+            ? (global.formatLastOpened?.(b.createdAt, { t: this.lastOpenedTranslator() })?.label || '—')
+            : '—';
         const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb">${esc(this.workbenchGroupLabel(b))}</span>`;
         const classes = ['config-bm-row'];
         if (ticked) classes.push('is-checked');
@@ -1017,6 +1029,9 @@
                     ${crumb}
                 </span>
                 <span class="config-bm-tags" role="gridcell">${tagChips}</span>
+                <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
+                <span class="config-bm-extra config-bm-checkmode" role="gridcell" title="${esc(`${this.t('config.bmFieldChecking', 'Checking')}: ${checkMeta?.hint || ''}`)}">${esc(checkLabel)}</span>
+                <span class="config-bm-extra config-bm-added" role="gridcell" title="${esc(this.t('config.bookmarkStatAdded', 'Added'))}">${esc(added)}</span>
                 <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
             </div>`;

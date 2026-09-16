@@ -461,6 +461,28 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     white-space: nowrap;
 }
 
+/* ── Folded panel: more per row ───────────────────────────────────────── */
+
+.config-bm-extra {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .config-bm-workbench.is-panel-collapsed .config-bm-row {
+        grid-template-columns: 16px 20px minmax(8rem, 1fr) minmax(0, 11rem) 4rem 8rem 5.5rem 3.5rem 5.5rem;
+    }
+
+    .config-bm-workbench.is-panel-collapsed .config-bm-extra {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--font-size-small);
+        color: var(--text-secondary);
+    }
+}
+
 /* ── Panel ────────────────────────────────────────────────────────────── */
 
 .config-bm-panel {

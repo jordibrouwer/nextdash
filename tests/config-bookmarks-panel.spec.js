@@ -23,7 +23,9 @@ async function capturePosts(page) {
 }
 
 async function focusFirstRow(page) {
-    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    // The list answers j with nothing focused; a click on its corner can land
+    // under the sticky view header once the page has scrolled.
+    await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
     return page.locator('#config-bm-list .config-bm-row.keyboard-selected').getAttribute('data-bm-key');
 }
@@ -99,6 +101,21 @@ test.describe('the bookmark panel', () => {
         await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
         await page.click('[data-bm-panel-toggle]');
         await expect(page.locator('#config-bm-workbench')).not.toHaveClass(/is-panel-collapsed/);
+    });
+
+    test('a folded panel gives the rows more to show', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 800 });
+        await openBookmarks(page);
+        await focusFirstRow(page);
+        const row = page.locator('#config-bm-list .config-bm-row').first();
+        await expect(row.locator('.config-bm-checkmode')).toBeHidden();
+        await page.keyboard.press('i');
+        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
+        await expect(row.locator('.config-bm-checkmode')).toBeVisible();
+        await expect(row.locator('.config-bm-added')).toBeVisible();
+        await page.keyboard.press('i');
+        await expect(row.locator('.config-bm-checkmode')).toBeHidden();
+        await expect(row.locator('.config-bm-added')).toBeHidden();
     });
 
     test('Edit in the right-click menu opens the panel, not a dialog', async ({ page }) => {
