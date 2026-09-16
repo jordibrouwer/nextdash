@@ -442,12 +442,6 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     text-overflow: clip;
 }
 
-/* The drawn pin the context menus use; currentColor follows the theme. */
-.config-bm-pin {
-    display: inline-flex;
-    align-items: center;
-    color: var(--text-secondary);
-}
 
 .config-bm-tags {
     display: flex;
@@ -489,12 +483,8 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
         grid-template-columns: 16px 20px minmax(8rem, 1fr) minmax(0, 11rem) 1.5rem 4rem 8rem 5.5rem 3.5rem 5.5rem;
     }
 
-    /* Pinned gets its own column when folded, so the inline pin would be a
-       second copy. */
-    .config-bm-workbench.is-panel-collapsed .config-bm-name .config-bm-pin {
-        display: none;
-    }
-
+    /* Pinned is shown only here, in its own column; the drawn pin the
+       context menus use, in the theme's colour. */
     .config-bm-workbench.is-panel-collapsed .config-bm-extra.config-bm-pinned {
         display: flex;
         align-items: center;

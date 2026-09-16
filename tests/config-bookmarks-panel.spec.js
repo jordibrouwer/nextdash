@@ -125,11 +125,21 @@ test.describe('the bookmark panel', () => {
         await expect.poll(() => page.evaluate((k) =>
             window.dashboardInstance.config.findBookmarkByKey(k)?.pinned === true, key)).toBe(true);
         const row = page.locator(`#config-bm-list .config-bm-row[data-bm-key="${key}"]`);
-        await expect(row.locator('.config-bm-pinned svg')).toBeHidden();
-        await page.locator('#config-bm-panel [data-bm-panel-toggle]').click();
+        const extras = ['.config-bm-pinned', '.config-bm-key', '.config-bm-checkmode', '.config-bm-added'];
+        // Panel open: no pin anywhere in the row, and no extra columns.
+        await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
+        for (const sel of extras) await expect(row.locator(sel)).toBeHidden();
+        // Out of the field, onto plain page chrome, so i reaches the list.
+        await page.locator('#config-bm-count').click();
+        await page.keyboard.press('i');
         await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
+        for (const sel of extras) await expect(row.locator(sel)).toBeVisible();
         await expect(row.locator('.config-bm-pinned svg')).toBeVisible();
-        await expect(row.locator('.config-bm-name .config-bm-pin')).toBeHidden();
+        await page.keyboard.press('i');
+        await expect(page.locator('#config-bm-workbench')).not.toHaveClass(/is-panel-collapsed/);
+        for (const sel of extras) await expect(row.locator(sel)).toBeHidden();
+        await expect(row.locator('.config-bm-pinned svg')).toBeHidden();
+        await expect(row.locator('.config-bm-name svg')).toHaveCount(0);
     });
 
     test('a folded panel gives the rows more to show', async ({ page }) => {

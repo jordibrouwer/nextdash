@@ -1128,12 +1128,12 @@
                     <span class="config-bm-health-dot is-${esc(state)}" title="${esc(this.railHealthLabel(state))}"></span>
                     <span class="config-bm-title">${esc(title)}</span>
                     <span class="config-bm-domain">${esc(domain)}</span>
-                    ${b.pinned ? `<span class="config-bm-pin" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
                 </span>
                 <span class="config-bm-tags" role="gridcell">${tagChips}</span>
-                <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned ? (global.MenuIcons?.PIN || '') : ''}</span>
+                <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned
+                    ? `<span aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
                 <span class="config-bm-extra config-bm-checkmode" role="gridcell" title="${esc(`${this.t('config.bmFieldChecking', 'Checking')}: ${checkMeta?.hint || ''}`)}">${esc(checkLabel)}</span>
                 <span class="config-bm-extra config-bm-added" role="gridcell" title="${esc(this.t('config.bookmarkStatAdded', 'Added'))}">${esc(added)}</span>
