@@ -21,7 +21,7 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
     });
 
-    test('e opens the edit bookmark modal', async ({ page }) => {
+    test('e moves focus into the panel', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
         ]);
@@ -29,8 +29,8 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
         await page.keyboard.press('e');
-        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
-        await expect(page.locator('#bookmark-form-modal .bookmark-inline-input').first()).toBeFocused();
+        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
+        await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
     });
 
     test('g and Shift+G jump to first and last bookmark rows', async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('#config-bm-search')).toBeFocused();
     });
 
-    test('Escape closes the modal before clearing list selection', async ({ page }) => {
+    test('Escape leaves the panel field before clearing list selection', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
         ]);
@@ -67,10 +67,10 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
         await page.keyboard.press('e');
-        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).toBeFocused();
 
         await page.keyboard.press('Escape');
-        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
+        await expect(page.locator('#config-bm-panel [data-bm-field="name"]')).not.toBeFocused();
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
 

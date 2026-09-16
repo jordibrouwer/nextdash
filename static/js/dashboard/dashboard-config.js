@@ -951,7 +951,8 @@ class DashboardConfig {
             // field only when none of them happened to be armed, and otherwise
             // the field was torn down by something else and its blur saved the
             // half-typed value.
-            if (document.activeElement?.classList?.contains('config-bm-inline-input')) return;
+            // A panel field owns Escape: it means "put the old value back".
+            if (document.activeElement?.closest?.('#config-bm-panel')) return;
             // The row's right-click menu is layered over the view and owns
             // Escape while it is up, the same as the theme picker below. This
             // handler is on document in the capture phase and registers first,
@@ -2318,7 +2319,7 @@ class DashboardConfig {
 
     async activateBookmarkKeyboardRow(key) {
         if (!key) return;
-        void this.openBookmarkEditModal(key);
+        this.focusWorkbenchPanel(key);
     }
 
     findBookmarkByKey(key) {
@@ -2592,6 +2593,13 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+        }
+        // With or without a row in focus: the panel is folded for the list.
+        if (e.key === 'i') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.toggleWorkbenchPanel();
+            return true;
         }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
@@ -22075,133 +22083,6 @@ class DashboardConfig {
     }
 
     /**
-     * Swap a field on a row for an input, and write it on Enter.
-     *
-     * Deliberately narrow: name and shortcut are single, short values with an
-     * obvious success state. Anything with a picker — category, tags, checking —
-     * already has its own popover or menu, and reimplementing those here would
-     * be a second copy of each.
-     */
-    startInlineBookmarkEdit(el) {
-        if (!el || el.dataset.editing === 'true') return;
-        const field = el.getAttribute('data-bm-inline');
-        const row = el.closest('.config-bm-row');
-        const key = row?.getAttribute('data-bm-key');
-        if (!key || !field) return;
-
-        const bookmark = this.findBookmarkByKey(key);
-        const current = field === 'shortcut'
-            ? String(bookmark?.shortcut || '')
-            : String(bookmark?.name || '');
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = `config-bm-inline-input config-bm-inline-input--${field}`;
-        input.value = current;
-        if (field === 'shortcut') input.maxLength = 5;
-        input.setAttribute('aria-label', field === 'shortcut'
-            ? this.t('config.bookmarkShortcutAdd', 'Add a shortcut')
-            : this.t('config.bookmarkNameLabel', 'Name'));
-
-        const original = el.innerHTML;
-        el.dataset.editing = 'true';
-        el.innerHTML = '';
-        el.appendChild(input);
-        input.focus();
-        input.select();
-
-        // A shortcut belongs to one bookmark; two claiming it is a conflict the
-        // health view already reports and nothing prevented at the point of
-        // typing. Said here, while the field is still open and the old value is
-        // still one Escape away, rather than as a red row found later.
-        let warning = null;
-        const conflictOf = (value) => (field === 'shortcut'
-            ? this.findShortcutOwner(value, key)
-            : null);
-        const showConflict = (owner) => {
-            if (!owner) {
-                warning?.remove();
-                warning = null;
-                input.classList.remove('is-invalid');
-                return;
-            }
-            input.classList.add('is-invalid');
-            if (!warning) {
-                warning = document.createElement('span');
-                warning.className = 'config-bm-inline-conflict';
-                warning.setAttribute('role', 'alert');
-                el.appendChild(warning);
-            }
-            warning.textContent = this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
-                .replace('{key}', String(input.value || '').trim().toUpperCase())
-                .replace('{name}', owner.name || owner.url || '');
-        };
-
-        let done = false;
-        const cleanup = () => {
-            warning?.remove();
-            warning = null;
-        };
-        const restore = () => {
-            if (done) return;
-            done = true;
-            cleanup();
-            el.dataset.editing = 'false';
-            el.innerHTML = original;
-        };
-        const commit = async () => {
-            if (done) return;
-            const next = input.value.trim();
-            if (next === current) {
-                done = true;
-                cleanup();
-                el.dataset.editing = 'false';
-                el.innerHTML = original;
-                return;
-            }
-            const owner = conflictOf(next);
-            if (owner) {
-                // Refused rather than saved: two bookmarks sharing a shortcut
-                // means neither is reachable by it, so accepting the edit would
-                // break the one that already worked.
-                showConflict(owner);
-                input.focus();
-                input.select();
-                return;
-            }
-            done = true;
-            cleanup();
-            el.dataset.editing = 'false';
-            const saved = await this.saveInlineBookmarkField(key, field, next);
-            if (!saved) el.innerHTML = original;
-        };
-
-        input.addEventListener('input', () => showConflict(conflictOf(input.value.trim())));
-        input.addEventListener('keydown', (e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') { e.preventDefault(); void commit(); }
-            if (e.key === 'Escape') { e.preventDefault(); restore(); }
-        });
-        // Clicking away saves, the way the inline editor on the grid does: an
-        // abandoned edit that silently discarded what you typed is worse than
-        // one that keeps it, and Escape is right there for the other case. A
-        // conflicting value is the exception — it is put back, and said so,
-        // because saving it would break the bookmark that already holds the key.
-        input.addEventListener('blur', () => {
-            const next = input.value.trim();
-            const owner = next !== current ? conflictOf(next) : null;
-            if (owner) {
-                this.notify(this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
-                    .replace('{key}', next.toUpperCase())
-                    .replace('{name}', owner.name || owner.url || ''), 'error');
-                restore();
-                return;
-            }
-            void commit();
-        });
-    }
-
-    /**
      * The bookmark already using a shortcut, or null.
      *
      * Across every page, not just this one: the health report counts a conflict
@@ -22219,8 +22100,14 @@ class DashboardConfig {
         }) || null;
     }
 
-    /** Write one field of one bookmark, then repaint the list from the server. */
-    async saveInlineBookmarkField(key, field, value) {
+    /**
+     * Write some fields of one bookmark, then refresh.
+     *
+     * Returns false without writing when the page no longer has the bookmark
+     * or the server refuses; the panel keeps what was typed in that case. The
+     * panel follows the bookmark afterwards, because a new URL is a new key.
+     */
+    async saveBookmarkFields(key, patch) {
         const record = await this.findBookmarkRecord(key);
         if (!record) return false;
         const { pageId, index } = record;
@@ -22228,26 +22115,35 @@ class DashboardConfig {
             const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
             const list = res.ok ? await res.json() : null;
             if (!Array.isArray(list) || !list[index]) throw new Error('bookmark not found');
-            if (field === 'shortcut') {
-                list[index].shortcut = value.toUpperCase();
-            } else {
-                // An empty name would leave the row showing its URL with no way
-                // back to a name, so an emptied field keeps what was there.
-                if (!value) return false;
-                list[index].name = value;
+            const next = { ...list[index], ...patch };
+            if ('shortcut' in patch) next.shortcut = String(patch.shortcut || '').trim().toUpperCase();
+            // An emptied name or URL keeps what was there: a row with neither
+            // has nothing to show and nowhere to go.
+            if ('name' in patch && !String(patch.name || '').trim()) next.name = list[index].name;
+            if ('url' in patch) {
+                const url = window.BookmarkUrlUtils?.ensureHttpUrl?.(patch.url) || String(patch.url || '').trim();
+                next.url = url || list[index].url;
             }
+            list[index] = next;
             const saved = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(list),
             });
             if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
+            this._bmPendingFocus = { pageId: String(pageId), index };
             await this.refreshBookmarksAfterWrite();
             return true;
         } catch {
-            this.notify(this.t('config.bookmarkSaveFailed', 'Could not save this bookmark'), 'error');
             return false;
         }
+    }
+
+    /** The key of the n-th bookmark on a page, as the list now holds it. */
+    bookmarkKeyAt(pageId, index) {
+        const onPage = (this.dash.allBookmarks || []).filter((b) => String(b.pageId) === String(pageId));
+        const b = index < 0 ? onPage[onPage.length - 1] : onPage[index];
+        return b ? this.bookmarkKey(b) : null;
     }
 
     async openBookmarkEditModal(key) {
@@ -23448,6 +23344,23 @@ class DashboardConfig {
         return (this.dash.allBookmarks || []).filter((b) => keys.has(this.bookmarkKey(b)));
     }
 
+    /** What the legacy bulk bar's inputs say, for the one caller left that reads them. */
+    bulkArgsFromToolbar(action) {
+        const val = (id) => document.getElementById(id)?.value || '';
+        if (action === 'move') {
+            const { categoryId } = DashboardConfig.parseCategoryFilter(val('config-bulk-category'));
+            return { pageId: val('config-bulk-page'), category: categoryId };
+        }
+        if (action === 'tags') {
+            return {
+                tags: val('config-bulk-tags').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+                mode: val('config-bulk-tags-mode') || 'add',
+            };
+        }
+        if (action === 'status') return val('config-bulk-status') || 'off';
+        return undefined;
+    }
+
     async handleBulkAction(action) {
         if (action === 'clear') {
             this.bmSelected.clear();
@@ -23466,9 +23379,9 @@ class DashboardConfig {
         if (!picked.length) return;
 
         try {
-            if (action === 'move') await this.bulkMove(picked);
-            else if (action === 'tags') await this.bulkTags(picked);
-            else if (action === 'status') await this.bulkStatus(picked);
+            if (action === 'move') await this.bulkMove(picked, this.bulkArgsFromToolbar('move'));
+            else if (action === 'tags') await this.bulkTags(picked, this.bulkArgsFromToolbar('tags'));
+            else if (action === 'status') await this.bulkStatus(picked, this.bulkArgsFromToolbar('status'));
             else if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'export') this.bulkExportCsv(picked);
@@ -23594,10 +23507,10 @@ class DashboardConfig {
         };
     }
 
-    async bulkMove(picked) {
-        const targetPage = document.getElementById('config-bulk-page')?.value || '';
-        const rawCat = document.getElementById('config-bulk-category')?.value || '';
-        const { pageId: catPage, categoryId: targetCat } = DashboardConfig.parseCategoryFilter(rawCat);
+    async bulkMove(picked, { pageId = '', category = '' } = {}) {
+        const targetPage = String(pageId || '');
+        const targetCat = String(category || '');
+        const catPage = null;
         if (!targetPage && !targetCat) return;
 
         if (targetCat && !targetPage) {
@@ -23649,10 +23562,7 @@ class DashboardConfig {
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
     }
 
-    async bulkTags(picked) {
-        const raw = document.getElementById('config-bulk-tags')?.value || '';
-        const mode = document.getElementById('config-bulk-tags-mode')?.value || 'add';
-        const tags = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+    async bulkTags(picked, { tags = [], mode = 'add' } = {}) {
         if (!tags.length) return;
         const snapshots = await this.mutateSelected(picked, (b) => {
             const current = Array.isArray(b.tags) ? b.tags.map((t) => String(t).toLowerCase()) : [];
@@ -23669,8 +23579,7 @@ class DashboardConfig {
         });
     }
 
-    async bulkStatus(picked) {
-        const mode = document.getElementById('config-bulk-status')?.value || 'off';
+    async bulkStatus(picked, mode = 'off') {
         const snapshots = await this.mutateSelected(picked, (b) => {
             const next = { ...b };
             if (window.CheckMode) {
@@ -23687,11 +23596,11 @@ class DashboardConfig {
         });
     }
 
-    async bulkPin(picked) {
-        // Mixed selections pin everything rather than flipping each: a toggle
-        // that leaves half pinned is not what "toggle pin" is asked to do.
-        const allPinned = picked.every((b) => b.pinned === true);
-        const snapshots = await this.mutateSelected(picked, (b) => ({ ...b, pinned: !allPinned }));
+    async bulkPin(picked, pinned) {
+        // Explicit when asked; otherwise a mixed selection pins everything
+        // rather than flipping each.
+        const target = typeof pinned === 'boolean' ? pinned : !picked.every((b) => b.pinned === true);
+        const snapshots = await this.mutateSelected(picked, (b) => ({ ...b, pinned: target }));
         this.notify(this.t('config.bulkPinDone', 'Pins updated.'), 'success', {
             undoCallback: this.bulkUndo(snapshots, 'config.bulkPinUndone', 'Pins put back.',
                 'config.bulkUndoFailed', 'Could not undo that.'),

@@ -6089,7 +6089,17 @@
     "bmSelectGroup": "select group",
     "bmKeySelect": "select",
     "bmKeyRange": "range",
-    "bmKeyPanel": "panel"
+    "bmKeyPanel": "panel",
+    "bmHideDetails": "Hide details",
+    "bmNoCategory": "No category",
+    "bmFieldUrl": "URL",
+    "bmFieldTags": "Tags",
+    "bmFieldShortcut": "Shortcut",
+    "bmFieldNote": "Note",
+    "bmFieldChecking": "Checking",
+    "bmUsage": "Usage",
+    "bmUptime7d": "{pct}% up this week",
+    "bmNotSaved": "Not saved — retry"
   },
   "colors": {
     "title": "theme customization",

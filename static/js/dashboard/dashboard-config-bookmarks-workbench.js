@@ -260,13 +260,292 @@
         });
     },
 
+    workbenchPanelMode() {
+        if (this.bmSelected.size > 1) return 'bulk';
+        return this.workbenchPanelKey() ? 'single' : 'empty';
+    },
+
+    workbenchPanelKey() {
+        if (this._bmPendingFocus) {
+            const key = this.bookmarkKeyAt(this._bmPendingFocus.pageId, this._bmPendingFocus.index);
+            this._bmPendingFocus = null;
+            if (key) this._bmKeyboardKey = key;
+        }
+        const key = this._bmKeyboardKey;
+        return key && this.findBookmarkByKey(key) ? key : null;
+    },
+
+    renderWorkbenchPanelToggle() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const collapsed = this.bmPanelCollapsed();
+        const label = collapsed ? this.t('config.bmDetails', 'Details') : this.t('config.bmHideDetails', 'Hide details');
+        return `<button type="button" class="config-bm-panel-toggle" data-bm-panel-toggle
+                        aria-expanded="${collapsed ? 'false' : 'true'}" title="${esc(label)} (i)">
+                    <span class="config-bm-panel-toggle-label">${esc(label)}</span><span aria-hidden="true">${collapsed ? '‹' : '›'}</span>
+                </button>`;
+    },
+
     renderWorkbenchPanel() {
         const esc = (v) => this.dash.escapeHtml(v);
-        return `<p class="config-bm-panel-empty">${esc(this.t('config.bmPanelEmpty', 'Select a bookmark to see it here.'))}</p>`;
+        const mode = this.workbenchPanelMode();
+        let body;
+        if (mode === 'bulk') body = this.renderWorkbenchBulkPanel?.() || '';
+        else if (mode === 'single') body = this.renderWorkbenchSinglePanel(this.workbenchPanelKey());
+        else body = `<p class="config-bm-panel-empty">${esc(this.t('config.bmPanelEmpty', 'Select a bookmark to see it here.'))}</p>`;
+        return `${this.renderWorkbenchPanelToggle()}<div class="config-bm-panel-body">${body}</div>`;
+    },
+
+    renderWorkbenchField(name, label, control) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <label class="config-bm-field" data-bm-field-wrap="${name}">
+                <span class="config-bm-field-label">${esc(label)}</span>
+                ${control}
+                <span class="config-bm-field-status" role="status"></span>
+            </label>`;
+    },
+
+    /** Check modes as select options; CheckMode names them, the panel only lists them. */
+    workbenchCheckModeOptions() {
+        const cm = global.CheckMode;
+        if (!cm) return [];
+        return [cm.OFF, cm.PERIODIC, cm.MONITOR].map((mode) => ({ mode, label: cm.meta(mode).label }));
+    },
+
+    renderWorkbenchSinglePanel(key) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const b = this.findBookmarkByKey(key);
+        const facts = global.HealthFacts?.get?.(b.url) || null;
+        const state = this.bookmarkHealthState(b);
+        const fmt = (ts) => global.formatLastOpened?.(ts, { t: this.lastOpenedTranslator() }) || { label: '—' };
+        const pageOptions = (this.dash.pages || []).map((p) =>
+            `<option value="${esc(p.id)}"${String(p.id) === String(b.pageId) ? ' selected' : ''}>${esc(p.name || p.id)}</option>`).join('');
+        const categories = this.knownCategories(b.pageId);
+        const catOptions = [`<option value="">${esc(this.t('config.bmNoCategory', 'No category'))}</option>`]
+            .concat(categories.map((c) => {
+                const id = global.DashboardConfig.parseCategoryFilter(c.id).categoryId;
+                return `<option value="${esc(id)}"${id === (b.category || '') ? ' selected' : ''}>${esc(c.label)}</option>`;
+            })).join('');
+        const mode = global.CheckMode?.of?.(b) || 'off';
+        const modeOptions = this.workbenchCheckModeOptions().map((o) =>
+            `<option value="${esc(o.mode)}"${o.mode === mode ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+        const input = (name, value, extra = '') =>
+            `<input type="text" class="config-text" data-bm-field="${name}" value="${esc(value ?? '')}" data-original="${esc(value ?? '')}" ${extra}>`;
+        const feed = global.BookmarkFeedRow;
+        return `
+            <header class="config-bm-panel-head">
+                <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
+                <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
+                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
+            </header>
+            <div class="config-bm-panel-fields">
+                ${this.renderWorkbenchField('name', this.t('config.bookmarkNameLabel', 'Name'), input('name', b.name))}
+                ${this.renderWorkbenchField('url', this.t('config.bmFieldUrl', 'URL'), input('url', b.url, 'spellcheck="false"'))}
+                ${this.renderWorkbenchField('page', this.t('config.page', 'Page'), `<select class="config-select" data-bm-field="page">${pageOptions}</select>`)}
+                ${this.renderWorkbenchField('category', this.t('config.category', 'Category'), `<select class="config-select" data-bm-field="category">${catOptions}</select>`)}
+                ${this.renderWorkbenchField('tags', this.t('config.bmFieldTags', 'Tags'), input('tags', (b.tags || []).join(', ')))}
+                ${this.renderWorkbenchField('shortcut', this.t('config.bmFieldShortcut', 'Shortcut'), input('shortcut', b.shortcut, 'maxlength="5"'))}
+                ${this.renderWorkbenchField('note', this.t('config.bmFieldNote', 'Note'),
+                    `<textarea class="config-text" rows="2" data-bm-field="note" data-original="${esc(b.note || '')}">${esc(b.note || '')}</textarea>`)}
+                <label class="config-bm-field config-bm-field--inline" data-bm-field-wrap="pinned">
+                    <input type="checkbox" data-bm-field="pinned"${b.pinned ? ' checked' : ''}>
+                    <span class="config-bm-field-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
+                    <span class="config-bm-field-status" role="status"></span>
+                </label>
+                ${this.renderWorkbenchField('checkMode', this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-field="checkMode">${modeOptions}</select>`)}
+            </div>
+            <section class="config-bm-panel-facts">
+                <h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>
+                <p><span class="config-bm-health-dot is-${esc(state)}"></span> ${esc(this.railHealthLabel(state))}</p>
+                ${facts?.lastError ? `<p class="config-bm-panel-muted">${esc(facts.lastError)}</p>` : ''}
+                ${facts?.uptime7d != null ? `<p class="config-bm-panel-muted">${esc(this.t('config.bmUptime7d', '{pct}% up this week').replace('{pct}', String(Math.round(facts.uptime7d * 100))))}</p>` : ''}
+                <h3>${esc(this.t('config.bmUsage', 'Usage'))}</h3>
+                <p class="config-bm-panel-muted">${esc(this.bookmarkUsageTooltip(b))}</p>
+                <p class="config-bm-panel-muted">${esc(this.t('config.bookmarkStatLastOpened', 'Last opened'))}: ${esc(fmt(b.lastOpened).label)}</p>
+            </section>
+            <footer class="config-bm-panel-foot">
+                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>
+                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-panel-action="delete">${esc(this.t('config.delete', 'Delete'))}</button>
+            </footer>`;
+    },
+
+    repaintWorkbenchPanel() {
+        const panel = document.getElementById('config-bm-panel');
+        if (!panel) return;
+        // A save in flight owns the panel until it lands: repainting now would
+        // take the field (and what was typed into it) away mid-write.
+        if (this._bmPanelSaving) {
+            this._bmPanelRepaintQueued = true;
+            return;
+        }
+        const mode = this.workbenchPanelMode();
+        const key = mode === 'single' ? this.workbenchPanelKey() : '';
+        const sig = `${mode}|${key}|${mode === 'bulk' ? [...this.bmSelected].sort().join(',') : ''}|${(this.dash.allBookmarks || []).length}`;
+        // Typing in the panel while the list repaints around it must not lose
+        // the field; the same bookmark in the same mode is left alone.
+        if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
+        panel.innerHTML = this.renderWorkbenchPanel();
+        panel.dataset.bmPanelSig = sig;
+        panel.dataset.bmPanelMode = mode;
+        panel.dataset.bmPanelKey = key || '';
+        if (mode === 'bulk') this.toggleWorkbenchPanel(false, { remember: false });
+    },
+
+    /**
+     * Fold or unfold the panel. Only the reader's own toggle (the button, `i`)
+     * is remembered; `e` and a multi-row selection open it for now without
+     * overwriting that choice.
+     */
+    toggleWorkbenchPanel(force, { remember = true } = {}) {
+        const collapsed = typeof force === 'boolean' ? force : !this.bmPanelCollapsed();
+        if (remember) {
+            this._bmPanelTempOpen = false;
+            try {
+                global.localStorage?.setItem(PANEL_KEY, collapsed ? '1' : '0');
+            } catch { /* private window: the choice lasts this visit */ }
+        } else {
+            this._bmPanelTempOpen = !collapsed;
+        }
+        const root = document.getElementById('config-bm-workbench');
+        root?.classList.toggle('is-panel-collapsed', collapsed);
+        const toggle = document.querySelector('#config-bm-panel [data-bm-panel-toggle]');
+        if (toggle) toggle.outerHTML = this.renderWorkbenchPanelToggle();
+    },
+
+    focusWorkbenchPanel(key) {
+        if (key) this._bmKeyboardKey = key;
+        this.toggleWorkbenchPanel(false, { remember: false });
+        this.repaintWorkbenchPanel();
+        const field = document.querySelector('#config-bm-panel [data-bm-field="name"], #config-bm-panel [data-bm-field]');
+        field?.focus();
+        field?.select?.();
+    },
+
+    /** Read a field into a patch for saveBookmarkFields, or null when nothing changed. */
+    workbenchFieldPatch(el) {
+        const name = el.getAttribute('data-bm-field');
+        if (el.type === 'checkbox') return { [name]: el.checked };
+        const value = el.value;
+        if ((el.getAttribute('data-original') ?? null) === value) return null;
+        if (name === 'tags') {
+            return { tags: [...new Set(value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean))] };
+        }
+        return { [name]: value };
+    },
+
+    setWorkbenchFieldStatus(el, message, isError) {
+        const wrap = el.closest('.config-bm-field');
+        if (!wrap) return;
+        wrap.classList.toggle('is-error', Boolean(isError));
+        const status = wrap.querySelector('.config-bm-field-status');
+        if (status) status.textContent = message || '';
+    },
+
+    async commitWorkbenchField(el) {
+        const key = document.getElementById('config-bm-panel')?.dataset.bmPanelKey;
+        const name = el.getAttribute('data-bm-field');
+        if (!key || !name) return;
+        const b = this.findBookmarkByKey(key);
+        if (!b) return;
+        if (name === 'shortcut') {
+            const owner = this.findShortcutOwner(el.value, key);
+            if (owner) {
+                this.setWorkbenchFieldStatus(el, this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
+                    .replace('{key}', String(el.value || '').trim().toUpperCase())
+                    .replace('{name}', owner.name || owner.url || ''), true);
+                return;
+            }
+        }
+        let run;
+        if (name === 'page') {
+            if (String(el.value) === String(b.pageId)) return;
+            this._bmPendingFocus = { pageId: String(el.value), index: -1 };
+            run = this.bulkMove([b], { pageId: el.value, category: b.category || '' }).then(() => true, () => false);
+        } else if (name === 'checkMode') {
+            run = this.setBookmarkCheckMode(key, el.value).then(() => true, () => false);
+        } else {
+            const patch = this.workbenchFieldPatch(el);
+            if (!patch) return;
+            if (name === 'category' && el.value) await this.ensureCategoryOnPage(b.pageId, el.value);
+            run = this.saveBookmarkFields(key, patch);
+        }
+        this.setWorkbenchFieldStatus(el, '', false);
+        this._bmPanelSaving = run;
+        const ok = await run;
+        this._bmPanelSaving = null;
+        if (!ok) {
+            this._bmPendingFocus = null;
+            this._bmKeyboardKey = key;
+            this.setWorkbenchFieldStatus(el, this.t('config.bmNotSaved', 'Not saved — retry'), true);
+            this._bmPanelRepaintQueued = false;
+            return;
+        }
+        if (this._bmPanelRepaintQueued) {
+            this._bmPanelRepaintQueued = false;
+            document.getElementById('config-bm-panel').dataset.bmPanelSig = '';
+            this.repaintWorkbenchPanel();
+        }
+    },
+
+    bindWorkbenchPanel(panel) {
+        if (!panel || panel.dataset.bmPanelWired === '1') return;
+        panel.dataset.bmPanelWired = '1';
+        panel.addEventListener('click', (e) => {
+            if (e.target.closest('[data-bm-panel-toggle]')) {
+                this.toggleWorkbenchPanel();
+                return;
+            }
+            const action = e.target.closest('[data-bm-panel-action]')?.getAttribute('data-bm-panel-action');
+            const key = panel.dataset.bmPanelKey;
+            if (!action || !key) return;
+            if (action === 'open') this.openBookmarkByKey(key);
+            else if (action === 'delete') void this.deleteBookmarkByKey(key);
+            else this.handleBookmarkMenuAction(action, key);
+        });
+        // Selects and the checkbox save on change; text on leaving the field.
+        panel.addEventListener('change', (e) => {
+            const el = e.target.closest('[data-bm-field]');
+            if (!el || panel.dataset.bmPanelMode !== 'single') return;
+            if (el.tagName === 'SELECT' || el.type === 'checkbox') void this.commitWorkbenchField(el);
+        });
+        panel.addEventListener('focusout', (e) => {
+            const el = e.target.closest('input[data-bm-field]:not([type="checkbox"]), textarea[data-bm-field]');
+            if (!el || panel.dataset.bmPanelMode !== 'single') return;
+            void this.commitWorkbenchField(el);
+        });
+        panel.addEventListener('keydown', (e) => {
+            const el = e.target.closest('[data-bm-field]');
+            if (!el) return;
+            e.stopPropagation();
+            if (e.key === 'Enter' && el.tagName === 'INPUT') {
+                e.preventDefault();
+                el.blur();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                if (el.hasAttribute('data-original')) el.value = el.getAttribute('data-original');
+                this.setWorkbenchFieldStatus(el, '', false);
+                // Back to the row, without a save: the value is the old one.
+                el.removeAttribute('data-bm-field');
+                el.blur();
+                const row = [...document.querySelectorAll('#config-bm-list .config-bm-row')]
+                    .find((r) => this.bookmarkRowKey(r) === panel.dataset.bmPanelKey);
+                row?.focus({ preventScroll: true });
+                document.getElementById('config-bm-panel').dataset.bmPanelSig = '';
+                this.repaintWorkbenchPanel();
+            }
+        });
     },
 
     bindWorkbench(container) {
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
+        const panel = container.querySelector('#config-bm-panel');
+        this.bindWorkbenchPanel(panel);
+        if (panel) {
+            panel.dataset.bmPanelSig = '';
+            this.repaintWorkbenchPanel();
+        }
     },
 
     workbenchGrouped() {

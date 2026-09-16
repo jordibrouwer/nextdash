@@ -385,3 +385,123 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     text-align: right;
     white-space: nowrap;
 }
+
+/* ── Panel ────────────────────────────────────────────────────────────── */
+
+.config-bm-panel {
+    position: sticky;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.config-bm-panel-toggle {
+    align-self: flex-end;
+    display: inline-flex;
+    gap: var(--space-1, 0.25rem);
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+/* Beats the themed slab shadow above, which carries html/body in its selector. */
+html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
+    padding: var(--space-2, 0.5rem) 0;
+    background: none;
+    box-shadow: none;
+}
+
+.config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
+    display: none;
+}
+
+.config-bm-workbench.is-panel-collapsed .config-bm-panel-toggle {
+    writing-mode: vertical-rl;
+    align-self: center;
+    color: var(--accent-primary);
+}
+
+.config-bm-panel-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-panel-title {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-bm-panel-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.config-bm-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-field-label,
+.config-bm-panel-facts h3 {
+    margin: 0;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-field .config-text,
+.config-bm-field .config-select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.config-bm-field-status:empty {
+    display: none;
+}
+
+.config-bm-field.is-error .config-text,
+.config-bm-field.is-error .config-select {
+    border-color: var(--accent-error);
+}
+
+.config-bm-field.is-error .config-bm-field-status {
+    color: var(--accent-error);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-panel-facts p {
+    margin: 2px 0;
+}
+
+.config-bm-panel-muted {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-panel-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-panel-foot .config-btn--danger {
+    margin-left: auto;
+}

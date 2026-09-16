@@ -541,7 +541,7 @@ class DashboardConfigContextMenu {
                 c.openBookmarkByKey(key);
                 break;
             case 'edit':
-                await c.openBookmarkEditModal(key);
+                c.focusWorkbenchPanel(key);
                 break;
             // No per-row pin writer exists — the editor and the bulk bar are the
             // only two, and bulkPin already takes a list. One bookmark is a list

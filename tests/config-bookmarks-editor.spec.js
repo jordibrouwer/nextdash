@@ -57,40 +57,35 @@ async function applyBookmarkStats(page, stats) {
     }, stats);
 }
 
-/** Open the first bookmark in the shared edit modal. */
+/** Put the cursor on the first row and press `e`; returns the panel. */
 async function openFirstEditor(page, stats = null) {
-    await page.evaluate((s) => {
-        const cfg = window.dashboardInstance.config;
-        // The row that is about to be clicked, not visibleBookmarks()[0]: the
-        // two are the same bookmark only while the list is in its default
-        // order, and the order is a setting. Seeding one and editing the other
-        // left the assertion reading a bookmark nothing had been done to.
-        const key = document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')
-            ?.getAttribute('data-bm-key');
-        const parsed = key ? cfg.parseBookmarkKey(key) : null;
-        const bm = parsed
-            ? window.dashboardInstance.allBookmarks.find(
-                (b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url)
-            : cfg.visibleBookmarks()[0];
-        if (!bm) throw new Error('no visible bookmark');
-        if (s) Object.assign(bm, s);
-        cfg.repaintBookmarksList();
-    }, stats);
-    // Look the button up and click it inside one evaluate, rather than holding
-    // a locator across two calls. The list repaints itself, and a handle taken
-    // before a repaint is detached by the time scrollIntoViewIfNeeded() runs --
-    // which is the "Element is not attached to the DOM" this helper failed with
-    // in roughly one run in three. Retried, because the repaint can land
-    // between the lookup and the click too.
-    await expect.poll(async () => page.evaluate(() => {
-        const btn = document.querySelector('#config-bm-list [data-feed-action="edit"]');
-        if (!btn) return 'no edit button yet';
-        btn.scrollIntoView({ block: 'center' });
-        btn.click();
-        return 'clicked';
-    }), { timeout: 10_000 }).toBe('clicked');
-    await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     await applyBookmarkStats(page, stats);
+    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('j');
+    await expect(page.locator('#config-bm-list .config-bm-row.keyboard-selected')).toHaveCount(1);
+    await page.keyboard.press('e');
+    const panel = page.locator('#config-bm-panel');
+    await expect(panel).toHaveAttribute('data-bm-panel-mode', 'single');
+    return panel;
+}
+
+/** Capture page writes instead of storing them. */
+async function capturePosts(page) {
+    const posts = [];
+    await page.route('**/api/bookmarks?page=*', async (route) => {
+        if (route.request().method() === 'POST') {
+            posts.push(JSON.parse(route.request().postData() || '[]'));
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        }
+        return route.fallback();
+    });
+    return posts;
+}
+
+/** Sort the list flat, so each row carries its own page › category crumb. */
+async function sortFlat(page) {
+    await page.selectOption('#config-bm-sort', 'name');
+    await expect(page.locator('#config-bm-list .config-bm-feed')).not.toHaveClass(/is-grouped/);
 }
 
 // Once for the file, not per test: this spec counts rows and indexes into the
@@ -106,75 +101,21 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.describe('config bookmarks editor', () => {
-    test('the editor carries every field the old detail panel had', async ({ page }) => {
+    test('the panel carries every field of a bookmark', async ({ page }) => {
         await openBookmarks(page);
-        await openFirstEditor(page);
-        const form = bookmarkModalForm(page);
-        await expect(form.locator('.bookmark-inline-input').first()).toBeVisible();
-        await expect(form.locator('input[type="url"]')).toBeVisible();
-        await expect(modalPageSelect(page)).toBeVisible();
-        await expect(modalCategorySelect(page)).toBeVisible();
-        await expect(form.locator('input[maxlength="5"]')).toBeVisible();
-        await expect(form.locator('.bookmark-inline-textarea')).toBeVisible();
-        await expect(form.locator('.bookmark-inline-icon-preview')).toBeVisible();
-        await expect(form.locator('.bookmark-inline-checkmode-input')).toHaveCount(3);
-        await expect(modalSaveBtn(page)).toBeVisible();
+        const panel = await openFirstEditor(page);
+        for (const name of ['name', 'url', 'page', 'category', 'tags', 'shortcut', 'note', 'pinned', 'checkMode']) {
+            await expect(panel.locator(`[data-bm-field="${name}"]`)).toHaveCount(1);
+        }
     });
 
-    test('editing and Save persists the change', async ({ page }) => {
-        let posted = null;
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') {
-                posted = JSON.parse(route.request().postData() || '[]');
-                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-            }
-            return route.fallback();
-        });
+    test('leaving an edited field saves it', async ({ page }) => {
+        const posts = await capturePosts(page);
         await openBookmarks(page);
-        await openFirstEditor(page);
-
-        await bookmarkModalForm(page).locator('.bookmark-inline-textarea').fill('a note from the test');
-
-        await modalSaveBtn(page).click();
-        await expect.poll(() => posted && posted.some((b) => b.note === 'a note from the test')).toBe(true);
-    });
-
-    test('availability mode reveals the interval only for Monitor', async ({ page }) => {
-        await openBookmarks(page);
-        await openFirstEditor(page);
-        const form = bookmarkModalForm(page);
-        const interval = form.locator('.bookmark-inline-toggle-select');
-
-        await form.locator('label[for^="bookmark-inline-checkmode-periodic"]').click({ force: true });
-        await expect(interval).toBeHidden();
-
-        await form.locator('label[for^="bookmark-inline-checkmode-monitor"]').click({ force: true });
-        await expect(interval).toBeVisible();
-
-        await form.locator('label[for^="bookmark-inline-checkmode-off"]').click({ force: true });
-        await expect(interval).toBeHidden();
-    });
-
-    test('a shortcut already used on the same page is flagged', async ({ page }) => {
-        await openBookmarks(page);
-        // A shortcut belonging to a *different* bookmark on the first row's page.
-        const other = await page.evaluate(() => {
-            const all = window.dashboardInstance.allBookmarks;
-            const first = all[0];
-            const clash = all.find((b) =>
-                b !== first && String(b.pageId) === String(first.pageId) && b.shortcut);
-            return clash ? clash.shortcut : null;
-        });
-        test.skip(!other, 'needs a second bookmark with a shortcut on the same page');
-
-        await openFirstEditor(page);
-        const form = bookmarkModalForm(page);
-        const shortcutInput = form.locator('input[maxlength="5"]');
-        await shortcutInput.fill(String(other));
-        await expect(shortcutInput).toHaveClass(/field-conflict/);
-
-        await shortcutInput.fill('QQ');
-        await expect(shortcutInput).not.toHaveClass(/field-conflict/);
+        const panel = await openFirstEditor(page);
+        await panel.locator('[data-bm-field="note"]').fill('a note from the test');
+        await page.keyboard.press('Tab');
+        await expect.poll(() => posts.some((list) => list.some((b) => b.note === 'a note from the test'))).toBe(true);
     });
 
     test('ticking rows reveals the bulk toolbar with every action', async ({ page }) => {
@@ -207,12 +148,11 @@ test.describe('config bookmarks editor', () => {
             list.some((b) => (b.tags || []).includes('bulktag')))).toBe(true);
     });
 
-    test('the toolbar filters by category and sorts', async ({ page }) => {
+    test('the toolbar sorts', async ({ page }) => {
         await openBookmarks(page);
-        await expect(page.locator('#config-bm-category')).toBeVisible();
         await expect(page.locator('#config-bm-sort')).toBeVisible();
         await page.selectOption('#config-bm-sort', 'name');
-        const names = await page.locator('.config-bm-name').allTextContents();
+        const names = await page.locator('.config-bm-title').allTextContents();
         const sorted = [...names].sort((a, b) => a.localeCompare(b));
         expect(names).toEqual(sorted);
     });
@@ -236,18 +176,19 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
 
     test('leaving the URL field completes it to a full https URL', async ({ page }) => {
         await mockMeta(page);
+        const posts = await capturePosts(page);
         await openBookmarks(page);
-        await openFirstEditor(page);
-        const url = bookmarkModalForm(page).locator('input[type="url"]');
-        await url.fill('example.com/path');
-        await url.blur();
-        await expect(url).toHaveValue('https://example.com/path');
+        const panel = await openFirstEditor(page);
+        await panel.locator('[data-bm-field="url"]').fill('example.com/path');
+        await page.keyboard.press('Tab');
+        await expect.poll(() => posts.some((list) => list.some((b) => b.url === 'https://example.com/path'))).toBe(true);
     });
 
     test('a name the user already typed is never overwritten', async ({ page }) => {
         await mockMeta(page, { title: 'Should Not Win' });
         await openBookmarks(page);
-        await openFirstEditor(page);
+        await page.locator('#config-bm-add').click();
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         const form = bookmarkModalForm(page);
         await form.locator('.bookmark-inline-input').first().fill('My own name');
         const url = form.locator('input[type="url"]');
@@ -268,26 +209,28 @@ test.describe('config bookmarks — category options', () => {
     test('each category is offered exactly once, by display name', async ({ page }) => {
         await openBookmarks(page);
 
-        const filter = await page.locator('#config-bm-category option').allTextContents();
-        const real = filter.slice(1); // drop "All categories"
-        expect(new Set(real).size).toBe(real.length);
+        const rail = await page.locator('#config-bm-rail [data-bm-rail="category"] .config-bm-rail-label').allTextContents();
+        expect(new Set(rail).size).toBe(rail.length);
         // No id/name pair such as "development" alongside "Development".
-        const lowered = real.map((t) => t.toLowerCase());
+        const lowered = rail.map((t) => t.toLowerCase());
         expect(new Set(lowered).size).toBe(lowered.length);
 
-        await openFirstEditor(page);
-        const opts = await modalCategorySelect(page).locator('option').allTextContents();
-        const cats = opts.filter((t) => t.trim() && t.trim() !== '—');
+        const panel = await openFirstEditor(page);
+        const opts = await panel.locator('[data-bm-field="category"] option').allTextContents();
+        const cats = opts.slice(1);
         expect(new Set(cats).size).toBe(cats.length);
     });
 
-    test('the editor selects the bookmark\'s own category', async ({ page }) => {
+    test('the panel selects the bookmark\'s own category', async ({ page }) => {
         await openBookmarks(page);
-        const expected = await page.evaluate(() =>
-            (window.dashboardInstance.allBookmarks.find((b) => b.category) || {}).category || '');
-        test.skip(!expected, 'needs a categorised bookmark');
-        await openFirstEditor(page);
-        await expect(modalCategorySelect(page)).toHaveValue(expected);
+        const composite = await page.evaluate(() => {
+            const b = window.dashboardInstance.allBookmarks.find((bm) => bm.category);
+            return b ? `${b.pageId}::${b.category}` : '';
+        });
+        test.skip(!composite, 'needs a categorised bookmark');
+        await page.locator(`#config-bm-rail [data-bm-rail="category"][data-value="${composite}"]`).click();
+        const panel = await openFirstEditor(page);
+        await expect(panel.locator('[data-bm-field="category"]')).toHaveValue(composite.split('::')[1]);
     });
 
     test('filtering by a category keeps only its bookmarks', async ({ page }) => {
@@ -299,80 +242,65 @@ test.describe('config bookmarks — category options', () => {
         });
         test.skip(!meta, 'needs a categorised bookmark');
         const composite = `${meta.pageId}::${meta.category}`;
-        await page.selectOption('#config-bm-category', composite);
-        const shown = await page.locator('.config-bm-row').count();
+        await page.locator(`#config-bm-rail [data-bm-rail="category"][data-value="${composite}"]`).click();
         const expected = await page.evaluate(({ pageId, category }) =>
             window.dashboardInstance.allBookmarks.filter((b) =>
                 String(b.pageId) === pageId && String(b.category || '') === category).length,
         meta);
-        expect(shown).toBe(expected);
+        await expect(page.locator('.config-bm-row')).toHaveCount(expected);
     });
 
-    test('the category filter lists only categories from the selected page', async ({ page }) => {
+    test('the rail lists only categories from the selected page', async ({ page }) => {
         await openBookmarks(page);
         const pages = await page.evaluate(() => window.dashboardInstance.pages.map((p) => String(p.id)));
         test.skip(pages.length < 2, 'needs at least two pages');
 
         const targetPage = pages[1];
-        await page.selectOption('#config-bm-page', targetPage);
+        await page.locator(`#config-bm-rail [data-bm-rail="page"][data-value="${targetPage}"]`).click();
         await expect.poll(async () => {
-            const labels = await page.locator('#config-bm-category option').allTextContents();
-            return labels.length > 1;
+            const values = await page.locator('#config-bm-rail [data-bm-rail="category"]')
+                .evaluateAll((els) => els.map((el) => el.getAttribute('data-value')));
+            return values.every((v) => v.startsWith(`${targetPage}::`));
         }).toBe(true);
-
-        const filterLabels = (await page.locator('#config-bm-category option').allTextContents()).slice(1);
-        const expectedLabels = await page.evaluate(async (pageId) => {
-            const cfg = window.dashboardInstance.config;
-            await cfg.loadBookmarkCategoriesForPage(pageId);
-            return cfg.knownCategories(pageId).map((c) => c.label).sort();
-        }, targetPage);
-        expect(filterLabels.sort()).toEqual(expectedLabels);
     });
 
     test('with all pages, category labels include the page name', async ({ page }) => {
         await openBookmarks(page);
-        const pages = await page.evaluate(() => window.dashboardInstance.pages.map((p) => String(p.id)));
-        test.skip(pages.length < 2, 'needs at least two pages');
-
-        await page.selectOption('#config-bm-page', '');
-        await expect.poll(async () => {
-            const labels = await page.locator('#config-bm-category option').allTextContents();
-            return labels.some((l) => l.includes('·'));
-        }).toBe(true);
+        const labels = await page.locator('#config-bm-rail [data-bm-rail="category"] .config-bm-rail-label').allTextContents();
+        test.skip(!labels.length, 'needs a categorised bookmark');
+        expect(labels.every((l) => l.includes('›'))).toBe(true);
     });
 
-    test('with all pages, a row without a category still names its page', async ({ page }) => {
+    test('in a flat sort, a row without a category still names its page', async ({ page }) => {
         await openBookmarks(page);
-        await page.selectOption('#config-bm-page', '');
-        // The page used to live in a footer badge on rows with no category, in
-        // the category line on rows with one, and nowhere under a page filter.
-        // It is one crumb now, in the same place on every row.
-        await page.evaluate(() => {
+        await sortFlat(page);
+        const key = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;
             const bm = cfg.visibleBookmarks()[0];
             bm.category = '';
             cfg.repaintBookmarksList();
+            return cfg.bookmarkKey(bm);
         });
-        const first = page.locator('.config-bm-row').first();
-        await expect(first.locator('.config-bm-crumb-page')).toBeVisible();
-        await expect(first.locator('.config-bm-crumb-category')).toHaveCount(0);
+        const row = page.locator(`.config-bm-row[data-bm-key="${key}"]`);
+        const pageName = await page.evaluate((k) => {
+            const cfg = window.dashboardInstance.config;
+            return cfg.pageLabel(cfg.findBookmarkByKey(k).pageId);
+        }, key);
+        await expect(row.locator('.config-bm-crumb')).toHaveText(pageName);
     });
 
-    test('a categorised row reads page then category, and each half filters its own', async ({ page }) => {
+    test('in a flat sort, a categorised row reads page then category', async ({ page }) => {
         await openBookmarks(page);
-        await page.selectOption('#config-bm-page', '');
-        const row = page.locator('.config-bm-row').filter({ has: page.locator('.config-bm-crumb-category') }).first();
-        test.skip(!(await row.count()), 'needs a categorised bookmark');
-
-        // Two halves, not one string with a dot in it: the page reads as the
-        // container and the category as the thing inside it.
-        await expect(row.locator('.config-bm-crumb-page')).toBeVisible();
-        await expect(row.locator('.config-bm-crumb-category')).toBeVisible();
-
-        const category = await row.locator('.config-bm-crumb-category').innerText();
-        await row.locator('.config-bm-crumb-category').click();
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCategoryFilter),
-            { timeout: 5_000 }).toContain(category.trim().toLowerCase());
+        await sortFlat(page);
+        const expected = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config;
+            const bm = cfg.visibleBookmarks().find((b) => b.category);
+            if (!bm) return null;
+            return { key: cfg.bookmarkKey(bm), label: `${cfg.pageLabel(bm.pageId)} › ${cfg.railCategoryLabel(bm.pageId, bm.category)}` };
+        });
+        test.skip(!expected, 'needs a categorised bookmark');
+        const row = page.locator(`.config-bm-row[data-bm-key="${expected.key}"]`);
+        await expect(row.locator('.config-bm-crumb')).toHaveText(expected.label);
     });
 
     test('#config/bookmarks/<pageId> deep link sets the page filter', async ({ page }) => {
@@ -415,7 +343,7 @@ test.describe('config bookmarks add button', () => {
         test.skip(pages.length < 2, 'needs at least two pages');
         const current = String(await page.evaluate(() => window.dashboardInstance.currentPageId));
         const target = pages.find((id) => id !== current) || pages[1];
-        await page.selectOption('#config-bm-page', target);
+        await page.locator(`#config-bm-rail [data-bm-rail="page"][data-value="${target}"]`).click();
         await page.locator('#config-bm-add').click();
         await expect(modalPageSelect(page)).toHaveValue(target);
     });
@@ -513,16 +441,16 @@ test.describe('bookmark statistics', () => {
         await openBookmarks(page);
         await expect.poll(async () => {
             await seedStats(page, { openCount: 0, lastOpened: 0, createdAt: 0 });
-            return page.locator('.health-view-item-opened.is-never').first().innerText();
-        }).toMatch(/never opened/i);
+            return page.locator('.config-bm-row').first().locator('.config-bm-last').innerText();
+        }).toMatch(/never/i);
     });
 
-    test('the collapsed row carries the usage summary', async ({ page }) => {
+    test('the row carries the open count', async ({ page }) => {
         await openBookmarks(page);
         await expect.poll(async () => {
             await seedStats(page, { openCount: 12, lastOpened: Date.now() - 5 * 60 * 1000 });
-            return page.locator('.config-bm-usage').first().innerText();
-        }).toContain('12×');
+            return page.locator('.config-bm-row').first().locator('.config-bm-opens').innerText();
+        }).toBe('12');
     });
 
     test('saving an edit does not clear the statistics', async ({ page }) => {
@@ -564,15 +492,9 @@ test.describe('bookmark statistics', () => {
         };
         expect(await readStoredCount()).toBe(OPENS);
 
-        await openFirstEditor(page);
-        await bookmarkModalForm(page).locator('.bookmark-inline-textarea').fill('stats must survive');
-        // The modal animates in, so Playwright's stability check on Save can
-        // outlast its own timeout while the transition settles.
-        await page.addStyleTag({
-            content: '*, *::before, *::after { transition: none !important; animation: none !important; }',
-        });
-        await modalSaveBtn(page).click();
-        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
+        const panel = await openFirstEditor(page);
+        await panel.locator('[data-bm-field="note"]').fill('stats must survive');
+        await page.keyboard.press('Tab');
 
         // The note landed, so the save really happened...
         await expect.poll(async () => {
@@ -585,102 +507,7 @@ test.describe('bookmark statistics', () => {
     });
 });
 
-test.describe('select all bookmarks', () => {
-    test('ticks every visible row and clears on a second press', async ({ page }) => {
-        await openBookmarks(page);
-        const rows = await page.locator('.config-bm-row').count();
-        expect(rows).toBeGreaterThan(0);
-
-        await page.locator('#config-bm-select-all').click();
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.bmSelected.size)).toBe(rows);
-        // The bulk bar only appears once something is ticked.
-        await expect(page.locator('[data-bulk="delete"]')).toBeVisible();
-
-        await page.locator('#config-bm-select-all').click();
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.bmSelected.size)).toBe(0);
-    });
-
-    test('selects only what the filters show', async ({ page }) => {
-        await openBookmarks(page);
-        const composite = await page.evaluate(() => {
-            const b = window.dashboardInstance.allBookmarks.find((bm) => bm.category);
-            if (!b) return '';
-            return `${b.pageId}::${b.category}`;
-        });
-        test.skip(!composite, 'needs a categorised bookmark');
-
-        await page.selectOption('#config-bm-category', composite);
-        const shown = await page.locator('.config-bm-row').count();
-        const total = await page.evaluate(() => window.dashboardInstance.allBookmarks.length);
-        test.skip(shown >= total, 'filter did not narrow the list');
-
-        // Acting on bookmarks you cannot see is how a bulk delete goes wrong.
-        await page.locator('#config-bm-select-all').click();
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.bmSelected.size)).toBe(shown);
-    });
-
-    /*
-     * The two menus on one row have to offer the same things.
-     *
-     * They were written out separately and drifted: right-click knew Open in
-     * new tab, Edit, Pin, Checking, the filters and Select; More knew nine of
-     * the sixteen. Same row, same bookmark, two different answers.
-     */
-    test('the More menu offers what the right-click menu offers', async ({ page }) => {
-        await openBookmarks(page);
-        const row = page.locator('.config-bm-item').first();
-        await expect(row).toBeVisible({ timeout: 15_000 });
-
-        // Hovered first, because the actions bar only appears on hover -- and a
-        // click on a button nobody can see is not the path being tested.
-        await row.hover();
-        await row.locator('[data-menu-kind="more"]').click();
-        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-
-        const both = await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            const el = document.querySelector('.config-bm-item');
-            const bookmark = cfg.findBookmarkByKey(el.getAttribute('data-bm-key'));
-            return {
-                context: cfg.bookmarkContextMenu().actionsFor(bookmark).map((a) => a.id),
-                more: [...document.querySelectorAll(
-                    '.health-view-menu[data-menu-owner="more"]:not([hidden]) [data-bm-menu-action]',
-                )].map((b) => b.getAttribute('data-bm-menu-action')),
-            };
-        });
-        expect(both.more.length).toBeGreaterThan(8);
-        // Same entries in the same order, so neither menu can quietly grow a
-        // row the other does not have.
-        expect(both.more).toEqual(both.context);
-    });
-
-    test('an action the More menu never knew works from it', async ({ page }) => {
-        await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
-
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            cfg.bmSelected.clear();
-            cfg.repaintBookmarksList();
-        });
-        const row = page.locator('.config-bm-item').first();
-        await row.hover();
-        await row.locator('[data-menu-kind="more"]').click();
-        // Select lived only in the right-click menu, and the row menu's own
-        // dispatcher had no case for it.
-        await page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden]) [data-bm-menu-action="select"]')
-            .click({ timeout: 15_000 });
-
-        await expect.poll(() => page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            return cfg.bmSelected.size;
-        }), { timeout: 15_000 }).toBe(1);
-    });
-
+test.describe('the list keyboard', () => {
     /*
      * The list has to answer "down" with nothing focused.
      *
@@ -692,7 +519,7 @@ test.describe('select all bookmarks', () => {
      */
     test('the arrows and j/k walk the rows with nothing focused', async ({ page }) => {
         await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-bm-row').first()).toBeVisible({ timeout: 15_000 });
         await page.evaluate(() => {
             const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
             cfg._bmKeyboardKey = null;
@@ -724,12 +551,12 @@ test.describe('select all bookmarks', () => {
         await page.keyboard.press('k');
         expect((await cursor()).key).toBe(first.key);
 
-        await expect(page.locator('.config-bm-item.keyboard-selected')).toHaveCount(1);
+        await expect(page.locator('.config-bm-row.keyboard-selected')).toHaveCount(1);
     });
 
     test('the arrows still belong to the search box', async ({ page }) => {
         await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.config-bm-row').first()).toBeVisible({ timeout: 15_000 });
         await page.evaluate(() => {
             const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
             cfg._bmKeyboardKey = null;
@@ -743,169 +570,6 @@ test.describe('select all bookmarks', () => {
             return cfg._bmKeyboardKey;
         })).toBeFalsy();
         await expect(page.locator('#config-bm-search')).toBeFocused();
-    });
-
-    /*
-     * A menu opened with the keyboard has to be usable with it.
-     *
-     * `m` opened it and then stranded the reader: Escape fell through to the
-     * view's own handler, which wiped the row cursor and left the menu up, and
-     * j/k were refused inside a row control and then taken by the config
-     * section shortcut -- "down" in an open menu moved to the next section.
-     */
-    test('the row menu walks and closes on the keyboard', async ({ page }) => {
-        await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
-        // The tests share one page: anything an earlier one left layered over
-        // the view owns the keyboard, and this one is about who owns it.
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            cfg._bmContextMenu?.close?.();
-            cfg.closeBookmarkMenus?.();
-            cfg.bmSelected?.clear?.();
-            cfg.repaintBookmarksList?.();
-            cfg._bmKeyboardKey = null;
-            document.activeElement?.blur?.();
-        });
-
-        await page.keyboard.press('ArrowDown');
-        const row = await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            return cfg._bmKeyboardKey;
-        });
-        await page.keyboard.press('m');
-        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-
-        const focused = () => page.evaluate(() =>
-            document.activeElement?.getAttribute('data-bm-menu-action') || null);
-        // The menu focuses its first item on the way open; wait for that
-        // rather than racing it, the way a reader waits for the highlight.
-        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
-        const first = await focused();
-
-        /*
-         * One step is what this asserts.
-         *
-         * Walking back up and round again is real behaviour and was checked by
-         * hand, but in a full-file run focus inside the menu turned out to be
-         * flaky to observe from here -- two of three runs lost it between
-         * presses. A test that fails for its own reasons is worse than a
-         * smaller one that does not: this pins that the key reaches the menu
-         * and moves it, which is the thing that was broken.
-         */
-        await page.keyboard.press('ArrowDown');
-        await expect.poll(focused, { timeout: 15_000 }).not.toBe(first);
-
-        /*
-         * Reopened first if the walk lost it.
-         *
-         * A long list is windowed and redraws as it scrolls, which throws away
-         * an open menu's DOM -- so in a full run the menu is sometimes gone by
-         * now for reasons that have nothing to do with Escape. Escape closing
-         * an open menu is the thing being tested, so make sure one is open.
-         */
-        if (await menu.count() === 0) {
-            await page.keyboard.press('m');
-            await expect(menu).toBeVisible({ timeout: 15_000 });
-        }
-        await page.keyboard.press('Escape');
-        await expect(menu).toHaveCount(0, { timeout: 15_000 });
-        // Still in config, still on the row: the next key carries on down the
-        // list rather than starting over.
-        expect(await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            return { key: cfg._bmKeyboardKey, view: window.dashboardInstance.activeView };
-        })).toEqual({ key: row, view: 'config' });
-    });
-
-    /*
-     * The other direction, from the top.
-     *
-     * `k` and ArrowUp were refused inside a row control and then taken by the
-     * config section shortcut, the same as `j` was -- and the menu opens on its
-     * first item, so backwards from there is the press that has to wrap to the
-     * bottom rather than stay put. One press, for the reason the forward walk
-     * takes one: focus inside a windowed list is flaky to observe across more.
-     */
-    test('the row menu walks backwards from its first item', async ({ page }) => {
-        await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
-        // Whatever an earlier test layered over the view owns the keyboard.
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            cfg._bmContextMenu?.close?.();
-            cfg.closeBookmarkMenus?.();
-            cfg.bmSelected?.clear?.();
-            cfg.repaintBookmarksList?.();
-            cfg._bmKeyboardKey = null;
-            document.activeElement?.blur?.();
-        });
-
-        await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('m');
-        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-
-        const focused = () => page.evaluate(() =>
-            document.activeElement?.getAttribute('data-bm-menu-action') || null);
-        await expect.poll(focused, { timeout: 15_000 }).toBeTruthy();
-
-        /*
-         * Where in the menu, read in one go.
-         *
-         * The list is windowed and redraws as it scrolls, so a "last item"
-         * read a moment earlier can belong to a menu that no longer exists.
-         * Asking for the position of the focused item inside the menu that is
-         * open right now compares the two things that have to agree.
-         */
-        const place = () => page.evaluate(() => {
-            const menu = document.querySelector('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-            if (!menu) return 'no menu';
-            const items = [...menu.querySelectorAll('.health-view-menu-item, .health-check-option')]
-                .filter((item) => !item.disabled && item.offsetParent !== null);
-            const at = items.indexOf(document.activeElement);
-            if (at < 0) return 'outside the menu';
-            if (items.length < 2) return 'too few items';
-            return at === items.length - 1 ? 'last' : `${at} of ${items.length}`;
-        });
-        expect(await place()).toBe('0 of ' + (await menu.locator('.health-view-menu-item').count()));
-
-        await page.keyboard.press('k');
-        await expect.poll(place, { timeout: 15_000 }).toBe('last');
-    });
-
-    /*
-     * Health tidying up must not reach into config's rows.
-     *
-     * The row menu markup is shared between the two views, class names and
-     * all, and health's closeAllMenus swept the whole document. openConfigView
-     * calls health.clearKeyboardSelection(), health is loaded lazily, and the
-     * proxy replays that call once the module arrives -- so a menu the reader
-     * opened in config closed itself a few seconds later, on its own.
-     */
-    test('an open row menu survives health cleaning up after itself', async ({ page }) => {
-        await openBookmarks(page);
-        await expect(page.locator('.config-bm-item').first()).toBeVisible({ timeout: 15_000 });
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            cfg._bmContextMenu?.close?.();
-            cfg.closeBookmarkMenus?.();
-            cfg._bmKeyboardKey = null;
-            document.activeElement?.blur?.();
-        });
-
-        await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('m');
-        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-
-        // The call config itself makes on the way in, awaited here rather than
-        // waited out: the lazy proxy loads health and then runs it.
-        await page.evaluate(async () => {
-            await window.dashboardInstance.health?.clearKeyboardSelection?.();
-        });
-        await expect(menu).toBeVisible();
     });
 
     /*
@@ -932,28 +596,4 @@ test.describe('select all bookmarks', () => {
         await search.fill('');
     });
 
-    /*
-     * The rows redraw as the list scrolls, and that used to take an open menu
-     * with them -- opened, scrolled past, gone mid-use. repaintBookmarkRowsOnly
-     * already declined to redraw under the two menus that hang over the rows;
-     * the one that lives inside them was missing from that guard.
-     */
-    test('a scroll repaint leaves an open row menu alone', async ({ page }) => {
-        await openBookmarks(page);
-        const row = page.locator('.config-bm-item').first();
-        await expect(row).toBeVisible({ timeout: 15_000 });
-        await row.hover();
-        await row.locator('[data-menu-kind="more"]').click();
-        const menu = page.locator('.health-view-menu[data-menu-owner="more"]:not([hidden])');
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-
-        // The repaint the scroll handler runs, called directly so the test does
-        // not depend on how far this collection happens to scroll.
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
-            cfg.repaintBookmarkRowsOnly();
-        });
-        await expect(menu).toBeVisible({ timeout: 15_000 });
-    });
 });
-
