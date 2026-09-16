@@ -80,6 +80,8 @@ test('a dock at the bottom holds every action', async ({ page }) => {
 for (const side of ['left', 'right']) {
     test(`a column on the ${side} stands the actions on top of each other`, async ({ page }) => {
         await openDashboard(page);
+        await choosePlacement(page, 'header');
+        const firstInHeader = await page.evaluate(() => Math.round(document.querySelector('.bookmark-link').getBoundingClientRect().left));
         await choosePlacement(page, side);
         const g = await group(page);
         expect(g.position).toBe('fixed');
@@ -87,6 +89,10 @@ for (const side of ['left', 'right']) {
         expect(g.side).toBe(side);
         expect(g.inHeader).toBe(false);
         expect(g.folded).toBe(0);
+
+        // Nothing moves to make room for the column on a wide window.
+        const first = await page.evaluate(() => Math.round(document.querySelector('.bookmark-link').getBoundingClientRect().left));
+        expect(first).toBe(firstInHeader);
     });
 }
 

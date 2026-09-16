@@ -8596,12 +8596,15 @@ body[data-action-bar="bottom"] #dashboard-layout {
     padding-bottom: 72px;
 }
 
-body[data-action-bar="left"] #dashboard-layout {
-    padding-left: 56px;
-}
-
-body[data-action-bar="right"] #dashboard-layout {
-    padding-right: 56px;
+/* A side column stands in the page's own margin, so nothing moves to make
+   room for it. Only where that margin is too narrow to hold it is room made,
+   on both sides so the grid keeps the centre the header stands on. */
+@media (max-width: 1199px) {
+    body[data-action-bar="left"] #dashboard-layout,
+    body[data-action-bar="right"] #dashboard-layout {
+        padding-left: 56px;
+        padding-right: 56px;
+    }
 }
 
 /* A side column has no room on a phone; it goes to the bottom instead. */
