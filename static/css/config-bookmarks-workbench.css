@@ -559,3 +559,97 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     opacity: 0.5;
     cursor: default;
 }
+
+/* ── Narrow widths ────────────────────────────────────────────────────── */
+
+.config-bm-narrow-buttons {
+    display: contents;
+}
+
+.config-bm-narrow-only,
+.config-bm-scrim {
+    display: none;
+}
+
+@media (max-width: 1199px) {
+    .config-bm-workbench,
+    .config-bm-workbench.is-panel-collapsed {
+        grid-template-columns: var(--bm-rail-w) minmax(0, 1fr);
+    }
+
+    .config-bm-narrow-only:not(.config-bm-phone-only) {
+        display: inline-flex;
+    }
+
+    .config-bm-panel {
+        display: none;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(420px, 100vw);
+        max-height: none;
+        border-radius: 0;
+        z-index: 1200;
+        overflow: auto;
+    }
+
+    .config-bm-workbench.is-drawer-open .config-bm-panel {
+        display: flex;
+    }
+
+    .config-bm-workbench.is-panel-collapsed .config-bm-panel-body {
+        display: block;
+    }
+
+    .config-bm-panel-toggle {
+        display: none;
+    }
+
+    .config-bm-scrim:not([hidden]) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        background: color-mix(in srgb, var(--background-primary) 60%, transparent);
+    }
+}
+
+@media (max-width: 799px) {
+    .config-bm-workbench,
+    .config-bm-workbench.is-panel-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .config-bm-narrow-only.config-bm-phone-only {
+        display: inline-flex;
+    }
+
+    .config-bm-rail {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(320px, 100vw);
+        max-height: none;
+        padding: var(--space-3, 0.75rem);
+        background: var(--surface-3, var(--background-secondary));
+        z-index: 1200;
+        overflow: auto;
+    }
+
+    .config-bm-workbench.is-sheet-open .config-bm-rail {
+        display: flex;
+    }
+
+    .config-bm-row {
+        grid-template-columns: 16px 18px minmax(0, 1fr) 3rem;
+    }
+
+    .config-bm-tags,
+    .config-bm-opens,
+    .config-bm-last {
+        display: none;
+    }
+}

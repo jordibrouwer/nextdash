@@ -883,6 +883,7 @@ class DashboardConfig {
     }
 
     closeConfigView() {
+        this.closeWorkbenchOverlays?.();
         const d = this.dash;
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
@@ -1012,6 +1013,11 @@ class DashboardConfig {
              * the right-click menu's branch above, and it calls the menu's own
              * handler rather than repeating what closing one means.
              */
+            if (this.closeWorkbenchOverlays?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
             if (this.handleBookmarkMenuKeys?.(e)) return;
             // In the bookmark list Escape undoes the widest thing first: the
             // selection, then the filters, then the cursor, then the view.
@@ -20314,6 +20320,7 @@ class DashboardConfig {
         const live = document.getElementById('config-bm-count-live');
         if (live) live.textContent = this.renderBookmarkCountLabelSafe(shown, total);
         this.repaintWorkbenchRail?.();
+        this.syncWorkbenchToolbar?.();
     }
 
     clearBookmarkFilterChip(key) {

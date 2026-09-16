@@ -41,6 +41,7 @@
                     <div class="config-bm-toolbar">
                         <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                         <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
+                        <span id="config-bm-narrow-buttons" class="config-bm-narrow-buttons">${this.renderWorkbenchNarrowButtons()}</span>
                         <span class="config-bm-toolbar-spacer"></span>
                         <label class="config-bm-sort">
                             <span>${esc(this.t('config.sortLabel', 'Sort'))}</span>
@@ -52,6 +53,7 @@
                 </section>
                 <aside class="config-bm-panel" id="config-bm-panel" role="region"
                        aria-label="${esc(this.t('config.bmDetails', 'Details'))}">${this.renderWorkbenchPanel()}</aside>
+                <div class="config-bm-scrim" data-bm-scrim hidden></div>
             </div>`;
     },
 
@@ -390,7 +392,8 @@
         panel.dataset.bmPanelSig = sig;
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
-        if (mode === 'bulk') this.toggleWorkbenchPanel(false, { remember: false });
+        if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
+        this.syncWorkbenchToolbar();
     },
 
     /**
@@ -441,7 +444,8 @@
 
     focusWorkbenchPanel(key) {
         if (key) this._bmKeyboardKey = key;
-        this.toggleWorkbenchPanel(false, { remember: false });
+        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
+        else this.toggleWorkbenchPanel(false, { remember: false });
         this.repaintWorkbenchPanel();
         const field = document.querySelector('#config-bm-panel [data-bm-field="name"], #config-bm-panel [data-bm-field]');
         field?.focus();
@@ -773,7 +777,8 @@
     },
 
     focusWorkbenchBulkField(name) {
-        this.toggleWorkbenchPanel(false, { remember: false });
+        if (this.workbenchNarrow()) this.openWorkbenchOverlay('drawer');
+        else this.toggleWorkbenchPanel(false, { remember: false });
         this.redrawBulkPanel();
         document.querySelector(`#config-bm-panel [data-bm-bulk-field="${name}"]`)?.focus();
     },
@@ -826,7 +831,57 @@
         });
     },
 
+    workbenchNarrow() {
+        return Boolean(global.matchMedia?.('(max-width: 1199px)').matches);
+    },
+
+    workbenchPhone() {
+        return Boolean(global.matchMedia?.('(max-width: 799px)').matches);
+    },
+
+    openWorkbenchOverlay(kind) {
+        const root = document.getElementById('config-bm-workbench');
+        if (!root) return;
+        this.closeWorkbenchOverlays();
+        root.classList.add(kind === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+        const scrim = root.querySelector('[data-bm-scrim]');
+        if (scrim) scrim.hidden = false;
+        this._bmOverlayLock = global.ScrollLock?.acquire?.(kind === 'sheet' ? 'bm-sheet' : 'bm-drawer') || null;
+    },
+
+    closeWorkbenchOverlays() {
+        const root = document.getElementById('config-bm-workbench');
+        const wasOpen = Boolean(root?.classList.contains('is-drawer-open') || root?.classList.contains('is-sheet-open'));
+        root?.classList.remove('is-drawer-open', 'is-sheet-open');
+        const scrim = root?.querySelector('[data-bm-scrim]');
+        if (scrim) scrim.hidden = true;
+        if (this._bmOverlayLock) {
+            global.ScrollLock?.release?.(this._bmOverlayLock);
+            this._bmOverlayLock = null;
+        }
+        if (wasOpen) this.syncWorkbenchToolbar();
+        return wasOpen;
+    },
+
+    renderWorkbenchNarrowButtons() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const active = [this.bmQuery, this.bmPageFilter, this.bmCategoryFilter, this.bmCleanupFilter, this.bmHealthFilter]
+            .filter((v) => String(v || '').trim()).length + this.bookmarkTagFilters().length;
+        const n = this.bmSelected.size;
+        return `
+            <button type="button" class="config-btn config-btn--small config-bm-narrow-only config-bm-phone-only" data-bm-open-sheet>${esc(
+                this.t('config.bmFilters', 'Filters'))}${active ? ` (${active})` : ''}</button>
+            <button type="button" class="config-btn config-btn--small config-bm-narrow-only" data-bm-open-drawer>${esc(
+                this.t('config.bmDetails', 'Details'))}${n > 1 ? ` (${n})` : ''}</button>`;
+    },
+
+    syncWorkbenchToolbar() {
+        const host = document.getElementById('config-bm-narrow-buttons');
+        if (host) host.innerHTML = this.renderWorkbenchNarrowButtons();
+    },
+
     bindWorkbench(container) {
+        this.closeWorkbenchOverlays();
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.bindWorkbenchPanel(panel);
@@ -834,6 +889,18 @@
         if (panel) {
             panel.dataset.bmPanelSig = '';
             this.repaintWorkbenchPanel();
+        }
+        const root = container.querySelector('#config-bm-workbench');
+        if (root && root.dataset.bmOverlayWired !== '1') {
+            root.dataset.bmOverlayWired = '1';
+            root.addEventListener('click', (e) => {
+                if (e.target.closest('[data-bm-scrim]')) this.closeWorkbenchOverlays();
+                else if (e.target.closest('[data-bm-open-sheet]')) this.openWorkbenchOverlay('sheet');
+                else if (e.target.closest('[data-bm-open-drawer]')) {
+                    this.openWorkbenchOverlay('drawer');
+                    this.repaintWorkbenchPanel();
+                }
+            });
         }
     },
 
