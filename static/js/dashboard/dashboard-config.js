@@ -145,6 +145,7 @@ class DashboardConfig {
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
+        this.bmHealthFilter = '';
         // null until the list is first rendered, when it takes the stored
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
@@ -505,6 +506,7 @@ class DashboardConfig {
         add('q', this.bmQuery);
         add('cat', this.bmCategoryFilter);
         add('filter', this.bmCleanupFilter);
+        add('health', this.bmHealthFilter);
         const tags = this.bookmarkTagFilters();
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
@@ -526,19 +528,21 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
         const filter = params.get('filter') || '';
         this.bmCleanupFilter = DashboardConfig.CLEANUP_FILTERS[filter] ? filter : '';
+        const health = params.get('health') || '';
+        this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
         if (sort) this.bmSort = sort;
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -20179,7 +20183,7 @@ class DashboardConfig {
         // bmTagFilter is a list, and an empty array is truthy — ask for its
         // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bookmarkTagFilters().length);
+            || this.bmCleanupFilter || this.bookmarkTagFilters().length || this.bmHealthFilter);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -20265,11 +20269,7 @@ class DashboardConfig {
         }, 180);
     }
 
-
-
-
     updateBookmarkListChrome() {
-        this.updateBookmarkTagCloud();
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const shown = filtered.length;
@@ -20277,37 +20277,7 @@ class DashboardConfig {
         if (countEl) countEl.textContent = this.renderBookmarkCountLabelSafe(shown, total);
         const live = document.getElementById('config-bm-count-live');
         if (live) live.textContent = this.renderBookmarkCountLabelSafe(shown, total);
-        const chips = document.getElementById('config-bm-filter-chips');
-        if (chips) {
-            chips.innerHTML = this.renderBookmarkFilterChipsSafe();
-            this.bindBookmarkFilterChips(chips);
-        }
-        const selectAll = document.getElementById('config-bm-select-all');
-        if (selectAll) selectAll.textContent = this.selectAllBookmarksLabel();
-        const hint = document.getElementById('config-bm-tiles-hint');
-        if (hint) {
-            const active = this.bookmarksFiltersActive();
-            hint.hidden = !active;
-            hint.textContent = active
-                ? this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters')
-                : '';
-        }
-        const tilesHost = document.getElementById('config-bm-tiles');
-        if (tilesHost) {
-            const stats = this.bookmarksFiltersActive()
-                ? this.computeBookmarkSubsetStats(filtered)
-                : this.computeStats();
-            tilesHost.innerHTML = this.bookmarksSummaryTiles(stats).map((t) => this.renderTile(t)).join('');
-        }
-    }
-
-    bindBookmarkFilterChips(root) {
-        // Absent while the renderers are still loading: the fallback panel has
-        // no chips to clear yet.
-        if (!root) return;
-        root.querySelectorAll('[data-bm-filter-clear]').forEach((btn) => {
-            btn.addEventListener('click', () => this.clearBookmarkFilterChip(btn.getAttribute('data-bm-filter-clear')));
-        });
+        this.repaintWorkbenchRail?.();
     }
 
     clearBookmarkFilterChip(key) {
@@ -20324,18 +20294,14 @@ class DashboardConfig {
             if (search) search.value = '';
         }
         if (key === 'all' || key === 'cleanup') this.bmCleanupFilter = '';
+        if (key === 'all' || key === 'health') this.bmHealthFilter = '';
         if (key === 'all') {
             this.clearBookmarkFilters();
             return;
         }
-        const pageEl = document.getElementById('config-bm-page');
-        if (pageEl && key === 'page') pageEl.value = this.bmPageFilter;
-        const catEl = document.getElementById('config-bm-category');
-        if (catEl && key === 'category') catEl.value = this.bmCategoryFilter;
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
         void this.ensureBookmarkCategoriesForFilter().then(() => {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
             this.restoreConfigHash();
             this.updateConfigShellHead();
@@ -20356,7 +20322,6 @@ class DashboardConfig {
             : DashboardConfig.categoryFilterKey(b.pageId, b.category);
         this.bmCategoryFilter = catKey;
         this.resetBookmarkVisibleLimit();
-        this.repaintBookmarksFilters();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
     }
@@ -20881,11 +20846,6 @@ class DashboardConfig {
         return '';
     }
 
-    /** The tag cloud, the chips and the banner, same reason. */
-    renderBookmarkTagCloudSafe() {
-        return typeof this.renderBookmarkTagCloud === 'function' ? this.renderBookmarkTagCloud() : '';
-    }
-
     /** What the engine needs: a key, an address and the tags it already has. */
     tagSuggestionItems() {
         return (this.dash.allBookmarks || []).map((b) => ({
@@ -21302,18 +21262,6 @@ class DashboardConfig {
         }
     }
 
-    renderBookmarkFilterChipsSafe() {
-        return typeof this.renderBookmarkFilterChips === 'function' ? this.renderBookmarkFilterChips() : '';
-    }
-
-    renderCleanupFilterBannerSafe() {
-        return typeof this.renderCleanupFilterBanner === 'function' ? this.renderCleanupFilterBanner() : '';
-    }
-
-    renderBookmarkQuickBarSafe() {
-        return typeof this.renderBookmarkQuickBar === 'function' ? this.renderBookmarkQuickBar() : '';
-    }
-
     renderBookmarkCountLabelSafe(shown, total) {
         return typeof this.renderBookmarkCountLabel === 'function'
             ? this.renderBookmarkCountLabel(shown, total)
@@ -21395,89 +21343,7 @@ class DashboardConfig {
 
     /** The pre-workbench controls, kept in the list column until the rail and panel replace them. */
     renderLegacyBookmarkControls() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const pages = this.dash.pages || [];
-        const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
-            .concat(pages.map((p) => {
-                const sel = String(this.bmPageFilter || '') === String(p.id) ? ' selected' : '';
-                return `<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`;
-            })).join('');
-        const catOptions = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
-            .concat(this.knownCategories().map((c) => {
-                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
-                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
-            })).join('');
-        return `
-            <div class="config-crud-toolbar config-crud-toolbar--view">
-                <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
-                        data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
-                <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
-                <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
-            </div>
-            ${this.renderBookmarkQuickBarSafe()}
-            ${this.renderBookmarkTagCloudSafe()}
-            <div class="config-bm-list-meta">
-                <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChipsSafe()}</div>
-            </div>
-            ${this.renderCleanupFilterBannerSafe()}
-            <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>`;
-    }
-
-
-
-    /**
-     * Wire the tag cloud.
-     *
-     * Delegated from the container: repainting the list replaces the cloud's
-     * own markup, so listeners bound to individual chips would not survive the
-     * first click.
-     */
-    bindBookmarkTagCloud(container) {
-        const cloud = container.querySelector('#config-bm-cloud');
-        if (!cloud || cloud._bmCloudBound) return;
-        cloud._bmCloudBound = true;
-        cloud.addEventListener('click', (e) => {
-            const tagBtn = e.target.closest('[data-bm-cloud-tag]');
-            if (tagBtn) {
-                e.preventDefault();
-                this.toggleBookmarkTagFilter(tagBtn.getAttribute('data-bm-cloud-tag'));
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-clear]')) {
-                e.preventDefault();
-                this.setBookmarkTagFilters([]);
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-select]')) {
-                e.preventDefault();
-                this.selectFilteredBookmarks();
-            }
-        });
-    }
-
-    /**
-     * Repaint the cloud's chips in place.
-     *
-     * Rebuilding the whole <details> would snap it shut mid-selection and throw
-     * away the scroll position, so only the parts that change are rewritten.
-     */
-    updateBookmarkTagCloud() {
-        const cloud = document.getElementById('config-bm-cloud');
-        if (!cloud) return;
-        const active = new Set(this.bookmarkTagFilters());
-        cloud.querySelectorAll('[data-bm-cloud-tag]').forEach((btn) => {
-            const on = active.has(btn.getAttribute('data-bm-cloud-tag'));
-            btn.classList.toggle('is-active', on);
-            btn.setAttribute('aria-selected', String(on));
-        });
-        const note = cloud.querySelector('.config-bm-cloud-summary-note');
-        if (note) {
-            note.textContent = active.size
-                ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', active.size)
-                : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
-        }
-        const actions = cloud.querySelector('.config-bm-cloud-actions');
-        if (actions) actions.hidden = active.size === 0;
+        return `<div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>`;
     }
 
     /** Tick every row the current filters leave visible, for the bulk bar. */
@@ -21652,7 +21518,6 @@ class DashboardConfig {
         await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
         if (!this.isActiveView()) return;
         if (this.section === 'bookmarks') {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
         } else if (this.section === 'stats') {
             this.repaintStatsBody();
@@ -21698,17 +21563,6 @@ class DashboardConfig {
             });
             if (!valid) this.bmCategoryFilter = '';
         }
-    }
-
-    repaintBookmarksFilters() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const catEl = document.getElementById('config-bm-category');
-        if (!catEl) return;
-        catEl.innerHTML = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
-            .concat(this.knownCategories().map((c) => {
-                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
-                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
-            })).join('');
     }
 
     /** The rows currently passing search, page filter, category filter and sort. */
@@ -21787,6 +21641,50 @@ class DashboardConfig {
         changed: (b) => window.BookmarkPredicates.match('changed', b),
     };
 
+    static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** Where this bookmark stands with the checker, from what the dashboard already knows. */
+    bookmarkHealthState(b) {
+        const model = window.BookmarkWorkbenchModel;
+        if (!model) return b?.checkStatus === true ? 'healthy' : 'unchecked';
+        return model.healthState(b, window.HealthFacts?.get?.(b?.url) || null);
+    }
+
+    /**
+     * One predicate per filter, so the list and the rail's counts cannot
+     * disagree about what a filter means.
+     */
+    bookmarkFilterTests() {
+        const q = String(this.bmQuery || '').trim().toLowerCase();
+        const pageFilter = String(this.bmPageFilter || '');
+        const tagFilter = this.bookmarkTagFilters();
+        const cleanupKey = this.bmCleanupFilter;
+        const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
+        const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
+        const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter || '');
+        const health = this.bmHealthFilter;
+        return {
+            query: (b) => !q || [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
+                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q)),
+            page: (b) => !pageFilter || String(b.pageId) === pageFilter,
+            category: (b) => {
+                if (!categoryId) return true;
+                if (catPage && String(b.pageId) !== String(catPage)) return false;
+                return (b.category || '') === categoryId;
+            },
+            // OR, matching the dashboard tag cloud: a second tag widens.
+            tag: (b) => !tagFilter.length || (Array.isArray(b.tags) ? b.tags : [])
+                .map((t) => String(t).toLowerCase()).some((t) => tagFilter.includes(t)),
+            cleanup: (b) => {
+                if (!cleanup) return true;
+                return cleanupKey === 'duplicate'
+                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
+                    : cleanup(b);
+            },
+            health: (b) => !health || this.bookmarkHealthState(b) === health,
+        };
+    }
+
     /** Page id → position, built once so sort comparators can look up in O(1). */
     pageOrderIndex() {
         const pages = this.dash.pages || [];
@@ -21822,7 +21720,8 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort ?? this.defaultBookmarksSort(),
+            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
+            this.bmSort ?? this.defaultBookmarksSort(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -21845,36 +21744,8 @@ class DashboardConfig {
 
     computeVisibleBookmarks() {
         const all = this.dash.allBookmarks || [];
-        const q = String(this.bmQuery || '').trim().toLowerCase();
-        const pageFilter = String(this.bmPageFilter || '');
-        const catFilter = this.bmCategoryFilter || '';
-        const tagFilter = this.bookmarkTagFilters();
-        const cleanupKey = this.bmCleanupFilter;
-        const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
-        const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
-        const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
-        const rows = all.filter((b) => {
-            if (cleanup) {
-                const ok = cleanupKey === 'duplicate'
-                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
-                    : cleanup(b);
-                if (!ok) return false;
-            }
-            if (pageFilter && String(b.pageId) !== pageFilter) return false;
-            if (categoryId) {
-                if (catPage && String(b.pageId) !== String(catPage)) return false;
-                if ((b.category || '') !== categoryId) return false;
-            }
-            if (tagFilter.length) {
-                const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
-                // OR, matching the dashboard tag cloud: picking a second tag
-                // widens the result rather than narrowing it to nothing.
-                if (!tagFilter.some((t) => tags.includes(t))) return false;
-            }
-            if (!q) return true;
-            return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
-                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
-        });
+        const tests = Object.values(this.bookmarkFilterTests());
+        const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
         const pageIndex = (id) => (order.has(String(id)) ? order.get(String(id)) : -1);
         const cmp = {
@@ -22810,30 +22681,6 @@ class DashboardConfig {
                 this.scheduleBookmarkSearchRepaint();
             });
         }
-        container.querySelectorAll('[data-bm-sort-chip]').forEach((chip) => {
-            chip.addEventListener('click', () => {
-                this.bmSort = chip.getAttribute('data-bm-sort-chip');
-                this.resetBookmarkVisibleLimit();
-                this.render();
-                this.restoreConfigHash();
-            });
-        });
-        container.querySelector('[data-bm-changed-toggle]')?.addEventListener('click', () => {
-            this.bmCleanupFilter = this.bmCleanupFilter === 'changed' ? '' : 'changed';
-            this.resetBookmarkVisibleLimit();
-            this._bmDuplicateUrls = null;
-            this.render();
-            this.restoreConfigHash();
-        });
-        this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
-        this.bindBookmarkTagCloud(container);
-        container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
-            this.bmCleanupFilter = '';
-            this.bmSelected.clear();
-            // The banner is outside the list, so repainting the rows alone
-            // would leave it on screen describing a filter no longer applied.
-            this.render();
-        });
         const wire = (id, prop) => {
             const el = container.querySelector(id);
             if (!el) return;
@@ -22849,14 +22696,7 @@ class DashboardConfig {
             });
         };
         wire('#config-bm-sort', 'bmSort');
-        const pageEl = container.querySelector('#config-bm-page');
-        pageEl?.addEventListener('change', () => {
-            this.bmPageFilter = pageEl.value;
-            void this.onBookmarksPageFilterChange();
-        });
-        wire('#config-bm-category', 'bmCategoryFilter');
         void this.ensureBookmarkCategoriesForFilter().then(() => {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
         });
         container.querySelector('#config-bm-add')
@@ -22870,8 +22710,6 @@ class DashboardConfig {
                 this.clearBookmarkFilters();
             }
         });
-        container.querySelector('#config-bm-select-all')
-            ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
         this.bindBookmarkKeyboard(container);
@@ -22884,6 +22722,7 @@ class DashboardConfig {
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
+        this.bmHealthFilter = '';
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
@@ -22901,7 +22740,6 @@ class DashboardConfig {
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
         await this.ensureBookmarkCategoriesForFilter();
-        this.repaintBookmarksFilters();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
         this.restoreConfigHash();

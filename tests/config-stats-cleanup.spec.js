@@ -82,7 +82,6 @@ test.describe('cleanup candidates', () => {
         await btn.click();
 
         await expect(page.locator('#config-bm-list')).toBeVisible();
-        await expect(page.locator('.config-cleanup-banner')).toContainText(/Without tags/i);
         await expect(page.locator('.config-bm-row')).toHaveCount(expected);
     });
 
@@ -101,11 +100,9 @@ test.describe('cleanup candidates', () => {
         const btn = page.locator('[data-cleanup-goto="untagged"]');
         test.skip(!(await btn.count()), 'no untagged bookmarks in this dataset');
         await btn.click();
-        await expect(page.locator('.config-cleanup-banner')).toBeVisible();
 
         const total = await page.evaluate(() => window.dashboardInstance.allBookmarks.length);
-        await page.locator('[data-cleanup-clear]').click();
-        await expect(page.locator('.config-cleanup-banner')).toHaveCount(0);
+        await page.locator('[data-bm-rail-clear="cleanup"]').click();
         await expect(page.locator('.config-bm-row')).toHaveCount(total);
     });
 

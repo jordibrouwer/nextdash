@@ -84,16 +84,17 @@ test.describe('what the bookmark list is narrowed to', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.hiddenSelectionCount())).toBe(1);
     });
 
-    test('the quick bar sorts, and asks what changed this week', async ({ page }) => {
+    test('the sort menu sorts, and the rail asks what changed this week', async ({ page }) => {
         await openBookmarks(page);
-        await page.click('[data-bm-sort-chip="opens"]');
+        await page.selectOption('#config-bm-sort', 'opens');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmSort)).toBe('opens');
-        await expect(page.locator('[data-bm-sort-chip="opens"]')).toHaveAttribute('aria-pressed', 'true');
 
-        await page.click('[data-bm-changed-toggle]');
+        // "Changed" is not among the rail's default views, so open the rest first.
+        await page.click('#config-bm-rail [data-bm-rail-more="views"]');
+        await page.click('#config-bm-rail [data-bm-rail="cleanup"][data-value="changed"]');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCleanupFilter)).toBe('changed');
         // A toggle, so the second press puts the whole list back.
-        await page.click('[data-bm-changed-toggle]');
+        await page.click('#config-bm-rail [data-bm-rail="cleanup"][data-value="changed"]');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCleanupFilter)).toBe('');
     });
 

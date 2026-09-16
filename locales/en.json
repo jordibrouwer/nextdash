@@ -6071,7 +6071,21 @@
     "healthReviewNoticeHint": "A card in the corner when enough links are worth a second look. Switching it off leaves link checking itself untouched.",
     "appearanceTabActionBar": "Action bar",
     "actionBarGroup": "The action bar",
-    "actionBarGroupNote": "The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well."
+    "actionBarGroupNote": "The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.",
+    "bmViews": "Views",
+    "bmViewAll": "All",
+    "bmPages": "Pages",
+    "bmCategories": "Categories",
+    "bmTags": "Tags",
+    "bmHealth": "Health",
+    "bmHealthHealthy": "Healthy",
+    "bmHealthBroken": "Broken",
+    "bmHealthDown": "Monitor down",
+    "bmHealthUnchecked": "Never checked",
+    "bmShowMore": "+{n} more",
+    "bmShowFewer": "fewer",
+    "bmAllTags": "all",
+    "bmEmptyHealth": "No bookmark is in that state right now."
   },
   "colors": {
     "title": "theme customization",

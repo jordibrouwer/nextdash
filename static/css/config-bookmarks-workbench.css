@@ -87,3 +87,123 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     color: var(--text-secondary);
     margin: 0;
 }
+
+/* ── Rail ─────────────────────────────────────────────────────────────── */
+
+.config-bm-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-bm-rail-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    align-items: center;
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-bm-rail-token {
+    display: inline-flex;
+    gap: 0.3em;
+    align-items: center;
+    border: 0;
+    border-radius: var(--radius-3, 4px);
+    padding: 1px 6px;
+    font: inherit;
+    font-size: var(--font-size-small);
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    cursor: pointer;
+}
+
+.config-bm-rail-clear-all,
+.config-bm-rail-more {
+    margin-left: auto;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-bm-rail-group {
+    background: var(--bm-slab-bg);
+    border-radius: var(--bm-slab-radius);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+}
+
+html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+}
+
+.config-bm-rail-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: var(--space-1, 0.25rem) 0;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-bm-rail-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    border: 0;
+    border-radius: var(--radius-3, 4px);
+    padding: 2px var(--space-1, 0.25rem);
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-bm-rail-item:hover,
+.config-bm-rail-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.config-bm-rail-item.is-on {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.config-bm-rail-item.is-empty:not(.is-on) {
+    opacity: 0.45;
+}
+
+.config-bm-rail-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-bm-rail-count {
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.config-bm-health-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--text-secondary);
+}
+
+.config-bm-health-dot.is-healthy { background: var(--accent-success); }
+.config-bm-health-dot.is-broken { background: var(--accent-error); }
+.config-bm-health-dot.is-down { background: var(--accent-warning); }

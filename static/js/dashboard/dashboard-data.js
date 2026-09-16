@@ -1205,7 +1205,6 @@ class DashboardData {
         if (repaintActiveView) {
             this.repaintBookmarkMutationSurfaces({ animate, refreshHealthReport, despiteModal });
         } else {
-            d.config?.repaintBookmarksFilters?.();
             d.config?.repaintBookmarksList?.();
         }
 
@@ -1229,7 +1228,6 @@ class DashboardData {
     repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
         const d = this.dash;
 
-        d.config?.repaintBookmarksFilters?.();
         d.config?.repaintBookmarksList?.();
 
         // Not `incremental: false`. Every add/edit/delete/move/tag change comes

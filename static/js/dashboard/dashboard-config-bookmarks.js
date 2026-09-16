@@ -36,41 +36,6 @@
         return parts.join(' · ');
     },
 
-    renderBookmarkFilterChips() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const chips = [];
-        const add = (key, label) => {
-            chips.push(`<button type="button" class="config-bm-filter-chip" data-bm-filter-clear="${esc(key)}">${esc(label)}<span aria-hidden="true">×</span></button>`);
-        };
-        if (this.bmPageFilter) {
-            const pageName = this.pageLabel(this.bmPageFilter);
-            add('page', this.t('config.bookmarksFilterPage', 'Page: {name}').replace('{name}', pageName));
-        }
-        if (this.bmCategoryFilter) {
-            const parsed = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter);
-            const label = parsed.categoryId
-                ? (this.knownCategories().find((c) => c.id === this.bmCategoryFilter)?.label || parsed.categoryId)
-                : this.bmCategoryFilter;
-            add('category', this.t('config.bookmarksFilterCategory', 'Category: {name}').replace('{name}', label));
-        }
-        // One chip per tag rather than one lumped "Tag: a, b, c": each stays
-        // removable on its own, which is the point of picking several.
-        for (const tag of this.bookmarkTagFilters()) {
-            add(`tag:${tag}`, this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', tag));
-        }
-        if (String(this.bmQuery || '').trim()) {
-            const q = String(this.bmQuery).trim();
-            add('search', this.t('config.bookmarksFilterSearch', 'Search: {q}').replace('{q}', q));
-        }
-        if (this.bmCleanupFilter) {
-            add('cleanup', this.cleanupFilterLabel(this.bmCleanupFilter));
-        }
-        if (chips.length > 1) {
-            chips.push(`<button type="button" class="config-bm-filter-chip config-bm-filter-chip--clear" data-bm-filter-clear="all">${esc(this.t('config.bookmarksClearAllFilters', 'Clear all'))}</button>`);
-        }
-        return chips.join('');
-    },
-
     renderBookmarkCountLabel(shown, total) {
         if (this.bookmarksFiltersActive() && shown !== total) {
             return this.t('config.bookmarksCountFiltered', '{shown} of {total}')
@@ -105,6 +70,9 @@
             return this.t('config.bookmarksEmptyCleanup', 'Nothing here is {filter} — which is the good outcome.')
                 .replace('{filter}', String(label).toLowerCase());
         }
+        if (this.bmHealthFilter) {
+            return this.t('config.bmEmptyHealth', 'No bookmark is in that state right now.');
+        }
         const tags = this.bookmarkTagFilters();
         if (tags.length) {
             return this.t('config.bookmarksEmptyTag', 'No bookmarks carry {tags}.')
@@ -120,111 +88,6 @@
             return this.t('config.bookmarksEmptyQuery', 'Nothing matches “{query}”.').replace('{query}', query);
         }
         return this.t('config.noBookmarksMatch', 'No bookmarks match your search.');
-    },
-
-    /**
-     * The three orders people actually use, and the one filter with no way in.
-     *
-     * Sorting lived in a dropdown of eight, which is where "most opened" went to
-     * be never found: a select shows one option and hides the rest behind a
-     * click, and none of the three that matter is the default. They are chips
-     * now, with the other five still in the menu beside them.
-     *
-     * "Changed this week" sits with them because it answers the question that
-     * follows an import or an afternoon of tidying — what did I touch — and
-     * every bookmark has carried the timestamp for it all along with nothing
-     * able to ask.
-     */
-    renderBookmarkQuickBar() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const sort = this.bmSort ?? this.defaultBookmarksSort();
-        const chips = [
-            ['page', this.t('config.sortByPage', 'Page order')],
-            ['recent', this.t('config.sortByRecent', 'Recently added')],
-            ['opens', this.t('config.sortByOpens', 'Most opened')],
-        ].map(([value, label]) => {
-            const on = String(sort) === value;
-            return `<button type="button" class="config-choice config-choice--small${on ? ' is-active' : ''}"
-                    data-bm-sort-chip="${esc(value)}" aria-pressed="${on}">${esc(label)}</button>`;
-        }).join('');
-        const changedOn = this.bmCleanupFilter === 'changed';
-        return `
-            <div class="config-bm-quickbar">
-                <span class="config-bm-quickbar-label">${esc(this.t('config.sortLabel', 'Sort'))}</span>
-                <div class="config-choices" role="group">${chips}</div>
-                <button type="button" class="config-choice config-choice--small${changedOn ? ' is-active' : ''}"
-                        data-bm-changed-toggle aria-pressed="${changedOn}"
-                        title="${esc(this.t('config.cleanupFilterChangedHint', 'Bookmarks added or edited in the last seven days'))}">${
-                    esc(this.t('config.cleanupFilterChanged', 'Changed in the last week'))}</button>
-            </div>`;
-    },
-
-    /**
-     * Tag cloud above the bookmark list.
-     *
-     * Collapsed by default: with a few dozen tags it would otherwise push the
-     * list itself off the screen on every visit. Tags are ordered by how many
-     * bookmarks carry them, so the ones worth filtering on come first, and each
-     * is sized by that count the way the dashboard cloud is.
-     */
-    renderBookmarkTagCloud() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const tags = this.bookmarkTagCounts();
-        if (!tags.length) return '';
-
-        const active = new Set(this.bookmarkTagFilters());
-        const max = tags[0].count || 1;
-        const chips = tags.map(({ tag, count }) => {
-            const on = active.has(tag);
-            // Four steps rather than a continuous scale: enough to show weight,
-            // few enough that the rows still line up.
-            const step = Math.min(3, Math.floor((count / max) * 4));
-            return `<button type="button"
-                    class="config-bm-cloud-tag config-bm-cloud-tag--s${step}${on ? ' is-active' : ''}"
-                    role="option" aria-selected="${on}"
-                    data-bm-cloud-tag="${esc(tag)}">${esc(tag)}<span class="config-bm-cloud-count">${count}</span></button>`;
-        }).join('');
-
-        const activeCount = active.size;
-        const summary = activeCount
-            ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', activeCount)
-            : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
-        return `
-            <details class="config-bm-cloud" id="config-bm-cloud"${activeCount ? ' open' : ''}>
-                <summary class="config-bm-cloud-summary">
-                    <span>${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}</span>
-                    <span class="config-bm-cloud-summary-note">${esc(summary)}</span>
-                </summary>
-                <div class="config-bm-cloud-body">
-                    <div class="config-bm-cloud-tags" role="listbox" aria-multiselectable="true"
-                         aria-label="${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}">${chips}</div>
-                    <div class="config-bm-cloud-actions"${activeCount ? '' : ' hidden'}>
-                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-select>${esc(this.t('config.bookmarksTagCloudSelect', 'Select these bookmarks'))}</button>
-                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-clear>${esc(this.t('config.bookmarksTagCloudClear', 'Clear tags'))}</button>
-                    </div>
-                </div>
-            </details>`;
-    },
-
-    /**
-     * A banner naming the cleanup filter the list arrived with.
-     *
-     * Without it the user lands on a list that is silently hiding most of their
-     * bookmarks, with nothing on screen to say why or how to get back — the
-     * search box is empty and both dropdowns read "all".
-     */
-    renderCleanupFilterBanner() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const key = this.bmCleanupFilter;
-        if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return '';
-        const shown = this.visibleBookmarks().length;
-        const label = this.cleanupFilterLabel(key);
-        const count = this.t('config.cleanupFilterCount', '{n} shown').replace('{n}', String(shown));
-        return `
-            <div class="config-cleanup-banner" role="status">
-                <span class="config-cleanup-banner-text">${esc(label)} · ${esc(count)}</span>
-                <button type="button" class="config-btn config-btn--small" data-cleanup-clear="1">${esc(this.t('config.cleanupFilterClear', 'Show all bookmarks'))}</button>
-            </div>`;
     },
 
     /**
