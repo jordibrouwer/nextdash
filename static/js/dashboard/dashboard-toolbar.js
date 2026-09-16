@@ -503,6 +503,14 @@ class DashboardToolbar {
 
     headerActionCap() {
         const d = this.dash;
+        /*
+         * Out of the header, nothing folds: a dock or a side column has the
+         * room the band did not. The menu placement keeps the one action that
+         * makes something and puts the rest behind the control.
+         */
+        const place = document.body.getAttribute('data-action-bar');
+        if (place === 'bottom' || place === 'left' || place === 'right') return Infinity;
+        if (place === 'menu') return 1;
         const raw = Math.round(Number(d.settings?.maxHeaderActions));
         const chosen = Number.isFinite(raw) ? raw : DashboardToolbar.HEADER_ACTION_DEFAULT;
         const capped = Math.min(8, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));

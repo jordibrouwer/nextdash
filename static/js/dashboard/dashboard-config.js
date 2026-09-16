@@ -11188,6 +11188,7 @@ class DashboardConfig {
         headerClockPlacement: { def: 'beside-name' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'segmented' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
+        actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'bottom' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: false },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -11970,6 +11971,15 @@ class DashboardConfig {
                 note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.'),
                 bulk: 'chrome',
                 controls: [
+                    { field: 'actionBarPosition', type: 'select', special: 'chrome',
+                        label: t('config.actionBarPositionLabel', 'Where the buttons stand'),
+                        options: [
+                            opt('bottom', t('config.actionBarBottom', 'In a dock at the bottom')),
+                            opt('left', t('config.actionBarLeft', 'In a column on the left')),
+                            opt('right', t('config.actionBarRight', 'In a column on the right')),
+                            opt('header', t('config.actionBarHeader', 'In the header')),
+                            opt('menu', t('config.actionBarMenu', 'Behind one menu in the header')),
+                        ] },
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
                     chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),

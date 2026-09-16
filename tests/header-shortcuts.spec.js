@@ -25,6 +25,14 @@ async function openDashboard(page) {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // These specs measure the actions in the header; a fresh install docks
+    // them at the bottom now.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.actionBarPosition = 'header';
+        d.setupDOM?.();
+        await d.saveSettings?.();
+    });
 }
 
 /**

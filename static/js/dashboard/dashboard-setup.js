@@ -82,6 +82,14 @@ class DashboardSetup {
         // Plain glyphs with a rule under the current one, or a plate around
         // every control: one answer for the tabs, the actions and the
         // destinations alike. CSS reads it off <body>.
+        // Where the action buttons stand. CSS moves the one group that already
+        // holds them, so the buttons, their keys and their handlers stay put.
+        document.body.setAttribute(
+            'data-action-bar',
+            ['bottom', 'left', 'right', 'menu'].includes(d.settings.actionBarPosition)
+                ? d.settings.actionBarPosition
+                : 'header'
+        );
         document.body.setAttribute(
             'data-header-buttons',
             d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'

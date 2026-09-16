@@ -447,6 +447,7 @@ type Settings struct {
 	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (3-8)
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
+	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
@@ -1385,6 +1386,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HeaderClockPlacement:            defaultHeaderClockPlacement,
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
+			ActionBarPosition:               defaultActionBarFresh,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -2935,6 +2937,25 @@ One answer for all three groups -- the page tabs, the actions and the
 destinations -- because a header with two of them plated and one bare reads as
 a mistake rather than as a choice.
 */
+/*
+Where the action buttons stand.
+
+The header carried them beside the pages and the destinations, and with six or
+seven of them the band read as clutter. They can stand in a dock at the bottom
+(the old button bar's place), in a column on either side, or behind one menu
+in the header. A new install starts with the dock; an install that predates
+the setting keeps them in the header, where its reader last saw them.
+*/
+const (
+	actionBarHeader         = "header"
+	actionBarBottom         = "bottom"
+	actionBarLeft           = "left"
+	actionBarRight          = "right"
+	actionBarMenu           = "menu"
+	defaultActionBarFresh   = actionBarBottom
+	defaultActionBarUpgrade = actionBarHeader
+)
+
 const (
 	headerButtonsPlain       = "plain"
 	headerButtonsPlated      = "plated"
@@ -3046,6 +3067,11 @@ func clampBookmarkSettings(s *Settings) {
 	case pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
 	default:
 		s.PageSwitcherStyle = defaultPageSwitcherStyle
+	}
+	switch s.ActionBarPosition {
+	case actionBarHeader, actionBarBottom, actionBarLeft, actionBarRight, actionBarMenu:
+	default:
+		s.ActionBarPosition = defaultActionBarUpgrade
 	}
 	switch s.HeaderButtonStyle {
 	case headerButtonsPlain, headerButtonsPlated:
@@ -3517,6 +3543,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HeaderClockPlacement:            defaultHeaderClockPlacement,
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
+			ActionBarPosition:               defaultActionBarFresh,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -3624,6 +3651,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		// Zero is a choice for this one, so an absent key is how an older
 		// file says it never answered.
+		if _, ok := rawSettings["actionBarPosition"]; !ok {
+			settings.ActionBarPosition = defaultActionBarUpgrade
+		}
 		if _, ok := rawSettings["maxHeaderActions"]; !ok {
 			settings.MaxHeaderActions = defaultMaxHeaderActions
 		}
