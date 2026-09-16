@@ -266,13 +266,23 @@
         return this.workbenchPanelKey() ? 'single' : 'empty';
     },
 
+    /**
+     * The bookmark the panel shows: the row under the cursor, or the one a
+     * save just moved. A moved bookmark can land outside the drawn window or
+     * the active filter, where the list drops its cursor; the panel is held
+     * on it anyway until the reader picks another row or clears the cursor.
+     */
     workbenchPanelKey() {
         if (this._bmPendingFocus) {
             const key = this.bookmarkKeyAt(this._bmPendingFocus.pageId, this._bmPendingFocus.index);
             this._bmPendingFocus = null;
-            if (key) this._bmKeyboardKey = key;
+            if (key) {
+                this._bmKeyboardKey = key;
+                this._bmPanelHoldKey = key;
+            }
         }
-        const key = this._bmKeyboardKey;
+        if (this._bmKeyboardKey && this._bmKeyboardKey !== this._bmPanelHoldKey) this._bmPanelHoldKey = null;
+        const key = this._bmKeyboardKey || this._bmPanelHoldKey;
         return key && this.findBookmarkByKey(key) ? key : null;
     },
 

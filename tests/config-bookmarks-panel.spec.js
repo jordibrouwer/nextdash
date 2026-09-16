@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { resetDashboardData } = require('./e2e-helpers');
+const { resetDashboardData, WRITE_TOKEN } = require('./e2e-helpers');
 const { openBookmarks } = require('./config-bookmarks-helpers');
 
 test.beforeEach(async ({ page }) => {
@@ -20,6 +20,19 @@ async function capturePosts(page) {
         return route.fallback();
     });
     return posts;
+}
+
+/** A second page, over the API: fixture setup, not the thing under test. */
+async function ensureSecondPage(page) {
+    const pages = await (await page.request.get('/api/pages')).json();
+    if (pages[1]) return String(pages[1].id);
+    const maxId = Math.max(0, ...pages.map((p) => Number(p.id) || 0));
+    const second = { id: maxId + 1, name: `Page ${maxId + 1}` };
+    await page.request.post('/api/pages', {
+        data: [...pages, second],
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    return String(second.id);
 }
 
 async function focusFirstRow(page) {
@@ -237,5 +250,60 @@ test.describe('the bookmark panel', () => {
             b.url === url && (b.tags || []).includes('zzclicked')))).toBe(true);
         // The save does not pull the panel back to the first bookmark.
         await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', secondKey);
+    });
+
+    test('moving to another page keeps the panel on the bookmark', async ({ page }) => {
+        const target = await ensureSecondPage(page);
+        await openBookmarks(page);
+        await focusFirstRow(page);
+        await page.keyboard.press('e');
+        const panel = page.locator('#config-bm-panel');
+        const name = await panel.locator('[data-bm-field="name"]').inputValue();
+        // Reached as a reader does, by focusing it; selectOption alone does not.
+        await panel.locator('[data-bm-field="page"]').focus();
+        await panel.locator('[data-bm-field="page"]').selectOption(target);
+        await expect(panel).toHaveAttribute('data-bm-panel-key', new RegExp(`^${target}::`));
+        await expect(panel).toHaveAttribute('data-bm-panel-mode', 'single');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('[data-bm-field="name"]')).toHaveValue(name);
+        await expect(panel.locator('[data-bm-field="page"]')).toHaveValue(target);
+        await expect(panel.locator('[data-bm-field="page"]')).toBeFocused();
+        // The row has moved to its new page's group in the list.
+        const key = await panel.getAttribute('data-bm-panel-key');
+        const row = page.locator(`#config-bm-list .config-bm-row[data-bm-key="${key}"]`);
+        await expect.poll(async () => {
+            await page.locator('#config-bm-list').hover();
+            await page.mouse.wheel(0, 2000);
+            return row.count();
+        }).toBe(1);
+        const group = await row.evaluate((r) => {
+            let el = r.previousElementSibling;
+            while (el && !el.matches('.config-bm-group-head')) el = el.previousElementSibling;
+            return el?.getAttribute('data-bm-group') || '';
+        });
+        expect(group.startsWith(`${target}::`)).toBe(true);
+    });
+
+    test('changing the category keeps the panel on the bookmark', async ({ page }) => {
+        await openBookmarks(page);
+        const key = await focusFirstRow(page);
+        await page.keyboard.press('e');
+        const panel = page.locator('#config-bm-panel');
+        const name = await panel.locator('[data-bm-field="name"]').inputValue();
+        const select = panel.locator('[data-bm-field="category"]');
+        const current = await select.inputValue();
+        const values = await select.locator('option').evaluateAll((os) => os.map((o) => o.value));
+        const next = values.find((v) => v !== current);
+        test.skip(next === undefined, 'needs a second category option');
+        const saved = page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/api/bookmarks?page='));
+        await select.focus();
+        await select.selectOption(next);
+        await saved;
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._bmPanelSaving)).toBe(null);
+        await expect(panel).toHaveAttribute('data-bm-panel-mode', 'single');
+        await expect(panel).toHaveAttribute('data-bm-panel-key', key);
+        await expect(panel.locator('[data-bm-field="name"]')).toHaveValue(name);
+        await expect(select).toHaveValue(next);
+        await expect(select).toBeFocused();
     });
 });

@@ -2219,6 +2219,7 @@ class DashboardConfig {
 
     clearBookmarkKeyboardSelection() {
         this._bmKeyboardKey = null;
+        this._bmPanelHoldKey = null;
         document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
             row.removeAttribute('aria-current');
@@ -23372,7 +23373,9 @@ class DashboardConfig {
         } else {
             this.bmSelected.clear();
         }
-        await this.refreshBookmarksAfterWrite();
+        // A row moved from the panel repaints only the list and panel: a
+        // whole-section render would replace the panel and close its drawer.
+        await this.refreshBookmarksAfterWrite({ silent: keepSelection });
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
     }
 
