@@ -8,7 +8,7 @@
  */
 
 .config-bm-workbench {
-    --bm-rail-w: 200px;
+    --bm-rail-w: 176px;
     --bm-panel-w: 260px;
     --bm-row-h: 44px;
     --bm-head-h: 32px;
@@ -24,7 +24,8 @@
     grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) 28px;
 }
 
-.config-bm-rail,
+/* The rail grows with the page and shows every group in full; only the
+   panel is a sticky, scrolling column. */
 .config-bm-panel {
     position: sticky;
     top: var(--space-4, 1rem);
@@ -42,6 +43,7 @@
 
 .config-bm-rail-search input {
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     padding-right: 2rem;
 }
@@ -94,6 +96,15 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+/* Labels ellipsize instead of widening the column. */
+.config-bm-rail > *,
+.config-bm-rail-group,
+.config-bm-rail-item {
+    min-width: 0;
 }
 
 .config-bm-rail-tokens {
@@ -117,6 +128,9 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
     color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
     cursor: pointer;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
 }
 
 .config-bm-rail-clear-all,
@@ -133,7 +147,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
 .config-bm-rail-group {
     background: var(--bm-slab-bg);
     border-radius: var(--bm-slab-radius);
-    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    padding: var(--space-1, 0.25rem) 6px 6px;
 }
 
 html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
@@ -155,7 +169,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 .config-bm-rail-item {
     display: flex;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: 6px;
     width: 100%;
     border: 0;
     border-radius: var(--radius-3, 4px);

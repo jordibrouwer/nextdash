@@ -47,6 +47,14 @@ test.describe('the bookmarks workbench', () => {
         expect(r && m && p, 'all three parts have a box').toBeTruthy();
         expect(r.x + r.width).toBeLessThanOrEqual(m.x + 1);
         expect(m.x + m.width).toBeLessThanOrEqual(p.x + 1);
+
+        // Every group in full, in a narrow column: no scrollbar either way.
+        const fit = await rail.evaluate((el) => ({
+            vertical: el.scrollHeight <= el.clientHeight + 1,
+            horizontal: el.scrollWidth <= el.clientWidth + 1,
+        }));
+        expect(fit).toEqual({ vertical: true, horizontal: true });
+        expect(r.width).toBeLessThanOrEqual(180);
     });
 
     test('a page in the rail filters the list, and the other pages keep their counts', async ({ page }) => {
