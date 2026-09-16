@@ -36,13 +36,13 @@ test.describe('config fields line up in a grid', () => {
      * three different offsets because each label sized its own row.
      */
     test('controls in one panel share a left edge', async ({ page }) => {
-        await openSection(page, 'behavior');
-        await openSubTab(page, 'data-behavior-tab', 'datetime');
+        await openSection(page, 'appearance');
+        await openSubTab(page, 'data-appearance-tab', 'datetime');
 
         // Date format, time format and weather source are three selects with
         // labels of very different lengths in the same panel.
         const lefts = await page.evaluate(() => {
-            const fields = [...document.querySelectorAll('#config-behavior-body .config-field')]
+            const fields = [...document.querySelectorAll('#config-appearance-body .config-field')]
                 .filter((f) => f.querySelector('.config-select'));
             return fields.map((f) => Math.round(
                 f.querySelector('.config-select').getBoundingClientRect().left
@@ -61,11 +61,11 @@ test.describe('config fields line up in a grid', () => {
      * beside it rather than being pushed to the far edge by a `1fr` column.
      */
     test('a control keeps its size and its affordances stay beside it', async ({ page }) => {
-        await openSection(page, 'behavior');
-        await openSubTab(page, 'data-behavior-tab', 'datetime');
+        await openSection(page, 'appearance');
+        await openSubTab(page, 'data-appearance-tab', 'datetime');
 
         const row = await page.evaluate(() => {
-            const el = document.querySelector('#config-behavior-body .config-select');
+            const el = document.querySelector('#config-appearance-body .config-select');
             const field = el.closest('.config-field');
             const aff = field.querySelector('.config-field-affordances');
             const s = el.getBoundingClientRect();
@@ -185,7 +185,7 @@ test.describe('the settings schema declares its section', () => {
         const appearance = [...new Set(
             panels.filter((p) => p.section === 'appearance').map((p) => p.tab)
         )].sort();
-        expect(appearance).toEqual(['buttonbar', 'display', 'header', 'layout']);
+        expect(appearance).toEqual(['buttonbar', 'datetime', 'display', 'header', 'layout']);
     });
 
     test('panelsFor keeps a shared tab name in its own section', async ({ page }) => {

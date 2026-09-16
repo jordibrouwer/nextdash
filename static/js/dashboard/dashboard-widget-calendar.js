@@ -1,5 +1,5 @@
 /**
- * The calendar widget: what is coming up, from the ICS feed set in Behavior
+ * The calendar widget: what is coming up, from the ICS feed set in Appearance
  * → Date & weather. One feed for the whole install, so this asks nothing of
  * its own besides how far ahead to look and how many rows to show.
  */

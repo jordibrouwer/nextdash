@@ -48,9 +48,9 @@ test.describe('config info + reset affordances', () => {
         // dateFormat default is 'short-slash'; set a non-default first.
         await page.evaluate(() => {
             window.dashboardInstance.settings.dateFormat = 'iso';
-            window.dashboardInstance.config.openConfigView('behavior');
+            window.dashboardInstance.config.openConfigView('appearance');
         });
-        await page.locator('[data-behavior-tab="datetime"]').click();
+        await page.locator('[data-appearance-tab="datetime"]').click();
 
         const resetBtn = page.locator('[data-reset-field="dateFormat"]');
         await expect(resetBtn).toHaveClass(/is-visible/);
@@ -63,8 +63,8 @@ test.describe('config info + reset affordances', () => {
 
     test('date & weather number fields show info buttons', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="datetime"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="datetime"]').click();
         await expect(page.locator('[data-info-field="weatherRefreshMinutes"]')).toBeVisible();
         await page.locator('[data-info-field="weatherRefreshMinutes"]').click();
         await expect(page.locator('#app-modal .modal-text')).toContainText(/1440/);
@@ -136,14 +136,34 @@ test.describe('config info + reset affordances', () => {
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
 
+    test('date & weather sits under Appearance, between Action bar and Display', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        const order = await page.locator('[data-appearance-tab]').evaluateAll((els) =>
+            els.map((el) => el.getAttribute('data-appearance-tab')));
+        expect(order.indexOf('datetime')).toBe(order.indexOf('buttonbar') + 1);
+        expect(order.indexOf('display')).toBe(order.indexOf('datetime') + 1);
+
+        await page.locator('[data-appearance-tab="datetime"]').click();
+        await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await expect(page.locator('[data-behavior-tab="datetime"]')).toHaveCount(0);
+
+        // An old link follows the tab to its new home.
+        await page.goto('/#config/behavior/datetime');
+        await expect(page.locator('[data-appearance-tab="datetime"]')).toHaveAttribute('aria-selected', 'true');
+        await expect.poll(() => page.evaluate(() => location.hash)).toBe('#config/appearance/datetime');
+    });
+
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        for (const tab of ['general', 'datetime', 'search', 'inbox', 'privacy', 'status']) {
+        for (const tab of ['general', 'search', 'inbox', 'privacy', 'status']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
         }
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        for (const tab of ['general', 'layout', 'display']) {
+        for (const tab of ['general', 'layout', 'datetime', 'display']) {
             await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toBeVisible();
         }
     });

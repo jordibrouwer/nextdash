@@ -287,6 +287,8 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
+        // Date & weather moved to Appearance; old links follow it there.
+        if (raw === 'config/behavior/datetime') return 'appearance';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -315,6 +317,7 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
+        if (raw === 'config/behavior/datetime') return 'datetime';
         if (raw === 'config/appearance/branding') return 'display';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
         // tab in its new home rather than on whatever tab opens first.
@@ -1688,7 +1691,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'layout', 'buttonbar', 'display', 'header'].includes(this.appearanceTab)
+            const tab = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -8623,6 +8626,9 @@ class DashboardConfig {
         if (this.appearanceTab === 'buttonbar') {
             return shell(this.renderAppearanceActionBarBody());
         }
+        if (this.appearanceTab === 'datetime') {
+            return shell(this.renderControlPanels(this.panelsFor('appearance', 'datetime'), 'behavior'));
+        }
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
@@ -9381,7 +9387,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'buttonbar', 'display', 'header'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -9508,6 +9514,7 @@ class DashboardConfig {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
+            datetime: ['config.appearanceTabDateTime', 'Date & weather'],
             display: ['config.appearanceTabDisplay', 'Display'],
             header: ['config.appearanceTabHeaderButtons', 'Header and buttons'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
@@ -11354,7 +11361,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 // Three subjects, and the weather is five of the eleven fields
                 // on its own -- a reader setting a date format scrolled past a
@@ -11379,7 +11386,7 @@ class DashboardConfig {
                 // Where the line is drawn, as against what it says: the three
                 // groups around this one set the date, the temperature and the
                 // feed, and this one is about the header that carries them.
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 title: t('config.generalGroupHeaderClock', 'Header'),
                 note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
@@ -11394,7 +11401,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 title: t('config.generalGroupWeather', 'Weather'),
                 note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
@@ -11411,7 +11418,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 title: t('config.generalGroupCalendar', 'Calendar'),
                 note: t('config.generalGroupCalendarNote', 'A feed to read your next appointments from. Two addresses because the widget and the date line ask for different things.'),
@@ -13215,7 +13222,7 @@ class DashboardConfig {
     // "has this moved on", and the two were only neighbours because both talk to
     // the internet on a schedule. Four panels down a tab named after something
     // else is also where a reader stops looking.
-    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'];
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -14004,7 +14011,9 @@ class DashboardConfig {
     // questions people ask about it — where it sits, which of the four main
     // buttons it carries, which extras — were answered two tabs apart, so
     // changing the bar meant finding it twice.
-    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'display', 'header', 'custom-themes'];
+    // Date & weather came over from Behavior: the clock, the date line and the
+    // weather are things on screen, and the header they sit in is set here.
+    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header', 'custom-themes'];
 
     /*
      * What a tab used to be called still opens it.
@@ -16515,7 +16524,7 @@ class DashboardConfig {
             { key: 'forecastRange', kind: 'choice',
               label: ['config.widgetForecastRange', 'Forecast range'],
               hint: ['config.widgetWeatherLocationHint',
-                     'Location, source and unit come from Behavior → Date & weather.'],
+                     'Location, source and unit come from Appearance → Date & weather.'],
               options: [
                   ['3day', ['config.widgetForecastRange3Day', '3 days']],
                   ['5day', ['config.widgetForecastRange5Day', '5 days']],
@@ -16537,7 +16546,7 @@ class DashboardConfig {
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetCalendarFeedHint',
-                     'Feed comes from Behavior → Date & weather → Calendar feed URL.'] },
+                     'Feed comes from Appearance → Date & weather → Calendar feed URL.'] },
         ],
         /*
          * The custom widget's scalars. Its fields[] is a list of objects, which
@@ -18425,7 +18434,7 @@ class DashboardConfig {
             backups: 'How old the newest automatic backup is, and whether the last run failed.',
             custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
-            calendar: 'What is coming up, from the ICS feed set in Behavior → Date & weather.',
+            calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
         };
         const label = this.dash.language?.t?.(key);
