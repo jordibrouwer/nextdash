@@ -8167,6 +8167,15 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-sh
     height: auto;
 }
 
+/* Plated boxes the destinations and the page tabs one by one; the actions stay
+   bare beside them. A surround around the actions on top of the boxes next to
+   them drew a frame around a row that is already framed. */
+body:not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-shortcuts {
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+}
+
 body[data-header-buttons="plain"] .header-track .page-nav-btn,
 body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,

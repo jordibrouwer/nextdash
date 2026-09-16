@@ -247,26 +247,19 @@ test('an action is drawn like the destinations beside it', async ({ page }) => {
  * design draws a box around the three that do something, and leaves the places
  * you can go standing on the header itself.
  */
-test('the actions stand in a surround, the destinations do not', async ({ page }) => {
+test('with plated buttons the actions stand bare, without a surround', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
     await usePlatedHeader(page);
 
-    const seen = await page.evaluate(() => {
-        const read = (el) => {
-            const s = window.getComputedStyle(el);
-            return { width: s.borderTopWidth, style: s.borderTopStyle, radius: s.borderTopLeftRadius };
-        };
-        return {
-            group: read(document.querySelector('.header-shortcuts')),
-            destinations: read(document.querySelector('.header-destinations')),
-        };
+    const group = await page.evaluate(() => {
+        const s = window.getComputedStyle(document.querySelector('.header-shortcuts'));
+        return { border: s.borderTopColor, background: s.backgroundColor, shadow: s.boxShadow };
     });
 
-    expect(parseFloat(seen.group.width), 'the actions have no surround').toBeGreaterThan(0);
-    expect(seen.group.style, 'the surround is not drawn').not.toBe('none');
-    expect(parseFloat(seen.group.radius), 'the surround has square corners').toBeGreaterThan(0);
-    expect(parseFloat(seen.destinations.width), 'the destinations were boxed in too').toBe(0);
+    expect(group.border, 'the actions still have a surround').toBe('rgba(0, 0, 0, 0)');
+    expect(group.background, 'the actions still sit on a plate').toBe('rgba(0, 0, 0, 0)');
+    expect(group.shadow, 'the actions still cast a shadow').toBe('none');
 });
 
 /*
@@ -439,10 +432,11 @@ test('the groups in the band are all the same plate', async ({ page }) => {
         };
     });
 
-    expect(seen.group, 'the action group has no plate at all').not.toBe('none');
-    expect(seen.switcher, 'the page switcher is drawn flatter than the actions beside it')
-        .toBe(seen.group);
-    expect(seen.destination, 'a destination is drawn flatter than the actions').toBe(seen.group);
+    // The actions stand bare under plated buttons; the switcher and the
+    // destinations are the plates, and they agree with each other.
+    expect(seen.group, 'the action group still carries a plate').toBe('none');
+    expect(seen.switcher, 'the page switcher has no plate at all').not.toBe('none');
+    expect(seen.destination, 'a destination is drawn flatter than the switcher').toBe(seen.switcher);
     expect(seen.tab, 'a segment carries a plate of its own inside the shell').toBe('none');
 });
 
