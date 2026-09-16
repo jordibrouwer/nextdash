@@ -8,22 +8,31 @@ import (
 )
 
 // bookmarkActivityName is what to call a bookmark in a sentence. A nameless
-// one is not worth an empty pair of quotes, so it borrows its address.
+// one is not worth an empty pair of quotes, so it borrows its address —
+// through activityURL, since this fallback is itself a sentence value and
+// NEXTDASH_ACTIVITY_LOG_URLS must reach it the same as everywhere else.
 func bookmarkActivityName(bm Bookmark) string {
 	if name := strings.TrimSpace(bm.Name); name != "" {
 		return name
 	}
 	if url := strings.TrimSpace(bm.URL); url != "" {
-		return url
+		return activityURL(url)
 	}
 	return "an unnamed bookmark"
 }
 
+// bookmarkActivitySnapshot is where NEXTDASH_ACTIVITY_LOG_URLS reaches every
+// channel that logs a bookmark's address — mutate's add/update/delete and
+// open's own record alike — through the one field every one of them builds
+// from this function rather than reading bm.URL directly. The readable
+// sentence a caller prints alongside this (added %q (%s), say) still carries
+// the full URL: reducing that would mean rewriting every sentence, not one
+// field, and the container log has always shown it.
 func bookmarkActivitySnapshot(bm Bookmark) map[string]any {
 	return map[string]any{
 		"pageId": bm.PageID,
 		"name":   strings.TrimSpace(bm.Name),
-		"url":    strings.TrimSpace(bm.URL),
+		"url":    activityUserText(strings.TrimSpace(bm.URL)),
 	}
 }
 
@@ -117,7 +126,7 @@ func logBookmarkAdd(bm Bookmark, r *http.Request) {
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	logActivity(activityCategoryMutate, "bookmark.add", fields,
-		fmt.Sprintf("added %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("added %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBookmarkDelete(bm Bookmark, r *http.Request) {
@@ -127,7 +136,7 @@ func logBookmarkDelete(bm Bookmark, r *http.Request) {
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	logActivity(activityCategoryMutate, "bookmark.delete", fields,
-		fmt.Sprintf("deleted %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("deleted %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBookmarkRestore(item TrashedBookmark, r *http.Request) {
@@ -400,7 +409,7 @@ func logBookmarkOpen(pageID, index int, bm Bookmark, source, method, sessionID s
 		}
 	}
 	logActivity(activityCategoryOpen, "bookmark.open", fields,
-		fmt.Sprintf("opened %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("opened %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBrowserImport(pageID, imported, skipped int, r *http.Request) {

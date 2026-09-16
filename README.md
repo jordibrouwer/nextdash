@@ -298,6 +298,11 @@ environment:
 | `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security`, `health`, `sources`, `feeds`, `archive`, `backup`, `store`, `widgets`, `notify`, `search`, `keys`, `nav`, `session`, `clienterror` (comma-separated). Overridden by **Activity trail** in the app when set |
 | `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
 | `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
+| `NEXTDASH_ACTIVITY_OPEN_DETAIL` | `basic` | `off`, `basic`, `full` — how much a bookmark-open record carries. Overridden by **Open detail** in the app when set |
+| `NEXTDASH_ACTIVITY_LOG_FORMAT` | `text` | `text` (the readable sentence) or `json` (the same structured line, so stdout can be piped straight into Loki or Vector) |
+| `NEXTDASH_ACTIVITY_LOG_URLS` | `full` | `full`, `host` (keep the hostname, drop path/query), or `off` (drop the field). Applies to bookmark URLs and search query text in the trail |
+| `NEXTDASH_ACTIVITY_LOG_SAMPLE` | *(unset)* | Per-channel sampling, e.g. `open=0.1,keys=0.25`. A channel left out is unsampled. A malformed value disables sampling entirely and says so at startup |
+| `NEXTDASH_ACTIVITY_LOG_MAX_AGE_DAYS` | `0` (off) | Delete a rotated `activity.log.N` backup once it is older than this many days, on top of the existing size cap |
 | `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for server outbound fetches |
 | `NEXTDASH_SSRF_API_RATE_PER_MIN` | `60` | Rate limit for preview/ping/icon APIs |
 | `NEXTDASH_CSP` | on | Set `off` to disable Content-Security-Policy headers |

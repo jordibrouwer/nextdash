@@ -20,13 +20,21 @@ const (
 	activityCategoryClientError = "clienterror"
 )
 
-// activityUserText is where NEXTDASH_ACTIVITY_LOG_URLS will do its trimming
-// once Phase 4 adds it — a search query today, full; host-only or nothing
-// once that setting says so. Every place that logs client-typed text calls
-// this instead of using the string directly, so that phase changes one
-// function rather than every call site that logs something a person typed.
+// activityUserText applies NEXTDASH_ACTIVITY_LOG_URLS to a search query the
+// same way it applies to a bookmark URL (see bookmarkActivitySnapshot):
+// full keeps it, host reduces anything URL-shaped to its host, off drops it
+// entirely. Every place that logs client-typed text calls this instead of
+// using the string directly, so the one setting reaches every call site that
+// logs something a person typed.
 func activityUserText(s string) string {
-	return s
+	switch activityLogURLsValue() {
+	case "off":
+		return ""
+	case "host":
+		return activityHostOnly(s)
+	default:
+		return s
+	}
 }
 
 // activitySessionIDPattern is the shape a per-tab session id may take: hex
