@@ -183,6 +183,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/settings-sanitize.js":                                "3e64f171f787",
 	"js/shared/bookmark-feed-row.js":                         "2a2a0a4e020e",
 	"js/shared/bookmark-predicates.js":                       "c0c20664613c",
+	"js/shared/bookmark-workbench-model.js":                  "c9973ca883a0",
 	"js/shared/clock-format.js":                              "2fb45e03f722",
 	"js/shared/config-custom-themes.js":                      "505ee4249345",
 	"js/shared/config-favicon-prefetch.js":                   "58550ec7ccc2",
