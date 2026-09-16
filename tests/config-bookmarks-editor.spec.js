@@ -71,6 +71,21 @@ async function openFirstEditor(page, stats = null) {
     return panel;
 }
 
+/**
+ * Open the first row in the full edit dialog the way a reader does: the
+ * cursor on it, then Shift+E. Returns that row's key.
+ */
+async function openFirstDialog(page) {
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('j');
+    const row = page.locator('#config-bm-list .config-bm-row.keyboard-selected');
+    await expect(row).toHaveCount(1);
+    const key = await row.getAttribute('data-bm-key');
+    await page.keyboard.press('Shift+E');
+    await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+    return key;
+}
+
 /** Capture page writes instead of storing them. */
 async function capturePosts(page) {
     const posts = [];
@@ -118,6 +133,44 @@ test.describe('config bookmarks editor', () => {
         await panel.locator('[data-bm-field="note"]').fill('a note from the test');
         await page.keyboard.press('Tab');
         await expect.poll(() => posts.some((list) => list.some((b) => b.note === 'a note from the test'))).toBe(true);
+    });
+
+    test('availability mode reveals the interval only for Monitor', async ({ page }) => {
+        await openBookmarks(page);
+        await openFirstDialog(page);
+        const form = bookmarkModalForm(page);
+        const interval = form.locator('.bookmark-inline-toggle-select');
+
+        await form.locator('label[for^="bookmark-inline-checkmode-periodic"]').click({ force: true });
+        await expect(interval).toBeHidden();
+
+        await form.locator('label[for^="bookmark-inline-checkmode-monitor"]').click({ force: true });
+        await expect(interval).toBeVisible();
+
+        await form.locator('label[for^="bookmark-inline-checkmode-off"]').click({ force: true });
+        await expect(interval).toBeHidden();
+    });
+
+    test('a shortcut already used on the same page is flagged', async ({ page }) => {
+        await openBookmarks(page);
+        const key = await openFirstDialog(page);
+        // A shortcut belonging to a *different* bookmark on that row's page.
+        const other = await page.evaluate((k) => {
+            const c = window.dashboardInstance.config;
+            const first = c.findBookmarkByKey(k);
+            const clash = window.dashboardInstance.allBookmarks.find((b) =>
+                b !== first && String(b.pageId) === String(first.pageId) && b.shortcut);
+            return clash ? clash.shortcut : null;
+        }, key);
+        test.skip(!other, 'needs a second bookmark with a shortcut on the same page');
+
+        const form = bookmarkModalForm(page);
+        const shortcutInput = form.locator('input[maxlength="5"]');
+        await shortcutInput.fill(String(other));
+        await expect(shortcutInput).toHaveClass(/field-conflict/);
+
+        await shortcutInput.fill('QQ');
+        await expect(shortcutInput).not.toHaveClass(/field-conflict/);
     });
 
     test('ticking two rows turns the panel into the bulk form', async ({ page }) => {
