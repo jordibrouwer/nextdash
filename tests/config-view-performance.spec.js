@@ -43,13 +43,13 @@ test.describe('the spotlight catalogue is data', () => {
         expect(state.complete).toBe(true);
         /*
          * The carousel that used to draw one of these at a time is gone
-         * (v1.3.3), and the stream that replaced it moved off the overview to
-         * About → News & features (v1.10.0). What the overview keeps is a card
-         * that says what the newest release is and links to the rest. This file
+         * (v1.3.3), the stream that replaced it moved to About → News &
+         * features (v1.10.0), and the card that pointed at it went with the
+         * blocks rebuild -- the overview is about the collection now. This file
          * is about the catalogue being fetched data rather than 42 entries
          * compiled into the config module, which is asserted above.
          */
-        await expect(page.locator('.config-whats-new')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('.config-overview-blocks')).toBeVisible({ timeout: 10_000 });
     });
 });
 

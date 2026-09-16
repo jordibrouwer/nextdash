@@ -1999,6 +1999,328 @@
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
 /*
+ * The landing section: a row of figures, then four blocks.
+ *
+ * The figures are the install at a glance and the blocks answer one question
+ * each -- what needs you, how you use this, how tidy it is, whether the links
+ * answer. Everything about nextDash itself (the release, the developer, what
+ * is new, a tip) has its own address in About and Help, so this section is
+ * about your own collection and nothing else.
+ */
+.config-overview-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-5, 1.5rem);
+}
+
+.config-overview-blocks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4, 1rem);
+}
+
+/* One column before the blocks get too narrow to hold a sentence. */
+@media (max-width: 900px) {
+    .config-overview-tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-overview-blocks {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/*
+ * The block is the tier-2 slab the inbox and health already use, so the three
+ * views are one material rather than three descriptions of one.
+ */
+.config-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--card-bg, color-mix(in srgb, var(--background-secondary) 55%, transparent));
+}
+
+.config-block-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* The handle marks where a block starts without spending a second type size. */
+.config-block-handle {
+    color: var(--accent-primary);
+    opacity: 0.55;
+}
+
+.config-block-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.07);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* What the block is for. Two steps down, so it explains without competing. */
+.config-block-what {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-block-body {
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* The one accented block: a tint here means "this wants something from you". */
+.config-block--attention {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--card-bg, transparent));
+}
+
+.config-attention-sentences {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/*
+ * A problem is a line you can read, with the way out beside it. The count used
+ * to sit in a column of its own, which made every problem a figure to
+ * interpret rather than a sentence to act on.
+ */
+.config-attention-sentence {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-1-5, 0.35rem) 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-attention-sentence:last-child {
+    border-bottom: 0;
+}
+
+.config-attention-text {
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+}
+
+.config-attention-sentence--crit .config-attention-text {
+    color: var(--accent-error, #ef4444);
+}
+
+.config-attention-sentence--warn .config-attention-text {
+    color: var(--accent-warning, #f59e0b);
+}
+
+.config-attention-chip {
+    flex: 0 0 auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.68rem);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-attention-chip:hover {
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+}
+
+.config-attention-chip:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+/* Prose, so it is set to be read rather than scanned. */
+.config-habits {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--font-size-controls);
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.config-habits p {
+    margin: 0;
+}
+
+.config-cleanup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5, 1.5rem);
+}
+
+.config-cleanup-score {
+    font-size: calc(var(--font-size-text) * 2.6);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent-primary);
+}
+
+.config-cleanup-score--warn { color: var(--accent-warning, #f59e0b); }
+.config-cleanup-score--crit { color: var(--accent-error, #ef4444); }
+
+.config-cleanup-meter {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-cleanup-bar {
+    height: 6px;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    overflow: hidden;
+}
+
+.config-cleanup-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-primary);
+}
+
+.config-cleanup-bar-fill--warn { background: var(--accent-warning, #f59e0b); }
+.config-cleanup-bar-fill--crit { background: var(--accent-error, #ef4444); }
+
+.config-cleanup-reason {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-health-glance {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5, 1.5rem);
+}
+
+/*
+ * The share that answers, as a ring. --config-health-pct is set inline because
+ * it is data, not style: the number comes from the report every repaint.
+ */
+.config-health-ring {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--accent-primary) calc(var(--config-health-pct, 0) * 1%),
+        color-mix(in srgb, var(--text-primary) 8%, transparent) 0
+    );
+}
+
+.config-health-ring::after {
+    content: "";
+    grid-area: 1 / 1;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--background-primary);
+}
+
+.config-health-ring-value {
+    grid-area: 1 / 1;
+    z-index: 1;
+    font-size: var(--font-size-controls);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.config-health-counts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-health-state {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-health-label {
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-health-count {
+    font-size: var(--font-size-text);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.config-health-count--healthy { color: var(--accent-success, #10b981); }
+.config-health-count--content { color: var(--accent-warning, #f59e0b); }
+.config-health-count--down { color: var(--accent-error, #ef4444); }
+.config-health-count--broken { color: var(--accent-error, #ef4444); }
+
+/*
+ * The update line. Absent on a current install -- the bar it replaces spent a
+ * framed row saying nothing had happened.
+ */
+.config-update-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4, 1rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-warning, #f59e0b) 45%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-warning, #f59e0b) 8%, transparent);
+}
+
+.config-update-notice-text {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+}
+
+/*
+ * The colophon line: which release is running, with its notes a button away.
+ * Quiet on purpose -- it is the last thing on the page, not an announcement.
+ */
+.config-overview-footnote {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-5, 1.5rem) 0 0;
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-update-notice-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+
+/*
  * Overview reads top-down as: act → know → read → tips. Only the act zone is
  * framed, so a border on this page means "this wants something from you".
  */

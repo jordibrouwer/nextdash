@@ -16,7 +16,7 @@ async function openOverview(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-    await page.waitForSelector('.config-overview-layout', { timeout: 15_000 });
+    await page.waitForSelector('.config-overview-blocks', { timeout: 15_000 });
 }
 
 /**
@@ -53,12 +53,13 @@ test.describe('the current release as the reader meets it', () => {
         }));
         await openOverview(page);
 
-        // The Latest update panel is gone: it repeated the update bar above it
-        // and stripped the release notes down to a lead. The version itself is
-        // still here, in the update bar, and the stream carries the release row.
-        await expect.poll(() => page.locator('.config-overview-act').innerText(), { timeout: 15_000 })
+        // The update bar is a notice now, drawn only when there is a newer
+        // release, so on a current install the version lives in the colophon
+        // line at the foot -- About has no version line by decision, and this
+        // is the one place in config that names the running release.
+        await expect.poll(() => page.locator('.config-overview-footnote').innerText(), { timeout: 15_000 })
             .toMatch(/1\.3\.3/);
-        await expect(page.locator('.config-overview-layout')).not.toContainText('Latest update');
+        await expect(page.locator('.config-overview-blocks')).not.toContainText('Latest update');
     });
 
     test('the stream leads with the release and its new setting', async ({ page }) => {

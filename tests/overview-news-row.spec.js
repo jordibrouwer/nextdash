@@ -115,10 +115,10 @@ test.describe('the overview news row', () => {
     test('and the stream is not on the overview any more', async ({ page }) => {
         await newsTab(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForSelector('.config-whats-new', { timeout: 20_000 });
+        await page.waitForSelector('.config-overview-blocks', { timeout: 20_000 });
 
-        // Four fifths of that page's words were this feed. What is left is the
-        // answer to "is there anything new" and the way to the reading.
+        // Four fifths of that page's words were this feed. None of it is here
+        // now: the reading lives at About → News & features.
         expect(await page.locator('.config-news-stream > li').count(),
             'the overview is carrying the feed again').toBe(0);
     });

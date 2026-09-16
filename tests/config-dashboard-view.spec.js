@@ -193,10 +193,11 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
-        await expect(page.locator('.config-tiles--overview')).toHaveCount(0);
-        const glance = page.locator('.config-mini-list');
-        await expect(glance.first()).toBeVisible();
-        expect((await glance.first().innerText()).toLowerCase()).toContain('bookmarks');
+        // The counts are the figure row now, not the At a glance list the
+        // panel used to hold.
+        const tiles = page.locator('.config-overview-tiles .config-tile');
+        await expect(tiles.first()).toBeVisible();
+        expect((await tiles.first().innerText()).toLowerCase()).toContain('bookmarks');
     });
 
     test('the bookmarks section shows five summary tiles on one row', async ({ page }) => {
@@ -226,7 +227,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
 
-        await expect(page.locator('.config-whats-new')).toBeVisible();
+        await expect(page.locator('.config-overview-blocks')).toBeVisible();
         for (const gone of ['.config-feature-spotlight', '.config-new-features-nav',
             '.config-new-features-counter', '[data-overview-feature]']) {
             await expect(page.locator(gone)).toHaveCount(0);
@@ -262,9 +263,12 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
         // Broken links is an attention row now, not a status tile.
-        const brokenRow = page.locator('.config-attention-row', { hasText: /broken/i });
+        // The row is a sentence now, and the sentence does not carry the word
+        // "broken" -- it says how many links are not answering. Found by where
+        // its chip goes instead.
+        const brokenRow = page.locator('.config-attention-chip[data-overview-go*="broken"]').first();
         await expect(brokenRow).toBeVisible();
-        await brokenRow.locator('[data-overview-go]').click();
+        await brokenRow.click();
 
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView))

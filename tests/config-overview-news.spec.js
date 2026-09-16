@@ -234,32 +234,6 @@ test.describe('the news stream', () => {
         await page.locator('[data-about-tab="colophon"]').click();
         await expect.poll(() => page.evaluate(() => location.hash)).toBe('#config/about');
     });
-
-    /*
-     * The overview keeps a card, and the card is a way in.
-     *
-     * The stream itself moved to About in v1.10.0, so the old journey -- six
-     * rows on the overview, drill in for the rest -- no longer exists. What
-     * survives it is the part worth keeping: the overview says what the newest
-     * release is and how much is waiting, and one button opens the page that
-     * carries it in full.
-     */
-    test('the overview card is a way into the stream, not a copy of it', async ({ page }) => {
-        await openNewsWith(page, POSTS);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForSelector('.config-whats-new', { timeout: 15_000 });
-
-        // A summary, not the stream: the card carries no rows of its own.
-        expect(await page.locator('.config-whats-new .config-news-item').count()).toBe(0);
-
-        await page.locator('.config-whats-new [data-overview-go*="aboutTab"]').click();
-        await page.waitForSelector('#config-about-body .config-news-item', { timeout: 15_000 });
-
-        expect(await page.evaluate(() => window.dashboardInstance.config.aboutTab)).toBe('news');
-        // The stream in full, plus the undated back catalogue of features.
-        expect(await page.locator('#config-about-body .config-news-item').count()).toBeGreaterThan(1);
-        await expect(page.locator('#config-about-body')).toContainText(/switch on/i);
-    });
 });
 
 test.describe('the switch under Behavior → Privacy', () => {

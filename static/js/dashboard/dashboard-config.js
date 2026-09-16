@@ -3511,133 +3511,242 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-overview-act">
-                ${this.renderOverviewUpdates()}
-                ${this.renderOverviewAttention()}
+            ${this.renderOverviewUpdateNotice()}
+            <div class="config-overview-tiles">
+                ${this.overviewSummaryTiles().map((t) => this.renderTile(t)).join('')}
             </div>
-            <div class="config-overview-layout">
-                ${this.renderZoneRule('project', this.t('config.overviewZoneProject', 'From nextDash'),
-                    `<a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer">nextdash.cc ↗</a>`)}
-                <div class="config-overview-about-row">
-                    ${this.renderOverviewAbout()}
-                    ${this.renderOverviewWhatsNew()}
-                </div>
-                ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
-                <div class="config-overview-install-row">
-                    ${this.renderOverviewStats()}
-                    ${this.renderOverviewChangedPanel()}
-                </div>
-                ${this.renderOverviewTips()}
+            <div class="config-overview-blocks">
+                ${this.renderOverviewAttentionBlock()}
+                ${this.renderOverviewHabitsBlock()}
+                ${this.renderOverviewCleanupBlock()}
+                ${this.renderOverviewHealthBlock()}
             </div>
+            ${this.renderOverviewFootnote()}
         `;
     }
 
     /**
-     * The line that names a zone.
+     * Which release is running, and the way into its notes.
      *
-     * A rule with a word on it, not a panel heading: the zones group what is
-     * already there rather than adding two more boxes to a page that had seven.
+     * The update bar that used to carry the version is a notice now, drawn only
+     * when there is a newer release -- and About has no version line by
+     * decision, because the app-version meta is an asset fingerprint rather
+     * than a release number. Without this line the number left config
+     * altogether. A colophon line, not a panel: one sentence at the foot.
      */
-    renderZoneRule(id, label, trailing = '') {
+    renderOverviewFootnote() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const current = this._updateStatus?.current;
+        if (!current) return '';
+
         return `
-            <div class="config-zone-rule" data-zone="${esc(id)}">
-                <span>${esc(label)}</span>
-                <i aria-hidden="true"></i>
-                ${trailing}
-            </div>`;
+            <p class="config-overview-footnote">
+                <span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>
+                <button type="button" class="config-btn config-btn--small"
+                        data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
+            </p>`;
     }
 
     /**
-     * Who makes nextDash, with the two links that follow from it.
+     * The shell every overview block wears.
      *
-     * Sits beside the latest-update panel at half width — reference material
-     * you go looking for rather than read on the way past.
-     *
-     * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
-     * same markup the what's-new modal uses, including the twinkling stars — so
-     * the two are identical by construction rather than by two descriptions that
-     * can drift apart.
+     * A block is a title, the line saying what it is for, and its body. The
+     * "what" line is not decoration: four blocks of bare figures is a page you
+     * have to already understand to read, and the section is the one a reader
+     * arrives at first.
      */
-    renderOverviewAbout() {
+    renderOverviewBlock(id, title, what, body) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
-
         return `
-            <div class="config-panel config-panel--plain config-about-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.overviewAboutBodyShort',
-                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.'))}</p>
-                <!-- One address per line rather than two buttons side by side:
-                     the column is narrower than the row this used to sit in,
-                     and a list of four is easier to scan than a wrapped pair.
-                     nextdash.cc and its feed are here because the project's own
-                     site appeared nowhere in the product before this release. -->
-                <ul class="config-about-links">
-                    <li><a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer"><span>nextdash.cc</span><span>${esc(this.t('config.overviewAboutSite', 'site ↗'))}</span></a></li>
-                    <li><a href="https://nextdash.cc/feed/" target="_blank" rel="noopener noreferrer"><span>RSS</span><span>${esc(this.t('config.overviewAboutRss', 'subscribe ↗'))}</span></a></li>
-                    <li><a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><span>GitHub</span><span>${esc(this.t('config.overviewAboutIssues', 'issues ↗'))}</span></a></li>
-                    <li><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer"><span>jordibrw.nl</span><span>${esc(this.t('config.overviewAboutWriting', 'writing ↗'))}</span></a></li>
-                </ul>
-                <div class="config-about-actions">
-                    <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer">
-                        <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>
-                        <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                        <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
-                    </a>
+            <section class="config-block config-block--${esc(id)}">
+                <div class="config-block-header">
+                    <span class="config-block-handle" aria-hidden="true">//</span>
+                    <h3 class="config-block-title">${esc(title)}</h3>
+                </div>
+                <p class="config-block-what">${esc(what)}</p>
+                <div class="config-block-body">${body}</div>
+            </section>`;
+    }
+
+    /** The install in eight figures, drawn by the shared tile. */
+    overviewSummaryTiles() {
+        const s = this.computeStats();
+        return [
+            { key: 'total', tone: 'accent', label: this.t('config.statsBookmarks', 'Bookmarks'), value: s.total },
+            { key: 'pages', tone: 'neutral', label: this.t('config.statsPages', 'Pages'), value: s.pages },
+            { key: 'categories', tone: 'neutral', label: this.t('config.statsCategoryCount', 'Categories'), value: s.categories },
+            { key: 'tags', tone: 'neutral', label: this.t('config.statsTagCount', 'Distinct tags'), value: s.tagCount },
+            {
+                key: 'monitored',
+                tone: s.monitored > 0 ? 'accent' : 'neutral',
+                label: this.t('config.statsMonitored', 'Monitored'),
+                value: s.monitored,
+            },
+            { key: 'shortcut', tone: 'neutral', label: this.t('config.statsWithShortcut', 'With shortcut'), value: s.withShortcut },
+            { key: 'pinned', tone: 'neutral', label: this.t('config.statsPinned', 'Pinned'), value: s.pinned },
+            {
+                key: 'edited',
+                tone: 'neutral',
+                label: this.t('config.overviewTileLastEdited', 'Last edited'),
+                // A date is not a count, so the tile says when rather than how
+                // many -- the shared component prints whatever it is given.
+                value: s.lastTouched ? this.formatRelative(s.lastTouched) : '—',
+            },
+        ];
+    }
+
+    /**
+     * What is waiting for you, as sentences rather than a count column.
+     *
+     * The same six checks the panel made, said as a line each with the action
+     * beside it: "4 broken links." reads as the problem it is, where a 4 in one
+     * column and "Broken links" in another reads as a figure to interpret.
+     */
+    renderOverviewAttentionBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = this.overviewAttentionItems();
+        const what = this.t('config.overviewAttentionWhat', 'Things nextDash noticed that you may want to act on.');
+
+        const body = items.length
+            ? `<ul class="config-attention-sentences">${items.map((i) => `
+                <li class="config-attention-sentence config-attention-sentence--${esc(i.tone)}">
+                    <span class="config-attention-text">${esc(i.sentence)}</span>
+                    <button type="button" class="config-attention-chip"
+                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
+                </li>`).join('')}</ul>`
+            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+
+        return this.renderOverviewBlock(
+            'attention',
+            this.t('config.overviewAttentionTitle', 'Needs attention'),
+            what,
+            body
+        );
+    }
+
+    /** How you reach for this collection, from figures it already keeps. */
+    renderOverviewHabitsBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.computeStats();
+        const share = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
+
+        const keys = this.t('config.overviewHabitsKeys',
+            'You reach for bookmarks by keystroke: {shortcut}% carry a shortcut, against {tagged}% carrying tags.')
+            .replace('{shortcut}', String(share(s.withShortcut)))
+            .replace('{tagged}', String(share(s.tagged)));
+
+        // The busiest page is counted by how much it holds; the top link by how
+        // often it was opened. Both are already computed for Statistics.
+        const busiest = [...(s.perPage || [])].sort((a, b) => b[1] - a[1])[0];
+        const top = (s.topOpened || [])[0];
+        const lines = [`<p>${esc(keys)}</p>`];
+        if (busiest && top) {
+            lines.push(`<p>${esc(this.t('config.overviewHabitsTop',
+                'Most of it lives on {page}; your most-opened link is “{link}” at {opens}.')
+                .replace('{page}', String(busiest[0]))
+                .replace('{link}', String(top[0]))
+                .replace('{opens}', String(top[1])))}</p>`);
+        }
+
+        return this.renderOverviewBlock(
+            'habits',
+            this.t('config.overviewHabitsTitle', 'How you use this collection'),
+            this.t('config.overviewHabitsWhat', 'A quick read on your habits, drawn from your own data.'),
+            `<div class="config-habits">${lines.join('')}</div>`
+        );
+    }
+
+    /** The score, and the one deduction that cost the most. */
+    renderOverviewCleanupBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const { score, details } = this.computeStats().cleanup;
+        const tone = score >= 80 ? 'good' : (score >= 50 ? 'warn' : 'crit');
+        // The biggest penalty, not the first detail: a number without its
+        // heaviest cause is a verdict the reader cannot act on.
+        const worst = [...details].sort((a, b) => (b.penalty || 0) - (a.penalty || 0))[0];
+
+        const body = `
+            <div class="config-cleanup">
+                <span class="config-cleanup-score config-cleanup-score--${tone}">${esc(String(score))}</span>
+                <div class="config-cleanup-meter">
+                    <div class="config-cleanup-bar">
+                        <span class="config-cleanup-bar-fill config-cleanup-bar-fill--${tone}" style="width:${score}%"></span>
+                    </div>
+                    <p class="config-cleanup-reason">${esc(worst ? worst.text : '')}</p>
                 </div>
             </div>`;
+
+        return this.renderOverviewBlock(
+            'cleanup',
+            this.t('config.overviewScoreLabel', 'Cleanup score'),
+            this.t('config.overviewCleanupWhat', 'How tidy the collection is. Higher is cleaner.'),
+            body
+        );
     }
 
     /**
-     * GitHub update check — manual refresh and status (opt-in).
+     * Whether the links still answer, in the four states the report keeps apart.
+     *
+     * Healthy, wrong content, a monitor that is down, an ordinary dead link: a
+     * bookmark is in exactly one of them, so the four add up to what was
+     * checked rather than double-counting an outage as two problems.
      */
-    renderOverviewUpdates() {
+    renderOverviewHealthBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const sum = this.dash.health?.report?.summary || {};
+        const counts = [
+            ['healthy', this.t('config.overviewHealthHealthy', 'Healthy'), Number(sum.healthyCount) || 0],
+            ['content', this.t('config.overviewHealthContent', 'Wrong content'), Number(sum.contentCount) || 0],
+            ['down', this.t('config.overviewHealthDown', 'Monitor down'), Number(sum.monitorDownCount) || 0],
+            ['broken', this.t('config.overviewHealthBroken', 'Broken'), Number(sum.brokenCount) || 0],
+        ];
+        const checked = counts.reduce((n, c) => n + c[2], 0);
+        const pct = checked ? Math.round((counts[0][2] / checked) * 100) : 0;
+
+        const body = `
+            <div class="config-health-glance">
+                <span class="config-health-ring" style="--config-health-pct:${pct}">
+                    <span class="config-health-ring-value">${esc(String(pct))}%</span>
+                </span>
+                <ul class="config-health-counts">${counts.map(([id, label, n]) => `
+                    <li class="config-health-state">
+                        <span class="config-health-label">${esc(label)}</span>
+                        <span class="config-health-count config-health-count--${esc(id)}">${esc(String(n))}</span>
+                    </li>`).join('')}</ul>
+            </div>`;
+
+        return this.renderOverviewBlock(
+            'health',
+            this.t('config.overviewHealthTitle', 'Health at a glance'),
+            this.t('config.overviewHealthWhat', 'Live reachability of the links you monitor.'),
+            body
+        );
+    }
+
+    /**
+     * The update line, drawn only when there is a release to name.
+     *
+     * The bar this replaces was permanent: on a current install it spent a
+     * framed row of the landing section saying nothing had happened. Same rule
+     * as the attention block -- silence is the healthy state.
+     */
+    renderOverviewUpdateNotice() {
         if (!window.nextdashUpdateCheckEnabled?.()) return '';
 
         const esc = (v) => this.dash.escapeHtml(v);
-        const desc = window.nextdashDescribeUpdateStatus?.(
-            this._updateStatus,
-            this._updateStatusChecking
-        ) || { tone: 'neutral', message: '' };
-        const toneClass = esc(desc.tone || 'neutral');
-        const showDismiss = desc.tone === 'warn'
-            && this._updateStatus?.latest
-            && !this._updateStatusChecking;
-        let statusMessage = desc.message || '';
-        if (desc.tone === 'warn' && this._updateStatus?.latest && !this._updateStatusChecking) {
-            statusMessage = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
-                .replace(/\{latest\}/g, this._updateStatus.latest);
-        }
-        // When the check ran. The server caches its answer for 24 hours and
-        // ships checkedAt on every response, but nothing read it — so pressing
-        // "Check for updates" re-rendered the same sentence and the button read
-        // as broken, while the answer could be a day old.
-        const checkedAt = Number(this._updateStatus?.checkedAt) || 0;
-        if (statusMessage && checkedAt && !this._updateStatusChecking) {
-            const ago = this.formatRelative(checkedAt);
-            statusMessage = `${statusMessage} ${this.t('config.updateCheckedAt', '(checked {when})')
-                .replace('{when}', ago)}`;
-        }
-        const statusHidden = !statusMessage && !this._updateStatusChecking;
+        const desc = window.nextdashDescribeUpdateStatus?.(this._updateStatus, this._updateStatusChecking) || {};
+        if (desc.tone !== 'warn' || !this._updateStatus?.latest) return '';
+
+        const message = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
+            .replace(/\{latest\}/g, this._updateStatus.latest);
 
         return `
-            <div class="config-update-bar config-update-bar--${toneClass}" role="region" aria-label="${esc(this.t('config.updateCheckPanelTitle', 'Software updates'))}">
-                <p class="config-update-status" id="config-overview-update-status" aria-live="polite"${statusHidden ? ' hidden' : ''}>${esc(statusMessage)}</p>
-                <div class="config-update-actions config-actions">
+            <div class="config-update-notice" role="status">
+                <p class="config-update-notice-text">${esc(message)}</p>
+                <div class="config-update-notice-actions">
                     ${desc.releaseUrl ? `<a class="config-btn config-btn--small" href="${esc(desc.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}
-                    ${showDismiss ? `<button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>` : ''}
-                    <!-- Beside the release this bar already names, which is
-                         where it belongs; it used to sit in a panel further
-                         down that repeated the same version. -->
                     <button type="button" class="config-btn config-btn--small" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-action="check-update"
-                            ${statusHidden ? '' : 'aria-describedby="config-overview-update-status" '}
-                            aria-busy="${this._updateStatusChecking ? 'true' : 'false'}"
-                            ${this._updateStatusChecking ? 'disabled' : ''}>${esc(this._updateStatusChecking
-                                ? this.t('config.updateCheckChecking', 'Checking GitHub…')
-                                : this.t('config.updateCheckNow', 'Check for updates'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>
                 </div>
             </div>`;
     }
@@ -3647,69 +3756,56 @@ class DashboardConfig {
      * down, duplicates, an unread inbox. Only problems appear — a clean install
      * gets a single "nothing needs attention" line instead of five zeroes.
      */
-    renderOverviewAttention() {
-        const esc = (v) => this.dash.escapeHtml(v);
+    overviewAttentionItems() {
         const d = this.dash;
         const sum = d.health?.report?.summary || {};
         const inboxUnread = d.inbox?.unreadCount?.() || 0;
+        const say = (key, fallback, n) => this.t(key, fallback).replace('{n}', String(n));
 
-        const items = [
+        return [
             {
                 n: Number(sum.brokenCount) || 0, tone: 'crit',
                 label: this.t('config.overviewBroken', 'Broken links'),
+                sentence: say('config.statsSummaryBroken', '{n} links are not answering.', Number(sum.brokenCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'broken' },
             },
             {
                 n: Number(sum.monitorDownCount) || 0, tone: 'crit',
                 label: this.t('config.overviewMonitorsDown', 'Monitors down'),
+                sentence: say('config.overviewSentenceMonitors', '{n} monitors are down right now.', Number(sum.monitorDownCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'monitored' },
             },
             {
                 n: inboxUnread, tone: 'warn',
                 label: this.t('config.overviewInboxUnread', 'Unread in the inbox'),
+                sentence: say('config.overviewSentenceInbox', '{n} unfiled links are waiting in the inbox.', inboxUnread),
                 cta: this.t('config.overviewOpenInbox', 'Open inbox'),
                 action: { view: 'inbox' },
             },
             {
                 n: Number(sum.duplicateCount) || 0, tone: 'warn',
                 label: this.t('config.overviewDuplicates', 'Duplicate bookmarks'),
+                sentence: say('config.overviewSentenceDuplicates', '{n} duplicate URLs across your pages.', Number(sum.duplicateCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'duplicate' },
             },
             {
                 n: Number(sum.shortcutConflictCount) || 0, tone: 'warn',
                 label: this.t('config.overviewShortcutConflicts', 'Shortcut conflicts'),
+                sentence: say('config.overviewSentenceConflicts', '{n} shortcuts are claimed twice.', Number(sum.shortcutConflictCount) || 0),
                 cta: this.t('config.overviewOpenBookmarks', 'Open bookmarks'),
                 action: { section: 'bookmarks' },
             },
             {
                 n: Number(sum.uncheckedCount) || 0, tone: 'neutral',
                 label: this.t('config.overviewUnchecked', 'Never checked'),
+                sentence: say('config.overviewSentenceUnchecked', '{n} links have never been checked.', Number(sum.uncheckedCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'unchecked' },
             },
         ].filter((i) => i.n > 0);
-
-        // Nothing wrong means no panel at all, not a panel saying so. A framed
-        // block costing ~110px to report the absence of problems was the single
-        // largest thing on a healthy install's Overview.
-        if (!items.length) {
-            return `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
-        }
-
-        return `
-            <div class="config-panel config-panel--attention">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
-                <ul class="config-attention-list">${items.map((i) => `
-                    <li class="config-attention-row config-attention-row--${esc(i.tone)}">
-                        <span class="config-attention-count">${esc(String(i.n))}</span>
-                        <span class="config-attention-label">${esc(i.label)}</span>
-                        <button type="button" class="config-btn config-btn--small"
-                                data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
-                    </li>`).join('')}</ul>
-            </div>`;
     }
 
     /** Twinkling stars around the new-features panel border (decorative). */
@@ -3762,176 +3858,6 @@ class DashboardConfig {
                 return [];
             });
         return this._overviewFeaturesPromise;
-    }
-
-    /** A few headline numbers, with the full report a click away. */
-    renderOverviewStats() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.computeStats();
-        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
-        const scoreTone = s.cleanup.score >= 80 ? 'good' : (s.cleanup.score >= 50 ? 'warn' : 'crit');
-
-        const row = (label, value) => `
-            <li class="config-mini-row">
-                <span>${esc(label)}</span>
-                <span class="config-mini-value">${esc(String(value))}</span>
-            </li>`;
-
-        return `
-            <div class="config-panel config-panel--plain">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewStatsTitle', 'At a glance'))}</h3>
-                ${s.total ? `
-                    <div class="config-score config-score--compact">
-                        <span class="config-score-value config-score-value--${scoreTone}">${esc(String(s.cleanup.score))}</span>
-                        <div>
-                            <div class="config-bar">
-                                <span class="config-bar-fill config-bar-fill--${scoreTone}" style="width:${s.cleanup.score}%"></span>
-                            </div>
-                            <p class="config-field-hint">${esc(this.t('config.overviewScoreLabel', 'Cleanup score'))}</p>
-                        </div>
-                    </div>` : ''}
-                <ul class="config-mini-list">
-                    ${row(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
-                    ${row(this.t('config.statsPages', 'Pages'), s.pages)}
-                    ${row(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
-                    ${row(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
-                    ${row(this.t('config.statsTaggedBookmarks', 'Tagged'), `${s.tagged} (${pct}%)`)}
-                    ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
-                </ul>
-                <div class="config-actions">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"stats"}'>${esc(this.t('config.overviewMoreStats', 'All statistics →'))}</button>
-                </div>
-            </div>`;
-    }
-
-    /**
-     * How much of this install is not stock, with a way to go and look.
-     *
-     * This is the answer to "why does my dashboard behave differently from the
-     * documentation", which otherwise means opening every tab and reading for
-     * a ↺. The number was already computable — isFieldDefault decides whether
-     * each ↺ shows — it had just never been added up anywhere.
-     *
-     * Silent on a stock install rather than reporting a zero: "0 settings
-     * changed" is a line that never earns its place, and the panel it sits in
-     * is a summary, not a checklist.
-     */
-    renderOverviewChangedSettings() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const changed = this.changedSettings();
-        if (!changed.length) return '';
-
-        // Where they are, so the line says something the count alone does not.
-        const sections = [...new Set(changed.map((e) => e.section))]
-            .map((s) => this.sectionLabel(s));
-        const label = this.t('config.overviewChangedSettings', '{n} settings differ from the default')
-            .replace('{n}', String(changed.length));
-
-        return `
-            <p class="config-overview-changed">
-                <button type="button" class="config-link-button"
-                        data-overview-changed>${esc(label)}</button>
-                <span class="config-field-hint">${esc(sections.join(' · '))}</span>
-            </p>`;
-    }
-
-    /**
-     * What differs from a fresh install, as the other half of the zone.
-     *
-     * It used to be a line at the foot of At a glance, where a figure about
-     * *your choices* sat under six figures about *your bookmarks* and read as
-     * a seventh statistic. On its own it is a question with an answer: nothing
-     * differs, or these sections do.
-     */
-    renderOverviewChangedPanel() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const changed = this.changedSettings();
-
-        const body = changed.length
-            ? this.renderOverviewChangedSettings()
-            : `<p class="config-field-hint">${esc(this.t('config.overviewChangedNone',
-                'Everything is at its installation default.'))}</p>`;
-
-        return `
-            <div class="config-panel config-panel--plain">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewChangedTitle', 'Not stock'))}</h3>
-                ${body}
-            </div>`;
-    }
-
-    /**
-     * What is new, in four lines rather than in fourteen rows.
-     *
-     * The stream lives at About → News, which is where its own "All news &
-     * features" button already pointed. What belongs on a page called Overview
-     * is the answer to "is there anything new", not the reading itself: the
-     * newest release and its date, how much has arrived since, and the way in.
-     *
-     * Counted from the same stream the full list is built from, so the figures
-     * here and the list there cannot disagree. Undated back-catalogue features
-     * are left out of the count for the same reason they are left out of the
-     * stream -- they are not news, they are the drill-in.
-     */
-    renderOverviewWhatsNew() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const stream = this._newsStream;
-
-        const body = () => {
-            if (stream === undefined) {
-                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
-            }
-            if (!stream.length) {
-                return `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
-                    'No posts to show right now.'))}</p>`;
-            }
-            const newest = stream.find((item) => item.source === 'release');
-            const since = newest ? Number(newest.at) || 0 : 0;
-            const counts = {
-                feature: stream.filter((i) => i.source === 'feature' && (Number(i.at) || 0) >= since).length,
-                site: stream.filter((i) => i.source === 'site' && (Number(i.at) || 0) >= since).length,
-            };
-            const line = (label, value) => `
-                <div class="config-whats-new-line">
-                    <span class="config-whats-new-label">${esc(label)}</span>
-                    <span class="config-whats-new-value">${esc(value)}</span>
-                </div>`;
-
-            const rows = [];
-            if (newest) {
-                const title = newest.titleKey ? this.t(newest.titleKey, newest.title) : newest.title;
-                rows.push(line(this.t('config.overviewNewsSourceRelease', 'release'),
-                    `${title} · ${this.formatNewsDate(newest.at)}`));
-            }
-            if (counts.feature) {
-                rows.push(line(this.t('config.overviewWhatsNewFeatures', 'new settings'), String(counts.feature)));
-            }
-            if (counts.site) {
-                rows.push(line(this.t('config.overviewNewsSourceSite', 'nextdash.cc'), String(counts.site)));
-            }
-            return rows.join('');
-        };
-
-        /*
-         * This card does not mark the stream read.
-         *
-         * It is a summary with a link to it -- the release, a count of new
-         * settings, a count of posts -- and it stayed behind when the stream
-         * moved to About. Marking read here cleared the unread dots for a
-         * reader who had seen a count and not one item, which is the opposite
-         * of what the dots are for. renderAboutNews() marks it, where it is
-         * actually read.
-         */
-
-        return `
-            <div class="config-panel config-panel--plain config-whats-new">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'What\u2019s new'))}</h3>
-                ${body()}
-                <div class="config-news-foot config-news-foot--link">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
-                </div>
-            </div>`;
     }
 
     /**
@@ -4149,35 +4075,6 @@ class DashboardConfig {
         const next = window.DashboardNewsStream?.SOURCES?.includes(source) ? source : 'all';
         this.newsFilter = this.newsFilter === next ? 'all' : next;
         this.repaintNews();
-    }
-
-    /**
-     * A rotating handful of tips. Rotating rather than fixed so the row is worth
-     * glancing at more than once; seeded by the day so it does not shuffle on
-     * every repaint.
-     *
-     * A footer row rather than a panel: three keyboard hints did not need a
-     * heading and a frame at the bottom of the page, and as a panel it read as
-     * another block competing with the two above it.
-     */
-    renderOverviewTips() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const all = this.helpTips();
-        if (!all.length) return '';
-        const day = Math.floor(Date.now() / 86400000);
-        const start = day % all.length;
-        const picked = [0, 1, 2].map((i) => all[(start + i) % all.length]);
-
-        return `
-            <div class="config-overview-tips-row">
-                <span class="config-overview-tips-label">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</span>
-                <ul class="config-overview-tips-list">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
-                <div class="config-overview-tips-actions">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
-                    ${this.renderCheatSheetPdfLink()}
-                </div>
-            </div>`;
     }
 
     /**
