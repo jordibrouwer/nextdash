@@ -954,10 +954,14 @@ class DashboardRenderCore {
             // same repaint the full render gets below. This is the common route
             // — most mutations never reach the full rebuild.
             d.multiSelect?.prune();
+            // msSinceRender (the "full" open-detail extra) measures from here:
+            // the grid the reader is looking at, whichever path last painted it.
+            d._bookmarkGridRenderedAt = Date.now();
             return;
         }
         const animate = options && options.animate === true;
         d._renderAnimationsEnabled = animate;
+        d._bookmarkGridRenderedAt = Date.now();
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         container.classList.remove('inbox-layout', 'health-layout', 'config-layout');

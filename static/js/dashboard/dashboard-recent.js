@@ -475,7 +475,7 @@ class DashboardRecent {
     }
 
 
-    recordBookmarkOpened(bookmark, bookmarkIndex, source = 'dashboard', method) {
+    recordBookmarkOpened(bookmark, bookmarkIndex, source = 'dashboard', method, extra) {
         const d = this.dash;
         if (!bookmark) return;
 
@@ -494,7 +494,7 @@ class DashboardRecent {
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 
         if (index >= 0 && pageId > 0) {
-            d.analytics?.trackBookmarkOpen(pageId, index, source, method);
+            d.analytics?.trackBookmarkOpen(pageId, index, source, method, extra);
         }
     }
 

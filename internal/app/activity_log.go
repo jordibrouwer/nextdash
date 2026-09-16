@@ -36,10 +36,11 @@ const (
 )
 
 type activityLogConfig struct {
-	enabled  map[string]bool
-	persist  bool
-	filePath string
-	disabled bool
+	enabled    map[string]bool
+	persist    bool
+	filePath   string
+	disabled   bool
+	openDetail string
 }
 
 var (
@@ -77,6 +78,7 @@ func loadActivityLogConfig() activityLogConfig {
 	}
 
 	cfg := activityLogConfig{enabled: enabled}
+	cfg.openDetail = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_OPEN_DETAIL"))
 	if strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_PERSIST")) == "1" {
 		cfg.persist = true
 		cfg.filePath = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_FILE"))
@@ -118,6 +120,41 @@ func setActivityChannelsForRuntime(enabled map[string]bool) {
 	}
 	activityCfgOnce.Do(func() {})
 	activityCfg = cfg
+}
+
+/*
+setActivityOpenDetailForRuntime replaces how much an open record carries, the
+same way setActivityChannelsForRuntime replaces which channels are on —
+persistence and the channel list are left exactly as they were.
+*/
+func setActivityOpenDetailForRuntime(level string) {
+	cfg := activityConfig()
+	cfg.openDetail = level
+	activityCfgMu.Lock()
+	defer activityCfgMu.Unlock()
+	if activityCfgTest != nil {
+		*activityCfgTest = cfg
+		return
+	}
+	activityCfgOnce.Do(func() {})
+	activityCfg = cfg
+}
+
+// activityOpenDetailLevel is how much the open record carries beyond the
+// pageId/index it always had: off strips source/method back out, basic is
+// exactly Phase 1's two fields, and full adds the client-supplied extras.
+// Basic is the default for the same reason the eight channels default off —
+// an unset or unrecognised value must read as whatever a reader who has
+// never touched this setting already has, which is Phase 1's shape.
+func activityOpenDetailLevel() string {
+	switch strings.ToLower(strings.TrimSpace(activityConfig().openDetail)) {
+	case "off":
+		return "off"
+	case "full":
+		return "full"
+	default:
+		return "basic"
+	}
 }
 
 func activityEnabled(category string) bool {

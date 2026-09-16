@@ -5504,6 +5504,18 @@ class DashboardConfig {
                         <span>${esc(label)}</span>
                     </label>`).join('');
 
+        // A level inside the open channel, not a channel of its own: twelve
+        // checkboxes is already near what a person will read, and this is a
+        // question of how much one of them carries, not whether it fires.
+        const openDetailLevel = ['off', 'basic', 'full'].includes(String(s.activityOpenDetail || '').toLowerCase())
+            ? String(s.activityOpenDetail).toLowerCase()
+            : 'basic';
+        const openDetailOptions = [
+            ['off', this.t('config.openDetailOff', 'Off — just the open')],
+            ['basic', this.t('config.openDetailBasic', 'Basic — how it was opened')],
+            ['full', this.t('config.openDetailFull', 'Full — plus result rank and timing')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === openDetailLevel ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
         const levelOptions = [
             ['', this.t('config.logLevelAll', 'Everything')],
             ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
@@ -5560,6 +5572,11 @@ class DashboardConfig {
                         title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`}</h3>
                 <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
                 ${channelBoxes}
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.openDetailLabel', 'Open detail'))}</span>
+                    <select class="config-select" data-activity-open-detail ${activeChannels.includes('open') ? '' : 'disabled'}>${openDetailOptions}</select>
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.openDetailHint', 'How much an open record carries, once Bookmarks opened is on. Basic is the default: which surface and gesture opened it. Full adds where in the results it was and how long you waited.'))}</p>
             </div>
 
             <div class="config-panel">
@@ -5974,10 +5991,24 @@ class DashboardConfig {
                 // because the button is only in the DOM when it has something
                 // to do — the same rule the other panels follow.
                 this.syncActivityResetButton(container, chosen);
+                // The level only means anything once opens are actually being
+                // recorded, so it stays greyed out until that box is ticked —
+                // it is not cleared, so the choice is still there if Open goes
+                // back on.
+                const openDetailSelect = container.querySelector('[data-activity-open-detail]');
+                if (openDetailSelect) openDetailSelect.disabled = !chosen.includes('open');
             });
         });
 
         this.bindActivityResetButton(container);
+
+        const openDetailSelect = container.querySelector('[data-activity-open-detail]');
+        if (openDetailSelect) {
+            openDetailSelect.addEventListener('change', () => {
+                this.dash.settings.activityOpenDetail = openDetailSelect.value;
+                void this.saveSettingsWithFeedback();
+            });
+        }
 
         const search = container.querySelector('[data-log-search]');
         if (search) {

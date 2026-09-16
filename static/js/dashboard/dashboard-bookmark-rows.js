@@ -2178,11 +2178,20 @@ class DashboardBookmarkRows {
             if (link) pointerTypeByLink.set(link, e.pointerType);
         });
 
-        const recordOpen = (row, method) => {
+        const recordOpen = (row, method, newTab) => {
             const bookmark = d.multiSelect?.bookmarkForRow?.(row);
             if (!bookmark) return;
             const index = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
-            d.recordBookmarkOpened(bookmark, index >= 0 ? index : undefined, 'dashboard', method);
+            const renderedAt = d._bookmarkGridRenderedAt;
+            // Sent unconditionally; trackBookmarkOpen only lets these through
+            // when the reader has the "full" open detail level on.
+            const extra = {
+                newTab: Boolean(newTab),
+                category: bookmark.category || '',
+                rowIndex: index >= 0 ? index : undefined,
+                msSinceRender: typeof renderedAt === 'number' ? Date.now() - renderedAt : undefined,
+            };
+            d.recordBookmarkOpened(bookmark, index >= 0 ? index : undefined, 'dashboard', method, extra);
         };
 
         // A plain click's method: a tap if pointerdown just saw one on this
@@ -2214,7 +2223,7 @@ class DashboardBookmarkRows {
                     e.preventDefault();
                     return;
                 }
-                recordOpen(row, 'mouse-modifier');
+                recordOpen(row, 'mouse-modifier', true);
                 d.visual?.markBookmarkOpening?.({ row, newTab: true });
                 return;
             }
@@ -2245,7 +2254,7 @@ class DashboardBookmarkRows {
                 e.preventDefault();
                 return;
             }
-            recordOpen(row, plainClickMethod(e, hit.link));
+            recordOpen(row, plainClickMethod(e, hit.link), hit.link.target === '_blank');
             // Hypr mode hands the address to the window manager and this tab
             // stays put, so there is nothing to wait for.
             if (!(window.hyprMode && window.hyprMode.isEnabled())) {
@@ -2271,7 +2280,7 @@ class DashboardBookmarkRows {
                 e.preventDefault();
                 return;
             }
-            recordOpen(hit.row, 'mouse-middle');
+            recordOpen(hit.row, 'mouse-middle', true);
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(hit.safeHref);

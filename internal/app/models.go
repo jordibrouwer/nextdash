@@ -740,9 +740,14 @@ type Settings struct {
 	ServerLogLevel string `json:"serverLogLevel,omitempty"`
 	// ActivityChannels are the JSON trail's channels. Empty means the
 	// environment's choice, and failing that the defaults (mutate, status).
-	ActivityChannels     []string `json:"activityChannels,omitempty"`
-	MonitorNotifyURL     string   `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
-	MonitorNotifyRetries int      `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	ActivityChannels []string `json:"activityChannels,omitempty"`
+	// ActivityOpenDetail is how much the open record carries: "off", "basic"
+	// or "full". Empty means the environment's choice, and failing that
+	// "basic" — exactly Phase 1's source/method, so turning this setting on
+	// for the first time changes nothing until it is actually moved.
+	ActivityOpenDetail   string `json:"activityOpenDetail,omitempty"`
+	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.

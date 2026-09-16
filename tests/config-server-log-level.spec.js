@@ -17,7 +17,9 @@ async function resetLogSettings(page) {
         await window.nextDashFetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ serverLogLevel: '', activityChannels: ['mutate', 'status'] }),
+            body: JSON.stringify({
+                serverLogLevel: '', activityChannels: ['mutate', 'status'], activityOpenDetail: '',
+            }),
         });
         // The panel renders from the in-memory copy, which a write to the
         // server does not refresh — a previous test's channels would otherwise
@@ -26,6 +28,7 @@ async function resetLogSettings(page) {
         if (settings) {
             settings.serverLogLevel = '';
             settings.activityChannels = ['mutate', 'status'];
+            settings.activityOpenDetail = '';
         }
     });
 }
@@ -130,4 +133,32 @@ test('the activity trail can be put back to its defaults', async ({ page }) => {
         const res = await fetch('/api/settings');
         return (await res.json()).activityChannels || [];
     }), { timeout: 15_000 }).toEqual(['mutate', 'status']);
+});
+
+test('the open-detail level is disabled until Bookmarks opened is on', async ({ page }) => {
+    await openServerLogTab(page);
+
+    const openChannel = page.locator('[data-activity-channel="open"]');
+    const detail = page.locator('[data-activity-open-detail]');
+    await expect(openChannel).toBeVisible({ timeout: 15_000 });
+    await expect(openChannel).not.toBeChecked();
+    await expect(detail).toBeDisabled();
+    // Basic is the default value underneath, even while greyed out — turning
+    // Open on must not silently reset a choice nobody made yet.
+    await expect(detail).toHaveValue('basic');
+
+    await openChannel.check();
+    await expect(detail).toBeEnabled({ timeout: 15_000 });
+
+    await detail.selectOption('full');
+    await expect.poll(async () => page.evaluate(async () => {
+        const res = await fetch('/api/settings');
+        return (await res.json()).activityOpenDetail;
+    }), { timeout: 15_000 }).toBe('full');
+
+    // Turning Open back off greys the select out again rather than clearing
+    // the choice, the same as the channel checkboxes leave each other alone.
+    await openChannel.uncheck();
+    await expect(detail).toBeDisabled({ timeout: 15_000 });
+    await expect(detail).toHaveValue('full');
 });

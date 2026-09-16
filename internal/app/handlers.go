@@ -3840,7 +3840,7 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 	// logBookmarkOpen drops anything outside its allowlists.
 	source, _ := raw["source"].(string)
 	method, _ := raw["method"].(string)
-	logBookmarkOpen(pageID, index, bookmark, source, method, r)
+	logBookmarkOpen(pageID, index, bookmark, source, method, raw, r)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

@@ -3390,7 +3390,9 @@ class SearchComponent {
                     <span class="search-recent-tile-name" title="${this._escHtml(match.name || '')}">${this._escHtml(match.name || '')}</span>
                     <span class="search-recent-tile-when">${this._escHtml(this._relativeWhen(match.lastOpened))}${match.meta ? ` · ${this._escHtml(match.meta)}` : ''}</span>
                 `;
-                tile.addEventListener('click', () => this.openBookmark(match.bookmark));
+                tile.addEventListener('click', () => this.openBookmark(match.bookmark, {
+                    resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
+                }));
                 this._bindMatchKeyboardActivate(tile, mySelectableIndex);
                 tiles.appendChild(tile);
                 this.matchElements.push(tile);
@@ -3522,7 +3524,9 @@ class SearchComponent {
                     this.closeSearch();
                     window.openWhatsNewModal?.({ force: true });
                 } else {
-                    this.openBookmark(match.bookmark);
+                    this.openBookmark(match.bookmark, {
+                        resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
+                    });
                 }
             });
             this._bindMatchKeyboardActivate(matchElement, mySelectableIndex);
@@ -3682,20 +3686,28 @@ class SearchComponent {
             } else if (selectedMatch.type === 'hint-new' || selectedMatch.type === 'hint-finder') {
                 selectedMatch.action?.();
             } else {
-                this.openBookmark(selectedMatch.bookmark, { newTab });
+                this.openBookmark(selectedMatch.bookmark, {
+                    newTab, resultRank: this.selectedMatchIndex, queryLength: String(this.currentQuery || '').length,
+                });
             }
         }
         // If no matches, do nothing (keep search open)
     }
 
-    openBookmark(bookmark, { newTab = false, source = 'search', method } = {}) {
+    openBookmark(bookmark, { newTab = false, source = 'search', method, resultRank, queryLength } = {}) {
         this.recordSearchHistory(this.currentQuery);
         // The other half of the same fact: the history keeps what was typed,
         // this keeps what it turned out to mean.
         this.recordSearchPick(bookmark);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
-        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, source, method);
+        // resultRank/queryLength are the "full" open-detail extras for a search
+        // pick — how far down the list someone went to reach this. Only a
+        // caller that knows its position in the results passes them.
+        const extra = (resultRank !== undefined || queryLength !== undefined)
+            ? { resultRank, queryLength }
+            : undefined;
+        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, source, method, extra);
 
         // Close search first if it's active
         if (this.searchActive) {
