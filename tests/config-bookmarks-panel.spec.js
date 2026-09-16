@@ -123,4 +123,24 @@ test.describe('the bookmark panel', () => {
         await expect(page.locator('#config-bm-view, .config-view').first()).toBeVisible();
         expect(posts.length).toBe(0);
     });
+
+    test('the tags field suggests known tags, and taking one saves nothing yet', async ({ page }) => {
+        const posts = await capturePosts(page);
+        await openBookmarks(page);
+        await focusFirstRow(page);
+        const tag = await page.evaluate(() => window.dashboardInstance.allBookmarks
+            .flatMap((b) => b.tags || []).map((t) => String(t).toLowerCase()).find((t) => t.length > 2));
+        test.skip(!tag, 'needs a tagged bookmark');
+        await page.keyboard.press('e');
+        const field = page.locator('#config-bm-panel [data-bm-field="tags"]');
+        await field.click();
+        await field.fill(tag.slice(0, 2));
+        const items = page.locator('.tag-ac-dropdown .tag-ac-item');
+        await expect(items.filter({ hasText: tag }).first()).toBeVisible();
+        const first = await items.first().getAttribute('data-tag');
+        await page.keyboard.press('Enter');
+        await expect(field).toHaveValue(new RegExp(`${first}, $`));
+        await expect(field).toBeFocused();
+        expect(posts.length).toBe(0);
+    });
 });

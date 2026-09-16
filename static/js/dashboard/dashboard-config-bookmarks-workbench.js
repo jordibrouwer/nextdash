@@ -384,11 +384,38 @@
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
         if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
+        this.detachWorkbenchTagAutocomplete(panel);
         panel.innerHTML = this.renderWorkbenchPanel();
+        this.attachWorkbenchTagAutocomplete(panel);
         panel.dataset.bmPanelSig = sig;
         panel.dataset.bmPanelMode = mode;
         panel.dataset.bmPanelKey = key || '';
         if (mode === 'bulk') this.toggleWorkbenchPanel(false, { remember: false });
+    },
+
+    /**
+     * Tag suggestions on the panel's tag fields, as the edit dialog has them.
+     * The dropdown lives on document.body, so the old inputs are let go
+     * before a repaint throws them away.
+     */
+    attachWorkbenchTagAutocomplete(panel) {
+        const TA = global.TagAutocomplete;
+        if (!TA) return;
+        panel.querySelectorAll('[data-bm-field="tags"], [data-bm-bulk-field="tags"]').forEach((input) => {
+            const pool = new Set();
+            (this.dash.allBookmarks || []).forEach((b) =>
+                (b.tags || []).forEach((t) => pool.add(String(t).toLowerCase())));
+            TA.attach(input, () => {
+                input.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).forEach((t) => pool.add(t));
+                return [...pool];
+            });
+        });
+    },
+
+    detachWorkbenchTagAutocomplete(panel) {
+        const TA = global.TagAutocomplete;
+        if (!TA) return;
+        panel.querySelectorAll('[data-bm-field="tags"], [data-bm-bulk-field="tags"]').forEach((input) => TA.detach(input));
     },
 
     /**
@@ -511,12 +538,22 @@
         panel.addEventListener('focusout', (e) => {
             const el = e.target.closest('input[data-bm-field]:not([type="checkbox"]), textarea[data-bm-field]');
             if (!el || panel.dataset.bmPanelMode !== 'single') return;
+            if (el._tagAutocomplete?._dropdown) {
+                // Suggestions are still up: let them close first, and save only
+                // if focus has not come back to the field in the meantime.
+                setTimeout(() => {
+                    if (document.activeElement !== el && el.isConnected) void this.commitWorkbenchField(el);
+                }, 150);
+                return;
+            }
             void this.commitWorkbenchField(el);
         });
         panel.addEventListener('keydown', (e) => {
             const el = e.target.closest('[data-bm-field]');
             if (!el) return;
             e.stopPropagation();
+            // The suggestion dropdown already used this key.
+            if (e.defaultPrevented) return;
             if (e.key === 'Enter' && el.tagName === 'INPUT') {
                 e.preventDefault();
                 el.blur();
@@ -781,6 +818,7 @@
             const el = e.target.closest('[data-bm-bulk-field="tags"]');
             if (!el) return;
             e.stopPropagation();
+            if (e.defaultPrevented) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 void this.applyWorkbenchBulk();
