@@ -22408,12 +22408,12 @@ class DashboardConfig {
         }
     }
 
-    async setBookmarkCheckMode(key, mode) {
+    async setBookmarkCheckMode(key, mode, intervalMinutes) {
         const record = await this.findBookmarkRecord(key);
         if (!record || !window.CheckMode) return;
         this.closeBookmarkMenus();
         const updated = { ...record.record };
-        window.CheckMode.assign(updated, mode);
+        window.CheckMode.assign(updated, mode, intervalMinutes);
         try {
             await this.writePageBookmarks(record.pageId, (list) => {
                 const next = [...list];

@@ -143,4 +143,27 @@ test.describe('the bookmark panel', () => {
         await expect(field).toBeFocused();
         expect(posts.length).toBe(0);
     });
+
+    test('Monitor offers the interval, and choosing one saves it', async ({ page }) => {
+        // Recorded and passed on: the mode has to be stored for the panel to
+        // keep showing the interval after the refresh.
+        const posts = [];
+        await page.route('**/api/bookmarks?page=*', async (route) => {
+            if (route.request().method() === 'POST') posts.push(JSON.parse(route.request().postData() || '[]'));
+            return route.fallback();
+        });
+        await openBookmarks(page);
+        const key = await focusFirstRow(page);
+        const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, key);
+        await page.keyboard.press('e');
+        const interval = page.locator('#config-bm-panel [data-bm-field="monitorInterval"]');
+        await page.locator('#config-bm-panel [data-bm-field="checkMode"]').selectOption('off');
+        await expect(interval).toBeHidden();
+        await page.locator('#config-bm-panel [data-bm-field="checkMode"]').selectOption('monitor');
+        await expect(interval).toBeVisible();
+        await expect.poll(() => posts.some((list) => list.some((b) => b.url === url && b.monitor === true))).toBe(true);
+        await interval.selectOption('60');
+        await expect.poll(() => posts.some((list) => list.some((b) =>
+            b.url === url && b.monitor === true && b.monitorIntervalMinutes === 60))).toBe(true);
+    });
 });

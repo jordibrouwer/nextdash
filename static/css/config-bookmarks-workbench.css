@@ -477,6 +477,10 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     gap: 2px;
 }
 
+.config-bm-field[hidden] {
+    display: none;
+}
+
 .config-bm-field--inline {
     flex-direction: row;
     align-items: center;

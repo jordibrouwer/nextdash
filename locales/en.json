@@ -6112,7 +6112,8 @@
     "bmApplyTo": "Apply to {n}",
     "bmDeleteN": "Delete {n}",
     "bmBulkDone": "Bookmarks updated.",
-    "bmBulkUndone": "Changes put back."
+    "bmBulkUndone": "Changes put back.",
+    "bmFieldInterval": "Interval"
   },
   "colors": {
     "title": "theme customization",

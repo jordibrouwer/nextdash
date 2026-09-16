@@ -313,6 +313,15 @@
         return [cm.OFF, cm.PERIODIC, cm.MONITOR].map((mode) => ({ mode, label: cm.meta(mode).label }));
     },
 
+    /** Monitor cadences as select options, the choices the edit dialog offers. */
+    workbenchIntervalOptions(selected, { mixed = false } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const cm = global.CheckMode;
+        const head = mixed ? [`<option value=""${selected ? '' : ' selected'}>${esc(this.t('config.bmMixed', 'mixed'))}</option>`] : [];
+        return head.concat((cm?.INTERVAL_CHOICES || []).map((m) =>
+            `<option value="${m}"${Number(selected) === m ? ' selected' : ''}>${esc(cm.intervalLabel(m))}</option>`)).join('');
+    },
+
     renderWorkbenchSinglePanel(key) {
         const esc = (v) => this.dash.escapeHtml(v);
         const b = this.findBookmarkByKey(key);
@@ -354,6 +363,11 @@
                     <span class="config-bm-field-status" role="status"></span>
                 </label>
                 ${this.renderWorkbenchField('checkMode', this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-field="checkMode">${modeOptions}</select>`)}
+                <label class="config-bm-field" data-bm-field-wrap="monitorInterval"${mode === 'monitor' ? '' : ' hidden'}>
+                    <span class="config-bm-field-label">${esc(this.t('config.bmFieldInterval', 'Interval'))}</span>
+                    <select class="config-select" data-bm-field="monitorInterval">${this.workbenchIntervalOptions(global.CheckMode?.intervalOf?.(b))}</select>
+                    <span class="config-bm-field-status" role="status"></span>
+                </label>
             </div>
             <section class="config-bm-panel-facts">
                 <h3>${esc(this.t('config.bmHealth', 'Health'))}</h3>
@@ -494,6 +508,8 @@
             run = this.bulkMove([b], { pageId: el.value, category: b.category || '' }).then(() => true, () => false);
         } else if (name === 'checkMode') {
             run = this.setBookmarkCheckMode(key, el.value).then(() => true, () => false);
+        } else if (name === 'monitorInterval') {
+            run = this.setBookmarkCheckMode(key, 'monitor', Number(el.value)).then(() => true, () => false);
         } else {
             const patch = this.workbenchFieldPatch(el);
             if (!patch) return;
@@ -537,6 +553,11 @@
         panel.addEventListener('change', (e) => {
             const el = e.target.closest('[data-bm-field]');
             if (!el || panel.dataset.bmPanelMode !== 'single') return;
+            // The interval belongs to Monitor alone; shown as soon as it is picked.
+            if (el.getAttribute('data-bm-field') === 'checkMode') {
+                const wrap = panel.querySelector('[data-bm-field-wrap="monitorInterval"]');
+                if (wrap) wrap.hidden = el.value !== 'monitor';
+            }
             if (el.tagName === 'SELECT' || el.type === 'checkbox') void this.commitWorkbenchField(el);
         });
         panel.addEventListener('focusout', (e) => {
@@ -594,6 +615,11 @@
         const n = picked.length;
         const draft = this.bulkDraft();
         const mixed = esc(this.t('config.bmMixed', 'mixed'));
+        const field = (label, control, cls = '') => `
+            <div class="config-bm-field ${cls}">
+                <span class="config-bm-field-label">${esc(label)}</span>
+                ${control}
+            </div>`;
 
         const page = M.sharedValue(picked.map((b) => String(b.pageId)));
         const pageValue = draft.pageId ?? (page.mixed ? '' : page.value);
@@ -643,6 +669,13 @@
                 `<option value="${esc(o.mode)}"${o.mode === modeValue ? ' selected' : ''}>${esc(o.label)}</option>`))
             .join('');
 
+        const intervalShared = M.sharedValue(picked.map((b) => global.CheckMode?.intervalOf?.(b)));
+        const intervalValue = draft.monitorInterval ?? (intervalShared.mixed ? '' : intervalShared.value);
+        const intervalField = modeValue === 'monitor'
+            ? field(this.t('config.bmFieldInterval', 'Interval'),
+                `<select class="config-select" data-bm-bulk-field="monitorInterval">${this.workbenchIntervalOptions(intervalValue, { mixed: intervalShared.mixed })}</select>`)
+            : '';
+
         const hidden = this.hiddenSelectionCount();
         const states = picked.reduce((acc, b) => {
             const s = this.bookmarkHealthState(b);
@@ -653,11 +686,6 @@
             .map((k) => `<span><span class="config-bm-health-dot is-${k}"></span> ${states[k]} ${esc(this.railHealthLabel(k).toLowerCase())}</span>`)
             .join(' · ');
         const dirty = Object.keys(draft).length > 0;
-        const field = (label, control, cls = '') => `
-            <div class="config-bm-field ${cls}">
-                <span class="config-bm-field-label">${esc(label)}</span>
-                ${control}
-            </div>`;
 
         return `
             <header class="config-bm-panel-head">
@@ -682,6 +710,7 @@
                         <button type="button" data-bm-bulk-pin="false" aria-pressed="${draft.pinned === false}">${esc(this.t('config.bmUnpinAll', 'Unpin all'))}</button>
                     </span>`, 'config-bm-bulk-pinned')}
                 ${field(this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-bulk-field="checkMode">${modeOptions}</select>`)}
+                ${intervalField}
             </div>
             ${health ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3><p>${health}</p></section>` : ''}
             <footer class="config-bm-panel-foot">
@@ -706,6 +735,11 @@
         }
         if (name === 'checkMode') {
             if (el.value) draft.checkMode = el.value; else delete draft.checkMode;
+            // Redrawn so the interval appears or goes with Monitor.
+            return true;
+        }
+        if (name === 'monitorInterval') {
+            if (el.value) draft.monitorInterval = Number(el.value); else delete draft.monitorInterval;
             return false;
         }
         if (name === 'tags' || name === 'tagsMode') {
@@ -737,7 +771,7 @@
         const picked = this.bookmarksFromKeys(keys);
         const draft = { ...this.bulkDraft() };
         if (!picked.length || !Object.keys(draft).length) return;
-        const { pageId, ...rest } = draft;
+        const { pageId, monitorInterval, ...rest } = draft;
         const moving = pageId && picked.some((b) => String(b.pageId) !== String(pageId));
         // A category travels with the move when there is one; otherwise it is
         // an in-place edit like the rest.
@@ -746,17 +780,26 @@
         const assign = (b, mode) => {
             b.monitorIntervalMinutes = global.CheckMode.intervalOf?.(b)
                 || Number(this.dash?.settings?.defaultMonitorIntervalMinutes) || 15;
-            global.CheckMode.assign(b, mode);
+            global.CheckMode.assign(b, mode, monitorInterval);
         };
+        const M = global.BookmarkWorkbenchModel;
+        const base = M.bulkMutation(inPlace, assign);
+        // An interval on its own changes only the rows that are monitored.
+        const intervalOnly = monitorInterval && !inPlace.checkMode;
+        const mutate = intervalOnly
+            ? (b) => {
+                const next = base(b);
+                return global.CheckMode.of(b) === 'monitor' ? M.bulkMutation({ checkMode: 'monitor' }, assign)(next) : next;
+            }
+            : base;
         try {
-            if (Object.keys(inPlace).length) {
+            if (Object.keys(inPlace).length || intervalOnly) {
                 if (inPlace.category) {
                     for (const pid of new Set(picked.map((b) => String(b.pageId)))) {
                         await this.ensureCategoryOnPage(pid, inPlace.category);
                     }
                 }
-                const snapshots = await this.mutateSelected(picked,
-                    global.BookmarkWorkbenchModel.bulkMutation(inPlace, assign));
+                const snapshots = await this.mutateSelected(picked, mutate);
                 this.notify(this.t('config.bmBulkDone', 'Bookmarks updated.'), 'success', {
                     undoCallback: this.bulkUndo(snapshots, 'config.bmBulkUndone', 'Changes put back.',
                         'config.bulkUndoFailed', 'Could not undo that.'),
