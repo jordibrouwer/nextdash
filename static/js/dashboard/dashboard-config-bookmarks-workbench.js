@@ -988,10 +988,10 @@
         const domain = this.formatBookmarkUrlDisplay(b.url);
         const state = this.bookmarkHealthState(b);
         const tags = (b.tags || []).map((t) => String(t).trim()).filter(Boolean);
-        const TAGS_SHOWN = 2;
-        const tagChips = tags.slice(0, TAGS_SHOWN)
-            .map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
-            + (tags.length > TAGS_SHOWN ? `<span class="config-bm-tag config-bm-tag--more">+${tags.length - TAGS_SHOWN}</span>` : '');
+        // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
+        // decides which, once the row has a width.
+        const tagChips = tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
+            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
         const crumb = ctx.grouped ? '' : `<span class="config-bm-crumb">${esc(this.workbenchGroupLabel(b))}</span>`;
@@ -1017,12 +1017,79 @@
                     ${crumb}
                 </span>
                 <span class="config-bm-tags" role="gridcell">${tagChips}</span>
-                <span class="config-bm-key" role="gridcell">${b.shortcut
-                    ? `<kbd>${esc(b.shortcut)}</kbd>`
-                    : '<span class="config-bm-key--empty" aria-hidden="true">+</span>'}</span>
                 <span class="config-bm-opens" role="gridcell" title="${esc(this.bookmarkUsageTooltip(b))}">${Number(b.openCount || 0)}</span>
                 <span class="config-bm-last" role="gridcell">${esc(last.label)}</span>
             </div>`;
+    },
+
+    /**
+     * Show as many whole tag chips per row as fit, then `+n` for the rest.
+     *
+     * Three passes over every row, so the layout is computed once: show all
+     * chips (and a wide `+n` to measure), read every width, then hide.
+     */
+    fitWorkbenchTags(root) {
+        const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
+        if (!cells.length) return;
+        cells.forEach((cell) => {
+            cell.querySelectorAll('.config-bm-tag').forEach((chip) => { chip.hidden = false; });
+            const more = cell.querySelector('.config-bm-tag--more');
+            if (more) more.textContent = '+99';
+        });
+        const plans = cells.map((cell) => {
+            const chips = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')];
+            const more = cell.querySelector('.config-bm-tag--more');
+            const gap = parseFloat(getComputedStyle(cell).columnGap) || 0;
+            return {
+                chips,
+                more,
+                gap,
+                avail: cell.clientWidth,
+                widths: chips.map((chip) => chip.getBoundingClientRect().width),
+                moreWidth: more ? more.getBoundingClientRect().width : 0,
+            };
+        });
+        plans.forEach(({ chips, more, gap, avail, widths, moreWidth }) => {
+            if (!more) return;
+            const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1);
+            let keep = widths.length;
+            if (total > avail + 1) {
+                keep = 0;
+                let used = moreWidth;
+                while (keep < widths.length && used + widths[keep] + gap <= avail + 1) {
+                    used += widths[keep] + gap;
+                    keep += 1;
+                }
+            }
+            const hiddenNames = [];
+            chips.forEach((chip, i) => {
+                chip.hidden = i >= keep;
+                if (chip.hidden) hiddenNames.push(chip.textContent);
+            });
+            more.hidden = hiddenNames.length === 0;
+            more.textContent = hiddenNames.length ? `+${hiddenNames.length}` : '';
+            if (hiddenNames.length) more.title = hiddenNames.join(', ');
+            else more.removeAttribute('title');
+        });
+        // Refit whenever the list changes width: a window resize, the panel
+        // folding, or the first layout after the rows were put in.
+        const host = document.getElementById('config-bm-list');
+        if (host && this._bmTagFitHost !== host && global.ResizeObserver) {
+            this._bmTagFitObserver?.disconnect();
+            this._bmTagFitHost = host;
+            let queued = false;
+            let lastWidth = -1;
+            this._bmTagFitObserver = new global.ResizeObserver(() => {
+                if (queued || host.clientWidth === lastWidth) return;
+                queued = true;
+                global.requestAnimationFrame(() => {
+                    queued = false;
+                    lastWidth = host.clientWidth;
+                    if (host.isConnected) this.fitWorkbenchTags(host);
+                });
+            });
+            this._bmTagFitObserver.observe(host);
+        }
     },
 
     renderWorkbenchGroupHead(item, esc) {

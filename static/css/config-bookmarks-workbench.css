@@ -231,8 +231,11 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
 
 .config-bm-row,
 .config-bm-group-head {
-    background: var(--bm-slab-bg);
     padding-inline: var(--space-2, 0.5rem);
+}
+
+.config-bm-row {
+    background: var(--bm-slab-bg);
 }
 
 .config-bm-row {
@@ -242,7 +245,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
        without a floor here a narrow panel starves the title to 0 width —
        invisible, not just cramped. Tags is the one allowed to lose the
        argument and clip. */
-    grid-template-columns: 16px 20px minmax(6rem, 1fr) minmax(0, 7rem) 3rem 3rem 4.5rem;
+    grid-template-columns: 16px 20px minmax(6rem, 1fr) minmax(0, 9rem) 3.5rem 5.5rem;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     height: var(--bm-row-h);
@@ -260,15 +263,18 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
     /* The gap above a slab is drawn inside the head's own fixed height, so
        the window's arithmetic stays exact. */
     border-top: var(--space-2, 0.5rem) solid transparent;
-    background-clip: padding-box;
-    border-radius: calc(var(--bm-slab-radius) + var(--space-2, 0.5rem)) calc(var(--bm-slab-radius) + var(--space-2, 0.5rem)) 0 0;
+    /* No slab of its own: the head is a caption, and the rows under it read
+       as one table. */
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
     font-size: var(--font-size-small);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-secondary);
 }
 
-.config-bm-feed:not(.is-grouped) .config-bm-row.is-group-start {
+.config-bm-row.is-group-start {
     border-radius: var(--bm-slab-radius) var(--bm-slab-radius) 0 0;
 }
 
@@ -276,7 +282,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
     border-radius: 0 0 var(--bm-slab-radius) var(--bm-slab-radius);
 }
 
-.config-bm-feed:not(.is-grouped) .config-bm-row.is-group-start.is-group-end {
+.config-bm-row.is-group-start.is-group-end {
     border-radius: var(--bm-slab-radius);
 }
 
@@ -430,9 +436,11 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     display: flex;
     gap: var(--space-1, 0.25rem);
     overflow: hidden;
+    min-width: 0;
 }
 
 .config-bm-tag {
+    flex: none;
     padding: 1px 7px;
     border-radius: var(--radius-pill, 999px);
     background: var(--surface-3, var(--background-secondary));
@@ -440,8 +448,8 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     white-space: nowrap;
 }
 
-.config-bm-key--empty {
-    opacity: 0.35;
+.config-bm-tag[hidden] {
+    display: none;
 }
 
 .config-bm-opens,
@@ -703,7 +711,7 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     }
 
     .config-bm-row {
-        grid-template-columns: 16px 20px minmax(0, 1fr) 3rem;
+        grid-template-columns: 16px 20px minmax(0, 1fr);
     }
 
     .config-bm-tags,

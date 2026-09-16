@@ -67,6 +67,34 @@ test.describe('groups in the bookmark list', () => {
         expect(img.y + img.height).toBeLessThanOrEqual(cell.y + cell.height + 0.5);
     });
 
+    test('tags that do not fit are counted, never cut', async ({ page }) => {
+        const tags = ['networking', 'observability', 'homelab-services', 'documentation',
+            'infrastructure', 'automation', 'dashboards', 'monitoring'];
+        // Wide enough for the tag column to reach its full width.
+        await page.setViewportSize({ width: 1600, height: 800 });
+        await openBookmarksWithRows(page, [
+            { name: 'Tagged', url: 'https://tagged.example', pageId: 1, tags },
+        ]);
+        const cell = page.locator('#config-bm-list .config-bm-row').first().locator('.config-bm-tags');
+        const more = cell.locator('.config-bm-tag--more');
+        await expect(more).toBeVisible();
+        await expect(more).toHaveText(/^\+\d+$/);
+        const layout = await cell.evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            const shown = [...el.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')]
+                .filter((chip) => !chip.hidden);
+            return {
+                shown: shown.length,
+                overflow: shown.some((chip) => chip.getBoundingClientRect().right > box.right + 0.5)
+                    || el.querySelector('.config-bm-tag--more').getBoundingClientRect().right > box.right + 0.5,
+            };
+        });
+        const n = Number((await more.textContent()).slice(1));
+        expect(layout.shown).toBeGreaterThanOrEqual(1);
+        expect(layout.shown + n).toBe(tags.length);
+        expect(layout.overflow).toBe(false);
+    });
+
     test('select group ticks the whole group', async ({ page }) => {
         await openBookmarksWithRows(page, ROWS);
         await page.selectOption('#config-bm-sort', 'page');
