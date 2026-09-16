@@ -3840,9 +3840,124 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 	// logBookmarkOpen drops anything outside its allowlists.
 	source, _ := raw["source"].(string)
 	method, _ := raw["method"].(string)
-	logBookmarkOpen(pageID, index, bookmark, source, method, raw, r)
+	sessionID, _ := raw["sessionId"].(string)
+	logBookmarkOpen(pageID, index, bookmark, source, method, sessionID, raw, r)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// trackOK decodes the body into a loose map and answers the two-line reply
+// every one of these five endpoints gives — {"status":"ok"} on success, a
+// bare 400 on a body that is not JSON at all. Every field inside is optional
+// from here down: the corresponding log function is where each one is
+// actually validated, and it drops rather than rejects.
+func trackOK(w http.ResponseWriter, r *http.Request) (map[string]interface{}, bool) {
+	w.Header().Set("Content-Type", "application/json")
+	var raw map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, false
+	}
+	return raw, true
+}
+
+func trackRespondOK(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// TrackSearch records that a search was issued, how many results it found,
+// and whether it ended in an open — the single best signal for a bookmark
+// that should exist and does not.
+func (h *Handlers) TrackSearch(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	query, _ := raw["query"].(string)
+	resultCount, _ := parseIntFromAny(raw["resultCount"])
+	opened, _ := raw["opened"].(bool)
+	sessionID, _ := raw["sessionId"].(string)
+	logSearchActivity(query, resultCount, opened, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackKeys records which keyboard shortcuts fired, aggregated by the client
+// over an interval rather than one line per press.
+func (h *Handlers) TrackKeys(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	counts := map[string]int{}
+	if keys, ok := raw["keys"].(map[string]interface{}); ok {
+		for key, value := range keys {
+			if n, ok := parseIntFromAny(value); ok {
+				counts[key] = n
+			}
+		}
+	}
+	sessionID, _ := raw["sessionId"].(string)
+	logKeyActivity(counts, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackNav records a page switch, a category folding open or closed, or a
+// layout change — whether the shape of the dashboard matches what people
+// actually use.
+func (h *Handlers) TrackNav(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	action, _ := raw["action"].(string)
+	detail, _ := raw["detail"].(string)
+	sessionID, _ := raw["sessionId"].(string)
+	logNavActivity(action, detail, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackSession records that a dashboard tab loaded and which page it landed
+// on, so later opens and searches from the same tab can be related to it.
+func (h *Handlers) TrackSession(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	pageID, _ := parseIntFromAny(raw["pageId"])
+	sessionID, _ := raw["sessionId"].(string)
+	logSessionActivity(pageID, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackClientError records a JS error the page caught about itself — a
+// widget broken only in one browser is invisible on the server otherwise.
+func (h *Handlers) TrackClientError(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	message, _ := raw["message"].(string)
+	stack, _ := raw["stack"].(string)
+	script, _ := raw["script"].(string)
+	sessionID, _ := raw["sessionId"].(string)
+	logClientErrorActivity(message, stack, script, sessionID, r)
+	trackRespondOK(w)
 }
 
 func parseIntFromAny(value interface{}) (int, bool) {

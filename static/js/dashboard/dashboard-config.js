@@ -5498,6 +5498,11 @@ class DashboardConfig {
             ['widgets', this.t('config.logChannelWidgets', 'Widget requests')],
             ['notify', this.t('config.logChannelNotify', 'Alerts sent')],
             ['open', this.t('config.logChannelOpen', 'Bookmarks opened')],
+            ['search', this.t('config.logChannelSearch', 'Searches')],
+            ['keys', this.t('config.logChannelKeys', 'Keyboard shortcuts')],
+            ['nav', this.t('config.logChannelNav', 'Navigation')],
+            ['session', this.t('config.logChannelSession', 'Dashboard loads')],
+            ['clienterror', this.t('config.logChannelClientError', 'Browser errors')],
         ].map(([key, label]) => `
                     <label class="config-toggle">
                         <input type="checkbox" data-activity-channel="${esc(key)}" ${activeChannels.includes(key) ? 'checked' : ''}>

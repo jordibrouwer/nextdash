@@ -162,3 +162,49 @@ test('the open-detail level is disabled until Bookmarks opened is on', async ({ 
     await expect(detail).toBeDisabled({ timeout: 15_000 });
     await expect(detail).toHaveValue('full');
 });
+
+// One of the five Phase 3 channels, picked because a search that starts and
+// ends is easy to drive without touching a bookmark. The other four follow
+// the same gate (window.nextdashChannelOn), read from this same setting.
+test('a search is only sent to the server once the search channel is on', async ({ page }) => {
+    await openServerLogTab(page);
+
+    const requests = [];
+    await page.route('**/api/track-search', async (route) => {
+        requests.push(route.request().postDataJSON());
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+    });
+
+    const searchChannel = page.locator('[data-activity-channel="search"]');
+    await expect(searchChannel).toBeVisible({ timeout: 15_000 });
+    await expect(searchChannel).not.toBeChecked();
+
+    // Off: leave Config, search, and close it. Nothing should be sent.
+    await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+    await page.keyboard.press('>');
+    await page.keyboard.type('zzz-search-off', { delay: 10 });
+    await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    expect(requests.length).toBe(0);
+
+    // On: reopen Config, tick the box, and repeat the same round trip.
+    await page.evaluate(async () => {
+        const config = window.dashboardInstance.config;
+        await config.openConfigView('data-backups');
+        const c = config.instance || config;
+        c.dbTab = 'logs';
+        c.render();
+    });
+    await expect(searchChannel).toBeVisible({ timeout: 15_000 });
+    await searchChannel.check();
+    await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+
+    await page.keyboard.press('>');
+    await page.keyboard.type('zzz-search-on', { delay: 10 });
+    await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+    await page.keyboard.press('Escape');
+
+    await expect.poll(() => requests.length, { timeout: 15_000 }).toBe(1);
+    expect(requests[0].query.toLowerCase()).toContain('search-on');
+});

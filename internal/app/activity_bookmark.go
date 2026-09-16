@@ -361,13 +361,21 @@ func sanitizeOpenDetailExtras(raw map[string]any) map[string]any {
 	return out
 }
 
-func logBookmarkOpen(pageID, index int, bm Bookmark, source, method string, extra map[string]any, r *http.Request) {
+func logBookmarkOpen(pageID, index int, bm Bookmark, source, method, sessionID string, extra map[string]any, r *http.Request) {
 	if !activityEnabled(activityCategoryOpen) {
 		return
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	fields["index"] = index
 	fields["pageId"] = pageID
+	// The session channel is what turns this id on at all — an open cannot
+	// relate itself to a page load or a search that never opened without one
+	// — but the field is attached here regardless of the open-detail level,
+	// since it identifies the tab rather than describing how this one open
+	// happened.
+	if sid := validActivitySessionID(sessionID); sid != "" {
+		fields["sessionId"] = sid
+	}
 	// "off" is the pre-Phase-1 shape: pageId/index and nothing else client-
 	// claimed, for a reader who turned the extra detail back down rather than
 	// merely never turning it up.

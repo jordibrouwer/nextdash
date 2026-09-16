@@ -351,6 +351,9 @@ class Dashboard {
 
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
+            // Once, per tab: which page this load landed on. Without a session
+            // id nothing later — an open, a search — can be related back to it.
+            window.nextdashTrackSession?.(this.currentPageId);
 
             /*
              * Back and Forward.

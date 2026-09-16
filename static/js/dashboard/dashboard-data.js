@@ -904,6 +904,12 @@ class DashboardData {
             d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
             d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
         }
+        // 'default' is the placeholder the instance is constructed with,
+        // before the first page has actually loaded — that first load is not
+        // a switch away from anything, so it does not count as nav.
+        if (d.currentPageId !== 'default' && d.currentPageId !== targetPageId) {
+            window.nextdashTrackNav?.('page');
+        }
         d.currentPageId = targetPageId;
         if (!preserveView) {
             d.setActiveView('bookmarks');

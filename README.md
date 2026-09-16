@@ -262,7 +262,7 @@ Only an installed browser extension's origin receives `Access-Control-Allow-Orig
 
 ### Activity log (bookmark events)
 
-A machine-readable JSON trail of bookmark changes and status checks, written alongside the readable server log. Twelve channels; changes and check results are on by default. Choose them under **Config → Data & backups → Server log → Activity trail**, or with `NEXTDASH_ACTIVITY_LOG`. URLs appear in the trail, so treat the log files as sensitive on a shared host. See *MANUAL § 21*.
+A machine-readable JSON trail of bookmark changes and status checks, written alongside the readable server log. Seventeen channels; changes and check results are on by default, every other channel — including searches, keyboard shortcuts, navigation, dashboard loads and browser errors — is off until asked for. Choose them under **Config → Data & backups → Server log → Activity trail**, or with `NEXTDASH_ACTIVITY_LOG`. URLs appear in the trail, so treat the log files as sensitive on a shared host. See *MANUAL § 21*.
 
 ### Production Docker example
 
@@ -295,7 +295,7 @@ environment:
 | `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on write/destructive APIs |
 | `NEXTDASH_CORS_ORIGINS` | *(unset)* | Extra `Origin` allowlist for API CORS, comma-separated. Extension origins always allowed; `*` answers everyone |
 | `NEXTDASH_LOG_LEVEL` | `info` | How much the server writes: `error`, `warn`, `info`, `debug`. Overridden by **Detail level** in the app when set |
-| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security`, `health`, `sources`, `feeds`, `archive`, `backup`, `store`, `widgets`, `notify` (comma-separated). Overridden by **Activity trail** in the app when set |
+| `NEXTDASH_ACTIVITY_LOG` | `mutate,status` | `off`, `mutate`, `status`, `open`, `security`, `health`, `sources`, `feeds`, `archive`, `backup`, `store`, `widgets`, `notify`, `search`, `keys`, `nav`, `session`, `clienterror` (comma-separated). Overridden by **Activity trail** in the app when set |
 | `NEXTDASH_ACTIVITY_LOG_PERSIST` | off | `1` = rotate `activity.log` under data dir |
 | `NEXTDASH_ACTIVITY_LOG_FILE` | `data/activity.log` | Custom activity log path |
 | `NEXTDASH_OUTBOUND_REQUESTS_PER_MIN` | `120` | Rate limit for server outbound fetches |

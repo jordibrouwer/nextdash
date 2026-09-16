@@ -1314,6 +1314,7 @@ class SearchComponent {
             // it runs through the same query box. This used to fall through to
             // openBookmark's 'search' default and report every shortcut open
             // as a search pick.
+            window.nextdashRecordKey?.(match.shortcut);
             this.openBookmark(match, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
             return;
@@ -1328,6 +1329,7 @@ class SearchComponent {
             if (!this.searchActive || this.currentQuery !== query) return;
             const stillMatching = this.exactShortcutMatch();
             if (!stillMatching) return;
+            window.nextdashRecordKey?.(stillMatching.shortcut);
             this.openBookmark(stillMatching, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
         }, SearchComponent.SHORTCUT_OPEN_DELAY_MS);
@@ -2830,6 +2832,15 @@ class SearchComponent {
     }
 
     closeSearch() {
+        // One record per search session, sent as it ends, rather than one per
+        // keystroke: query and result count are both still moving while the
+        // reader is typing, and "did it end in an open" cannot be known until
+        // now anyway.
+        const query = String(this.currentQuery || '').trim();
+        if (query) {
+            window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
+        }
+        this._searchOpened = false;
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
@@ -3054,6 +3065,10 @@ class SearchComponent {
     }
 
     renderSearchMatches() {
+        // Captured here rather than recomputed at flush time: this is the one
+        // place every branch of updateSearch() converges on before painting,
+        // so it is the count the reader actually saw.
+        this._lastSearchResultCount = this.searchMatches.length;
         const matchesContainer = document.getElementById('search-matches');
         if (!matchesContainer) return;
 
@@ -3695,6 +3710,9 @@ class SearchComponent {
     }
 
     openBookmark(bookmark, { newTab = false, source = 'search', method, resultRank, queryLength } = {}) {
+        // Read by closeSearch() when this session's search.query line goes
+        // out — "did it end in an open" cannot be answered any earlier.
+        this._searchOpened = true;
         this.recordSearchHistory(this.currentQuery);
         // The other half of the same fact: the history keeps what was typed,
         // this keeps what it turned out to mean.
