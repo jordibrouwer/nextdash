@@ -53,8 +53,37 @@ async function openServerLogTab(page) {
     });
 }
 
+/** Opens Logs → Activity trail, where the channel checkboxes live now. */
+async function openActivityTrailTab(page) {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    await resetLogSettings(page);
+    await page.evaluate(async () => {
+        const config = window.dashboardInstance.config;
+        await config.openConfigView('logs');
+        const c = config.instance || config;
+        c.logsTab = 'trail';
+        c.render();
+    });
+}
+
+/** The detail/retention/capture fields moved behind the gear's popover. */
+async function openLogSettingsPopover(page) {
+    const popover = page.locator('#config-log-settings-popover');
+    if (await popover.isHidden()) {
+        await page.locator('[data-log-settings-toggle]').click();
+    }
+    await expect(popover).toBeVisible();
+    return popover;
+}
+
 test('the detail level is chosen in the app and reaches the server', async ({ page }) => {
     await openServerLogTab(page);
+    await openLogSettingsPopover(page);
 
     const level = page.locator('[data-log-select="detail"]');
     await expect(level).toBeVisible({ timeout: 15_000 });
@@ -72,12 +101,14 @@ test('the floor note says what is being kept, apart from the display filter', as
     const note = page.locator('[data-log-floor-note]');
     await expect(note).toBeVisible({ timeout: 15_000 });
 
+    await openLogSettingsPopover(page);
     await page.locator('[data-log-select="detail"]').selectOption('warn');
     await expect(note).toContainText(/quiet/i, { timeout: 15_000 });
 });
 
 test('the detail level says what the container log is doing, as it changes', async ({ page }) => {
     await openServerLogTab(page);
+    await openLogSettingsPopover(page);
 
     const live = page.locator('[data-log-detail-live]');
     await expect(live).toBeVisible({ timeout: 15_000 });
@@ -93,7 +124,7 @@ test('the detail level says what the container log is doing, as it changes', asy
 });
 
 test('an activity channel can be switched on and is remembered', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     const health = page.locator('[data-activity-channel="health"]');
     await expect(health).toBeVisible({ timeout: 15_000 });
@@ -107,7 +138,7 @@ test('an activity channel can be switched on and is remembered', async ({ page }
 });
 
 test('the activity trail can be put back to its defaults', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     // Nothing to reset while the list is untouched, matching the ↺ elsewhere
     // in config: it appears only when a value differs from the default.
@@ -136,7 +167,7 @@ test('the activity trail can be put back to its defaults', async ({ page }) => {
 });
 
 test('the open-detail level is disabled until Bookmarks opened is on', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     const openChannel = page.locator('[data-activity-channel="open"]');
     const detail = page.locator('[data-activity-open-detail]');
@@ -167,7 +198,7 @@ test('the open-detail level is disabled until Bookmarks opened is on', async ({ 
 // ends is easy to drive without touching a bookmark. The other four follow
 // the same gate (window.nextdashChannelOn), read from this same setting.
 test('a search is only sent to the server once the search channel is on', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     const requests = [];
     await page.route('**/api/track-search', async (route) => {
@@ -193,7 +224,7 @@ test('a search is only sent to the server once the search channel is on', async 
         const config = window.dashboardInstance.config;
         await config.openConfigView('logs');
         const c = config.instance || config;
-        c.logsTab = 'server';
+        c.logsTab = 'trail';
         c.render();
     });
     await expect(searchChannel).toBeVisible({ timeout: 15_000 });
@@ -213,7 +244,7 @@ test('a search is only sent to the server once the search channel is on', async 
 // rather than sending per press. pagehide is the flush this drives, since a
 // real 30s interval is too slow for a test.
 test('a real shortcut is aggregated and flushed to track-keys', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     const requests = [];
     await page.route('**/api/track-keys', async (route) => {
@@ -238,7 +269,7 @@ test('a real shortcut is aggregated and flushed to track-keys', async ({ page })
 // The real per-category toggle, not a settings write — this is the click a
 // reader actually makes.
 test('collapsing a category through the real toggle sends track-nav', async ({ page }) => {
-    await openServerLogTab(page);
+    await openActivityTrailTab(page);
 
     const requests = [];
     await page.route('**/api/track-nav', async (route) => {

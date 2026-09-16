@@ -292,6 +292,7 @@ class SearchCommandsComponent {
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
+        { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },
         { id: 'about', labelKey: 'commands.configAbout', fallback: 'About' },
         // The names that used to be sections and are now tabs, kept so typing
         // what you remember still arrives somewhere sensible.
@@ -321,7 +322,7 @@ class SearchCommandsComponent {
         this._closeCommandPalette();
         const dash = window.dashboardInstance;
         const section = entry.section || entry.id;
-        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab' }[section];
+        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab', logs: 'logsTab' }[section];
         if (dash?.config?.openConfigView) {
             if (entry.tab && state) dash.config[state] = entry.tab;
             void dash.config.openConfigView(section);

@@ -28,6 +28,7 @@ class DashboardConfigLoader {
         'widgets',
         'stats',
         'help',
+        'logs',
         'about',
     ];
 
@@ -50,6 +51,9 @@ class DashboardConfigLoader {
         // reader runs before the module that knows about either.
         if (raw === 'config/pages-tags/tags') return 'bookmarks';
         if (raw === 'config/pages-tags' || raw.startsWith('config/pages-tags/')) return 'structure';
+        // The server log left Data & backups for its own section; an old link
+        // still names the tab it used to be.
+        if (raw === 'config/data-backups/logs') return 'logs';
         // Help links carry a third segment naming a panel; the section is
         // still the first, and the loader only needs that much.
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
@@ -70,6 +74,7 @@ class DashboardConfigLoader {
         stats: 'statsTab',
         'data-backups': 'dataTab',
         help: 'helpTab',
+        logs: 'logsTab',
     };
 
     /** Mirrors DashboardConfig.loadLastConfigLocation for cold load on bare `#config`. */

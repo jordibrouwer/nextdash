@@ -41,8 +41,8 @@ class DashboardConfig {
         'about',
     ];
 
-    /** The Logs section's one sub-tab. */
-    static LOGS_TABS = ['server'];
+    /** The Logs section's two sub-tabs. */
+    static LOGS_TABS = ['server', 'trail'];
 
     /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
     /**
@@ -1074,6 +1074,15 @@ class DashboardConfig {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.closeThemePickerFromKeyboard();
+                return;
+            }
+            // The log settings popover takes Escape first, same reasoning as
+            // the theme picker just above: this handler is on document in the
+            // capture phase and registers before the popover's own listener.
+            if (this._logSettingsPopoverClose) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._logSettingsPopoverClose();
                 return;
             }
             e.preventDefault();
@@ -4470,6 +4479,9 @@ class DashboardConfig {
         // Navigating away from Data & backups leaves the log tab behind, so its
         // poll has to stop with it.
         this.stopServerLogTimer();
+        // Same reasoning for the log settings popover: it belongs to a body
+        // that is about to be replaced, so Escape must not go looking for it.
+        this._logSettingsPopoverClose = null;
         this.section = section;
         this._trackAction('section', { section, via });
         // The bookmark list's renderers arrive on demand. Waiting for them is
@@ -4768,16 +4780,17 @@ class DashboardConfig {
     logsTabLabel(tab) {
         const map = {
             server: ['config.logsTabServer', 'Server logs'],
+            trail: ['config.logsTabTrail', 'Activity trail'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
     }
 
     /**
-     * Its own top-level section now, one tab strip wide. The strip is real
-     * rather than a single unconditional panel so the shape matches every
-     * other section — and so a second tab can join it later without the
-     * markup changing underneath it.
+     * Its own top-level section now, a real tab strip: Server logs (the
+     * viewer and its settings) and Activity trail (which channels are kept).
+     * They used to be two panels stacked in one tab; two tabs keeps either
+     * one from crowding the other.
      */
     renderLogsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -4792,25 +4805,46 @@ class DashboardConfig {
         `;
     }
 
-    /** Which sub-tab of Logs is showing — one today. */
+    /** Which sub-tab of Logs is showing. */
     renderLogsTab() {
+        if (this.logsTab === 'trail') {
+            return this.renderActivityTrail();
+        }
         return this.renderDataLogs();
     }
 
-    /** Wire the Logs section's strip and hand the rest to the log controls. */
+    /** Wire the Logs section's strip and hand the rest to whichever tab is up. */
     bindLogsActions(container) {
         this.bindSubTabStrip(container, 'data-logs-tab', (tab) => {
             if (tab === this.logsTab) return;
+            // Leaving Server logs must take its timer with it, same as every
+            // other polling view in config.
+            if (this.logsTab === 'server') this.stopServerLogTimer();
             this.logsTab = tab;
             this.restoreConfigHash();
             const body = document.getElementById('config-logs-body');
             if (body) {
                 body.innerHTML = this.renderLogsTab();
-                this.bindLogsActions(body);
+                this.bindLogsTabContent(body);
             }
             this.syncSubTabStrip('data-logs-tab', this.logsTab);
         });
+        this.bindLogsTabContent(container);
+    }
+
+    /** The binding half of renderLogsTab(): whichever of the two tabs is up. */
+    bindLogsTabContent(container) {
+        // Every call means a fresh #config-log-settings-popover just landed in
+        // the DOM (hidden), so any older popover's close() is stale — holding
+        // onto it would make Escape try to act on a detached element instead
+        // of closing config.
+        this._logSettingsPopoverClose = null;
+        if (this.logsTab === 'trail') {
+            this.bindActivityTrailControls(container);
+            return;
+        }
         this.bindServerLogControls(container);
+        this.bindLogSettingsPopover(container);
         void this.loadServerLog({ reset: true });
         this.updateServerLogTimer();
     }
@@ -5558,6 +5592,109 @@ class DashboardConfig {
             ['debug', this.t('config.logDetailVerbose', 'Verbose — every step')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === detail ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        const levelOptions = [
+            ['', this.t('config.logLevelAll', 'Everything')],
+            ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
+            ['error', this.t('config.logLevelError', 'Errors only')],
+            // Not a severity: activity lines are what someone did — a bookmark
+            // saved, a page added — and they have always been in here, mixed
+            // in with the requests. Finding them meant knowing to type
+            // "activity" into the search box.
+            ['activity', this.t('config.logLevelActivity', 'Activity only')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
+
+            <div class="config-tiles" role="list" id="config-log-tiles">${this.renderServerLogTiles()}</div>
+
+            <div class="config-panel config-log-main">
+                <h3 class="config-panel-title">${esc(this.t('config.logsPanelTitle', 'Server log'))}</h3>
+
+                <div class="config-log-toolbar">
+                    <label class="config-log-toolbar-item">
+                        <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
+                        <select class="config-select" data-log-select="level">${levelOptions}</select>
+                    </label>
+                    <label class="config-log-toolbar-item config-log-toolbar-search">
+                        <span class="config-field-label sr-only">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
+                        <input type="search" class="config-text" data-log-search
+                            placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
+                            value="${esc(this.logQuery || '')}">
+                    </label>
+                    <label class="config-toggle config-log-toolbar-item">
+                        <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
+                        <span>${esc(this.t('config.logFollowLabel', 'Follow'))}</span>
+                    </label>
+                    <div class="config-log-toolbar-actions">
+                        <button type="button" class="config-btn config-icon-btn" data-log-action="refresh"
+                                title="${esc(this.t('config.logRefreshNow', 'Refresh now'))}" aria-label="${esc(this.t('config.logRefreshNow', 'Refresh now'))}">↻</button>
+                        <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
+                        <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
+                        <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear'))}</button>
+                        <button type="button" class="config-btn config-icon-btn" data-log-settings-toggle
+                                aria-haspopup="true" aria-expanded="false" aria-controls="config-log-settings-popover"
+                                title="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}"
+                                aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}">⚙</button>
+                    </div>
+                </div>
+
+                <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
+                <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
+                    'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
+
+                <div class="config-log-view" data-log-output>${this.renderServerLogLines()}</div>
+
+                <div class="move-popover config-log-settings-popover" id="config-log-settings-popover"
+                     role="dialog" aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}" hidden>
+                    <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
+                    <div class="config-log-settings-body">
+                        <label class="config-toggle">
+                            <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
+                            <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
+                        </label>
+                        <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
+                            <select class="config-select" data-log-select="interval">${intervalOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
+                            <select class="config-select" data-log-select="mode">${modeOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
+                            <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
+                            <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
+                        </div>
+                        <p class="config-panel-note">${esc(byCount
+                            ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
+                            : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
+                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
+                        </div>
+                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
+                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Activity trail: the three channel groups as cards side by side, with the
+     * reset action once at the bottom rather than per card — resetting puts
+     * every group back at once, so one button for all three is the honest
+     * shape.
+     */
+    renderActivityTrail() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+
         const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
             ? s.activityChannels.map((c) => String(c).toLowerCase())
             : DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
@@ -5624,108 +5761,32 @@ class DashboardConfig {
             .map((key) => channelBox(key) + (key === 'open' ? openDetailField : '')).join('');
         const clientBoxes = ['clienterror'].map(channelBox).join('');
 
-        const levelOptions = [
-            ['', this.t('config.logLevelAll', 'Everything')],
-            ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
-            ['error', this.t('config.logLevelError', 'Errors only')],
-            // Not a severity: activity lines are what someone did — a bookmark
-            // saved, a page added — and they have always been in here, mixed
-            // in with the requests. Finding them meant knowing to type
-            // "activity" into the search box.
-            ['activity', this.t('config.logLevelActivity', 'Activity only')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
+        const resetButton = channelsAtDefault ? '' : `
+                <button type="button" class="config-btn" data-activity-reset
+                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`;
 
         return `
-            <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
 
-            <div class="config-tiles" role="list" id="config-log-tiles">${this.renderServerLogTiles()}</div>
-
-            <div class="config-log-layout">
-                <div class="config-log-main config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.logsPanelTitle', 'Server log'))}</h3>
-                    <div class="config-field">
-                        <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
-                        <select class="config-select" data-log-select="level">${levelOptions}</select>
-                    </div>
-                    <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
-                    <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
-                        'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
-                    <div class="config-field">
-                        <span class="config-field-label">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
-                        <input type="search" class="config-text" data-log-search
-                            placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
-                            value="${esc(this.logQuery || '')}">
-                    </div>
-                    <label class="config-toggle">
-                        <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
-                        <span>${esc(this.t('config.logFollowLabel', 'Scroll to newest lines'))}</span>
-                    </label>
-
-                    <div class="config-log-view" data-log-output>${this.renderServerLogLines()}</div>
-
-                    <div class="config-actions">
-                        <button type="button" class="config-btn" data-log-action="refresh">${esc(this.t('config.logRefreshNow', 'Refresh now'))}</button>
-                        <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
-                        <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
-                        <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear log'))}</button>
-                    </div>
+            <div class="config-log-trail-grid">
+                <div class="config-panel config-log-trail-card">
+                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupChanges', 'Changes'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupChangesNote', 'What the server itself wrote or did in the background.'))}</p>
+                    ${changesBoxes}
                 </div>
-
-                <div class="config-log-side">
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h3>
-                        <label class="config-toggle">
-                            <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
-                            <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
-                        </label>
-                        <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
-                            <select class="config-select" data-log-select="interval">${intervalOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
-                            <select class="config-select" data-log-select="mode">${modeOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
-                            <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
-                        </div>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
-                            <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
-                        </div>
-                        <p class="config-panel-note">${esc(byCount
-                            ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
-                            : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
-                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
-                        </div>
-                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
-                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
-                    </div>
-
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}${channelsAtDefault ? '' : `<button type="button"
-                                class="config-panel-reset" data-activity-reset
-                                title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`}</h3>
-                        <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
-                        <div class="config-log-channel-group">
-                            <h4 class="config-log-channel-group-title">${esc(this.t('config.logChannelGroupChanges', 'Changes'))}</h4>
-                            ${changesBoxes}
-                        </div>
-                        <div class="config-log-channel-group">
-                            <h4 class="config-log-channel-group-title">${esc(this.t('config.logChannelGroupUsage', 'Usage'))}</h4>
-                            ${usageBoxes}
-                        </div>
-                        <div class="config-log-channel-group">
-                            <h4 class="config-log-channel-group-title">${esc(this.t('config.logChannelGroupClient', 'Client'))}</h4>
-                            ${clientBoxes}
-                        </div>
-                    </div>
+                <div class="config-panel config-log-trail-card">
+                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupUsage', 'Usage'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupUsageNote', 'What the person at the dashboard did.'))}</p>
+                    ${usageBoxes}
+                </div>
+                <div class="config-panel config-log-trail-card">
+                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupClient', 'Client'))}</h3>
+                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupClientNote', 'What the browser itself reported.'))}</p>
+                    ${clientBoxes}
                 </div>
             </div>
+
+            <div class="config-log-trail-footer" data-log-trail-footer>${resetButton}</div>
         `;
     }
 
@@ -5765,22 +5826,22 @@ class DashboardConfig {
      * The button exists only while the channels differ from the defaults, so
      * this adds and removes it rather than showing and hiding it. Done in place
      * so the checkbox the user just clicked keeps the focus — repainting the
-     * whole tab body would take it away mid-click.
+     * whole tab body would take it away mid-click. Lives in the tab's footer
+     * now that Activity trail is three cards rather than one panel with a
+     * title to hang the button on.
      */
     syncActivityResetButton(container, channels) {
-        const title = container.querySelector('.config-panel-title [data-activity-reset]')?.closest('.config-panel-title')
-            || [...container.querySelectorAll('.config-panel-title')]
-                .find((el) => el.parentElement?.querySelector('[data-activity-channel]'));
-        if (!title) return;
-        const existing = title.querySelector('[data-activity-reset]');
+        const footer = container.querySelector('[data-log-trail-footer]');
+        if (!footer) return;
+        const existing = footer.querySelector('[data-activity-reset]');
         if (this.activityChannelsAreDefault(channels)) {
             existing?.remove();
             return;
         }
         if (existing) return;
         const esc = (v) => this.dash.escapeHtml(v);
-        title.insertAdjacentHTML('beforeend', `<button type="button"
-                        class="config-panel-reset" data-activity-reset
+        footer.insertAdjacentHTML('beforeend', `<button type="button"
+                        class="config-btn" data-activity-reset
                         title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`);
         this.bindActivityResetButton(container);
     }
@@ -5975,7 +6036,7 @@ class DashboardConfig {
      * and re-creating the search box on every poll would drop focus mid-typing.
      */
     repaintServerLog() {
-        if (this.section !== 'logs') return;
+        if (this.section !== 'logs' || this.logsTab !== 'server') return;
 
         const tiles = document.getElementById('config-log-tiles');
         if (tiles) tiles.innerHTML = this.renderServerLogTiles();
@@ -6004,7 +6065,7 @@ class DashboardConfig {
             const body = document.getElementById('config-logs-body');
             if (!body) return;
             body.innerHTML = this.renderLogsTab();
-            this.bindLogsActions(body);
+            this.bindLogsTabContent(body);
             return;
         }
         const body = document.getElementById('config-db-body');
@@ -6020,7 +6081,7 @@ class DashboardConfig {
         this._logTimer = setInterval(() => {
             // Belt and braces: if a repaint ever loses the teardown, the timer
             // stops itself rather than polling behind a closed config view.
-            if (this.section !== 'logs') {
+            if (this.section !== 'logs' || this.logsTab !== 'server') {
                 this.stopServerLogTimer();
                 return;
             }
@@ -6100,43 +6161,6 @@ class DashboardConfig {
             });
         });
 
-        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
-            box.addEventListener('change', () => {
-                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
-                    .filter((input) => input.checked)
-                    .map((input) => input.dataset.activityChannel);
-                /*
-                 * An empty list would mean "the environment decides" to the
-                 * server, which is not what unticking everything looks like it
-                 * means. 'none' is a channel nothing writes to, so it records
-                 * the choice as made.
-                 */
-                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
-                void this.saveSettingsWithFeedback();
-                // Reset panel appears the moment the list leaves the defaults
-                // and goes again when it returns. Rebuilt rather than toggled,
-                // because the button is only in the DOM when it has something
-                // to do — the same rule the other panels follow.
-                this.syncActivityResetButton(container, chosen);
-                // The level only means anything once opens are actually being
-                // recorded, so it stays greyed out until that box is ticked —
-                // it is not cleared, so the choice is still there if Open goes
-                // back on.
-                const openDetailSelect = container.querySelector('[data-activity-open-detail]');
-                if (openDetailSelect) openDetailSelect.disabled = !chosen.includes('open');
-            });
-        });
-
-        this.bindActivityResetButton(container);
-
-        const openDetailSelect = container.querySelector('[data-activity-open-detail]');
-        if (openDetailSelect) {
-            openDetailSelect.addEventListener('change', () => {
-                this.dash.settings.activityOpenDetail = openDetailSelect.value;
-                void this.saveSettingsWithFeedback();
-            });
-        }
-
         const search = container.querySelector('[data-log-search]');
         if (search) {
             let debounce = null;
@@ -6191,6 +6215,110 @@ class DashboardConfig {
                 void this.handleServerLogAction(btn.getAttribute('data-log-action'));
             });
         });
+    }
+
+    /**
+     * The gear at the end of the Server logs toolbar: a small popover holding
+     * the settings that used to be their own panel. Wears the app's one menu
+     * surface (.move-popover) rather than a new one, and follows the same
+     * contract every popover in config keeps — Escape and an outside click
+     * both close it, and closing returns focus to the button that opened it.
+     *
+     * Escape itself is handled by setupEscapeShortcut() above, not a listener
+     * here: that handler is on document in the capture phase and registers
+     * long before this popover ever opens, so a listener added here would
+     * never see the key first — the same reasoning as the theme picker and
+     * the bookmark row menu, which take Escape the same explicit way.
+     */
+    bindLogSettingsPopover(container) {
+        const toggle = container.querySelector('[data-log-settings-toggle]');
+        const pop = container.querySelector('#config-log-settings-popover');
+        if (!toggle || !pop || toggle.dataset.bound === '1') return;
+        toggle.dataset.bound = '1';
+
+        const position = () => {
+            const rect = toggle.getBoundingClientRect();
+            const popW = pop.offsetWidth || 280;
+            const popH = pop.offsetHeight || 200;
+            const left = Math.max(8, Math.min(rect.right - popW, window.innerWidth - popW - 8));
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const top = spaceBelow >= popH + 8 || rect.top < popH
+                ? rect.bottom + 6
+                : Math.max(8, rect.top - popH - 6);
+            pop.style.left = `${Math.round(left)}px`;
+            pop.style.top = `${Math.round(top)}px`;
+        };
+
+        let onOutside = null;
+        const close = () => {
+            if (pop.hidden) return;
+            pop.hidden = true;
+            toggle.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', onOutside, true);
+            window.removeEventListener('resize', position);
+            window.removeEventListener('scroll', position, true);
+            if (this._logSettingsPopoverClose === close) this._logSettingsPopoverClose = null;
+            toggle.focus({ preventScroll: true });
+        };
+        const open = () => {
+            pop.hidden = false;
+            toggle.setAttribute('aria-expanded', 'true');
+            position();
+            onOutside = (e) => {
+                if (pop.contains(e.target) || toggle.contains(e.target)) return;
+                close();
+            };
+            // Bound on the next tick, or the very click that opens the popover
+            // closes it again.
+            setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+            window.addEventListener('resize', position);
+            window.addEventListener('scroll', position, true);
+            this._logSettingsPopoverClose = close;
+        };
+
+        toggle.addEventListener('click', () => {
+            if (pop.hidden) open(); else close();
+        });
+    }
+
+    /** Wire the Activity trail tab: the three channel cards and the reset. */
+    bindActivityTrailControls(container) {
+        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
+                    .filter((input) => input.checked)
+                    .map((input) => input.dataset.activityChannel);
+                /*
+                 * An empty list would mean "the environment decides" to the
+                 * server, which is not what unticking everything looks like it
+                 * means. 'none' is a channel nothing writes to, so it records
+                 * the choice as made.
+                 */
+                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
+                void this.saveSettingsWithFeedback();
+                // Reset appears the moment the list leaves the defaults and
+                // goes again when it returns. Rebuilt rather than toggled,
+                // because the button is only in the DOM when it has something
+                // to do — the same rule the other panels follow.
+                this.syncActivityResetButton(container, chosen);
+                // The level only means anything once opens are actually being
+                // recorded, so it stays greyed out until that box is ticked —
+                // it is not cleared, so the choice is still there if Open goes
+                // back on.
+                const openDetailSelect = container.querySelector('[data-activity-open-detail]');
+                if (openDetailSelect) openDetailSelect.disabled = !chosen.includes('open');
+            });
+        });
+
+        this.bindActivityResetButton(container);
+
+        const openDetailSelect = container.querySelector('[data-activity-open-detail]');
+        if (openDetailSelect) {
+            openDetailSelect.addEventListener('change', () => {
+                this.dash.settings.activityOpenDetail = openDetailSelect.value;
+                void this.saveSettingsWithFeedback();
+            });
+        }
     }
 
     async handleServerLogAction(action) {

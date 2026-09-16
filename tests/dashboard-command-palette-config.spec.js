@@ -59,7 +59,7 @@ test.describe('the config commands name the config that exists', () => {
             overview: 'Overview', bookmarks: 'Bookmarks', appearance: 'Appearance',
             structure: 'Structure', behavior: 'Behavior',
             'data-backups': 'Data & backups', widgets: 'Widgets', stats: 'Statistics',
-            help: 'Help', about: 'About',
+            help: 'Help', logs: 'Logs', about: 'About',
         };
         for (const id of sections) {
             expect(names, `section ${id} is not offered`).toContain(labels[id]);

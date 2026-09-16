@@ -4696,78 +4696,127 @@ body.no-animations .config-new-features-panel-star {
 @media (prefers-reduced-motion: reduce) {
 }
 
-/* ── Server log section layout ───────────────────────────────────────────── */
+/* ── Server logs toolbar ──────────────────────────────────────────────────── */
 
 /*
- * The log panel and its two settings panels side by side rather than stacked:
- * the viewer is the thing being read continuously, so it gets the width and
- * the settings that are set once and left alone go beside it, not above it.
- * A flex row rather than grid tracks: the ratio only has to be roughly 2:1,
- * and the fixed clamp on the side column is a plain min/max-width.
+ * One row: the level filter, search, follow, the action buttons and the
+ * settings gear. Wraps rather than scrolling sideways when it does not fit —
+ * a toolbar that hides its own buttons behind a scrollbar is worse than one
+ * that grows a second line.
  */
-.config-log-layout {
+.config-log-toolbar {
     display: flex;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin: 4px 0 12px;
+}
+
+.config-log-toolbar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-log-toolbar-item .config-field-label {
+    white-space: nowrap;
+}
+
+/*
+ * Grows only enough to use spare room, never enough to push the action
+ * buttons onto a second line — a search box wants width, but the buttons at
+ * the end of the row are the ones that must not be the thing that wraps.
+ */
+.config-log-toolbar-search {
+    flex: 0 1 200px;
+    min-width: 140px;
+}
+
+.config-log-toolbar-search .config-text {
+    width: 100%;
+}
+
+.config-log-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.config-icon-btn {
+    padding: 7px 10px;
+    line-height: 1;
+    font-size: calc(var(--font-size-text) * 1.1);
+}
+
+/* ── Log settings popover ─────────────────────────────────────────────────── */
+
+/*
+ * The settings that used to be their own panel, collected behind the gear so
+ * the toolbar stays one row and the viewer keeps the width. Wears the same
+ * surface as every menu in the app (.move-popover); only the size and the
+ * stacked fields below are its own, since it holds selects and hints rather
+ * than a list of items.
+ */
+.config-log-settings-popover {
+    width: min(320px, calc(100vw - 24px));
+    max-width: min(320px, calc(100vw - 24px));
+    padding: 0;
+}
+
+.config-log-settings-popover[hidden] {
+    display: none;
+}
+
+.config-log-settings-body {
+    padding: 2px 14px 12px;
+}
+
+.config-log-settings-body .config-field {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.config-log-settings-body .config-field-label {
+    grid-column: 1 / -1;
+}
+
+.config-log-settings-body .config-select {
+    width: 100%;
+}
+
+/* ── Activity trail cards ─────────────────────────────────────────────────── */
+
+/*
+ * The three channel groups (Changes, Usage, Client) as cards rather than
+ * blocks in one long panel — auto-fit so three sit side by side on a wide
+ * screen and stack on a narrow one without a breakpoint to maintain.
+ */
+.config-log-trail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 20px;
     margin-top: 20px;
 }
 
-.config-log-main.config-panel {
-    flex: 2 1 0;
-    min-width: 0;
+.config-log-trail-card.config-panel {
     margin-top: 0;
 }
 
-.config-log-side {
-    flex: 1 1 280px;
-    min-width: 280px;
-    max-width: 380px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    /* Same offset the section rail sticks at, so the two agree while scrolling. */
-    position: sticky;
-    top: 8px;
+.config-log-trail-footer {
+    margin-top: 20px;
 }
 
-.config-log-side .config-panel {
+.config-log-trail-footer:empty {
     margin-top: 0;
 }
 
-/* Narrower than this, 2:1 stops being a row and becomes a squeeze. */
-@media (max-width: 1100px) {
-    .config-log-layout {
-        flex-direction: column;
+/* Below this, three across is a squeeze even with auto-fit's own minimum. */
+@media (max-width: 720px) {
+    .config-log-trail-grid {
+        grid-template-columns: 1fr;
     }
-
-    .config-log-side {
-        position: static;
-        top: auto;
-        max-width: none;
-        min-width: 0;
-        width: 100%;
-    }
-}
-
-/*
- * Activity trail's channels split into three labelled blocks (Changes, Usage,
- * Client) instead of one flat list of seventeen boxes — the grouping is
- * decided in dashboard-config.js, this is just the heading that names each
- * block.
- */
-.config-log-channel-group {
-    margin-top: 16px;
-}
-
-.config-log-channel-group:first-of-type {
-    margin-top: 8px;
-}
-
-.config-log-channel-group-title {
-    margin: 0 0 4px;
-    font-size: calc(var(--font-size-text) * 0.86);
-    letter-spacing: 0.05em;
-    color: var(--text-secondary, var(--text-muted, #888));
 }
 
 /* ── Server log viewer ───────────────────────────────────────────────────── */
@@ -4775,9 +4824,7 @@ body.no-animations .config-new-features-panel-star {
 /*
  * A scrolling tail that fills the height the panel has to give it, rather
  * than a fixed box: the log is the one thing in the section read continuously,
- * so it is worth more of the screen than a few hundred pixels. The 420px this
- * replaces was sized for a viewer stacked under two other panels; beside them
- * instead, there is a full viewport of room above the actions row.
+ * so it is worth more of the screen than a few hundred pixels.
  */
 .config-log-view {
     height: calc(100vh - 420px);

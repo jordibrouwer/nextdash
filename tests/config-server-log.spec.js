@@ -16,6 +16,19 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * Capture is off on a fresh install, so a test that wants lines has to turn it
  * on the way a user would.
  */
+/**
+ * Open the gear's popover, the way a user reaches the settings that used to
+ * be their own panel. A no-op if it is already open.
+ */
+async function openLogSettingsPopover(page) {
+    const popover = page.locator('#config-log-settings-popover');
+    if (await popover.isHidden()) {
+        await page.locator('[data-log-settings-toggle]').click();
+    }
+    await expect(popover).toBeVisible();
+    return popover;
+}
+
 async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } = {}) {
     // One server is shared across the file, so the previous test's choice is
     // still persisted. Set the switch before the page loads, so the tab paints
@@ -40,6 +53,7 @@ async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } 
 
     const toggle = page.locator('[data-log-toggle="capture"]');
     if (capture !== await toggle.isChecked()) {
+        await openLogSettingsPopover(page);
         await toggle.click();
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(capture);
@@ -72,12 +86,15 @@ test.describe('Logs → Server logs', () => {
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
         await expect(page.locator('#config-log-tiles .config-tile')).toHaveCount(3);
 
-        // The controls the feature is made of.
-        for (const kind of ['interval', 'retention', 'level']) {
-            await expect(page.locator(`[data-log-select="${kind}"]`)).toBeVisible();
-        }
+        // The controls the feature is made of: the level filter stays on the
+        // toolbar, the rest live behind the gear.
+        await expect(page.locator('[data-log-select="level"]')).toBeVisible();
         for (const action of ['refresh', 'copy', 'download', 'clear']) {
             await expect(page.locator(`[data-log-action="${action}"]`)).toBeVisible();
+        }
+        await openLogSettingsPopover(page);
+        for (const kind of ['interval', 'retention']) {
+            await expect(page.locator(`[data-log-select="${kind}"]`)).toBeVisible();
         }
     });
 
@@ -169,14 +186,18 @@ test.describe('Logs → Server logs', () => {
             return window.dashboardInstance.config.renderServerLogLines();
         })).toContain('Not collecting');
 
+        await openLogSettingsPopover(page);
         await page.locator('[data-log-toggle="capture"]').click();
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/settings')).json()).serverLogEnabled), { timeout: 10_000 }).toBe(true);
         await page.evaluate(() => fetch('/api/pages'));
+        // A click on the toolbar's refresh button lands outside the popover,
+        // which closes it — the same outside-click rule any menu follows.
         await page.locator('[data-log-action="refresh"]').click();
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
 
         // Stopping halts capture without discarding what is already there.
+        await openLogSettingsPopover(page);
         await page.locator('[data-log-toggle="capture"]').click();
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(false);
@@ -190,6 +211,7 @@ test.describe('Logs → Server logs', () => {
 
     test('the two caps are exclusive: only one control is live at a time', async ({ page }) => {
         await openLogs(page);
+        await openLogSettingsPopover(page);
 
         const age = page.locator('[data-log-select="retention"]');
         const count = page.locator('[data-log-select="maxEntries"]');
@@ -199,7 +221,12 @@ test.describe('Logs → Server logs', () => {
         await expect(age).toBeEnabled();
         await expect(count).toBeDisabled();
 
+        // Changing the mode rebuilds the tab body (the live control has to
+        // switch and the hint under them has to follow), which closes the
+        // popover along with everything else in it — so it is reopened after
+        // every mode change, same as after any other section repaint.
         await page.locator('[data-log-select="mode"]').selectOption('count');
+        await openLogSettingsPopover(page);
         await expect(count).toBeEnabled();
         await expect(age).toBeDisabled();
         expect(await page.evaluate(() =>
@@ -220,6 +247,7 @@ test.describe('Logs → Server logs', () => {
         await page.locator('[data-log-select="mode"]').selectOption('time');
         await expect.poll(() => page.evaluate(async () =>
             (await (await fetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(2000);
+        await openLogSettingsPopover(page);
         await expect(page.locator('[data-log-select="maxEntries"]')).toBeDisabled();
     });
 
@@ -228,6 +256,7 @@ test.describe('Logs → Server logs', () => {
         const hasTimer = () => page.evaluate(() => !!window.dashboardInstance.config._logTimer);
 
         expect(await hasTimer()).toBe(false);
+        await openLogSettingsPopover(page);
         await page.locator('[data-log-select="interval"]').selectOption('2');
         expect(await hasTimer()).toBe(true);
 
@@ -238,49 +267,62 @@ test.describe('Logs → Server logs', () => {
         expect(await hasTimer()).toBe(false);
 
         await page.locator('[data-config-section="logs"]').click();
+        await openLogSettingsPopover(page);
         await page.locator('[data-log-select="interval"]').selectOption('2');
         expect(await hasTimer()).toBe(true);
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         expect(await hasTimer()).toBe(false);
     });
 
-    test('at 1440px, the log sits beside a narrow settings column with three channel groups', async ({ page }) => {
-        await page.setViewportSize({ width: 1440, height: 900 });
+    test('the gear opens the settings popover, and Escape closes it and returns focus', async ({ page }) => {
         await openLogs(page);
 
-        const main = page.locator('.config-log-main');
-        const side = page.locator('.config-log-side');
-        await expect(main).toBeVisible();
-        await expect(side).toBeVisible();
+        const gear = page.locator('[data-log-settings-toggle]');
+        const popover = page.locator('#config-log-settings-popover');
+        await expect(popover).toBeHidden();
+        await expect(gear).toHaveAttribute('aria-expanded', 'false');
 
-        const [mainBox, sideBox] = await Promise.all([main.boundingBox(), side.boundingBox()]);
-        expect(mainBox.x).toBeLessThan(sideBox.x);
-        expect(sideBox.width).toBeLessThanOrEqual(380);
+        await gear.click();
+        await expect(popover).toBeVisible();
+        await expect(gear).toHaveAttribute('aria-expanded', 'true');
+        for (const kind of ['interval', 'mode', 'retention', 'maxEntries', 'detail']) {
+            await expect(popover.locator(`[data-log-select="${kind}"]`)).toBeVisible();
+        }
+        await expect(popover.locator('[data-log-toggle="capture"]')).toBeVisible();
 
-        await expect(page.locator('.config-log-channel-group-title')).toHaveText(['Changes', 'Usage', 'Client']);
+        // Escape closes it and hands focus back to the button that opened it.
+        await page.keyboard.press('Escape');
+        await expect(popover).toBeHidden();
+        await expect(gear).toHaveAttribute('aria-expanded', 'false');
+        await expect(gear).toBeFocused();
+    });
+
+    test('Activity trail opens from its tab button, with Open detail under Bookmarks opened', async ({ page }) => {
+        await openLogs(page);
+
+        await page.locator('[data-logs-tab="trail"]').click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.logsTab)).toBe('trail');
+        await expect(page.locator('.config-log-trail-card')).toHaveCount(3);
 
         // Open detail sits directly after the Bookmarks opened checkbox, not
         // tacked on after the whole channel list.
         const usageOrder = await page.evaluate(() => {
-            const group = [...document.querySelectorAll('.config-log-channel-group')]
-                .find((g) => g.querySelector('.config-log-channel-group-title')?.textContent === 'Usage');
+            const group = [...document.querySelectorAll('.config-log-trail-card')]
+                .find((card) => card.querySelector('.config-panel-title')?.textContent === 'Usage');
             return [...group.querySelectorAll('[data-activity-channel], [data-activity-open-detail]')]
                 .map((el) => el.getAttribute('data-activity-channel') || 'open-detail');
         });
         expect(usageOrder).toEqual(['open', 'open-detail', 'search', 'keys', 'nav', 'session']);
     });
 
-    test('at 900px, the settings column drops below the log', async ({ page }) => {
-        await page.setViewportSize({ width: 900, height: 900 });
-        await openLogs(page);
-
-        const main = page.locator('.config-log-main');
-        const side = page.locator('.config-log-side');
-        const [mainBox, sideBox] = await Promise.all([main.boundingBox(), side.boundingBox()]);
-        expect(sideBox.y).toBeGreaterThanOrEqual(mainBox.y + mainBox.height - 1);
-
-        const hasHorizontalScroll = await page.evaluate(() =>
-            document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-        expect(hasHorizontalScroll).toBe(false);
+    test('#config/logs/trail opens the Activity trail tab', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/logs/trail');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config?.logsTab),
+            { timeout: 15_000 }).toBe('trail');
+        await expect(page.locator('.config-log-trail-card')).toHaveCount(3);
     });
 });
