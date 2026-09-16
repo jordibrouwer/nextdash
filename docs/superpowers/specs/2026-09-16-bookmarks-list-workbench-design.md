@@ -89,7 +89,8 @@ Three modes, chosen in this order:
 2. **A focused row → bookmark form.** Name, URL, page › category, tags,
    shortcut, note, pinned, checking; then read-only health (status, last
    check, response time) and usage (opens, last opened, added). Footer:
-   *Open*, *Show on dashboard*, *Refresh favicon*, *Delete*.
+   *Open*, *Show on dashboard*, *Refresh favicon*, *Delete*. Saving a URL
+   or a page changes the bookmark's key; the panel follows it to the new key.
 3. **Nothing → empty state** ("Select a bookmark").
 
 Collapse with the `›` button or `i`; a narrow *Details* tab remains at the
@@ -133,7 +134,8 @@ pipeline. The rail writes these fields and calls
 - `bmHealthFilter` — `healthy | broken | down | unchecked | null`. Added to
   the memo token in `visibleBookmarks()` and applied in
   `computeVisibleBookmarks()`.
-- `bmFocusKey` — the row the panel describes. Replaces `_bmKeyboardKey`.
+- The row the panel describes is the existing `_bmKeyboardKey` (25 call
+  sites, including the view's Escape handler); it is not renamed.
 - `bmSelectAnchor` — the start of a `⇧x` range.
 - `bookmarkFacetCounts()` — one pass over the collection producing counts per
   page, category, tag, health state and view. Each facet group is counted with
