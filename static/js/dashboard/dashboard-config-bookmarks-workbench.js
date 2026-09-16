@@ -346,6 +346,7 @@
             <header class="config-bm-panel-head">
                 <span class="config-bm-panel-icon">${feed?.renderIcon?.(this.resolveIconSrc(b.icon), esc) || this.renderBookmarkIcon(b)}</span>
                 <span class="config-bm-panel-title">${esc(b.name || this.formatBookmarkUrlDisplay(b.url))}</span>
+                <button type="button" class="config-btn config-btn--small" data-bm-panel-action="edit-dialog">${esc(this.t('config.bmEditDialog', 'Edit…'))} <kbd>⇧E</kbd></button>
                 <button type="button" class="config-btn config-btn--small" data-bm-panel-action="open">${esc(this.t('config.openBookmark', 'Open'))}</button>
             </header>
             <div class="config-bm-panel-fields">
@@ -546,6 +547,7 @@
             const key = panel.dataset.bmPanelKey;
             if (!action || !key) return;
             if (action === 'open') this.openBookmarkByKey(key);
+            else if (action === 'edit-dialog') void this.openBookmarkEditModal(key);
             else if (action === 'delete') void this.deleteBookmarkByKey(key);
             else this.handleBookmarkMenuAction(action, key);
         });

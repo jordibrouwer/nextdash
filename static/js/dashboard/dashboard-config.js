@@ -2596,6 +2596,13 @@ class DashboardConfig {
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
                 return true;
             }
+            // The full dialog, as Shift+E is on the dashboard grid.
+            if (e.key === 'E') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.openBookmarkEditModal(this._bmKeyboardKey);
+                return true;
+            }
             if (e.key === 'd') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -22471,6 +22478,7 @@ class DashboardConfig {
             ['x', this.t('config.bmKeySelect', 'select')],
             ['⇧x', this.t('config.bmKeyRange', 'range')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
+            ['⇧e', this.t('config.bmKeyEditDialog', 'edit dialog')],
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
@@ -22702,6 +22710,10 @@ class DashboardConfig {
             // that runs on a separate promise chain; defer one frame so
             // allBookmarks is settled before we read it.
             requestAnimationFrame(() => {
+                // The dialog may have changed what the panel shows without
+                // changing the key it shows it for.
+                const panel = document.getElementById('config-bm-panel');
+                if (panel) panel.dataset.bmPanelSig = '';
                 this.repaintBookmarksList();
                 if (this._bmModalRestoreKey) {
                     this._bmKeyboardKey = this._bmModalRestoreKey;

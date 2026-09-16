@@ -6113,7 +6113,9 @@
     "bmDeleteN": "Delete {n}",
     "bmBulkDone": "Bookmarks updated.",
     "bmBulkUndone": "Changes put back.",
-    "bmFieldInterval": "Interval"
+    "bmFieldInterval": "Interval",
+    "bmKeyEditDialog": "edit dialog",
+    "bmEditDialog": "Edit…"
   },
   "colors": {
     "title": "theme customization",

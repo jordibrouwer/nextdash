@@ -166,4 +166,15 @@ test.describe('the bookmark panel', () => {
         await expect.poll(() => posts.some((list) => list.some((b) =>
             b.url === url && b.monitor === true && b.monitorIntervalMinutes === 60))).toBe(true);
     });
+
+    test('Shift+E opens the full dialog, and the legend says so', async ({ page }) => {
+        await openBookmarks(page);
+        await expect(page.locator('.config-bm-keyboard-legend')).toContainText('⇧e');
+        await focusFirstRow(page);
+        await page.keyboard.press('Shift+E');
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
+        await expect(page.locator('#config-bm-list')).toBeVisible();
+    });
 });
