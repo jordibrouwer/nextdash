@@ -116,6 +116,22 @@ test.describe('the bookmark panel', () => {
         await expect(page.locator('#config-bm-workbench')).not.toHaveClass(/is-panel-collapsed/);
     });
 
+    test('a folded panel shows pins in a column of their own', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 800 });
+        await openBookmarks(page);
+        const key = await focusFirstRow(page);
+        await page.keyboard.press('e');
+        await page.locator('#config-bm-panel [data-bm-field="pinned"]').check();
+        await expect.poll(() => page.evaluate((k) =>
+            window.dashboardInstance.config.findBookmarkByKey(k)?.pinned === true, key)).toBe(true);
+        const row = page.locator(`#config-bm-list .config-bm-row[data-bm-key="${key}"]`);
+        await expect(row.locator('.config-bm-pinned svg')).toBeHidden();
+        await page.locator('#config-bm-panel [data-bm-panel-toggle]').click();
+        await expect(page.locator('#config-bm-workbench')).toHaveClass(/is-panel-collapsed/);
+        await expect(row.locator('.config-bm-pinned svg')).toBeVisible();
+        await expect(row.locator('.config-bm-name .config-bm-pin')).toBeHidden();
+    });
+
     test('a folded panel gives the rows more to show', async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 800 });
         await openBookmarks(page);

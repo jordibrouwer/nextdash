@@ -1133,6 +1133,7 @@
                     ${crumb}
                 </span>
                 <span class="config-bm-tags" role="gridcell">${tagChips}</span>
+                <span class="config-bm-extra config-bm-pinned" role="gridcell" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">${b.pinned ? (global.MenuIcons?.PIN || '') : ''}</span>
                 <span class="config-bm-extra config-bm-key" role="gridcell" title="${esc(this.t('config.bmFieldShortcut', 'Shortcut'))}">${b.shortcut ? `<kbd>${esc(b.shortcut)}</kbd>` : ''}</span>
                 <span class="config-bm-extra config-bm-checkmode" role="gridcell" title="${esc(`${this.t('config.bmFieldChecking', 'Checking')}: ${checkMeta?.hint || ''}`)}">${esc(checkLabel)}</span>
                 <span class="config-bm-extra config-bm-added" role="gridcell" title="${esc(this.t('config.bookmarkStatAdded', 'Added'))}">${esc(added)}</span>
