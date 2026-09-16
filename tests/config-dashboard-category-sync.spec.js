@@ -66,7 +66,10 @@ test.describe('config to dashboard category sync', () => {
         await page.locator('#config-bm-search').fill(uniqueName);
         const row = page.locator('#config-bm-list .config-bm-row', { hasText: uniqueName });
         await expect(row).toBeVisible({ timeout: 10_000 });
-        await row.locator('[data-feed-action="edit"]').evaluate((el) => el.click());
+        // A click puts the cursor on the row; Shift+E opens the full dialog.
+        await row.locator('.config-bm-title').click();
+        await expect(row).toHaveClass(/keyboard-selected/);
+        await page.keyboard.press('Shift+E');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');

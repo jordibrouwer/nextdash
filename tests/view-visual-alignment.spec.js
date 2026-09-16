@@ -59,7 +59,7 @@ const openInbox = async (page) => {
 
 const openConfigBookmarks = async (page) => {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-    await page.waitForSelector('.config-bm-feed', { timeout: 15_000 });
+    await page.waitForSelector('#config-bm-workbench .config-bm-feed', { timeout: 15_000 });
     await page.waitForTimeout(400);
 };
 
@@ -102,35 +102,8 @@ test.describe('the three views share one row', () => {
     });
 });
 
-test.describe('the three views share one tile', () => {
-    test('Config → Bookmarks uses the Health tile, without the stripe', async ({ page }) => {
-        await openDashboard(page);
-        await openConfigBookmarks(page);
-        const config = await boxOf(page, '.config-tiles--bookmarks .config-tile');
-        const stripe = await page.evaluate(() => getComputedStyle(
-            document.querySelector('.config-tiles--bookmarks .config-tile'), '::before').content);
-
-        await openHealth(page);
-        const health = await boxOf(page, '.lvs-rail [data-health-tile]:not(.is-active)');
-
-        expect(config).not.toBeNull();
-        expect(health).not.toBeNull();
-        // Corner radius is the shared language, and both views were made to
-        // speak it: --layout-radius-sm on each.
-        expect(config.radius).toBe(health.radius);
-        // Surface and density are not, and pinning them here was asking for a
-        // thing nobody built. Config → Bookmarks draws filled cards — a
-        // small-caps label over a large figure, "TAGGED BOOKMARKS / 8 / 100% of
-        // total". Health draws a bare summary line above a long list, "8 Total
-        // · 8 Healthy · 0 Monitored", on no ground of its own. Holding them to
-        // one padding and one fill would either inflate that line into cards
-        // that push the list off screen, or flatten the cards into a line. Two
-        // components that share a corner, not one component twice.
-        // Health carries tone in the value's colour; the stripe was the one
-        // thing that made this tile a different component.
-        expect(stripe).toBe('none');
-    });
-});
+// 'the three views share one tile' is gone: the bookmarks workbench has no
+// summary tiles; its counts live in the filter rail.
 
 test.describe('rounded is the shared shape', () => {
     test('Health and Inbox round their filter group the same way', async ({ page }) => {
@@ -192,7 +165,9 @@ test.describe('Config → Bookmarks opens like a view', () => {
                 // breadcrumb, so the header carries no title of its own —
                 // two of them one line apart read as a mistake.
                 ownTitle: h.querySelector('h1, h2, h3') !== null,
-                subtitle: Boolean(h.querySelector('.config-bm-subtitle')),
+                // The opening line is lifted onto the view band, the way
+                // every section's intro is.
+                subtitle: Boolean(document.querySelector('.config-view-head .lvs-description')?.textContent.trim()),
                 badge: h.querySelector('.config-bm-header-badge')?.textContent?.trim() || '',
             };
         });
@@ -208,7 +183,7 @@ test.describe('Config → Bookmarks opens like a view', () => {
     test('its search box matches the one in Health', async ({ page }) => {
         await openDashboard(page);
         await openConfigBookmarks(page);
-        const config = await boxOf(page, '.config-crud-toolbar--view .config-text');
+        const config = await boxOf(page, '#config-bm-rail #config-bm-search');
 
         await openHealth(page);
         const health = await boxOf(page, '.health-view-search-input');
@@ -216,7 +191,8 @@ test.describe('Config → Bookmarks opens like a view', () => {
         expect(config).not.toBeNull();
         expect(health).not.toBeNull();
         expect(config.radius).toBe(health.radius);
-        expect(config.padding).toBe(health.padding);
+        // Padding is not compared: the rail's box keeps room on the right for
+        // its `/` hint.
         expect(config.background).toBe(health.background);
     });
 });

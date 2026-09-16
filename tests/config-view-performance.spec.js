@@ -53,36 +53,6 @@ test.describe('the spotlight catalogue is data', () => {
     });
 });
 
-test.describe('a row builds its menus when they are opened', () => {
-    test('no menu items until one is asked for', async ({ page }) => {
-        await openConfig(page, 'bookmarks');
-        await page.waitForSelector('.config-bm-row', { timeout: 15_000 });
-
-        const rows = await page.locator('.config-bm-row').count();
-        expect(rows).toBeGreaterThan(1);
-        // Fifty rows used to carry two full menus each, hidden.
-        expect(await page.locator('.health-view-menu .health-view-menu-item').count()).toBe(0);
-
-        const key = await page.locator('.config-bm-row').first().getAttribute('data-bm-key');
-        await page.evaluate((k) => {
-            const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
-            c.toggleBookmarkMenu(k, 'more');
-        }, key);
-        await page.waitForTimeout(300);
-        const open = page.locator('.health-view-menu:not([hidden]) .health-view-menu-item');
-        expect(await open.count()).toBeGreaterThan(4);
-        // Built once: opening it again does not stack a second copy of the items.
-        const first = await open.count();
-        await page.evaluate((k) => {
-            const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
-            c.toggleBookmarkMenu(k, 'more');
-            c.toggleBookmarkMenu(k, 'more');
-        }, key);
-        await page.waitForTimeout(300);
-        expect(await page.locator('.health-view-menu:not([hidden]) .health-view-menu-item').count()).toBe(first);
-    });
-});
-
 test.describe('switching sections keeps the shell', () => {
     test('the rail is bound once and still switches sections', async ({ page }) => {
         await openConfig(page, 'overview');

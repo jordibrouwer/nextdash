@@ -5689,7 +5689,7 @@ body.no-animations .bookmark-move-out {
 
 /* Inside the link, not a grid column: .bookmark-link is a subgrid whose columns
    line up across every category on the page, so a new column would move every
-   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag-chip)
+   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag)
    — a tag should look like a tag wherever it is listed. */
 .bookmark-tag-strip {
     display: inline-flex;

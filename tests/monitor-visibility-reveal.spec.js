@@ -426,12 +426,10 @@ test.describe('reaching the Health view from a bookmark', () => {
 
         const row = page.locator('#config-bm-list .config-bm-row').first();
         const key = await row.getAttribute('data-bm-key');
-        // The actions bar is revealed on hover, so the menu can exist while its
-        // container is still collapsed — hover first, the way a person would.
-        await row.hover();
-        await page.evaluate((k) => window.dashboardInstance.config.toggleBookmarkMenu(k, 'more'), key);
-
-        const item = page.locator(`[data-menu-for="${key}"] [data-bm-menu-action="health"]`);
+        expect(key).toBeTruthy();
+        // The row's right-click menu carries the Health entry.
+        await row.click({ button: 'right' });
+        const item = page.locator('.config-bm-context-menu [data-action="health"]');
         await expect(item).toBeVisible();
         await item.click();
 

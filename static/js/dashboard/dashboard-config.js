@@ -21906,29 +21906,6 @@ class DashboardConfig {
         };
     }
 
-    /**
-     * The one-line usage summary on a collapsed row: how often, how recently.
-     *
-     * Kept out of the meta line above it because that one describes where the
-     * bookmark lives (page, category, tags) and this describes whether it is
-     * used at all — the thing you scan the list for when clearing out dead
-     * links. Never-opened is stated outright rather than left blank, matching
-     * Health, where an empty slot would read as missing data instead.
-     */
-    renderBookmarkUsageLine(b) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const opens = Number(b.openCount || 0);
-        const { label, title, never } = window.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
-            || { label: '', title: '', never: true };
-        const openedCls = never ? 'health-view-item-opened is-never' : 'health-view-item-opened';
-        const openedHtml = `<span class="${openedCls}" title="${esc(title)}">${esc(never ? this.t('dashboard.healthNeverOpened', 'never opened') : label)}</span>`;
-        if (opens === 0) {
-            return openedHtml;
-        }
-        const count = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
-        return `${openedHtml}<span class="config-bm-usage" title="${esc(title)}">${esc(count)}</span>`;
-    }
-
     /** Bookmark icons are stored as bare filenames; the dashboard serves them from /data/icons/. */
     resolveIconSrc(icon) {
         const raw = String(icon || '');
@@ -21959,35 +21936,6 @@ class DashboardConfig {
         return `<div class="config-bm-icon config-bm-icon--placeholder" aria-hidden="true">🔗</div>`;
     }
 
-    /*
-     * The row's More menu, built from the context menu's own list.
-     *
-     * The two used to be written out separately and had drifted: right-click
-     * offered Open in new tab, Edit, Pin, Checking, the three filters and
-     * Select; More offered nine of the sixteen and nothing else. Same row,
-     * same bookmark, two different answers to "what can I do with this".
-     *
-     * actionsFor() is the one list now, so a row added to either menu appears
-     * in both, and the click goes through the context menu's run() -- which
-     * already knows the handful of actions the row dispatcher never learned.
-     */
-    renderBookmarkRowMenu(b, key) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const menu = this.bookmarkContextMenu();
-        const actions = menu?.actionsFor?.(b);
-        if (!Array.isArray(actions) || !actions.length) return '';
-        const items = actions.map((action) => {
-            const danger = action.danger ? ' health-view-menu-item--danger' : '';
-            // A submenu entry opens a second menu rather than acting, and says
-            // so the way a menu is expected to: with a trailing marker.
-            const trailer = action.submenu ? ' <span aria-hidden="true">›</span>' : '';
-            return `<button type="button" class="health-view-menu-item${danger}" role="menuitem"`
-                + `${action.submenu ? ' aria-haspopup="menu"' : ''}`
-                + ` data-bm-menu-action="${esc(action.id)}">${esc(action.label)}${trailer}</button>`;
-        });
-        return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
-    }
-
     shareBookmarkActionLabel() {
         const menu = this.dash.contextMenu;
         if (menu?.shareActionLabel) {
@@ -22004,44 +21952,6 @@ class DashboardConfig {
 
     closeBookmarkMenus() {
         window.BookmarkFeedRow?.closeAllMenus?.(this.bookmarkListRoot() || document);
-    }
-
-    toggleBookmarkMenu(key, kind = 'more') {
-        this.fillBookmarkMenu(key, kind);
-        return window.BookmarkFeedRow?.toggleMenu?.(key, kind, this.bookmarkListRoot() || document) === true;
-    }
-
-    /**
-     * Build a row's menu the first time it is opened.
-     *
-     * Every row used to carry both menus fully rendered and hidden — the reason a
-     * row costs ~55 DOM nodes, times fifty rows on screen. The shell is what
-     * toggleMenu looks for; this fills it once, and the items are handled by one
-     * delegated listener on the list rather than by handlers bound per row.
-     */
-    fillBookmarkMenu(key, kind) {
-        const root = this.bookmarkListRoot() || document;
-        const menu = root.querySelector(
-            `.health-view-menu[data-menu-for="${CSS.escape(key)}"][data-menu-owner="${CSS.escape(kind)}"]`
-        );
-        if (!menu || menu.dataset.menuLazy !== kind) return;
-        const bookmark = this.findBookmarkByKey(key);
-        if (!bookmark) return;
-        const esc = (v) => this.dash.escapeHtml(v);
-        if (kind === 'check') {
-            const mode = window.CheckMode?.of?.(bookmark) || 'off';
-            const built = window.BookmarkFeedRow?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || '';
-            // renderCheckModeMenu returns the whole element; take its inside.
-            const wrap = document.createElement('div');
-            wrap.innerHTML = built;
-            menu.innerHTML = wrap.firstElementChild?.innerHTML || '';
-        } else {
-            const built = this.renderBookmarkRowMenu(bookmark, key);
-            const wrap = document.createElement('div');
-            wrap.innerHTML = built;
-            menu.innerHTML = wrap.firstElementChild?.innerHTML || '';
-        }
-        delete menu.dataset.menuLazy;
     }
 
     syncBookmarkRowBusy(key, busy) {
@@ -23092,49 +23002,6 @@ class DashboardConfig {
             overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
             input.focus();
         });
-    }
-
-    /**
-     * Tick every row the filters currently show, or clear them if they already
-     * are. Scoped to the visible rows, not the whole collection: acting on
-     * bookmarks you cannot see is how a bulk delete goes wrong.
-     */
-    /**
-     * "Select all" ticks every row the current filters match, which is usually
-     * more than the ~50 rendered — the rest arrive on scroll. Naming the count
-     * says so up front, since the next click may well be Delete.
-     */
-    selectAllBookmarksLabel() {
-        const total = this.visibleBookmarks().length;
-        const shown = Math.min(total, this.bookmarkVisibleLimit(total));
-        if (total > shown) {
-            return this.t('config.selectAllBookmarksCount', 'Select all {n}').replace('{n}', String(total));
-        }
-        return this.t('config.selectAllBookmarks', 'Select all');
-    }
-
-    toggleSelectAllBookmarks() {
-        const rows = this.visibleBookmarks();
-        const keys = rows.map((b) => this.bookmarkKey(b));
-        const allSelected = keys.length > 0 && keys.every((k) => this.bmSelected.has(k));
-        if (allSelected) {
-            keys.forEach((k) => this.bmSelected.delete(k));
-        } else {
-            keys.forEach((k) => this.bmSelected.add(k));
-        }
-        const host = document.getElementById('config-bm-list');
-        if (host) {
-            keys.forEach((key) => {
-                const row = host.querySelector(`.config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
-                if (!row) return;
-                const box = row.querySelector('.config-bm-tick');
-                if (box) box.checked = !allSelected;
-                row.classList.toggle('is-checked', !allSelected);
-            });
-            this.afterSelectionChange();
-            return;
-        }
-        this.repaintBookmarksList();
     }
 
     /**

@@ -372,18 +372,6 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     height: 22px;
 }
 
-/*
- * `.config-bm-tick` is the one class this row shares with the pre-workbench
- * card (kept per the interfaces contract). That card hid an unchecked box
- * until `.config-bm-item` was hovered or selected — classes this row never
- * carries — so without this override the box is just permanently invisible
- * here. #config-bm-list beats that rule's specificity outright (an id
- * against any number of classes) regardless of which stylesheet loads last.
- */
-#config-bm-list .config-bm-tick {
-    opacity: 1;
-}
-
 .config-bm-name {
     display: flex;
     align-items: baseline;

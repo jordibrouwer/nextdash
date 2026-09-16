@@ -54,7 +54,10 @@ test.describe('config: sections restored from the old config', () => {
     test('editing a bookmark opens the add-bookmark modal prefilled', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
-        await page.locator('#config-bm-list [data-feed-action="edit"]').first().evaluate((el) => el.click());
+        await page.locator('#config-bm-list .config-bm-row').first().waitFor();
+        await page.evaluate(() => document.activeElement?.blur?.());
+        await page.keyboard.press('j');
+        await page.keyboard.press('Shift+E');
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await expect(form.locator('.bookmark-inline-input').first()).not.toHaveValue('');
@@ -74,7 +77,7 @@ test.describe('config: sections restored from the old config', () => {
             return el ? el.getBoundingClientRect().width : 0;
         })).toBeGreaterThan(240);
         await expect.poll(() => page.evaluate(() => {
-            const el = document.querySelector('#config-bm-list .config-bm-row .health-view-item-title');
+            const el = document.querySelector('#config-bm-list .config-bm-row .config-bm-title');
             return el ? el.scrollWidth : 0;
         })).toBeGreaterThan(0);
 

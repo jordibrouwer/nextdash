@@ -57,8 +57,15 @@ test.describe('groups in the bookmark list', () => {
             { name: 'Iconic', url: 'https://iconic.example', pageId: 1, icon: ICON_32 },
         ]);
         const row = page.locator('#config-bm-list .config-bm-row').first();
-        const cell = await row.locator('.config-bm-icon-cell').boundingBox();
-        const img = await row.locator('.config-bm-icon-cell img').boundingBox();
+        await expect(row.locator('.config-bm-icon-cell img')).toBeVisible();
+        // Both boxes in one read: the list can repaint between two calls.
+        const { cell, img } = await row.evaluate((el) => {
+            const box = (node) => {
+                const r = node?.getBoundingClientRect();
+                return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+            };
+            return { cell: box(el.querySelector('.config-bm-icon-cell')), img: box(el.querySelector('.config-bm-icon-cell img')) };
+        });
         expect(cell && img, 'the icon has a box').toBeTruthy();
         expect(img.width).toBeGreaterThanOrEqual(14);
         expect(img.x).toBeGreaterThanOrEqual(cell.x - 0.5);

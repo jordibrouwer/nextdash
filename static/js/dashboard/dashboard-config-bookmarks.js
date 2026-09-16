@@ -1,15 +1,8 @@
 /**
- * Config → Bookmarks, the list itself, loaded when that section is opened.
- *
- * Twelve methods and some four hundred lines of the config module drew one
- * list — the rows, the bulk bar, the tag cloud, the chips, the crumbs — and
- * every visit to any other section carried them. They are the same methods on
- * the same prototype, moved verbatim; only the moment they arrive has changed.
- *
- * What the rest of the module calls stays behind: renderBookmarksListTab,
- * repaintBookmarksList and the handlers. What they call *into* is guarded in
- * one place — renderBookmarksListSafe — so nothing else has to know whether
- * this file is here yet.
+ * Config → Bookmarks, the helpers the list still shares, loaded when that
+ * section is opened: the usage tooltip, the count label and the empty-list
+ * reason. The list itself — rail, rows and panel — is drawn by
+ * dashboard-config-bookmarks-workbench.js.
  *
  * Split one section at a time, deliberately: an earlier attempt to lift the
  * whole of config out at once failed on forty-one tests, and the failures did
@@ -88,66 +81,6 @@
             return this.t('config.bookmarksEmptyQuery', 'Nothing matches “{query}”.').replace('{query}', query);
         }
         return this.t('config.noBookmarksMatch', 'No bookmarks match your search.');
-    },
-
-    /**
-     * Where a bookmark lives: page › category, as one pill in two halves.
-     *
-     * It used to be a single underlined button reading "main · Development".
-     * The dot was the only thing separating two different facts, nothing said
-     * which was which, and the underline promised navigation while the click
-     * filters the list. A reader who did not already know their page was called
-     * "main" saw two words and no hierarchy.
-     *
-     * Two halves, each filtering its own thing, split by an arrow that reads as
-     * hierarchy — and bordered rather than underlined, so it is visibly a
-     * different kind of thing from the tag chips above it.
-     *
-     * A bookmark with no category gets the page half alone rather than the
-     * separate footer badge it used to get, so the page sits in the same place
-     * on every row.
-     */
-    renderBookmarkPlaceCrumb(b, key, ctx = {}) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const pageName = typeof ctx.pageName === 'function'
-            ? ctx.pageName(b.pageId)
-            : this.pageLabel(b.pageId);
-        // With a page filter on, every row is on that page: repeating it in
-        // every crumb would be a column of the same word.
-        const showPage = !this.bmPageFilter && !!pageName;
-        const categoryName = b.category ? this.categoryOwnLabel(b) : '';
-        if (!showPage && !categoryName) return '';
-
-        const pageHalf = showPage
-            ? `<button type="button" class="config-bm-crumb-part config-bm-crumb-page"
-                    data-bm-filter-page="${esc(String(b.pageId))}"
-                    title="${esc(this.t('config.filterByPageTitle', 'Filter by page {name}').replace('{name}', pageName))}">${esc(pageName)}</button>`
-            : '';
-        const categoryHalf = categoryName
-            ? `<button type="button" class="config-bm-crumb-part config-bm-crumb-category"
-                    data-bm-row-key="${esc(key)}"
-                    title="${esc(this.t('config.filterByCategoryTitle', 'Filter by category {name}').replace('{name}', categoryName))}">${esc(categoryName)}</button>`
-            : '';
-        const arrow = pageHalf && categoryHalf
-            ? '<span class="config-bm-crumb-sep" aria-hidden="true">›</span>'
-            : '';
-        return `<p class="config-bm-meta-category"><span class="config-bm-crumb">${pageHalf}${arrow}${categoryHalf}</span></p>`;
-    },
-
-    renderBookmarkRowActions(b, key, open) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const editLabel = open
-            ? this.t('config.close', 'Close')
-            : this.t('config.edit', 'Edit');
-        const editKbd = open ? '' : '<kbd>e</kbd>';
-        return `
-            <div class="config-bm-actions">
-                <div class="config-bm-actions-inner">
-                    <button type="button" class="config-bm-action-btn" data-bm-open="${esc(key)}">${esc(this.t('config.openBookmark', 'Open'))}<kbd>Enter</kbd></button>
-                    <button type="button" class="config-bm-action-btn" data-bm-edit="${esc(key)}">${esc(editLabel)}${editKbd}</button>
-                    <button type="button" class="config-bm-action-btn config-bm-action-btn--danger" data-bm-delete="${esc(key)}">${esc(this.t('config.delete', 'Delete'))}<kbd>d</kbd></button>
-                </div>
-            </div>`;
     },
     });
 

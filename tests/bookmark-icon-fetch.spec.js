@@ -93,14 +93,14 @@ async function openEditor(page, { icon = '' } = {}) {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await expect(page.locator('#config-bm-list')).toBeVisible();
 
-    // Through the list's own `e` shortcut, on the row the cursor lands on
-    // first — the slab row has no dedicated Edit button any more.
+    // Through the list's own Shift+E, on the row the cursor lands on first:
+    // `e` edits in the side panel, Shift+E opens the full dialog.
     await expect
         .poll(() => page.locator('#config-bm-list .config-bm-row').count())
         .toBeGreaterThan(0);
-    await page.locator('#config-bm-list').click();
+    await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
-    await page.keyboard.press('e');
+    await page.keyboard.press('Shift+E');
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 }
 
