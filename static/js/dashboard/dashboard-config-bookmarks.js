@@ -134,55 +134,6 @@
         return `<p class="config-bm-meta-category"><span class="config-bm-crumb">${pageHalf}${arrow}${categoryHalf}</span></p>`;
     },
 
-    renderBulkToolbar() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const n = this.bmSelected.size;
-        if (n === 0) return '';
-        const hidden = this.hiddenSelectionCount();
-        const pages = this.dash.pages || [];
-        const picked = this.bookmarksFromKeys([...this.bmSelected]);
-        const pageOpts = [`<option value="">${esc(this.t('config.bulkMovePagePlaceholder', 'Move to page…'))}</option>`]
-            .concat(pages.map((p) => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`)).join('');
-        const catOpts = [`<option value="">${esc(this.t('config.bulkMoveCategoryPlaceholder', 'Set category…'))}</option>`]
-            .concat(this.bulkKnownCategories(picked).map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)).join('');
-        const modeOpts = [
-            ['add', this.t('config.bulkTagsAdd', 'Add')],
-            ['replace', this.t('config.bulkTagsReplace', 'Replace')],
-            ['remove', this.t('config.bulkTagsRemove', 'Remove')],
-        ].map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
-        const statusOpts = (window.CheckMode?.options?.() || []).map((o) =>
-            `<option value="${esc(o.mode)}">${esc(o.label)}</option>`
-        ).join('');
-
-        return `
-            <div class="config-bulk-bar" role="group" aria-label="${esc(this.t('config.bulkActions', 'Bulk actions'))}">
-                <span class="config-bulk-count">${esc(this.t('config.bulkSelectedCount', '{n} selected').replace('{n}', String(n)))}${
-                    hidden ? ` ${esc(this.t('config.bulkSelectedHidden', '({n} not shown by this filter)').replace('{n}', String(hidden)))}` : ''}</span>
-                ${this.renderBulkOffscreenNotice(picked)}
-                <div class="config-bulk-group">
-                    <select class="config-select" id="config-bulk-page">${pageOpts}</select>
-                    <select class="config-select" id="config-bulk-category">${catOpts}</select>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="move">${esc(this.t('config.bulkMoveApply', 'Apply'))}</button>
-                </div>
-                <div class="config-bulk-group">
-                    <input type="text" class="config-text" id="config-bulk-tags" placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">
-                    <select class="config-select" id="config-bulk-tags-mode">${modeOpts}</select>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="tags">${esc(this.t('config.bulkTagsApply', 'Apply tags'))}</button>
-                </div>
-                <div class="config-bulk-group">
-                    <select class="config-select" id="config-bulk-status">${statusOpts}</select>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="status">${esc(this.t('config.bulkStatusApply', 'Set checking'))}</button>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="pin">${esc(this.t('config.bulkTogglePin', 'Toggle pin'))}</button>
-                </div>
-                <div class="config-bulk-group">
-                    <button type="button" class="config-btn config-btn--small" data-bulk="favicons">${esc(this.t('config.bulkRefreshFavicons', 'Refresh favicons'))}</button>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
-                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-bulk="delete">${esc(this.t('config.bulkDelete', 'Delete'))}</button>
-                    <button type="button" class="config-btn config-btn--small" data-bulk="clear">${esc(this.t('config.bulkClearSelection', 'Clear selection'))}</button>
-                </div>
-            </div>`;
-    },
-
     renderBookmarkRowActions(b, key, open) {
         const esc = (v) => this.dash.escapeHtml(v);
         const editLabel = open

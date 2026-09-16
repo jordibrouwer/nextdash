@@ -505,3 +505,45 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
 .config-bm-panel-foot .config-btn--danger {
     margin-left: auto;
 }
+
+/* ── Bulk form ────────────────────────────────────────────────────────── */
+
+.config-bm-segmented {
+    display: inline-flex;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.config-bm-segmented button {
+    border: 0;
+    padding: 2px 8px;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.config-bm-segmented button[aria-pressed="true"] {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+.config-bm-bulk-tagcounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-bm-bulk-hidden {
+    margin: 0;
+    color: var(--accent-warning);
+    font-size: var(--font-size-small);
+}
+
+.config-bm-panel-foot .config-btn--primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+}

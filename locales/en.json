@@ -6099,7 +6099,20 @@
     "bmFieldChecking": "Checking",
     "bmUsage": "Usage",
     "bmUptime7d": "{pct}% up this week",
-    "bmNotSaved": "Not saved — retry"
+    "bmNotSaved": "Not saved — retry",
+    "bmMixed": "mixed",
+    "bmNoTags": "no tags",
+    "bmAllPinned": "all pinned",
+    "bmNonePinned": "none pinned",
+    "bmSomePinned": "{k} of {n} pinned",
+    "bmPinAll": "Pin all",
+    "bmUnpinAll": "Unpin all",
+    "bmBulkTitle": "{n} bookmarks",
+    "bmHiddenByFilter": "{n} hidden by the filter — still included",
+    "bmApplyTo": "Apply to {n}",
+    "bmDeleteN": "Delete {n}",
+    "bmBulkDone": "Bookmarks updated.",
+    "bmBulkUndone": "Changes put back."
   },
   "colors": {
     "title": "theme customization",

@@ -944,14 +944,8 @@ class DashboardConfig {
             // they were. Health and inbox already guard the same way.
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
-            // An open inline field owns Escape: it means "put the old value
-            // back", and the field is the only thing that knows what that was.
-            // Checked here rather than by the INPUT guard further down, which
-            // sits behind branches that stop the event — so Escape reached the
-            // field only when none of them happened to be armed, and otherwise
-            // the field was torn down by something else and its blur saved the
-            // half-typed value.
-            // A panel field owns Escape: it means "put the old value back".
+            // A panel field owns Escape: it means "put the old value back",
+            // and the field is the only thing that knows what that was.
             if (document.activeElement?.closest?.('#config-bm-panel')) return;
             // The row's right-click menu is layered over the view and owns
             // Escape while it is up, the same as the theme picker below. This
@@ -1019,6 +1013,21 @@ class DashboardConfig {
              * handler rather than repeating what closing one means.
              */
             if (this.handleBookmarkMenuKeys?.(e)) return;
+            // In the bookmark list Escape undoes the widest thing first: the
+            // selection, then the filters, then the cursor, then the view.
+            if (this.section === 'bookmarks' && this.bmSelected.size) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.bmSelected.clear();
+                this.afterSelectionChange();
+                return;
+            }
+            if (this.section === 'bookmarks' && this.bookmarksFiltersActive()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearBookmarkFilters();
+                return;
+            }
             if (this._bmKeyboardKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -20839,11 +20848,6 @@ class DashboardConfig {
     }
 
     /** The bulk bar, likewise — it is drawn from three places. */
-    renderBulkToolbarSafe() {
-        if (typeof this.renderBulkToolbar === 'function') return this.renderBulkToolbar();
-        return '';
-    }
-
     /** What the engine needs: a key, an address and the tags it already has. */
     tagSuggestionItems() {
         return (this.dash.allBookmarks || []).map((b) => ({
@@ -21339,11 +21343,6 @@ class DashboardConfig {
         return this.renderBookmarksWorkbench();
     }
 
-    /** The pre-workbench controls, kept in the list column until the rail and panel replace them. */
-    renderLegacyBookmarkControls() {
-        return `<div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>`;
-    }
-
     /** Tick every row the current filters leave visible, for the bulk bar. */
     selectFilteredBookmarks() {
         const rows = this.visibleBookmarks() || [];
@@ -21816,30 +21815,6 @@ class DashboardConfig {
     }
 
     /**
-     * Warns when part of the selection sits outside the current filters.
-     *
-     * Ticks survive a filter change, so selecting rows on one page and then
-     * switching to another leaves a bar reading "7 selected" above a list where
-     * nothing is ticked — and Delete would still take all seven. Naming the
-     * hidden count, with a way to drop them, keeps the destructive buttons
-     * honest about their reach.
-     */
-    renderBulkOffscreenNotice(picked) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const visibleKeys = new Set(this.visibleBookmarks().map((b) => this.bookmarkKey(b)));
-        const hidden = picked.filter((b) => !visibleKeys.has(this.bookmarkKey(b))).length;
-        if (!hidden) return '';
-        const label = this.t('config.bulkSelectedOffscreen', '{n} not shown by the current filters')
-            .replace('{n}', String(hidden));
-        return `
-            <span class="config-bulk-offscreen">
-                <span class="config-bulk-offscreen-text">${esc(label)}</span>
-                <button type="button" class="config-btn config-btn--small" data-bulk="keep-visible">${esc(this.t('config.bulkKeepVisible', 'Select only these'))}</button>
-            </span>`;
-    }
-
-    /** The bulk-action bar, shown only once rows are ticked. */
-    /**
      * Selected rows that the current filter does not show.
      *
      * A selection used to be dropped whenever a filter changed, which is safe
@@ -21889,7 +21864,6 @@ class DashboardConfig {
             const box = row.querySelector('.config-bm-tick');
             if (box) box.checked = on;
         });
-        this.repaintBulkToolbar();
         this.repaintWorkbenchPanel?.();
     }
 
@@ -22634,7 +22608,6 @@ class DashboardConfig {
             }
         });
         this.bindBookmarkRows(container);
-        this.bindBulkToolbar(container);
         this.bindBookmarkKeyboard(container);
         this.bindWorkbench?.(container);
     }
@@ -23138,7 +23111,7 @@ class DashboardConfig {
                 if (box) box.checked = !allSelected;
                 row.classList.toggle('is-checked', !allSelected);
             });
-            this.repaintBulkToolbar();
+            this.afterSelectionChange();
             return;
         }
         this.repaintBookmarksList();
@@ -23214,7 +23187,7 @@ class DashboardConfig {
         host.innerHTML = this.renderBookmarksList();
         this.bindBookmarkRows(host);
         this.bindBookmarkKeyboard(host);
-        this.repaintBulkToolbar();
+        this.repaintWorkbenchPanel?.();
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
         else window.scrollTo(0, scrollTop);
@@ -23225,19 +23198,6 @@ class DashboardConfig {
                 .find((row) => this.bookmarkRowKey(row) === focusedKey);
             again?.focus({ preventScroll: true });
         }
-    }
-
-    repaintBulkToolbar() {
-        const host = document.getElementById('config-bm-bulk');
-        if (!host) return;
-        host.innerHTML = this.renderBulkToolbarSafe();
-        this.bindBulkToolbar(host);
-    }
-
-    bindBulkToolbar(root) {
-        root.querySelectorAll('[data-bulk]').forEach((btn) => {
-            btn.addEventListener('click', () => this.handleBulkAction(btn.getAttribute('data-bulk')));
-        });
     }
 
     /** Split a "pageId::url" row key back into its parts. */
@@ -23344,23 +23304,6 @@ class DashboardConfig {
         return (this.dash.allBookmarks || []).filter((b) => keys.has(this.bookmarkKey(b)));
     }
 
-    /** What the legacy bulk bar's inputs say, for the one caller left that reads them. */
-    bulkArgsFromToolbar(action) {
-        const val = (id) => document.getElementById(id)?.value || '';
-        if (action === 'move') {
-            const { categoryId } = DashboardConfig.parseCategoryFilter(val('config-bulk-category'));
-            return { pageId: val('config-bulk-page'), category: categoryId };
-        }
-        if (action === 'tags') {
-            return {
-                tags: val('config-bulk-tags').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
-                mode: val('config-bulk-tags-mode') || 'add',
-            };
-        }
-        if (action === 'status') return val('config-bulk-status') || 'off';
-        return undefined;
-    }
-
     async handleBulkAction(action) {
         if (action === 'clear') {
             this.bmSelected.clear();
@@ -23379,10 +23322,7 @@ class DashboardConfig {
         if (!picked.length) return;
 
         try {
-            if (action === 'move') await this.bulkMove(picked, this.bulkArgsFromToolbar('move'));
-            else if (action === 'tags') await this.bulkTags(picked, this.bulkArgsFromToolbar('tags'));
-            else if (action === 'status') await this.bulkStatus(picked, this.bulkArgsFromToolbar('status'));
-            else if (action === 'pin') await this.bulkPin(picked);
+            if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'export') this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);

@@ -48,7 +48,6 @@
                         </label>
                         <button type="button" class="config-btn config-btn--primary config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     </div>
-                    ${this.renderLegacyBookmarkControls()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
                 <aside class="config-bm-panel" id="config-bm-panel" role="region"
@@ -381,7 +380,7 @@
         }
         const mode = this.workbenchPanelMode();
         const key = mode === 'single' ? this.workbenchPanelKey() : '';
-        const sig = `${mode}|${key}|${mode === 'bulk' ? [...this.bmSelected].sort().join(',') : ''}|${(this.dash.allBookmarks || []).length}`;
+        const sig = `${mode}|${key}|${mode === 'bulk' ? [...this.bmSelected].sort().join(',') + JSON.stringify(this._bmBulkDraft || {}) : ''}|${(this.dash.allBookmarks || []).length}`;
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
         if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
@@ -538,10 +537,262 @@
         });
     },
 
+    bulkDraft() {
+        const sig = [...this.bmSelected].sort().join('\n');
+        if (this._bmBulkDraftSig !== sig) {
+            this._bmBulkDraftSig = sig;
+            this._bmBulkDraft = {};
+        }
+        return this._bmBulkDraft;
+    },
+
+    renderWorkbenchBulkPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const M = global.BookmarkWorkbenchModel;
+        const picked = this.bookmarksFromKeys([...this.bmSelected]);
+        const n = picked.length;
+        const draft = this.bulkDraft();
+        const mixed = esc(this.t('config.bmMixed', 'mixed'));
+
+        const page = M.sharedValue(picked.map((b) => String(b.pageId)));
+        const pageValue = draft.pageId ?? (page.mixed ? '' : page.value);
+        const pageOptions = [`<option value="">${mixed}</option>`]
+            .concat((this.dash.pages || []).map((p) =>
+                `<option value="${esc(p.id)}"${String(p.id) === String(pageValue) ? ' selected' : ''}>${esc(p.name || p.id)}</option>`))
+            .join('');
+
+        const cat = M.sharedValue(picked.map((b) => b.category || ''));
+        const catValue = draft.category ?? (cat.mixed ? null : cat.value);
+        const catScope = draft.pageId ? [{ pageId: draft.pageId }] : picked;
+        const known = this.bulkKnownCategories(catScope).map((c) => ({
+            id: global.DashboardConfig.parseCategoryFilter(c.id).categoryId,
+            label: c.label,
+        }));
+        // A chosen category stays listed after the target page changes: the
+        // move carries it there even when that page has never used it.
+        if (catValue && !known.some((c) => c.id === catValue)) {
+            known.push({ id: catValue, label: this.railCategoryLabel(picked[0]?.pageId, catValue) });
+        }
+        const catOptions = [`<option value="__keep__"${catValue === null ? ' selected' : ''}>${mixed}</option>`,
+            `<option value=""${catValue === '' ? ' selected' : ''}>${esc(this.t('config.bmNoCategory', 'No category'))}</option>`]
+            .concat(known.map((c) =>
+                `<option value="${esc(c.id)}"${c.id === catValue ? ' selected' : ''}>${esc(c.label)}</option>`))
+            .join('');
+
+        const tagCounts = M.tagCounts(picked)
+            .map(([t, k]) => `<span class="config-bm-tag">${esc(t)} <span class="config-bm-rail-count">${k}</span></span>`)
+            .join('');
+        const tagsMode = draft.tags?.mode || 'add';
+        const modeButtons = [
+            ['add', this.t('config.bulkTagsAdd', 'Add')],
+            ['replace', this.t('config.bulkTagsReplace', 'Replace')],
+            ['remove', this.t('config.bulkTagsRemove', 'Remove')],
+        ].map(([v, l]) => `<button type="button" data-bm-bulk-field="tagsMode" data-value="${v}"
+                aria-pressed="${tagsMode === v ? 'true' : 'false'}">${esc(l)}</button>`).join('');
+
+        const pinnedCount = picked.filter((b) => b.pinned === true).length;
+        const pinSummary = pinnedCount === 0 || pinnedCount === n
+            ? this.t(pinnedCount ? 'config.bmAllPinned' : 'config.bmNonePinned', pinnedCount ? 'all pinned' : 'none pinned')
+            : this.t('config.bmSomePinned', '{k} of {n} pinned').replace('{k}', String(pinnedCount)).replace('{n}', String(n));
+
+        const modeShared = M.sharedValue(picked.map((b) => global.CheckMode?.of?.(b) || 'off'));
+        const modeValue = draft.checkMode ?? (modeShared.mixed ? '' : modeShared.value);
+        const modeOptions = [`<option value="">${mixed}</option>`]
+            .concat(this.workbenchCheckModeOptions().map((o) =>
+                `<option value="${esc(o.mode)}"${o.mode === modeValue ? ' selected' : ''}>${esc(o.label)}</option>`))
+            .join('');
+
+        const hidden = this.hiddenSelectionCount();
+        const states = picked.reduce((acc, b) => {
+            const s = this.bookmarkHealthState(b);
+            acc[s] = (acc[s] || 0) + 1;
+            return acc;
+        }, {});
+        const health = global.DashboardConfig.HEALTH_FILTERS.filter((k) => states[k])
+            .map((k) => `<span><span class="config-bm-health-dot is-${k}"></span> ${states[k]} ${esc(this.railHealthLabel(k).toLowerCase())}</span>`)
+            .join(' · ');
+        const dirty = Object.keys(draft).length > 0;
+        const field = (label, control, cls = '') => `
+            <div class="config-bm-field ${cls}">
+                <span class="config-bm-field-label">${esc(label)}</span>
+                ${control}
+            </div>`;
+
+        return `
+            <header class="config-bm-panel-head">
+                <span class="config-bm-panel-title">${esc(this.t('config.bmBulkTitle', '{n} bookmarks').replace('{n}', String(n)))}</span>
+                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="clear">${esc(this.t('config.bulkClearSelection', 'Clear selection'))}</button>
+            </header>
+            ${hidden ? `<p class="config-bm-bulk-hidden">${esc(this.t('config.bmHiddenByFilter', '{n} hidden by the filter — still included').replace('{n}', String(hidden)))}
+                <button type="button" class="config-bm-rail-more" data-bm-bulk-action="keep-visible">${esc(this.t('config.bulkKeepVisible', 'Select only these'))}</button></p>` : ''}
+            <div class="config-bm-panel-fields">
+                ${field(this.t('config.page', 'Page'), `<select class="config-select" data-bm-bulk-field="page">${pageOptions}</select>`)}
+                ${field(this.t('config.category', 'Category'), `<select class="config-select" data-bm-bulk-field="category">${catOptions}</select>`)}
+                ${field(this.t('config.bmFieldTags', 'Tags'), `
+                    <div class="config-bm-bulk-tagcounts">${tagCounts || `<span class="config-bm-panel-muted">${esc(this.t('config.bmNoTags', 'no tags'))}</span>`}</div>
+                    <div class="config-bm-segmented" role="group">${modeButtons}</div>
+                    <input type="text" class="config-text" data-bm-bulk-field="tags"
+                           value="${esc((draft.tags?.list || []).join(', '))}"
+                           placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">`)}
+                ${field(this.t('config.pinnedShort', 'Pinned'), `
+                    <span class="config-bm-panel-muted">${esc(pinSummary)}</span>
+                    <span class="config-bm-segmented" role="group">
+                        <button type="button" data-bm-bulk-pin="true" aria-pressed="${draft.pinned === true}">${esc(this.t('config.bmPinAll', 'Pin all'))}</button>
+                        <button type="button" data-bm-bulk-pin="false" aria-pressed="${draft.pinned === false}">${esc(this.t('config.bmUnpinAll', 'Unpin all'))}</button>
+                    </span>`, 'config-bm-bulk-pinned')}
+                ${field(this.t('config.bmFieldChecking', 'Checking'), `<select class="config-select" data-bm-bulk-field="checkMode">${modeOptions}</select>`)}
+            </div>
+            ${health ? `<section class="config-bm-panel-facts"><h3>${esc(this.t('config.bmHealth', 'Health'))}</h3><p>${health}</p></section>` : ''}
+            <footer class="config-bm-panel-foot">
+                <button type="button" class="config-btn config-btn--primary config-btn--small" data-bm-bulk-action="apply"${dirty ? '' : ' disabled'}>${esc(this.t('config.bmApplyTo', 'Apply to {n}').replace('{n}', String(n)))}</button>
+                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
+                <button type="button" class="config-btn config-btn--small" data-bm-bulk-action="favicons">${esc(this.t('config.bulkRefreshFavicons', 'Refresh favicons'))}</button>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-bulk-action="delete">${esc(this.t('config.bmDeleteN', 'Delete {n}').replace('{n}', String(n)))}</button>
+            </footer>`;
+    },
+
+    /** Record one bulk control into the draft; returns true when the panel must redraw. */
+    readBulkControl(el) {
+        const draft = this.bulkDraft();
+        const name = el.getAttribute('data-bm-bulk-field');
+        if (name === 'page') {
+            if (el.value) draft.pageId = el.value; else delete draft.pageId;
+            return true;
+        }
+        if (name === 'category') {
+            if (el.value === '__keep__') delete draft.category; else draft.category = el.value;
+            return false;
+        }
+        if (name === 'checkMode') {
+            if (el.value) draft.checkMode = el.value; else delete draft.checkMode;
+            return false;
+        }
+        if (name === 'tags' || name === 'tagsMode') {
+            const mode = name === 'tagsMode' ? el.getAttribute('data-value') : (draft.tags?.mode || 'add');
+            const input = el.closest('#config-bm-panel').querySelector('[data-bm-bulk-field="tags"]');
+            const list = String(input?.value || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+            if (list.length || mode === 'replace') draft.tags = { mode, list }; else delete draft.tags;
+            return name === 'tagsMode';
+        }
+        return false;
+    },
+
+    syncBulkApply() {
+        const btn = document.querySelector('#config-bm-panel [data-bm-bulk-action="apply"]');
+        if (btn) btn.disabled = Object.keys(this.bulkDraft()).length === 0;
+    },
+
+    redrawBulkPanel() {
+        const panel = document.getElementById('config-bm-panel');
+        if (!panel) return;
+        const focused = document.activeElement?.getAttribute?.('data-bm-bulk-field');
+        panel.dataset.bmPanelSig = '';
+        this.repaintWorkbenchPanel();
+        if (focused) panel.querySelector(`[data-bm-bulk-field="${focused}"]`)?.focus();
+    },
+
+    async applyWorkbenchBulk() {
+        const keys = [...this.bmSelected];
+        const picked = this.bookmarksFromKeys(keys);
+        const draft = { ...this.bulkDraft() };
+        if (!picked.length || !Object.keys(draft).length) return;
+        const { pageId, ...rest } = draft;
+        const moving = pageId && picked.some((b) => String(b.pageId) !== String(pageId));
+        // A category travels with the move when there is one; otherwise it is
+        // an in-place edit like the rest.
+        const inPlace = { ...rest };
+        if (moving) delete inPlace.category;
+        const assign = (b, mode) => {
+            b.monitorIntervalMinutes = global.CheckMode.intervalOf?.(b)
+                || Number(this.dash?.settings?.defaultMonitorIntervalMinutes) || 15;
+            global.CheckMode.assign(b, mode);
+        };
+        try {
+            if (Object.keys(inPlace).length) {
+                if (inPlace.category) {
+                    for (const pid of new Set(picked.map((b) => String(b.pageId)))) {
+                        await this.ensureCategoryOnPage(pid, inPlace.category);
+                    }
+                }
+                const snapshots = await this.mutateSelected(picked,
+                    global.BookmarkWorkbenchModel.bulkMutation(inPlace, assign));
+                this.notify(this.t('config.bmBulkDone', 'Bookmarks updated.'), 'success', {
+                    undoCallback: this.bulkUndo(snapshots, 'config.bmBulkUndone', 'Changes put back.',
+                        'config.bulkUndoFailed', 'Could not undo that.'),
+                    duration: 8000,
+                });
+            }
+            if (moving) {
+                // In-place edits never change a key (page and URL stay), so the
+                // same keys still find the same bookmarks after that refresh.
+                await this.bulkMove(this.bookmarksFromKeys(keys), { pageId, category: rest.category || '' });
+            }
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            await this.refreshBookmarksAfterWrite();
+        }
+        this._bmBulkDraft = {};
+        this.afterSelectionChange();
+    },
+
+    focusWorkbenchBulkField(name) {
+        this.toggleWorkbenchPanel(false, { remember: false });
+        this.redrawBulkPanel();
+        document.querySelector(`#config-bm-panel [data-bm-bulk-field="${name}"]`)?.focus();
+    },
+
+    bindWorkbenchBulk(panel) {
+        if (!panel || panel.dataset.bmBulkWired === '1') return;
+        panel.dataset.bmBulkWired = '1';
+        panel.addEventListener('click', (e) => {
+            if (panel.dataset.bmPanelMode !== 'bulk') return;
+            const pin = e.target.closest('[data-bm-bulk-pin]');
+            if (pin) {
+                const draft = this.bulkDraft();
+                const want = pin.getAttribute('data-bm-bulk-pin') === 'true';
+                if (draft.pinned === want) delete draft.pinned; else draft.pinned = want;
+                this.redrawBulkPanel();
+                return;
+            }
+            const mode = e.target.closest('[data-bm-bulk-field="tagsMode"]');
+            if (mode) {
+                this.readBulkControl(mode);
+                this.redrawBulkPanel();
+                return;
+            }
+            const action = e.target.closest('[data-bm-bulk-action]')?.getAttribute('data-bm-bulk-action');
+            if (!action) return;
+            if (action === 'apply') void this.applyWorkbenchBulk();
+            else void this.handleBulkAction(action).then(() => this.afterSelectionChange());
+        });
+        panel.addEventListener('change', (e) => {
+            const el = e.target.closest('[data-bm-bulk-field]');
+            if (!el || panel.dataset.bmPanelMode !== 'bulk') return;
+            if (this.readBulkControl(el)) this.redrawBulkPanel();
+            else this.syncBulkApply();
+        });
+        panel.addEventListener('input', (e) => {
+            const el = e.target.closest('[data-bm-bulk-field="tags"]');
+            if (!el || panel.dataset.bmPanelMode !== 'bulk') return;
+            this.readBulkControl(el);
+            this.syncBulkApply();
+        });
+        panel.addEventListener('keydown', (e) => {
+            const el = e.target.closest('[data-bm-bulk-field="tags"]');
+            if (!el) return;
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                void this.applyWorkbenchBulk();
+            }
+        });
+    },
+
     bindWorkbench(container) {
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.bindWorkbenchPanel(panel);
+        this.bindWorkbenchBulk(panel);
         if (panel) {
             panel.dataset.bmPanelSig = '';
             this.repaintWorkbenchPanel();

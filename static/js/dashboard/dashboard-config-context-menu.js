@@ -565,22 +565,29 @@ class DashboardConfigContextMenu {
             case 'filter-tag':
                 c.filterBookmarksByTag((bookmark.tags || []).filter(Boolean)[0]);
                 break;
-            // Ticking through the same set the checkbox writes, so the bulk bar
-            // appears exactly as it would have.
+            // Ticking through the same set the checkbox writes, so the panel
+            // follows exactly as it would have.
             case 'select':
                 c.bmSelected.add(key);
-                c.repaintBookmarksList();
+                c.afterSelectionChange();
                 break;
-            // The bulk entries hand straight to the toolbar's own dispatcher, so
-            // the menu cannot drift from what the buttons do.
+            // Entries that need a value open the bulk form on that field; the
+            // rest hand straight to the shared dispatcher.
             case 'bulk-move':
+                c.focusWorkbenchBulkField('page');
+                break;
             case 'bulk-tags':
-            case 'bulk-pin':
+                c.focusWorkbenchBulkField('tags');
+                break;
             case 'bulk-status':
+                c.focusWorkbenchBulkField('checkMode');
+                break;
+            case 'bulk-pin':
             case 'bulk-export':
             case 'bulk-delete':
             case 'clear':
                 await c.handleBulkAction(action.replace(/^bulk-/, ''));
+                c.afterSelectionChange();
                 break;
             // Everything else is already a row-menu action, and goes through the
             // one dispatcher rather than a second copy of each call.

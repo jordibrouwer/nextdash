@@ -60,7 +60,9 @@ async function applyBookmarkStats(page, stats) {
 /** Put the cursor on the first row and press `e`; returns the panel. */
 async function openFirstEditor(page, stats = null) {
     await applyBookmarkStats(page, stats);
-    await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+    // The list answers j with nothing focused; a click on its corner can land
+    // under the sticky view header once the page has scrolled.
+    await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press('j');
     await expect(page.locator('#config-bm-list .config-bm-row.keyboard-selected')).toHaveCount(1);
     await page.keyboard.press('e');
@@ -118,32 +120,24 @@ test.describe('config bookmarks editor', () => {
         await expect.poll(() => posts.some((list) => list.some((b) => b.note === 'a note from the test'))).toBe(true);
     });
 
-    test('ticking rows reveals the bulk toolbar with every action', async ({ page }) => {
-        await openBookmarks(page);
-        await expect(page.locator('.config-bulk-bar')).toHaveCount(0);
-        await page.locator('[data-bm-tick]').first().check();
-        await expect(page.locator('.config-bulk-bar')).toBeVisible();
-        for (const a of ['move', 'tags', 'status', 'pin', 'delete', 'clear']) {
-            await expect(page.locator(`[data-bulk="${a}"]`)).toBeVisible();
-        }
-        await expect(page.locator('.config-bulk-count')).toContainText('1');
-    });
-
-    test('bulk tags posts the tag onto every ticked bookmark', async ({ page }) => {
-        const posts = [];
-        await page.route('**/api/bookmarks?page=*', async (route) => {
-            if (route.request().method() === 'POST') {
-                posts.push(JSON.parse(route.request().postData() || '[]'));
-                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-            }
-            return route.fallback();
-        });
+    test('ticking two rows turns the panel into the bulk form', async ({ page }) => {
         await openBookmarks(page);
         await page.locator('[data-bm-tick]').first().check();
         await page.locator('[data-bm-tick]').nth(1).check();
-        await page.fill('#config-bulk-tags', 'bulktag');
-        await page.selectOption('#config-bulk-tags-mode', 'add');
-        await page.click('[data-bulk="tags"]');
+        const panel = page.locator('#config-bm-panel');
+        await expect(panel).toHaveAttribute('data-bm-panel-mode', 'bulk');
+        for (const a of ['apply', 'export', 'favicons', 'delete', 'clear']) {
+            await expect(panel.locator(`[data-bm-bulk-action="${a}"]`)).toBeVisible();
+        }
+    });
+
+    test('bulk tags posts the tag onto every ticked bookmark', async ({ page }) => {
+        const posts = await capturePosts(page);
+        await openBookmarks(page);
+        await page.locator('[data-bm-tick]').first().check();
+        await page.locator('[data-bm-tick]').nth(1).check();
+        await page.fill('#config-bm-panel [data-bm-bulk-field="tags"]', 'bulktag');
+        await page.click('#config-bm-panel [data-bm-bulk-action="apply"]');
         await expect.poll(() => posts.some((list) =>
             list.some((b) => (b.tags || []).includes('bulktag')))).toBe(true);
     });
@@ -388,16 +382,26 @@ test.describe('a category always exists on the page it is used on', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         await page.waitForSelector('[data-bm-tick]');
+        // Two ticked rows, the categorised one among them: the bulk form only
+        // appears for a selection of more than one.
         await page.evaluate((cat) => {
-            const bm = window.dashboardInstance.allBookmarks.find((b) => b.category === cat);
-            const box = document.querySelector(`[data-bm-tick="${CSS.escape(`${bm.pageId}::${bm.url}`)}"]`);
-            box.checked = true;
-            box.dispatchEvent(new Event('change', { bubbles: true }));
+            const cfg = window.dashboardInstance.config;
+            const all = window.dashboardInstance.allBookmarks;
+            const bm = all.find((b) => b.category === cat);
+            const other = all.find((b) => b !== bm && String(b.pageId) === String(bm.pageId) && b.category === cat)
+                || all.find((b) => b !== bm);
+            cfg.bmSelected.add(cfg.bookmarkKey(bm));
+            cfg.bmSelected.add(cfg.bookmarkKey(other));
+            cfg.afterSelectionChange();
         }, source);
 
-        await page.selectOption('#config-bulk-page', target);
-        await page.selectOption('#config-bulk-category', source);
-        await page.locator('[data-bulk="move"]').click();
+        const panel = page.locator('#config-bm-panel');
+        await expect(panel).toHaveAttribute('data-bm-panel-mode', 'bulk');
+        // Category first: the target page has never used it, so its own list
+        // does not offer it until it is the chosen one.
+        await panel.locator('[data-bm-bulk-field="category"]').selectOption(source);
+        await panel.locator('[data-bm-bulk-field="page"]').selectOption(target);
+        await panel.locator('[data-bm-bulk-action="apply"]').click();
 
         await expect.poll(async () => page.evaluate(async (p) => {
             const cats = await (await fetch(`/api/categories?page=${p}`)).json();
