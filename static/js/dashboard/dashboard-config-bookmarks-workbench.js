@@ -900,7 +900,7 @@
                     <span class="config-bm-health-dot is-${esc(state)}" title="${esc(this.railHealthLabel(state))}"></span>
                     <span class="config-bm-title">${esc(title)}</span>
                     <span class="config-bm-domain">${esc(domain)}</span>
-                    ${b.pinned ? `<span class="config-bm-pin" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">📌</span>` : ''}
+                    ${b.pinned ? `<span class="config-bm-pin" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}">${global.MenuIcons?.PIN || ''}</span>` : ''}
                     ${ctx.isDuplicate(b) ? `<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>` : ''}
                     ${crumb}
                 </span>

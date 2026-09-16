@@ -28,6 +28,26 @@ test.describe('groups in the bookmark list', () => {
         await expect(page.locator('#config-bm-list .config-bm-title').first()).toHaveText('Prometheus');
     });
 
+    test('a long domain gives way before the name does', async ({ page }) => {
+        // Wide enough that the name fits its column once the domain is gone.
+        await page.setViewportSize({ width: 1600, height: 800 });
+        const long = 'https://a-very-long-subdomain-that-keeps-going.and-going.example.com/with/a/path';
+        await openBookmarksWithRows(page, [
+            { name: 'A reasonably long bookmark name', url: long, pageId: 1, category: '' },
+        ]);
+        const row = page.locator('#config-bm-list .config-bm-row').first();
+        const sizes = await row.evaluate((el) => {
+            const title = el.querySelector('.config-bm-title');
+            const domain = el.querySelector('.config-bm-domain');
+            return {
+                titleClipped: title.scrollWidth > title.clientWidth,
+                domainClipped: domain.scrollWidth > domain.clientWidth,
+            };
+        });
+        expect(sizes.titleClipped, 'the name was cut').toBe(false);
+        expect(sizes.domainClipped, 'the domain should be the one to give way').toBe(true);
+    });
+
     test('select group ticks the whole group', async ({ page }) => {
         await openBookmarksWithRows(page, ROWS);
         await page.selectOption('#config-bm-sort', 'page');

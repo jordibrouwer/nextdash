@@ -228,7 +228,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
        without a floor here a narrow panel starves the title to 0 width —
        invisible, not just cramped. Tags is the one allowed to lose the
        argument and clip. */
-    grid-template-columns: 16px 18px minmax(6rem, 1fr) minmax(0, 9rem) 3rem 3rem 4.5rem;
+    grid-template-columns: 16px 18px minmax(6rem, 1fr) minmax(0, 7rem) 3rem 3rem 4.5rem;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     height: var(--bm-row-h);
@@ -337,6 +337,8 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
 }
 
 .config-bm-title {
+    flex: 0 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--text-primary);
@@ -349,14 +351,24 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
-    /* Gives up its width before the title does, under the same pressure —
-       the name a bookmark carries matters more than its domain. */
-    flex-shrink: 3;
+    /* Gives up its width long before the title does, down to nothing — the
+       name a bookmark carries matters more than its domain. Shrink is
+       weighted by width, so a long domain needs a factor this large for the
+       title to keep all of its pixels until the domain is gone. */
+    flex: 0 10000 auto;
+    min-width: 0;
 }
 
 .config-bm-crumb {
     font-family: inherit;
     opacity: 0.7;
+}
+
+/* The drawn pin the context menus use; currentColor follows the theme. */
+.config-bm-pin {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-secondary);
 }
 
 .config-bm-tags {
