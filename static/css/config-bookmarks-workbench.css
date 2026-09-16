@@ -242,7 +242,7 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-rail-group {
        without a floor here a narrow panel starves the title to 0 width —
        invisible, not just cramped. Tags is the one allowed to lose the
        argument and clip. */
-    grid-template-columns: 16px 18px minmax(6rem, 1fr) minmax(0, 7rem) 3rem 3rem 4.5rem;
+    grid-template-columns: 16px 20px minmax(6rem, 1fr) minmax(0, 7rem) 3rem 3rem 4.5rem;
     align-items: center;
     gap: var(--space-2, 0.5rem);
     height: var(--bm-row-h);
@@ -323,6 +323,47 @@ html[data-theme] body:not([data-depth="flat"]) .config-bm-row.is-group-end {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/*
+ * The shared feed icon is a 3rem tile in Health and Inbox; here it has a
+ * 20px column, and at full size the favicon was cut in half. The fallback
+ * `.config-bm-icon` carries the same 3rem from config-view.css.
+ */
+.config-bm-row .health-view-item-icon,
+.config-bm-row .config-bm-icon {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    background: none;
+    border-radius: 4px;
+    flex: none;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.config-bm-row .health-view-item-icon img,
+.config-bm-row .config-bm-icon img {
+    width: 16px;
+    height: 16px;
+}
+
+.config-bm-panel-head .health-view-item-icon,
+.config-bm-panel-head .config-bm-icon {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: none;
+    border-radius: 4px;
+    flex: none;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.config-bm-panel-head .health-view-item-icon img,
+.config-bm-panel-head .config-bm-icon img {
+    width: 22px;
+    height: 22px;
 }
 
 /*
@@ -662,7 +703,7 @@ html body .config-bm-workbench.is-panel-collapsed .config-bm-panel {
     }
 
     .config-bm-row {
-        grid-template-columns: 16px 18px minmax(0, 1fr) 3rem;
+        grid-template-columns: 16px 20px minmax(0, 1fr) 3rem;
     }
 
     .config-bm-tags,

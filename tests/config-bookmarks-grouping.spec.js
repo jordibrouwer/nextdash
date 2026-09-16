@@ -2,6 +2,9 @@
 const { test, expect } = require('./fixtures');
 const { openBookmarksWithRows } = require('./config-bookmarks-helpers');
 
+const ICON_32 = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="red"/></svg>')}`;
+
 const ROWS = [
     { name: 'Grafana', url: 'https://grafana.example', pageId: 1, category: 'mon', openCount: 3 },
     { name: 'Prometheus', url: 'https://prom.example', pageId: 1, category: 'mon', openCount: 9 },
@@ -46,6 +49,22 @@ test.describe('groups in the bookmark list', () => {
         });
         expect(sizes.titleClipped, 'the name was cut').toBe(false);
         expect(sizes.domainClipped, 'the domain should be the one to give way').toBe(true);
+    });
+
+    test('a favicon shows whole inside its cell', async ({ page }) => {
+        await openBookmarksWithRows(page, [
+            // An inline 32px square, so the image loads without a server file.
+            { name: 'Iconic', url: 'https://iconic.example', pageId: 1, icon: ICON_32 },
+        ]);
+        const row = page.locator('#config-bm-list .config-bm-row').first();
+        const cell = await row.locator('.config-bm-icon-cell').boundingBox();
+        const img = await row.locator('.config-bm-icon-cell img').boundingBox();
+        expect(cell && img, 'the icon has a box').toBeTruthy();
+        expect(img.width).toBeGreaterThanOrEqual(14);
+        expect(img.x).toBeGreaterThanOrEqual(cell.x - 0.5);
+        expect(img.y).toBeGreaterThanOrEqual(cell.y - 0.5);
+        expect(img.x + img.width).toBeLessThanOrEqual(cell.x + cell.width + 0.5);
+        expect(img.y + img.height).toBeLessThanOrEqual(cell.y + cell.height + 0.5);
     });
 
     test('select group ticks the whole group', async ({ page }) => {
