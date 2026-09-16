@@ -130,4 +130,24 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.keyboard.press('c');
         await expect(page.locator('#config-bm-list .health-view-menu:not([hidden])')).toHaveCount(0);
     });
+
+    test('Enter on a focused rail filter presses it, not the row under the cursor', async ({ page }) => {
+        // Recorded, not followed: a row opened by mistake would leave the test.
+        await page.addInitScript(() => {
+            window.__opened = [];
+            window.open = (url) => { window.__opened.push(String(url)); return null; };
+        });
+        await openBookmarksWithRows(page, [
+            { name: 'A', url: 'https://a.example', pageId: 1 },
+            { name: 'B', url: 'https://b.example', pageId: 1 },
+        ]);
+        await page.locator('#config-bm-count').click();
+        await page.keyboard.press('j');
+        await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
+        const filter = '#config-bm-rail [data-bm-rail="cleanup"][data-value="untagged"]';
+        await page.locator(filter).focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator(filter)).toHaveAttribute('aria-pressed', 'true');
+        expect(await page.evaluate(() => window.__opened)).toEqual([]);
+    });
 });

@@ -131,4 +131,53 @@ test.describe('the bulk form', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmQuery)).toBe('');
         await expect(page.locator('#config-bm-list')).toBeVisible();
     });
+
+    test('a move with No category takes the category away', async ({ page }) => {
+        const posts = [];
+        await page.route('**/api/bookmarks?page=*', async (route) => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            posts.push({
+                page: new URL(route.request().url()).searchParams.get('page'),
+                rows: JSON.parse(route.request().postData() || '[]'),
+            });
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        });
+        await openBookmarks(page);
+        await page.evaluate(() => window.dashboardInstance.config.addPage());
+        await page.waitForFunction(() => window.dashboardInstance.pages.length > 1, null, { timeout: 15_000 });
+        const target = await page.evaluate(() =>
+            String(window.dashboardInstance.pages[window.dashboardInstance.pages.length - 1].id));
+        try {
+            await page.click('[data-config-section="bookmarks"]');
+            // Two categorised rows from the list on screen.
+            const rows = page.locator('#config-bm-list .config-bm-row');
+            await expect(rows.first()).toBeVisible();
+            const keys = await page.evaluate(() => {
+                const c = window.dashboardInstance.config;
+                return [...document.querySelectorAll('#config-bm-list .config-bm-row')]
+                    .map((r) => r.getAttribute('data-bm-key'))
+                    .filter((k) => c.findBookmarkByKey(k)?.category)
+                    .slice(0, 2);
+            });
+            test.skip(keys.length < 2, 'needs two categorised bookmarks');
+            for (const k of keys) await page.locator(`[data-bm-tick="${k}"]`).check();
+            const urls = await page.evaluate((ks) => ks.map((k) =>
+                window.dashboardInstance.config.findBookmarkByKey(k).url), keys);
+            const panel = page.locator('#config-bm-panel');
+            await expect(panel).toHaveAttribute('data-bm-panel-mode', 'bulk');
+            await panel.locator('[data-bm-bulk-field="page"]').selectOption(target);
+            await panel.locator('[data-bm-bulk-field="category"]').selectOption('');
+            await panel.locator('[data-bm-bulk-action="apply"]').click();
+            const landed = () => posts.filter((p) => p.page === target)
+                .flatMap((p) => p.rows).filter((w) => urls.includes(w.url));
+            await expect.poll(() => landed().length).toBeGreaterThanOrEqual(urls.length);
+            for (const row of landed()) expect(row.category || '').toBe('');
+        } finally {
+            await page.unroute('**/api/bookmarks?page=*');
+            await page.evaluate(async (p) => {
+                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                await api(`/api/pages/${p}`, { method: 'DELETE' });
+            }, target);
+        }
+    });
 });

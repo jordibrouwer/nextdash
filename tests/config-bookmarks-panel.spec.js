@@ -194,4 +194,48 @@ test.describe('the bookmark panel', () => {
         await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
         await expect(page.locator('#config-bm-list')).toBeVisible();
     });
+
+    test('a save leaves the next field focused, with what was typed into it', async ({ page }) => {
+        const posts = [];
+        await page.route('**/api/bookmarks?page=*', async (route) => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            posts.push(JSON.parse(route.request().postData() || '[]'));
+            // Slow enough that the typing below happens while the save runs.
+            await new Promise((r) => setTimeout(r, 300));
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        });
+        await openBookmarks(page);
+        await focusFirstRow(page);
+        await page.keyboard.press('e');
+        await page.locator('#config-bm-panel [data-bm-field="name"]').fill('Renamed while typing on');
+        await page.keyboard.press('Tab');
+        const url = page.locator('#config-bm-panel [data-bm-field="url"]');
+        await expect(url).toBeFocused();
+        await page.keyboard.press('End');
+        await page.keyboard.type('/typed');
+        await expect.poll(() => posts.length).toBeGreaterThan(0);
+        // The save returns only once the refresh after it has repainted.
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._bmPanelSaving)).toBe(null);
+        await expect(url).toBeFocused();
+        await expect(url).toHaveValue(/\/typed$/);
+    });
+
+    test('tags typed before clicking another row are saved to the first bookmark', async ({ page }) => {
+        const posts = await capturePosts(page);
+        await openBookmarks(page);
+        const first = await focusFirstRow(page);
+        const url = await page.evaluate((k) => window.dashboardInstance.config.findBookmarkByKey(k).url, first);
+        await page.keyboard.press('e');
+        const field = page.locator('#config-bm-panel [data-bm-field="tags"]');
+        await field.click();
+        await page.keyboard.press('End');
+        await page.keyboard.type(', zzclicked');
+        const second = page.locator('#config-bm-list .config-bm-row').nth(1);
+        const secondKey = await second.getAttribute('data-bm-key');
+        await second.locator('.config-bm-title').click();
+        await expect.poll(() => posts.some((list) => list.some((b) =>
+            b.url === url && (b.tags || []).includes('zzclicked')))).toBe(true);
+        // The save does not pull the panel back to the first bookmark.
+        await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', secondKey);
+    });
 });

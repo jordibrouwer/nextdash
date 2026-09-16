@@ -947,7 +947,7 @@ class DashboardConfig {
             if (d.isModalOpen()) return;
             // A panel field owns Escape: it means "put the old value back",
             // and the field is the only thing that knows what that was.
-            if (document.activeElement?.closest?.('#config-bm-panel')) return;
+            if (document.activeElement?.matches?.('#config-bm-panel [data-bm-field]')) return;
             // The row's right-click menu is layered over the view and owns
             // Escape while it is up, the same as the theme picker below. This
             // handler is on document in the capture phase and registers first,
@@ -1715,6 +1715,7 @@ class DashboardConfig {
     render() {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        this.closeWorkbenchOverlaysOffList();
         container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
         // Only the parts that changed. The rail, the search button and the panel
@@ -1727,6 +1728,15 @@ class DashboardConfig {
         }
         container.innerHTML = this.renderShell();
         this.afterRender(container);
+    }
+
+    /**
+     * The drawer and sheet belong to the bookmark list. Anywhere else they
+     * would keep the scroll lock with nothing on screen to let it go.
+     */
+    closeWorkbenchOverlaysOffList() {
+        if (this.section === 'bookmarks' && this.bmTab === 'list') return;
+        this.closeWorkbenchOverlays?.();
     }
 
     /**
@@ -2552,6 +2562,13 @@ class DashboardConfig {
             return true;
         }
         if (onRowControl) {
+            return false;
+        }
+        // A focused button beside the list (rail, panel, toolbar) is pressed
+        // by Enter and Space; the row cursor does not get to take them.
+        if ((e.key === 'Enter' || e.key === ' ')
+            && !target?.closest?.('#config-bm-list')
+            && target?.matches?.('button, a[href], [role="button"], summary')) {
             return false;
         }
         if (e.key === 'Enter' && this._bmKeyboardKey) {
@@ -21982,8 +21999,13 @@ class DashboardConfig {
                 body: JSON.stringify(list),
             });
             if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
-            this._bmPendingFocus = { pageId: String(pageId), index };
-            await this.refreshBookmarksAfterWrite();
+            // Only when the panel still shows this bookmark: a save that lands
+            // after a click on another row must not pull the panel back.
+            if (this._bmKeyboardKey === key) this._bmPendingFocus = { pageId: String(pageId), index };
+            // Silent: a whole-section render would replace the panel the reader
+            // is typing in and close the drawer it sits in. The list and panel
+            // are repainted by the refresh itself.
+            await this.refreshBookmarksAfterWrite({ silent: true });
             return true;
         } catch {
             return false;
@@ -22278,9 +22300,10 @@ class DashboardConfig {
         }
     }
 
+    /** Returns whether the change was saved. */
     async setBookmarkCheckMode(key, mode, intervalMinutes) {
         const record = await this.findBookmarkRecord(key);
-        if (!record || !window.CheckMode) return;
+        if (!record || !window.CheckMode) return false;
         this.closeBookmarkMenus();
         const updated = { ...record.record };
         window.CheckMode.assign(updated, mode, intervalMinutes);
@@ -22291,10 +22314,12 @@ class DashboardConfig {
                 next[record.index] = { ...next[record.index], ...updated };
                 return next;
             });
-            await this.refreshBookmarksAfterWrite();
+            await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.updateHealthBadge?.();
+            return true;
         } catch {
             this.notify(this.t('config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+            return false;
         }
     }
 
@@ -22375,6 +22400,7 @@ class DashboardConfig {
             // leave that cursor pointing at a row nobody can see.
             this.clearListKeyboardSelection();
             this.bmTab = tab;
+            this.closeWorkbenchOverlaysOffList();
             this.restoreConfigHash();
             const body = document.getElementById('config-bm-body');
             if (!body) return;
@@ -23287,17 +23313,20 @@ class DashboardConfig {
         };
     }
 
-    async bulkMove(picked, { pageId = '', category = '' } = {}) {
+    /**
+     * Move bookmarks to a page, a category, or both.
+     *
+     * `category` left out (or null) keeps each row's own; an empty string
+     * takes it away. `keepSelection` is for a single row moved from the panel,
+     * which has nothing to do with what is ticked.
+     */
+    async bulkMove(picked, { pageId = '', category = null, keepSelection = false } = {}) {
         const targetPage = String(pageId || '');
-        const targetCat = String(category || '');
-        const catPage = null;
+        const targetCat = category == null ? null : String(category);
         if (!targetPage && !targetCat) return;
 
         if (targetCat && !targetPage) {
-            const applyTo = catPage
-                ? picked.filter((b) => String(b.pageId) === String(catPage))
-                : picked;
-            if (!applyTo.length) return;
+            const applyTo = picked;
             const pages = new Set(applyTo.map((b) => String(b.pageId)));
             for (const pageId of pages) {
                 await this.ensureCategoryOnPage(pageId, targetCat);
@@ -23315,7 +23344,7 @@ class DashboardConfig {
         const carried = moving.map((b) => {
             const copy = { ...b };
             delete copy.pageId;
-            if (targetCat) copy.category = targetCat;
+            if (targetCat !== null) copy.category = targetCat;
             return copy;
         });
         for (const [pageId, targets] of byPage) {
@@ -23331,49 +23360,20 @@ class DashboardConfig {
         // Targets are resolved before the refresh below, while the occurrence
         // index still describes the list these bookmarks were picked from.
         const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
-        if (targetCat && staying.length) {
+        if (targetCat !== null && staying.length) {
             const targets = this.selectionTargetsByPage(staying).get(String(targetPage)) || new Set();
             await this.refreshBookmarksAfterWrite({ silent: true });
             await this.writePageBookmarks(targetPage, (list) => DashboardConfig.withOccurrence(list)
                 .map(({ bookmark, target }) => (targets.has(target) ? { ...bookmark, category: targetCat } : bookmark)));
         }
-        this.bmSelected.clear();
+        if (keepSelection) {
+            // A moved row has a new key, so its tick has nothing left to point at.
+            moving.forEach((b) => this.bmSelected.delete(this.bookmarkKey(b)));
+        } else {
+            this.bmSelected.clear();
+        }
         await this.refreshBookmarksAfterWrite();
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
-    }
-
-    async bulkTags(picked, { tags = [], mode = 'add' } = {}) {
-        if (!tags.length) return;
-        const snapshots = await this.mutateSelected(picked, (b) => {
-            const current = Array.isArray(b.tags) ? b.tags.map((t) => String(t).toLowerCase()) : [];
-            let next;
-            if (mode === 'replace') next = [...tags];
-            else if (mode === 'remove') next = current.filter((t) => !tags.includes(t));
-            else next = [...new Set([...current, ...tags])];
-            return { ...b, tags: next };
-        });
-        this.notify(this.t('config.bulkTagsDone', 'Tags updated.'), 'success', {
-            undoCallback: this.bulkUndo(snapshots, 'config.bulkTagsUndone', 'Tags put back.',
-                'config.bulkUndoFailed', 'Could not undo that.'),
-            duration: 8000,
-        });
-    }
-
-    async bulkStatus(picked, mode = 'off') {
-        const snapshots = await this.mutateSelected(picked, (b) => {
-            const next = { ...b };
-            if (window.CheckMode) {
-                next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b)
-                    || Number(this.dash?.settings?.defaultMonitorIntervalMinutes) || 15;
-                window.CheckMode.assign(next, mode);
-            }
-            return next;
-        });
-        this.notify(this.t('config.bulkStatusDone', 'Availability checking updated.'), 'success', {
-            undoCallback: this.bulkUndo(snapshots, 'config.bulkStatusUndone', 'Availability checking put back.',
-                'config.bulkUndoFailed', 'Could not undo that.'),
-            duration: 8000,
-        });
     }
 
     async bulkPin(picked, pinned) {

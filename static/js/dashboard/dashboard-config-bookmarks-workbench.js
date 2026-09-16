@@ -397,7 +397,7 @@
         }
         const mode = this.workbenchPanelMode();
         const key = mode === 'single' ? this.workbenchPanelKey() : '';
-        const sig = `${mode}|${key}|${mode === 'bulk' ? [...this.bmSelected].sort().join(',') + JSON.stringify(this._bmBulkDraft || {}) : ''}|${(this.dash.allBookmarks || []).length}`;
+        const sig = this.workbenchPanelSig(mode, key);
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
         if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) return;
@@ -409,6 +409,11 @@
         panel.dataset.bmPanelKey = key || '';
         if (mode === 'bulk' && !this.workbenchNarrow()) this.toggleWorkbenchPanel(false, { remember: false });
         this.syncWorkbenchToolbar();
+    },
+
+    workbenchPanelSig(mode, key) {
+        const bulk = mode === 'bulk' ? [...this.bmSelected].sort().join(',') + JSON.stringify(this._bmBulkDraft || {}) : '';
+        return `${mode}|${key}|${bulk}|${(this.dash.allBookmarks || []).length}`;
     },
 
     /**
@@ -490,8 +495,13 @@
         if (status) status.textContent = message || '';
     },
 
-    async commitWorkbenchField(el) {
-        const key = document.getElementById('config-bm-panel')?.dataset.bmPanelKey;
+    /**
+     * Save one panel field. `key` is the bookmark the field belonged to when
+     * it was left, which is not the panel's any more if a row click has
+     * swapped the panel out in the meantime; the detached field still holds
+     * what was typed.
+     */
+    async commitWorkbenchField(el, key = document.getElementById('config-bm-panel')?.dataset.bmPanelKey) {
         const name = el.getAttribute('data-bm-field');
         if (!key || !name) return;
         const b = this.findBookmarkByKey(key);
@@ -505,37 +515,75 @@
                 return;
             }
         }
+        const live = el.isConnected;
         let run;
         if (name === 'page') {
             if (String(el.value) === String(b.pageId)) return;
             this._bmPendingFocus = { pageId: String(el.value), index: -1 };
-            run = this.bulkMove([b], { pageId: el.value, category: b.category || '' }).then(() => true, () => false);
+            run = this.bulkMove([b], { pageId: el.value, category: b.category || '', keepSelection: true })
+                .then(() => true, () => false);
         } else if (name === 'checkMode') {
-            run = this.setBookmarkCheckMode(key, el.value).then(() => true, () => false);
+            run = this.setBookmarkCheckMode(key, el.value);
         } else if (name === 'monitorInterval') {
-            run = this.setBookmarkCheckMode(key, 'monitor', Number(el.value)).then(() => true, () => false);
+            run = this.setBookmarkCheckMode(key, 'monitor', Number(el.value));
         } else {
             const patch = this.workbenchFieldPatch(el);
             if (!patch) return;
-            if (name === 'category' && el.value) await this.ensureCategoryOnPage(b.pageId, el.value);
-            run = this.saveBookmarkFields(key, patch);
+            if (name === 'category' && el.value) {
+                run = this.ensureCategoryOnPage(b.pageId, el.value)
+                    .then(() => this.saveBookmarkFields(key, patch), () => false);
+            } else {
+                run = this.saveBookmarkFields(key, patch);
+            }
         }
         this.setWorkbenchFieldStatus(el, '', false);
         this._bmPanelSaving = run;
         const ok = await run;
         this._bmPanelSaving = null;
         if (!ok) {
-            this._bmPendingFocus = null;
-            this._bmKeyboardKey = key;
+            if (live) {
+                this._bmPendingFocus = null;
+                this._bmKeyboardKey = key;
+            }
             this.setWorkbenchFieldStatus(el, this.t('config.bmNotSaved', 'Not saved — retry'), true);
             this._bmPanelRepaintQueued = false;
             return;
         }
+        // What was saved is what Escape goes back to from now on.
+        if (el.hasAttribute('data-original')) el.setAttribute('data-original', el.value);
         if (this._bmPanelRepaintQueued) {
             this._bmPanelRepaintQueued = false;
-            document.getElementById('config-bm-panel').dataset.bmPanelSig = '';
-            this.repaintWorkbenchPanel();
+            this.settleWorkbenchPanel(el);
         }
+    },
+
+    /**
+     * Bring the panel up to date after a save.
+     *
+     * When the reader has already moved on to another text field the fields
+     * stay where they are — a repaint would take the one being typed in — and
+     * only the panel's bookmark and title follow. Otherwise the panel is
+     * redrawn and focus goes back to the field that had it.
+     */
+    settleWorkbenchPanel(saved) {
+        const panel = document.getElementById('config-bm-panel');
+        if (!panel) return;
+        const active = document.activeElement;
+        const typing = active !== saved && panel.contains(active)
+            && active.matches('input[data-bm-field]:not([type="checkbox"]), textarea[data-bm-field]');
+        if (typing && panel.dataset.bmPanelMode === 'single' && this.workbenchPanelMode() === 'single') {
+            const key = this.workbenchPanelKey();
+            const b = this.findBookmarkByKey(key);
+            panel.dataset.bmPanelKey = key;
+            panel.dataset.bmPanelSig = this.workbenchPanelSig('single', key);
+            const title = panel.querySelector('.config-bm-panel-title');
+            if (title) title.textContent = b.name || this.formatBookmarkUrlDisplay(b.url);
+            return;
+        }
+        const focused = panel.contains(active) ? active.getAttribute('data-bm-field') : null;
+        panel.dataset.bmPanelSig = '';
+        this.repaintWorkbenchPanel();
+        if (focused) panel.querySelector(`[data-bm-field="${focused}"]`)?.focus();
     },
 
     bindWorkbenchPanel(panel) {
@@ -570,9 +618,12 @@
             if (!el || panel.dataset.bmPanelMode !== 'single') return;
             if (el._tagAutocomplete?._dropdown) {
                 // Suggestions are still up: let them close first, and save only
-                // if focus has not come back to the field in the meantime.
+                // if focus has not come back to the field in the meantime. The
+                // key is taken now, while the panel still shows this bookmark.
+                const key = panel.dataset.bmPanelKey;
                 setTimeout(() => {
-                    if (document.activeElement !== el && el.isConnected) void this.commitWorkbenchField(el);
+                    if (el.isConnected && document.activeElement === el) return;
+                    void this.commitWorkbenchField(el, key);
                 }, 150);
                 return;
             }
@@ -739,7 +790,12 @@
             return false;
         }
         if (name === 'checkMode') {
-            if (el.value) draft.checkMode = el.value; else delete draft.checkMode;
+            if (el.value) draft.checkMode = el.value;
+            else {
+                // Back to mixed: an interval picked for Monitor goes with it.
+                delete draft.checkMode;
+                delete draft.monitorInterval;
+            }
             // Redrawn so the interval appears or goes with Monitor.
             return true;
         }
@@ -805,16 +861,26 @@
                     }
                 }
                 const snapshots = await this.mutateSelected(picked, mutate);
-                this.notify(this.t('config.bmBulkDone', 'Bookmarks updated.'), 'success', {
-                    undoCallback: this.bulkUndo(snapshots, 'config.bmBulkUndone', 'Changes put back.',
-                        'config.bulkUndoFailed', 'Could not undo that.'),
-                    duration: 8000,
-                });
+                // No undo when a move follows: the snapshot is the source pages
+                // before the move, and putting those back would leave the moved
+                // copies on the target page as well. The move says it is done.
+                if (!moving) {
+                    this.notify(this.t('config.bmBulkDone', 'Bookmarks updated.'), 'success', {
+                        undoCallback: this.bulkUndo(snapshots, 'config.bmBulkUndone', 'Changes put back.',
+                            'config.bulkUndoFailed', 'Could not undo that.'),
+                        duration: 8000,
+                    });
+                }
             }
             if (moving) {
                 // In-place edits never change a key (page and URL stay), so the
                 // same keys still find the same bookmarks after that refresh.
-                await this.bulkMove(this.bookmarksFromKeys(keys), { pageId, category: rest.category || '' });
+                // A category left on mixed stays each row's own; "No category"
+                // ('') takes it away.
+                await this.bulkMove(this.bookmarksFromKeys(keys), {
+                    pageId,
+                    category: 'category' in rest ? rest.category : null,
+                });
             }
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
@@ -868,6 +934,15 @@
             this.syncBulkApply();
         });
         panel.addEventListener('keydown', (e) => {
+            const control = e.target.closest('[data-bm-bulk-field]');
+            if (control && e.key === 'Escape' && !e.defaultPrevented) {
+                // Out of the control first; the next Escape does what it does
+                // everywhere else (drawer, then selection).
+                e.preventDefault();
+                e.stopPropagation();
+                control.blur();
+                return;
+            }
             const el = e.target.closest('[data-bm-bulk-field="tags"]');
             if (!el) return;
             e.stopPropagation();
@@ -895,6 +970,7 @@
         const scrim = root.querySelector('[data-bm-scrim]');
         if (scrim) scrim.hidden = false;
         this._bmOverlayLock = global.ScrollLock?.acquire?.(kind === 'sheet' ? 'bm-sheet' : 'bm-drawer') || null;
+        this._bmOverlayKind = kind;
     },
 
     closeWorkbenchOverlays() {
@@ -907,6 +983,7 @@
             global.ScrollLock?.release?.(this._bmOverlayLock);
             this._bmOverlayLock = null;
         }
+        this._bmOverlayKind = null;
         if (wasOpen) this.syncWorkbenchToolbar();
         return wasOpen;
     },
@@ -929,7 +1006,17 @@
     },
 
     bindWorkbench(container) {
-        this.closeWorkbenchOverlays();
+        // A redraw of the section (a write elsewhere, a filter from the hash)
+        // keeps an open drawer or sheet open: its scroll lock is still held, so
+        // the new markup is put back in the state the old one was in. Leaving
+        // the list is what closes them (closeWorkbenchOverlaysOffList).
+        const reopen = this._bmOverlayKind;
+        if (reopen) {
+            const root = container.querySelector('#config-bm-workbench');
+            root?.classList.add(reopen === 'sheet' ? 'is-sheet-open' : 'is-drawer-open');
+            const scrim = root?.querySelector('[data-bm-scrim]');
+            if (scrim) scrim.hidden = false;
+        }
         this.bindWorkbenchRail(container.querySelector('#config-bm-rail'));
         const panel = container.querySelector('#config-bm-panel');
         this.bindWorkbenchPanel(panel);
