@@ -2666,7 +2666,7 @@ class SearchCommandsComponent {
                 { value: 'text', label: t('config.pageSwitcherText', 'Plain text, underlined') },
                 { value: 'compact', label: t('config.pageSwitcherCompact', 'One button with a list') },
             ],
-            current: (d) => d.settings.pageSwitcherStyle || 'segmented',
+            current: (d) => d.settings.pageSwitcherStyle || 'text',
             apply: (value) => this._applyChromeSetting('pageSwitcherStyle', value, `switcher:${value}`),
         }, args);
     }

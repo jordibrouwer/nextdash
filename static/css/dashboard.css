@@ -7512,8 +7512,16 @@ body[data-page-switcher="segmented"] .header-track .page-nav-btn.active {
    destinations use, so "you are here" is said the same way in both halves of
    the band. */
 body[data-page-switcher="text"] .header-track .page-navigation {
-    gap: 0.75rem;
+    gap: 1.1rem;
     overflow: visible;
+}
+
+/* Tabs, not a control panel: the walk arrows and the printed `,` read as
+   stray marks beside words. Their keys keep working and are in the cheat
+   sheet; the buttons only go from this style. */
+body[data-page-switcher="text"] .header-track .page-walk-hint,
+body[data-page-switcher="text"] .header-track .page-nav-overflow-key {
+    display: none;
 }
 
 body[data-page-switcher="text"] .header-track .page-nav-btn,
@@ -7526,7 +7534,8 @@ body[data-page-switcher="text"] .header-track .page-nav-overflow {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    color: var(--text-secondary);
 }
 
 body[data-page-switcher="text"] .header-track .page-nav-btn:hover,
@@ -7538,6 +7547,7 @@ body[data-page-switcher="text"] .header-track .page-nav-overflow:hover {
 body[data-page-switcher="text"] .header-track .page-nav-btn.active {
     background: transparent;
     color: var(--text-primary);
+    font-weight: 700;
     box-shadow: none;
 }
 

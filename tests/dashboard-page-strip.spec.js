@@ -467,6 +467,12 @@ test('the narrow header is the name and a page switcher', async ({ page }) => {
  */
 test('the walk hints move a page, and go dead at the ends', async ({ page }) => {
     await openWithPages(page, 3);
+    // The text switcher hides the walk buttons; they belong to the boxed styles.
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.pageSwitcherStyle = 'segmented';
+        d.setupDOM?.();
+    });
 
     const prev = page.locator('.header-track .page-walk-hint[data-page-walk="prev"]');
     const next = page.locator('.header-track .page-walk-hint[data-page-walk="next"]');
@@ -577,7 +583,7 @@ test('the strip stands in the same place whatever the name and the clock do', as
             mid(document.querySelector('.header-track')) - mid(document.querySelector('.header-top')),
         );
     });
-    expect(centred, `the strip sits ${centred}px off the centre of the row`).toBe(0);
+    expect(Math.abs(centred), `the strip sits ${centred}px off the centre of the row`).toBe(0);
 
     // What gives: the name is cut inside the zone it was given.
     const title = await page.evaluate(() => {

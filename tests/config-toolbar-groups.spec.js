@@ -58,13 +58,14 @@ test.describe('the chrome toggles are grouped', () => {
         // panel, which is why this is three more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(19);
-        expect(new Set(all).size).toBe(19);
+        expect(all).toHaveLength(21);
+        expect(new Set(all).size).toBe(21);
         expect(all).toEqual(expect.arrayContaining([
             'headerButtonStyle', 'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
             'showInboxButton', 'showHealthDashboard', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
+            'actionBarPosition',
         ]));
     });
 
@@ -116,10 +117,10 @@ test('the header toggles reach the header', async ({ page }) => {
             && el.getBoundingClientRect().width > 0;
     }, sel);
 
-    expect(await shown('.header-track .page-walk-hint')).toBe(true);
+    expect(await shown('.header-track .page-navigation')).toBe(true);
 
     await page.locator('[data-behavior-field="showPageTabs"]').uncheck();
-    await expect.poll(() => shown('.header-track .page-walk-hint'),
+    await expect.poll(() => shown('.header-track .page-navigation'),
         { timeout: 5_000 }).toBe(false);
 
     await page.locator('[data-behavior-field="showInboxButton"]').uncheck();
@@ -132,7 +133,7 @@ test('the header toggles reach the header', async ({ page }) => {
 
     // And back: the switches go both ways without a reload.
     await page.locator('[data-behavior-field="showPageTabs"]').check();
-    await expect.poll(() => shown('.header-track .page-walk-hint'),
+    await expect.poll(() => shown('.header-track .page-navigation'),
         { timeout: 5_000 }).toBe(true);
     await page.locator('[data-behavior-field="showInboxButton"]').check();
     await page.locator('[data-behavior-field="showDashboardButton"]').check();

@@ -109,11 +109,17 @@ const read = (page) => page.evaluate(() => {
     };
 });
 
-test('segmented is what a fresh install draws', async ({ page }) => {
+test('text is what a fresh install draws', async ({ page }) => {
     await openWithPages(page);
+    expect(await page.evaluate(() => document.body.getAttribute('data-page-switcher'))).toBe('text');
+});
+
+test('segmented puts the pages in one shell', async ({ page }) => {
+    await openWithPages(page);
+    await chooseStyle(page, 'segmented');
     const seen = await read(page);
 
-    expect(seen.attribute, 'the default is not segmented').toBe('segmented');
+    expect(seen.attribute).toBe('segmented');
     // The box moved from the tabs to the shell around them.
     expect(seen.shell.border, 'the shell has no edge of its own').toBe(1);
     expect(seen.shell.height, `the shell is ${seen.shell.height}px tall`).toBe(40);
@@ -137,6 +143,22 @@ test('text drops the box and underlines the page you are on', async ({ page }) =
     expect(seen.active.background, 'the page you are on is filled')
         .toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
     expect(seen.underline, 'nothing says which page you are on').toBe(true);
+
+    // Tabs, not a control panel: no walk arrows and no printed `,` beside them.
+    const marks = await page.evaluate(() => ({
+        arrows: [...document.querySelectorAll('.header-track .page-walk-hint')]
+            .filter((el) => window.getComputedStyle(el).display !== 'none').length,
+        comma: [...document.querySelectorAll('.header-track .page-nav-overflow-key')]
+            .filter((el) => window.getComputedStyle(el).display !== 'none').length,
+    }));
+    expect(marks.arrows, 'the walk arrows are still drawn').toBe(0);
+    expect(marks.comma, 'the `,` is still printed').toBe(0);
+
+    // The keys behind the arrows still walk the pages.
+    const before = await page.evaluate(() => String(window.dashboardInstance.currentPageId));
+    await page.locator('body').click({ position: { x: 5, y: 600 } });
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.currentPageId))).not.toBe(before);
 });
 
 test('compact is one button, and it opens its own list', async ({ page }) => {

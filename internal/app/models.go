@@ -445,6 +445,7 @@ type Settings struct {
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
 	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (3-8)
+	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
 	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
@@ -1418,6 +1419,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			HeaderActionsDefaultTwoMigrated: true,
+			PageSwitcherTextMigrated:        true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -2966,7 +2968,7 @@ const (
 	pageSwitcherSegmented    = "segmented"
 	pageSwitcherText         = "text"
 	pageSwitcherCompact      = "compact"
-	defaultPageSwitcherStyle = pageSwitcherSegmented
+	defaultPageSwitcherStyle = pageSwitcherText
 )
 
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
@@ -3603,6 +3605,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			HeaderActionsDefaultTwoMigrated: true,
+			PageSwitcherTextMigrated:        true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -4031,6 +4034,14 @@ func (fs *FileStore) GetSettings() Settings {
 			}
 			settings.HeaderActionsDefaultTwoMigrated = true
 		}
+		// Segmented was the switcher every install was written with; text is
+		// the default now, and a stored segmented moves once.
+		if !settings.PageSwitcherTextMigrated {
+			if settings.PageSwitcherStyle == pageSwitcherSegmented || settings.PageSwitcherStyle == "" {
+				settings.PageSwitcherStyle = pageSwitcherText
+			}
+			settings.PageSwitcherTextMigrated = true
+		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
 		default:
@@ -4231,6 +4242,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
+			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}

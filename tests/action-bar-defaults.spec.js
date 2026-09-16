@@ -33,7 +33,7 @@ const ACTION_BAR = [
 const HEADER_PANEL = [
     ['showPageTabs', true],
     ['showPageNamesInTabs', false],
-    ['pageSwitcherStyle', 'segmented'],
+    ['pageSwitcherStyle', 'text'],
     ['maxPageTabs', 4],
     ['showTitle', true],
     ['showDashboardButton', true],

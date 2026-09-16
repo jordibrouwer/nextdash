@@ -567,7 +567,7 @@ class DashboardPageNav {
 
     pageSwitcherStyle() {
         const raw = this.dash?.settings?.pageSwitcherStyle;
-        return raw === 'text' || raw === 'compact' ? raw : 'segmented';
+        return raw === 'segmented' || raw === 'compact' ? raw : 'text';
     }
 
 
