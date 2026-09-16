@@ -20302,6 +20302,9 @@ class DashboardConfig {
     }
 
     bindBookmarkFilterChips(root) {
+        // Absent while the renderers are still loading: the fallback panel has
+        // no chips to clear yet.
+        if (!root) return;
         root.querySelectorAll('[data-bm-filter-clear]').forEach((btn) => {
             btn.addEventListener('click', () => this.clearBookmarkFilterChip(btn.getAttribute('data-bm-filter-clear')));
         });
@@ -21318,7 +21321,7 @@ class DashboardConfig {
     }
 
     /**
-     * Load the bookmark list renderers, once.
+     * Load the bookmark list renderers and the workbench, once.
      *
      * Repaints when they land, so the section fills itself in rather than
      * waiting for the next click. A failure leaves the placeholder, which says
@@ -21326,43 +21329,31 @@ class DashboardConfig {
      * library with nothing in it.
      */
     ensureBookmarkRenderers() {
-        if (window.DashboardConfigBookmarksReady) return Promise.resolve(true);
+        const ready = () => window.DashboardConfigBookmarksReady === true
+            && window.DashboardConfigWorkbenchReady === true
+            && Boolean(window.BookmarkWorkbenchModel);
+        if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
-        this._bookmarkRenderersPromise = window.LazyScript.loadScriptOnce(
-            'js/dashboard/dashboard-config-bookmarks.js',
-            'dashboardConfigBookmarks',
-            () => window.DashboardConfigBookmarksReady === true
-        ).then(() => {
-            const waiting = this._bookmarksAwaitingRenderers === true;
-            this._bookmarksAwaitingRenderers = false;
-            if (waiting && this.isActiveView() && this.section === 'bookmarks') this.render();
-            return true;
-        }).catch(() => false);
+        const load = window.LazyScript.loadScriptOnce;
+        // In order: the workbench builds on both of the others.
+        this._bookmarkRenderersPromise = load('js/shared/bookmark-workbench-model.js',
+            'bookmarkWorkbenchModel', () => Boolean(window.BookmarkWorkbenchModel))
+            .then(() => load('js/dashboard/dashboard-config-bookmarks.js',
+                'dashboardConfigBookmarks', () => window.DashboardConfigBookmarksReady === true))
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-workbench.js',
+                'dashboardConfigWorkbench', () => window.DashboardConfigWorkbenchReady === true))
+            .then(() => {
+                const waiting = this._bookmarksAwaitingRenderers === true;
+                this._bookmarksAwaitingRenderers = false;
+                if (waiting && this.isActiveView() && this.section === 'bookmarks') this.render();
+                return true;
+            }).catch(() => false);
         return this._bookmarkRenderersPromise;
     }
 
-    renderBookmarksListTab() {
-        // Bookmarks are edited in place all over the app — a tag added, a pin
-        // toggled, an open counted — and none of that moves the array identity
-        // the memo keys on. Dropped here so a paint always starts from the data
-        // as it now is, and shared by every caller within that paint.
-        this.invalidateVisibleBookmarks();
+    bookmarkSortOptionsHtml() {
         const esc = (v) => this.dash.escapeHtml(v);
-        if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
-        const pages = this.dash.pages || [];
-        const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
-            .concat(pages.map((p) => {
-                const sel = String(this.bmPageFilter || '') === String(p.id) ? ' selected' : '';
-                return `<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`;
-            })).join('');
-
-        const catOptions = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
-            .concat(this.knownCategories().map((c) => {
-                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
-                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
-            })).join('');
-
-        const sortOptions = [
+        return [
             ['page', this.t('config.sortByPage', 'Page order')],
             ['name', this.t('config.sortByName', 'Name (A–Z)')],
             ['url', this.t('config.sortByUrl', 'URL')],
@@ -21374,36 +21365,62 @@ class DashboardConfig {
         ].map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
-        const filtered = this.visibleBookmarks();
-        const totalAll = (this.dash.allBookmarks || []).length;
-        const countLabel = this.renderBookmarkCountLabelSafe(filtered.length, totalAll);
+    }
+
+    renderBookmarksListTab() {
+        // Bookmarks are edited in place all over the app, and none of that
+        // moves the array identity the memo keys on, so a paint starts fresh.
+        this.invalidateVisibleBookmarks();
+        if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
+        void this.ensureBookmarkRenderers();
+        if (typeof this.renderBookmarksWorkbench !== 'function') {
+            // The rail (and its search box) only exists once the workbench
+            // module is in — until then, a minimal one keeps the section
+            // usable instead of going blank while the fetch is in flight, or
+            // stays this way for good if it never lands.
+            this._bookmarksAwaitingRenderers = true;
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `
+                <div class="config-panel">
+                    <div class="config-crud-toolbar config-crud-toolbar--view">
+                        <input type="search" class="config-text" id="config-bm-search"
+                               placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                               value="${esc(this.bmQuery || '')}">
+                    </div>
+                    <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
+                </div>`;
+        }
+        return this.renderBookmarksWorkbench();
+    }
+
+    /** The pre-workbench controls, kept in the list column until the rail and panel replace them. */
+    renderLegacyBookmarkControls() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = this.dash.pages || [];
+        const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
+            .concat(pages.map((p) => {
+                const sel = String(this.bmPageFilter || '') === String(p.id) ? ' selected' : '';
+                return `<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`;
+            })).join('');
+        const catOptions = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
+            .concat(this.knownCategories().map((c) => {
+                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
+                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
+            })).join('');
         return `
-            <div class="config-bm-tiles-wrap">
-                <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
-                <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
+            <div class="config-crud-toolbar config-crud-toolbar--view">
+                <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
+                        data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
+                <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
+                <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
             </div>
-            <div class="config-panel">
-                <div class="config-crud-toolbar config-crud-toolbar--view">
-                    <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
-                    <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
-                            data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
-                    <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
-                    <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
-                    <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
-                    <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
-                </div>
-                ${this.renderBookmarkQuickBarSafe()}
-                ${this.renderBookmarkTagCloudSafe()}
-                <div class="config-bm-list-meta">
-                    <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
-                    <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChipsSafe()}</div>
-                    <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
-                </div>
-                ${this.renderCleanupFilterBannerSafe()}
-                <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>
-                <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
+            ${this.renderBookmarkQuickBarSafe()}
+            ${this.renderBookmarkTagCloudSafe()}
+            <div class="config-bm-list-meta">
+                <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChipsSafe()}</div>
             </div>
-        `;
+            ${this.renderCleanupFilterBannerSafe()}
+            <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>`;
     }
 
 
@@ -22858,6 +22875,7 @@ class DashboardConfig {
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
         this.bindBookmarkKeyboard(container);
+        this.bindWorkbench?.(container);
     }
 
     clearBookmarkFilters() {

@@ -1,0 +1,89 @@
+/*
+ * Config → Bookmarks → List as a workbench: rail · list · panel.
+ *
+ * Colours come from the theme; the slabs use the surface ladder and the
+ * theme's edges the way the view headers do, and stay flat on flat depth.
+ * No backdrop-filter anywhere here: these surfaces take clicks, and blur on a
+ * clickable layer is what breaks hit-testing in Safari.
+ */
+
+.config-bm-workbench {
+    --bm-rail-w: 200px;
+    --bm-panel-w: 260px;
+    --bm-row-h: 44px;
+    --bm-head-h: 32px;
+    --bm-slab-bg: var(--surface-2, var(--background-secondary));
+    --bm-slab-radius: var(--radius-5, 8px);
+    display: grid;
+    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) var(--bm-panel-w);
+    gap: var(--space-4, 1rem);
+    align-items: start;
+}
+
+.config-bm-workbench.is-panel-collapsed {
+    grid-template-columns: var(--bm-rail-w) minmax(0, 1fr) 28px;
+}
+
+.config-bm-rail,
+.config-bm-panel {
+    position: sticky;
+    top: var(--space-4, 1rem);
+    max-height: calc(100vh - 2 * var(--space-4, 1rem));
+    overflow: auto;
+}
+
+.config-bm-main {
+    min-width: 0;
+}
+
+.config-bm-rail-search {
+    position: relative;
+}
+
+.config-bm-rail-search input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 2rem;
+}
+
+.config-bm-rail-search kbd {
+    position: absolute;
+    right: var(--space-2, 0.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.config-bm-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.config-bm-toolbar-spacer {
+    flex: 1;
+}
+
+.config-bm-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+}
+
+.config-bm-panel {
+    background: var(--surface-3, var(--background-secondary));
+    border-radius: var(--bm-slab-radius);
+    padding: var(--space-4, 1rem);
+}
+
+html[data-theme] body:not([data-depth="flat"]) .config-bm-panel {
+    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+}
+
+.config-bm-panel-empty {
+    color: var(--text-secondary);
+    margin: 0;
+}
