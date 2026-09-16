@@ -1199,9 +1199,6 @@ class DashboardConfig {
      */
     shouldUseBookmarkKeyboardNav(target) {
         if (this.section !== 'bookmarks') return false;
-        // A menu is up: its keys are handled before anything else, including
-        // the Escape that would otherwise close the whole config view.
-        if (this.bookmarkListRoot()?.querySelector('.health-view-menu:not([hidden])')) return true;
         if (this._bmKeyboardKey) return true;
         const inList = target?.closest?.('#config-bm-list');
         if (inList) return this.getBookmarkKeyboardRows().length > 0;
@@ -20396,29 +20393,6 @@ class DashboardConfig {
         return out.sort((a, b) => a.localeCompare(b));
     }
 
-    /**
-     * Every tag in use, with how many bookmarks carry it.
-     *
-     * Ranked by the same function the dashboard tag cloud uses, so both clouds
-     * order and count identically instead of drifting through two copies.
-     */
-    bookmarkTagCounts() {
-        const all = this.dash.allBookmarks || [];
-        const shared = window.DashboardTagCloud?.countTagsFromBookmarks;
-        if (typeof shared === 'function') return shared(all);
-        const counts = new Map();
-        for (const b of all) {
-            for (const raw of b.tags || []) {
-                const tag = String(raw || '').trim().toLowerCase();
-                if (!tag) continue;
-                counts.set(tag, (counts.get(tag) || 0) + 1);
-            }
-        }
-        return [...counts.entries()]
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .map(([tag, count]) => ({ tag, count }));
-    }
-
     setBookmarkTagFilters(tags) {
         this.bmTagFilter = Array.isArray(tags) ? tags : [];
         this.resetBookmarkVisibleLimit();
@@ -20739,18 +20713,6 @@ class DashboardConfig {
      * in practice it has landed before anyone clicks Bookmarks.
      */
     /**
-     * How tall one row is, measured rather than assumed.
-     *
-     * The spacers above and below the window are this times a row count, so a
-     * wrong number shows up as a scrollbar that lies. Measured from the rows on
-     * screen the first time there are any, and kept: rows differ by a few pixels
-     * (a second line of tags), and the average is what the spacers want.
-     */
-    bookmarkRowHeight() {
-        return this.workbenchItemHeights?.().rowHeight || 44;
-    }
-
-    /**
      * Which slice of the list's items (rows and group headers) to draw, or
      * null for all of them. Heights are fixed by the stylesheet, so the
      * spacers are exact.
@@ -20829,7 +20791,6 @@ class DashboardConfig {
          * over them.
          */
         if (document.querySelector('.move-popover, .config-bm-context-menu')) return;
-        if (document.querySelector('#config-bm-list .health-view-menu:not([hidden])')) return;
         // Focus lives on a row, and this replaces every row. Without putting it
         // back, closing a menu or finishing an edit drops the list's j/k
         // navigation on the floor.
@@ -21355,14 +21316,6 @@ class DashboardConfig {
                 </div>`;
         }
         return this.renderBookmarksWorkbench();
-    }
-
-    /** Tick every row the current filters leave visible, for the bulk bar. */
-    selectFilteredBookmarks() {
-        const rows = this.visibleBookmarks() || [];
-        for (const b of rows) this.bmSelected.add(this.bookmarkKey(b));
-        this.repaintBookmarksList();
-        this.updateBookmarkListChrome();
     }
 
     /** Human label for each named cleanup filter. */

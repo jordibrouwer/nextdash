@@ -39,13 +39,6 @@
     },
 
     /**
-     * The list tab: the tiles, the filter row and the rows themselves.
-     *
-     * The tiles come with the list rather than staying above the strip: they
-     * count what the filters below them produce, and each one is a filter of its
-     * own — they belong to the thing they act on.
-     */
-    /**
      * Why this list is empty, in the reader's own terms.
      *
      * It said "no bookmarks match your search" whatever was narrowing the list

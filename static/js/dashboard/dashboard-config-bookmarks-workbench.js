@@ -1160,7 +1160,7 @@
                    .replace('{shown}', String(rowCount)).replace('{total}', String(all.length)))}</p>`
             : '';
         return `<div class="config-bm-feed${ctx.grouped ? ' is-grouped' : ''}" role="grid" aria-rowcount="${all.length}"
-                     aria-label="${esc(this.t('config.bookmarks', 'Bookmarks'))}" data-bm-rows="${rowCount}">${win ? spacer(win.above) : ''}${body}${win ? spacer(win.below) : ''}${more}</div>`;
+                     aria-label="${esc(this.t('config.sectionBookmarks', 'Bookmarks'))}" data-bm-rows="${rowCount}">${win ? spacer(win.above) : ''}${body}${win ? spacer(win.below) : ''}${more}</div>`;
     },
 
     workbenchItemHeights() {
