@@ -1310,7 +1310,11 @@ class SearchComponent {
         if (!match) return;
 
         if (mode === 'instant') {
-            this.openBookmark(match);
+            // Typing a shortcut and having it open is not a search, even though
+            // it runs through the same query box. This used to fall through to
+            // openBookmark's 'search' default and report every shortcut open
+            // as a search pick.
+            this.openBookmark(match, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
             return;
         }
@@ -1324,7 +1328,7 @@ class SearchComponent {
             if (!this.searchActive || this.currentQuery !== query) return;
             const stillMatching = this.exactShortcutMatch();
             if (!stillMatching) return;
-            this.openBookmark(stillMatching);
+            this.openBookmark(stillMatching, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
         }, SearchComponent.SHORTCUT_OPEN_DELAY_MS);
     }
@@ -3684,14 +3688,14 @@ class SearchComponent {
         // If no matches, do nothing (keep search open)
     }
 
-    openBookmark(bookmark, { newTab = false } = {}) {
+    openBookmark(bookmark, { newTab = false, source = 'search', method } = {}) {
         this.recordSearchHistory(this.currentQuery);
         // The other half of the same fact: the history keeps what was typed,
         // this keeps what it turned out to mean.
         this.recordSearchPick(bookmark);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
-        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');
+        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, source, method);
 
         // Close search first if it's active
         if (this.searchActive) {

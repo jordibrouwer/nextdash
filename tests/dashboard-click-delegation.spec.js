@@ -153,6 +153,37 @@ test.describe('bookmark clicks are delegated', () => {
         expect(recorded.seen).not.toBeNull();
         expect(recorded.expected).toContain(recorded.seen.url.replace(/\/$/, '').slice(0, 20));
     });
+
+    // e.detail is what tells the two apart: a real mouse click carries a
+    // detail of 1, and Enter on a focused anchor synthesises one with detail
+    // 0. Both go through the same delegated listener, so this is the only
+    // seam that can tell them apart without a second listener.
+    test('a mouse click and Enter on a link report different open methods', async ({ page }) => {
+        await page.addInitScript(() => {
+            document.addEventListener('click', (e) => {
+                const link = e.target?.closest?.('a');
+                if (link && link.href && !link.href.startsWith('javascript:')) e.preventDefault();
+            }, true);
+        });
+        const posted = [];
+        await page.route('**/api/track-open', async (route) => {
+            posted.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+        });
+
+        await openDashboard(page);
+        await page.locator('#dashboard-layout .bookmark-link a.bookmark-open').first().click();
+        await expect.poll(() => posted.length).toBe(1);
+        expect(posted[0].method).toBe('mouse');
+        expect(posted[0].source).toBe('dashboard');
+
+        await openDashboard(page);
+        const link = page.locator('#dashboard-layout .bookmark-link a.bookmark-open').first();
+        await link.focus();
+        await page.keyboard.press('Enter');
+        await expect.poll(() => posted.length).toBe(2);
+        expect(posted[1].method).toBe('keyboard-enter');
+    });
 });
 
 test.describe('the selection toolbar', () => {

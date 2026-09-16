@@ -70,7 +70,7 @@ func TestActivityLogOpenDisabledByDefault(t *testing.T) {
 	})
 
 	lines := captureActivityLogs(t, func() {
-		logBookmarkOpen(1, 0, Bookmark{Name: "HN", URL: "https://news.ycombinator.com"}, nil)
+		logBookmarkOpen(1, 0, Bookmark{Name: "HN", URL: "https://news.ycombinator.com"}, "", "", nil)
 	})
 	if len(lines) != 0 {
 		t.Fatalf("expected no open logs, got %v", lines)
@@ -83,7 +83,7 @@ func TestActivityLogOpenWhenEnabled(t *testing.T) {
 	})
 
 	lines := captureActivityLogs(t, func() {
-		logBookmarkOpen(1, 2, Bookmark{PageID: 1, Name: "HN", URL: "https://news.ycombinator.com"}, nil)
+		logBookmarkOpen(1, 2, Bookmark{PageID: 1, Name: "HN", URL: "https://news.ycombinator.com"}, "", "", nil)
 	})
 	if len(lines) != 1 || !strings.Contains(lines[0], `"event":"bookmark.open"`) {
 		t.Fatalf("unexpected open log: %v", lines)

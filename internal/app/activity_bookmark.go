@@ -294,13 +294,50 @@ func logBookmarksDeletedAll(r *http.Request) {
 		"deleted every bookmark")
 }
 
-func logBookmarkOpen(pageID, index int, bm Bookmark, r *http.Request) {
+// The client's own account of how an open reached the server: which surface
+// showed the link (activityOpenSources) and which gesture triggered it
+// (activityOpenMethods). Both are what the page claims, not anything the
+// server observed, so a value outside these sets is dropped rather than
+// logged — free text here is free text a page could put anything in.
+var activityOpenSources = map[string]bool{
+	"dashboard":    true,
+	"search":       true,
+	"recent":       true,
+	"config":       true,
+	"context-menu": true,
+	"health":       true,
+	"shortcut":     true,
+}
+
+var activityOpenMethods = map[string]bool{
+	"mouse":             true,
+	"mouse-middle":      true,
+	"mouse-modifier":    true,
+	"keyboard-enter":    true,
+	"keyboard-shortcut": true,
+	"touch":             true,
+	"unknown":           true,
+}
+
+func logBookmarkOpen(pageID, index int, bm Bookmark, source, method string, r *http.Request) {
 	if !activityEnabled(activityCategoryOpen) {
 		return
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	fields["index"] = index
 	fields["pageId"] = pageID
+	// Logged as "openSource", not "source": activityFieldsFromRequest already
+	// puts the request's own transport under "source" (dashboard, extension or
+	// api), which today is the only way to tell a browser-extension open apart
+	// from one made on the page itself. The value here answers a different
+	// question — which surface of the dashboard the reader was looking at —
+	// and reusing "source" for it would silently overwrite the first answer.
+	if activityOpenSources[source] {
+		fields["openSource"] = source
+	}
+	if activityOpenMethods[method] {
+		fields["method"] = method
+	}
 	logActivity(activityCategoryOpen, "bookmark.open", fields,
 		fmt.Sprintf("opened %q (%s)", bookmarkActivityName(bm), bm.URL))
 }

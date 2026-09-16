@@ -3834,7 +3834,13 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logBookmarkOpen(pageID, index, bookmark, r)
+	// Cached JS in an open tab, or the browser extension, may still be
+	// posting the old {pageId, index} shape, so these two are read loosely
+	// and left absent rather than rejecting a request that lacks them.
+	// logBookmarkOpen drops anything outside its allowlists.
+	source, _ := raw["source"].(string)
+	method, _ := raw["method"].(string)
+	logBookmarkOpen(pageID, index, bookmark, source, method, r)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
