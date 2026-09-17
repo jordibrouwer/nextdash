@@ -83,7 +83,7 @@ test('past the cap the rest fold behind a control that counts them', async ({ pa
     // Raising the cap puts them back on the bar.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
-        d.settings.maxHeaderActions = 8;
+        d.settings.maxHeaderActions = 9;
         d.setupDOM?.();
         await d.saveSettings?.();
     });

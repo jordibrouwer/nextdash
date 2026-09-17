@@ -25,28 +25,9 @@ func TestFreshSettingsFileVisibilityDefaults(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("fresh install: showHealthDashboard should be true")
 	}
-	// Tags, recents, the cheat sheet and pages live in the search panel now, so
-	// none of the four ships as a button in the bar. Each keeps its key and its
-	// toggle; see the launcher pass in GetSettings.
-	if settings.ShowRecentButton {
-		t.Fatal("fresh install: showRecentButton should be false")
-	}
-	if settings.ShowCheatSheetButton {
-		t.Fatal("fresh install: showCheatSheetButton should be false")
-	}
-	// Search, commands and finders are one panel that switches mode on a key,
-	// and the pills at its foot now show that. Three separate doors to it in
-	// the button bar is two more than the panel needs; search keeps its own,
-	// the other two are a setting away for anyone who wants them back.
-	if !settings.ShowSearchButton {
-		t.Fatal("fresh install: showSearchButton should be true")
-	}
-	if settings.ShowFindersButton {
-		t.Fatal("fresh install: showFindersButton should be false")
-	}
-	if settings.ShowCommandsButton {
-		t.Fatal("fresh install: showCommandsButton should be false")
-	}
+	// Every action button ships on: the bar is where a new reader learns what
+	// the keys do.
+	assertAllActionButtons(t, "fresh install", settings, true)
 	if !settings.ShowIcons {
 		t.Fatal("fresh install: showIcons should be true")
 	}
@@ -88,12 +69,8 @@ func TestGetSettingsMigratesMissingVisibilityKeys(t *testing.T) {
 	if !settings.ShowHealthDashboard {
 		t.Fatal("migration: missing showHealthDashboard should default to true")
 	}
-	if settings.ShowRecentButton {
-		t.Fatal("migration: showRecentButton moves into the search panel")
-	}
-	if settings.ShowCheatSheetButton {
-		t.Fatal("migration: showCheatSheetButton moves into the search panel")
-	}
+	// And an older install gets them all back, once.
+	assertAllActionButtons(t, "migration", settings, true)
 	if !settings.AutoBackupEnabled {
 		t.Fatal("migration: missing autoBackupEnabled should default to true")
 	}
@@ -264,8 +241,8 @@ func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
 	// A fresh install starts without the button; an upgrade keeps it. The two
 	// answers come from different places — the constructors and the absent-key
 	// migration — and the point of this test is that they stay different.
-	if got := NewStore().GetSettings().ShowCollapseAllButton; got {
-		t.Fatalf("fresh install: showCollapseAllButton = %v, want false", got)
+	if got := NewStore().GetSettings().ShowCollapseAllButton; !got {
+		t.Fatalf("fresh install: showCollapseAllButton = %v, want true", got)
 	}
 
 	for _, tc := range []struct {
@@ -275,7 +252,9 @@ func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
 	}{
 		// The upgrade case: a settings file written before the key existed.
 		{"key absent", map[string]any{"currentPage": 1}, true},
-		{"explicitly off", map[string]any{"currentPage": 1, "showCollapseAllButton": false}, false},
+		// Off before the all-on pass is turned on by it, once; off after it stays.
+		{"explicitly off, before the pass", map[string]any{"currentPage": 1, "showCollapseAllButton": false}, true},
+		{"explicitly off, after the pass", map[string]any{"currentPage": 1, "showCollapseAllButton": false, "actionButtonsAllOnMigrated": true}, false},
 		{"explicitly on", map[string]any{"currentPage": 1, "showCollapseAllButton": true}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -525,4 +504,37 @@ func TestGetSettingsCarriesTheModernRowTreatment(t *testing.T) {
 			t.Errorf("rowHighlight = %q, want subtle: a stated choice was overwritten", settings.RowHighlight)
 		}
 	})
+}
+
+func assertAllActionButtons(t *testing.T, when string, s Settings, want bool) {
+	t.Helper()
+	for name, got := range map[string]bool{
+		"showAddBookmarkButton": s.ShowAddBookmarkButton,
+		"showSearchButton":      s.ShowSearchButton,
+		"showCommandsButton":    s.ShowCommandsButton,
+		"showFindersButton":     s.ShowFindersButton,
+		"showTagCloudButton":    s.ShowTagCloudButton,
+		"showRecentButton":      s.ShowRecentButton,
+		"showPagesButton":       s.ShowPagesButton,
+		"showCollapseAllButton": s.ShowCollapseAllButton,
+		"showCheatSheetButton":  s.ShowCheatSheetButton,
+	} {
+		if got != want {
+			t.Errorf("%s: %s = %v, want %v", when, name, got, want)
+		}
+	}
+}
+
+// A button switched off after the all-on pass stays off.
+func TestActionButtonChoicesAfterTheAllOnPassStick(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{
+		"currentPage": 1, "actionButtonsAllOnMigrated": true, "launcherDefaultsMigrated": true,
+		"showRecentButton": false, "showCommandsButton": false,
+	})
+	s := NewStore().GetSettings()
+	if s.ShowRecentButton || s.ShowCommandsButton {
+		t.Fatalf("a choice made after the pass was undone: recent %v, commands %v", s.ShowRecentButton, s.ShowCommandsButton)
+	}
 }

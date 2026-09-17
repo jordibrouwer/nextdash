@@ -222,8 +222,9 @@ test.describe('the header and surfaces settings', () => {
         expect(listed).toContain('pages');
         expect(listed).toContain('foldall');
 
+        // On by default, so picking it switches it off.
         await pick(page, 'pages');
         await expect.poll(() => page.evaluate(
-            () => window.dashboardInstance.settings.showPagesButton), { timeout: 5_000 }).toBe(true);
+            () => window.dashboardInstance.settings.showPagesButton), { timeout: 5_000 }).toBe(false);
     });
 });

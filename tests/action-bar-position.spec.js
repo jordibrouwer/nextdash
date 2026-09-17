@@ -108,7 +108,7 @@ test('the menu placement keeps add in the header and folds the rest', async ({ p
     expect(g.folded).toBeGreaterThan(0);
 
     // The keys do not care where the button is.
-    await page.keyboard.press('/');
+    await page.keyboard.press('>');
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
 });
 

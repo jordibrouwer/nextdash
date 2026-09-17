@@ -27,21 +27,30 @@ const drawn = (page, selector) => page.evaluate((sel) => {
     return window.getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
 }, selector);
 
-test('the bar carries add and search, and nothing else that opens a panel', async ({ page }) => {
+test('a fresh install carries every action button', async ({ page }) => {
     await openDashboard(page);
 
-    expect(await drawn(page, '#quick-add-toolbar-btn'), 'add left the bar').toBe(true);
-    expect(await drawn(page, '#search-button'), 'search left the bar').toBe(true);
-
-    for (const gone of ['#tag-cloud-toggle-btn', '#recent-bookmarks-button', '#help-button',
-        '#page-overview-header-btn']) {
-        expect(await drawn(page, gone), `${gone} is still in the bar`).toBe(false);
+    for (const id of ['#quick-add-toolbar-btn', '#search-button', '#commands-button', '#finders-button',
+        '#tag-cloud-toggle-btn', '#recent-bookmarks-button', '#page-overview-header-btn',
+        '#collapse-all-button', '#help-button']) {
+        expect(await drawn(page, id), `${id} is not in the bar`).toBe(true);
     }
 
     // The destinations are untouched: they are places, not panels.
     expect(await drawn(page, '.dashboard-link-anchor')).toBe(true);
     expect(await drawn(page, '.config-link-anchor')).toBe(true);
 });
+
+/** The two keys below reach the panel's modes while their buttons are off. */
+async function buttonsOff(page) {
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, { showRecentButton: false, showTagCloudButton: false });
+        d.setupDOM?.();
+        await d.saveSettings?.();
+        window.DashboardTagCloud?.syncFromSettings?.();
+    });
+}
 
 test('the panel names the modes that used to be buttons', async ({ page }) => {
     await openDashboard(page);
@@ -58,8 +67,9 @@ test('the panel names the modes that used to be buttons', async ({ page }) => {
     expect(pills.map((p) => p.key)).toEqual(['>', ':', '?', '/', '*', '!']);
 });
 
-test('* opens the panel on what was opened last', async ({ page }) => {
+test('* opens the panel on what was opened last, with the recent button off', async ({ page }) => {
     await openDashboard(page);
+    await buttonsOff(page);
     // Something to have opened: the recents mode reads lastOpened off the store.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
@@ -79,8 +89,9 @@ test('* opens the panel on what was opened last', async ({ page }) => {
     await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toHaveCount(0);
 });
 
-test('/ opens the panel on the tags', async ({ page }) => {
+test('/ opens the panel on the tags, with the tag cloud button off', async ({ page }) => {
     await openDashboard(page);
+    await buttonsOff(page);
 
     await page.keyboard.press('/');
 

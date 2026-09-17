@@ -12,22 +12,19 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, w
  * now, and every one has a default recorded — which is what draws the ↺.
  */
 /*
- * Add and search are the two verbs the bar keeps.
- *
- * Tags, recents, the cheat sheet and pages each open a panel, and the search
- * panel names all four along its foot -- so none of them ships as a button.
- * Every one keeps its key and its toggle; see launcher-header.spec.js.
+ * Every action button ships on: the bar is where a new reader learns what the
+ * keys do. Each keeps its toggle; see launcher-header.spec.js.
  */
 const ACTION_BAR = [
     ['showAddBookmarkButton', true],
     ['showSearchButton', true],
-    ['showCommandsButton', false],
-    ['showFindersButton', false],
-    ['showTagCloudButton', false],
-    ['showRecentButton', false],
-    ['showPagesButton', false],
-    ['showCollapseAllButton', false],
-    ['showCheatSheetButton', false],
+    ['showCommandsButton', true],
+    ['showFindersButton', true],
+    ['showTagCloudButton', true],
+    ['showRecentButton', true],
+    ['showPagesButton', true],
+    ['showCollapseAllButton', true],
+    ['showCheatSheetButton', true],
 ];
 
 const HEADER_PANEL = [

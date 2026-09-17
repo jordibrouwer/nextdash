@@ -422,6 +422,7 @@ type Settings struct {
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
+	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
@@ -444,7 +445,7 @@ type Settings struct {
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
-	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (3-8)
+	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
 	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
 	PageSwitcherClassicMigrated     bool   `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
@@ -1362,23 +1363,20 @@ func (fs *FileStore) initializeDefaultFiles() {
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
-			ShowPagesButton:           false,
+			ShowPagesButton:           true,
 			ShowInboxButton:           true,
 			ShowDashboardButton:       true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
-			// Off by default. Search, commands and finders are one panel
-			// that changes mode on a key, and the pills at its foot say so
-			// now -- three doors to one room is two more than it needs. The
-			// search button stays, and both of these are one toggle away in
-			// Config for anyone who wants them back.
-			ShowFindersButton:               false,
-			ShowCommandsButton:              false,
-			ShowRecentButton:                false,
-			ShowTagCloudButton:              false,
+			// Every action button is on: the bar is where a new reader
+			// learns what the keys do, and the fold keeps a full bar tidy.
+			ShowFindersButton:               true,
+			ShowCommandsButton:              true,
+			ShowRecentButton:                true,
+			ShowTagCloudButton:              true,
 			ShowSearchFlowBanner:            true,
-			ShowCheatSheetButton:            false,
-			ShowCollapseAllButton:           false,
+			ShowCheatSheetButton:            true,
+			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
@@ -1434,6 +1432,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
+			ActionButtonsAllOnMigrated:      true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -2918,7 +2917,7 @@ Zero is a real answer: every action behind the one control.
 */
 const (
 	minHeaderActions        = 0
-	maxHeaderActionsCap     = 8
+	maxHeaderActionsCap     = 9
 	defaultMaxHeaderActions = 2
 )
 
@@ -3534,18 +3533,18 @@ func (fs *FileStore) GetSettings() Settings {
 			WeatherRefreshMinutes:           30,
 			ShowConfigButton:                true,
 			ShowHealthDashboard:             true,
-			ShowPagesButton:                 false,
+			ShowPagesButton:                 true,
 			ShowInboxButton:                 true,
 			ShowDashboardButton:             true,
 			ShowSearchButton:                true,
 			ShowAddBookmarkButton:           true,
-			ShowFindersButton:               false,
-			ShowCommandsButton:              false,
-			ShowRecentButton:                false,
-			ShowTagCloudButton:              false,
+			ShowFindersButton:               true,
+			ShowCommandsButton:              true,
+			ShowRecentButton:                true,
+			ShowTagCloudButton:              true,
 			ShowSearchFlowBanner:            true,
-			ShowCheatSheetButton:            false,
-			ShowCollapseAllButton:           false,
+			ShowCheatSheetButton:            true,
+			ShowCollapseAllButton:           true,
 			ShowStatus:                      true,
 			ColorizeStatus:                  true,
 			MonitorEmphasis:                 "problems",
@@ -3629,6 +3628,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
+			ActionButtonsAllOnMigrated:      true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -4056,6 +4056,25 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.LauncherDefaultsMigrated = true
 		}
 		/*
+		 * Every action button on, once.
+		 *
+		 * The buttons left the bar for the search panel's modes, and a reader
+		 * who never learnt the keys lost the only thing that named them. They
+		 * are all on again; a button switched off after this stays off.
+		 */
+		if !settings.ActionButtonsAllOnMigrated {
+			settings.ShowAddBookmarkButton = true
+			settings.ShowSearchButton = true
+			settings.ShowCommandsButton = true
+			settings.ShowFindersButton = true
+			settings.ShowTagCloudButton = true
+			settings.ShowRecentButton = true
+			settings.ShowPagesButton = true
+			settings.ShowCollapseAllButton = true
+			settings.ShowCheatSheetButton = true
+			settings.ActionButtonsAllOnMigrated = true
+		}
+		/*
 		 * Two actions before "+N", not four.
 		 *
 		 * Four was the default every install was written with, so a stored 4
@@ -4284,6 +4303,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
+			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated

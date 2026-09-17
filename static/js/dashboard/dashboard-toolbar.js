@@ -502,7 +502,8 @@ class DashboardToolbar {
         if (place === 'menu') return 1;
         const raw = Math.round(Number(d.settings?.maxHeaderActions));
         const chosen = Number.isFinite(raw) ? raw : DashboardToolbar.HEADER_ACTION_DEFAULT;
-        const capped = Math.min(8, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
+        // Nine: every action button, so a full bar needs no control at all.
+        const capped = Math.min(9, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
         /*
          * A narrow row folds one more away per rung of the header's own
          * ladder: fitHeaderZones has already decided the row is too full, and

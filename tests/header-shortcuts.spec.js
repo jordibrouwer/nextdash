@@ -161,11 +161,12 @@ async function showEveryAction(page) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         Object.assign(d.settings, {
-            showAddBookmarkButton: true, showSearchButton: true, showTagCloudButton: true,
-            showRecentButton: true, showCheatSheetButton: true, showPagesButton: true,
-            // Room for all six on the bar: past the reader's cap the rest fold
+            showAddBookmarkButton: true, showSearchButton: true, showCommandsButton: true,
+            showFindersButton: true, showTagCloudButton: true, showRecentButton: true,
+            showPagesButton: true, showCollapseAllButton: true, showCheatSheetButton: true,
+            // Room for all nine on the bar: past the reader's cap the rest fold
             // behind one control, and this is about the order they stand in.
-            maxHeaderActions: 8,
+            maxHeaderActions: 9,
         });
         d.setupDOM?.();
         await d.saveSettings?.();
@@ -199,7 +200,7 @@ test('the actions are always in the same order', async ({ page }) => {
 
     // Pages sits after recents: both open a panel you came for, and the sheet
     // that lists every key stays last.
-    expect(keys).toBe('+ > / * , !');
+    expect(keys).toBe('+ > : ? / * , . !');
 });
 
 /*
