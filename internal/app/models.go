@@ -423,6 +423,8 @@ type Settings struct {
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
+	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
+	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 10s
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
@@ -1400,6 +1402,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarEnabled:                true,
 			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
@@ -1433,6 +1436,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
+			ActionKeysOffMigrated:           true,
+			ActionBarRightMigrated:          true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -2961,8 +2966,10 @@ Where the action buttons stand.
 The header carried them beside the pages and the destinations, and with six or
 seven of them the band read as clutter. They can stand in a dock at the bottom
 (the old button bar's place), in a column on either side, or behind one menu
-in the header. A new install starts with the dock; an install that predates
-the setting keeps them in the header, where its reader last saw them.
+in the header. Every install starts with a column on the right that slides
+into its edge after ten seconds: out of the page's way, and back the moment
+the pointer touches that edge. An install that predates this default is moved
+there once (see ActionBarRightMigrated).
 */
 const (
 	actionBarHeader         = "header"
@@ -2970,8 +2977,12 @@ const (
 	actionBarLeft           = "left"
 	actionBarRight          = "right"
 	actionBarMenu           = "menu"
-	defaultActionBarFresh   = actionBarBottom
-	defaultActionBarUpgrade = actionBarHeader
+	defaultActionBarFresh   = actionBarRight
+	defaultActionBarUpgrade = actionBarRight
+	// An unknown stored value falls back to where the actions always were.
+	fallbackActionBar = actionBarHeader
+	// Seconds before the default right column slides away.
+	defaultActionBarAutoHide = 10
 )
 
 const (
@@ -3090,7 +3101,7 @@ func clampBookmarkSettings(s *Settings) {
 	switch s.ActionBarPosition {
 	case actionBarHeader, actionBarBottom, actionBarLeft, actionBarRight, actionBarMenu:
 	default:
-		s.ActionBarPosition = defaultActionBarUpgrade
+		s.ActionBarPosition = fallbackActionBar
 	}
 	switch s.ActionBarAutoHideSeconds {
 	case 0, 2, 5, 10, 30:
@@ -3568,6 +3579,7 @@ func (fs *FileStore) GetSettings() Settings {
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarEnabled:                true,
 			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
@@ -3629,6 +3641,8 @@ func (fs *FileStore) GetSettings() Settings {
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
+			ActionKeysOffMigrated:           true,
+			ActionBarRightMigrated:          true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -3686,10 +3700,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// The bar was always drawn before this switch existed.
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
-		}
-		// The chips were always drawn before they could be switched off.
-		if _, ok := rawSettings["showActionKeys"]; !ok {
-			settings.ShowActionKeys = true
 		}
 		if _, ok := rawSettings["maxHeaderActions"]; !ok {
 			settings.MaxHeaderActions = defaultMaxHeaderActions
@@ -4075,6 +4085,30 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ActionButtonsAllOnMigrated = true
 		}
 		/*
+		 * Key chips off, once, for a dashboard that already existed.
+		 *
+		 * Every action button came back on at the same time, and a bar of
+		 * nine buttons each with its chip is a lot to meet on upgrade. The
+		 * keys still work, and resting on a button shows its key. A fresh
+		 * install starts with the chips on (see the constructors above); a
+		 * reader who turns them on after this keeps them.
+		 */
+		if !settings.ActionKeysOffMigrated {
+			settings.ShowActionKeys = false
+			settings.ActionKeysOffMigrated = true
+		}
+		/*
+		 * The action bar to the right column, sliding after ten seconds, once.
+		 *
+		 * The same default a fresh install starts with. A position or delay
+		 * chosen after this is kept.
+		 */
+		if !settings.ActionBarRightMigrated {
+			settings.ActionBarPosition = actionBarRight
+			settings.ActionBarAutoHideSeconds = defaultActionBarAutoHide
+			settings.ActionBarRightMigrated = true
+		}
+		/*
 		 * Two actions before "+N", not four.
 		 *
 		 * Four was the default every install was written with, so a stored 4
@@ -4304,6 +4338,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
+			settings.ActionKeysOffMigrated = settings.ActionKeysOffMigrated || stored.ActionKeysOffMigrated
+			settings.ActionBarRightMigrated = settings.ActionBarRightMigrated || stored.ActionBarRightMigrated
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated
