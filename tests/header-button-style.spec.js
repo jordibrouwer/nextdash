@@ -154,3 +154,123 @@ test('the choice is a setting, and it survives a reload', async ({ page }) => {
     expect(await page.evaluate(
         () => document.documentElement.getAttribute('data-header-buttons'))).toBe('plated');
 });
+
+test('on a glass theme, plain controls stand on the band with nothing behind them', async ({ page }) => {
+    await openDashboard(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, { theme: 'tarnished-brass-dark', themeDepth: 'glass', headerButtonStyle: 'plain' });
+        await d.saveSettings?.();
+    });
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissBlockingOverlays(page);
+    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('glass');
+
+    const behind = () => page.evaluate(() => [...document.querySelectorAll(
+        '.header-top .page-nav-btn, .header-top .search-button, .header-top .header-shortcuts, '
+        + '.header-top .dashboard-link-anchor, .header-top .health-link-anchor, .header-top .config-link-anchor',
+    )].filter((el) => el.getBoundingClientRect().width > 0)
+        .map((el) => {
+            const s = window.getComputedStyle(el);
+            return { el: el.id || String(el.className), bg: s.backgroundColor, filter: s.backdropFilter };
+        }));
+
+    const plain = await behind();
+    expect(plain.length).toBeGreaterThan(0);
+    for (const c of plain) {
+        expect(c.bg, `${c.el} paints a ground`).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+        expect(c.filter, `${c.el} still blurs what is behind it`).toBe('none');
+    }
+
+    // Each in its own box keeps the glass.
+    await chooseStyle(page, 'plated');
+    const plated = await behind();
+    expect(plated.some((c) => c.filter !== 'none'), 'plated lost its glass').toBe(true);
+});
+
+test('plated leaves the actions and tabs in the header bare, hover included; a dock keeps its plate', async ({ page }) => {
+    await openDashboard(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, { theme: 'tarnished-brass-dark', themeDepth: 'glass', headerButtonStyle: 'plated', pageSwitcherStyle: 'classic', actionBarPosition: 'header' });
+        await d.saveSettings?.();
+    });
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await dismissBlockingOverlays(page);
+
+    const ground = (sel) => page.locator(sel).first().evaluate((el) => {
+        const s = window.getComputedStyle(el);
+        return { bg: s.backgroundColor, shadow: s.boxShadow, filter: s.backdropFilter };
+    });
+    const hover = async (sel) => {
+        const box = await page.locator(sel).first().boundingBox();
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(300);
+        return ground(sel);
+    };
+    const bare = /rgba\(0, 0, 0, 0\)|transparent/;
+
+    for (const sel of ['#search-button', '#page-navigation .page-nav-btn:not([hidden])']) {
+        const rest = await ground(sel);
+        expect(rest.bg, `${sel} paints a ground`).toMatch(bare);
+        expect(rest.filter, `${sel} blurs what is behind it`).toBe('none');
+        const over = await hover(sel);
+        expect(over.bg, `${sel} lights a wash on hover`).toMatch(bare);
+        expect(over.shadow, `${sel} casts on hover`).toBe('none');
+        await page.mouse.move(700, 600);
+    }
+    // The destinations are still the plates.
+    expect((await ground('.config-link-anchor')).bg).not.toMatch(bare);
+
+    // Docked, the bar is a plate and its hover is its own.
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.actionBarPosition = 'bottom';
+        d.setupDOM?.();
+    });
+    await page.waitForTimeout(400);
+    expect((await ground('.header-shortcuts')).bg, 'the dock lost its plate').not.toMatch(bare);
+    const docked = await hover('#search-button');
+    expect(docked.bg, 'the dock lost its hover').not.toMatch(bare);
+});
+
+test('a rule stands between the pages and the actions when both are in the header', async ({ page }) => {
+    await openDashboard(page);
+    const setup = async (settings) => {
+        await page.evaluate(async (next) => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, next);
+            await d.saveSettings?.();
+            d.config?.applyChromeSettings?.();
+        }, settings);
+        await page.waitForTimeout(400);
+    };
+    const rule = () => page.evaluate(() => {
+        const el = document.querySelector('.header-zone-divider--pages');
+        const drawn = el && window.getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
+        if (!drawn) return { drawn: false };
+        const r = el.getBoundingClientRect();
+        const tabs = [...document.querySelectorAll('#page-navigation .page-nav-btn')]
+            .filter((b) => b.getBoundingClientRect().width > 0);
+        const actions = document.querySelector('.header-shortcuts').getBoundingClientRect();
+        return {
+            drawn: true,
+            afterPages: tabs.every((b) => b.getBoundingClientRect().right <= r.left + 1),
+            beforeActions: r.right <= actions.left + 1,
+        };
+    });
+
+    await setup({ headerButtonStyle: 'plated', pageSwitcherStyle: 'classic', actionBarPosition: 'header', actionBarEnabled: true });
+    const inHeader = await rule();
+    expect(inHeader.drawn, 'no rule between the pages and the actions').toBe(true);
+    expect(inHeader.afterPages).toBe(true);
+    expect(inHeader.beforeActions).toBe(true);
+
+    await setup({ actionBarPosition: 'bottom' });
+    expect((await rule()).drawn, 'the rule stayed after the actions left the header').toBe(false);
+
+    await setup({ actionBarPosition: 'header', pageSwitcherStyle: 'text' });
+    expect((await rule()).drawn, 'a rule beside pages that stand in the middle').toBe(false);
+});

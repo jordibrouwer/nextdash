@@ -494,3 +494,12 @@
 .hub-preview[data-preview-bar="off"] .hub-pv-dest b {
     display: none;
 }
+
+/* Classic stands the pages at the right, beside the destinations. */
+.hub-preview[data-preview-switcher="classic"] .hub-pv-head {
+    justify-content: flex-start;
+}
+
+.hub-preview[data-preview-switcher="classic"] .hub-pv-tabs {
+    margin-left: auto;
+}

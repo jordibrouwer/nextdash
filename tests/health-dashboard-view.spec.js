@@ -244,14 +244,15 @@ test.describe('health dashboard view', () => {
         await popup.close();
     });
 
-    test('opening health deselects the page tab', async ({ page }) => {
+    test('opening health keeps the page you were on marked, and only that one', async ({ page }) => {
         await openHealthView(page);
 
-        // The regression this guards: page tabs keyed off `activeView !== 'inbox'`,
-        // which stays true on health and would leave a page tab looking selected.
-        const pageTabSelections = await page.locator('.page-nav-btn:not([data-view-tab])')
+        // The page tab says where the dashboard button takes you back to; the
+        // health icon says where you are. One page tab, never two.
+        const selected = await page.locator('#page-navigation .page-nav-btn:not([data-view-tab])')
             .evaluateAll((tabs) => tabs.map((t) => t.getAttribute('aria-selected')));
-        expect(pageTabSelections.every((s) => s === 'false')).toBe(true);
+        expect(selected.filter((s) => s === 'true')).toHaveLength(1);
+        await expect(page.locator('.health-link a.health-link-anchor')).toHaveClass(/active/);
     });
 
     test('summary tiles appear above the list and filter it', async ({ page }) => {

@@ -263,7 +263,7 @@
         const esc = (v) => config.dash.escapeHtml(v);
         const cols = Math.min(6, Math.max(1, Number(s.columnsPerRow) || 4));
         const place = ['bottom', 'left', 'right', 'menu'].includes(s.actionBarPosition) ? s.actionBarPosition : 'header';
-        const switcher = ['segmented', 'compact'].includes(s.pageSwitcherStyle) ? s.pageSwitcherStyle : 'text';
+        const switcher = ['text', 'segmented', 'compact'].includes(s.pageSwitcherStyle) ? s.pageSwitcherStyle : 'classic';
         const density = s.densityMode || 'comfortable';
         const barState = s.actionBarEnabled === false ? 'off'
             : (Number(s.actionBarAutoHideSeconds) > 0 && ['bottom', 'left', 'right'].includes(place) ? 'sliding' : 'on');

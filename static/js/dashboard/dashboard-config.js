@@ -11227,7 +11227,7 @@ class DashboardConfig {
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
         headerClockPlacement: { def: 'beside-name' },
-        pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'text' },
+        pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'bottom' },
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
@@ -11989,6 +11989,7 @@ class DashboardConfig {
                     { field: 'pageSwitcherStyle', type: 'select', special: 'chrome',
                         label: t('config.pageSwitcherStyleLabel', 'Page switcher'),
                         options: [
+                            opt('classic', t('config.pageSwitcherClassic', 'Numbers beside the destinations')),
                             opt('segmented', t('config.pageSwitcherSegmented', 'One segmented control')),
                             opt('text', t('config.pageSwitcherText', 'Plain text, underlined')),
                             opt('compact', t('config.pageSwitcherCompact', 'One button with a list')),

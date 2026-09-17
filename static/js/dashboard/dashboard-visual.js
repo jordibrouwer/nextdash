@@ -645,8 +645,13 @@ class DashboardVisual {
         };
         const left = drawn(row.querySelector('.header-shortcuts'));
         const right = hasContent(row.querySelector('.header-destinations'));
+        // The pages stand before the actions only in classic, and only a tab
+        // that is drawn counts as pages.
+        const pages = [...document.querySelectorAll('#page-navigation .page-nav-btn')].some(drawn);
         row.querySelectorAll('.header-zone-divider').forEach((rule) => {
-            rule.hidden = !(left && right);
+            rule.hidden = rule.classList.contains('header-zone-divider--pages')
+                ? !(left && pages)
+                : !(left && right);
         });
     }
 

@@ -250,7 +250,9 @@ class DashboardPageNav {
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
-            const selected = index === pageIndex && d.isBookmarksView();
+            // The page you were last on stays marked in config, health and the
+            // inbox: it is where the dashboard button and Escape take you back.
+            const selected = index === pageIndex;
             btn.classList.toggle('active', selected);
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
@@ -567,7 +569,7 @@ class DashboardPageNav {
 
     pageSwitcherStyle() {
         const raw = this.dash?.settings?.pageSwitcherStyle;
-        return raw === 'segmented' || raw === 'compact' ? raw : 'text';
+        return ['text', 'segmented', 'compact'].includes(raw) ? raw : 'classic';
     }
 
 
@@ -650,6 +652,16 @@ class DashboardPageNav {
          * narrows it further.
          */
         let shown = Math.min(cap, tabs.length);
+        /*
+         * Classic stands in a column sized by its own tabs, so its width is
+         * never a budget: measured against it, the room kept for the chip
+         * pushed out the second tab of three. The name beside it gives way
+         * first, and a window too narrow for both is the header-fit ladder's
+         * to handle -- which caps the strip at one from step 3.
+         */
+        if (this.pageSwitcherStyle() === 'classic') {
+            budget = Number.POSITIVE_INFINITY;
+        }
         if (!budget || budget < 0) {
             // And try again once the header has a width to report.
             if (!this._pageTabRefitQueued) {

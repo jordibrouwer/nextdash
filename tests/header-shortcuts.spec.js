@@ -282,7 +282,7 @@ test('the hairline needs something on both sides of it', async ({ page }) => {
     await showEveryAction(page);
     await usePlatedHeader(page);
 
-    const rules = () => page.evaluate(() => [...document.querySelectorAll('.header-zone-divider')]
+    const rules = () => page.evaluate(() => [...document.querySelectorAll('.header-zone-divider:not(.header-zone-divider--pages)')]
         .filter((el) => window.getComputedStyle(el).display !== 'none').length);
     const apply = (settings) => page.evaluate(async (patch) => {
         const d = window.dashboardInstance;
@@ -542,7 +542,7 @@ test('the destinations are as big as the action group', async ({ page }) => {
             // One hairline, between what you do and where you go. The one in
             // front of the actions went with the standalone pages button: a
             // rule needs something on both sides of it.
-            dividers: document.querySelectorAll('.header-zone-divider').length,
+            dividers: document.querySelectorAll('.header-zone-divider:not(.header-zone-divider--pages)').length,
             // And the pages button is an action, in the group with the rest.
             pagesInGroup: Boolean(document.querySelector('.header-shortcuts #page-overview-header-btn')),
             pagesStandalone: document.querySelectorAll('.pages-link').length,

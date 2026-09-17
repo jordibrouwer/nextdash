@@ -192,6 +192,39 @@ html[data-theme] body[data-depth="glass"] :is(
     -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
+/* Kale kopknoppen zijn kaal: zonder vlak is er geen glas om door te kijken,
+   en de blur tekende toch een getinte doos achter elk icoon. Alleen "elk in
+   een eigen doos" houdt het glas. */
+html[data-theme] body[data-depth="glass"][data-header-buttons="plain"] .header-top :is(
+    .page-overview-header-btn,
+    .page-navigation,
+    .page-nav-btn,
+    .page-nav-overflow,
+    .header-shortcuts,
+    .dashboard-link-anchor,
+    .health-link-anchor,
+    .config-link-anchor,
+    .search-button,
+    .btn-group
+) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Ook onder "elk in een eigen doos" staan de acties en de paginatabs in de kop
+   kaal, dus zonder glas. Een dock aan de rand is wel een plaat en houdt het;
+   de segmented schaal is de plaat van de tabs en houdt het ook. */
+html[data-theme] body[data-depth="glass"]:not([data-action-bar="bottom"]):not([data-action-bar="left"]):not([data-action-bar="right"]) .header-top :is(
+    .header-shortcuts,
+    .search-button,
+    .btn-group
+),
+html[data-theme] body[data-depth="glass"] .header-top .header-track :is(.page-nav-btn, .page-nav-overflow),
+html[data-theme] body[data-depth="glass"]:not([data-page-switcher="segmented"]) .header-top .page-navigation {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 /* Blokken en rails: een lijst om te lezen, geen venster om door te kijken. */
 html[data-theme] body[data-depth="glass"] :is(
     .config-tile,

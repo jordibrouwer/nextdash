@@ -46,6 +46,14 @@ async function openWithPages(page, count, width = 1500) {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The strip on the centre of the band is what this file measures; the
+    // default draws the pages at the right instead (page-switcher-styles.spec.js).
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.pageSwitcherStyle = 'text';
+        await d.saveSettings?.();
+        d.setupDOM?.();
+    });
     await seedPages(page, count);
     await page.waitForTimeout(600);
 }

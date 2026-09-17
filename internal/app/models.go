@@ -446,8 +446,9 @@ type Settings struct {
 	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
 	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (3-8)
 	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
+	PageSwitcherClassicMigrated     bool   `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
-	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
+	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
 	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
 	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
 	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
@@ -1425,6 +1426,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			LauncherDefaultsMigrated:        true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
+			PageSwitcherClassicMigrated:     true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -2973,7 +2975,8 @@ const (
 	pageSwitcherSegmented    = "segmented"
 	pageSwitcherText         = "text"
 	pageSwitcherCompact      = "compact"
-	defaultPageSwitcherStyle = pageSwitcherText
+	pageSwitcherClassic      = "classic"
+	defaultPageSwitcherStyle = pageSwitcherClassic
 )
 
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
@@ -3071,7 +3074,7 @@ func clampBookmarkSettings(s *Settings) {
 		s.HeaderClockPlacement = defaultHeaderClockPlacement
 	}
 	switch s.PageSwitcherStyle {
-	case pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
+	case pageSwitcherClassic, pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
 	default:
 		s.PageSwitcherStyle = defaultPageSwitcherStyle
 	}
@@ -3618,6 +3621,7 @@ func (fs *FileStore) GetSettings() Settings {
 			LauncherDefaultsMigrated:        true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
+			PageSwitcherClassicMigrated:     true,
 			TagCloudDefaultMigrated:         true,
 			RowHighlight:                    "subtle",
 			InkGap:                          defaultInkGap,
@@ -4062,6 +4066,15 @@ func (fs *FileStore) GetSettings() Settings {
 			}
 			settings.PageSwitcherTextMigrated = true
 		}
+		// Classic -- the numbers beside the destinations -- is the default
+		// now. Text was the default until then, so a stored text moves once;
+		// segmented and compact were chosen and stay.
+		if !settings.PageSwitcherClassicMigrated {
+			if settings.PageSwitcherStyle == pageSwitcherText || settings.PageSwitcherStyle == "" {
+				settings.PageSwitcherStyle = pageSwitcherClassic
+			}
+			settings.PageSwitcherClassicMigrated = true
+		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
 		default:
@@ -4263,6 +4276,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
+			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}

@@ -104,7 +104,7 @@ class DashboardSetup {
         const switcher = d.settings.pageSwitcherStyle;
         document.body.setAttribute(
             'data-page-switcher',
-            switcher === 'segmented' || switcher === 'compact' ? switcher : 'text'
+            ['text', 'segmented', 'compact'].includes(switcher) ? switcher : 'classic'
         );
 
         d.publishButtonBarHeight?.();

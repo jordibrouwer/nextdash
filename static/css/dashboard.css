@@ -1411,6 +1411,8 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
    these are a dense row of tabs and padding them out to 44px would push the
    later pages off the strip for no gain. */
 @media (hover: none) and (pointer: coarse) {
+    /* The text styles set their tabs to their glyph's width; a finger needs more. */
+    body:not([data-mobile-layout="true"]):is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn,
     body:not([data-mobile-layout="true"]) .page-nav-btn {
         min-height: 44px;
         min-width: 44px;
@@ -7511,7 +7513,7 @@ body[data-page-switcher="segmented"] .header-track .page-nav-btn.active {
 /* Text: no box at all. The page you are on takes the 2px underline the
    destinations use, so "you are here" is said the same way in both halves of
    the band. */
-body[data-page-switcher="text"] .header-track .page-navigation {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-navigation {
     gap: 1.1rem;
     overflow: visible;
 }
@@ -7519,13 +7521,13 @@ body[data-page-switcher="text"] .header-track .page-navigation {
 /* Tabs, not a control panel: the walk arrows and the printed `,` read as
    stray marks beside words. Their keys keep working and are in the cheat
    sheet; the buttons only go from this style. */
-body[data-page-switcher="text"] .header-track .page-walk-hint,
-body[data-page-switcher="text"] .header-track .page-nav-overflow-key {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-walk-hint,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow-key {
     display: none;
 }
 
-body[data-page-switcher="text"] .header-track .page-nav-btn,
-body[data-page-switcher="text"] .header-track .page-nav-overflow {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow {
     position: relative;
     height: 32px;
     min-width: 0;
@@ -7538,20 +7540,20 @@ body[data-page-switcher="text"] .header-track .page-nav-overflow {
     color: var(--text-secondary);
 }
 
-body[data-page-switcher="text"] .header-track .page-nav-btn:hover,
-body[data-page-switcher="text"] .header-track .page-nav-overflow:hover {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn:hover,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow:hover {
     background: transparent;
     color: var(--text-primary);
 }
 
-body[data-page-switcher="text"] .header-track .page-nav-btn.active {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn.active {
     background: transparent;
     color: var(--text-primary);
     font-weight: 700;
     box-shadow: none;
 }
 
-body[data-page-switcher="text"] .header-track .page-nav-btn.active::after {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn.active::after {
     content: '';
     position: absolute;
     left: 0;
@@ -7564,9 +7566,33 @@ body[data-page-switcher="text"] .header-track .page-nav-btn.active::after {
 
 /* The chip is a word among words here, not a control: the key it carries is
    the same `,` printed on everything else that opens the panel. */
-body[data-page-switcher="text"] .header-track .page-nav-overflow-key {
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow-key {
     background: transparent;
     padding: 0;
+}
+
+/* Classic: the text tabs, standing at the right beside the destinations
+   rather than on the centre of the band -- where they stood before the band
+   had a middle. The columns change, not the markup: the identity takes the
+   free room, and the pages and the actions size to what they hold. */
+body[data-page-switcher="classic"] .dashboard-section.section-controls .header-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
+}
+
+body[data-page-switcher="classic"] .dashboard-section.section-controls .header-track {
+    justify-content: flex-end;
+    justify-self: end;
+}
+
+/* On the destinations' line: as tall as they are, so the rule under the page
+   you are on is the rule under the view you are in -- one line, not two. */
+body[data-page-switcher="classic"] .header-track .page-nav-btn,
+body[data-page-switcher="classic"] .header-track .page-nav-overflow {
+    height: 40px;
+}
+
+body[data-page-switcher="classic"] .header-track .page-nav-btn.active::after {
+    bottom: -2px;
 }
 
 /* Compact: one button naming the page you are on.
@@ -7635,6 +7661,12 @@ body[data-page-switcher="compact"] .header-track .page-nav-overflow {
    is set on the element here so the flex gap goes with the rule rather than
    leaving a hole where it stood. */
 .header-zone-divider[hidden] {
+    display: none;
+}
+
+/* The pages stand beside the actions only in classic; elsewhere the band's
+   middle already separates them. */
+body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: none;
 }
 
@@ -8237,6 +8269,18 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
     box-shadow: none;
     transform: none;
     opacity: 0.7;
+}
+
+/* Plated boxes the destinations; the actions and the page tabs stay bare in
+   the header, and bare means bare on hover too -- the accent wash and its
+   cast drew a box around a control the rest of the time drawn without one.
+   The ink still lifts. A docked bar is a plate of its own and keeps its
+   hover as it was. */
+body:not([data-header-buttons="plain"]):not([data-action-bar="bottom"]):not([data-action-bar="left"]):not([data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts .search-button:is(:hover, :focus-visible, :active),
+body:not([data-header-buttons="plain"]):not([data-page-switcher="segmented"]) .dashboard-section.section-controls .header-track :is(.page-nav-btn, .page-nav-overflow):is(:hover, :active) {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
 }
 
 /* The zones sit closer together with no boxes between them, and the rule that

@@ -2662,11 +2662,12 @@ class SearchCommandsComponent {
             prefix: 'switcher',
             shortcut: ':SWITCHER',
             options: [
+                { value: 'classic', label: t('config.pageSwitcherClassic', 'Numbers beside the destinations') },
                 { value: 'segmented', label: t('config.pageSwitcherSegmented', 'One segmented control') },
                 { value: 'text', label: t('config.pageSwitcherText', 'Plain text, underlined') },
                 { value: 'compact', label: t('config.pageSwitcherCompact', 'One button with a list') },
             ],
-            current: (d) => d.settings.pageSwitcherStyle || 'text',
+            current: (d) => d.settings.pageSwitcherStyle || 'classic',
             apply: (value) => this._applyChromeSetting('pageSwitcherStyle', value, `switcher:${value}`),
         }, args);
     }

@@ -109,9 +109,42 @@ const read = (page) => page.evaluate(() => {
     };
 });
 
-test('text is what a fresh install draws', async ({ page }) => {
+test('classic is what a fresh install draws', async ({ page }) => {
     await openWithPages(page);
-    expect(await page.evaluate(() => document.body.getAttribute('data-page-switcher'))).toBe('text');
+    expect(await page.evaluate(() => document.body.getAttribute('data-page-switcher'))).toBe('classic');
+});
+
+test('classic stands the pages beside the destinations, underlined', async ({ page }) => {
+    await openWithPages(page);
+    await chooseStyle(page, 'segmented');
+    await chooseStyle(page, 'classic');
+    const seen = await read(page);
+
+    expect(seen.attribute).toBe('classic');
+    expect(seen.tab.border, 'a page is still a box').toBe(0);
+    expect(seen.underline, 'nothing says which page you are on').toBe(true);
+
+    // On the right half of the band, and nothing between them and the
+    // destinations but the action group.
+    const place = await page.evaluate(() => {
+        const track = document.querySelector('.header-track').getBoundingClientRect();
+        const dest = document.querySelector('.header-destinations').getBoundingClientRect();
+        const band = document.querySelector('.header-top').getBoundingClientRect();
+        return {
+            rightHalf: track.left > band.left + band.width / 2,
+            beforeDestinations: track.right <= dest.left + 1,
+            arrows: [...document.querySelectorAll('.header-track .page-walk-hint')]
+                .filter((el) => window.getComputedStyle(el).display !== 'none').length,
+        };
+    });
+    expect(place.rightHalf, 'the pages still stand in the middle').toBe(true);
+    expect(place.beforeDestinations, 'the pages are not before the destinations').toBe(true);
+    expect(place.arrows, 'the walk arrows are drawn beside the numbers').toBe(0);
+
+    // A tab is still a way to a page.
+    const before = await page.evaluate(() => String(window.dashboardInstance.currentPageId));
+    await page.locator('#page-navigation .page-nav-btn:not(.active):not([hidden])').first().click();
+    await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.currentPageId))).not.toBe(before);
 });
 
 test('segmented puts the pages in one shell', async ({ page }) => {
@@ -193,4 +226,38 @@ test('the choice survives a reload', async ({ page }) => {
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-page-switcher'),
     ), { timeout: 10_000 }).toBe('text');
+});
+
+test('the page you were last on stays marked in config, health and the inbox', async ({ page }) => {
+    await openWithPages(page);
+    await chooseStyle(page, 'classic');
+    // Onto the second page, so the mark is not simply the first tab.
+    await page.locator('#page-navigation .page-nav-btn:not(.active):not([hidden])').first().click();
+    await page.waitForTimeout(400);
+    const marked = () => page.evaluate(() => {
+        const d = window.dashboardInstance;
+        const tabs = [...document.querySelectorAll('#page-navigation .page-nav-btn')];
+        const active = tabs.filter((t) => t.classList.contains('active'));
+        const index = d.pages.findIndex((p) => String(p.id) === String(d.currentPageId));
+        return { count: active.length, right: active[0] === tabs[index], view: d.activeView };
+    });
+    expect(await marked()).toEqual({ count: 1, right: true, view: 'bookmarks' });
+
+    await page.keyboard.press('Shift+S');
+    await expect.poll(async () => (await marked()).view).toBe('config');
+    expect(await marked()).toEqual({ count: 1, right: true, view: 'config' });
+
+    await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
+    await expect.poll(async () => (await marked()).view).toBe('health');
+    expect(await marked()).toEqual({ count: 1, right: true, view: 'health' });
+
+    await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
+    await expect.poll(async () => (await marked()).view).toBe('inbox');
+    expect(await marked()).toEqual({ count: 1, right: true, view: 'inbox' });
+
+    // And the marked tab still leads back to that page.
+    const before = await page.evaluate(() => String(window.dashboardInstance.currentPageId));
+    await page.locator('#page-navigation .page-nav-btn.active').click();
+    await expect.poll(async () => (await marked()).view).toBe('bookmarks');
+    expect(await page.evaluate(() => String(window.dashboardInstance.currentPageId))).toBe(before);
 });
