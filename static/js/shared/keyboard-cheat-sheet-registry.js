@@ -209,8 +209,8 @@
                 // `x` from the shared legend — enough to teach that selecting
                 // exists, with the rest a keypress away in the modal.
                 { keys: 'x', cheatKey: 'hmsToggleRow', fallback: 'Tick the focused row and move to the next — so a run of rows is x-x-x' },
-                { keys: 'X', cheatKey: 'hmsSelectAll', fallback: 'Tick every row the current filter shows' },
-                { keys: 'Ctrl/Cmd + A', cheatKey: 'hmsSelectAllKeys', fallback: 'Tick every row the current filter shows' },
+                { keys: 'X', cheatKey: 'hmsSelectAll', fallback: 'Tick every row the current filter shows; pressing it again unticks them' },
+                { keys: 'Ctrl/Cmd + A', cheatKey: 'hmsSelectAllKeys', fallback: 'Tick every row the current filter shows; pressing it again unticks them' },
                 { keys: 'Alt + click', cheatKey: 'hmsCtrlClick', fallback: 'Add or remove a single row with the mouse' },
                 { keys: 'Shift + click', cheatKey: 'hmsShiftClick', fallback: 'Extend the selection to the clicked row' },
                 { keys: 'Click', cheatKey: 'hmsPlainClick', fallback: 'With a selection open, a plain click clears it' },
