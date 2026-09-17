@@ -101,3 +101,34 @@ test(':weather sets the town and switches the line on', async ({ page }) => {
         shown: window.dashboardInstance.settings.showWeatherWithDate,
     })), { timeout: 5_000 }).toEqual({ place: 'Leiden', shown: true });
 });
+
+test(':tour lists the guided tours and opens one', async ({ page }) => {
+    await open(page);
+    await palette(page, 'tour');
+    await expect(rows(page).first()).toBeVisible();
+
+    await palette(page, 'tour changes');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.changes-tour')).toBeVisible({ timeout: 10_000 });
+});
+
+test('the palette names the same tours config does', async ({ page }) => {
+    await open(page);
+    // Loads the config module, then compares the two lists.
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
+    await page.waitForTimeout(800);
+
+    const lists = await page.evaluate(() => ({
+        config: (window.DashboardConfig?.GUIDED_TOURS || []).map((t) => t.id),
+        palette: (window.SearchCommandsComponent?.GUIDED_TOURS || []).map((t) => t.id),
+    }));
+    expect(lists.palette.slice().sort()).toEqual(lists.config.slice().sort());
+});
+
+test(':import goes to the backups panel', async ({ page }) => {
+    await open(page);
+    await palette(page, 'import');
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 10_000 }).toContain('#config/data');
+});

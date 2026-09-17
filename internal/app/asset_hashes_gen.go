@@ -177,7 +177,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/quick-add.js":                                        "3cdaa7ed2a38",
 	"js/reorder.js":                                          "57a3fdbb825b",
 	"js/scroll-lock.js":                                      "c84ffae41c1a",
-	"js/search-commands.js":                                  "716e82f04e59",
+	"js/search-commands.js":                                  "bef54625eb63",
 	"js/search-commands/search-commands-columns.js":          "728ef36275c4",
 	"js/search-commands/search-commands-fontsize.js":         "5918b343a075",
 	"js/search-commands/search-commands-new.js":              "2749a6fe7429",

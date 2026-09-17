@@ -1,5 +1,22 @@
 // Search Commands Component JavaScript
 class SearchCommandsComponent {
+    /*
+     * The guided tours, mirrored from DashboardConfig.GUIDED_TOURS.
+     *
+     * Config is lazily loaded, and this list has to be answerable before it
+     * is. Kept in step by command-palette-settings.spec.js, which fails if the
+     * two lists diverge.
+     */
+    static GUIDED_TOURS = [
+        { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
+        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
+        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health' },
+        { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox' },
+        { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
+        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category' },
+    ];
+
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
         this.language = language;
         this.updateQueryCallback = updateQueryCallback;
@@ -30,7 +47,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupBookmarks',
                 commands: [
                     'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
-                    'open', 'goto', 'find', 'stale', 'duplicates',
+                    'open', 'goto', 'find', 'stale', 'duplicates', 'archive',
                 ],
             },
             {
@@ -62,7 +79,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -159,6 +176,9 @@ class SearchCommandsComponent {
             'metadata': this.handleMetadataCommand.bind(this),
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
+            'import': this.handleImportCommand.bind(this),
+            'tour': this.handleTourCommand.bind(this),
+            'archive': this.handleArchiveCommand.bind(this),
         };
 
         // Current page bookmarks and all bookmarks
@@ -3106,6 +3126,124 @@ class SearchCommandsComponent {
         }, args);
     }
 
+
+    /*
+     * The guided tours, replayed from the palette.
+     *
+     * Config → Help → Guided tours is where they live; this is the same list
+     * with the same effect, for a reader who already knows which one they
+     * want. `:tour` alone names them all; a word picks one.
+     */
+    handleTourCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard?.config) return [];
+        /*
+         * Named here rather than read off config.
+         *
+         * The config module is lazily loaded, so on a dashboard nobody has
+         * opened config on yet its GUIDED_TOURS list does not exist -- and a
+         * command that answers with nothing until you have been somewhere else
+         * is worse than no command. Replaying still goes through config, which
+         * loads on the way.
+         */
+        const tours = SearchCommandsComponent.GUIDED_TOURS;
+        const typed = (args[0] || '').toLowerCase();
+        const matches = tours.filter(({ id, label }) => !typed
+            || id.toLowerCase().includes(typed)
+            || label.toLowerCase().startsWith(typed));
+        return matches.map(({ id, labelKey, label }) => ({
+            name: this._t(labelKey, label),
+            shortcut: ':TOUR',
+            type: 'command',
+            stateId: `tour:${id}`,
+            action: () => this._runOverlayAction(() => {
+                if (id === 'changesTourV1' && window.ChangesTour?.open) {
+                    window.ChangesTour.open();
+                    return;
+                }
+                void dashboard.config.replayTour(id);
+            }),
+        }));
+    }
+
+    /** Restoring from a backup lives in config; this is the way in. */
+    handleImportCommand() {
+        return [{
+            name: this._t('commands.importLabel', 'Restore from a backup (.zip)'),
+            shortcut: ':IMPORT',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                window.location.hash = '#config/data/backups';
+            }),
+        }];
+    }
+
+    /*
+     * A copy of a page, kept on this machine.
+     *
+     * The bookmark the cursor is on, or the one named after the command. The
+     * same endpoint Health's "save a local copy" uses, and the same answer
+     * when monolith is not installed.
+     */
+    handleArchiveCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const typed = String(fullQuery || '').replace(/^:\s*archive\s*/i, '').trim();
+        const context = this.contextBookmark;
+        const pool = Array.isArray(dashboard.allBookmarks) && dashboard.allBookmarks.length
+            ? dashboard.allBookmarks
+            : (dashboard.bookmarks || []);
+
+        const targets = typed
+            ? pool.filter((b) => String(b.name || '').toLowerCase().includes(typed.toLowerCase())).slice(0, 8)
+            : (context ? [context] : []);
+
+        if (!targets.length) {
+            return [{
+                name: typed
+                    ? t('commands.archiveNoMatch', 'No bookmark of that name to save a copy of')
+                    : t('commands.archiveHint', 'Type a bookmark’s name to keep a copy of its page'),
+                shortcut: ':ARCHIVE',
+                type: 'command-completion',
+                completion: ':archive ',
+            }];
+        }
+
+        return targets.map((bookmark) => ({
+            name: t('commands.archiveOne', 'Keep a copy of {name}').replace('{name}', bookmark.name || bookmark.url),
+            shortcut: ':ARCHIVE',
+            type: 'command',
+            stateId: `archive:${bookmark.id || bookmark.url}`,
+            action: () => this._runOverlayAction(() => this._captureArchive(bookmark)),
+        }));
+    }
+
+    async _captureArchive(bookmark) {
+        const dashboard = window.dashboardInstance;
+        const url = bookmark?.url;
+        if (!dashboard || !url) return;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        dashboard.showNotification?.(
+            this._t('commands.archiveSaving', 'Saving a copy…'), 'info');
+        try {
+            const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(url)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                // 412 is monolith missing, which is a setup step rather than a
+                // failure of the page -- same answer Health gives.
+                dashboard.showNotification?.(res.status === 412
+                    ? this._t('commands.archiveMissingTool', 'monolith is not installed — see Config → Data & backups → Sources.')
+                    : (body.error || this._t('commands.archiveError', 'Could not save a copy of that page.')), 'error');
+                return;
+            }
+            dashboard.showNotification?.(
+                this._t('commands.archiveDone', 'A copy is kept.'), 'success');
+        } catch {
+            dashboard.showNotification?.(
+                this._t('commands.archiveError', 'Could not save a copy of that page.'), 'error');
+        }
+    }
 
     handleFaviconCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
