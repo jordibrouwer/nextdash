@@ -94,9 +94,20 @@ test.describe('a group page', () => {
         const field = page.locator('[data-hub-text="weatherLocation"]');
         await expect(field).toBeVisible();
 
-        await field.fill('Leiden');
-        await field.press('Enter');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.weatherLocation)).toBe('Leiden');
+        // Typed, not submitted: the weather line answers to this field, so it
+        // is saved while the word is being written.
+        await field.click();
+        await field.pressSequentially('Leiden', { delay: 40 });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.weatherLocation),
+            { timeout: 5_000 }).toBe('Leiden');
+
+        // And the field is still the one being typed into, with the cursor
+        // where it was: the save redraws the cards under the reader's hands.
+        const state = await page.evaluate(() => {
+            const el = document.activeElement;
+            return { field: el?.dataset?.hubText, value: el?.value, caret: el?.selectionStart };
+        });
+        expect(state).toEqual({ field: 'weatherLocation', value: 'Leiden', caret: 6 });
 
         // It was saved, not only drawn.
         await page.reload();

@@ -11354,6 +11354,9 @@ class DashboardConfig {
      * midpoints of the bands inkGapLabelFor already named, so a dashboard that
      * was set with the slider keeps the word it had.
      */
+    /** How long a typed setting waits before it is saved. */
+    static HUB_TEXT_SAVE_MS = 450;
+
     static INK_GAP_STEPS = [
         [0.34, 'inkGapSoft', 'Soft'],
         [0.44, 'inkGapNormal', 'Normal'],
@@ -11538,7 +11541,7 @@ class DashboardConfig {
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
         maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
         maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
-        headerClockPlacement: { def: 'beside-name' },
+        headerClockPlacement: { def: 'classic' },
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
@@ -14480,14 +14483,29 @@ class DashboardConfig {
         root.querySelectorAll('[data-hub-text]').forEach((input) => {
             if (input.dataset.hubBound === '1') return;
             input.dataset.hubBound = '1';
-            // On change, not on every keystroke: each save redraws the cards,
-            // and a redraw mid-word takes the cursor with it.
-            input.addEventListener('change', () => {
+            /*
+             * While it is typed, not only when it is left.
+             *
+             * The weather line answers to this field, and waiting for a blur
+             * meant typing a town and seeing nothing happen. Each keystroke
+             * restarts a short timer, so one word is one save and one fetch
+             * rather than five; the repaint that follows puts the cursor back
+             * where it was (repaintHubBasics).
+             */
+            const save = () => {
+                clearTimeout(this._hubTextTimer);
+                this._hubTextTimer = null;
                 void this.setBehavior(input.dataset.hubText, input.value.trim(),
                     input.dataset.hubSpecial || undefined);
+            };
+            input.addEventListener('input', () => {
+                clearTimeout(this._hubTextTimer);
+                this._hubTextTimer = setTimeout(save, DashboardConfig.HUB_TEXT_SAVE_MS);
             });
+            // Leaving the field, or pressing Enter, is not something to wait out.
+            input.addEventListener('change', save);
             input.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') input.blur();
+                if (event.key === 'Enter') save();
             });
         });
         root.querySelectorAll('[data-hub-more]').forEach((fold) => {
@@ -14510,6 +14528,16 @@ class DashboardConfig {
         if (basics) {
             const focused = document.activeElement?.closest?.('[data-hub-field]');
             const key = focused ? [focused.dataset.hubField, focused.dataset.hubValue] : null;
+            // A field being typed into is redrawn under the reader's hands:
+            // what it holds and where the cursor sits have to survive that, or
+            // a saved keystroke sends the caret to the end of the word.
+            const typing = document.activeElement?.closest?.('[data-hub-text]');
+            const text = typing ? {
+                field: typing.dataset.hubText,
+                value: typing.value,
+                start: typing.selectionStart,
+                end: typing.selectionEnd,
+            } : null;
             const tmp = document.createElement('div');
             tmp.innerHTML = hub.renderBasics(this, section, tab);
             const fresh = tmp.firstElementChild;
@@ -14518,6 +14546,14 @@ class DashboardConfig {
                 this.bindHubControls(container);
                 if (key) {
                     fresh.querySelector(`[data-hub-field="${CSS.escape(key[0])}"][data-hub-value="${CSS.escape(key[1])}"]`)?.focus();
+                }
+                if (text) {
+                    const back = fresh.querySelector(`[data-hub-text="${CSS.escape(text.field)}"]`);
+                    if (back) {
+                        back.value = text.value;
+                        back.focus();
+                        back.setSelectionRange(text.start, text.end);
+                    }
                 }
             }
         }
