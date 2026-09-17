@@ -8682,6 +8682,37 @@ body[data-action-keys="off"] .header-action-item-key {
     display: none;
 }
 
+/*
+ * The key, on hover, when the chips are off (action-key-hint.js).
+ *
+ * Above the docked bar (900) and never in the way of the pointer: it stands
+ * beside the button it names, and a click passes through it.
+ */
+.action-key-hint {
+    position: fixed;
+    z-index: 1002;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 7px);
+    background: var(--background-secondary);
+    box-shadow: 0 4px 14px color-mix(in srgb, black 22%, transparent);
+    pointer-events: none;
+}
+
+.action-key-hint kbd {
+    display: block;
+    min-width: 1.4em;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-3, 0.25rem);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1.3;
+    text-align: center;
+}
+
 /* Switched off: no actions anywhere, and no divider waiting for them. */
 body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-shortcuts,
 body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-zone-divider {
