@@ -14,6 +14,10 @@
  * look for the setting; and "Show me" dims the window and lights up the real
  * element on the dashboard behind it.
  *
+ * It shows rather than goes: the steps name where a thing lives and light it
+ * up on the real screen, and none of them takes the reader somewhere -- a tour
+ * that walks off mid-sentence is worse than one that points.
+ *
  * It does not replace the What's new modal. The last step points at it.
  *
  * A fresh install gets the same steps with the "what moved" taken out of them
@@ -30,16 +34,6 @@
     const SHOW_DELAY_MS = 9000;
     /** How long the reader has the real element to themselves. */
     const SPOTLIGHT_MS = 1800;
-    /**
-     * How long a view change is given before the step comes back, and how many
-     * times that is tried.
-     *
-     * One attempt was not enough: a view that opens a window of its own on
-     * arrival -- Config → Widgets has a tour of its own -- closes whatever is
-     * open as it renders, and the step came back only to be taken away again.
-     */
-    const RETURN_MS = 500;
-    const RETURN_TRIES = 4;
     /** "Later" is one more ask, tomorrow. */
     const LATER_MS = 24 * 60 * 60 * 1000;
 
@@ -61,6 +55,23 @@
     }
 
     const esc = window.NextDashHtml.escapeHtml;
+
+    /**
+     * The keys a step names, drawn as keys.
+     *
+     * Applied after escaping, so the body stays text from the locale files and
+     * only these fixed strings become markup. They read as prose otherwise --
+     * "Shift + A opens the browser" is a sentence about a key that does not
+     * look like one.
+     */
+    const KEYS = ['Shift + A', 'Shift + O', ':changes'];
+
+    function withKeys(text) {
+        return KEYS.reduce(
+            (acc, key) => acc.replaceAll(esc(key), `<kbd>${esc(key)}</kbd>`),
+            esc(text),
+        );
+    }
 
     /** An install the server wrote fresh has nothing to be told it lost. */
     const isNewcomer = () => dash()?.settings?.firstRunInstall === true;
@@ -101,25 +112,56 @@
     }
 
     function art(name) {
-        return `<div class="changes-tour-art changes-tour-art--${name}" aria-hidden="true">${ART[name]}</div>`;
+        return `<div class="changes-tour-art changes-tour-art--${name}" aria-hidden="true">${ART()[name]}</div>`;
     }
 
-    const ART = {
+    /*
+     * Built per render, not once at load: the badge on the gloss card is the
+     * theme browser's own word for it, and the language is not loaded yet when
+     * this file runs. A literal there showed the Dutch word on an English
+     * dashboard.
+     */
+    const ART = () => ({
         pages: `<span class="changes-tour-bar"><span class="changes-tour-dim">19:42</span>
             <span class="changes-tour-tabs"><b>1</b><i>2</i><i>3</i><i>+5</i></span>
             <span class="changes-tour-dim">⌂ ✉ ♥ ⚙</span></span>`,
         actions: `<span class="changes-tour-page"><span class="changes-tour-lines"><i></i><i></i><i></i></span>
             <span class="changes-tour-rail"><i>+</i><i>&gt;</i><i>:</i><i>*</i></span>
             <span class="changes-tour-handle"></span></span>`,
-        config: `<span class="changes-tour-tiles"><i></i><i></i><i></i><i></i><i></i><i></i></span>`,
-        workbench: `<span class="changes-tour-bench"><i class="changes-tour-bench-filters"></i>
-            <i class="changes-tour-bench-list"></i><i class="changes-tour-bench-edit"></i></span>`,
+        // Named tiles, not six grey boxes: the step is about config opening on
+        // groups with names, and an unlabelled grid says nothing at all.
+        config: `<span class="changes-tour-tiles">
+            <i><b>Theme</b><em>Retro CRT</em></i>
+            <i><b>Grid</b><em>4 columns</em></i>
+            <i><b>Action bar</b><em>right</em></i>
+            <i><b>Date &amp; weather</b><em>Leiden</em></i>
+            <i><b>Header</b><em>plain</em></i>
+            <i><b>Custom themes</b><em>2</em></i>
+        </span>`,
+        // The three columns with what stands in them: filters that are ticked,
+        // rows that are picked, and the panel that edits what is picked. Empty
+        // boxes drew the layout and said nothing about the work.
+        workbench: `<span class="changes-tour-bench">
+            <i class="changes-tour-bench-filters"><b>filters</b><s></s><s></s><s></s></i>
+            <i class="changes-tour-bench-list"><b>list</b><u class="is-picked"></u><u class="is-picked"></u><u></u><u></u></i>
+            <i class="changes-tour-bench-edit"><b>2 picked</b><s></s><s></s></i>
+        </span>`,
         widgets: `<span class="changes-tour-widget"><b>12</b><span class="changes-tour-dim">queue</span>
             <b>340</b><span class="changes-tour-dim">done</span></span>`,
         tags: `<span class="changes-tour-tags"><i>selfhosted</i><i>tools</i><i>docs</i><i class="is-own">+</i></span>`,
-        looks: `<span class="changes-tour-swatches"><i class="is-gloss"></i><i class="is-light"></i><i class="is-dark"></i></span>`,
+        /*
+         * Three theme cards rather than three grey squares: a lacquered one
+         * with its badge and its lit band, and a light and a dark half of the
+         * same family. The colours come from the theme's own accents, so the
+         * drawing is in whatever theme the reader is actually looking at.
+         */
+        looks: `<span class="changes-tour-swatches">
+            <i class="is-gloss"><b>${esc(t('config.themeBadgeGloss', 'Gloss'))}</b><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
+            <i class="is-light"><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
+            <i class="is-dark"><span class="changes-tour-chips"><u></u><u></u><u></u></span></i>
+        </span>`,
         done: `<span class="changes-tour-done">✳</span>`,
-    };
+    });
 
     function steps() {
         const fresh = isNewcomer();
@@ -148,7 +190,9 @@
                     : t('changesTourActionsTitle', 'The action buttons have a place of their own'),
                 body: t('changesTourActionsBody', "They stand in a column on the right, which slides into the edge after a couple of seconds. Touching that edge, clicking the handle it leaves behind, or pressing ' or Shift + O brings them back. Their key chips can go; the keys keep working."),
                 art: 'actions',
-                lit: '.dashboard-section.section-controls .header-shortcuts',
+                // No "Show me": the bar this step is about slides into its
+                // edge, so more often than not there is nothing there to light
+                // up -- and lighting up an empty edge explains nothing.
                 choice: () => choice('actionBarPosition', t('changesTourActionsChoice', 'Where do you want them?'), [
                     ['right', t('changesTourActionsRight', 'Right')],
                     ['left', t('changesTourActionsLeft', 'Left')],
@@ -161,22 +205,18 @@
                 title: t('changesTourConfigTitle', 'Config opens on tiles'),
                 body: t('changesTourConfigBody', 'Appearance and Behavior show groups first; a click opens one and Escape goes back. Date & weather now sits under Appearance, and there is a Logs section.'),
                 art: 'config',
-                lit: '.header-destinations .config-link-anchor',
-                go: { label: () => t('changesTourConfigOpen', 'Open config'), hash: '#config/appearance' },
             },
             {
                 key: 'workbench',
                 title: t('changesTourWorkbenchTitle', 'Bookmarks → List is a workbench'),
                 body: t('changesTourWorkbenchBody', 'Filters on the left, the list in the middle, an edit panel on the right — for several bookmarks at once as well as one.'),
                 art: 'workbench',
-                go: { label: () => t('changesTourWorkbenchOpen', 'Open the list'), hash: '#config/bookmarks' },
             },
             {
                 key: 'widgets',
                 title: t('changesTourWidgetsTitle', 'Widgets of your own'),
                 body: t('changesTourWidgetsBody', 'A Custom widget reads your own JSON address and puts the numbers on the dashboard as figures, rows or a bar. You say which field goes where and how often it refreshes.'),
                 art: 'widgets',
-                go: { label: () => t('changesTourWidgetsOpen', 'Open Widgets'), hash: '#config/widgets' },
             },
             {
                 key: 'tags',
@@ -187,28 +227,18 @@
             {
                 key: 'looks',
                 title: t('changesTourLooksTitle', 'New looks'),
-                body: t('changesTourLooksBody', 'Gloss themes catch the light and carry a badge in the theme browser, and a theme of your own can set its shape and its sheen, in a light and a dark half.'),
+                body: t('changesTourLooksBody', 'Gloss themes catch the light and carry a badge in the theme browser, and a theme of your own can set its shape and its sheen, in a light and a dark half. Shift + A opens the browser from anywhere.'),
                 art: 'looks',
                 // The config view's own opener, not ThemeBrowser.open: the
                 // browser needs the palettes, the favourites and the preview
                 // and revert pair handed to it, and called bare it returns
                 // without drawing anything. Same route Shift+A takes.
-                go: { label: () => t('changesTourLooksOpen', 'Open the theme browser'), action: () => dash()?.config?.openThemeBrowser?.() },
             },
             {
                 key: 'done',
                 title: t('changesTourDoneTitle', 'That is all of it'),
                 body: t('changesTourDoneBody', 'You can open this again from Config → Help → Guided tours, or with the :changes command. The full release notes are in What\'s new.'),
                 art: 'done',
-                go: {
-                    label: () => t('changesTourDoneWhatsNew', "Open What's new"),
-                    // Loaded on demand; if it cannot be, the overlay it was
-                    // going to fill has to come down rather than stand empty.
-                    action: () => global.openWhatsNewModal?.({
-                        force: true,
-                        onAbort: () => global.AppModal?.hide?.(),
-                    }),
-                },
             },
         ];
     }
@@ -217,6 +247,28 @@
 
     let index = 0;
     let finished = false;
+    /*
+     * Whether the window is being taken away on purpose.
+     *
+     * The modal calls onHide on every hide, its own Next and Back included, so
+     * without this the tour counted itself finished the moment the reader
+     * pressed Next -- and every "Open" button after that found a tour that had
+     * already ended and never came back.
+     */
+    let stepping = false;
+
+    /** A hide we are doing ourselves: onHide must not read it as an answer. */
+    function ourOwnHide(fn) {
+        stepping = true;
+        try {
+            fn();
+        } finally {
+            setTimeout(() => { stepping = false; }, 0);
+        }
+    }
+
+    /** The step as it stands on screen: in the overlay, and the overlay shown. */
+    const onScreen = () => Boolean(document.querySelector('#app-modal.show .changes-tour'));
 
     /** Apply a choice: write it, save it, and let the dashboard redraw. */
     async function applyChoice(field, value) {
@@ -233,16 +285,35 @@
         global.ActionBarAutoHide?.sync?.();
     }
 
-    /** Dim the window, light up the real thing, and come back to the step. */
+    /**
+     * Dim the window, light up the real thing, and come back to the step.
+     *
+     * A sheet over the page while it is lit, because the window is out of the
+     * way and the dashboard underneath is not: a reader who pressed "Show me"
+     * to be shown the config button then pressed the config button, which
+     * opened config and closed the tour. Anything pressed during the look ends
+     * the look instead, and hands the step straight back.
+     */
     function spotlight(selector) {
         const target = selector && document.querySelector(selector);
         if (!target) return;
-        document.body.classList.add('changes-tour-peeking');
-        target.classList.add('changes-tour-lit');
-        setTimeout(() => {
+        const guard = document.createElement('div');
+        guard.className = 'changes-tour-peek-guard';
+        let done = null;
+        const timer = setTimeout(() => done(), SPOTLIGHT_MS);
+        done = () => {
+            clearTimeout(timer);
+            guard.remove();
             target.classList.remove('changes-tour-lit');
             document.body.classList.remove('changes-tour-peeking');
-        }, SPOTLIGHT_MS);
+        };
+        guard.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            done();
+        });
+        document.body.appendChild(guard);
+        document.body.classList.add('changes-tour-peeking');
+        target.classList.add('changes-tour-lit');
     }
 
     function render() {
@@ -258,11 +329,10 @@
                     { n: index + 1, total }))}</div>
                 <h3 class="changes-tour-step-title">${esc(step.title)}</h3>
                 ${art(step.art)}
-                <p class="changes-tour-step-body">${esc(step.body)}</p>
+                <p class="changes-tour-step-body">${withKeys(step.body)}</p>
                 ${step.choice ? step.choice() : ''}
-                ${step.lit || step.go ? `<div class="changes-tour-extra">
-                    ${step.lit ? `<button type="button" class="changes-tour-extra-btn" data-tour-lit="${esc(step.lit)}">${esc(t('changesTourShowMe', 'Show me'))}</button>` : ''}
-                    ${step.go ? `<button type="button" class="changes-tour-extra-btn" data-tour-go="${esc(step.key)}">${esc(step.go.label())}</button>` : ''}
+                ${step.lit ? `<div class="changes-tour-extra">
+                    <button type="button" class="changes-tour-extra-btn" data-tour-lit="${esc(step.lit)}">${esc(t('changesTourShowMe', 'Show me'))}</button>
                 </div>` : ''}
                 <div class="changes-tour-dots" aria-hidden="true">
                     ${all.map((_, i) => `<span class="changes-tour-dot${i === index ? ' is-active' : ''}"></span>`).join('')}
@@ -286,7 +356,7 @@
                     return;
                 }
                 index += 1;
-                render();
+                ourOwnHide(render);
             },
             onCancel: () => {
                 if (isFirst) {
@@ -294,17 +364,47 @@
                     return;
                 }
                 index -= 1;
-                render();
+                ourOwnHide(render);
             },
-            onHide: () => finish('dismissed'),
+            /*
+             * Escape, the × and a click on the backdrop mean "enough".
+             *
+             * Next and Back land here too, because the modal hides itself
+             * before it calls onConfirm -- so the answer is not "was this a
+             * hide" but "is the tour gone a moment later". `stepping` covers
+             * the hides we do ourselves, where the step comes back only after
+             * a view has rendered.
+             */
+            // Escape, the × and a click on the backdrop mean "enough". Next and
+            // Back hide the window too -- the modal hides before it calls
+            // onConfirm -- so those are marked as ours as the click arrives.
+            onHide: () => {
+                if (stepping) return;
+                finish('dismissed');
+            },
         });
         wire(all[index]);
     }
 
-    /** The buttons the modal does not know about: choices, Show me, Open. */
-    function wire(step) {
+    /** The buttons the modal does not know about: the choices and Show me. */
+    function wire(current) {
         const root = document.querySelector('.changes-tour');
         if (!root) return;
+        /*
+         * Next and Back are the modal's own buttons, and it hides itself before
+         * it tells us which was pressed. Marked here, as the click arrives and
+         * before the modal acts on it, so the hide that follows is not read as
+         * the reader closing the tour.
+         */
+        const actions = document.getElementById('modal-actions');
+        if (actions && actions.dataset.changesTourBound !== '1') {
+            actions.dataset.changesTourBound = '1';
+            actions.addEventListener('click', () => {
+                if (!onScreen()) return;
+                stepping = true;
+                setTimeout(() => { stepping = false; }, 0);
+            }, true);
+        }
         root.querySelectorAll('[data-tour-field]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 root.querySelectorAll(`[data-tour-field="${btn.dataset.tourField}"]`)
@@ -315,42 +415,6 @@
         root.querySelector('[data-tour-lit]')?.addEventListener('click', (event) => {
             spotlight(event.currentTarget.dataset.tourLit);
         });
-        root.querySelector('[data-tour-go]')?.addEventListener('click', () => {
-            /*
-             * Going somewhere is not leaving the tour.
-             *
-             * A view change closes whatever modal is open, so the step has to
-             * be put back afterwards -- otherwise "Open the list" spent the
-             * rest of the tour to show one screen, and the reader was left in
-             * config with no way back into it but the command.
-             *
-             * The two that open something of their own (the theme browser,
-             * What's new) do end it: two windows over each other is not a tour.
-             */
-            if (step.go.hash) {
-                global.AppModal?.hide?.();
-                global.location.hash = step.go.hash;
-                returnToStep(RETURN_TRIES);
-                return;
-            }
-            /*
-             * The theme browser and What's new are drawn in this same modal,
-             * so they replace the step rather than opening beside it. Hiding
-             * first left the overlay up with nothing in it while What's new
-             * loaded -- a blurred dashboard behind an empty window.
-             */
-            finish('followed');
-            step.go.action?.();
-        });
-    }
-
-    /** Put the step back once the view it opened has settled. */
-    function returnToStep(triesLeft) {
-        setTimeout(() => {
-            if (finished || triesLeft <= 0) return;
-            if (!document.querySelector('.changes-tour')) render();
-            returnToStep(triesLeft - 1);
-        }, RETURN_MS);
     }
 
     function finish(outcome) {

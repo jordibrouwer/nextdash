@@ -5,12 +5,14 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * The tour of a release that moved things: offered once in the corner, eight
  * steps in a window, and the steps where a default moved carry the choice
- * itself.
+ * itself. It shows rather than goes -- no step takes the reader somewhere.
  */
 
 const TIP_ID = 'changesTourV1';
 const card = (page) => page.locator('.changes-tour-notice-card');
 const tour = (page) => page.locator('.changes-tour');
+/** The step as the reader sees it: in the overlay, and the overlay shown. */
+const shownTour = (page) => page.locator('#app-modal.show .changes-tour');
 
 async function loadWithTourPending(page) {
     await page.setViewportSize({ width: 1500, height: 950 });
@@ -54,12 +56,12 @@ test('Later keeps the answer open, and asks again tomorrow', async ({ page }) =>
     expect(await page.evaluate(() => window.ChangesTour.card.shouldShow())).toBe(true);
 });
 
-test('Show me walks the steps and ends on What\'s new', async ({ page }) => {
+test('Show me walks the steps, forward and back', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.card.render());
     await card(page).locator('[data-changes-tour-action="show"]').click();
 
-    await expect(tour(page)).toBeVisible();
+    await expect(shownTour(page)).toHaveCount(1);
     await expect(page.locator('.changes-tour-dot')).toHaveCount(8);
     await expect(page.locator('.changes-tour-progress')).toHaveText(/1.*8/);
 
@@ -93,70 +95,82 @@ test('a step where a default moved puts the old arrangement back', async ({ page
 test('Show me lights up the real thing, and the window comes back', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
+    // Step one: the action bar step has no Show me, because a bar that has
+    // slid into its edge is not there to be pointed at.
     await page.locator('[data-tour-lit]').click();
 
     await expect(page.locator('.changes-tour-lit')).toHaveCount(1);
     await expect(page.locator('body.changes-tour-peeking')).toHaveCount(1);
-    // And it hands the window back on its own.
-    await expect(page.locator('body.changes-tour-peeking')).toHaveCount(0, { timeout: 5_000 });
-    await expect(tour(page)).toBeVisible();
+    // Nothing on the dashboard can be pressed while it is lit: a reader shown
+    // the config button used to press it, and the tour ended in config.
+    await page.locator('.changes-tour-peek-guard').click({ position: { x: 5, y: 5 } });
+    await expect(page.locator('body.changes-tour-peeking')).toHaveCount(0);
+    expect(await page.evaluate(() => window.location.hash)).not.toContain('#config');
+    await expect(shownTour(page)).toHaveCount(1);
 });
 
-test('the config step opens config', async ({ page }) => {
+test('the look ends on its own as well', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
-    // Two Nexts: pages, action buttons, then config.
-    await page.locator('#modal-actions button').first().click();
-    await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/3.*8/);
+    await page.locator('[data-tour-lit]').click();
 
-    await page.locator('[data-tour-go]').click();
-    await expect.poll(() => page.evaluate(() => window.location.hash)).toContain('#config');
-    // And the step comes back over it: going somewhere is not leaving the tour.
-    await expect(tour(page)).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/3.*8/);
+    await expect(page.locator('body.changes-tour-peeking')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.changes-tour-peek-guard')).toHaveCount(0);
+    await expect(shownTour(page)).toHaveCount(1);
 });
 
-test('a view with a window of its own does not end the tour', async ({ page }) => {
+test('only the first step points at the real screen', async ({ page }) => {
     await loadWithTourPending(page);
-    await page.evaluate(() => {
-        // Config → Widgets opens a tour of its own on arrival, which closes
-        // whatever modal is up as it renders.
-        window.DiscoverabilityState?.forgetTip?.('widgetsTutorialV1', { persist: false });
-        window.ChangesTour.open();
-    });
-    for (let i = 0; i < 4; i += 1) await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/5.*8/);
+    await page.evaluate(() => window.ChangesTour.open());
+    await expect(page.locator('[data-tour-lit]')).toHaveCount(1);
 
-    await page.locator('[data-tour-go]').click();
-    await expect.poll(() => page.evaluate(() => window.location.hash)).toContain('widgets');
-    await expect(tour(page)).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/5.*8/);
+    // The action bar has slid into its edge, and config is a screen away:
+    // neither is there to be pointed at.
+    for (const n of [2, 3]) {
+        await page.locator('#modal-actions button').first().click();
+        await expect(page.locator('.changes-tour-progress')).toHaveText(new RegExp(`${n}.*8`));
+        await expect(page.locator('[data-tour-lit]')).toHaveCount(0);
+    }
+    // And the config step draws the tiles it is about, with their names.
+    await expect(page.locator('.changes-tour-tiles b').first()).toBeVisible();
+    await expect(page.locator('.changes-tour-tiles i')).toHaveCount(6);
+
+    // The workbench step draws its three columns, with rows picked in the list.
+    await page.locator('#modal-actions button').first().click();
+    await expect(page.locator('.changes-tour-progress')).toHaveText(/4.*8/);
+    await expect(page.locator('.changes-tour-bench i')).toHaveCount(3);
+    await expect(page.locator('.changes-tour-bench u.is-picked')).toHaveCount(2);
 });
 
-test('the looks step opens the theme browser', async ({ page }) => {
+test('a key a step names is drawn as a key', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
     for (let i = 0; i < 6; i += 1) await page.locator('#modal-actions button').first().click();
     await expect(page.locator('.changes-tour-progress')).toHaveText(/7.*8/);
 
-    await page.locator('[data-tour-go]').click();
-    // A window of its own, so this one does end the tour.
-    await expect(page.locator('.theme-browser')).toBeVisible({ timeout: 10_000 });
-    await expect(tour(page)).toHaveCount(0);
+    await expect(page.locator('.changes-tour-step-body kbd')).toHaveText('Shift + A');
+
+    // And the step draws three theme cards, the lacquered one with its badge.
+    await expect(page.locator('.changes-tour-swatches i')).toHaveCount(3);
+    // The theme browser's own word for it, in the reader's language -- not a
+    // literal, which showed the Dutch badge on an English dashboard.
+    await expect(page.locator('.changes-tour-swatches i.is-gloss b')).toHaveText('Gloss');
+    // Colour, not grey: the chips take the theme's own accents.
+    const chip = await page.locator('.changes-tour-chips u').first()
+        .evaluate((el) => getComputedStyle(el).backgroundColor);
+    const [r, g, b] = (chip.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    expect(Math.max(r, g, b) - Math.min(r, g, b), `a grey chip: ${chip}`).toBeGreaterThan(0.02);
 });
 
-test("the last step opens What's new in the same window", async ({ page }) => {
+test('no step walks off to another view', async ({ page }) => {
     await loadWithTourPending(page);
     await page.evaluate(() => window.ChangesTour.open());
-    for (let i = 0; i < 7; i += 1) await page.locator('#modal-actions button').first().click();
-    await expect(page.locator('.changes-tour-progress')).toHaveText(/8.*8/);
-
-    await page.locator('[data-tour-go]').click();
-    await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 10_000 });
-    await expect(tour(page)).toHaveCount(0);
-    // And nothing of the tour is left behind over the dashboard.
-    await expect(page.locator('body.changes-tour-peeking')).toHaveCount(0);
+    for (let i = 0; i < 7; i += 1) {
+        await expect(page.locator('[data-tour-go]')).toHaveCount(0);
+        await page.locator('#modal-actions button').first().click();
+    }
+    await expect(page.locator('[data-tour-go]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.location.hash)).not.toContain('#config');
 });
 
 test('it can be opened again from the command palette', async ({ page }) => {
@@ -166,5 +180,5 @@ test('it can be opened again from the command palette', async ({ page }) => {
     await page.keyboard.press(':');
     await page.keyboard.type('changes');
     await page.keyboard.press('Enter');
-    await expect(tour(page)).toBeVisible({ timeout: 5_000 });
+    await expect(shownTour(page)).toHaveCount(1, { timeout: 5_000 });
 });
