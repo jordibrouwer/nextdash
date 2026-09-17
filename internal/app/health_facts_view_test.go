@@ -136,3 +136,21 @@ func TestFactsViewKeepsAFreshMonitor(t *testing.T) {
 		t.Fatalf("expected the fresh monitor and nothing else: %+v", facts.Rows)
 	}
 }
+
+// The health trend tile on the dashboard shows the fleet's last day, like the
+// health view's rail does; the badge's request is where it reads it from.
+func TestFactsViewCarriesTheLastDay(t *testing.T) {
+	report := BookmarkHealthReport{Issues: []HealthIssue{
+		{URL: "https://a.example", Monitor: true, MonitorStats: &MonitorStats{Uptime24h: UptimeWindow{Ratio: 0.5, Samples: 20}}},
+		{URL: "https://b.example", Monitor: true, MonitorStats: &MonitorStats{}},
+	}}
+
+	facts := buildHealthFactsReport(report)
+
+	if facts.Rows[0].Uptime24h != 0.5 || facts.Rows[0].Uptime24hCount != 20 {
+		t.Fatalf("the last day did not come along: %+v", facts.Rows[0])
+	}
+	if facts.Rows[1].Uptime24hCount != 0 {
+		t.Fatalf("a day was invented from no samples: %+v", facts.Rows[1])
+	}
+}

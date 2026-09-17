@@ -110,31 +110,42 @@ test.describe('uptime, trend, inbox and neglected', () => {
         expect(await Promise.resolve(text)).not.toMatch(/^\s*3\s*$/);
     });
 
-    test('the trend reads the direction, not just the latest number', async ({ page }) => {
+    test("the trend tile says what the health view's summary says", async ({ page }) => {
         await open(page);
         const rendered = await page.evaluate(async () => {
             const d = window.dashboardInstance;
             const day = 24 * 60 * 60 * 1000;
-            // Twelve broken a month ago, four today: still high, clearly better.
+            // 80% healthy three weeks ago, 95% today.
             d._widgetTrend = [
-                { t: Date.now() - 20 * day, b: 12 },
-                { t: Date.now() - 10 * day, b: 8 },
-                { t: Date.now(), b: 4 },
+                { t: Date.now() - 20 * day, n: 100, h: 80, b: 12 },
+                { t: Date.now() - 10 * day, n: 100, h: 90, b: 8 },
+                { t: Date.now(), n: 100, h: 95, b: 4 },
             ];
+            d.healthSummary = { totalBookmarks: 100, healthyCount: 95, brokenCount: 4, monitorDownCount: 0, monitoredCount: 0 };
             const body = document.createElement('div');
             await window.DashboardWidgets.trend(body, { type: 'trend', config: { days: 30 } }, d);
-            const change = body.querySelector('.dashboard-widget-trend-change');
+            const value = (key) => body.querySelector(`[data-trend-row="${key}"] .dashboard-widget-trend-value`)?.textContent;
+            const change = body.querySelector('[data-trend-row="trend"] .dashboard-widget-trend-change');
             return {
-                value: body.querySelector('.dashboard-widget-trend-value')?.textContent,
-                change: change?.textContent,
+                score: value('score'),
+                trend: value('trend'),
                 better: change?.classList.contains('is-better'),
-                hasLine: !!body.querySelector('canvas'),
+                sentence: body.querySelector('[data-trend-row="trend"] .dashboard-widget-trend-note')?.textContent,
+                broken: value('broken'),
+                healthy: value('healthy'),
+                uptimeRow: !!body.querySelector('[data-trend-row="uptime"]'),
+                hasLine: !!body.querySelector('svg.dashboard-widget-trend-line polyline'),
             };
         });
-        expect(rendered.value).toBe('4');
-        expect(rendered.change).toBe('-8');
-        // Fewer broken links is good news even when the number is still high.
+        expect(rendered.score).toBe('95%');
+        expect(rendered.trend).toBe('▲15');
+        // More healthy is good news.
         expect(rendered.better).toBe(true);
+        expect(rendered.sentence).toMatch(/15/);
+        expect(rendered.broken).toBe('4');
+        expect(rendered.healthy).toMatch(/95.*100/);
+        // No monitors, no uptime row.
+        expect(rendered.uptimeRow).toBe(false);
         expect(rendered.hasLine).toBe(true);
     });
 

@@ -553,6 +553,8 @@ class DashboardVisual {
              */
             d.healthSummary = summary;
             d.renderCore?.refreshWidgets?.('health');
+            // The trend tile reads the same score, counts and last day.
+            d.renderCore?.refreshWidgets?.('trend');
             // The same response carries the certificates map, kept by
             // HealthFacts; the certificates widget reads it from there rather
             // than fetching a report of its own.

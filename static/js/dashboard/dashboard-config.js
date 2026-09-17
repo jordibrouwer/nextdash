@@ -19179,7 +19179,7 @@ class DashboardConfig {
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
-            trend: 'Broken links over time, as a line — the direction is what a single number cannot show.',
+            trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',

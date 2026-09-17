@@ -35,7 +35,11 @@ type HealthFactsRow struct {
 	// the first, so these are the rest.
 	Uptime7d      float64 `json:"uptime7d,omitempty"`
 	Uptime7dCount int     `json:"uptime7dSamples,omitempty"`
-	DownSince     int64   `json:"downSince,omitempty"`
+	// The last day, for the health trend tile's "Uptime 24h": the view pools
+	// it across the fleet, and the tile pools the same windows from here.
+	Uptime24h      float64 `json:"uptime24h,omitempty"`
+	Uptime24hCount int     `json:"uptime24hSamples,omitempty"`
+	DownSince      int64   `json:"downSince,omitempty"`
 	// Heartbeat is the bar's states and nothing else: the sparkline colours a
 	// tick per bucket and reads no other field, while a full HeartbeatBucket
 	// carries from, to, up, down, avgMs and reason. Forty of those per monitor
@@ -108,6 +112,10 @@ func buildHealthFactsReport(report BookmarkHealthReport) HealthFactsReport {
 			if stats.Uptime30d.Samples > 0 {
 				row.Uptime30d = stats.Uptime30d.Ratio
 				row.Uptime30dCount = stats.Uptime30d.Samples
+			}
+			if stats.Uptime24h.Samples > 0 {
+				row.Uptime24h = stats.Uptime24h.Ratio
+				row.Uptime24hCount = stats.Uptime24h.Samples
 			}
 			if stats.Uptime7d.Samples > 0 {
 				row.Uptime7d = stats.Uptime7d.Ratio

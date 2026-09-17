@@ -2000,7 +2000,10 @@
     "widgetAsOfStale": "as of {time} — older than this widget refreshes",
     "mergeConfirmBest": "Merge {count} bookmark(s) with the same URL?\n\nKeeps best: \"{keep}\"",
     "openBrokenConfirm": "Open {count} broken link(s) in new tabs? (max {max} at a time; {remaining} left)",
-    "openBrokenRemaining": "({remaining} more in health view.)"
+    "openBrokenRemaining": "({remaining} more in health view.)",
+    "widgetTrendHealthy": "Healthy",
+    "widgetTrendOfTotal": "{n} of {total}",
+    "widgetHealthDownNow": "Monitors down"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -2160,7 +2163,7 @@
     "widgetAbout.health": "How many bookmarks are broken, down, changed or fine — each figure opens its own filter.",
     "widgetAbout.uptime": "The bookmarks you monitor, worst first, with uptime over the last week.",
     "widgetAbout.certs": "Certificates about to expire, grouped by host rather than by bookmark.",
-    "widgetAbout.trend": "Broken links over time, as a line — the direction is what a single number cannot show.",
+    "widgetAbout.trend": "The health view's summary: the score and its direction over time, what is broken, and the monitors' last day.",
     "widgetAbout.inbox": "How much is waiting to be filed, and how long the oldest has waited.",
     "widgetAbout.feeds": "Feeds with new items, and the ones that stopped after repeated failures.",
     "widgetAbout.sources": "What each import last did, so a failed import is not only visible in config.",
