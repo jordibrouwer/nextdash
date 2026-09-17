@@ -75,6 +75,22 @@ test.describe('a topic that continues on another tab says so', () => {
     });
 });
 
+test.describe('a link to a panel that moved tab still arrives', () => {
+    test('an old server-log link opens the Logs tab on that panel', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/help/data/server-log');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.helpTab), { timeout: 10_000 })
+            .toBe('logs');
+        await expect(page.locator('#help-panel-server-log')).toBeVisible();
+        await expect.poll(() => page.evaluate(() => window.location.hash))
+            .toMatch(/#config\/help\/logs\/server-log$/);
+    });
+});
+
 test.describe('the version panel reads its own version', () => {
     test('the heading follows the release index, not a translated string', async ({ page }) => {
         await openHelp(page, 'start');

@@ -36,14 +36,16 @@ async function openHelp(page, tab) {
 }
 
 const CASES = [
-    { tab: 'search', needles: [/typing a shortcut/i, /short pause/i] },
+    { tab: 'search', needles: [/typing a bookmark shortcut/i, /short pause/i] },
     { tab: 'organizing', needles: [/already saved this on/i, /come back where you were/i, /Fresh/] },
     { tab: 'health', needles: [/ten links, two minutes/i, /rot report/i] },
     { tab: 'config', needles: [/what it is set to/i, /all devices/i, /duplicate/i] },
     { tab: 'inbox', needles: [/integrations\//i, /share sheet/i] },
     // The log rebuild: a level and a component on every line, one control for
     // how much is written and another for what goes into the trail.
-    { tab: 'data', needles: [/detail level/i, /activity trail/i, /docker logs/i] },
+    { tab: 'logs', needles: [/detail level/i, /activity trail/i, /docker logs/i] },
+    // The header rebuild: where the action buttons stand, and how pages switch.
+    { tab: 'appearance', needles: [/in a dock at the bottom/i, /page switcher/i, /theme browser/i] },
 ];
 
 for (const { tab, needles } of CASES) {

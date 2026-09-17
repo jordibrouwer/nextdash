@@ -25,6 +25,7 @@
                 'tipEverydayPages',
                 'tipEverydayArrows',
                 'tipEverydayEsc',
+                'tipEverydayEscHome',
                 'tipEverydayOverview',
                 'tipEverydayViews',
                 'tipEverydayDensity',
@@ -57,6 +58,7 @@
                 'tipEditLockLayout',
                 'tipEditMoveCategory',
                 'tipEditSelectionActions',
+                'tipEditWorkbench',
                 'tipEditTagSuggestions',
                 'tipEditRenamePage',
                 'tipEditPageTabDot',
@@ -70,6 +72,7 @@
             tips: [
                 'tipFindFilters',
                 'tipFindShortcutMode',
+                'tipFindGridShortcut',
                 'tipFindAllPages',
                 'tipFindFinders',
                 'tipFindTagCloud',
@@ -105,6 +108,9 @@
                 'tipTuneInfo',
                 'tipTuneTheme',
                 'tipTuneThemeBrowser',
+                'tipTuneGloss',
+                'tipTuneActionBar',
+                'tipTuneSwitcher',
                 'tipTunePreview',
                 'tipTuneSmartCollections',
                 'tipTuneFresh',
@@ -120,14 +126,14 @@
         {
             titleKey: 'tipsGroupConfig',
             titleFallback: 'Config',
-            tips: ['tipConfigKeyboard', 'tipConfigFindValue'],
+            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigHub'],
         },
         {
-            // Where bookmarks come from and where what happens here goes —
-            // the two directions Data & backups grew in v1.4.0.
+            // Where bookmarks come from, where what happens here goes, and
+            // what the server says about it.
             titleKey: 'tipsGroupData',
             titleFallback: 'Data in and out',
-            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks'],
+            tips: ['tipDataSources', 'tipDataPortable', 'tipDataWebhooks', 'tipDataBeyondBookmarks', 'tipDataLogs'],
         },
     ];
 

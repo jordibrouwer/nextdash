@@ -490,7 +490,7 @@ class DashboardConfig {
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
-        const tab = DashboardConfig.subTabFromHash(hash);
+        let tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         // A hub section's bare hash is its start screen, and a tab in it is
         // the group that holds the tab.
@@ -501,6 +501,10 @@ class DashboardConfig {
             this.hubOpen[section] = open;
         }
         if (!tab || !prop) return hubChanged;
+        if (section === 'help') {
+            const moved = DashboardConfig.HELP_PANEL_MOVED[DashboardConfig.helpPanelFromHash(hash)];
+            if (moved && moved.from === tab) tab = moved.to;
+        }
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
@@ -2719,7 +2723,10 @@ class DashboardConfig {
         { tab: 'start', titleKey: 'config.helpStartTitle', fallback: 'Getting started' },
         { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
         { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
-        { tab: 'config', titleKey: 'config.helpAppearanceTitle', fallback: 'Appearance & themes' },
+        { tab: 'config', titleKey: 'config.helpBehaviorTitle', fallback: 'Behavior' },
+        { tab: 'appearance', titleKey: 'config.helpThemesTitle', fallback: 'Themes' },
+        { tab: 'appearance', titleKey: 'config.helpHeaderTitle', fallback: 'Header & action buttons' },
+        { tab: 'appearance', titleKey: 'config.helpAppearanceTitle', fallback: 'Grid, display & date' },
         { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
@@ -2737,6 +2744,8 @@ class DashboardConfig {
         { tab: 'inbox', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
+        { tab: 'logs', titleKey: 'config.helpServerLogTitle', fallback: 'Server log' },
+        { tab: 'logs', titleKey: 'config.helpActivityTrailTitle', fallback: 'Activity trail' },
         // About is a section now, not a help tab, so it carries its own target
         // rather than a `tab` the help view would fail to open.
         { section: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
@@ -25740,12 +25749,13 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
+    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     helpTabLabel(tab) {
         const map = {
             start: ['config.helpTabStart', 'Getting started'],
             config: ['config.helpTabConfig', 'Configuring'],
+            appearance: ['config.helpTabAppearance', 'Appearance'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
@@ -25755,6 +25765,7 @@ class DashboardConfig {
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
+            logs: ['config.helpTabLogs', 'Logs'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -25918,6 +25929,7 @@ class DashboardConfig {
         this.ensureHelpProse();
         switch (this.helpTab) {
             case 'config': return this.renderHelpConfig();
+            case 'appearance': return this.renderHelpAppearance();
             case 'organizing': return this.renderHelpOrganizing();
             case 'widgets': return this.renderHelpWidgets();
             case 'search': return this.renderHelpSearch();
@@ -25927,6 +25939,7 @@ class DashboardConfig {
             case 'inbox': return this.renderHelpInbox();
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
+            case 'logs': return this.renderHelpLogs();
             default: return this.renderHelpStart();
         }
     }
@@ -25986,6 +25999,19 @@ class DashboardConfig {
                 ${buttons}
             </p>`;
     }
+
+    /**
+     * Panels that changed tab, by panel id.
+     *
+     * A copied link names the tab the panel was on when it was copied. When a
+     * panel moves, the old link would open a tab that no longer holds it and
+     * scroll to nothing; this sends it to the tab that does.
+     */
+    static HELP_PANEL_MOVED = {
+        themes: { from: 'config', to: 'appearance' },
+        appearance: { from: 'config', to: 'appearance' },
+        'server-log': { from: 'data', to: 'logs' },
+    };
 
     /**
      * The pairs worth threading, by the panel the reader is on.
@@ -26210,7 +26236,7 @@ class DashboardConfig {
             { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
             { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
         ],
-        // ── v1.4.0 topics ──────────────────────────────────────────────────
+        // ── Widgets, sources, archive, webhooks, themes ────────────────────
         'config.helpWidgetsTitle': [
             {
                 kind: 'widgetSpan', value: 2,
@@ -26315,6 +26341,11 @@ class DashboardConfig {
                 captionKey: 'config.helpArtOutFlow', caption: 'Pushed, and signed',
             },
         ],
+        'config.helpHeaderTitle': [
+            // The keys for the three things the header now carries: the pages,
+            // the dock, and the theme browser behind the destinations.
+            { kind: 'keys', value: ['1–9', "'", 'Shift + A'] },
+        ],
         'config.helpThemesTitle': [
             // The browser first, because it is the change: what was a list of
             // 214 names is a grid you can see. Then the two things every theme
@@ -26377,7 +26408,7 @@ class DashboardConfig {
         ],
         'config.helpCommandsTitle': [
             {
-                kind: 'query', value: [['prefix', ':'], ['text', 'layout modern']],
+                kind: 'query', value: [['prefix', ':'], ['text', 'density compact']],
                 captionKey: 'config.helpArtCommandExample', caption: 'Actions, not destinations',
             },
         ],
@@ -26597,6 +26628,12 @@ class DashboardConfig {
                 ],
             },
         ],
+        'config.helpActivityTrailTitle': [
+            {
+                kind: 'flow',
+                value: [{ k: 'config.helpArtOutLabel', d: 'nextDash' }, 'JSON', 'activity.log'],
+            },
+        ],
         'config.helpSelfHostingTitle': [
             {
                 kind: 'boundary',
@@ -26620,7 +26657,7 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpInboxTitle': {
             isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'behavior', behaviorTab: 'search' },
+            go: { section: 'behavior', behaviorTab: 'inbox' },
         },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
@@ -26630,7 +26667,7 @@ class DashboardConfig {
             isOn: (s) => s.monitorNotifyEnabled === true,
             go: { section: 'behavior', behaviorTab: 'status' },
         },
-        'config.helpPrivacyTitle': {
+        'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
         },
@@ -26738,11 +26775,23 @@ class DashboardConfig {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
             + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
-                'config.helpBehaviorBody', '')
-            + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
-                'config.helpAppearanceBody', '')
-            + this.helpPanel('config.helpThemesTitle', 'Themes',
-                'config.helpThemesBody', '');
+                'config.helpBehaviorBody', '');
+    }
+
+    /**
+     * Appearance as a tab of its own.
+     *
+     * Themes, the grid and the header with its action buttons were three long
+     * panels on Configuring, beside the article about finding your way around
+     * config — a tab about the rail and the hub that was mostly about colours.
+     */
+    renderHelpAppearance() {
+        return this.helpPanel('config.helpThemesTitle', 'Themes',
+            'config.helpThemesBody', '')
+            + this.helpPanel('config.helpHeaderTitle', 'Header & action buttons',
+                'config.helpHeaderBody', '')
+            + this.helpPanel('config.helpAppearanceTitle', 'Grid, display & date',
+                'config.helpAppearanceBody', '');
     }
 
     renderHelpOrganizing() {
@@ -27000,18 +27049,23 @@ class DashboardConfig {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
             // Where bookmarks come from, where copies of them are kept, and what
-            // this install tells the outside — the three subjects the Data &
-            // backups section grew in v1.4.0, in the order its tabs carry them.
+            // this install tells the outside, in the order the tabs carry them.
             + this.helpPanel('config.helpSourcesTitle', 'Sources — where bookmarks come from',
                 'config.helpSourcesBody', '')
             + this.helpPanel('config.helpArchiveTitle', 'Keeping a copy of a page',
                 'config.helpArchiveBody', '')
-            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks & assistants',
+            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks',
                 'config.helpIntegrationsBody', '')
-            + this.helpPanel('config.helpServerLogTitle', 'Server log',
-                'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
                 'config.helpSelfHostingBody', '');
+    }
+
+    /** Logs is a section of config, so its two tabs get a help tab of their own. */
+    renderHelpLogs() {
+        return this.helpPanel('config.helpServerLogTitle', 'Server log',
+            'config.helpServerLogBody', '')
+            + this.helpPanel('config.helpActivityTrailTitle', 'Activity trail',
+                'config.helpActivityTrailBody', '');
     }
 
     /**

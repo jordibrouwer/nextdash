@@ -318,10 +318,13 @@ test.describe('config help — translations', () => {
                 }
 
                 // Each body carries real prose, not an empty string falling back to
-                // the (deliberately blank) English default.
+                // the (deliberately blank) English default. Chinese says in one
+                // character what the others spell out in several, so it gets a
+                // lower floor rather than a longer text.
+                const floor = lang === 'zh' ? 80 : 200;
                 for (const prose of await body.locator('.config-help-prose').all()) {
                     expect((await prose.textContent())?.trim().length,
-                        `${lang}/${tab} prose length`).toBeGreaterThan(200);
+                        `${lang}/${tab} prose length`).toBeGreaterThan(floor);
                 }
             }
         }

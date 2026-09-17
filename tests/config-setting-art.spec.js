@@ -120,8 +120,8 @@ test.describe('help opens with a picture', () => {
 
         // Every prose panel, on every tab that has them: an article that opens
         // with a paragraph describing a shape is the thing this replaces.
-        for (const tab of ['start', 'config', 'organizing', 'search', 'health',
-            'monitoring', 'inbox', 'stats', 'data']) {
+        for (const tab of ['start', 'config', 'appearance', 'organizing', 'search', 'health',
+            'monitoring', 'inbox', 'stats', 'data', 'logs']) {
             const { panels, drawn } = await countsFor(tab);
             expect(panels, `${tab} has articles`).toBeGreaterThan(0);
             expect(drawn, `${tab}: ${drawn}/${panels} articles drawn`).toBe(panels);

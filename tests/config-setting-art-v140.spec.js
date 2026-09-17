@@ -51,7 +51,8 @@ test.describe('the v1.4.0 setting drawings', () => {
      */
     test('the new help topics open with their drawing', async ({ page }) => {
         for (const [tab, selector] of [
-            ['config', '.config-help-art .setting-art-themes'],
+            // Themes moved to an Appearance tab of their own.
+            ['appearance', '.config-help-art .setting-art-themes'],
             // The widget topic moved to a Widgets tab of its own; the drawing
             // went with it.
             ['widgets', '.config-help-art .setting-art-blocks'],
