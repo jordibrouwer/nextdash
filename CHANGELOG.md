@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.0 — 17 September 2026](#v1110--17-september-2026)
 - [v1.10.0 — 13 September 2026](#v1100--13-september-2026)
 - [v1.9.0 — 11 September 2026](#v190--11-september-2026)
 - [v1.8.0 — 10 September 2026](#v180--10-september-2026)
@@ -204,6 +205,102 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.0 — 17 September 2026
+
+A hundred and twenty-six changes across 269 files, +38,395 / −17,736 lines, and one question behind most of it — **where does a thing live**. The buttons floated over the grid on a bar with no home; the page tabs, the clock and the view's name each owned a band of their own; config opened on a wall of every setting at once; and the bookmark list was a table with a dialog on top of it.
+
+So the header became one row in three zones, and the fixed buttons got a place to stand: a column at either edge, a dock at the bottom, the header, or one menu — and a docked one slides into its edge after a couple of seconds and leaves a handle where it went. Config opens on tiles now, one subject each, with the two to four settings a group leads with as cards. Bookmarks → List became a workbench: filters in a rail, rows in the middle, an edit panel on the right that edits one bookmark or fifty.
+
+Moving that much is a cost paid by everyone who already knew where things were, so the release carries its own explanation: a card in the corner offers a one-minute tour of what moved, and every step where a default changed hands the old arrangement back in one click. The first-run setup window went the other way — it asked for a language, a theme and a link behaviour before the reader had seen the dashboard those answers are about. What it needed to know is asked once, in the corner, when there is something to look at.
+
+And the look settled. A fresh install opens on Tarnished Brass in glass with a soft glow, ten Gloss families catch the light, a theme of your own can set its shape and its sheen in a light and a dark half, and the widgets stopped being grey panels pasted on the page.
+
+### Header
+
+- **new — one header row, in three zones.** The clock and the page's name on the left, the page tabs in the centre, the destinations and the actions on the right. The name folded into that row and the 60px band it used to own is gone; the bar sits at the top of the page with the grid's air underneath it rather than a rule.
+- **new — the page switcher is a choice of four.** Numbers beside the destinations (the default), one segmented control, plain text tabs, or one button with a list of its own. `:switcher` tries them without opening config.
+- **new — page tabs shown before “+N”**, 3 to 9, five to begin with. What does not fit is counted rather than dropped, and every page keeps its digit key whether its tab is drawn or folded.
+- **new — the clock and the weather stand where you put them**: beside the view name, in a column of their own, or on their own line with the name underneath — the old top of the page, offered back as a third placement and what every install now starts on. They are drawn to be read rather than to fill a band.
+- **new — the header folds in one order as the window narrows**, so the page switcher and the destinations are the last things to go, and the actions fold away before them.
+- **new — plain or plated header controls.** Plain underlines what is current; plated gives each control its own box. Under plated the action buttons and the page tabs stay bare — a box inside a box read as a second bar.
+- **new — a dashboard destination beside inbox, health and config**, the pages button became one of the action buttons, and the inbox and pages buttons can each be switched off with their keys still working.
+- **new — the header sheet is one shape two panels can wear**, and the launcher header is drawn from it.
+- **fix — the header controls carried a ring around their key chips**, the chips were dimmer than the labels beside them, and the action glyphs were a weight heavier than the buttons they stood in. Contrast measured on every theme.
+- **fix — the view header is painted solid while the page moves under it.**
+
+### Action bar
+
+- **new — the fixed buttons have a place of their own.** A column on the right (the default) or the left, a dock at the bottom, in the header, or behind one menu — **Config → Appearance → Action bar**, or `:buttons`. The floating bar they used to sit on is gone, and a side column takes its room from the page margin rather than from the grid.
+- **new — a docked bar slides into its edge.** After 2 seconds by default, or 5, 10, 30, or never. It comes back when the pointer touches that edge, when focus moves into it, and on `'` or `Shift + O` — and a bar you are using never leaves while you are using it.
+- **new — a handle marks the edge a bar slid into.** Quiet at rest, larger and clearer as the pointer nears, and a click on it brings the bar back. None in the header, behind the menu, or on a touch screen.
+- **new — every action button is on to begin with**, and up to nine stand before the fold. What the header cannot show goes behind one control whose menu names each action with its key, down to two actions on a narrow window.
+- **new — the key on a button is a chip you can switch off**, and with the chips off, resting on a button shows that button's key beside it. A new install starts with the chips on; a dashboard that already existed starts without them.
+- **new — the setting is named for what it moves**: *Where the fixed buttons stand*, with the action cap on the same tab and Header & buttons ahead of it.
+- **fix — the tag cloud opened under a docked bar**, and its own wrap is shown when it opens.
+- **fix — the popovers on the action buttons are gone.** A tooltip on a button that already carries its key is a second label.
+
+### Pages and panels
+
+- **new — the pages panel is drawn the way recent bookmarks is**, with *New page* as a button rather than a dashed row, and a page can be deleted from it — asked twice.
+- **new — recents answer one word with every kind and are drawn as tiles.**
+- **fix — the grid takes the focus back when the tag cloud closes**, and when search closes.
+- **fix — the pages panel and recents left the header**; both open from the search panel, which is where the rest of the modes already live.
+
+### Bookmarks → List
+
+- **new — the list is a workbench**: filters in a rail on the left, the rows in the middle, an edit panel on the right. Specced, planned and built on a model of its own (`bookmark-workbench-model.js`).
+- **new — the panel edits one bookmark or a selection of them**, with tag suggestions in it and the monitor interval beside them.
+- **new — rows are slabs, picked from the keyboard**, with whole favicons rather than cropped ones, the pin drawn where it belongs, room for the name, and the tags that do not fit counted rather than dropped. The shortcut column is gone.
+- **new — `Shift + E` opens the full dialog from the list.**
+- **new — on a narrow screen the rail folds into a drawer and the panel into a sheet**, and the rail is drawn whole without scrollbars.
+- **fix — the panel keeps its place after a move and after a bulk edit**, its header is readable, and a folded panel gives the row its width back — with the pin shown only in the folded list.
+- **fix — the old list controls are gone**, and the code behind the list was tidied with its dialog tests restored.
+
+### Config
+
+- **new — Appearance and Behavior open on a hub of tiles.** A tile opens its group, Escape goes back, the two to four settings a group leads with are cards, and everything else is behind *More settings* — specced first, then built.
+- **new — config is drawn the way health and the inbox are drawn.**
+- **new — every appearance setting has an explanation, a default and one kind of control.**
+- **new — Date & weather moved to Appearance**, and the weather location is a card of its own rather than a field behind *More settings*. It saves while it is typed, so the line answers as the town is written.
+- **new — the overview is rebuilt around the collection.**
+- **fix — *Toolbar & tabs* is called Header and buttons**, which is what it sets.
+
+### Logs
+
+- **new — Logs is a section of its own**, split into the server log and the activity trail, each beside its own settings.
+- **new — the activity log has format, URL, sampling and age**, and channels for search, keys, navigation, sessions and client errors, hooked into the handlers that already existed.
+- **new — how a bookmark was opened is recorded**, with a detail level for open records.
+
+### Appearance
+
+- **new — a fresh install starts on Tarnished Brass, in glass with a soft glow**, the theme's own backdrop and the contrast that reads as *Normal*. An install that already answered those questions keeps its answer.
+- **new — glass reads as glass and the glow is a dial**, with what a theme ships on settled rather than left to drift.
+- **new — ten Gloss families, and a sheen any theme can have.** They carry a lit band and a badge in the theme browser; the **Gloss** slider in the theme editor gives the same sheen to a theme of your own or to a recoloured packaged one.
+- **new — a custom theme can set everything a packaged theme can** — depth, glow, glass, corner radius and sheen — and comes as a light and a dark half, like the built-ins.
+- **new — the widgets take the page's colour.** A tile was a step up the surface ladder with a cast shadow, which on every theme read as a grey-white panel pasted on the dashboard. It is the page's own colour one step off it now, its cells one step further; under glass it is see-through and blurred, with the lit edge back.
+- **fix — a theme lost its character when its colours were saved.**
+
+### Dashboard
+
+- **new — a tour of what moved.** A card in the corner offers it once — *Show me*, *Later*, *No thanks* — and eight steps say where the pages, the action buttons, config, the list, the widgets, the tags and the themes are now. Where a default changed the step carries the choice, so the old arrangement is one click away, and *Show me* lights up the real thing on the page behind it. Reopened from **Config → Help → Guided tours** or `:changes`; the release notes stay where they are.
+- **new — the corner asks for a town, a clock and a unit**, once, and the weather line is on to begin with on a fresh install.
+- **new — Escape on a bare grid goes home, then opens search.**
+- **new — a bookmark opens by its own key while the cursor is on the grid**, and a row says when it is being waited on.
+- **new — the health trend widget is drawn like the health view's summary tile**, with the same figures and the same words.
+- **fix — the first-run setup window is gone.** A window of questions before the reader has seen the dashboard they are about asks for answers nobody can give yet; the checklist in the corner stays, and every setting it used to ask for is in config.
+- **fix — the ★ moved to the bottom-right corner**, the cards in the other corner stand at the bottom edge, the toast stands with them, and the old corner button is gone.
+- **fix — the health trend widget drew itself twice** when two renders overlapped.
+- **fix — the spread card, the settings-search promo and what was left of the side rail are gone**, along with the button style they described.
+
+### Docs
+
+- **docs — the config help and the tips are rewritten for the app as it is**, with an Appearance tab and a Logs tab, and old links to panels that moved still land on them.
+- **docs — the manual is rewritten for the current app**, and the readme and the compose files list the newer variables.
+- **docs — the help, the tips and the new strings are translated into all six languages**, the strings the other languages still showed in English are gone, and so are the keys nothing uses.
+- **docs — the manual, the help and the tips carry the action bar's defaults**, the tour, and the key that appears on hover.
 
 ---
 
