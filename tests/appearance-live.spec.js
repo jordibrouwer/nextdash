@@ -61,9 +61,9 @@ test.describe('appearance controls apply live', () => {
 
         const shadow = () => page.evaluate(() => {
             const probe = document.createElement('div');
-            probe.className = 'dashboard-widget';
+            probe.className = 'dashboard-grid layout-cards';
             const body = document.createElement('div');
-            body.className = 'dashboard-widget-body';
+            body.className = 'category';
             probe.appendChild(body);
             document.getElementById('dashboard-layout').appendChild(probe);
             const value = window.getComputedStyle(body).boxShadow;
