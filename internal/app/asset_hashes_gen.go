@@ -192,7 +192,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/clock-format.js":                              "2fb45e03f722",
 	"js/shared/config-custom-themes.js":                      "505ee4249345",
 	"js/shared/config-favicon-prefetch.js":                   "58550ec7ccc2",
-	"js/shared/config-help-tips.js":                          "5e5aebdbc4b4",
+	"js/shared/config-help-tips.js":                          "d73fec757066",
 	"js/shared/config-hub.js":                                "2816b98193c9",
 	"js/shared/config-language.js":                           "1f806525c920",
 	"js/shared/config-setting-promo.js":                      "d31e073aea06",

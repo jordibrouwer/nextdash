@@ -213,16 +213,22 @@ The header has three zones.
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
 
-A fresh install shows **add** and **search**. Switch the others on under **Config → Appearance → Header & buttons → Action bar**. Hiding a button leaves its key working; with every button off, the surround disappears too. **Show the key on each button** adds a key chip.
+Every button is on to begin with. Switch the ones you do not want off under **Config → Appearance → Action bar**. Hiding a button leaves its key working; with every button off, the surround disappears too.
 
-**Where the fixed buttons stand:**
+**Where the fixed buttons stand.** A fresh install puts the bar in **a column on the right** that slides into the edge after **2 seconds**, so the page has it out of the way until it is wanted.
 
 | Position | Behaviour |
 |----------|-----------|
-| **In a dock at the bottom** (default) | Centred at the bottom. **Slide a docked bar away after** hides it after 2, 5, 10 or 30 seconds; **`'`** or **`Shift + O`** slides it away or back. |
-| **In a column on the left / right** | A vertical column along that edge; the page moves aside to make room. |
+| **In a column on the right** (default) / **on the left** | A vertical column along that edge; the page moves aside to make room. |
+| **In a dock at the bottom** | Centred at the bottom. |
 | **In the header** | Beside the destinations. **Action buttons shown before "+N"** (default 2) folds the rest behind one control whose menu lists each action with its key. |
 | **Behind one menu in the header** | One control; every action is in its menu. |
+
+**A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge, when focus moves into it, and on **`'`** or **`Shift + O`**, which also send it away again. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
+
+While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
+
+**The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of nine chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
 `:buttons` and `:maxactions` change these from the command palette.
 
@@ -950,7 +956,7 @@ Small drawings beside the shape settings show what a value looks like.
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
 - **Header and buttons** tab — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and the dashboard, inbox, health and config buttons.
-- **Action bar** tab — where the fixed buttons stand, action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away, and one switch per button.
+- **Action bar** tab — where the fixed buttons stand (a column on the right by default), action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away (2 seconds by default), and one switch per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each group has **Show all / Hide all**.
 

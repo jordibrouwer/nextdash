@@ -110,6 +110,7 @@
                 'tipTuneThemeBrowser',
                 'tipTuneGloss',
                 'tipTuneActionBar',
+                'tipTuneActionKeyHint',
                 'tipTuneSwitcher',
                 'tipTunePreview',
                 'tipTuneSmartCollections',
