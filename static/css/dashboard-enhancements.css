@@ -111,11 +111,6 @@ kbd,
     top: 0.5rem;
 }
 
-@media (max-width: 768px), (hover: none) and (pointer: coarse) {
-    .quick-add-modal-header-actions kbd {
-        display: none;
-    }
-}
 
 /* Dashboard discoverability: header, mobile bar, mini status */
 
@@ -148,10 +143,6 @@ kbd,
     max-width: 100%;
 }
 
-.dashboard-mini-status .mini-sep {
-    opacity: 0.45;
-    margin: 0 0.35em;
-}
 
 body .dashboard-mini-status,
 body .status-loading-indicator.show,
@@ -166,15 +157,6 @@ body .page-swipe-hint {
 /* The pages button is one of the header actions (.search-button in
    dashboard.css); inbox, health and config share the destination chrome. */
 
-.search-button-labeled {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-hairline, 0.15rem);
-    min-width: 2.75rem;
-    padding: var(--space-2, 0.55rem) var(--space-2, 0.45rem) !important;
-}
 
 .search-button-label {
     display: none;
@@ -190,10 +172,6 @@ body .page-swipe-hint {
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
-    .search-button-labeled .search-button-label {
-        display: block;
-    }
-
     .dashboard-mini-status {
         display: block;
     }
@@ -217,9 +195,6 @@ body .page-swipe-hint {
     animation: config-saved-flash 1.4s ease;
 }
 
-.search-button.first-bookmark-pulse {
-    animation: first-bookmark-pulse 1s ease 3;
-}
 
 @keyframes first-bookmark-pulse {
     0%, 100% { box-shadow: 0 0 0 0 transparent; }
@@ -240,9 +215,7 @@ body .page-swipe-hint {
 
 :is(
     .dashboard-search-promo,
-    .dashboard-g-jump-promo,
     .dashboard-grid-kbd-promo,
-    .dashboard-smart-collection-promo,
     .dashboard-feature-promo
 ) kbd {
     border-radius: 0.2em;

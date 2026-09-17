@@ -3879,11 +3879,6 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     min-width: 0;
 }
 
-.bookmark-inline-field.bookmark-inline-check {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-1-5, 0.4rem);
-}
 
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
    One horizontal row of pills instead of three stacked checkbox rows: the flags
@@ -4414,9 +4409,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     vertical-align: -0.05em;
 }
 
-.bookmark-link.smart-recent-promote {
-    animation: smartRecentPromote 320ms ease-out;
-}
 
 @keyframes smartRecentPromote {
     0% {
@@ -4750,15 +4742,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     position: relative;
 }
 
-.bookmark-link.bookmark-flash::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--accent-primary);
-    opacity: 0;
-    pointer-events: none;
-    animation: bookmarkFlash 380ms ease-out forwards;
-}
 
 /* Copy-URL row flash */
 @keyframes bookmarkCopyFlash {
@@ -4781,9 +4764,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     animation: none;
 }
 
-body.no-animations .bookmark-link.bookmark-flash::after {
-    animation: none !important;
-}
 
 /* Launcher scale-pulse on open */
 @keyframes bookmarkPulse {
@@ -5190,11 +5170,6 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     padding: 0.1rem 0.35rem;
 }
 
-.recent-bookmarks-modal-meta {
-    flex-shrink: 0;
-    color: var(--text-tertiary);
-    font-size: var(--font-size-controls);
-}
 
 .recent-bookmarks-empty {
     padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
@@ -5269,38 +5244,9 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 }
 
 /* Inbox intro modal — centered above the inbox feed */
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) {
-    z-index: 13000 !important;
-    justify-content: center;
-    align-items: center;
-    padding: max(1.25rem, 2vw);
-    box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay.show:has(.inbox-intro-modal) {
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
-    width: min(40rem, calc(100vw - 2.5rem));
-    max-width: 100%;
-    margin: 0;
-    max-height: min(85vh, calc(100vh - 2.5rem));
-    transform: translateY(0) scale(1);
-    opacity: 1 !important;
-    visibility: visible !important;
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
-}
 
-body.no-animations:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
-    transform: none !important;
-    transition: opacity 0.15s ease !important;
-}
 
 /* Page overview modal — centered compact shell */
 /*
@@ -5667,20 +5613,12 @@ body.no-animations .bookmark-move-out {
     .bookmark-move-out { animation-duration: 0.01ms !important; transform: none !important; opacity: 1 !important; }
     .bookmark-link.bookmark-deep-link-focus,
     .bookmark-link.bookmark-copy-flash::after,
-    .bookmark-link.bookmark-flash::after,
     .layout-launcher .bookmark-link.bookmark-pulse {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }
     /* Decorative looping, nothing waits on it */
     .health-link a { animation: none !important; }
-    /* Promo balloons (entrance + float) */
-    .dashboard-feature-promo-balloon,
-    .dashboard-g-jump-promo-balloon,
-    .dashboard-grid-kbd-promo-balloon,
-    .dashboard-smart-collection-promo-balloon,
-    .dashboard-search-promo-balloon,
-    .dashboard-search-promo-badge { animation: none !important; }
     /* Date popover entrance */
     .date-popover { animation: none !important; }
 }
