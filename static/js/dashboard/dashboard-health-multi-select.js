@@ -75,6 +75,41 @@ class DashboardHealthMultiSelect {
         this.syncToolbar();
     }
 
+    /** True when every row the active filter shows is already ticked. */
+    allVisibleSelected() {
+        const visible = this.health.getFilteredIssues();
+        if (!visible.length) return false;
+        return visible.every((issue) => this.selected.has(this.health.issueKey(issue)));
+    }
+
+    /**
+     * Tick every row the current filter shows, or untick them when they are all
+     * ticked already — so the key and the Select all button undo themselves, the
+     * same way the inbox chord does.
+     *
+     * Only the visible rows are untouched on the way back: ticks made under
+     * another filter survive, which is the rule prune() and the reach warning
+     * are both built on.
+     */
+    toggleAllVisible() {
+        const visible = this.health.getFilteredIssues();
+        if (!visible.length) return;
+        const keys = visible.map((issue) => this.health.issueKey(issue));
+        const on = !keys.every((key) => this.selected.has(key));
+        keys.forEach((key) => {
+            if (on) {
+                this.selected.add(key);
+            } else {
+                this.selected.delete(key);
+            }
+        });
+        if (!on) {
+            this.anchorKey = null;
+        }
+        this.syncRows();
+        this.syncToolbar();
+    }
+
     /**
      * Extend from the anchor to `key` over the filtered order, so Shift+click and
      * Shift+↑/↓ pick up everything between rather than just the two ends.

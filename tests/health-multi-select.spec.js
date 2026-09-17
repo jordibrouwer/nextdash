@@ -383,3 +383,75 @@ test.describe('health view multi-select', () => {
         }, { timeout: 15_000 }).toBe(2);
     });
 });
+
+/**
+ * Select all from the ⋯ menu.
+ *
+ * X and Ctrl/Cmd+A already ticked the filtered list, which left the whole of
+ * multi-select behind a key nobody finds without the cheat sheet. Driven
+ * through the menu button here rather than the method, so the test fails if the
+ * entry stops being rendered or stops being wired.
+ */
+test.describe('health select all button', () => {
+    test('the menu button ticks the filtered list, and untick it again', async ({ page }) => {
+        await openHealth(page);
+
+        const visible = await page.evaluate(
+            () => window.dashboardInstance.health.getFilteredIssues().length
+        );
+        expect(visible).toBeGreaterThan(0);
+
+        await page.locator('[data-health-toolbar-more]').click();
+        const button = page.locator('[data-health-select-all]');
+        await expect(button).toBeVisible();
+        await expect(button).toContainText(String(visible));
+
+        await button.click();
+        await expect.poll(async () => page.evaluate(
+            () => window.dashboardInstance.health.multiSelect.selected.size
+        )).toBe(visible);
+        await expect(page.locator('#health-bulk-bar .config-bulk-count')).toBeVisible();
+
+        // Same entry, now reading the other way: the menu stays open, so the
+        // label has to have been redrawn.
+        await expect(button).toContainText(/deselect/i);
+        await button.click();
+        await expect.poll(async () => page.evaluate(
+            () => window.dashboardInstance.health.multiSelect.selected.size
+        )).toBe(0);
+    });
+
+    test('deselect all only unticks the rows the filter shows', async ({ page }) => {
+        await openHealth(page);
+        await page.evaluate(() => window.dashboardInstance.health.multiSelect.selectAllVisible());
+        const all = await page.evaluate(
+            () => window.dashboardInstance.health.multiSelect.selected.size
+        );
+        expect(all).toBeGreaterThan(1);
+
+        // Narrow the list, so the remaining ticks sit outside the filter.
+        // Searched on the url, which is the field every issue record carries —
+        // matchesQuery reads name, url, pageName, category and the reason text.
+        const needle = await page.evaluate(
+            () => window.dashboardInstance.health.getFilteredIssues()[0]?.url || ''
+        );
+        expect(needle.length).toBeGreaterThan(0);
+        await page.locator('.health-view-search-input').fill(needle);
+        await expect.poll(async () => page.evaluate(
+            () => window.dashboardInstance.health.getFilteredIssues().length
+        ), { timeout: 10_000 }).toBeLessThan(all);
+        const narrowed = await page.evaluate(
+            () => window.dashboardInstance.health.getFilteredIssues().length
+        );
+
+        await page.locator('[data-health-toolbar-more]').click();
+        const button = page.locator('[data-health-select-all]');
+        await expect(button).toContainText(/deselect/i);
+        await button.click();
+
+        const after = await page.evaluate(
+            () => window.dashboardInstance.health.multiSelect.selected.size
+        );
+        expect(after).toBe(all - narrowed);
+    });
+});

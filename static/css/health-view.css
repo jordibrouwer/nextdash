@@ -574,6 +574,7 @@
    had no rule at all, so each rendered as the browser's default grey button:
    square, 2px outset, in a row of soft-cornered ones. Easy to miss, because
    they are only on screen while their own filter is. */
+.health-view-select-all-btn,
 .health-view-export-btn,
 .health-view-history-export-btn,
 .health-view-rot-btn,
@@ -591,6 +592,7 @@
     cursor: pointer;
 }
 
+.health-view-select-all-btn:hover,
 .health-view-export-btn:hover,
 .health-view-history-export-btn:hover,
 .health-view-rot-btn:hover,
