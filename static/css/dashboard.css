@@ -6035,45 +6035,50 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * category title beside it.
  */
 /*
- * The two surfaces a readout is built from, and both are translucent on purpose.
+ * The surfaces a readout is built from: the page's own colour, one step off
+ * it, and solid.
  *
- * Mixed with `transparent` rather than with a named background, so they
- * composite over whatever the card turned out to be. Deriving them from
- * --background-primary was the first attempt and it does not survive contact
- * with the themes: measured across four, the cell came out lighter than the
- * card on two and darker on the other two, and on two of them the difference
- * was under 1% -- invisible. The card is not mixed from --background-primary,
- * so anything mixed from it lands wherever it lands.
+ * They were tints of --text-primary, one step towards the reader. On every
+ * theme that read as a grey-white panel pasted on the dashboard, and the cells
+ * inside it lighter still: mixing in the ink mixes in its whiteness. These take
+ * the page's hue and chroma and move only its lightness -- up on a dark theme,
+ * down on a light one, as --ink-dir says -- so a tile keeps the colour of the
+ * page it stands on. The theme's accent tint rides on top the way it does on
+ * the surface ladder.
  *
- * A tint of the text colour always moves away from the card in the same
- * direction the text does: lighter on a dark theme, darker on a light one.
- * That is one step towards the reader on every theme, which is the whole
- * relationship a readout needs.
+ * The cells sit one step further out than the tile. Their container paints the
+ * tile's own ground, so the 1px gaps between them draw the hairlines. The
+ * solid cell is kept under its own name so glass can thin it without a
+ * variable that refers to itself.
  *
- * --text-primary and not --text-secondary, which is what these mixed for a
- * long time and is why a readout came out grey on a themed dashboard. The
- * secondary ink is derived in theme-ink.css as oklch(from <surface> ...) with
- * `calc(c * 0.5)` -- half the chroma of the surface it stands on. On a dark
- * theme that surface is near-black and carries almost none to begin with, so
- * halving it lands at effectively zero: measured on retro-crt-dark, the cell
- * came out srgb(0.723 0.761 0.733), which is a grey on a green dashboard.
- * Scaling the chroma down is right for ink (it is what keeps a greyscale
- * theme neutral instead of picking up a tint), and wrong for a surface that
- * has to belong to the card it sits in. --text-primary comes straight from
- * the theme with its own chroma, so the tint carries the theme's hue and the
- * direction above still holds.
+ * Chroma is the page's own, unscaled: a neutral page has no hue to speak of,
+ * and inventing one would tint a greyscale theme red.
+ *
+ * The fallback, for a browser without relative colours, is the old ink tint at
+ * a lower strength over the solid page.
  */
 .dashboard-widget {
-    --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 13%, transparent);
-    --dashboard-widget-cell: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    --dashboard-widget-surface: color-mix(in srgb, var(--text-primary) 4%, var(--background-primary));
+    --dashboard-widget-cell-solid: color-mix(in srgb, var(--text-primary) 8%, var(--background-primary));
+    --dashboard-widget-cell: var(--dashboard-widget-cell-solid);
+    --dashboard-widget-rule: var(--dashboard-widget-surface);
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--dashboard-widget-cell) 88%, var(--text-primary));
+}
+
+@supports (color: oklch(from white l c h)) {
+    .dashboard-widget {
+        --dashboard-widget-surface: color-mix(in srgb, var(--accent-primary) var(--theme-tint, 0%),
+            oklch(from var(--background-primary) clamp(0, calc(l + 0.035 * var(--ink-dir, 1)), 1) c h));
+        --dashboard-widget-cell-solid: color-mix(in srgb, var(--accent-primary) var(--theme-tint, 0%),
+            oklch(from var(--background-primary) clamp(0, calc(l + 0.07 * var(--ink-dir, 1)), 1) c h));
+    }
 }
 
 .dashboard-widget .dashboard-widget-body {
     padding: var(--space-3, 0.75rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 9px);
-    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    background: var(--dashboard-widget-surface);
     /*
      * Reserved before the data arrives.
      *
@@ -6767,8 +6772,10 @@ button.dashboard-widget-stat.keyboard-selected {
     overflow: hidden;
     /* A track that can be seen when the fill is short: at four pixels on a
        16%-tint ground the empty part of the bar was invisible, so a bar at 5%
-       looked like a stray mark rather than like a bar that is nearly empty. */
-    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+       looked like a stray mark rather than like a bar that is nearly empty.
+       Solid on the cell's ground, and a lighter share of the ink: at 22% over
+       transparent it was the brightest thing on the tile. */
+    background: color-mix(in srgb, var(--text-primary) 14%, var(--dashboard-widget-cell));
 }
 
 .dashboard-widget-meter-fill {

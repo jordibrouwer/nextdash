@@ -68,13 +68,13 @@ test.describe('the dark bottom edge', () => {
     test('the raised surfaces carry both edges', async ({ page }) => {
         await openDashboard(page, 'rich');
 
-        // The widget body is the clearest case: it is nothing but a surface
-        // with figures on it, so it is where the ladder shows most.
+        // A card preset's category: the widget body stepped off the ladder, so
+        // the card is the raised surface the ladder still paints.
         const shadow = await page.evaluate(() => {
             const probe = document.createElement('div');
-            probe.className = 'dashboard-widget';
+            probe.className = 'dashboard-grid layout-cards';
             const body = document.createElement('div');
-            body.className = 'dashboard-widget-body';
+            body.className = 'category';
             probe.appendChild(body);
             document.getElementById('dashboard-layout').appendChild(probe);
             const value = window.getComputedStyle(body).boxShadow;
@@ -101,12 +101,12 @@ test.describe('the dark bottom edge', () => {
  * page, where a shadow is black on any theme. The edges lie ON the surface
  * and stay theme-derived.
  */
-/** The box-shadow a widget body resolves to at a given depth. */
+/** The box-shadow a raised card resolves to at a given depth. */
 const widgetShadow = (page) => page.evaluate(() => {
     const probe = document.createElement('div');
-    probe.className = 'dashboard-widget';
+    probe.className = 'dashboard-grid layout-cards';
     const body = document.createElement('div');
-    body.className = 'dashboard-widget-body';
+    body.className = 'category';
     probe.appendChild(body);
     document.getElementById('dashboard-layout').appendChild(probe);
     const value = window.getComputedStyle(body).boxShadow;

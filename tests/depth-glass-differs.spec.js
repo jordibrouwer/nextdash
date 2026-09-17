@@ -12,8 +12,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * glass produced a dashboard indistinguishable from rich. A setting that does
  * nothing is worse than one that is not offered.
  *
- * Measured on the widget body, because that is the raised surface the default
- * layout actually paints. The card presets that draw no card stay untouched by
+ * Measured on a card preset's category: the widget body is a quiet tint now,
+ * not a raised surface. The presets that draw no card stay untouched by
  * design: transparency is a property of a surface, and where there is no
  * surface there is nothing to see through.
  */
@@ -27,13 +27,13 @@ async function dashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
-/** The widget body's ground and the blur behind it, at a given depth. */
+/** A raised card's ground and the blur behind it, at a given depth. */
 const surfaceAt = (page, depth) => page.evaluate((value) => {
     document.body.setAttribute('data-depth', value);
     const widget = document.createElement('div');
-    widget.className = 'dashboard-widget';
+    widget.className = 'dashboard-grid layout-cards';
     const body = document.createElement('div');
-    body.className = 'dashboard-widget-body';
+    body.className = 'category';
     widget.appendChild(body);
     document.getElementById('dashboard-layout').appendChild(widget);
     const style = window.getComputedStyle(body);

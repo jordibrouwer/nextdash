@@ -384,16 +384,14 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
 /*
  * The widget body.
  *
- * A tile is the one block on the dashboard that is nothing but a surface with
- * figures on it, so it is where a flat palette shows most. It mixed 5% of the
- * secondary text colour into nothing, which is a surface without being on the
- * ladder — surface-2 puts it a step above the card it sits in.
+ * Deliberately off the ladder. surface-2 lifted every tile a step above the
+ * card it sits in, and on every theme that read as a grey panel pasted on the
+ * page. The tile keeps its page-coloured ground from dashboard.css; depth gives it a
+ * hairline and the soft shadow, not the lit edges.
  */
 body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
-    background: var(--surface-2);
-    background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+    box-shadow: var(--surface-cast);
 }
 
 /*

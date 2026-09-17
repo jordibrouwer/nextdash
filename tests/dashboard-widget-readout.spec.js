@@ -137,8 +137,6 @@ test.describe('a widget reads as an instrument', () => {
             const card = tile.querySelector('.dashboard-widget-body');
             const cell = tile.querySelector('.dashboard-widget-stat');
             const paint = (el) => {
-                // What the pixel actually is: these surfaces are translucent
-                // on purpose, so the declared value is not the answer.
                 const rect = el.getBoundingClientRect();
                 return { rect: [Math.round(rect.width), Math.round(rect.height)] };
             };
@@ -153,18 +151,15 @@ test.describe('a widget reads as an instrument', () => {
         }, CHANNELS);
 
         /*
-         * Translucent, and that is the load-bearing part.
+         * Solid, and a step off the tile.
          *
-         * Mixed with a named background instead, the cell landed wherever that
-         * background happened to be: measured across four themes it came out
-         * lighter than the card on two and darker on the other two, and twice
-         * the difference was under one percent -- a readout indistinguishable
-         * from the card it sits on. A tint composites over whatever the card
-         * turned out to be, so it always moves one step in the direction of
-         * the text, on every theme.
+         * Both are the page's colour moved in lightness, the cell one step
+         * further than the tile -- so on every theme the two stay apart. The difference has to be one a person can see.
          */
-        expect(Number(surfaces.cellAlpha)).toBeGreaterThan(0);
-        expect(Number(surfaces.cellAlpha)).toBeLessThan(1);
+        expect(surfaces.cellAlpha, 'the cell is see-through').toBeUndefined();
+        const apart = surfaces.card.reduce((sum, v, i) => sum + Math.abs(v - surfaces.cell[i]), 0);
+        expect(apart, `the cell is the tile's own colour: ${surfaces.cell} on ${surfaces.card}`)
+            .toBeGreaterThan(0.06);
         // The hairline between cells is the grid's gap showing through.
         expect(surfaces.gap).toBe(1);
         expect(surfaces.size.rect[0]).toBeGreaterThan(0);
