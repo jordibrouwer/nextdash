@@ -11996,8 +11996,6 @@ class DashboardConfig {
                         ] },
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
-                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 8, step: 1, special: 'chrome',
-                        label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
                     chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
@@ -12025,6 +12023,8 @@ class DashboardConfig {
                             opt('header', t('config.actionBarHeader', 'In the header')),
                             opt('menu', t('config.actionBarMenu', 'Behind one menu in the header')),
                         ] },
+                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 8, step: 1, special: 'chrome',
+                        label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
@@ -14490,7 +14490,7 @@ class DashboardConfig {
     // changing the bar meant finding it twice.
     // Date & weather came over from Behavior: the clock, the date line and the
     // weather are things on screen, and the header they sit in is set here.
-    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'header', 'buttonbar', 'datetime', 'display', 'custom-themes'];
 
     /*
      * What a tab used to be called still opens it.

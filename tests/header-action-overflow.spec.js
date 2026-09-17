@@ -123,7 +123,8 @@ test('zero from Config puts every action behind the control', async ({ page }) =
     await openWithActions(page, { cap: 2 });
     await page.keyboard.press('Shift+Comma');
     await page.click('[data-config-section="appearance"]');
-    await page.click('[data-appearance-tab="header"]');
+    // With the actions it caps, on the Action bar tab.
+    await page.click('[data-appearance-tab="buttonbar"]');
     const field = page.locator('xpath=//input[@type="number" and @data-behavior-field="maxHeaderActions"]');
     await expect(field).toHaveAttribute('min', '0');
     await field.fill('0');
