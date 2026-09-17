@@ -4,21 +4,6 @@
     position: fixed;
     right: max(1rem, env(safe-area-inset-right));
     bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-/*
- * Above the corner button, not on top of it.
- *
- * The what's-new star moved to this corner, and a toast pinned to the same
- * 1rem covered it for as long as it was on screen -- including the toasts that
- * carry an Undo, which is the one thing you might be reaching past it for.
- */
-body:has(#whats-new-btn) .app-notification {
-    bottom: calc(max(1rem, env(safe-area-inset-bottom))
-        + var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem));
-}
-
-.app-notification {
     max-width: min(380px, calc(100vw - 1.5rem));
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     display: inline-flex;

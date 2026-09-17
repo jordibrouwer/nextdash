@@ -256,15 +256,14 @@ test.describe("what's new modal", () => {
 });
 
 /*
- * The star sits in the bottom-right corner, and the toast stands clear of it.
+ * The star sits in the bottom-right corner, and the toast at the bottom edge.
  *
  * It was bottom-left, where the page's own content starts; the actions it
  * belongs beside are all at the right end of the bar. The notification host is
- * pinned to that same corner, so it had to be lifted — a toast covering the
- * button for as long as it is on screen is a button you cannot press, and the
- * toasts that carry an Undo are exactly the ones you reach past it for.
+ * pinned to that same corner and stands at the bottom edge like the corner
+ * cards; while a toast shows it may cover the star.
  */
-test('the what\'s-new button is in the bottom-right corner, under the toast', async ({ page }) => {
+test('the what\'s-new button is in the bottom-right corner, the toast at the bottom edge', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
@@ -289,11 +288,13 @@ test('the what\'s-new button is in the bottom-right corner, under the toast', as
     )).toBe(true);
     await page.waitForTimeout(400);
 
-    const overlap = await page.evaluate(() => {
-        const box = (sel) => document.querySelector(sel).getBoundingClientRect();
-        const toast = box('#app-notification');
-        const star = box('#whats-new-btn');
-        return toast.bottom > star.top && toast.right > star.left && toast.left < star.right;
+    const toast = await page.evaluate(() => {
+        const r = document.getElementById('app-notification').getBoundingClientRect();
+        return {
+            gap: Math.round(window.innerHeight - r.bottom),
+            edge: Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) || 16),
+        };
     });
-    expect(overlap, 'the toast covers the button').toBe(false);
+    // At the bottom edge, the 1rem every corner card keeps -- not a row above it.
+    expect(toast.gap).toBeLessThanOrEqual(toast.edge + 1);
 });
