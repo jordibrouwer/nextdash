@@ -88,6 +88,43 @@ test('a page is a row in one slab, not a card of its own', async ({ page }) => {
         .toBe(row.depth !== 'flat');
 });
 
+test('the cursor opens on the page you are on, not on the first', async ({ page }) => {
+    await openPages(page);
+    // Stand on the second page, then open the panel again.
+    await page.keyboard.press('Escape');
+    const second = await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        if (d.pages.length < 2) {
+            const pages = [...d.pages, { id: 6200, name: 'second' }];
+            const saved = await api('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pages),
+            });
+            if (!saved.ok) throw new Error(`seeding pages failed: ${saved.status}`);
+            await d.loadData();
+        }
+        const id = Number(d.pages[1].id);
+        await d.requestPageNavigation(id);
+        return id;
+    });
+    await page.keyboard.press(',');
+    await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
+
+    const seen = await page.evaluate(() => {
+        const items = [...document.querySelectorAll('.page-overview-modal-item')];
+        return {
+            ring: items.findIndex((el) => el.classList.contains('is-focused')),
+            focused: items.findIndex((el) => el.contains(document.activeElement)),
+            pageOfFocus: document.activeElement?.dataset?.pageId,
+        };
+    });
+    expect(seen.ring, 'the ring sits on the first page').toBe(1);
+    expect(seen.focused, 'the focus sits on the first page').toBe(1);
+    expect(Number(seen.pageOfFocus)).toBe(second);
+});
+
 test('the foot counts the pages instead of repeating Esc', async ({ page }) => {
     await openPages(page);
 
@@ -96,7 +133,7 @@ test('the foot counts the pages instead of repeating Esc', async ({ page }) => {
     expect(foot).toMatch(/\b1 page\b|\b\d+ pages\b/);
 });
 
-test('the page you are on takes the focus, not the way out', async ({ page }) => {
+test('the page you are on takes the focus, whichever page that is', async ({ page }) => {
     await openPages(page);
 
     /*
@@ -254,9 +291,16 @@ test.describe('the shape of the panel', () => {
 
         const filter = page.locator('#page-overview-filter');
         await expect(filter).toBeVisible();
-        // It takes the keyboard, so typing narrows at once.
+        // The cursor stays on the page you are on; a letter is handed to the
+        // filter, which is the only thing it used to take the focus for.
+        await expect.poll(() => page.evaluate(
+            () => Boolean(document.activeElement?.closest('.page-overview-modal-item.is-current'))),
+        { timeout: 5_000 }).toBe(true);
+
+        await page.keyboard.type('page-');
         await expect.poll(() => page.evaluate(
             () => document.activeElement?.id), { timeout: 5_000 }).toBe('page-overview-filter');
+        expect(await filter.inputValue()).toBe('page-');
 
         await filter.fill('page-7');
         await expect.poll(() => page.evaluate(

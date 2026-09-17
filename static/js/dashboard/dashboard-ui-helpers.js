@@ -759,7 +759,14 @@ class DashboardUiHelpers {
             return Math.max(1, across);
         };
 
-        const setFocus = (idx) => {
+        /*
+         * `move` says whether the keyboard goes with the cursor.
+         *
+         * While the filter is being typed into, the ring follows what is left
+         * on screen but the focus stays in the field -- moving it would take
+         * the next letter with it.
+         */
+        const setFocus = (idx, move = true) => {
             if (pages.length === 0) {
                 return;
             }
@@ -782,14 +789,13 @@ class DashboardUiHelpers {
             items().forEach((el, i) => {
                 el.classList.toggle('is-focused', !onNewPage && i === focusedIndex);
                 if (!onNewPage && i === focusedIndex) {
-                    const btn = el.querySelector('.page-overview-modal-link');
-                    btn?.focus({ preventScroll: true });
+                    if (move) el.querySelector('.page-overview-modal-link')?.focus({ preventScroll: true });
                     el.scrollIntoView({ block: 'nearest' });
                 }
             });
             if (onNewPage) {
                 const trigger = document.getElementById('page-overview-new-page');
-                trigger?.focus({ preventScroll: true });
+                if (move) trigger?.focus({ preventScroll: true });
                 trigger?.scrollIntoView({ block: 'nearest' });
             }
         };
@@ -832,7 +838,9 @@ class DashboardUiHelpers {
                     if (hit && firstVisible < 0) firstVisible = i;
                 });
                 this._pageOverviewDelete?.disarm?.();
-                if (needle && firstVisible >= 0) setFocus(firstVisible);
+                if (needle && firstVisible >= 0) {
+                    setFocus(firstVisible, document.activeElement !== filterInput);
+                }
             };
             filterInput.addEventListener('input', apply);
         }
@@ -857,7 +865,28 @@ class DashboardUiHelpers {
              * Escape -- stay with the panel.
              */
             const typing = document.activeElement?.id === 'page-overview-filter';
-            if (typing && e.key.length === 1) {
+            // A digit is a page's key wherever it is pressed: "3" means the
+            // third page, filtered or not, typed into or not. Every other
+            // character belongs to whatever is being typed.
+            const isPageDigit = e.key >= '1' && e.key <= '9';
+            if (typing && e.key.length === 1 && !isPageDigit) {
+                return;
+            }
+            /*
+             * A letter typed on a row goes to the filter.
+             *
+             * The panel's own keys are `,`, `n` and the digits; anything else
+             * of one character is somebody starting to type a page's name. It
+             * is handed over with the letter rather than swallowed, so the
+             * filter reads the same whether it had the focus or not.
+             */
+            if (!typing && filterInput && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey
+                && e.key !== ',' && e.key !== 'n' && e.key !== 'N' && !(e.key >= '1' && e.key <= '9')) {
+                e.preventDefault();
+                e.stopPropagation();
+                filterInput.focus({ preventScroll: true });
+                filterInput.value += e.key;
+                filterInput.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
             if (e.key === ',') {
@@ -984,16 +1013,17 @@ class DashboardUiHelpers {
              * travel back into the list.
              */
             /*
-             * The filter takes the keyboard when there is one.
+             * The page you are on is where the cursor belongs.
              *
-             * With enough pages to earn a filter, typing is the way in; without
-             * it the page you are on is where the cursor belongs. Decided here
-             * rather than by a focus() after the fact, which raced the modal's
-             * own first focus and lost about half the time.
+             * With enough pages to earn a filter, the filter used to take the
+             * keyboard -- so the panel opened with the cursor at the top of the
+             * list whatever page you were standing on, and the first arrow key
+             * walked from page one rather than from here. Typing still filters:
+             * a letter pressed while a row has the focus is handed to the
+             * filter (see the key handler), which is the only thing the filter
+             * was taking the focus for.
              */
-            initialFocusSelector: pages.length > DashboardUiHelpers.PAGE_FILTER_FROM
-                ? '#page-overview-filter'
-                : '.page-overview-modal-item.is-current .page-overview-modal-link',
+            initialFocusSelector: '.page-overview-modal-item.is-current .page-overview-modal-link',
             /*
              * The width is the sheet's own business (see page-overview-sheet
              * in modal.css): the grid takes the page's column, the compact
