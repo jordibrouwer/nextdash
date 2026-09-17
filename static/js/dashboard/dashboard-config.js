@@ -11230,6 +11230,9 @@ class DashboardConfig {
         pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'text' },
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'bottom' },
+        actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
+        actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 0 },
+        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: false },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -11630,7 +11633,7 @@ class DashboardConfig {
                 note: t('config.generalGroupKeyboardNote', 'Whether the keyboard works outside the dashboard, and whether it explains itself.'),
                 controls: [
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
-                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
+                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on header links'), special: 'shortcutTooltips' },
                     // Here rather than under Appearance: what it controls is
                     // whether the keyboard explains itself, not how the grid
                     // looks.
@@ -12020,6 +12023,17 @@ class DashboardConfig {
                             opt('right', t('config.actionBarRight', 'In a column on the right')),
                             opt('header', t('config.actionBarHeader', 'In the header')),
                             opt('menu', t('config.actionBarMenu', 'Behind one menu in the header')),
+                        ] },
+                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
+                    { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
+                    { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
+                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
+                        options: [
+                            opt(0, t('config.actionBarAutoHideNever', 'Always in view')),
+                            opt(2, t('config.actionBarAutoHide2', '2 seconds')),
+                            opt(5, t('config.actionBarAutoHide5', '5 seconds')),
+                            opt(10, t('config.actionBarAutoHide10', '10 seconds')),
+                            opt(30, t('config.actionBarAutoHide30', '30 seconds')),
                         ] },
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
@@ -12629,7 +12643,8 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const fields = (panel.controls || [])
-            .filter((c) => c.type === 'checkbox' && c.field)
+            // A switch for the whole panel is not one of the things it shows.
+            .filter((c) => c.type === 'checkbox' && c.field && !c.noBulk)
             .map((c) => c.field);
         if (fields.length < 2) return '';
 

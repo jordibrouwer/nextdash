@@ -8584,6 +8584,44 @@ body[data-action-bar="right"] .dashboard-section.section-controls .header-shortc
     right: 12px;
 }
 
+/* The key chip on each action button can go; the keys keep working. */
+body[data-action-keys="off"] .header-shortcuts .search-button-icon,
+body[data-action-keys="off"] .header-action-item-key {
+    display: none;
+}
+
+/* Switched off: no actions anywhere, and no divider waiting for them. */
+body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-zone-divider {
+    display: none;
+}
+
+/* A dock slides into the edge it stands on, and back out. The resting
+   transforms above stay as they are; hidden adds the way out. */
+body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+body[data-action-bar-hidden][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(-50%, calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+body[data-action-bar-hidden][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(calc(-100% - 20px), -50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(calc(100% + 20px), -50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* Nothing left of the actions in the header, so nothing to divide. */
 body[data-action-bar="bottom"] .dashboard-section.section-controls .header-zone-divider,
 body[data-action-bar="left"] .dashboard-section.section-controls .header-zone-divider,
@@ -8617,6 +8655,12 @@ body[data-action-bar="bottom"] #dashboard-layout {
         right: auto;
         transform: translateX(-50%);
         flex-direction: row;
+    }
+
+    /* On a phone the side columns stand at the bottom, so they leave downwards. */
+    body[data-action-bar-hidden][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+    body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+        transform: translate(-50%, calc(100% + 24px));
     }
 
     body[data-action-bar="left"] #dashboard-layout,

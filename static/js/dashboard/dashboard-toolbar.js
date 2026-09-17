@@ -28,7 +28,8 @@ class DashboardToolbar {
             // No key: the star is a button you click, and a chip reading "★"
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
-            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','], header: true },
+            // An action button like the rest, not a header destination.
+            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
             {
                 selector: '#page-nav-inbox-btn',
                 labelKey: 'dashboard.inboxPageTitle',
@@ -267,17 +268,17 @@ class DashboardToolbar {
         };
 
         const allDefs = this.shortcutButtonDefs();
-        const defs = allDefs.filter((def) => !def.header);
         const headerDefs = allDefs.filter((def) => def.header);
 
-        const toolbarButtons = [];
-        const defByButton = new Map();
-
-        defs.forEach((def) => {
+        /*
+         * The action buttons get no popover. Each already carries its key as a
+         * chip, so the popover only repeated it -- and in a dock it opened over
+         * the bookmarks the reader was aiming for. Their label stays in
+         * aria-label and the key in aria-keyshortcuts.
+         */
+        allDefs.filter((def) => !def.header).forEach((def) => {
             const btn = def.id ? document.getElementById(def.id) : document.querySelector(def.selector);
             if (!btn) return;
-            toolbarButtons.push(btn);
-            defByButton.set(btn, def);
             btn.removeAttribute('data-tooltip');
             btn.removeAttribute('data-i18n-tooltip');
         });
@@ -333,7 +334,7 @@ class DashboardToolbar {
             }
         };
 
-        // Resolved once, like toolbarButtons above. This runs on every
+        // Resolved once rather than per event. This runs on every
         // pointermove, and re-querying four selectors per mouse move cost a
         // document query plus a style resolution for each — for elements that do
         // not move between renders. Rebound on the next renderToolbar anyway.
@@ -348,18 +349,6 @@ class DashboardToolbar {
                     show(btn, def.labelKey, def.keys, { below: true });
                     return;
                 }
-            }
-            const hoveredBtn = toolbarButtons.find((btn) => btn.matches(':hover'));
-            if (hoveredBtn) {
-                const def = defByButton.get(hoveredBtn);
-                if (def) show(hoveredBtn, def.labelKey, def.keys);
-                return;
-            }
-            const focusedBtn = toolbarButtons.find((btn) => btn.matches(':focus-visible'));
-            if (focusedBtn) {
-                const def = defByButton.get(focusedBtn);
-                if (def) show(focusedBtn, def.labelKey, def.keys);
-                return;
             }
             hide();
         };

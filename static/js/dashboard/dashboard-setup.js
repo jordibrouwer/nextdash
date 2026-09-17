@@ -90,6 +90,13 @@ class DashboardSetup {
                 ? d.settings.actionBarPosition
                 : 'header'
         );
+        // Off draws no action buttons anywhere; their keys keep working. The
+        // seconds are what the dock waits before sliding into its edge.
+        document.body.setAttribute('data-action-bar-enabled',
+            d.settings.actionBarEnabled === false ? 'off' : 'on');
+        document.body.setAttribute('data-action-keys',
+            d.settings.showActionKeys === false ? 'off' : 'on');
+        window.ActionBarAutoHide?.sync();
         document.body.setAttribute(
             'data-header-buttons',
             d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'
@@ -361,6 +368,16 @@ class DashboardSetup {
                 window.nextdashRecordKey?.(',');
                 d.showPageOverlay();
                 return;
+            }
+
+            // ' or Shift+O — slide a docked action bar out of view or back.
+            if (e.key === "'" || (e.code === 'KeyO' && e.shiftKey)) {
+                if (window.ActionBarAutoHide?.toggle()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.("' or Shift+O");
+                    return;
+                }
             }
 
             // '<' (Shift+,) — jump to config. Layout-independent: also accept the

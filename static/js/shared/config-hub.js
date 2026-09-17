@@ -51,7 +51,7 @@
             layout: ['columnsPerRow', 'densityMode'],
             display: ['shortcutDisplay', 'rowHighlight'],
             header: ['pageSwitcherStyle', 'headerButtonStyle', 'showPageNamesInTabs'],
-            buttonbar: ['actionBarPosition'],
+            buttonbar: ['actionBarPosition', 'actionBarAutoHideSeconds', 'actionBarEnabled'],
             datetime: ['timeFormat', 'headerClockPlacement', 'weatherUnit'],
         },
         behavior: {
@@ -265,13 +265,15 @@
         const place = ['bottom', 'left', 'right', 'menu'].includes(s.actionBarPosition) ? s.actionBarPosition : 'header';
         const switcher = ['segmented', 'compact'].includes(s.pageSwitcherStyle) ? s.pageSwitcherStyle : 'text';
         const density = s.densityMode || 'comfortable';
+        const barState = s.actionBarEnabled === false ? 'off'
+            : (Number(s.actionBarAutoHideSeconds) > 0 && ['bottom', 'left', 'right'].includes(place) ? 'sliding' : 'on');
         const cells = Array.from({ length: cols * 2 }, () => '<i></i>').join('');
         const tabs = switcher === 'compact'
             ? '<span class="hub-pv-tab is-on">main ▾</span>'
             : `<span class="hub-pv-tab is-on">${s.showPageNamesInTabs ? 'main' : '1'}</span><span class="hub-pv-tab">${s.showPageNamesInTabs ? 'web' : '2'}</span><span class="hub-pv-tab">${s.showPageNamesInTabs ? 'media' : '3'}</span>`;
         return `
             <div class="hub-preview" aria-hidden="true"
-                 data-preview-cols="${cols}" data-preview-actions="${esc(place)}"
+                 data-preview-cols="${cols}" data-preview-actions="${esc(place)}" data-preview-bar="${barState}"
                  data-preview-switcher="${esc(switcher)}" data-preview-density="${esc(density)}"
                  data-preview-buttons="${s.headerButtonStyle === 'plated' ? 'plated' : 'plain'}">
                 <div class="hub-pv-head">

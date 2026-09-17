@@ -72,6 +72,7 @@
                 { keys: 'Shift + ← / →', cheatKey: 'navPrevNextPage', fallback: 'Previous / next page', print: true },
                 { keys: ',', cheatKey: 'navPageOverview', fallback: 'Page overview with bookmark counts', print: true, printFallback: 'Page overview' },
                 { keys: 'n', cheatKey: 'navPageOverviewNewPage', fallback: 'Create a new page from the page overview' },
+                { keys: "' or Shift + O", cheatKey: 'navToggleActionBar', fallback: 'Slide a docked action bar out of view, or bring it back', print: true, printFallback: 'Show or hide the action bar' },
                 { keys: '<', cheatKey: 'navOpenConfig', fallback: 'Open config (< is Shift+,; in config < returns here)' },
                 { keys: '.', cheatKey: 'navCollapseAll', fallback: 'Collapse or expand all categories' },
                 { keys: 'Shift + N', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page' },

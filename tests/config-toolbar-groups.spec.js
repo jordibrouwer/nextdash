@@ -58,14 +58,14 @@ test.describe('the chrome toggles are grouped', () => {
         // panel, which is why this is three more than the toggles named below; the clock's placement sits with the clock, in
         // Behavior → Date & weather.
         const all = panels.flatMap((p) => p.fields);
-        expect(all).toHaveLength(21);
-        expect(new Set(all).size).toBe(21);
+        expect(all).toHaveLength(24);
+        expect(new Set(all).size).toBe(24);
         expect(all).toEqual(expect.arrayContaining([
             'headerButtonStyle', 'showPageTabs', 'showPageNamesInTabs', 'showTitle', 'showDashboardButton',
             'showInboxButton', 'showHealthDashboard', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
-            'actionBarPosition',
+            'actionBarPosition', 'actionBarEnabled', 'actionBarAutoHideSeconds', 'showActionKeys',
         ]));
     });
 

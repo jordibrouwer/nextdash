@@ -476,3 +476,21 @@
 .hub-subtabs .config-subtab.is-in-group:not(.is-active) {
     color: var(--text-primary, inherit);
 }
+
+/* The dock half inside its edge when it slides away; gone when switched off. */
+.hub-preview[data-preview-bar="sliding"] .hub-pv-dock {
+    opacity: 0.35;
+}
+
+.hub-preview[data-preview-bar="sliding"][data-preview-actions="left"] .hub-pv-dock {
+    left: 1px;
+}
+
+.hub-preview[data-preview-bar="sliding"][data-preview-actions="right"] .hub-pv-dock {
+    right: 1px;
+}
+
+.hub-preview[data-preview-bar="off"] .hub-pv-dock,
+.hub-preview[data-preview-bar="off"] .hub-pv-dest b {
+    display: none;
+}

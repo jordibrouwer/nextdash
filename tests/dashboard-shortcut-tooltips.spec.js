@@ -4,8 +4,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForFaviconPrefe
 
 /**
  * The keyboard-shortcut popovers on the header links (pages, inbox, health,
- * config) and the button bar below (add, search, commands, finders, recent, tag
- * cloud, cheat sheet, what's new).
+ * config). The action buttons have none: each carries its key as a chip.
  *
  * One switch covers all of them: settings.showShortcutTooltips, reachable from
  * Config → Behavior → General and from `:shortcuts on|off` in the command
@@ -73,8 +72,11 @@ async function hoverAndRead(page, selector) {
 
 // The two families the user sees as one feature: header links, and the button
 // bar underneath.
-const HEADER = ['#page-overview-header-btn', '.config-link-anchor'];
-const TOOLBAR = ['#search-button', '#commands-button', '#finders-button'];
+const HEADER = ['.config-link-anchor'];
+// Every button that can stand in the action bar.
+const TOOLBAR = ['#quick-add-toolbar-btn', '#search-button', '#commands-button', '#finders-button',
+    '#collapse-all-button', '#recent-bookmarks-button', '#page-overview-header-btn', '#help-button',
+    '#tag-cloud-toggle-btn'];
 
 test.describe('dashboard shortcut popovers: one switch', () => {
     test('they are off unless asked for, and the host exists once switched on', async ({ page }) => {
@@ -106,21 +108,20 @@ test.describe('dashboard shortcut popovers: one switch', () => {
         }
     });
 
-    test('switching off hides the button-bar popovers too', async ({ page }) => {
+    test('the action buttons show no popover, switch on or off', async ({ page }) => {
         await loadDashboard(page);
-        await setTooltips(page, true);
-        for (const sel of TOOLBAR) {
-            const on = await hoverAndRead(page, sel);
-            if (on.skipped) continue;
-            expect(on.visible, `${sel} should show a popover while on; top=${on._top}`).toBe(true);
+        for (const enabled of [true, false]) {
+            await setTooltips(page, enabled);
+            for (const sel of TOOLBAR) {
+                const seen = await hoverAndRead(page, sel);
+                if (seen.skipped) continue;
+                expect(seen.visible, `${sel} opened a popover (tooltips ${enabled ? 'on' : 'off'})`).toBe(false);
+                // Nor the CSS one that data-tooltip draws.
+                expect(await page.locator(sel).first().getAttribute('data-tooltip')).toBeNull();
+            }
         }
-
-        await setTooltips(page, false);
-        for (const sel of TOOLBAR) {
-            const off = await hoverAndRead(page, sel);
-            if (off.skipped) continue;
-            expect(off.visible, `${sel} should stay silent while off`).toBe(false);
-        }
+        // The key still reaches a screen reader.
+        expect(await page.locator('#search-button').getAttribute('aria-keyshortcuts')).toBeTruthy();
     });
 
     test('switching off removes the popover element and its listeners', async ({ page }) => {
@@ -142,7 +143,7 @@ test.describe('dashboard shortcut popovers: one switch', () => {
         await setTooltips(page, false);
         await setTooltips(page, true);
 
-        const back = await hoverAndRead(page, '#search-button');
+        const back = await hoverAndRead(page, '.config-link-anchor');
         if (!back.skipped) expect(back.visible).toBe(true);
     });
 

@@ -449,6 +449,9 @@ type Settings struct {
 	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
 	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: one segmented control, plain text, or a single button naming the page
 	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
+	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
+	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
+	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
@@ -1388,6 +1391,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarEnabled:                true,
+			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -3075,6 +3080,11 @@ func clampBookmarkSettings(s *Settings) {
 	default:
 		s.ActionBarPosition = defaultActionBarUpgrade
 	}
+	switch s.ActionBarAutoHideSeconds {
+	case 0, 2, 5, 10, 30:
+	default:
+		s.ActionBarAutoHideSeconds = 0
+	}
 	switch s.HeaderButtonStyle {
 	case headerButtonsPlain, headerButtonsPlated:
 	default:
@@ -3546,6 +3556,8 @@ func (fs *FileStore) GetSettings() Settings {
 			PageSwitcherStyle:               defaultPageSwitcherStyle,
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarEnabled:                true,
+			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -3656,6 +3668,14 @@ func (fs *FileStore) GetSettings() Settings {
 		// file says it never answered.
 		if _, ok := rawSettings["actionBarPosition"]; !ok {
 			settings.ActionBarPosition = defaultActionBarUpgrade
+		}
+		// The bar was always drawn before this switch existed.
+		if _, ok := rawSettings["actionBarEnabled"]; !ok {
+			settings.ActionBarEnabled = true
+		}
+		// The chips were always drawn before they could be switched off.
+		if _, ok := rawSettings["showActionKeys"]; !ok {
+			settings.ShowActionKeys = true
 		}
 		if _, ok := rawSettings["maxHeaderActions"]; !ok {
 			settings.MaxHeaderActions = defaultMaxHeaderActions
