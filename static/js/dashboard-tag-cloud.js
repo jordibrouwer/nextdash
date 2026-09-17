@@ -719,6 +719,45 @@
             this.modal.style.bottom = 'auto';
         },
 
+        /**
+         * Open away from a docked bar, fully inside the window.
+         *
+         * The button stands in the same group wherever the bar is, so the
+         * header's "hang under it" also ran for a bar at the bottom of the
+         * window -- and put the cloud under the window's edge. A bottom dock
+         * opens it above the button; a side column beside it, towards the page.
+         * A dock that has slid away still has a place to open from: the edge it
+         * slid into, which the clamps below keep the cloud inside of.
+         */
+        positionModalBesideDock(place, rect, margin, vw, vh, maxW) {
+            if (place === 'bottom') {
+                const edge = Math.min(rect.top, vh - margin);
+                const maxH = Math.max(160, Math.round(edge - margin * 2));
+                this.syncModalSize(maxH);
+                const centre = rect.left + rect.width / 2;
+                let left = centre - maxW / 2;
+                left = Math.min(Math.max(left, margin), vw - margin - maxW);
+                this.modal.style.left = `${Math.round(left)}px`;
+                this.modal.style.right = 'auto';
+                this.modal.style.top = 'auto';
+                this.modal.style.bottom = `${Math.round(vh - edge + margin)}px`;
+                return;
+            }
+            const maxH = Math.max(160, Math.round(vh - margin * 2));
+            this.syncModalSize(maxH);
+            const modalH = this.modal.offsetHeight || 200;
+            let left = place === 'left'
+                ? Math.max(rect.right, 0) + margin
+                : Math.min(rect.left, vw) - margin - maxW;
+            left = Math.min(Math.max(left, margin), vw - margin - maxW);
+            let top = rect.top + rect.height / 2 - modalH / 2;
+            top = Math.min(Math.max(top, margin), vh - margin - modalH);
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
+        },
+
         positionModalForActiveTagFilter(toggleRect, margin, vw, vh, maxW) {
             const banner = document.getElementById('tag-filter-banner');
             if (!banner || !window.dashboardInstance?.hasActiveTagFilters?.()) {
@@ -770,7 +809,17 @@
             // dropdown: under the button, hanging from its right edge, clamped
             // into the window on both axes.
             if (this.toggle.closest('.header-shortcuts')) {
-                this.positionModalUnderHeaderButton(rect, margin, vw, vh, maxW);
+                let place = document.body.getAttribute('data-action-bar') || 'header';
+                // On a phone the side columns stand at the bottom.
+                if ((place === 'left' || place === 'right')
+                    && window.matchMedia?.('(max-width: 700px)').matches) {
+                    place = 'bottom';
+                }
+                if (place === 'bottom' || place === 'left' || place === 'right') {
+                    this.positionModalBesideDock(place, rect, margin, vw, vh, maxW);
+                } else {
+                    this.positionModalUnderHeaderButton(rect, margin, vw, vh, maxW);
+                }
                 return;
             }
 

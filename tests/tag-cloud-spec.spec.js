@@ -157,6 +157,53 @@ test.describe('where the cloud opens', () => {
 });
 
 /*
+ * From a docked bar the cloud opens away from the edge.
+ *
+ * The button stands in the same group wherever the bar is, and the cloud hung
+ * under it every time -- which for a bar at the bottom put it under the window.
+ */
+for (const place of ['bottom', 'left', 'right']) {
+    test(`from a bar docked ${place}, the cloud opens whole and clear of the button`, async ({ page }) => {
+        await page.setViewportSize({ width: 1500, height: 1000 });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate((where) => {
+            Object.assign(window.dashboardInstance.settings,
+                { showTagCloudButton: true, actionBarPosition: where, actionBarAutoHideSeconds: 0 });
+            window.dashboardInstance.setupDOM?.();
+        }, place);
+        await page.waitForTimeout(400);
+        await page.locator('#tag-cloud-toggle-btn').click();
+        await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
+        await page.waitForTimeout(400);
+
+        const seen = await page.evaluate(() => {
+            const m = document.getElementById('tag-cloud-modal').getBoundingClientRect();
+            const b = document.getElementById('tag-cloud-toggle-btn').getBoundingClientRect();
+            return {
+                m: { top: m.top, left: m.left, right: m.right, bottom: m.bottom },
+                b: { top: b.top, left: b.left, right: b.right, bottom: b.bottom },
+                w: document.documentElement.clientWidth,
+                h: window.innerHeight,
+            };
+        });
+        const { m, b } = seen;
+        expect(m.top, 'off the top').toBeGreaterThanOrEqual(0);
+        expect(m.left, 'off the left').toBeGreaterThanOrEqual(0);
+        expect(m.right, 'off the right').toBeLessThanOrEqual(seen.w);
+        expect(m.bottom, 'off the bottom').toBeLessThanOrEqual(seen.h);
+        const overlaps = !(m.right <= b.left || m.left >= b.right || m.bottom <= b.top || m.top >= b.bottom);
+        expect(overlaps, 'the cloud covers its own button').toBe(false);
+        if (place === 'bottom') expect(m.bottom).toBeLessThanOrEqual(b.top);
+        if (place === 'left') expect(m.left).toBeGreaterThanOrEqual(b.right);
+        if (place === 'right') expect(m.right).toBeLessThanOrEqual(b.left);
+    });
+}
+
+/*
  * Closing the cloud puts the reader back on the grid.
  *
  * Escape sent the focus to the button in the action bar, which is the one
