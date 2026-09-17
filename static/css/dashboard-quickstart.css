@@ -5,28 +5,17 @@
  */
 
 /*
- * Above the corner buttons, never over them.
+ * At the bottom edge.
  *
- * The card sat at the bottom edge with a z-index of 2147482800, and the two
- * buttons that live in that corner -- the tag cloud's and What's New -- sit at
- * 1001 and 1002. So on a first run, which is the only time this card is up,
- * the card covered both of them: elementFromPoint in the middle of the What's
- * New button returned .quickstart-actions, and a click on it went to the card.
- * A new reader could not reach either button until the card was dismissed,
- * which is exactly the reader the card is for.
- *
- * Two rows of the corner stack, in the same expression the tag cloud's own
- * button uses to sit above What's New. Unconditional: a button position that
- * moves those two out of the corner leaves the card floating a little high,
- * which costs a band of empty page -- against a button nobody can press.
+ * The card used to be lifted two rows, to keep it off the tag cloud's and What's
+ * New's buttons in this corner. Neither stands here any more -- the tag cloud's
+ * is one of the action buttons, and What's New moved to the right -- so the
+ * lift only left every invitation floating above the edge.
  */
 .quickstart-card {
     position: fixed;
     left: max(1rem, env(safe-area-inset-left));
-    bottom: calc(
-        max(1rem, env(safe-area-inset-bottom))
-        + 2 * (var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem))
-    );
+    bottom: max(1rem, env(safe-area-inset-bottom));
     width: 340px;
     max-width: calc(100vw - 2rem);
     background: var(--background-secondary);

@@ -75,16 +75,14 @@ test.describe('floating dock opacity', () => {
     });
 
     /*
-     * What floats still has to be opaque; what does not, no longer must.
+     * What floats still has to be opaque.
      *
      * The action buttons moved into the header, where they sit on the header's
-     * own surface -- there is nothing of the grid behind them to read through,
-     * which is the whole reason the dock's buttons had to be solid. The two
-     * corner buttons still float over the grid with no plate at all, so the
-     * rule that was written for them still is about them.
+     * own surface. What's New is the one button left floating over the grid in
+     * a corner, with no plate around it, so the rule written for the corner
+     * buttons is now about it alone. The tag cloud's button is an action button.
      */
-    test('the corner FABs are opaque', async ({ page }) => {
-        expect(await bgAlpha(page, '#tag-cloud-toggle-btn')).toBe(1);
+    test('the corner button is opaque', async ({ page }) => {
         expect(await bgAlpha(page, '#whats-new-btn')).toBe(1);
     });
 

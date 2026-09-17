@@ -731,26 +731,16 @@ class DashboardToolbar {
     }
 
     syncTagCloudButtonPlacement() {
-        const d = this.dash;
         const toggle = document.getElementById('tag-cloud-toggle-btn');
-        const wrap = document.getElementById('dashboard-tag-cloud-wrap');
-        if (!toggle || !wrap) return;
-
-        // The header is where the actions are. It stands between search and
-        // recents there, which is the order the keys are learned in: find
-        // something, browse by tag, then what you opened last.
         const shortcuts = document.querySelector('.header-shortcuts');
-        if (shortcuts) {
-            if (toggle.parentElement !== shortcuts) {
-                shortcuts.appendChild(toggle);
-            }
-            return;
-        }
+        if (!toggle || !shortcuts) return;
 
-        // No header to stand in (the phone layout builds its own): back in the
-        // wrap it came from, which is where its modal is anchored.
-        if (toggle.parentElement !== wrap) {
-            wrap.insertBefore(toggle, wrap.firstChild);
+        // The button is one of the actions. It stands between search and
+        // recents, which is the order the keys are learned in: find something,
+        // browse by tag, then what you opened last. The template has it in the
+        // cloud's wrap, and the header group is always there to move it into.
+        if (toggle.parentElement !== shortcuts) {
+            shortcuts.appendChild(toggle);
         }
     }
 

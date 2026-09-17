@@ -23,8 +23,11 @@ async function openCloud(page) {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The button in the header, and on the row: a fresh install docks the
+    // actions at the bottom and folds all but two, and "under the button" is
+    // the header's placement.
     await page.evaluate(() => {
-        window.dashboardInstance.settings.showTagCloudButton = true;
+        Object.assign(window.dashboardInstance.settings, { showTagCloudButton: true, actionBarPosition: 'header', maxHeaderActions: 8 });
         window.dashboardInstance.setupDOM?.();
     });
     await page.evaluate(() => window.DashboardTagCloud?.openModal?.());

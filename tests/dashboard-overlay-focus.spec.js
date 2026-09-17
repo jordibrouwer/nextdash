@@ -171,7 +171,15 @@ test.describe('dashboard overlay focus', () => {
 
     test('recent bookmarks shortcut moves focus into modal', async ({ page }) => {
         await closeDashboardOverlays(page);
-        await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
+        // The modal is what `*` opens while the recent button is on; with it
+        // off, which is the default now, the key opens the search panel's
+        // recents mode instead.
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showRecentButton = true;
+            d.setupDOM?.();
+            d.searchComponent?.closeSearch?.();
+        });
         await page.keyboard.press('*');
         await expect(page.locator('#app-modal.show')).toBeVisible({ timeout: 5000 });
         await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toBeVisible({ timeout: 5000 });

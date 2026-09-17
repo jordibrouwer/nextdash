@@ -56,6 +56,17 @@ test.describe('tag filter view', () => {
         await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => window.dashboardInstance && !document.body.classList.contains('loading'));
         await dismissBlockingUi(page);
+        // A fresh install has the tag cloud off, docks the actions at the
+        // bottom and folds all but two of them; these are about the cloud and
+        // its button standing in the header. Where the cloud opens is
+        // tag-cloud-spec.spec.js's.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { showTagCloudButton: true, actionBarPosition: 'header', maxHeaderActions: 8 });
+            await d.saveSettings?.();
+            d.setupDOM?.();
+            window.DashboardTagCloud?.syncFromSettings?.();
+        });
     });
 
     test('bulk toolbar stays clickable while tag cloud modal is open', async ({ page }) => {
@@ -128,39 +139,6 @@ test.describe('tag filter view', () => {
         expect(overlap).not.toBeNull();
         expect(overlap.openCountDisplay).toBe('none');
         expect(overlap.intersects).toBe(false);
-    });
-
-    test('tag cloud modal anchors near FAB instead of centering over bookmarks', async ({ page }) => {
-        await ensureLintgrasFilter(page);
-        await page.evaluate(() => {
-            window.DashboardTagCloud.openModal();
-        });
-        await page.waitForTimeout(500);
-
-        const placement = await page.evaluate(() => {
-            const toggle = document.getElementById('tag-cloud-toggle-btn');
-            const modal = document.getElementById('tag-cloud-modal');
-            const toggleRect = toggle?.getBoundingClientRect();
-            const modalRect = modal?.getBoundingClientRect();
-            const viewportCenterX = window.innerWidth / 2;
-            return {
-                toggleLeft: toggleRect?.left ?? 0,
-                modalLeft: modalRect?.left ?? 0,
-                modalTop: modalRect?.top ?? 0,
-                modalCenterX: modalRect ? modalRect.left + (modalRect.width / 2) : 0,
-                viewportCenterX,
-                tooltip: toggle?.getAttribute('data-tooltip'),
-            };
-        });
-
-        expect(Math.abs(placement.modalLeft - placement.toggleLeft)).toBeLessThan(120);
-        expect(Math.abs(placement.modalCenterX - placement.viewportCenterX)).toBeGreaterThan(80);
-        // The button names its key. It carried no tooltip when this was
-        // written; the toolbar gives every control one now — dashboard-toolbar
-        // lists this one as `/` — and asserting the absence of it had this
-        // failing for something the test is not about.
-        expect(placement.tooltip).toContain('/');
-        expect(placement.modalTop).toBeGreaterThan(180);
     });
 
     test('tag filter bookmarks stack vertically', async ({ page }) => {
