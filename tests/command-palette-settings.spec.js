@@ -66,3 +66,38 @@ test(':action hide sets the delay, and :action keys the chips', async ({ page })
     await page.keyboard.press('Enter');
     await expect.poll(() => page.evaluate(() => document.body.dataset.actionKeys), { timeout: 5_000 }).toBe('off');
 });
+
+test(':clock, :spacing and :items write what they name', async ({ page }) => {
+    await open(page);
+
+    await palette(page, 'clock beside');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.settings.headerClockPlacement), { timeout: 5_000 }).toBe('beside-name');
+
+    await palette(page, 'spacing airy');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.settings.categorySpacing), { timeout: 5_000 }).toBe('airy');
+
+    await palette(page, 'items 5');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.settings.categoryItemLimit), { timeout: 5_000 }).toBe(5);
+});
+
+test(':weather sets the town and switches the line on', async ({ page }) => {
+    await open(page);
+    await page.evaluate(async () => {
+        Object.assign(window.dashboardInstance.settings, { weatherLocation: '', showWeatherWithDate: false });
+        await window.dashboardInstance.saveSettings?.();
+    });
+
+    await palette(page, 'weather Leiden');
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(() => ({
+        place: window.dashboardInstance.settings.weatherLocation,
+        shown: window.dashboardInstance.settings.showWeatherWithDate,
+    })), { timeout: 5_000 }).toEqual({ place: 'Leiden', shown: true });
+});

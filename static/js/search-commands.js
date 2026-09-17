@@ -48,14 +48,15 @@ class SearchCommandsComponent {
                     'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
                     'buttons', 'action', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
-                    'shortcuts', 'locklayout',
+                    'clock', 'time', 'unit', 'weather', 'spacing', 'margins', 'highlight', 'items',
+                    'collapse', 'empty', 'tags', 'shortcuts', 'locklayout',
                 ],
             },
             {
                 id: 'collections',
                 label: 'Smart collections',
                 labelKey: 'commands.groupCollections',
-                commands: ['collections'],
+                commands: ['collections', 'fresh'],
             },
             {
                 id: 'settings-tools',
@@ -95,6 +96,18 @@ class SearchCommandsComponent {
             'buttons': this.handleButtonsCommand.bind(this),
             'action': this.handleActionBarCommand.bind(this),
             'actionbar': this.handleActionBarCommand.bind(this),
+            'clock': this.handleClockPlacementCommand.bind(this),
+            'time': this.handleTimeFormatCommand.bind(this),
+            'unit': this.handleWeatherUnitCommand.bind(this),
+            'weather': this.handleWeatherCommand.bind(this),
+            'spacing': this.handleSpacingCommand.bind(this),
+            'margins': this.handleMarginsCommand.bind(this),
+            'highlight': this.handleRowHighlightCommand.bind(this),
+            'items': this.handleItemsCommand.bind(this),
+            'collapse': this.handleCollapseCommand.bind(this),
+            'empty': this.handleEmptyCategoriesCommand.bind(this),
+            'tags': this.handleRowTagsCommand.bind(this),
+            'fresh': this.handleFreshCommand.bind(this),
             'header': this.handleHeaderCommand.bind(this),
             'glow': this.handleGlowCommand.bind(this),
             'buttonstyle': this.handleButtonStyleCommand.bind(this),
@@ -2826,6 +2839,271 @@ class SearchCommandsComponent {
         window.ActionBarAutoHide?.sync?.();
         dashboard.saveSettings?.();
         return this._paletteRefresh(stateId);
+    }
+
+
+    /*
+     * The settings a reader changes often, each on its own word.
+     *
+     * All of them are choices with two to five answers, so they share the
+     * appearance-row machinery: the current answer is ticked, typing narrows,
+     * Enter writes and applies. `special` says what has to be redrawn after,
+     * matching what the config panel does for the same field.
+     */
+    _settingCommand(spec, args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').toLowerCase();
+        const options = typed
+            ? spec.options.filter(({ value }) => String(value).toLowerCase().startsWith(typed))
+            : spec.options;
+        if (!options.length) return [];
+        const current = dashboard.settings[spec.field];
+        return options.map(({ value, label }) => ({
+            ...this._markCurrentRow(label, String(current) === String(value)),
+            shortcut: spec.shortcut,
+            type: 'command',
+            stateId: `${spec.field}:${value}`,
+            action: () => this._applySettingValue(spec.field, value, spec.apply, `${spec.field}:${value}`),
+        }));
+    }
+
+    /** Write a setting and redraw what reads it. */
+    _applySettingValue(field, value, apply, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[field] = value;
+        if (apply === 'chrome') {
+            dashboard.setupDOM?.();
+        } else if (apply === 'render') {
+            dashboard.renderDashboard?.({ animate: false });
+        } else if (apply === 'chromeRender') {
+            dashboard.setupDOM?.();
+            dashboard.renderDashboard?.({ animate: false });
+        } else if (apply === 'datetime') {
+            dashboard.renderDateWeatherLine?.();
+            dashboard.refreshWeather?.(true);
+        }
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
+    }
+
+    handleClockPlacementCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'headerClockPlacement',
+            shortcut: ':CLOCK',
+            apply: 'chrome',
+            options: [
+                { value: 'classic', label: t('config.headerClockClassic', 'On their own line, name underneath') },
+                { value: 'beside-name', label: t('config.headerClockBesideName', 'Beside the view name') },
+                { value: 'own-zone', label: t('config.headerClockOwnZone', 'In a column of their own') },
+            ],
+        }, args);
+    }
+
+    handleTimeFormatCommand(args) {
+        return this._settingCommand({
+            field: 'timeFormat',
+            shortcut: ':TIME',
+            apply: 'datetime',
+            options: [{ value: '24h', label: '23:59' }, { value: '12h', label: '11:59 PM' }],
+        }, args);
+    }
+
+    handleWeatherUnitCommand(args) {
+        return this._settingCommand({
+            field: 'weatherUnit',
+            shortcut: ':UNIT',
+            apply: 'datetime',
+            options: [{ value: 'celsius', label: '°C' }, { value: 'fahrenheit', label: '°F' }],
+        }, args);
+    }
+
+    /*
+     * The town the weather is read from -- a name, not a choice.
+     *
+     * Bare, it says which town is set and offers to clear it; with words after
+     * it, it sets them. Switching the line on comes with it: a town nobody can
+     * see the weather of is an answer to nothing.
+     */
+    handleWeatherCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const typed = String(fullQuery || '').replace(/^:\s*weather\s*/i, '').trim();
+        const current = String(dashboard.settings.weatherLocation || '').trim();
+
+        if (!typed) {
+            const rows = [{
+                name: current
+                    ? t('commands.weatherCurrent', 'Weather from {place}').replace('{place}', current)
+                    : t('commands.weatherNone', 'No town set — type one after :weather'),
+                shortcut: ':WEATHER',
+                type: 'command',
+                stateId: `weather:${current}`,
+                action: () => this._paletteRefresh(`weather:${current}`),
+            }];
+            if (current) {
+                rows.push({
+                    name: t('commands.weatherClear', 'Clear the town'),
+                    shortcut: ':WEATHER',
+                    type: 'command',
+                    stateId: 'weather:clear',
+                    action: () => this._applyWeatherLocation(''),
+                });
+            }
+            return rows;
+        }
+
+        return [{
+            name: t('commands.weatherSet', 'Read the weather from {place}').replace('{place}', typed),
+            shortcut: ':WEATHER',
+            type: 'command',
+            stateId: `weather:set:${typed}`,
+            action: () => this._applyWeatherLocation(typed),
+        }];
+    }
+
+    _applyWeatherLocation(place) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        Object.assign(dashboard.settings, {
+            weatherLocation: place,
+            weatherSource: 'manual',
+            showWeatherWithDate: place ? true : dashboard.settings.showWeatherWithDate,
+        });
+        dashboard.renderDateWeatherLine?.();
+        dashboard.refreshWeather?.(true);
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(`weather:${place}`);
+    }
+
+    handleSpacingCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'categorySpacing',
+            shortcut: ':SPACING',
+            apply: 'chromeRender',
+            options: [
+                { value: 'snug', label: t('config.spacingSnug', 'Snug') },
+                { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+            ],
+        }, args);
+    }
+
+    handleMarginsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'sideMargin',
+            shortcut: ':MARGINS',
+            apply: 'chromeRender',
+            options: [
+                { value: 'snug', label: t('config.spacingSnug', 'Snug') },
+                { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+            ],
+        }, args);
+    }
+
+    handleRowHighlightCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'rowHighlight',
+            shortcut: ':HIGHLIGHT',
+            apply: 'chrome',
+            options: [
+                { value: 'subtle', label: t('config.rowHighlightSubtle', 'Subtle') },
+                { value: 'strong', label: t('config.rowHighlightStrong', 'Strong') },
+            ],
+        }, args);
+    }
+
+    handleItemsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const current = Number(dashboard.settings.categoryItemLimit) || 0;
+        const counts = [0, 5, 8, 10, 15, 20].filter((n) => !typed || String(n).startsWith(typed));
+        const asked = Number(typed);
+        if (!counts.length && Number.isFinite(asked) && asked >= 0 && asked <= 200) counts.push(asked);
+        return counts.map((n) => ({
+            ...this._markCurrentRow(
+                n === 0
+                    ? t('commands.itemsAll', 'Every bookmark in a category')
+                    : t('commands.itemsBefore', '{n} before “+N more”').replace('{n}', String(n)),
+                current === n,
+            ),
+            shortcut: ':ITEMS',
+            type: 'command',
+            stateId: `items:${n}`,
+            action: () => this._applySettingValue('categoryItemLimit', n, 'render', `items:${n}`),
+        }));
+    }
+
+    /** The two-answer settings, each drawn the same way. */
+    _toggleSettingCommand({ field, shortcut, onLabel, offLabel, apply, invert = false }, args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const stored = dashboard.settings[field];
+        const current = invert ? stored !== true : stored !== false;
+        const asked = (args[0] || '').toLowerCase();
+        const states = asked === 'on' ? [true] : asked === 'off' ? [false] : [true, false];
+        return states.map((on) => ({
+            ...this._markCurrentRow(on ? onLabel : offLabel, current === on),
+            shortcut,
+            type: 'command',
+            stateId: `${field}:${on}`,
+            action: () => this._applySettingValue(field, invert ? !on : on, apply, `${field}:${on}`),
+        }));
+    }
+
+    handleCollapseCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'alwaysCollapseCategories',
+            shortcut: ':COLLAPSE',
+            apply: 'render',
+            invert: true,
+            onLabel: t('commands.collapseOn', 'Start every category folded'),
+            offLabel: t('commands.collapseOff', 'Start every category open'),
+        }, args);
+    }
+
+    handleEmptyCategoriesCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'hideEmptyCategories',
+            shortcut: ':EMPTY',
+            apply: 'render',
+            invert: true,
+            onLabel: t('commands.emptyHide', 'Hide categories with nothing in them'),
+            offLabel: t('commands.emptyShow', 'Show every category'),
+        }, args);
+    }
+
+    handleRowTagsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'showRowTags',
+            shortcut: ':TAGS',
+            apply: 'render',
+            onLabel: t('commands.rowTagsOn', 'Show tags on the rows'),
+            offLabel: t('commands.rowTagsOff', 'Hide tags on the rows'),
+        }, args);
+    }
+
+    handleFreshCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'feedsEnabled',
+            shortcut: ':FRESH',
+            apply: 'render',
+            onLabel: t('commands.freshOn', 'Count what the pages you saved have published'),
+            offLabel: t('commands.freshOff', 'Stop counting new items'),
+        }, args);
     }
 
 
