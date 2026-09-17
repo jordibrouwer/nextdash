@@ -21,7 +21,7 @@ async function openBehavior(page, tab = 'general') {
     await dismissBlockingOverlays(page);
     await page.evaluate((t) => {
         const c = window.dashboardInstance.config;
-        c.openConfigView('behavior');
+        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
         c.behaviorTab = t;
         c.render();
     }, tab);

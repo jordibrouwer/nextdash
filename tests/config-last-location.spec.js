@@ -49,7 +49,7 @@ async function openConfigBare(page) {
 async function goToBehaviorPrivacy(page) {
     await page.evaluate(async () => {
         const c = window.dashboardInstance.config;
-        await c.openConfigView('behavior');
+        await (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
         c.behaviorTab = 'privacy';
         c.render();
     });
@@ -159,7 +159,7 @@ test.describe('config remembers where you were', () => {
         await load(page);
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
-            await c.openConfigView('appearance');
+            await (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
             c.appearanceTab = 'layout';
             c.render();
             // What clicking the sub-tab does: it rewrites the address bar.

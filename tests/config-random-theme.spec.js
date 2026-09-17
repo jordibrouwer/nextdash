@@ -7,7 +7,7 @@ async function openAppearance(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await expect(page.locator('[data-appearance-randommode="off"]')).toBeVisible();
 }
 
@@ -157,7 +157,7 @@ test.describe('Random theme modes', () => {
         await openAppearance(page);
         await setRandomThemeMode(page, 'view');
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await setRandomThemeMode(page, 'off');
         const resolved = await page.evaluate(() => {
             const s = window.dashboardInstance.settings;

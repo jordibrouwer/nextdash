@@ -135,7 +135,7 @@ test('plated puts every control back in a box', async ({ page }) => {
 test('the choice is a setting, and it survives a reload', async ({ page }) => {
     await openDashboard(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await page.locator('[data-appearance-tab="header"]').click();
     await page.waitForTimeout(200);

@@ -26,8 +26,8 @@ async function openTab(page, section, tab) {
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
     await page.evaluate(([s, t]) => {
         const c = window.dashboardInstance.config;
+        if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = t || c[`${s}Tab`] || 'general';
         c.openConfigView(s);
-        if (t) c.switchAppearanceTab?.(t);
     }, [section, tab]);
     await page.waitForSelector('.config-panel-title', { timeout: 20_000 });
 }
@@ -82,8 +82,7 @@ test.describe('behavior panels', () => {
      * line; what is split is the settings behind it.
      */
     test('the date tab separates the clock, the weather and the calendar', async ({ page }) => {
-        await openTab(page, 'behavior', null);
-        await page.click('[data-behavior-tab="datetime"]');
+        await openTab(page, 'appearance', 'datetime');
         await expect.poll(async () => (await panels(page)).length).toBeGreaterThan(1);
         const found = await panels(page);
 

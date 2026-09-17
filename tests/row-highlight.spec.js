@@ -73,7 +73,7 @@ test.describe('how a row lights up', () => {
         await page.evaluate(() => { window.__notReloaded = true; });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.openConfigView('appearance');
+            (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
             c.switchAppearanceTab?.('display');
         });
         await page.waitForSelector('[data-behavior-field="rowHighlight"]', { timeout: 20_000 });

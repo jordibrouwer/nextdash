@@ -156,7 +156,7 @@ test.describe('monitor emphasis setting', () => {
 
     test('the three choices apply live and survive a reload', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForFunction(() =>
             typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {
@@ -258,7 +258,7 @@ test.describe('the feature catalogue announces it', () => {
 test.describe('the new setting is marked as new', () => {
     test('no tab or panel claims to be new once the release has passed', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForFunction(() =>
             typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {

@@ -130,6 +130,8 @@ test('zero from Config puts every action behind the control', async ({ page }) =
     await field.press('Tab');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.maxHeaderActions)).toBe(0);
 
+    // The first Escape goes from the group back to the tiles.
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     const seen = await bar(page);

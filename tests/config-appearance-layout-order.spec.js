@@ -20,7 +20,7 @@ async function openLayoutTab(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-tab="layout"]').click();
     await expect(page.locator('[data-behavior-field="launcherIconSize"]')).toBeVisible();
 }

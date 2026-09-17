@@ -13,7 +13,7 @@ async function openDisplayTab(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     // showRecentButton sits on the Button bar tab ("Button bar — extras"),
     // not on Display; the setting has moved twice and this helper follows it.
     await page.locator('[data-appearance-tab="buttonbar"]').click();
@@ -88,7 +88,7 @@ test.describe('config save feedback', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.locator('[data-appearance-font="l"]').click();
         await expect(state(page)).toHaveClass(/is-saved/);
     });
@@ -106,7 +106,7 @@ test.describe('config save feedback', () => {
         expect(parent).toBe('BODY');
 
         // Save immediately after a view switch, while the transform is running.
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.locator('[data-appearance-tab="buttonbar"]').click();
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         await page.locator('[data-behavior-field="showRecentButton"]').click();

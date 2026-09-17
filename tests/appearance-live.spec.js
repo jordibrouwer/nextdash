@@ -35,7 +35,7 @@ async function openAppearance(page) {
 /** Opens the appearance section and waits for its controls to exist. */
 async function appearanceControls(page) {
     await openAppearance(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
     await page.click('[data-appearance-tab="general"]');
     await page.waitForSelector('[data-appearance-select="themeDepth"]', { timeout: 20_000 });
@@ -132,7 +132,7 @@ test.describe('appearance controls apply live', () => {
         await openAppearance(page);
         // The preset sits under Appearance's layout tab, not in a section of
         // its own -- it moved there with the config reshuffle.
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
         await page.click('[data-appearance-tab="layout"]');
         const select = page.locator('[data-behavior-field="layoutPreset"]');

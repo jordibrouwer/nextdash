@@ -88,7 +88,7 @@ test.describe('theme import', () => {
 
     test('the button is offered beside Export', async ({ page }) => {
         await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForTimeout(600);
         const hasBoth = await page.evaluate(() => ({
             exp: !!document.querySelector('[data-theme-action="export"]'),

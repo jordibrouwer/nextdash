@@ -168,7 +168,7 @@ test('config sections are not history steps', async ({ page }) => {
 
     const afterOpen = await page.evaluate(() => history.length);
     for (const section of ['appearance', 'behavior']) {
-        await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+        await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
         await expect.poll(() => page.evaluate(() => location.hash)).toContain(section);
     }
     const afterSections = await page.evaluate(() => history.length);

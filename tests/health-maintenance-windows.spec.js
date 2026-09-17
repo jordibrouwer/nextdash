@@ -17,7 +17,7 @@ async function openStatusTab(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.evaluate(() => {
         window.dashboardInstance.config.behaviorTab = 'status';
         window.dashboardInstance.config.render();

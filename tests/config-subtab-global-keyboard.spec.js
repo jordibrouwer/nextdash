@@ -13,7 +13,7 @@ async function openSection(page, section) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+    await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
 }
 
 test.describe('config sub-tab shortcuts from the panel', () => {
@@ -23,7 +23,7 @@ test.describe('config sub-tab shortcuts from the panel', () => {
         await page.locator('#config-section-panel').focus();
 
         await page.keyboard.press('Alt+ArrowRight');
-        await expect(page.locator('[data-behavior-tab="datetime"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-tab="search"][aria-selected="true"]')).toBeVisible();
 
         await page.keyboard.press('Alt+ArrowLeft');
         await expect(page.locator('[data-behavior-tab="general"][aria-selected="true"]')).toBeVisible();

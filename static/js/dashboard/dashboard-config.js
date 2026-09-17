@@ -129,6 +129,9 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        // Appearance and Behavior open on a start screen of tiles; a tile opens
+        // its group. False means the start screen is showing.
+        this.hubOpen = { appearance: false, behavior: false };
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -437,6 +440,9 @@ class DashboardConfig {
 
     static ABOUT_TABS = ['colophon', 'news'];
 
+    /** Sections drawn as a start screen of tiles by ConfigHub. */
+    static HUB_SECTIONS = ['appearance', 'behavior'];
+
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
         about: 'aboutTab',
@@ -486,11 +492,19 @@ class DashboardConfig {
         const section = DashboardConfig.sectionFromHash(hash);
         const tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
-        if (!tab || !prop) return false;
+        // A hub section's bare hash is its start screen, and a tab in it is
+        // the group that holds the tab.
+        let hubChanged = false;
+        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
+            const open = Boolean(tab);
+            hubChanged = this.hubOpen[section] !== open;
+            this.hubOpen[section] = open;
+        }
+        if (!tab || !prop) return hubChanged;
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
-        if (this[prop] === tab) return false;
+        if (this[prop] === tab) return hubChanged;
         this[prop] = tab;
         return true;
     }
@@ -582,6 +596,11 @@ class DashboardConfig {
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const tab = prop ? this[prop] : null;
         const tabs = DashboardConfig.SUB_TABS[section];
+        // On a hub the first tab is a group like any other, so it is always
+        // named; leaving it out is what means the start screen.
+        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
+            return this.hubOpen[section] && tab ? `config/${section}/${tab}` : `config/${section}`;
+        }
         if (tab && tabs && tabs.includes(tab) && tab !== tabs[0]) {
             return `config/${section}/${tab}`;
         }
@@ -1085,6 +1104,14 @@ class DashboardConfig {
                 this._logSettingsPopoverClose();
                 return;
             }
+            // Inside a hub group Escape goes back to the tiles first.
+            if (DashboardConfig.HUB_SECTIONS.includes(this.section) && this.hubOpen?.[this.section]
+                && window.ConfigHub) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeHub(this.section);
+                return;
+            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -1549,6 +1576,9 @@ class DashboardConfig {
             }
             btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
+                // Hub tiles are a grid of links, not a tablist: an arrow key
+                // must not open a group.
+                if (btn.closest('[data-hub-start]')) return;
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
                 e.preventDefault();
@@ -8799,6 +8829,11 @@ class DashboardConfig {
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
+        const hub = window.ConfigHub;
+        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
+        if (hub && !this.hubOpen.appearance) {
+            return apIntro + this.renderHubStart('appearance');
+        }
         // Which half of the current family is showing, so Quick mode marks the
         // right button whatever theme is picked. Reading s.theme directly only
         // ever matched the two legacy ids, leaving both buttons unlit on every
@@ -8890,10 +8925,13 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}${stars}</button>`;
         }).join('');
 
-        const shell = (body) => `
-            <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
+        const shell = (body) => (hub
+            ? hub.renderGroup(this, 'appearance', this.appearanceTab,
+                `<div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`)
+            : `
+            ${apIntro}
             <div class="config-subtabs" role="tablist">${apTabs}</div>
-            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`;
+            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`);
 
         if (this.appearanceTab === 'custom-themes') {
             return shell(this.renderCustomThemes());
@@ -9484,6 +9522,7 @@ class DashboardConfig {
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
             void this.switchAppearanceTab(tab);
         });
+        this.bindHubControls(container);
         // The filter field is rendered by the shared bar, but this section is
         // hand-written markup — so it is applied to the DOM after each render
         // rather than while the controls are built.
@@ -9687,7 +9726,8 @@ class DashboardConfig {
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
     async switchAppearanceTab(tab) {
-        if (tab === this.appearanceTab) return;
+        const hubClosed = window.ConfigHub && !this.hubOpen.appearance;
+        if (tab === this.appearanceTab && !hubClosed) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
         }
@@ -9706,6 +9746,7 @@ class DashboardConfig {
             await this.applyThemeChoice(this._themeSelected);
         }
         this.appearanceTab = tab;
+        if (window.ConfigHub) this.hubOpen.appearance = true;
         this.restoreConfigHash();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
@@ -13540,6 +13581,13 @@ class DashboardConfig {
 
     renderBehavior() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const hub = window.ConfigHub;
+        const intro = `<p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>`;
+        if (hub) {
+            if (!this.hubOpen.behavior) return intro + this.renderHubStart('behavior');
+            return hub.renderGroup(this, 'behavior', this.behaviorTab,
+                `<div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>`);
+        }
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'behavior'
@@ -13780,6 +13828,13 @@ class DashboardConfig {
 
     bindBehaviorControls(container) {
         this.bindSubTabStrip(container, 'data-behavior-tab', (tab) => {
+            if (window.ConfigHub) {
+                this.behaviorTab = tab;
+                this.hubOpen.behavior = true;
+                this.restoreConfigHash();
+                this.render();
+                return;
+            }
             if (tab === this.behaviorTab) return;
             this.behaviorTab = tab;
             this.restoreConfigHash();
@@ -13794,6 +13849,7 @@ class DashboardConfig {
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
+        this.bindHubControls(container);
         this.bindFormKeyboard(container);
     }
 
@@ -14017,6 +14073,115 @@ class DashboardConfig {
         this.repaintActiveControlPanels();
     }
 
+    /* ── Config hub (Appearance and Behavior) ──────────────────────────────── */
+
+    /*
+     * Choosing a tab — a notice sending the reader to Privacy, a remembered
+     * location, a settings-search jump — means showing it, so on a hub it also
+     * opens the group that holds it. Only Back and a bare hash show the tiles.
+     */
+    get appearanceTab() { return this._appearanceTab; }
+
+    set appearanceTab(tab) {
+        this._appearanceTab = tab;
+        if (this.hubOpen) this.hubOpen.appearance = true;
+    }
+
+    get behaviorTab() { return this._behaviorTab; }
+
+    set behaviorTab(tab) {
+        this._behaviorTab = tab;
+        if (this.hubOpen) this.hubOpen.behavior = true;
+    }
+
+    /**
+     * The tiles, or — while a search or "Only changed" is on — the matching
+     * settings of every group, each under the group it lives in.
+     */
+    renderHubStart(section) {
+        const hub = window.ConfigHub;
+        const searching = String(this.settingsFilter || '').trim() || this.changedOnly;
+        if (!searching) return hub.renderStart(this, section);
+        const esc = (v) => this.dash.escapeHtml(v);
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
+        const hits = hub.groups(section).map((g) => {
+            const panels = g.tabs.flatMap((tab) => this.panelsFor(section, tab));
+            if (!panels.length) return '';
+            const html = this.renderControlPanels(panels, 'behavior');
+            if (!html.trim() || html.includes('config-panel-empty')) return '';
+            return `
+                <section class="hub-hits" data-hub-hits="${esc(g.id)}">
+                    <button type="button" class="hub-hits-title" ${attr}="${esc(g.tabs[0])}">${esc(this.t(g.titleKey, g.title))} →</button>
+                    ${html}
+                </section>`;
+        }).join('');
+        const empty = this.changedOnly
+            ? this.t('config.hubChangedNone', 'Nothing here differs from its default.')
+            : this.t('config.hubSearchNone', 'No setting matches that.');
+        return `<div class="hub-start hub-start--hits" data-hub-start="${esc(section)}">${hits || `<p class="config-panel-empty">${esc(empty)}</p>`}</div>`;
+    }
+
+    closeHub(section) {
+        if (!this.hubOpen?.[section]) return;
+        this.hubOpen[section] = false;
+        if (section === 'appearance') this.clearThemePreview?.();
+        this.restoreConfigHash();
+        this.render();
+        document.querySelector(`[data-hub-start="${section}"] button`)?.focus();
+    }
+
+    /** Back, the basics cards and the More settings fold. Safe to call twice. */
+    bindHubControls(container) {
+        const root = container.closest?.('#dashboard-layout') || container;
+        root.querySelectorAll('[data-hub-back]').forEach((btn) => {
+            if (btn.dataset.hubBound === '1') return;
+            btn.dataset.hubBound = '1';
+            btn.addEventListener('click', () => this.closeHub(btn.dataset.hubBack));
+        });
+        root.querySelectorAll('[data-hub-field]').forEach((btn) => {
+            if (btn.dataset.hubBound === '1') return;
+            btn.dataset.hubBound = '1';
+            btn.addEventListener('click', () => {
+                const raw = btn.dataset.hubValue;
+                const type = btn.dataset.hubType;
+                const value = type === 'bool' ? raw === 'true' : type === 'number' ? Number(raw) : raw;
+                void this.setBehavior(btn.dataset.hubField, value, btn.dataset.hubSpecial || undefined);
+            });
+        });
+        root.querySelectorAll('[data-hub-more]').forEach((fold) => {
+            if (fold.dataset.hubBound === '1') return;
+            fold.dataset.hubBound = '1';
+            fold.addEventListener('toggle', () => {
+                try {
+                    localStorage.setItem(`nextdash.hubMore.${fold.dataset.hubMore}`, fold.open ? '1' : '0');
+                } catch { /* a browser refusing storage just forgets the fold */ }
+            });
+        });
+    }
+
+    /** Redraw the basics cards and the preview after a setting changed. */
+    repaintHubBasics(container) {
+        const hub = window.ConfigHub;
+        const section = this.section;
+        const tab = section === 'appearance' ? this.appearanceTab : this.behaviorTab;
+        const basics = container.querySelector('.hub-basics');
+        if (basics) {
+            const focused = document.activeElement?.closest?.('[data-hub-field]');
+            const key = focused ? [focused.dataset.hubField, focused.dataset.hubValue] : null;
+            const tmp = document.createElement('div');
+            tmp.innerHTML = hub.renderBasics(this, section, tab);
+            const fresh = tmp.firstElementChild;
+            if (fresh) {
+                basics.replaceWith(fresh);
+                this.bindHubControls(container);
+                if (key) {
+                    fresh.querySelector(`[data-hub-field="${CSS.escape(key[0])}"][data-hub-value="${CSS.escape(key[1])}"]`)?.focus();
+                }
+            }
+        }
+        if (section === 'appearance') hub.repaintPreview(this);
+    }
+
     /**
      * Reapply the header chrome so a Header and buttons toggle shows up at
      * once, without a reload.
@@ -14199,6 +14364,11 @@ class DashboardConfig {
         // while, with a comment explaining exactly this hazard; the settings
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
+        if (window.ConfigHub && DashboardConfig.HUB_SECTIONS.includes(this.section)) {
+            // The start screen's summaries and search hits are one block.
+            if (!this.hubOpen[this.section]) { this.render(); return; }
+            this.repaintHubBasics(container);
+        }
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
             if (body) {

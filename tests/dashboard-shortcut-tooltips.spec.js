@@ -164,7 +164,7 @@ test.describe('dashboard shortcut popovers: one switch', () => {
 test.describe('the switch is reachable from both places', () => {
     test('Config → Behavior → General has the toggle and it saves', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="general"]').click();
 
         const toggle = page.locator('[data-behavior-field="showShortcutTooltips"]');
@@ -198,7 +198,7 @@ test.describe('the switch is reachable from both places', () => {
 
     test('the info modal has a title and body, not just a button', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="general"]').click();
 
         // Both strings must resolve. An unresolved key renders as empty here,
@@ -245,7 +245,7 @@ test.describe('the switch is reachable from both places', () => {
         await loadDashboard(page);
         await setTooltips(page, true);
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.evaluate(() => {
             window.dashboardInstance.config.behaviorTab = 'general';
             window.dashboardInstance.config.render();

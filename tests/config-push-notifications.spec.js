@@ -11,7 +11,7 @@ async function loadDashboard(page) {
 
 /** Opens Behaviour → Status & health, where the push panel lives. */
 async function openStatusTab(page) {
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.locator('[data-behavior-tab="status"]').click();
 }
 
@@ -173,7 +173,7 @@ test.describe('config: browser push notifications', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="status"]').click();
         await dismissBlockingOverlays(page);
 

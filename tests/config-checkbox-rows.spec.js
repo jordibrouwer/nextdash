@@ -22,7 +22,7 @@ async function openAppearance(page, tab) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 15_000 });
     if (tab) {
         await page.locator(`[data-appearance-tab="${tab}"]`).click();
@@ -45,7 +45,7 @@ test.describe('checkboxes use one row shape', () => {
             ['appearance', ['general', 'layout', 'datetime', 'display', 'header'], 'data-appearance-tab'],
             ['behavior', ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'], 'data-behavior-tab'],
         ]) {
-            await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+            await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             for (const tab of tabs) {
                 await page.locator(`[${attr}="${tab}"]`).click();
                 await page.waitForTimeout(200);

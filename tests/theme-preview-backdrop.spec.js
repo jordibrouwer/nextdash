@@ -22,7 +22,7 @@ async function openAppearance(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView),
         { timeout: 25_000 }).toBe('config');
 }
@@ -104,7 +104,7 @@ test('Escape closes the theme picker on the first press', async ({ page }) => {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForTimeout(2500);
 
     /*

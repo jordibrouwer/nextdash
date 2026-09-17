@@ -19,7 +19,7 @@ async function openFreshPanel(page) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
-        c.openConfigView('behavior');
+        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
         c.behaviorTab = 'fresh';
         c.render();
     });

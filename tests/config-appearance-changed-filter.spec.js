@@ -30,7 +30,7 @@ async function openAppearance(page, tab, resets = []) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     if (tab) {
         await page.locator(`[data-appearance-tab="${tab}"]`).click();
     }

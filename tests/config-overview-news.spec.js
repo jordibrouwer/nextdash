@@ -240,7 +240,7 @@ test.describe('the switch under Behavior → Privacy', () => {
     async function openPrivacy(page) {
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
-            await c.openConfigView('behavior');
+            await (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
             c.behaviorTab = 'privacy';
             c.render();
         });

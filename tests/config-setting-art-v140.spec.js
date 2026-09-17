@@ -25,7 +25,7 @@ test.describe('the v1.4.0 setting drawings', () => {
     test('depth and backdrop are drop-downs', async ({ page }) => {
         await openConfig(page, () => {
             const c = window.dashboardInstance.config;
-            c.openConfigView('appearance');
+            (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
             c.switchAppearanceTab?.('theme');
         });
         await expect(page.locator('[data-appearance-select="themeDepth"]')).toHaveCount(1);

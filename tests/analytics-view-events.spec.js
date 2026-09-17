@@ -48,7 +48,7 @@ test.describe('view analytics events', () => {
 
     test('a sub-tab reached by keyboard is distinguishable from a click', async ({ page }) => {
         await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await captureTracks(page);
 
         await page.locator('[data-behavior-tab]').first().focus();
@@ -63,7 +63,7 @@ test.describe('view analytics events', () => {
 
     test('a settings change reports the field name but never a free-text value', async ({ page }) => {
         await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').first().click();
         await captureTracks(page);
 

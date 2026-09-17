@@ -106,6 +106,22 @@ const test = base.test.extend({
      * opens a page does not get one just to be watched.
      */
     page: async ({ page }, use, testInfo) => {
+        // Config → Appearance and Behavior fold their less-used settings under
+        // "More settings". Specs written against the flat panels expect every
+        // control to be reachable, so the folds start open here; the hub's own
+        // spec writes '0' after this to test the closed default.
+        await page.addInitScript(() => {
+            const groups = {
+                appearance: ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'],
+                behavior: ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'],
+            };
+            try {
+                Object.entries(groups).forEach(([section, tabs]) => tabs.forEach((tab) => {
+                    const key = `nextdash.hubMore.${section}:${tab}`;
+                    if (localStorage.getItem(key) === null) localStorage.setItem(key, '1');
+                }));
+            } catch { /* opaque origin before the first navigation */ }
+        });
         await use(page);
         if (testInfo.status === testInfo.expectedStatus) return;
         try {

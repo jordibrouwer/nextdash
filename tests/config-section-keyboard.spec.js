@@ -13,7 +13,7 @@ async function openSection(page, section = 'overview') {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+    await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
 }
 
 test.describe('config section rail follows the ARIA tabs pattern', () => {

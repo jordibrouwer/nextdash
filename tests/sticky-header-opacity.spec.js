@@ -20,7 +20,7 @@ async function open(page, view) {
     await dismissBlockingOverlays(page);
     if (view === 'config') {
         await waitForConfigReady(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForSelector('.config-view', { timeout: 20_000 });
     } else if (view === 'health') {
         await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());

@@ -12,7 +12,7 @@ async function loadDashboard(page) {
 test.describe('config info + reset affordances', () => {
     test('behavior settings show info buttons and a privacy hint', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         // General tab: openInNewTab has an info button.
         await expect(page.locator('[data-info-field="openInNewTab"]')).toBeVisible();
         // Privacy tab: the long analytics hint text is shown inline.
@@ -24,7 +24,7 @@ test.describe('config info + reset affordances', () => {
 
     test('clicking an info button opens the modal', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-info-field="openInNewTab"]').click();
         // The AppModal dialog by name, not the first dialog on the page. The
         // loose `.modal, [role="dialog"]` matched #tag-cloud-modal, which sits
@@ -48,7 +48,7 @@ test.describe('config info + reset affordances', () => {
         // dateFormat default is 'short-slash'; set a non-default first.
         await page.evaluate(() => {
             window.dashboardInstance.settings.dateFormat = 'iso';
-            window.dashboardInstance.config.openConfigView('appearance');
+            (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="datetime"]').click();
 
@@ -63,7 +63,7 @@ test.describe('config info + reset affordances', () => {
 
     test('date & weather number fields show info buttons', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.locator('[data-appearance-tab="datetime"]').click();
         await expect(page.locator('[data-info-field="weatherRefreshMinutes"]')).toBeVisible();
         await page.locator('[data-info-field="weatherRefreshMinutes"]').click();
@@ -74,7 +74,7 @@ test.describe('config info + reset affordances', () => {
         await loadDashboard(page);
         // dashboard-config.js is lazy-loaded on first open; until then the
         // class it defines is not on window.
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForFunction(() => !!window.DashboardConfig?.FIELD_META);
         // A field carrying a reset affordance but no info button is a gap: the
         // UI offers to restore a default it never names.
@@ -138,7 +138,7 @@ test.describe('config info + reset affordances', () => {
 
     test('date & weather sits under Appearance, between Action bar and Display', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         const order = await page.locator('[data-appearance-tab]').evaluateAll((els) =>
             els.map((el) => el.getAttribute('data-appearance-tab')));
         expect(order.indexOf('datetime')).toBe(order.indexOf('buttonbar') + 1);
@@ -147,7 +147,7 @@ test.describe('config info + reset affordances', () => {
         await page.locator('[data-appearance-tab="datetime"]').click();
         await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await expect(page.locator('[data-behavior-tab="datetime"]')).toHaveCount(0);
 
         // An old link follows the tab to its new home.
@@ -158,11 +158,11 @@ test.describe('config info + reset affordances', () => {
 
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         for (const tab of ['general', 'search', 'inbox', 'privacy', 'status']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
         }
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         for (const tab of ['general', 'layout', 'datetime', 'display']) {
             await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toBeVisible();
         }
@@ -170,7 +170,7 @@ test.describe('config info + reset affordances', () => {
 
     test('appearance controls show info buttons', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         // fontPreset and backgroundType carry info entries in the old config.
         await expect(page.locator('[data-info-field="fontPreset"]')).toBeVisible();
         await expect(page.locator('[data-info-field="backgroundType"]')).toBeVisible();
@@ -190,7 +190,7 @@ test.describe('config info + reset affordances', () => {
         // backgroundType default is 'none'; set a non-default first.
         await page.evaluate(() => {
             window.dashboardInstance.settings.backgroundType = 'gradient';
-            window.dashboardInstance.config.openConfigView('appearance');
+            (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
 
         const resetBtn = page.locator('[data-reset-field="backgroundType"]');

@@ -54,7 +54,7 @@ test.describe('category spacing', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            await cfg.openConfigView('appearance');
+            await (cfg.appearanceTab = cfg.appearanceTab || 'general', cfg).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
@@ -134,7 +134,7 @@ test.describe('page margins', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            await cfg.openConfigView('appearance');
+            await (cfg.appearanceTab = cfg.appearanceTab || 'general', cfg).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
@@ -151,7 +151,7 @@ test.describe('page margins', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            await cfg.openConfigView('appearance');
+            await (cfg.appearanceTab = cfg.appearanceTab || 'general', cfg).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
@@ -167,7 +167,7 @@ test.describe('Appearance → Layout panel order', () => {
     test('Bookmarks layout leads, and the version panel is gone', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
-            await window.dashboardInstance.config.openConfigView('appearance');
+            await (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
@@ -194,7 +194,7 @@ test.describe('Appearance → Layout panel order', () => {
     test('the moved controls are still bound', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
-            await window.dashboardInstance.config.openConfigView('appearance');
+            await (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 

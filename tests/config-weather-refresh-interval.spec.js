@@ -29,8 +29,8 @@ test('changing the weather refresh interval re-arms the timer live', async ({ pa
     expect(before).toBeTruthy();
 
     // Change it through the config path, not by hand.
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-    await page.locator('[data-behavior-tab="datetime"]').click();
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+    await page.locator('[data-appearance-tab="datetime"]').click();
     const input = page.locator('[data-behavior-field="weatherRefreshMinutes"]');
     await input.scrollIntoViewIfNeeded();
     await input.fill('5');

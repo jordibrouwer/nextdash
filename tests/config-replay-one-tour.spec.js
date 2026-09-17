@@ -24,7 +24,7 @@ async function openBehaviorGeneral(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
     stateBefore = await page.evaluate(() => window.DiscoverabilityState.exportState());
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.waitForSelector('[data-behavior-tab="general"]', { timeout: 15_000 });
     await page.locator('[data-behavior-tab="general"]').click();
 }

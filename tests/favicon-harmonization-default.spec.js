@@ -38,7 +38,7 @@ function readState(page) {
 
 /** Choose a theme from the picker, the way the appearance panel offers it. */
 async function pickTheme(page, themeId) {
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('.config-theme-picker-button').click();
     await page.locator(`[data-theme-option="${themeId}"]`).click();
     await expect.poll(() =>
@@ -54,6 +54,8 @@ test.describe('favicon harmonisation defaults to on', () => {
         expect(before.themed).toBeGreaterThan(0);
 
         await pickTheme(page, 'absinthe-dark');
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
@@ -76,6 +78,8 @@ test.describe('favicon harmonisation defaults to on', () => {
         await pickTheme(page, 'absinthe-dark');
 
         await page.locator('[data-appearance-toggle-icons="off"]').click();
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 

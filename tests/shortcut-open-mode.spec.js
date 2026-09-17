@@ -115,7 +115,7 @@ test.describe('typing a bookmark shortcut', () => {
 test.describe('Inbox is its own tab in Behavior', () => {
     test('the tab exists and carries the inbox settings', async ({ page }) => {
         await dashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.waitForSelector('[data-behavior-tab]', { timeout: 15_000 });
 
         const tabs = await page.locator('[data-behavior-tab]').evaluateAll(
@@ -137,7 +137,7 @@ test.describe('Inbox is its own tab in Behavior', () => {
         await dashboard(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.openConfigView('behavior');
+            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
             c.behaviorTab = 'search';
             c.render();
         });

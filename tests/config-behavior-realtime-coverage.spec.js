@@ -58,7 +58,7 @@ async function load(page) {
     await dismissBlockingOverlays(page);
     // config is a lazy-loading stub until a section is opened; behaviorSchema
     // lives on the real module.
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.waitForFunction(() =>
         typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
 }

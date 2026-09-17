@@ -67,7 +67,7 @@ test.describe('every screen speaks in sentences', () => {
 
         const offenders = [];
         for (const { section, tabs } of sections) {
-            await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+            await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             await page.waitForTimeout(500);
             for (const tab of (tabs.length ? tabs : [null])) {
                 if (tab) {

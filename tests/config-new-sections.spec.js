@@ -10,7 +10,7 @@ async function loadDashboard(page) {
 }
 
 async function openSection(page, section) {
-    await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+    await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
 }
 
 async function openAppearanceTab(page, tab) {

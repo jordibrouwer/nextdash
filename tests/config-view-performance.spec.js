@@ -16,7 +16,7 @@ async function openConfig(page, section) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
-    await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+    await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
     await page.waitForSelector('.config-view-body', { timeout: 20_000 });
     await page.waitForTimeout(500);
 }

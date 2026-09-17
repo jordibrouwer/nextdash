@@ -18,7 +18,7 @@ async function openDisplayTab(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 15_000 });
     await page.click('[data-appearance-tab="display"]');
     await page.waitForSelector('[data-behavior-field="linkPreviewMode"]', { timeout: 15_000 });

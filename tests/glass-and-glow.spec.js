@@ -123,7 +123,7 @@ test('a changed answer survives the next load', async ({ page }) => {
 test('the choice is saved and comes back', async ({ page }) => {
     await openDashboard(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 20_000 });
 
     await page.locator('[data-appearance-select="glowStrength"]').selectOption('full');

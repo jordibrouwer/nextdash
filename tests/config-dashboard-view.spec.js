@@ -377,7 +377,7 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('the appearance section renders theme and font-size controls', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await expect(page.locator('.config-tile-label', { hasText: /active theme/i })).toBeVisible();
         await expect(page.locator('[data-appearance-theme="light"]')).toBeVisible();
@@ -397,7 +397,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => {
             window.dashboardInstance.settings.theme = 'dark';
-            window.dashboardInstance.config.openConfigView('appearance');
+            (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
 
         await page.locator('[data-appearance-theme="light"]').click();
@@ -423,7 +423,7 @@ test.describe('config dashboard view (scaffold)', () => {
      */
     test('favicon harmonization is configurable and stored per theme', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toBeVisible();
 
@@ -452,15 +452,17 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('favicon harmonization stays enabled after leaving config', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
@@ -472,11 +474,13 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         test.skip(!hasIcon, 'needs at least one bookmark with a favicon');
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
 
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
@@ -495,7 +499,7 @@ test.describe('config dashboard view (scaffold)', () => {
      */
     test('favicon harmonization stays enabled while random theme mode rotates themes', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.evaluate(() => window.dashboardInstance.config.setRandomThemeMode('view'));
         await expect.poll(() => page.evaluate(() =>
@@ -518,13 +522,13 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
@@ -546,7 +550,7 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('appearance exposes the full control set', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
         await expect(page.locator('[data-appearance-weight="bold"]')).toBeVisible();
@@ -579,7 +583,7 @@ test.describe('config dashboard view (scaffold)', () => {
      */
     test('gradient and image backgrounds can actually be chosen', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-bg="gradient"]').click();
         const swatches = page.locator('[data-appearance-gradient]');
@@ -612,7 +616,7 @@ test.describe('config dashboard view (scaffold)', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-select="fontPreset"]').selectOption('jetbrains-mono');
 
@@ -635,7 +639,7 @@ test.describe('config dashboard view (scaffold)', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         const picker = page.locator('[data-theme-picker-button]');
         await expect(picker).toBeVisible();
@@ -658,7 +662,7 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('the theme-colours link opens the native editor tab', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-action="edit-colors"]').click();
 
@@ -673,7 +677,7 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('appearance has layout and display sub-tabs', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-tab="layout"]').click();
         await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
@@ -687,13 +691,11 @@ test.describe('config dashboard view (scaffold)', () => {
 
     test('the behavior section renders grouped settings across sub-tabs', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
 
         // General tab is active by default.
         await expect(page.locator('[data-behavior-field="openInNewTab"]')).toBeVisible();
         // Other groups live under their own sub-tabs.
-        await page.locator('[data-behavior-tab="datetime"]').click();
-        await expect(page.locator('[data-behavior-field="dateFormat"]')).toBeVisible();
         await page.locator('[data-behavior-tab="search"]').click();
         await expect(page.locator('[data-behavior-field="enableFuzzySuggestions"]')).toBeVisible();
         // Pasting a URL is an inbox errand — where it lands is decided beside
@@ -714,7 +716,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => {
             window.dashboardInstance.settings.openInNewTab = false;
-            window.dashboardInstance.config.openConfigView('behavior');
+            (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior');
         });
 
         await page.locator('[data-behavior-field="openInNewTab"]').check();
@@ -732,8 +734,8 @@ test.describe('config dashboard view (scaffold)', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="datetime"]').click();
+        // Date & weather lives under Appearance now.
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = 'datetime', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-behavior-field="dateFormat"]').selectOption('iso');
 
@@ -750,7 +752,7 @@ test.describe('config dashboard view (scaffold)', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         await page.locator('[data-appearance-font="xl"]').click();
 
@@ -857,8 +859,10 @@ test.describe('config remembers last location', () => {
     test('Escape restores the sub-tab too on the next Shift+S visit', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
@@ -903,7 +907,7 @@ test.describe('config remembers last location', () => {
     test('Shift+I from config remembers the sub-tab for Shift+S', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('Shift+I');
@@ -923,7 +927,7 @@ test.describe('config remembers last location', () => {
                 savedAt: Date.now(),
             }));
         });
-        await page.goto('/#config/appearance');
+        await page.goto('/#config/appearance/general');
         await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
@@ -947,8 +951,10 @@ test.describe('config remembers last location', () => {
     test('bare #config restores the section Escape left', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
+        // The first Escape goes from the group back to the tiles.
+        await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
@@ -1014,14 +1020,14 @@ test.describe('sub-tab deep links', () => {
 
     test('switching sub-tab keeps the hash shareable', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
         await expect.poll(() => page.evaluate(() => window.location.hash))
             .toBe('#config/behavior/privacy');
 
-        // The first tab is the section default, so it stays off the URL.
+        // On the hub every group is named; the bare hash is the tiles.
         await page.locator('[data-behavior-tab="general"]').click();
-        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/behavior');
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/behavior/general');
     });
 
     test('an unknown tab falls back to the section rather than breaking', async ({ page }) => {

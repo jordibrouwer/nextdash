@@ -144,7 +144,7 @@ test.describe('the tab holds what belongs to it', () => {
 
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.openConfigView('behavior');
+            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
             c.behaviorTab = 'status';
             c.render();
         });

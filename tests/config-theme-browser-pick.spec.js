@@ -32,7 +32,7 @@ async function openBrowser(page) {
     // the overlay gone and nextdashSetupFaviconsDone no longer false -- so it
     // returns when the sweep is done rather than always spending the worst case.
     await waitForFaviconPrefetch(page);
-    await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('appearance'); });
+    await page.evaluate(async () => { await (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'); });
     await page.locator('[data-appearance-action="browse-themes"]').first().click();
     await expect(page.locator(`[data-theme-id="${PICK}"]`).first()).toBeAttached();
     /*

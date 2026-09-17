@@ -41,7 +41,7 @@ async function openCustomThemes(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-tab="custom-themes"]').click();
     await expect(page.locator('[data-theme-add]')).toBeVisible();
 }
@@ -52,7 +52,7 @@ test.describe('custom theme editor', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await expect(page.locator('[data-appearance-tab]')).toHaveCount(6);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
@@ -234,7 +234,7 @@ test.describe('custom theme editor', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         // The old embedded panel is gone; the link is a jump to the tab.
         await expect(page.locator('#config-theme-colors-panel')).toHaveCount(0);
         await page.locator('[data-appearance-action="edit-colors"]').click();
@@ -248,7 +248,7 @@ test.describe('custom theme editor', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         /*
          * Five tiles on one row, each naming a setting this section holds.
@@ -277,7 +277,7 @@ test.describe('custom theme editor', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
 
         // Only actionable once the colour document has loaded, since that is
         // what the count comes from.
@@ -315,7 +315,7 @@ test.describe('custom theme editor', () => {
         expect(await page.evaluate(() =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
@@ -402,7 +402,7 @@ test.describe('custom theme editor', () => {
             enabled: window.dashboardInstance.config.iconStylingEntry()?.enabled === true,
         }), customId)).toEqual({ theme: customId, enabled: true });
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 });

@@ -180,7 +180,7 @@ test.describe('spreading is a switch, the width follows from the content', () =>
             d.settings.categoryItemLimit = 15;
             d.settings.defaultCategorySpread = true;
             const c = d.config;
-            await c.openConfigView('appearance');
+            await (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
             c.appearanceTab = 'layout';
             c.render();
         });
@@ -277,7 +277,7 @@ test.describe('the column count is the ceiling', () => {
         // Opened once so the lazily loaded config module exists — changing the
         // column count is something you do in config, and its own setBehavior
         // is the path that takes.
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForFunction(() => window.dashboardInstance.config.instance != null, null, { timeout: 15_000 });
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await page.waitForTimeout(300);
@@ -629,7 +629,7 @@ test.describe('config points the way to the new setting', () => {
         await openDashboard(page);
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
-            await c.openConfigView('appearance');
+            await (c.appearanceTab = c.appearanceTab || 'general', c).openConfigView('appearance');
             c.appearanceTab = 'layout';
             c.render();
         });

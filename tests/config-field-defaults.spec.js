@@ -220,7 +220,7 @@ test.describe('numeric inputs accept what the server accepts', () => {
 test.describe('the background re-check interval reaches the server', () => {
     async function openStatusTab(page) {
         await openConfig(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="status"]').click();
         await expect(page.locator('[data-behavior-tab="status"]')).toHaveAttribute('aria-selected', 'true');
     }

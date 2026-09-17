@@ -46,7 +46,7 @@ async function openDateWeatherTab(page, settings = {}) {
         // not the first fetch.
         await d.refreshWeather?.(true);
     }, settings);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-tab="datetime"]').click();
     await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();
 }

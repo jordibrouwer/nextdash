@@ -19,7 +19,7 @@ async function openAppearance(page, tab) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 15_000 });
     // Through the tab strip, as a reader gets there: the tab is remembered
     // between visits, so setting it in code lands on whichever body was last
@@ -172,7 +172,7 @@ test.describe('the settings that are a place, not a size', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.openConfigView('behavior');
+            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
             // Quick add & inbox, where the paste destination lives — it moved
             // off the Search tab when the inbox settings were grouped.
             c.behaviorTab = 'inbox';

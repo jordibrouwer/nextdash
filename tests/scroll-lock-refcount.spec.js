@@ -31,7 +31,7 @@ test.describe('scroll lock is refcounted', () => {
     // lock and left the page unscrollable with no modal on screen.
     test('a modal opened over another still frees the page on close', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForTimeout(500);
 
         await page.evaluate(() => { void window.AppModal.alert({ title: 'first', message: 'a' }); });
@@ -51,7 +51,7 @@ test.describe('scroll lock is refcounted', () => {
         await loadDashboard(page);
 
         for (const section of ['behavior', 'appearance']) {
-            await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
+            await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             await page.waitForTimeout(500);
 
             const btn = page.locator('#config-view [data-info-field], .config-info-btn').first();

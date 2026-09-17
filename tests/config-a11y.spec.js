@@ -8,7 +8,7 @@ async function openBehavior(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 20_000 });
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.waitForSelector('.config-field', { timeout: 15_000 });
 }
 

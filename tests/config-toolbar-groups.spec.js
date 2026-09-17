@@ -21,7 +21,7 @@ async function openToolbarTab(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await waitForConfigReady(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 15_000 });
     await page.locator('[data-appearance-tab="header"]').click();
     await expect(page.locator('[data-appearance-tab="header"]')).toHaveAttribute('aria-selected', 'true');

@@ -15,7 +15,7 @@ async function openAppearanceFresh(page) {
         localStorage.removeItem(key);
         window.DiscoverabilityState?.resetSettingPromoSeen?.('random-theme-v2', { persist: false });
     }, STORAGE_KEY);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await expect(page.locator('[data-appearance-randommode="off"]')).toBeVisible();
 }
 
@@ -51,6 +51,8 @@ test.describe('Config setting promo', () => {
 
         await page.keyboard.press('Escape');
         await expect(promo).toHaveCount(0);
+        // The same press took the group back to the tiles; the next leaves.
+        await page.keyboard.press('Escape');
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })
             .toBe('bookmarks');
