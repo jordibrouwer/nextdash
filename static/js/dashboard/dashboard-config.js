@@ -11594,12 +11594,12 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { def: 'ask' },
         monitorEmphasis: { def: 'problems' },
-        theme: { def: 'retro-crt-dark' },
+        theme: { def: 'tarnished-brass-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
-        themeDepth: { def: 'flat' },
-        glowStrength: { def: 'off' },
+        themeDepth: { def: 'glass' },
+        glowStrength: { def: 'soft' },
         inkGap: { def: 0.44 },
         themeBackdrop: { def: 'on' },
         backgroundPattern: { def: 'auto' },

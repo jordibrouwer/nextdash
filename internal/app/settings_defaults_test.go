@@ -328,7 +328,7 @@ func TestServerLogMaxEntriesDefault(t *testing.T) {
 // can read the others at the moment they are needed. Only the first two are
 // checkable from Go; the client pair is held to it by
 // tests/config-field-defaults.spec.js.
-func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
+func TestFreshInstallStartsOnTarnishedBrass(t *testing.T) {
 	// Its own store: this one describes a fresh install, so it must not
 	// inherit whatever an earlier test in the run left behind.
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
@@ -336,8 +336,20 @@ func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
 	t.Chdir(tmp)
 
 	settings := NewStore().GetSettings()
-	if settings.Theme != "retro-crt-dark" {
-		t.Fatalf("fresh install theme = %q, want retro-crt-dark", settings.Theme)
+	if settings.Theme != "tarnished-brass-dark" {
+		t.Fatalf("fresh install theme = %q, want tarnished-brass-dark", settings.Theme)
+	}
+
+	// The look it is built for: glass surfaces, a soft glow, the theme's own
+	// backdrop, and the contrast that reads as Normal in Appearance.
+	if settings.ThemeDepth != "glass" || settings.GlowStrength != "soft" {
+		t.Fatalf("fresh install depth %q glow %q, want glass and soft", settings.ThemeDepth, settings.GlowStrength)
+	}
+	if settings.ThemeBackdrop != "on" || settings.BackgroundPattern != "auto" {
+		t.Fatalf("fresh install backdrop %q pattern %q, want on and auto", settings.ThemeBackdrop, settings.BackgroundPattern)
+	}
+	if settings.InkGap != defaultInkGap {
+		t.Fatalf("fresh install inkGap = %v, want %v", settings.InkGap, defaultInkGap)
 	}
 
 	// Auto dark mode is on by default, so the light variant has to exist and be
@@ -353,7 +365,7 @@ func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
 	// Favicon harmonisation is seeded per displayed theme id, so both variants
 	// carry an entry; with only one, it would apply for half the day.
 	styling := settings.ThemeIconStyling
-	for _, id := range []string{"retro-crt-dark", "retro-crt-light"} {
+	for _, id := range []string{"tarnished-brass-dark", "tarnished-brass-light"} {
 		entry, ok := styling[id]
 		if !ok || !entry.Enabled {
 			t.Fatalf("themeIconStyling[%q] = %+v, want an enabled entry", id, entry)

@@ -286,7 +286,7 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
 	// The default theme must not have moved.
-	if defaultThemeID != "retro-crt-dark" {
+	if defaultThemeID != "tarnished-brass-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }
@@ -510,8 +510,11 @@ func TestThemeContractCoversInfoAndTheLadder(t *testing.T) {
 	})
 
 	t.Run("the ladder's step is anchored on the theme it was drawn against", func(t *testing.T) {
-		if got := themeSurfaceStep(themes[defaultThemeID]); got != "1" {
-			t.Errorf("the default theme is no longer the reference: %q", got)
+		// retro-crt-dark by name, not defaultThemeID: the 3/6/9 were measured
+		// against its 0.828 of room, and that stays the reference whatever a
+		// fresh install happens to open on.
+		if got := themeSurfaceStep(themes["retro-crt-dark"]); got != "1" {
+			t.Errorf("the reference theme is no longer the reference: %q", got)
 		}
 	})
 

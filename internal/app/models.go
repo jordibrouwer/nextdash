@@ -871,10 +871,23 @@ const defaultHealthWidgetID = "w_000000000001"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "retro-crt-dark"
+const defaultThemeID = "tarnished-brass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "retro-crt-light"
+const defaultThemeLightID = "tarnished-brass-light"
+
+/*
+The look a fresh install opens on, beside its theme.
+
+Glass and a soft glow because Tarnished Brass is built for them -- its surfaces
+are meant to be seen through and its accent to carry a little light. Contrast
+stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
+is the theme's own.
+*/
+const (
+	defaultThemeDepth   = "glass"
+	defaultGlowStrength = "soft"
+)
 
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
@@ -1430,8 +1443,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:          true,
 			SortMethod:                      "order",
 			LayoutPreset:                    "default",
-			ThemeDepth:                      "flat",
-			GlowStrength:                    "off",
+			ThemeDepth:                      defaultThemeDepth,
+			GlowStrength:                    defaultGlowStrength,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
@@ -3636,8 +3649,8 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:               defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			LayoutPreset:                    "default",
-			ThemeDepth:                      "flat",
-			GlowStrength:                    "off",
+			ThemeDepth:                      defaultThemeDepth,
+			GlowStrength:                    defaultGlowStrength,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			LauncherDefaultsMigrated:        true,
@@ -3702,6 +3715,33 @@ func (fs *FileStore) GetSettings() Settings {
 		// The bar was always drawn before this switch existed.
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
+		}
+		/*
+		 * A settings file that never answered the look questions.
+		 *
+		 * Not the same as an upgrade: the migrations below move an install that
+		 * answered them under an older default, and each leaves its marker. A
+		 * file with the marker but without the key is an incomplete one -- hand
+		 * written, half restored, or written by a build that did not know the
+		 * setting -- and it gets what a fresh install gets rather than the zero
+		 * value, which for a depth is no depth at all.
+		 */
+		if _, ok := rawSettings["theme"]; !ok {
+			settings.Theme = defaultThemeID
+		}
+		// Both markers: without the flat one this is an install from before the
+		// depth ladder, which the migration below moves to flat on purpose.
+		if _, ok := rawSettings["themeDepth"]; !ok && settings.SurfaceDefaultsMigrated && settings.DepthDefaultFlatMigrated {
+			settings.ThemeDepth = defaultThemeDepth
+		}
+		if _, ok := rawSettings["glowStrength"]; !ok && settings.SurfaceDefaultsMigrated {
+			settings.GlowStrength = defaultGlowStrength
+		}
+		if _, ok := rawSettings["themeBackdrop"]; !ok {
+			settings.ThemeBackdrop = "on"
+		}
+		if _, ok := rawSettings["backgroundPattern"]; !ok {
+			settings.BackgroundPattern = "auto"
 		}
 		if _, ok := rawSettings["maxHeaderActions"]; !ok {
 			settings.MaxHeaderActions = defaultMaxHeaderActions

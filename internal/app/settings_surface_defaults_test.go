@@ -33,7 +33,7 @@ func writeSurfaceSettingsFile(t *testing.T, payload map[string]any) {
 	}
 }
 
-func TestFreshInstallStartsOnBackdropOnGlowOffDepthFlat(t *testing.T) {
+func TestFreshInstallStartsOnBackdropOnGlowSoftDepthGlass(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 
@@ -42,11 +42,62 @@ func TestFreshInstallStartsOnBackdropOnGlowOffDepthFlat(t *testing.T) {
 	if settings.ThemeBackdrop != "on" {
 		t.Fatalf("fresh install: themeBackdrop is %q", settings.ThemeBackdrop)
 	}
-	if settings.GlowStrength != "off" {
+	// A fresh install opens on Tarnished Brass, which is built for glass and a
+	// soft glow; an install that predates this keeps the flat, unlit answer the
+	// migration below gave it.
+	if settings.GlowStrength != "soft" {
 		t.Fatalf("fresh install: glowStrength is %q", settings.GlowStrength)
 	}
-	if settings.ThemeDepth != "flat" {
+	if settings.ThemeDepth != "glass" {
 		t.Fatalf("fresh install: themeDepth is %q", settings.ThemeDepth)
+	}
+}
+
+// A settings file that carries the marker but never answered the question --
+// hand written, half restored, written by a build that did not know the
+// setting -- is not an upgrade, and gets what a fresh install gets.
+func TestAnIncompleteSettingsFileGetsTheFreshLook(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+
+	writeSurfaceSettingsFile(t, map[string]any{
+		"currentPage":              1,
+		"surfaceDefaultsMigrated":  true,
+		"depthDefaultFlatMigrated": true,
+	})
+
+	settings := NewStore().GetSettings()
+
+	if settings.Theme != defaultThemeID {
+		t.Fatalf("incomplete file: theme is %q", settings.Theme)
+	}
+	if settings.ThemeDepth != "glass" || settings.GlowStrength != "soft" {
+		t.Fatalf("incomplete file: depth %q glow %q", settings.ThemeDepth, settings.GlowStrength)
+	}
+	if settings.ThemeBackdrop != "on" || settings.BackgroundPattern != "auto" {
+		t.Fatalf("incomplete file: backdrop %q pattern %q", settings.ThemeBackdrop, settings.BackgroundPattern)
+	}
+}
+
+// And one that did answer keeps its answer.
+func TestAStoredLookIsKept(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+
+	writeSurfaceSettingsFile(t, map[string]any{
+		"currentPage":              1,
+		"surfaceDefaultsMigrated":  true,
+		"depthDefaultFlatMigrated": true,
+		"theme":                    "cherry-graphite-dark",
+		"themeDepth":               "flat",
+		"glowStrength":             "off",
+	})
+
+	settings := NewStore().GetSettings()
+
+	if settings.Theme != "cherry-graphite-dark" || settings.ThemeDepth != "flat" || settings.GlowStrength != "off" {
+		t.Fatalf("stored look was overwritten: theme %q depth %q glow %q",
+			settings.Theme, settings.ThemeDepth, settings.GlowStrength)
 	}
 }
 

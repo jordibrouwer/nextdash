@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'retro-crt-dark';
+    const DEFAULT_THEME = 'tarnished-brass-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
