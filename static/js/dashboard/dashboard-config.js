@@ -14455,6 +14455,11 @@ class DashboardConfig {
 
     closeHub(section) {
         if (!this.hubOpen?.[section]) return;
+        // A field typed into is saved a moment after the last keystroke, and
+        // leaving the group inside that moment used to write anyway -- from an
+        // input that is no longer on screen.
+        clearTimeout(this._hubTextTimer);
+        this._hubTextTimer = null;
         this.hubOpen[section] = false;
         if (section === 'appearance') this.clearThemePreview?.();
         this.restoreConfigHash();
