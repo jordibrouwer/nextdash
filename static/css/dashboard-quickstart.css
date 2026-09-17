@@ -1,5 +1,5 @@
 /*
- * Quick-start card (checklist + compact first-run setup).
+ * Quick-start card: the first-run checklist.
  * Non-blocking, bottom-left, theme-driven. Mirrors feature-spotlight conventions
  * so it reads as part of the same system.
  */
@@ -63,13 +63,6 @@
 
 .quickstart-head .quickstart-title {
     margin-bottom: 0;
-}
-
-.quickstart-text {
-    font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-secondary);
-    margin: 0 0 var(--space-2, 0.6rem);
-    line-height: 1.5;
 }
 
 .quickstart-close {
@@ -211,174 +204,9 @@
     background: var(--accent-success);
 }
 
-/* ---- Compact setup card ---- */
-
-.quickstart-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.3rem);
-    margin-bottom: var(--space-3, 0.7rem);
-}
-
 /* [hidden] must win over the flex display above (e.g. weather location field). */
 .quickstart-card [hidden] {
     display: none !important;
-}
-
-.quickstart-field > span,
-.quickstart-fieldset legend {
-    font-size: var(--font-size-small, 0.7rem);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.quickstart-select,
-.quickstart-input {
-    width: 100%;
-    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
-    font-family: inherit;
-    font-size: var(--font-size-small, 0.74rem);
-    color: var(--text-primary);
-    background: var(--background-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-4, 0.35rem);
-}
-
-.quickstart-setup-fields {
-    max-height: 46vh;
-    overflow-y: auto;
-    margin-bottom: var(--space-1, 0.25rem);
-}
-
-.quickstart-field-hint {
-    font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary);
-    line-height: 1.4;
-    margin: 0 0 var(--space-1-5, 0.35rem);
-}
-
-.quickstart-fieldset {
-    border: none;
-    margin: 0 0 var(--space-3, 0.75rem);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.3rem);
-}
-
-.quickstart-fieldset legend {
-    margin-bottom: var(--space-1, 0.3rem);
-    padding: 0;
-}
-
-.quickstart-radio {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.45rem);
-    font-size: var(--font-size-small, 0.74rem);
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
-.quickstart-radio input {
-    accent-color: var(--accent-primary);
-}
-
-/* Starting-point step: two stacked option cards with a label + description. */
-.quickstart-startpoint {
-    gap: var(--space-2, 0.5rem);
-}
-
-.quickstart-radio-block {
-    align-items: flex-start;
-    gap: var(--space-2, 0.55rem);
-    padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-secondary);
-    transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-
-.quickstart-radio-block input {
-    margin-top: var(--space-hairline, 0.15rem);
-    flex-shrink: 0;
-}
-
-.quickstart-radio-block:has(input:checked) {
-    border-color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px var(--accent-primary);
-}
-
-.quickstart-radio-text {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-hairline, 0.15rem);
-    min-width: 0;
-}
-
-.quickstart-radio-label {
-    font-weight: var(--font-weight-semibold, 600);
-    color: var(--text-primary);
-}
-
-.quickstart-radio-hint {
-    font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary);
-    line-height: 1.4;
-}
-
-.quickstart-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2, 0.5rem);
-    margin-top: var(--space-1-5, 0.35rem);
-}
-
-.quickstart-btn {
-    font-family: inherit;
-    font-size: var(--font-size-small, 0.74rem);
-    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.85rem);
-    border-radius: var(--radius-4, 0.35rem);
-    border: 1px solid var(--border-primary);
-    cursor: pointer;
-    background: var(--background-primary);
-    color: var(--text-primary);
-}
-
-.quickstart-btn-ghost {
-    background: transparent;
-}
-
-/* A third answer that is not a third peer.
-   A long label ("Remind me in 30 days", and longer once translated) wraps onto
-   its own row, where a full-width bordered button reads as the heaviest choice
-   on the card -- the opposite of what a postponement should look like. As plain
-   text it can take the whole row without claiming it. */
-.quickstart-btn-quiet {
-    background: transparent;
-    border-color: transparent;
-    padding-left: 0;
-    padding-right: 0;
-    color: var(--text-muted, var(--text-secondary));
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-.quickstart-btn-quiet:hover,
-.quickstart-btn-quiet:focus-visible {
-    color: var(--text-primary);
-}
-
-.quickstart-btn-primary {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-    color: #fff;
-    font-weight: 600;
-}
-
-.quickstart-btn:hover,
-.quickstart-btn:focus-visible {
-    filter: brightness(1.05);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -438,6 +266,66 @@
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
     margin-top: var(--space-3, 0.8rem);
+}
+
+/*
+ * The clock-and-weather card's three answers, on the card itself.
+ *
+ * A label above its control rather than beside it: the card is 340px wide and
+ * a two-column row left "Temperature" wrapping over two lines beside a pair of
+ * buttons. The choices are buttons and not a select, because two options are
+ * cheaper to read than to open.
+ */
+.clock-weather-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.55rem);
+    margin-top: var(--space-3, 0.7rem);
+}
+
+.clock-weather-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.clock-weather-label {
+    font-size: var(--font-size-small, 0.7rem);
+    color: var(--text-tertiary);
+}
+
+.clock-weather-input {
+    width: 100%;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.35rem);
+}
+
+.clock-weather-choices {
+    display: flex;
+    gap: var(--space-1-5, 0.35rem);
+    flex-wrap: wrap;
+}
+
+.clock-weather-choice {
+    padding: var(--space-1, 0.28rem) var(--space-2, 0.6rem);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.35rem);
+    cursor: pointer;
+}
+
+.clock-weather-choice[aria-pressed="true"] {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
 }
 
 /* Shown only after the invitation has been taken up: the command that does the
@@ -509,50 +397,3 @@
 @media (prefers-reduced-motion: reduce) {
 }
 
-/*
- * The two ways into an import, on the last step of the setup card.
- *
- * Shaped like the radio blocks above rather than like the card's own buttons:
- * they are the same kind of thing to read -- a label with a line explaining
- * what it gets you -- and the difference is only that these go somewhere
- * instead of choosing something. Kept visually quieter than the primary
- * button, because Finish is still the way out of the card.
- */
-.quickstart-setup-links {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-}
-
-.quickstart-setup-link {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-hairline, 0.15rem);
-    width: 100%;
-    padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 8px);
-    background: var(--background-secondary);
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-
-.quickstart-setup-link:hover,
-.quickstart-setup-link:focus-visible {
-    border-color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px var(--accent-primary);
-}
-
-.quickstart-setup-link-label {
-    font-weight: var(--font-weight-semibold, 600);
-    color: var(--text-primary);
-}
-
-.quickstart-setup-link-hint {
-    font-size: var(--font-size-small, 0.66rem);
-    color: var(--text-tertiary);
-    line-height: 1.4;
-}

@@ -89,7 +89,7 @@ test.describe('replaying the tour also replays the tips', () => {
         await openBehaviorGeneral(page);
         await page.evaluate(async () => {
             const d = window.dashboardInstance;
-            d.settings.quickStart = { ...(d.settings.quickStart || {}), dismissed: true, setupDone: true };
+            d.settings.quickStart = { ...(d.settings.quickStart || {}), dismissed: true };
             d.settings.onboardingCompleted = true;
             await d.saveSettings?.();
         });

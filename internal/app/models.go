@@ -902,7 +902,6 @@ func defaultThemeIconStyling() map[string]ThemeIconStylingEntry {
 // QuickStartState tracks first-run quick-start progress, persisted per-user in
 // settings JSON (not client localStorage) so it is consistent across devices.
 type QuickStartState struct {
-	SetupDone           bool `json:"setupDone"`           // Compact setup card finished or skipped
 	Dismissed           bool `json:"dismissed"`           // Checklist completed or dismissed
 	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
 	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)

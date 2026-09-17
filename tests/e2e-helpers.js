@@ -501,12 +501,6 @@ async function dismissOnboardingIfPresent(page) {
         await legacy.waitFor({ state: 'hidden', timeout: 5000 });
     }
 
-    const setup = page.locator('.quickstart-setup');
-    if (await setup.count()) {
-        await setup.locator('[data-qs-action="skip-setup"]').click();
-        await setup.waitFor({ state: 'hidden', timeout: 5000 });
-    }
-
     const checklist = page.locator('.quickstart-checklist');
     if (await checklist.count()) {
         await checklist.locator('[data-qs-action="dismiss"]').click();

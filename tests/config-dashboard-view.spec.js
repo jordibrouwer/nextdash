@@ -1058,7 +1058,6 @@ test.describe('sub-tab deep links', () => {
 
     test('the analytics modal links straight to privacy', async ({ page }) => {
         await loadDashboard(page);
-        await page.evaluate(() => document.querySelector('.quickstart-setup')?.remove());
         await page.evaluate(() => window.DashboardAnalyticsNotice.openDetails());
 
         // It used to only name the old config's path — "General → Advanced →
@@ -1081,7 +1080,6 @@ test.describe('sub-tab deep links', () => {
         await page.evaluate(async () => {
             window.dashboardInstance.settings.analyticsOptIn = false;
             await window.dashboardInstance.saveSettings?.();
-            document.querySelector('.quickstart-setup')?.remove();
         });
         await page.evaluate(() => window.DashboardAnalyticsNotice.openDetails());
 

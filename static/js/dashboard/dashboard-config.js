@@ -8679,9 +8679,6 @@ class DashboardConfig {
         // card was still dismissed, and so nothing appeared -- and it put the
         // two flags into exactly the disagreement that silences every
         // unprompted card (see dashboard-quickstart.js shouldStart).
-        //
-        // setupDone is left alone: replaying the tour is not a reason to ask
-        // again for a language and a theme that are already chosen.
         if (this.dash.settings.quickStart && typeof this.dash.settings.quickStart === 'object') {
             this.dash.settings.quickStart.dismissed = false;
         }
@@ -17150,7 +17147,7 @@ class DashboardConfig {
      * nothing.
      */
     static GUIDED_TOURS = [
-        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'Welcome tour',
+        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
           whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },

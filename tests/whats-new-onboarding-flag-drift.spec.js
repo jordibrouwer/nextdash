@@ -40,7 +40,7 @@ test.describe('onboarding flags that disagree', () => {
         // it: the card dismissed, the flag not set, and an older release read.
         await page.evaluate(async ({ release, key }) => {
             const d = window.dashboardInstance;
-            d.settings.quickStart = { ...(d.settings.quickStart || {}), dismissed: true, setupDone: true };
+            d.settings.quickStart = { ...(d.settings.quickStart || {}), dismissed: true };
             d.settings.onboardingCompleted = false;
             await d.saveSettings?.();
             window.DiscoverabilityState?.setLastWhatsNewRelease?.(release);
@@ -68,7 +68,7 @@ test.describe('onboarding flags that disagree', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await page.evaluate(async ({ key }) => {
             const d = window.dashboardInstance;
-            d.settings.quickStart = { setupDone: false, dismissed: false, visitedConfig: false, seenCheatsheet: false };
+            d.settings.quickStart = { dismissed: false, visitedConfig: false, seenCheatsheet: false };
             d.settings.onboardingCompleted = false;
             await d.saveSettings?.();
             localStorage.removeItem(key);
