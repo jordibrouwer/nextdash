@@ -188,6 +188,28 @@
     font-weight: 700;
 }
 
+/*
+ * A basics card that is typed into: the weather location.
+ *
+ * Same card as the ones beside it, with the row of choices replaced by one
+ * field -- a place name is not a choice out of four.
+ */
+.hub-text {
+    width: 100%;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 8px);
+}
+
+.hub-text:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
+}
+
 .hub-choices {
     display: flex;
     flex-wrap: wrap;

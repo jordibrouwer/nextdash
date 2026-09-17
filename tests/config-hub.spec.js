@@ -89,6 +89,21 @@ test.describe('a group page', () => {
         expect(await page.evaluate(() => window.dashboardInstance.settings.columnsPerRow)).toBe(3);
     });
 
+    test('the weather location is a card of its own, typed into and saved', async ({ page }) => {
+        await open(page, '#config/appearance/datetime');
+        const field = page.locator('[data-hub-text="weatherLocation"]');
+        await expect(field).toBeVisible();
+
+        await field.fill('Leiden');
+        await field.press('Enter');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.weatherLocation)).toBe('Leiden');
+
+        // It was saved, not only drawn.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => window.dashboardInstance.settings.weatherLocation)).toBe('Leiden');
+    });
+
     test('the preview follows a change made under More settings', async ({ page }) => {
         await open(page, '#config/appearance/buttonbar');
         await page.locator('[data-hub-field="actionBarPosition"][data-hub-value="left"]').click();

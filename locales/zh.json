@@ -2497,6 +2497,7 @@
     "weatherSourceLabel": "位置来源：",
     "weatherSourceManual": "手动位置",
     "weatherSourceBrowser": "使用浏览器定位",
+    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "天气位置：",
     "weatherLocationPlaceholder": "城市名（例如 Leiden）",
     "weatherUnitCelsius": "摄氏度（°C）",

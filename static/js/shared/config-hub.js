@@ -52,7 +52,9 @@
             display: ['shortcutDisplay', 'rowHighlight'],
             header: ['pageSwitcherStyle', 'headerButtonStyle', 'showPageNamesInTabs'],
             buttonbar: ['actionBarPosition', 'actionBarAutoHideSeconds', 'actionBarEnabled'],
-            datetime: ['timeFormat', 'headerClockPlacement', 'weatherUnit'],
+            // The location leads: without one the weather line shows nothing,
+            // and it was the one answer of the four kept behind More settings.
+            datetime: ['weatherLocation', 'timeFormat', 'weatherUnit', 'headerClockPlacement'],
         },
         behavior: {
             general: ['language', 'openInNewTab', 'lockLayout'],
@@ -223,6 +225,24 @@
                 return '';
             }
             const current = s[field];
+            /*
+             * A card that is typed into rather than chosen from.
+             *
+             * The basics are a row of choices, which is why they are cards at
+             * all -- but the weather location is a place name, and it is the
+             * answer the weather line cannot do without. Left out of the row it
+             * was the only one of its tab's four behind More settings.
+             */
+            if (control.type === 'text') {
+                return `
+                <div class="hub-card hub-card--text" data-hub-card="${esc(field)}" data-hub-special="${esc(control.special || '')}">
+                    <label class="hub-card-title" for="hub-text-${esc(field)}">${esc(control.label)}</label>
+                    <input type="text" id="hub-text-${esc(field)}" class="hub-text"
+                           value="${esc(current == null ? '' : String(current))}"
+                           placeholder="${esc(control.placeholder || '')}"
+                           data-hub-text="${esc(field)}" data-hub-special="${esc(control.special || '')}">
+                </div>`;
+            }
             let options;
             if (control.type === 'checkbox') {
                 options = [

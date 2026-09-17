@@ -2497,6 +2497,7 @@
     "weatherSourceLabel": "Locatiebron:",
     "weatherSourceManual": "Handmatige locatie",
     "weatherSourceBrowser": "Browserlocatie gebruiken",
+    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "Weerlocatie:",
     "weatherLocationPlaceholder": "Stadsnaam (bv. Leiden)",
     "weatherUnitCelsius": "Celsius (°C)",

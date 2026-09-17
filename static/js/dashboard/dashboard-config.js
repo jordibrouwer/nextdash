@@ -12048,7 +12048,8 @@ class DashboardConfig {
                     { field: 'weatherUnit', type: 'select', label: t('config.weatherUnitLabel', 'Temperature unit'), special: 'datetime', options: [
                         opt('celsius', '°C'), opt('fahrenheit', '°F'),
                     ] },
-                    { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
+                    { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'),
+                      placeholder: t('config.weatherLocationPlaceholder', 'Leiden'), special: 'datetime' },
                     { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
                 ],
             },
@@ -14474,6 +14475,19 @@ class DashboardConfig {
                 const type = btn.dataset.hubType;
                 const value = type === 'bool' ? raw === 'true' : type === 'number' ? Number(raw) : raw;
                 void this.setBehavior(btn.dataset.hubField, value, btn.dataset.hubSpecial || undefined);
+            });
+        });
+        root.querySelectorAll('[data-hub-text]').forEach((input) => {
+            if (input.dataset.hubBound === '1') return;
+            input.dataset.hubBound = '1';
+            // On change, not on every keystroke: each save redraws the cards,
+            // and a redraw mid-word takes the cursor with it.
+            input.addEventListener('change', () => {
+                void this.setBehavior(input.dataset.hubText, input.value.trim(),
+                    input.dataset.hubSpecial || undefined);
+            });
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') input.blur();
             });
         });
         root.querySelectorAll('[data-hub-more]').forEach((fold) => {
