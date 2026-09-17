@@ -47,7 +47,7 @@ class SearchCommandsComponent {
                     'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
                     'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
-                    'buttons', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
+                    'buttons', 'action', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
                     'shortcuts', 'locklayout',
                 ],
             },
@@ -93,6 +93,8 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
+            'action': this.handleActionBarCommand.bind(this),
+            'actionbar': this.handleActionBarCommand.bind(this),
             'header': this.handleHeaderCommand.bind(this),
             'glow': this.handleGlowCommand.bind(this),
             'buttonstyle': this.handleButtonStyleCommand.bind(this),
@@ -2722,6 +2724,106 @@ class SearchCommandsComponent {
         dashboard.setupDOM?.();
         dashboard.renderPageNavigation?.();
         dashboard.pageNav?.setActivePageNavButton?.(dashboard.currentPageId);
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
+    }
+
+
+    /*
+     * Where the action buttons stand, and how they behave there.
+     *
+     * `:buttons` says WHICH buttons are drawn; this one says where the bar is
+     * and what it does once it is there -- the settings the release moved, and
+     * the ones a reader is most likely to want back. Four shapes on one word:
+     *
+     *   :action                 the five places, the current one ticked
+     *   :action left|bottom|…   go straight there
+     *   :action on|off          the whole bar
+     *   :action hide 0|2|5|…    seconds before a docked bar slides away
+     *   :action keys on|off     the key chip on each button
+     */
+    handleActionBarCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const first = (args[0] || '').toLowerCase();
+        const second = (args[1] || '').toLowerCase();
+
+        const places = [
+            { value: 'right', label: t('config.actionBarRight', 'A column on the right') },
+            { value: 'left', label: t('config.actionBarLeft', 'A column on the left') },
+            { value: 'bottom', label: t('config.actionBarBottom', 'A dock at the bottom') },
+            { value: 'header', label: t('config.actionBarHeader', 'In the header') },
+            { value: 'menu', label: t('config.actionBarMenu', 'Behind one menu') },
+        ];
+
+        const stateRow = (label, on, stateId, apply) => ({
+            ...this._markCurrentRow(label, on),
+            shortcut: ':ACTION',
+            type: 'command',
+            stateId,
+            action: apply,
+        });
+
+        // The bar itself, on or off.
+        if (first === 'on' || first === 'off') {
+            const on = first === 'on';
+            return [stateRow(
+                on ? t('commands.actionBarOn', 'Show the action buttons') : t('commands.actionBarOff', 'Hide the action buttons'),
+                dashboard.settings.actionBarEnabled !== false === on,
+                `action:enabled:${first}`,
+                () => this._applyActionBarSetting('actionBarEnabled', on, `action:enabled:${first}`),
+            )];
+        }
+
+        // The key chip on each button.
+        if (first === 'keys') {
+            const current = dashboard.settings.showActionKeys !== false;
+            const states = second === 'on' ? [true] : second === 'off' ? [false] : [true, false];
+            return states.map((on) => stateRow(
+                on ? t('commands.actionKeysOn', 'Show the key on each button') : t('commands.actionKeysOff', 'Hide the key on each button'),
+                current === on,
+                `action:keys:${on}`,
+                () => this._applyActionBarSetting('showActionKeys', on, `action:keys:${on}`),
+            ));
+        }
+
+        // How long a docked bar waits before it slides into its edge.
+        if (first === 'hide') {
+            const current = Number(dashboard.settings.actionBarAutoHideSeconds) || 0;
+            const seconds = [0, 2, 5, 10, 30].filter((n) => !second || String(n).startsWith(second));
+            return seconds.map((n) => stateRow(
+                n === 0
+                    ? t('config.actionBarAutoHideNever', 'Always in view')
+                    : t('commands.actionBarAfterSeconds', 'Slide away after {n}s').replace('{n}', String(n)),
+                current === n,
+                `action:hide:${n}`,
+                () => this._applyActionBarSetting('actionBarAutoHideSeconds', n, `action:hide:${n}`),
+            ));
+        }
+
+        const current = dashboard.settings.actionBarPosition || 'header';
+        const matches = first ? places.filter(({ value }) => value.startsWith(first)) : places;
+        if (!matches.length) return [];
+        return matches.map(({ value, label }) => stateRow(
+            label, value === current, `action:${value}`,
+            () => this._applyActionBarSetting('actionBarPosition', value, `action:${value}`),
+        ));
+    }
+
+    /**
+     * Write one action-bar setting and let the bar answer for it.
+     *
+     * The same two the panel calls: setupDOM puts the attributes on <body>,
+     * and the autohide module re-reads the delay and comes out of hiding, so
+     * a bar switched on while it was away is visible rather than merely set.
+     */
+    _applyActionBarSetting(key, value, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[key] = value;
+        dashboard.setupDOM?.();
+        window.ActionBarAutoHide?.sync?.();
         dashboard.saveSettings?.();
         return this._paletteRefresh(stateId);
     }
