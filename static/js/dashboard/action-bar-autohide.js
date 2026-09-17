@@ -10,6 +10,11 @@
  *
  * State lives on <body> as data-action-bar-hidden, so the slide itself is CSS
  * and reduced motion is handled where every other animation is.
+ *
+ * While the bar is away a small handle stands on that edge, so the place it
+ * comes back from is visible. It grows as the pointer comes near -- the
+ * nearness is --edge-proximity, 0 to 1, on the handle -- and a click on it
+ * brings the bar back for anyone who misses the edge itself.
  */
 (function (global) {
     'use strict';
@@ -19,11 +24,14 @@
     const EDGE = 6;
     /** How far past the ends of the bar the edge still counts. */
     const SLACK = 24;
+    /** From how far away the handle starts to grow, in pixels. */
+    const NEAR = 340;
 
     let timer = null;
     let hidden = false;
     let bound = false;
     let frame = 0;
+    let handle = null;
 
     const settings = () => global.dashboardInstance?.settings || {};
     const place = () => document.body.getAttribute('data-action-bar') || 'header';
@@ -34,8 +42,22 @@
     // No hover on a touch screen, so nothing would ever bring the bar back.
     const touchOnly = () => global.matchMedia?.('(hover: none)').matches === true;
 
+    /** The handle on the edge; drawn only while the bar is away (CSS). */
+    function edgeHandle() {
+        if (handle) return handle;
+        handle = document.createElement('div');
+        handle.className = 'action-bar-edge-handle';
+        // The keys and the edge already bring the bar back; this is a picture
+        // of where, not a control of its own.
+        handle.setAttribute('aria-hidden', 'true');
+        handle.addEventListener('click', () => show());
+        document.body.appendChild(handle);
+        return handle;
+    }
+
     function setHidden(value) {
         hidden = value;
+        edgeHandle().style.setProperty('--edge-proximity', '0');
         document.body.toggleAttribute('data-action-bar-hidden', value);
         const el = bar();
         if (el) {
@@ -95,12 +117,30 @@
         }
     }
 
+    /** How close the pointer is to the docked edge: 0 far away, 1 on it. */
+    function nearness(x, y) {
+        const { clientWidth: width, clientHeight: height } = document.documentElement;
+        let distance;
+        switch (place()) {
+            case 'left': distance = x; break;
+            case 'right': distance = width - x; break;
+            case 'bottom': distance = height - y; break;
+            default: return 0;
+        }
+        return Math.max(0, Math.min(1, 1 - distance / NEAR));
+    }
+
     function onPointerMove(e) {
         if (!hidden || frame) return;
         const { clientX: x, clientY: y } = e;
         frame = requestAnimationFrame(() => {
             frame = 0;
-            if (hidden && docked() && atEdge(x, y)) show();
+            if (!hidden || !docked()) return;
+            if (atEdge(x, y)) {
+                show();
+                return;
+            }
+            edgeHandle().style.setProperty('--edge-proximity', nearness(x, y).toFixed(3));
         });
     }
 
@@ -108,6 +148,10 @@
         if (bound) return;
         bound = true;
         document.addEventListener('pointermove', onPointerMove, { passive: true });
+        // Leaving the window is being far from every edge.
+        document.documentElement.addEventListener('pointerleave', () => {
+            if (handle) handle.style.setProperty('--edge-proximity', '0');
+        });
         // Over the bar the wait stops; leaving it, or tabbing out, starts it again.
         document.addEventListener('pointerover', (e) => {
             if (!hidden && bar()?.contains(e.target)) {

@@ -8745,6 +8745,86 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
     pointer-events: none;
 }
 
+/*
+ * The handle on the edge a bar slid into (action-bar-autohide.js).
+ *
+ * Plain enough at rest that the reader keeps knowing where the bar went, and
+ * larger and clearer as the pointer nears, through --edge-proximity (0 to 1). Only drawn while a
+ * docked bar is away; a click on it brings the bar back. No backdrop-filter:
+ * it takes clicks.
+ */
+.action-bar-edge-handle {
+    --edge-proximity: 0;
+    --edge-thick: calc(10px + 8px * var(--edge-proximity));
+    --edge-long: calc(64px + 40px * var(--edge-proximity));
+    position: fixed;
+    z-index: 899;
+    display: none;
+    background: color-mix(in srgb, var(--background-secondary) 92%, var(--text-primary));
+    border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    opacity: calc(0.65 + 0.3 * var(--edge-proximity));
+    cursor: pointer;
+    animation: action-bar-edge-handle-in 0.2s ease both;
+}
+
+.action-bar-edge-handle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) calc(50% + 30% * var(--edge-proximity)), transparent);
+}
+
+@keyframes action-bar-edge-handle-in {
+    from { opacity: 0; }
+}
+
+body[data-action-bar-hidden]:is([data-action-bar="left"], [data-action-bar="right"], [data-action-bar="bottom"]) .action-bar-edge-handle {
+    display: block;
+}
+
+body[data-action-bar="left"] .action-bar-edge-handle,
+body[data-action-bar="right"] .action-bar-edge-handle {
+    top: 50%;
+    translate: 0 -50%;
+    width: var(--edge-thick);
+    height: var(--edge-long);
+}
+
+body[data-action-bar="left"] .action-bar-edge-handle {
+    left: 0;
+    border-left: 0;
+    border-radius: 0 7px 7px 0;
+}
+
+body[data-action-bar="right"] .action-bar-edge-handle {
+    right: 0;
+    border-right: 0;
+    border-radius: 7px 0 0 7px;
+}
+
+body[data-action-bar="bottom"] .action-bar-edge-handle {
+    bottom: 0;
+    left: 50%;
+    translate: -50% 0;
+    width: var(--edge-long);
+    height: var(--edge-thick);
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+}
+
+body:is([data-action-bar="left"], [data-action-bar="right"]) .action-bar-edge-handle::after {
+    width: 2px;
+    height: calc(22px + 14px * var(--edge-proximity));
+}
+
+body[data-action-bar="bottom"] .action-bar-edge-handle::after {
+    width: calc(22px + 14px * var(--edge-proximity));
+    height: 2px;
+}
+
 /* Nothing left of the actions in the header, so nothing to divide. */
 body[data-action-bar="bottom"] .dashboard-section.section-controls .header-zone-divider,
 body[data-action-bar="left"] .dashboard-section.section-controls .header-zone-divider,

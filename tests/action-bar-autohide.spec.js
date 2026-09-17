@@ -147,3 +147,55 @@ test('the key chips switch off in config, and the keys keep working', async ({ p
     await page.locator('body').press('!');
     await expect(page.locator('.keyboard-cheat-sheet-modal')).toBeVisible();
 });
+
+/*
+ * A handle on the edge while the bar is away: where it comes back from, larger
+ * as the pointer nears, and a click on it brings the bar back.
+ */
+const handle = (page) => page.locator('.action-bar-edge-handle');
+const handleSize = (page) => handle(page).evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { width: r.width, height: r.height, right: r.right, bottom: r.bottom, left: r.left };
+});
+
+test('a handle stands on the edge the bar slid into, and only then', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect(handle(page)).toBeHidden();
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await expect(handle(page)).toBeVisible();
+
+    const box = await handleSize(page);
+    // The page's edge, which is the body's: a scrollbar gutter stands beyond
+    // it, and the bar itself is placed against the same edge.
+    const edge = await page.evaluate(() => document.body.getBoundingClientRect().right);
+    expect(box.right, 'the handle is not on the right edge').toBeGreaterThanOrEqual(edge - 1);
+
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(false);
+    await expect(handle(page)).toBeHidden();
+});
+
+test('the handle grows as the pointer nears the edge', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    const far = await handleSize(page);
+    expect(far.bottom, 'the handle is not on the bottom edge').toBeGreaterThanOrEqual(899);
+
+    await page.mouse.move(750, 900 - 60);
+    await expect.poll(async () => (await handleSize(page)).height).toBeGreaterThan(far.height);
+    const near = await handleSize(page);
+    expect(near.width).toBeGreaterThan(far.width);
+});
+
+test('a click on the handle brings the bar back', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await handle(page).click();
+    await expect.poll(() => hidden(page)).toBe(false);
+});
+
+test('no handle for a bar in the header', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'header', actionBarAutoHideSeconds: 2 });
+    await page.waitForTimeout(2500);
+    await expect(handle(page)).toBeHidden();
+});
