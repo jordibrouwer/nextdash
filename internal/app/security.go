@@ -176,7 +176,17 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		LabelTransform: keepLabelTransform(tc.LabelTransform),
 		LabelSpacing:   keepLabelSpacing(tc.LabelSpacing),
 		LabelWeight:    keepLabelWeight(tc.LabelWeight),
+		Backdrop:       keepBackdrop(tc.Backdrop),
 	}
+}
+
+// keepBackdrop keeps a recipe name the renderer knows, and nothing else.
+func keepBackdrop(value string) string {
+	name := strings.ToLower(strings.TrimSpace(value))
+	if themeBackdropRecipeIndex(name) < 0 {
+		return ""
+	}
+	return name
 }
 
 // keepInRange holds a declared number inside its range; unset (zero or less,

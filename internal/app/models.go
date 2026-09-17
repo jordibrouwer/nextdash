@@ -1105,6 +1105,10 @@ type ThemeColors struct {
 	LabelTransform string `json:"labelTransform,omitempty"` // none | uppercase | lowercase
 	LabelSpacing   string `json:"labelSpacing,omitempty"`   // an em length, e.g. "0.14em"
 	LabelWeight    int    `json:"labelWeight,omitempty"`    // 400-800
+
+	// Backdrop names one of the nine backdrop recipes (see themeBackdropRecipes
+	// in handlers.go). Empty keeps the one the theme's id hashes to.
+	Backdrop string `json:"backdrop,omitempty"`
 }
 
 type Store interface {
@@ -4927,6 +4931,9 @@ func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
 	}
 	if current.LabelWeight == 0 {
 		current.LabelWeight = defaults.LabelWeight
+	}
+	if strings.TrimSpace(current.Backdrop) == "" {
+		current.Backdrop = defaults.Backdrop
 	}
 	return current
 }

@@ -9854,7 +9854,27 @@ class DashboardConfig {
     static THEME_COLOR_GROUPS = [
         ['themeGroupText', 'Text', ['textPrimary', 'textSecondary', 'textTertiary']],
         ['themeGroupSurfaces', 'Surfaces', ['backgroundPrimary', 'backgroundSecondary', 'backgroundDots', 'backgroundModal', 'borderPrimary', 'borderSecondary']],
-        ['themeGroupAccents', 'Accents', ['accentSuccess', 'accentWarning', 'accentError']],
+        ['themeGroupAccents', 'Accents', ['accentPrimary', 'accentSuccess', 'accentWarning', 'accentError', 'accentInfo']],
+    ];
+
+    /** Colours a theme may leave empty: the server derives them instead. */
+    static THEME_OPTIONAL_COLORS = ['accentPrimary', 'accentInfo'];
+
+    /**
+     * Everything a theme can be besides a palette, as the editor offers it.
+     * Ranges match what the server keeps (security.go) and renders
+     * (handlers.go); an unset field is derived there.
+     */
+    static THEME_CHARACTER_FIELDS = [
+        { prop: 'surfaceStep', kind: 'range', min: 0.6, max: 1.8, step: 0.05, key: 'themeCharSurfaceStep', label: 'Space between surface layers' },
+        { prop: 'radiusScale', kind: 'range', min: 0.05, max: 1.6, step: 0.05, key: 'themeCharRadius', label: 'Corner roundness' },
+        { prop: 'surfaceAlpha', kind: 'range', min: 0.3, max: 1, step: 0.05, glass: true, key: 'themeCharSurfaceAlpha', label: 'Surface opacity' },
+        { prop: 'surfaceBlur', kind: 'range', min: 1, max: 32, step: 1, unit: 'px', glass: true, key: 'themeCharSurfaceBlur', label: 'Blur behind surfaces' },
+        { prop: 'surfaceGlow', kind: 'glow', min: 0.05, max: 1, step: 0.05, key: 'themeCharGlow', label: 'Glow around surfaces' },
+        { prop: 'labelTransform', kind: 'choice', options: ['none', 'uppercase', 'lowercase'], key: 'themeCharLabelCase', label: 'Category title case' },
+        { prop: 'labelSpacing', kind: 'range', min: -0.05, max: 0.25, step: 0.01, unit: 'em', key: 'themeCharLabelSpacing', label: 'Category title letter spacing' },
+        { prop: 'labelWeight', kind: 'select', options: [400, 500, 600, 700, 800], key: 'themeCharLabelWeight', label: 'Category title weight' },
+        { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
     ];
 
     themeColorLabel(prop) {
@@ -9868,7 +9888,9 @@ class DashboardConfig {
             backgroundModal: ['config.colorBackgroundModal', 'Modals'],
             borderPrimary: ['config.colorBorderPrimary', 'Borders'],
             borderSecondary: ['config.colorBorderSecondary', 'Subtle borders'],
-            accentSuccess: ['config.colorAccentSuccess', 'Accent'],
+            accentPrimary: ['config.colorAccentPrimary', 'Theme colour'],
+            accentSuccess: ['config.colorAccentSuccess', 'Success'],
+            accentInfo: ['config.colorAccentInfo', 'Info'],
             accentWarning: ['config.colorAccentWarning', 'Warning'],
             accentError: ['config.colorAccentError', 'Error'],
         };
@@ -10011,11 +10033,13 @@ class DashboardConfig {
                     // may use, so the text field is the source of truth and the
                     // swatch is a convenience that writes into it.
                     const forPicker = /^#[0-9a-fA-F]{6}$/.test(val) ? val : '#000000';
+                    const optional = DashboardConfig.THEME_OPTIONAL_COLORS.includes(prop);
+                    const placeholder = optional ? this.t('config.themeColorDerived', 'derived') : '#1a1a1a';
                     return `
                     <div class="config-field config-theme-field">
                         <span class="config-field-label">${esc(this.themeColorLabel(prop))}</span>
                         <input type="color" class="config-theme-color-input" data-theme-color-picker="${esc(prop)}" value="${esc(forPicker)}" aria-label="${esc(this.themeColorLabel(prop))}">
-                        <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}" value="${esc(val)}" spellcheck="false" placeholder="#1a1a1a">
+                        <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}"${optional ? ' data-theme-color-optional="1"' : ''} value="${esc(val)}" spellcheck="false" placeholder="${esc(placeholder)}">
                     </div>`;
                 }).join('')}
             </div>`).join('');
@@ -10030,6 +10054,8 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
                 <p class="config-field-warning" id="config-theme-contrast" hidden></p>
                 <div class="config-theme-groups">${groups}</div>
+                ${this.renderThemeCharacter(theme)}
+                ${isCustom ? this.renderThemePairRow(id) : ''}
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
                     <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
@@ -10038,6 +10064,170 @@ class DashboardConfig {
                     ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
                 </div>
             </div>`;
+    }
+
+    /**
+     * Shape, glass, glow and titles: what a theme is besides its colours.
+     *
+     * Each control can be left on "automatic", which is the value the server
+     * works out from the palette -- the way all the packaged themes that never
+     * mention a field get one.
+     */
+    renderThemeCharacter(theme) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const auto = this.t('config.themeCharAuto', 'Automatic');
+        const glassNote = this.t('config.themeCharGlassOnly', 'Shows with depth set to Glass.');
+        const rows = DashboardConfig.THEME_CHARACTER_FIELDS.map((f) => {
+            const label = this.t(`config.${f.key}`, f.label);
+            const raw = theme[f.prop];
+            let control;
+            if (f.kind === 'range' || f.kind === 'glow') {
+                const numeric = f.unit === 'em' ? parseFloat(raw) : Number(raw);
+                const set = f.kind === 'glow' ? numeric > 0 : (f.unit === 'em' ? Number.isFinite(numeric) && String(raw || '') !== '' : numeric > 0);
+                const value = set ? numeric : (f.min + f.max) / 2;
+                const readout = set ? `${value}${f.unit || ''}` : auto;
+                const glowSelect = f.kind === 'glow' ? `
+                    <select class="config-select" data-theme-glow-mode>
+                        <option value="auto" ${!(numeric > 0) && !(numeric < 0) ? 'selected' : ''}>${esc(auto)}</option>
+                        <option value="none" ${numeric < 0 ? 'selected' : ''}>${esc(this.t('config.themeCharGlowNone', 'None'))}</option>
+                        <option value="custom" ${numeric > 0 ? 'selected' : ''}>${esc(this.t('config.themeCharGlowCustom', 'This much'))}</option>
+                    </select>` : '';
+                const hideRange = f.kind === 'glow' && !(numeric > 0);
+                control = `${glowSelect}
+                    <input type="range" class="config-range" data-theme-char="${esc(f.prop)}" data-unit="${esc(f.unit || '')}"
+                           min="${f.min}" max="${f.max}" step="${f.step}" value="${esc(String(value))}" aria-label="${esc(label)}"${hideRange ? ' hidden' : ''}>
+                    <span class="config-range-value" data-theme-char-readout="${esc(f.prop)}"${hideRange ? ' hidden' : ''}>${esc(readout)}</span>`;
+            } else if (f.kind === 'choice') {
+                const current = raw || '';
+                const names = { '': auto, none: this.t('config.themeCharCaseNone', 'As typed'), uppercase: 'UPPERCASE', lowercase: 'lowercase' };
+                control = `<div class="config-choices" role="group" aria-label="${esc(label)}">${['', ...f.options].map((o) =>
+                    `<button type="button" class="config-choice${o === current ? ' is-active' : ''}" aria-pressed="${o === current}" data-theme-char-choice="${esc(f.prop)}" data-value="${esc(o)}">${esc(names[o])}</button>`).join('')}</div>`;
+            } else {
+                const current = raw ? String(raw) : '';
+                const optionLabel = (o) => (f.prop === 'backdrop'
+                    ? this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1))
+                    : String(o));
+                control = `<select class="config-select" data-theme-char-select="${esc(f.prop)}" aria-label="${esc(label)}">
+                    <option value="" ${current === '' ? 'selected' : ''}>${esc(auto)}</option>
+                    ${f.options.map((o) => `<option value="${esc(String(o))}" ${String(o) === current ? 'selected' : ''}>${esc(optionLabel(o))}</option>`).join('')}
+                </select>`;
+            }
+            const unset = raw === undefined || raw === null || raw === '' || raw === 0;
+            return `
+                <div class="config-field config-theme-char" data-theme-char-row="${esc(f.prop)}">
+                    <span class="config-field-label">${esc(label)}</span>
+                    ${control}
+                    <span class="config-field-affordances">
+                        <button type="button" class="config-reset-btn${unset ? '' : ' is-visible'}" data-theme-char-reset="${esc(f.prop)}"
+                                aria-label="${esc(this.t('config.themeCharReset', 'Back to automatic'))}" title="${esc(this.t('config.themeCharReset', 'Back to automatic'))}">↺</button>
+                    </span>
+                </div>${f.glass ? `<p class="config-field-hint">${esc(glassNote)}</p>` : ''}`;
+        }).join('');
+        return `
+            <details class="config-theme-character" data-theme-character ${this._themeCharacterOpen ? 'open' : ''}>
+                <summary>${esc(this.t('config.themeCharTitle', 'Shape & character'))}</summary>
+                <p class="config-panel-note">${esc(this.t('config.themeCharNote', 'Corners, glass, glow, the category titles and the backdrop. Automatic is what nextDash works out from the colours.'))}</p>
+                ${rows}
+            </details>`;
+    }
+
+    /** The other half of a custom theme, or the button that makes one. */
+    renderThemePairRow(id) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pair = this.themePairOf(id);
+        if (pair.other && this._colorsData?.custom?.[pair.other]) {
+            const otherName = this._colorsData.custom[pair.other].name || pair.other;
+            return `
+                <p class="config-panel-note" data-theme-pair="${esc(pair.other)}">
+                    ${esc(this.t('config.themePairHas', 'Paired with {name}: Quick mode switches between the two.').replace('{name}', otherName))}
+                    <button type="button" class="config-btn config-btn--small" data-theme-edit="${esc(pair.other)}">${esc(this.t('config.themeEdit', 'Edit'))}</button>
+                </p>`;
+        }
+        return `
+            <p class="config-panel-note">
+                ${esc(this.t('config.themePairNone', 'A light and a dark half let Quick mode and "follow system dark mode" switch between them.'))}
+                <button type="button" class="config-btn config-btn--small" data-theme-action="pair">${esc(this.t('config.themePairMake', 'Make a light/dark pair'))}</button>
+            </p>`;
+    }
+
+    /** Which half a custom theme is, and the id of the other one. */
+    themePairOf(id) {
+        const m = String(id || '').match(/^(.*)-(dark|light)$/);
+        if (!m) return { base: id, half: null, other: null };
+        return { base: m[1], half: m[2], other: `${m[1]}-${m[2] === 'dark' ? 'light' : 'dark'}` };
+    }
+
+    /**
+     * Turn a single custom theme into a light/dark pair.
+     *
+     * The theme keeps its palette and takes the suffix of the half it already
+     * is, judged from its background; the other half starts from the base
+     * palette of that lightness with this theme's accents and character, so it
+     * is recognisably the same theme and readable from the start. Renaming the
+     * id moves every setting that names it with it.
+     */
+    async makeThemePair(id) {
+        const data = this._colorsData;
+        const theme = data?.custom?.[id];
+        if (!theme) return;
+        const lum = window.ColorValueUtils?.relativeLuminance?.(String(theme.backgroundPrimary || '').trim());
+        const half = lum != null && lum >= 0.4 ? 'light' : 'dark';
+        const other = half === 'dark' ? 'light' : 'dark';
+        const known = this.themePairOf(id);
+        const base = known.half ? known.base : id;
+        const ownId = `${base}-${half}`;
+        const otherId = `${base}-${other}`;
+        if (data.custom[otherId]) return;
+
+        const neutrals = data[other] || {};
+        const carried = {};
+        ['accentPrimary', 'accentSuccess', 'accentWarning', 'accentError', 'accentInfo',
+            ...DashboardConfig.THEME_CHARACTER_FIELDS.map((f) => f.prop)].forEach((k) => {
+            if (theme[k] !== undefined && theme[k] !== '') carried[k] = theme[k];
+        });
+        const names = Object.values(data.custom).map((t) => t.name);
+        const counterpart = {
+            ...neutrals,
+            ...carried,
+            name: DashboardConfig.uniqueNameFrom(`${theme.name || base} ${this.t(`config.themePairSuffix_${other}`, other)}`, names),
+        };
+
+        // Rebuilt in order, with the new half straight after the old one.
+        const next = {};
+        Object.entries(data.custom).forEach(([key, value]) => {
+            if (key === id) {
+                next[ownId] = value;
+                next[otherId] = counterpart;
+            } else {
+                next[key] = value;
+            }
+        });
+        data.custom = next;
+
+        if (ownId !== id) this.renameThemeInSettings(id, ownId);
+        this._themeSelected = ownId;
+        this.syncCustomThemeIds();
+        this.repaintAppearanceBody();
+        if (await this.saveColorsData() && ownId !== id) {
+            await this.saveSettingsWithFeedback();
+        }
+    }
+
+    /** Everything in the settings that names a theme by id follows a rename. */
+    renameThemeInSettings(from, to) {
+        const s = this.dash.settings;
+        if (!s) return;
+        if (s.theme === from) s.theme = to;
+        if (Array.isArray(s.favoriteThemes)) {
+            s.favoriteThemes = s.favoriteThemes.map((t) => (t === from ? to : t));
+        }
+        if (s.themeIconStyling && s.themeIconStyling[from]) {
+            s.themeIconStyling[to] = s.themeIconStyling[from];
+            delete s.themeIconStyling[from];
+        }
+        if (document.documentElement.getAttribute('data-theme') === from) {
+            document.documentElement.setAttribute('data-theme', to);
+        }
     }
 
     /**
@@ -10163,21 +10353,15 @@ class DashboardConfig {
             this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
             return;
         }
-        // Either shape is accepted: what this exports, and a bare object of
-        // colours — someone who copied a palette out of a backup has the latter.
-        const colors = payload?.colors && typeof payload.colors === 'object'
-            ? payload.colors
-            : (payload && typeof payload === 'object' ? payload : null);
-        if (!colors || !colors.backgroundPrimary || !colors.textPrimary) {
+        // One reading of a theme file for both import buttons.
+        const theme = this.normalizeImportedTheme(payload);
+        if (!theme) {
             this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
             return;
         }
         const names = Object.values(data.custom || {}).map((t) => t.name);
-        const wanted = String(payload?.name || colors.name || this.t('config.customThemePrefix', 'My theme')).trim();
         const id = DashboardConfig.newThemeId();
-        const clean = { ...colors };
-        delete clean.name;
-        data.custom[id] = { ...clean, name: DashboardConfig.uniqueNameFrom(wanted, names) };
+        data.custom[id] = { ...theme, name: DashboardConfig.uniqueNameFrom(theme.name, names) };
         this._themeSelected = id;
         this.syncCustomThemeIds();
         this.repaintAppearanceBody();
@@ -10459,6 +10643,14 @@ class DashboardConfig {
                 }
             });
             input.addEventListener('change', () => {
+                // An optional colour left empty goes back to being derived.
+                if (input.dataset.themeColorOptional && !input.value.trim()) {
+                    delete theme[prop];
+                    window.ColorValueUtils?.validateTextInput?.(input);
+                    this.previewThemeColors(id);
+                    void this.saveColorsData();
+                    return;
+                }
                 if (!window.ColorValueUtils?.isValidCSSValue?.(input.value)) {
                     // Put back the stored value rather than saving something the
                     // server would reject or render as an empty variable.
@@ -10485,6 +10677,81 @@ class DashboardConfig {
 
         container.querySelectorAll('[data-theme-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleThemeAction(btn.getAttribute('data-theme-action'), id));
+        });
+        this.bindThemeCharacter(container, id, theme);
+    }
+
+    /** The Shape & character controls: preview while moving, save on release. */
+    bindThemeCharacter(container, id, theme) {
+        const fold = container.querySelector('[data-theme-character]');
+        fold?.addEventListener('toggle', () => { this._themeCharacterOpen = fold.open; });
+        const setValue = (prop, value, { save }) => {
+            if (value === undefined) delete theme[prop];
+            else theme[prop] = value;
+            this.previewThemeColors(id);
+            const reset = container.querySelector(`[data-theme-char-reset="${prop}"]`);
+            reset?.classList.toggle('is-visible', value !== undefined);
+            if (save) void this.saveColorsData();
+        };
+        container.querySelectorAll('[data-theme-char]').forEach((range) => {
+            const prop = range.dataset.themeChar;
+            const unit = range.dataset.unit || '';
+            const readout = container.querySelector(`[data-theme-char-readout="${prop}"]`);
+            const read = () => {
+                const n = Number(range.value);
+                return unit === 'em' ? `${n}em` : n;
+            };
+            range.addEventListener('input', () => {
+                if (readout) readout.textContent = `${range.value}${unit}`;
+                setValue(prop, read(), { save: false });
+            });
+            range.addEventListener('change', () => setValue(prop, read(), { save: true }));
+        });
+
+        const glowMode = container.querySelector('[data-theme-glow-mode]');
+        glowMode?.addEventListener('change', () => {
+            const range = container.querySelector('[data-theme-char="surfaceGlow"]');
+            const readout = container.querySelector('[data-theme-char-readout="surfaceGlow"]');
+            const custom = glowMode.value === 'custom';
+            if (range) range.hidden = !custom;
+            if (readout) {
+                readout.hidden = !custom;
+                readout.textContent = range?.value || '';
+            }
+            const value = glowMode.value === 'none' ? -1 : (custom ? Number(range?.value) : undefined);
+            setValue('surfaceGlow', value, { save: true });
+        });
+
+        container.querySelectorAll('[data-theme-char-choice]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.themeCharChoice;
+                const value = btn.dataset.value || undefined;
+                container.querySelectorAll(`[data-theme-char-choice="${prop}"]`).forEach((b) => {
+                    const on = b === btn;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', String(on));
+                });
+                setValue(prop, value, { save: true });
+            });
+        });
+
+        container.querySelectorAll('[data-theme-char-select]').forEach((select) => {
+            const prop = select.dataset.themeCharSelect;
+            select.addEventListener('change', () => {
+                const raw = select.value;
+                const value = raw === '' ? undefined : (prop === 'labelWeight' ? Number(raw) : raw);
+                setValue(prop, value, { save: true });
+            });
+        });
+
+        container.querySelectorAll('[data-theme-char-reset]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.themeCharReset;
+                setValue(prop, undefined, { save: true });
+                // Redraw the row's control as automatic.
+                this.repaintAppearanceBody();
+                if (this._themeSelected) this.previewThemeColors(this._themeSelected);
+            });
         });
     }
 
@@ -10542,16 +10809,19 @@ class DashboardConfig {
             return;
         }
         if (action === 'export') {
-            const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${String(theme.name || id).replace(/[^\w-]+/g, '-').toLowerCase()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            // The same file the list's ⤓ writes, for packaged themes too.
+            const payload = { nextdashTheme: 1, name: theme.name || id, colors: { ...theme } };
+            delete payload.colors.name;
+            const safeName = String(theme.name || id).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            this.triggerDownload(
+                new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+                `nextdash-theme-${safeName || 'theme'}.json`);
         }
         if (action === 'import') {
             this.importThemeFromFile();
+        }
+        if (action === 'pair') {
+            await this.makeThemePair(id);
         }
     }
 
@@ -10604,14 +10874,24 @@ class DashboardConfig {
      */
     normalizeImportedTheme(parsed) {
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-        const colorKeys = Object.keys(parsed).filter((k) => k !== 'name'
-            && typeof parsed[k] === 'string' && /^(#|rgb|hsl|var\()/i.test(parsed[k].trim()));
-        if (!colorKeys.length) return null;
+        // Both shapes: an exported file wraps the theme in `colors`, and a bare
+        // object of fields is what a backup's colors.json holds.
+        const source = parsed.colors && typeof parsed.colors === 'object' ? parsed.colors : parsed;
+        const colorKeys = Object.keys(source).filter((k) => k !== 'name'
+            && typeof source[k] === 'string' && /^(#|rgb|hsl|var\()/i.test(source[k].trim()));
+        if (!colorKeys.length || !source.backgroundPrimary || !source.textPrimary) return null;
+        const rawName = parsed.name || source.name || this.t('config.themeImportedName', 'Imported theme');
         const out = { name: DashboardConfig.NAME_MAX_LENGTH
-            ? String(parsed.name || this.t('config.themeImportedName', 'Imported theme'))
-                .trim().slice(0, DashboardConfig.NAME_MAX_LENGTH)
-            : String(parsed.name || '') };
-        colorKeys.forEach((k) => { out[k] = parsed[k]; });
+            ? String(rawName).trim().slice(0, DashboardConfig.NAME_MAX_LENGTH)
+            : String(rawName) };
+        colorKeys.forEach((k) => { out[k] = source[k]; });
+        // The character fields come along too, in the type each one has; the
+        // server holds them to their ranges when the theme is saved.
+        DashboardConfig.THEME_CHARACTER_FIELDS.forEach(({ prop }) => {
+            const v = source[prop];
+            if (typeof v === 'number' && Number.isFinite(v)) out[prop] = v;
+            else if (typeof v === 'string' && v.trim() && !colorKeys.includes(prop)) out[prop] = v.trim();
+        });
         return out.name ? out : null;
     }
 

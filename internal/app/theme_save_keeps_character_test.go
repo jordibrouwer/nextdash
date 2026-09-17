@@ -153,3 +153,32 @@ func TestAStrippedInstallGetsTheBuiltInCharacterBack(t *testing.T) {
 		t.Fatalf("the reader's own colour was overwritten: %q", got.TextPrimary)
 	}
 }
+
+func TestAThemeCanPickItsBackdrop(t *testing.T) {
+	tc := ThemeColors{BackgroundPrimary: "#101010", AccentSuccess: "#22aa55"}
+	hashed := themeBackdropImage("theme-abc", tc)
+
+	seen := map[string]bool{}
+	for _, name := range themeBackdropRecipes {
+		tc.Backdrop = name
+		seen[themeBackdropImage("theme-abc", tc)] = true
+	}
+	if len(seen) != len(themeBackdropRecipes) {
+		t.Fatalf("%d recipes drew %d different backdrops", len(themeBackdropRecipes), len(seen))
+	}
+	if !seen[hashed] {
+		t.Fatal("the hashed backdrop is not one of the named recipes")
+	}
+
+	// Unset, or a name nobody knows, keeps the hashed one.
+	tc.Backdrop = ""
+	if themeBackdropImage("theme-abc", tc) != hashed {
+		t.Fatal("an unset backdrop changed the hashed recipe")
+	}
+	if got := sanitizeThemeColors(ThemeColors{Backdrop: "Rings"}).Backdrop; got != "rings" {
+		t.Fatalf("backdrop = %q, want rings", got)
+	}
+	if got := sanitizeThemeColors(ThemeColors{Backdrop: "url(x)"}).Backdrop; got != "" {
+		t.Fatalf("an unknown backdrop was kept: %q", got)
+	}
+}

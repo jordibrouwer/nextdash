@@ -53,7 +53,7 @@ test.describe('custom theme editor', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-tab]')).toHaveCount(6);
+        await expect(page.locator('[data-appearance-tab]')).toHaveCount(7);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="display"]')).toBeVisible();
@@ -69,8 +69,9 @@ test.describe('custom theme editor', () => {
         await page.locator('[data-theme-add]').click();
         await expect(page.locator('[data-theme-row]')).toHaveCount(1);
         await expect(page.locator('#config-theme-editor')).toBeVisible();
-        // All twelve ThemeColors fields are editable.
-        await expect(page.locator('[data-theme-color]')).toHaveCount(12);
+        // Every colour a theme has is editable: the twelve it always had, the
+        // theme's own accent and the info accent.
+        await expect(page.locator('[data-theme-color]')).toHaveCount(14);
 
         // A new theme must start from a real palette: blank colours would render
         // the dashboard with empty CSS variables.
@@ -196,7 +197,7 @@ test.describe('custom theme editor', () => {
         // it would have made them unreachable.
         await page.selectOption('[data-theme-base-select]', 'dark');
         await expect(page.locator('#config-theme-editor')).toHaveAttribute('data-theme-editing', 'dark');
-        await expect(page.locator('[data-theme-color]')).toHaveCount(12);
+        await expect(page.locator('[data-theme-color]')).toHaveCount(14);
         // Renaming and deleting are for custom themes only.
         await expect(page.locator('[data-theme-action="reset"]')).toBeVisible();
 

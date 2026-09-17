@@ -2914,6 +2914,10 @@ variations on one gradient would still read as one background.
 */
 func themeBackdropImage(themeID string, tc ThemeColors) string {
 	h := fnv32(themeBackdropHashID(themeID))
+	recipe := pick23(h)
+	if chosen := themeBackdropRecipeIndex(tc.Backdrop); chosen >= 0 {
+		recipe = chosen
+	}
 	pick := func(shift uint, span int) int {
 		if span <= 0 {
 			return 0
@@ -2943,7 +2947,7 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
 		wash(accent, 6) + " 0%, var(--background-primary) 68%)"
 
-	switch pick(23, 9) {
+	switch recipe {
 	case 0: // twee zachte blooms, de vorm van de referentie
 		return "radial-gradient(120% 88% at " + pct(x1) + " " + pct(y1) + ", " + veil(second, 26) + " 0%, transparent 56%), " +
 			"radial-gradient(110% 80% at " + pct(x2) + " " + pct(y2) + ", " + veil(accent, 24) + " 0%, transparent 60%), " + base
@@ -2971,6 +2975,28 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
 			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
 	}
+}
+
+// themeBackdropRecipes names the nine recipes above, in their switch order, so
+// a theme can pick one instead of taking the one its id hashes to.
+var themeBackdropRecipes = []string{
+	"blooms", "sweep", "wireframe", "glow", "band", "rings", "scanlines", "crosshatch", "horizon",
+}
+
+// themeBackdropRecipeIndex is the recipe a name stands for, or -1.
+func themeBackdropRecipeIndex(name string) int {
+	name = strings.ToLower(strings.TrimSpace(name))
+	for i, known := range themeBackdropRecipes {
+		if name == known {
+			return i
+		}
+	}
+	return -1
+}
+
+// pick23 is the recipe an id hashes to: the same bits pick() reads for it.
+func pick23(h uint32) int {
+	return int((h >> 23) % uint32(len(themeBackdropRecipes)))
 }
 
 // themeBackdropHashID maps a "-dark" theme id onto its "-light" counterpart so

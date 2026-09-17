@@ -4419,6 +4419,39 @@ body.no-animations .config-new-features-panel-star {
     margin-top: 8px;
 }
 
+/* Shape & character: a fold under the colours, one row per field. A row can
+   hold a mode picker as well as a slider, so it wraps rather than using the
+   field grid's fixed columns. */
+.config-theme-character {
+    margin-top: 18px;
+}
+
+.config-theme-character > summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.config-field.config-theme-char {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 10px;
+}
+
+.config-theme-char > .config-field-label {
+    flex: 0 0 min(100%, 220px);
+}
+
+.config-theme-char > .config-range {
+    flex: 1 1 160px;
+    max-width: 260px;
+}
+
+.config-theme-char > [hidden] {
+    display: none;
+}
+
 .config-theme-group-title {
     margin: 0 0 8px;
     font-size: calc(var(--font-size-text) * 0.9);
