@@ -147,3 +147,10 @@ test('a light/dark pair is made, and Quick mode switches between its halves', as
     await page.evaluate((mode) => window.dashboardInstance.config.setQuickMode(mode), other);
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(`${id}-${other}`);
 });
+
+test('a custom theme can have gloss', async ({ page }) => {
+    const id = await openEditor(page);
+    await page.locator('[data-theme-char="sheen"]').fill('0.8');
+    await expect.poll(() => cssVar(page, '--theme-sheen')).toBe('0.8');
+    await expect.poll(async () => (await colors(page)).custom[id].sheen).toBe(0.8);
+});

@@ -176,6 +176,7 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		LabelTransform: keepLabelTransform(tc.LabelTransform),
 		LabelSpacing:   keepLabelSpacing(tc.LabelSpacing),
 		LabelWeight:    keepLabelWeight(tc.LabelWeight),
+		Sheen:          keepInRange(tc.Sheen, 0, 1),
 		Backdrop:       keepBackdrop(tc.Backdrop),
 	}
 }

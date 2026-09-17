@@ -35,6 +35,7 @@
         if (num(colors.surfaceGlow) < 0) add('theme-surface-glow', 0);
         else if (num(colors.surfaceGlow) > 0) add('theme-surface-glow', clamp(colors.surfaceGlow, 0, 1));
         if (num(colors.radiusScale) > 0) add('theme-radius-scale', clamp(colors.radiusScale, 0.05, 1.6));
+        if (num(colors.sheen) > 0) add('theme-sheen', clamp(colors.sheen, 0, 1));
         if (['none', 'uppercase', 'lowercase'].includes(colors.labelTransform)) {
             add('theme-label-transform', colors.labelTransform);
         }

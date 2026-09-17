@@ -129,7 +129,7 @@ html[data-theme] body {
        restate it, at 6%, and quietly won -- so raising the number here moved
        nothing at all. One percentage, one place. */
     --edge-top: inset 0 1px 0 color-mix(in srgb,
-        var(--text-primary) calc(16% * var(--theme-depth)), transparent);
+        var(--text-primary) calc((16% + 30% * var(--theme-sheen, 0)) * var(--theme-depth)), transparent);
     /*
      * And the same light down the left edge, at two thirds.
      *
@@ -210,11 +210,35 @@ html[data-theme] body {
      * invisible when you look for it, and the reason a large surface stops
      * looking like a swatch.
      */
-    --surface-sheen: linear-gradient(
+    --surface-sheen: var(--surface-gloss), linear-gradient(
         180deg,
         color-mix(in srgb, var(--text-primary) calc(2.5% * var(--theme-depth)), transparent) 0%,
         transparent 40%
     );
+
+    /*
+     * Gloss: the light a lacquered surface catches.
+     *
+     * A theme's `sheen` (0-1, handlers.go) sets it; zero draws nothing, so
+     * every theme that never mentions it looks exactly as before. Two layers:
+     * a bright band across the top, and a soft highlight at the top left where
+     * the lit edges already put the light. White rather than --text-primary:
+     * a reflection is the colour of the light, not of the ink, and on a light
+     * theme it still reads as a shine on the surface.
+     */
+    --surface-gloss:
+        radial-gradient(120% 70% at 18% 0%,
+            color-mix(in srgb, white calc(12% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            transparent 62%),
+        linear-gradient(180deg,
+            color-mix(in srgb, white calc(15% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            color-mix(in srgb, white calc(4% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 42%,
+            transparent 58%);
+
+    /* The same light on a control under the pointer. */
+    --gloss-hover: linear-gradient(180deg,
+        color-mix(in srgb, white calc(18% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+        transparent 70%);
 
     /*
      * Accent washes, for what is selected, hovered or currently true. Named by
@@ -899,3 +923,38 @@ html[data-theme="bone-china-light"] body {
     --theme-title-spacing: 0.02em;
 }
 
+
+
+/*
+ * Gloss on the surfaces that are not cards.
+ *
+ * Only the gloss layer, not the base wash: these surfaces never carried the
+ * 2.5% sheen, and a theme without `sheen` must draw them exactly as it did.
+ */
+body:not([data-depth="flat"]) :is(
+    .config-panel,
+    .lvs-summary,
+    .hub-card,
+    .hub-tile,
+    .search-container
+) {
+    background-image: var(--surface-gloss);
+}
+
+/* The dock and the plated header controls are plates of their own. */
+body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
+    .dashboard-section.section-controls .header-shortcuts,
+body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-destinations :is(
+    .dashboard-link-anchor,
+    .health-link-anchor,
+    .config-link-anchor,
+    .page-nav-btn--inbox
+) {
+    background-image: var(--surface-gloss);
+}
+
+body:not([data-depth="flat"]) :is(.config-btn, .hub-choice, .dashboard-widget-health-row, .dashboard-widget-trend-row):hover,
+body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
+    .dashboard-section.section-controls .header-shortcuts .search-button:hover {
+    background-image: var(--gloss-hover);
+}

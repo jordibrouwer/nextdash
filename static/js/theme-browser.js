@@ -20,7 +20,7 @@
 (function (global) {
     'use strict';
 
-    const SEGMENTS = ['all', 'favorites', 'light', 'dark'];
+    const SEGMENTS = ['all', 'favorites', 'light', 'dark', 'gloss'];
     const FAVORITE_LIMIT = 24;
 
     /* ── Reading a palette ─────────────────────────────────────────────── */
@@ -88,6 +88,11 @@
             else if (sat < 0.32) traits.push(t('config.themeTraitMuted', 'muted'));
         }
         return traits;
+    }
+
+    /** A theme that catches light: its `sheen` is set. */
+    function isGloss(palette) {
+        return Number(palette?.sheen) > 0;
     }
 
     /* ── Grouping ──────────────────────────────────────────────────────── */
@@ -165,9 +170,10 @@
         const isFavorite = state.favorites.includes(id);
         const hasBoth = Boolean(family.variants.dark && family.variants.light);
         const variant = variantOf(id) || 'dark';
+        const gloss = isGloss(shown.palette);
 
         return `
-            <div class="theme-browser-card${isCurrent ? ' is-current' : ''}"
+            <div class="theme-browser-card${isCurrent ? ' is-current' : ''}${gloss ? ' is-gloss' : ''}"
                  role="option" tabindex="-1"
                  aria-selected="${isCurrent}"
                  data-theme-card="${escapeHtml(family.key)}"
@@ -175,6 +181,7 @@
                 <div class="theme-browser-swatches" aria-hidden="true">${swatches(shown.palette)}</div>
                 <div class="theme-browser-card-head">
                     <span class="theme-browser-card-name">${escapeHtml(family.label || id)}</span>
+                    ${gloss ? `<span class="theme-browser-badge" data-theme-badge="gloss">${escapeHtml(t('config.themeBadgeGloss', 'Gloss'))}</span>` : ''}
                     <button type="button" class="theme-browser-star${isFavorite ? ' is-on' : ''}"
                             data-theme-favorite="${escapeHtml(id)}"
                             aria-pressed="${isFavorite}"
@@ -204,9 +211,11 @@
         }
         if (state.segment === 'light' && !family.variants.light) return false;
         if (state.segment === 'dark' && !family.variants.dark) return false;
+        if (state.segment === 'gloss' && !Object.values(family.variants).some((v) => isGloss(v.palette))) return false;
         const query = state.query.trim().toLowerCase();
         if (!query) return true;
-        const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' ')]
+        const haystack = [family.label, family.key, deriveTraits(shown.palette, t).join(' '),
+            isGloss(shown.palette) ? `gloss ${t('config.themeBadgeGloss', 'Gloss')}` : '']
             .join(' ')
             .toLowerCase();
         return query.split(/\s+/).every((word) => haystack.includes(word));
@@ -231,6 +240,7 @@
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
                         ${segmentButton('light', t('config.themeSegmentLight', 'Light'))}
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
+                        ${segmentButton('gloss', t('config.themeBadgeGloss', 'Gloss'))}
                     </span>
                 </div>
                 <p class="theme-browser-count">${escapeHtml(

@@ -6235,7 +6235,11 @@
     "themePairNone": "A light and a dark half let Quick mode and \"follow system dark mode\" switch between them.",
     "themePairMake": "Make a light/dark pair",
     "themePairSuffix_light": "light",
-    "themePairSuffix_dark": "dark"
+    "themePairSuffix_dark": "dark",
+    "themeCharSheen": "Gloss",
+    "themeBadgeGloss": "Gloss",
+    "glossGlowOffer": "This is a gloss theme, made to be seen with Glow on. Turn Glow to Soft?",
+    "glossGlowOfferAction": "Turn on"
   },
   "colors": {
     "title": "theme customization",

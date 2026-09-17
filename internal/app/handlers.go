@@ -3120,6 +3120,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-surface-step: ` + themeSurfaceStep(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
+    --theme-sheen: ` + formatFloat(clampFloat(tc.Sheen, 0, 1, 0)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
     --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;
     --theme-label-weight: ` + themeLabelWeight(tc.LabelWeight) + `;

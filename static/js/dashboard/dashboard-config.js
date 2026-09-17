@@ -9874,6 +9874,7 @@ class DashboardConfig {
         { prop: 'labelTransform', kind: 'choice', options: ['none', 'uppercase', 'lowercase'], key: 'themeCharLabelCase', label: 'Category title case' },
         { prop: 'labelSpacing', kind: 'range', min: -0.05, max: 0.25, step: 0.01, unit: 'em', key: 'themeCharLabelSpacing', label: 'Category title letter spacing' },
         { prop: 'labelWeight', kind: 'select', options: [400, 500, 600, 700, 800], key: 'themeCharLabelWeight', label: 'Category title weight' },
+        { prop: 'sheen', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharSheen', label: 'Gloss' },
         { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
     ];
 
@@ -11131,7 +11132,32 @@ class DashboardConfig {
         if (randomActive && theme !== previous) {
             this.notify(this.t('config.randomThemeChoiceSavedHint',
                 'Random theme is on — your choice is saved, but the display keeps picking from the pool until you turn random off.'));
+        } else if (theme !== previous) {
+            await this.offerGlowForGloss(theme);
         }
+    }
+
+    /**
+     * A gloss theme with the glow switched off reads matte again, and the glow
+     * is the reader's setting rather than the theme's. So picking one while it
+     * is off asks, once per visit, with the switch in the question.
+     */
+    async offerGlowForGloss(theme) {
+        const s = this.dash.settings || {};
+        if ((s.glowStrength || 'off') !== 'off' || this._glossGlowOffered) return;
+        await this.loadColorsData();
+        const palette = this.themeById(theme);
+        if (!(Number(palette?.sheen) > 0)) return;
+        this._glossGlowOffered = true;
+        this.dash.showNotification?.(
+            this.t('config.glossGlowOffer', 'This is a gloss theme, made to be seen with Glow on. Turn Glow to Soft?'),
+            'info',
+            {
+                durationMs: 12000,
+                actionLabel: this.t('config.glossGlowOfferAction', 'Turn on'),
+                onAction: () => this.setAppearanceSelect('glowStrength', 'soft'),
+            },
+        );
     }
 
     setFontSize(size) {
