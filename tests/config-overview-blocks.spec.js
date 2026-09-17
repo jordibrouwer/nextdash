@@ -55,7 +55,7 @@ async function openOverview(page, health = PROBLEMS, update = null) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
-        ['random-theme-v2', 'find-settings-v1', 'bookmarks-page-filter-v1'].forEach((id) => {
+        ['random-theme-v2', 'bookmarks-page-filter-v1'].forEach((id) => {
             window.DiscoverabilityState?.markSettingPromoSeen?.(id, { persist: false });
         });
     });

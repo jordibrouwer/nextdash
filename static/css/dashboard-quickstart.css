@@ -399,7 +399,7 @@
 }
 
 /* ── Notice cards ───────────────────────────────────────────────────────
-   The bottom-left invitations (analytics, side rail, and any future one) all
+   The bottom-left invitations (analytics, theme browser, and any future one) all
    reuse .quickstart-card for placement and chrome; these are the shared parts
    of the body. Built by NoticeCard.define — see static/js/notice-card.js.
    Previously duplicated per card, which is how they drifted apart. */
@@ -441,10 +441,7 @@
 }
 
 /* Shown only after the invitation has been taken up: the command that does the
-   same thing again, for the one person who has just proved they care about it.
-   Two cards, one shape -- keep them selecting the same rules rather than
-   letting a second copy drift. */
-.side-rail-notice-hint,
+   same thing again, for the one person who has just proved they care about it. */
 .theme-browser-notice-hint {
     margin: var(--space-2, 0.6rem) 0 0;
     width: 100%;
@@ -453,7 +450,6 @@
     line-height: 1.5;
 }
 
-.side-rail-notice-hint kbd,
 .theme-browser-notice-hint kbd {
     font-family: var(--font-family-main);
     font-size: var(--text-2xs, 0.68rem);

@@ -21,14 +21,6 @@
             bodyKey: 'config.randomThemePromoBody',
         },
         {
-            id: 'find-settings-v1',
-            section: 'overview',
-            anchor: 'settingsJump',
-            placement: 'beside',
-            titleKey: 'config.settingsSearchPromoTitle',
-            bodyKey: 'config.settingsSearchPromoBody',
-        },
-        {
             id: 'bookmarks-page-filter-v1',
             section: 'bookmarks',
             anchor: 'bookmarksPageFilter',

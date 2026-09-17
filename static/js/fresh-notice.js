@@ -6,8 +6,8 @@
  * which is the right home for it and the wrong place to meet it. Nothing on the
  * grid suggests that some of these rows could tell you they have moved.
  *
- * So it is offered once, in the corner, the same way the side rail and the
- * spread-across-columns switch are. The card does not turn anything on: it
+ * So it is offered once, in the corner, the same way the other one-time notices
+ * are. The card does not turn anything on: it
  * hands over to FreshTutorial, which explains what the count means, what it
  * costs, and what it deliberately is not — and ends on the switch. A feature
  * whose whole promise is "we will tell you what is new" has been sold badly
@@ -20,8 +20,8 @@
     'use strict';
 
     const PROMO_ID = 'fresh-feeds-v1';
-    // Ahead of the side rail (7s) and spreading (7s), behind the analytics ask
-    // (3.5s) which is a question rather than an offer. The queue serves cards in
+    // Behind the analytics ask (3.5s), which is a question rather than an
+    // offer. The queue serves cards in
     // the order they join it, and joining is what this delay decides — so on an
     // install that has never answered any of them, this is what puts the new
     // feature in front of the announcements from earlier releases.

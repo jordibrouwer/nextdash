@@ -5,8 +5,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * A key in a promo looks like a key.
  *
- * The settings-search promo names three keystrokes, and its copy writes them
- * as <kbd> the way every other key in the app is written. The body was
+ * A promo that names keystrokes writes them as <kbd> the way every other key
+ * in the app is written. The settings-search promo that did is gone, so this
+ * registers one of its own with the same kind of copy. The body was
  * escaped, so what arrived on screen was the literal text "<kbd>Ctrl+Shift+K</kbd>"
  * in the middle of a sentence -- in a popover whose whole job is to teach a
  * shortcut.
@@ -17,7 +18,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * and the button stay escaped -- they carry no markup to begin with.
  */
 
-const PROMO = 'find-settings-v1';
+const PROMO = 'test-kbd-promo';
+const BODY = 'Press <kbd>Ctrl+Shift+K</kbd> (<kbd>Cmd+Shift+K</kbd> on Mac). <kbd>Ctrl+K</kbd> opens quick actions only.';
 
 async function raisePromo(page) {
     await page.setViewportSize({ width: 1500, height: 1000 });
@@ -32,12 +34,20 @@ async function raisePromo(page) {
 
     // A promo holds off while onboarding is unfinished, which is how the
     // fixture starts. Say it is done, then ask for this one by name.
-    await page.evaluate((id) => {
+    await page.evaluate(([id, body]) => {
+        const lang = window.dashboardInstance.language;
+        lang.translations.config = lang.translations.config || {};
+        lang.translations.config.testKbdPromoTitle = 'Keys';
+        lang.translations.config.testKbdPromoBody = body;
+        window.ConfigSettingPromo.registerAll([{
+            id, section: 'overview', anchor: 'settingsJump', placement: 'beside',
+            titleKey: 'config.testKbdPromoTitle', bodyKey: 'config.testKbdPromoBody',
+        }]);
         window.dashboardInstance.settings.onboardingCompleted = true;
         window.dashboardInstance.onboardingStartedInSession = false;
         window.ConfigSettingPromo?.resetSeen?.(id, { persist: false });
         window.ConfigSettingPromo?.scheduleForSection?.('overview');
-    }, PROMO);
+    }, [PROMO, BODY]);
     await page.waitForSelector('.config-setting-promo-body', { timeout: 20_000 });
 }
 
