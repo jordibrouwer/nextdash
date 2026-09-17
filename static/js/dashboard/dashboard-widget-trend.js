@@ -168,10 +168,21 @@
     }
 
     async function render(body, widget, dash) {
-        body.replaceChildren();
+        /*
+         * Only the latest draw lands.
+         *
+         * A tile is drawn on load and again when the badge's report arrives,
+         * and both wait on the trend fetch. Emptying before the wait meant each
+         * appended its own block after it -- two identical tiles, one under the
+         * other. The body is emptied after the wait, by the newest draw only.
+         */
+        const token = Symbol('trend-render');
+        body._trendRender = token;
         const days = Math.min(Math.max(Number(widget?.config?.days) || 30, 7), 90);
-        const summary = dash?.healthSummary || null;
         const all = await load(dash);
+        if (body._trendRender !== token) return;
+        body.replaceChildren();
+        const summary = dash?.healthSummary || null;
 
         if (!summary && !all) {
             const waiting = document.createElement('p');

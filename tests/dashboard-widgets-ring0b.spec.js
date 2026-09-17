@@ -149,6 +149,35 @@ test.describe('uptime, trend, inbox and neglected', () => {
         expect(rendered.hasLine).toBe(true);
     });
 
+    test('two draws of the trend tile that overlap leave one tile', async ({ page }) => {
+        await open(page);
+        const blocks = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            delete d._widgetTrend;
+            // A slow trend answer, so the load-time draw and the one the
+            // badge's report triggers are both waiting on it at once.
+            const realFetch = window.fetch;
+            window.fetch = async (url, opts) => {
+                if (String(url).includes('/api/health/trend')) {
+                    await new Promise((r) => setTimeout(r, 300));
+                    return new Response(JSON.stringify({ points: [
+                        { t: Date.now() - 864e5, n: 10, h: 9 }, { t: Date.now(), n: 10, h: 10 },
+                    ] }), { headers: { 'Content-Type': 'application/json' } });
+                }
+                return realFetch(url, opts);
+            };
+            const body = document.createElement('div');
+            const widget = { type: 'trend', config: { days: 30 } };
+            await Promise.all([
+                window.DashboardWidgets.trend(body, widget, d),
+                window.DashboardWidgets.trend(body, widget, d),
+            ]);
+            window.fetch = realFetch;
+            return body.querySelectorAll('.dashboard-widget-trend').length;
+        });
+        expect(blocks).toBe(1);
+    });
+
     test('the inbox tile leads with how long the oldest has waited', async ({ page }) => {
         await open(page);
         const rendered = await page.evaluate(async () => {
