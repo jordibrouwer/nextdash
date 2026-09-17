@@ -348,7 +348,6 @@ class SearchComponent {
                 if (mode === 'command') {
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
-                    this.commandsComponent.expandAllGroups();
                 } else if (mode === 'finder') {
                     this.currentQuery = this.finderModeQuery();
                 } else if (mode === 'tag') {
@@ -564,7 +563,6 @@ class SearchComponent {
             this.selectedMatchIndex = 0;
         }
         this.commandsComponent.resetState();
-        if (prefix === ':') this.commandsComponent.expandAllGroups();
         this.currentQuery = prefix === '?' ? this.finderModeQuery() : prefix;
         this._beginSearchSession();
         this.updateSearch();
@@ -927,7 +925,6 @@ class SearchComponent {
             const next = this._modeEntryQuery(key);
             if (next !== this.currentQuery) {
                 this.commandsComponent.resetState();
-                if (next.startsWith(':')) this.commandsComponent.expandAllGroups();
                 this.currentQuery = next;
                 this.selectedMatchIndex = 0;
                 this.updateSearch();
@@ -993,8 +990,6 @@ class SearchComponent {
                 : null;
             if (selected && selected.name) {
                 this.commandsComponent.contextBookmark = selected;
-                // Auto-expand the Bookmarks group so context commands are immediately visible
-                this.commandsComponent.expandedGroups.add('bookmarks');
             }
             this.addToQuery(':');
             return;
@@ -2273,14 +2268,13 @@ class SearchComponent {
             }
         } else if (this.currentQuery.startsWith(':')) {
             /*
-             * The bare `:` answers with the commands, not with five closed
-             * doors. Whichever way the scope was reached -- the key, the rail,
-             * a "more" row -- the groups start open; collapsing one stays the
-             * reader's, so this only acts when none is open at all.
+             * The bare `:` answers with the five headings, closed.
+             *
+             * They were opened for you, which put sixty commands on screen
+             * before anything had been asked for -- a list to scroll rather
+             * than a menu to read. Opening one is a keystroke, and typing past
+             * the colon skips the headings altogether.
              */
-            if (this.currentQuery.trim() === ':' && this.commandsComponent.expandedGroups?.size === 0) {
-                this.commandsComponent.expandAllGroups();
-            }
             // Handle commands
             this.searchMatches = this.commandsComponent.handleCommand(this.currentQuery);
         } else if (this.currentQuery.startsWith('?')) {
@@ -2538,7 +2532,6 @@ class SearchComponent {
             .replace(/^[:?*/]/, '')
             .trim();
         this.commandsComponent.resetState();
-        if (scope.id === 'commands') this.commandsComponent.expandAllGroups();
         if (scope.id === 'all') {
             this.currentQuery = word;
         } else if (scope.id === 'recent') {

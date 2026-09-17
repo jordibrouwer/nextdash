@@ -126,21 +126,25 @@ test('tab walks the rail and keeps the word', async ({ page }) => {
     expect((await state()).scope, 'shift+tab did not walk back').toBe('all');
 });
 
-test('the commands scope opens on the commands, not on closed doors', async ({ page }) => {
+test('the commands scope opens on its headings, closed', async ({ page }) => {
     await openSearch(page);
     await page.keyboard.press(':');
     await page.waitForTimeout(400);
 
     const rows = await page.evaluate(() => ({
         headers: document.querySelectorAll('.search-command-group-header').length,
+        open: [...document.querySelectorAll('.search-command-group-arrow')]
+            .filter((el) => el.textContent.trim() === '▾').length,
         commands: [...document.querySelectorAll('.search-match')]
             .filter((el) => (el.querySelector('.search-match-shortcut')?.textContent || '').startsWith(':')).length,
     }));
 
     expect(rows.headers, 'the groups are gone entirely').toBeGreaterThan(0);
-    // It used to be five headings and nothing else: two keystrokes before a
-    // single command was on screen.
-    expect(rows.commands, 'the bare colon still answers with closed groups').toBeGreaterThan(10);
+    // Sixty commands unfolded before anything was asked for is a list to
+    // scroll, not a menu to read: the headings say what is behind them and
+    // opening one is a keystroke.
+    expect(rows.open, 'a group was open before it was asked for').toBe(0);
+    expect(rows.commands, 'the commands are on screen unasked').toBe(0);
 });
 
 test('! opens the cheat sheet from inside the panel', async ({ page }) => {

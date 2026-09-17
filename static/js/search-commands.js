@@ -64,7 +64,9 @@ class SearchCommandsComponent {
                 commands: ['config', 'backup', 'trash', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
-        // Track which groups are expanded (none by default)
+        // Which groups are open. None is, until the reader opens one: the
+        // palette answers a bare `:` with its five headings rather than with
+        // every command it has.
         this.expandedGroups = new Set();
 
         // Bookmark pre-selected via keyboard when : was pressed; used to pre-fill context commands
@@ -192,19 +194,6 @@ class SearchCommandsComponent {
         this.resetTransientState();
         this.expandedGroups.clear();
         this.contextBookmark = null;
-    }
-
-    /**
-     * Open every group.
-     *
-     * A bare `:` used to answer with five closed headings: two keystrokes
-     * before a single command was on screen, in a panel whose whole point is
-     * that one keystroke is enough. The headings stay -- they are what says
-     * which kind of thing each command touches -- but they start open, and
-     * collapsing one is still the reader's.
-     */
-    expandAllGroups() {
-        this.commandGroups.forEach((group) => this.expandedGroups.add(group.id));
     }
 
     resetTransientState() {
