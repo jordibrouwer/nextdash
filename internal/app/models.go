@@ -424,7 +424,7 @@ type Settings struct {
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
 	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
-	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 10s
+	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
@@ -2967,7 +2967,7 @@ The header carried them beside the pages and the destinations, and with six or
 seven of them the band read as clutter. They can stand in a dock at the bottom
 (the old button bar's place), in a column on either side, or behind one menu
 in the header. Every install starts with a column on the right that slides
-into its edge after ten seconds: out of the page's way, and back the moment
+into its edge after two seconds: out of the page's way, and back the moment
 the pointer touches that edge. An install that predates this default is moved
 there once (see ActionBarRightMigrated).
 */
@@ -2982,7 +2982,7 @@ const (
 	// An unknown stored value falls back to where the actions always were.
 	fallbackActionBar = actionBarHeader
 	// Seconds before the default right column slides away.
-	defaultActionBarAutoHide = 10
+	defaultActionBarAutoHide = 2
 )
 
 const (
@@ -4098,7 +4098,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ActionKeysOffMigrated = true
 		}
 		/*
-		 * The action bar to the right column, sliding after ten seconds, once.
+		 * The action bar to the right column, sliding after two seconds, once.
 		 *
 		 * The same default a fresh install starts with. A position or delay
 		 * chosen after this is kept.

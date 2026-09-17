@@ -4,7 +4,7 @@ import "testing"
 
 // The actions can leave the header: a dock at the bottom, a column on either
 // side, or one menu. Every install starts with the right column sliding away
-// after ten seconds; an existing install is moved there once, and a choice
+// after two seconds; an existing install is moved there once, and a choice
 // made after that is kept.
 
 func TestFreshInstallPutsTheActionsInASlidingRightColumn(t *testing.T) {
@@ -12,8 +12,8 @@ func TestFreshInstallPutsTheActionsInASlidingRightColumn(t *testing.T) {
 	t.Chdir(t.TempDir())
 
 	s := NewStore().GetSettings()
-	if s.ActionBarPosition != "right" || s.ActionBarAutoHideSeconds != 10 {
-		t.Fatalf("fresh install: position %q after %ds, want right after 10s", s.ActionBarPosition, s.ActionBarAutoHideSeconds)
+	if s.ActionBarPosition != "right" || s.ActionBarAutoHideSeconds != 2 {
+		t.Fatalf("fresh install: position %q after %ds, want right after 2s", s.ActionBarPosition, s.ActionBarAutoHideSeconds)
 	}
 }
 
@@ -21,15 +21,15 @@ func TestExistingInstallMovesTheActionsToTheRightOnce(t *testing.T) {
 	for name, seed := range map[string]map[string]any{
 		"never answered": {"currentPage": 1},
 		"stored header":  {"currentPage": 1, "actionBarPosition": "header", "actionBarAutoHideSeconds": 0},
-		"stored bottom":  {"currentPage": 1, "actionBarPosition": "bottom", "actionBarAutoHideSeconds": 2},
+		"stored bottom":  {"currentPage": 1, "actionBarPosition": "bottom", "actionBarAutoHideSeconds": 30},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 			t.Chdir(t.TempDir())
 			seedSettingsFile(t, seed)
 			s := NewStore().GetSettings()
-			if s.ActionBarPosition != "right" || s.ActionBarAutoHideSeconds != 10 {
-				t.Fatalf("existing install: position %q after %ds, want right after 10s", s.ActionBarPosition, s.ActionBarAutoHideSeconds)
+			if s.ActionBarPosition != "right" || s.ActionBarAutoHideSeconds != 2 {
+				t.Fatalf("existing install: position %q after %ds, want right after 2s", s.ActionBarPosition, s.ActionBarAutoHideSeconds)
 			}
 		})
 	}

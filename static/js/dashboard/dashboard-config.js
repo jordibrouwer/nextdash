@@ -11546,7 +11546,7 @@ class DashboardConfig {
         headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
-        actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 10 },
+        actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
         showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
