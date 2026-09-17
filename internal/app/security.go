@@ -1,6 +1,7 @@
 package app
 
 import (
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -161,7 +162,70 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		AccentSuccess:       sanitizeCSSColor(tc.AccentSuccess),
 		AccentWarning:       sanitizeCSSColor(tc.AccentWarning),
 		AccentError:         sanitizeCSSColor(tc.AccentError),
+		AccentInfo:          sanitizeOptionalCSSColor(tc.AccentInfo),
+
+		// Character. These were dropped here, so every save of the colours --
+		// one edit in the theme editor -- stripped them from every theme in
+		// colors.json. Kept now, each held to what its renderer accepts, with
+		// zero still meaning "derive it".
+		SurfaceStep:    keepInRange(tc.SurfaceStep, 0.6, 1.8),
+		SurfaceAlpha:   keepSignedInRange(tc.SurfaceAlpha, 0.3, 1),
+		SurfaceBlur:    keepInRange(tc.SurfaceBlur, 0, 32),
+		SurfaceGlow:    keepSignedInRange(tc.SurfaceGlow, 0, 1),
+		RadiusScale:    keepInRange(tc.RadiusScale, 0.05, 1.6),
+		LabelTransform: keepLabelTransform(tc.LabelTransform),
+		LabelSpacing:   keepLabelSpacing(tc.LabelSpacing),
+		LabelWeight:    keepLabelWeight(tc.LabelWeight),
 	}
+}
+
+// keepInRange holds a declared number inside its range; unset (zero or less,
+// or not a number) stays unset.
+func keepInRange(v, min, max float64) float64 {
+	if math.IsNaN(v) || math.IsInf(v, 0) || v <= 0 {
+		return 0
+	}
+	return math.Min(math.Max(v, min), max)
+}
+
+// keepSignedInRange is keepInRange for the two fields where a negative number
+// is an answer -- "solid" for SurfaceAlpha, "no glow" for SurfaceGlow -- and
+// is kept as -1.
+func keepSignedInRange(v, min, max float64) float64 {
+	if !math.IsNaN(v) && !math.IsInf(v, 0) && v < 0 {
+		return -1
+	}
+	return keepInRange(v, min, max)
+}
+
+func keepLabelTransform(value string) string {
+	switch word := strings.ToLower(strings.TrimSpace(value)); word {
+	case "none", "uppercase", "lowercase":
+		return word
+	default:
+		return ""
+	}
+}
+
+// keepLabelSpacing stores what themeLabelSpacing would render, and nothing for
+// a value it would throw away.
+func keepLabelSpacing(value string) string {
+	raw := strings.ToLower(strings.TrimSpace(value))
+	if raw == "" {
+		return ""
+	}
+	rendered := themeLabelSpacing(raw)
+	if rendered == "normal" && raw != "normal" {
+		return ""
+	}
+	return rendered
+}
+
+func keepLabelWeight(weight int) int {
+	if weight < 400 || weight > 800 {
+		return 0
+	}
+	return weight - weight%100
 }
 
 func sanitizeColorTheme(c ColorTheme) ColorTheme {

@@ -4882,12 +4882,53 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 			stored[themeID] = defaults
 			continue
 		}
-		if strings.TrimSpace(current.AccentPrimary) == "" && defaults.AccentPrimary != "" {
-			current.AccentPrimary = defaults.AccentPrimary
-			stored[themeID] = current
-		}
+		stored[themeID] = fillThemeCharacter(current, defaults)
 	}
 	return stored
+}
+
+/*
+fillThemeCharacter puts back what a built-in theme ships and the stored copy
+lacks: the primary and info accents and every character field.
+
+Only the empty ones. A colour someone changed stays theirs. The character
+fields had no editor until now, so an empty one on disk is either a file from
+before the field existed or one that a colours save stripped -- saves dropped
+them until this release -- and in both cases the shipped value is the one the
+reader never chose to give up.
+*/
+func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
+	if strings.TrimSpace(current.AccentPrimary) == "" {
+		current.AccentPrimary = defaults.AccentPrimary
+	}
+	if strings.TrimSpace(current.AccentInfo) == "" {
+		current.AccentInfo = defaults.AccentInfo
+	}
+	if current.SurfaceStep == 0 {
+		current.SurfaceStep = defaults.SurfaceStep
+	}
+	if current.SurfaceAlpha == 0 {
+		current.SurfaceAlpha = defaults.SurfaceAlpha
+	}
+	if current.SurfaceBlur == 0 {
+		current.SurfaceBlur = defaults.SurfaceBlur
+	}
+	if current.SurfaceGlow == 0 {
+		current.SurfaceGlow = defaults.SurfaceGlow
+	}
+	if current.RadiusScale == 0 {
+		current.RadiusScale = defaults.RadiusScale
+	}
+	if strings.TrimSpace(current.LabelTransform) == "" {
+		current.LabelTransform = defaults.LabelTransform
+	}
+	if strings.TrimSpace(current.LabelSpacing) == "" {
+		current.LabelSpacing = defaults.LabelSpacing
+	}
+	if current.LabelWeight == 0 {
+		current.LabelWeight = defaults.LabelWeight
+	}
+	return current
 }
 
 func (fs *FileStore) SaveColors(colors ColorTheme) error {
