@@ -11510,7 +11510,7 @@ class DashboardConfig {
         timeFormat: { info: ['timeFormatInfoTitle', 'timeFormatInfoMessage'], def: '24h' },
         showDate: { info: ['showDateInfoTitle', 'showDateInfoMessage'], def: true },
         showTime: { info: ['showTimeInfoTitle', 'showTimeInfoMessage'], def: true },
-        showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: false },
+        showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: true },
         weatherSource: { info: ['weatherSourceInfoTitle', 'weatherSourceInfoMessage'], def: 'manual' },
         weatherUnit: { info: ['weatherUnitInfoTitle', 'weatherUnitInfoMessage'], def: 'celsius' },
         weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'], def: '' },

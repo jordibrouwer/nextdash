@@ -1372,7 +1372,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTime:                  true,
 			TimeFormat:                "24h",
 			DateFormat:                "short-slash",
-			ShowWeatherWithDate:       false,
+			ShowWeatherWithDate:       true,
 			WeatherSource:             "manual",
 			WeatherLocation:           "",
 			WeatherUnit:               "celsius",
@@ -3553,7 +3553,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowTime:                        true,
 			TimeFormat:                      "24h",
 			DateFormat:                      "short-slash",
-			ShowWeatherWithDate:             false,
+			ShowWeatherWithDate:             true,
 			WeatherSource:                   "manual",
 			WeatherLocation:                 "",
 			WeatherUnit:                     "celsius",
@@ -4239,6 +4239,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["timeFormat"]; !ok || (settings.TimeFormat != "24h" && settings.TimeFormat != "12h") {
 			settings.TimeFormat = "24h"
 		}
+		// Absent means an install from before the weather line, not a request
+		// for one: a fresh install starts with it on (see the constructors
+		// above), an upgrade keeps the dashboard it had.
 		if _, ok := rawSettings["showWeatherWithDate"]; !ok {
 			settings.ShowWeatherWithDate = false
 		}

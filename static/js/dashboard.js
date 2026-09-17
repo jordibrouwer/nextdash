@@ -136,7 +136,7 @@ class Dashboard {
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
             dateFormat: 'short-slash',
-            showWeatherWithDate: false,
+            showWeatherWithDate: true,
             weatherSource: 'manual',
             weatherLocation: '',
             weatherUnit: 'celsius',

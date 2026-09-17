@@ -211,8 +211,25 @@ func TestFreshInstallPutsTheClockOnItsOwnLine(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 
-	if got := NewStore().GetSettings().HeaderClockPlacement; got != "classic" {
-		t.Fatalf("fresh install: headerClockPlacement = %q, want classic", got)
+	settings := NewStore().GetSettings()
+	if settings.HeaderClockPlacement != "classic" {
+		t.Fatalf("fresh install: headerClockPlacement = %q, want classic", settings.HeaderClockPlacement)
+	}
+	// The weather joins that line: the card in the corner asks for a town, and
+	// a town with the line switched off shows nothing.
+	if !settings.ShowWeatherWithDate {
+		t.Fatal("fresh install: showWeatherWithDate is false")
+	}
+}
+
+// An install from before the weather line keeps the dashboard it had.
+func TestExistingInstallKeepsTheWeatherLineOff(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	writeSurfaceSettingsFile(t, map[string]any{"currentPage": 1})
+
+	if NewStore().GetSettings().ShowWeatherWithDate {
+		t.Fatal("existing install: showWeatherWithDate is true")
 	}
 }
 
