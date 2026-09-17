@@ -12017,7 +12017,7 @@ class DashboardConfig {
                 bulk: 'chrome',
                 controls: [
                     { field: 'actionBarPosition', type: 'select', special: 'chrome',
-                        label: t('config.actionBarPositionLabel', 'Where the buttons stand'),
+                        label: t('config.actionBarPositionLabel', 'Where the fixed buttons stand'),
                         options: [
                             opt('bottom', t('config.actionBarBottom', 'In a dock at the bottom')),
                             opt('left', t('config.actionBarLeft', 'In a column on the left')),
