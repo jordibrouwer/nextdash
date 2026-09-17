@@ -4111,12 +4111,96 @@ class SearchCommandsComponent {
         return this.removeCommandHandler.handle(args, fullQuery);
     }
 
+    /*
+     * Light or dark, and whether the clock decides.
+     *
+     * It used to be the follow-the-system switch alone, which is the setting
+     * and not the thing: `:dark` reads as "make it dark", and did not. The
+     * first two rows are the halves of the theme you are on; the two under
+     * them are the switch, saying which way it stands.
+     *
+     *   :dark            all four, the current answers ticked
+     *   :dark dark|light the half, now
+     *   :dark auto on|off  whether it follows the system
+     */
     handleDarkCommand(args) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
-        const enabled = dashboard.settings.autoDarkMode === true;
-        const apply = (value) => this.setAutoDarkMode(dashboard, value);
-        return this._handleSimpleToggle(args, { shortcut: ':DARK', prefix: 'dark', enabled, apply });
+        const t = (key, fb) => this._t(key, fb);
+        const first = (args[0] || '').toLowerCase();
+        const second = (args[1] || '').toLowerCase();
+        const auto = dashboard.settings.autoDarkMode === true;
+        const theme = String(dashboard.settings.theme || 'dark');
+        const isDark = !(theme.endsWith('-light') || theme === 'light');
+
+        const autoRows = () => {
+            const states = second === 'on' ? [true] : second === 'off' ? [false] : [true, false];
+            return states.map((on) => ({
+                ...this._markCurrentRow(on
+                    ? t('commands.darkAutoOn', 'Follow the system, light by day and dark by night')
+                    : t('commands.darkAutoOff', 'Keep the half I picked, whatever the system says'), auto === on),
+                shortcut: ':DARK',
+                type: 'command',
+                stateId: `dark:auto:${on}`,
+                action: () => this.setAutoDarkMode(dashboard, on),
+            }));
+        };
+
+        const halfRow = (wantsDark) => ({
+            ...this._markCurrentRow(wantsDark
+                ? t('config.themeDark', 'Dark')
+                : t('config.themeLight', 'Light'), isDark === wantsDark),
+            shortcut: ':DARK',
+            type: 'command',
+            stateId: `dark:half:${wantsDark ? 'dark' : 'light'}`,
+            action: () => this._applyThemeHalf(wantsDark),
+        });
+
+        if (first === 'auto' || first === 'system' || first === 'on' || first === 'off') {
+            // `:dark on|off` answered the switch before this command had halves,
+            // and a reader who learnt it should not find it doing something else.
+            if (first === 'on' || first === 'off') {
+                return [{
+                    ...this._markCurrentRow(first === 'on'
+                        ? t('commands.darkAutoOn', 'Follow the system, light by day and dark by night')
+                        : t('commands.darkAutoOff', 'Keep the half I picked, whatever the system says'),
+                    auto === (first === 'on')),
+                    shortcut: ':DARK',
+                    type: 'command',
+                    stateId: `dark:auto:${first}`,
+                    action: () => this.setAutoDarkMode(dashboard, first === 'on'),
+                }];
+            }
+            return autoRows();
+        }
+        if (first === 'dark') return [halfRow(true)];
+        if (first === 'light') return [halfRow(false)];
+        if (first) return [];
+
+        return [halfRow(true), halfRow(false), ...autoRows()];
+    }
+
+    /**
+     * Switch to the other half of the theme you are on.
+     *
+     * The family's own pair, not the two legacy ids: a reader on Tarnished
+     * Brass wants its light half, not "light". Through the config view's
+     * quick-mode path, which knows about custom themes with only one half and
+     * about the random-theme rotation.
+     */
+    _applyThemeHalf(wantsDark) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        const stateId = `dark:half:${wantsDark ? 'dark' : 'light'}`;
+        if (dashboard.config?.setQuickMode) {
+            void dashboard.config.setQuickMode(wantsDark ? 'dark' : 'light');
+            return this._paletteRefresh(stateId);
+        }
+        const current = String(dashboard.settings.theme || 'dark');
+        const swapped = window.ThemeUtils?.getPairedThemeVariant?.(current, wantsDark);
+        const next = !swapped || swapped === current ? (wantsDark ? 'dark' : 'light') : swapped;
+        void this.themeCommandHandler.applyTheme(next);
+        return this._paletteRefresh(stateId);
     }
 
     handleTitleCommand(args) {

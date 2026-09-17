@@ -125,6 +125,33 @@ test('the palette names the same tours config does', async ({ page }) => {
     expect(lists.palette.slice().sort()).toEqual(lists.config.slice().sort());
 });
 
+test(':dark offers both halves and the follow-the-system switch', async ({ page }) => {
+    await open(page);
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        Object.assign(d.settings, { theme: 'tarnished-brass-dark', autoDarkMode: false });
+        await d.saveSettings?.();
+    });
+
+    await palette(page, 'dark');
+    // Two halves and two answers to the switch, with the current ones ticked.
+    await expect(rows(page)).toHaveCount(4);
+    const ticked = await page.locator('.search-match', { hasText: '✓' }).allTextContents();
+    expect(ticked.length, 'nothing said where it stands').toBe(2);
+
+    // The half, now: the family's own light one, not the legacy id.
+    await palette(page, 'dark light');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.settings.theme), { timeout: 10_000 }).toBe('tarnished-brass-light');
+
+    // And the switch, set from the same command.
+    await palette(page, 'dark auto on');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.settings.autoDarkMode), { timeout: 5_000 }).toBe(true);
+});
+
 test(':import goes to the backups panel', async ({ page }) => {
     await open(page);
     await palette(page, 'import');
