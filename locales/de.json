@@ -2497,7 +2497,6 @@
     "weatherSourceLabel": "Standortquelle:",
     "weatherSourceManual": "Manueller Ort",
     "weatherSourceBrowser": "Browser-Standort verwenden",
-    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "Wetter-Standort:",
     "weatherLocationPlaceholder": "Stadtname (z. B. Leiden)",
     "weatherUnitCelsius": "Celsius (°C)",
@@ -5641,7 +5640,9 @@
     "themeBadgeGloss": "Glanz",
     "glossGlowOffer": "Dies ist ein Glanz-Theme, gemacht, um mit aktiviertem Leuchten gesehen zu werden. Leuchten auf Sanft stellen?",
     "glossGlowOfferAction": "Einschalten",
-    "headerClockClassic": "In einer eigenen Zeile, Name darunter"
+    "headerClockClassic": "In einer eigenen Zeile, Name darunter",
+    "overviewNewsSiteOff": "Site-News sind ausgeschaltet.",
+    "overviewNewsSiteUnavailable": "Site-News sind nicht verfügbar."
   },
   "colors": {
     "title": "themenanpassung",

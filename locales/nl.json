@@ -2497,7 +2497,6 @@
     "weatherSourceLabel": "Locatiebron:",
     "weatherSourceManual": "Handmatige locatie",
     "weatherSourceBrowser": "Browserlocatie gebruiken",
-    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "Weerlocatie:",
     "weatherLocationPlaceholder": "Stadsnaam (bv. Leiden)",
     "weatherUnitCelsius": "Celsius (°C)",
@@ -5641,7 +5640,9 @@
     "themeBadgeGloss": "Glans",
     "glossGlowOffer": "Dit is een glansthema, gemaakt om te zien met Gloed aan. Gloed op Zacht zetten?",
     "glossGlowOfferAction": "Aanzetten",
-    "headerClockClassic": "Op hun eigen regel, naam eronder"
+    "headerClockClassic": "Op hun eigen regel, naam eronder",
+    "overviewNewsSiteOff": "Sitenieuws staat uit.",
+    "overviewNewsSiteUnavailable": "Sitenieuws is niet beschikbaar."
   },
   "colors": {
     "title": "thema-aanpassing",

@@ -2497,7 +2497,6 @@
     "weatherSourceLabel": "Origen de la ubicación:",
     "weatherSourceManual": "Ubicación manual",
     "weatherSourceBrowser": "Usar la ubicación del navegador",
-    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "Ubicación del tiempo:",
     "weatherLocationPlaceholder": "Nombre de la ciudad (p. ej. Leiden)",
     "weatherUnitCelsius": "Celsius (°C)",
@@ -5641,7 +5640,9 @@
     "themeBadgeGloss": "Brillo",
     "glossGlowOffer": "Este es un tema con brillo, pensado para verse con el resplandor activado. ¿Poner el resplandor en Suave?",
     "glossGlowOfferAction": "Activar",
-    "headerClockClassic": "En su propia línea, con el nombre debajo"
+    "headerClockClassic": "En su propia línea, con el nombre debajo",
+    "overviewNewsSiteOff": "Las novedades del sitio están desactivadas.",
+    "overviewNewsSiteUnavailable": "Las novedades del sitio no están disponibles."
   },
   "colors": {
     "title": "personalización del tema",

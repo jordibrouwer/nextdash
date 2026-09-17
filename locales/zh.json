@@ -2497,7 +2497,6 @@
     "weatherSourceLabel": "位置来源：",
     "weatherSourceManual": "手动位置",
     "weatherSourceBrowser": "使用浏览器定位",
-    "weatherLocationPlaceholder": "Leiden",
     "weatherLocationLabel": "天气位置：",
     "weatherLocationPlaceholder": "城市名（例如 Leiden）",
     "weatherUnitCelsius": "摄氏度（°C）",
@@ -5641,7 +5640,9 @@
     "themeBadgeGloss": "光泽",
     "glossGlowOffer": "这是一个光泽主题，需要开启辉光才好看。要把辉光调到「柔和」吗？",
     "glossGlowOfferAction": "开启",
-    "headerClockClassic": "单独一行，名称在下方"
+    "headerClockClassic": "单独一行，名称在下方",
+    "overviewNewsSiteOff": "站点新闻已关闭。",
+    "overviewNewsSiteUnavailable": "站点新闻当前不可用。"
   },
   "colors": {
     "title": "主题自定义",
