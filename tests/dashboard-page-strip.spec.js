@@ -51,6 +51,10 @@ async function openWithPages(page, count, width = 1500) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         d.settings.pageSwitcherStyle = 'text';
+        // And the merged row, which is what a strip in the middle needs: the
+        // classic placement an install starts on gives the clock its own line
+        // and drops the tabs to the row beneath.
+        d.settings.headerClockPlacement = 'beside-name';
         await d.saveSettings?.();
         d.setupDOM?.();
     });

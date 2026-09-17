@@ -20,6 +20,16 @@ async function openDashboard(page) {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // This file is about the merged row, which is the beside-name placement.
+    // An install now starts on the classic one, where the clock keeps a line of
+    // its own and the name stands under it -- a different header, with its own
+    // tests further down.
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.headerClockPlacement = 'beside-name';
+        await d.saveSettings?.();
+        d.setupDOM?.();
+    });
 }
 
 const box = (page, selector) => page.evaluate((sel) => {

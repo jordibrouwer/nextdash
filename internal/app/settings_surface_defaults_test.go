@@ -198,3 +198,51 @@ func TestDepthFlatPassRunsOnlyOnce(t *testing.T) {
 		t.Fatalf("the pass ran twice: %q", depth)
 	}
 }
+
+/*
+The clock and the weather stand on a line of their own.
+
+Beside the view's name they shared a row with the page tabs and the actions,
+and the weather was the first thing that row gave up when it ran out of width.
+A fresh install starts on the classic placement; an install that predates it is
+moved there once, and a placement chosen after that is kept.
+*/
+func TestFreshInstallPutsTheClockOnItsOwnLine(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+
+	if got := NewStore().GetSettings().HeaderClockPlacement; got != "classic" {
+		t.Fatalf("fresh install: headerClockPlacement = %q, want classic", got)
+	}
+}
+
+func TestExistingInstallIsMovedOntoTheClassicClockOnce(t *testing.T) {
+	for name, seed := range map[string]map[string]any{
+		"never answered":     {"currentPage": 1},
+		"stored beside-name": {"currentPage": 1, "headerClockPlacement": "beside-name"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+			t.Chdir(t.TempDir())
+			writeSurfaceSettingsFile(t, seed)
+
+			if got := NewStore().GetSettings().HeaderClockPlacement; got != "classic" {
+				t.Fatalf("existing install: headerClockPlacement = %q, want classic", got)
+			}
+		})
+	}
+}
+
+func TestAClockPlacementChosenAfterTheMoveIsKept(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	writeSurfaceSettingsFile(t, map[string]any{
+		"currentPage":                1,
+		"headerClockPlacement":       "own-zone",
+		"headerClockClassicMigrated": true,
+	})
+
+	if got := NewStore().GetSettings().HeaderClockPlacement; got != "own-zone" {
+		t.Fatalf("headerClockPlacement = %q, want the stored own-zone", got)
+	}
+}

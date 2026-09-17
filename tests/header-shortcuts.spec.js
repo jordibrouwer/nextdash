@@ -70,6 +70,15 @@ test('every action button is in the header', async ({ page }) => {
 
 test('the header stays one row, and nothing is pushed off it', async ({ page }) => {
     await openDashboard(page);
+    // The merged row, which is what "one row" means: an install now starts on
+    // the classic placement, where the clock keeps a line of its own on
+    // purpose (dashboard-merged-header.spec.js covers both).
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.headerClockPlacement = 'beside-name';
+        await d.saveSettings?.();
+        d.setupDOM?.();
+    });
 
     const fit = await page.evaluate(() => {
         const actions = document.querySelector('.header-actions');

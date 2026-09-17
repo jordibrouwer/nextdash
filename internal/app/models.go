@@ -425,6 +425,7 @@ type Settings struct {
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
 	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
 	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
+	HeaderClockClassicMigrated      bool   `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
 	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
@@ -1451,6 +1452,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
 			ActionBarRightMigrated:          true,
+			HeaderClockClassicMigrated:      true,
 			FirstRunInstall:                 true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
@@ -2947,7 +2949,7 @@ const (
 	// clock and the weather on a line of their own, with the view's name in
 	// large type under them.
 	headerClockClassic          = "classic"
-	defaultHeaderClockPlacement = headerClockBesideName
+	defaultHeaderClockPlacement = headerClockClassic
 )
 
 /*
@@ -3657,6 +3659,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
 			ActionBarRightMigrated:          true,
+			HeaderClockClassicMigrated:      true,
 			FirstRunInstall:                 true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
@@ -4151,6 +4154,18 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ActionBarRightMigrated = true
 		}
 		/*
+		 * The clock and the weather onto a line of their own, once.
+		 *
+		 * Beside the view's name they shared a row with the page tabs and the
+		 * actions, and on a narrow window that row gave up the weather first --
+		 * the part of it that changes. The same default a fresh install starts
+		 * with; a placement chosen after this is kept.
+		 */
+		if !settings.HeaderClockClassicMigrated {
+			settings.HeaderClockPlacement = headerClockClassic
+			settings.HeaderClockClassicMigrated = true
+		}
+		/*
 		 * Two actions before "+N", not four.
 		 *
 		 * Four was the default every install was written with, so a stored 4
@@ -4382,6 +4397,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
 			settings.ActionKeysOffMigrated = settings.ActionKeysOffMigrated || stored.ActionKeysOffMigrated
 			settings.ActionBarRightMigrated = settings.ActionBarRightMigrated || stored.ActionBarRightMigrated
+			settings.HeaderClockClassicMigrated = settings.HeaderClockClassicMigrated || stored.HeaderClockClassicMigrated
 			settings.FirstRunInstall = settings.FirstRunInstall || stored.FirstRunInstall
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
