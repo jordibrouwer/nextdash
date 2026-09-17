@@ -501,7 +501,6 @@ type Settings struct {
 	SortMethod                     string                       `json:"sortMethod,omitempty"`                     // Legacy global sort (migrated to per-category sortMode)
 	CategorySortModes              map[string]map[string]string `json:"categorySortModes,omitempty"`              // Per-page sort for uncategorized/orphan categories
 	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
-	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
 	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
@@ -656,29 +655,20 @@ type Settings struct {
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
-	HealthCheckTimeoutSeconds      int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
-	QuickStart                     QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
-	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
-	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
-	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
-	ConfigStatsTourCompleted       bool                             `json:"configStatsTourCompleted"`
-	ConfigCategoriesTourCompleted  bool                             `json:"configCategoriesTourCompleted"`
-	ConfigTagsTourCompleted        bool                             `json:"configTagsTourCompleted"`
-	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
-	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
-	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	BackgroundType                 string                           `json:"backgroundType"`     // "auto", "none", "gradient", "image"
-	BackgroundGradient             string                           `json:"backgroundGradient"` // preset name used when type="gradient"
-	BackgroundImageUrl             string                           `json:"backgroundImageUrl"` // URL used when type="image"
-	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled                   bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
-	PasteDestination               string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls                bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems                  int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
+	HealthCheckTimeoutSeconds int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	QuickStart                QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
+	BackgroundType            string                           `json:"backgroundType"`                      // "auto", "none", "gradient", "image"
+	BackgroundGradient        string                           `json:"backgroundGradient"`                  // preset name used when type="gradient"
+	BackgroundImageUrl        string                           `json:"backgroundImageUrl"`                  // URL used when type="image"
+	ThemeIconStyling          map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
+	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
+	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
+	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs       bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote   bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks       bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
 	/*
 	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
 	 *
@@ -5297,9 +5287,8 @@ type DuplicateWarning struct {
 }
 
 type DuplicateGroup struct {
-	URL        string        `json:"url"`
-	Bookmarks  []BookmarkRef `json:"bookmarks"`
-	MatchScore float64       `json:"matchScore"`
+	URL       string        `json:"url"`
+	Bookmarks []BookmarkRef `json:"bookmarks"`
 }
 
 type BookmarkRef struct {
