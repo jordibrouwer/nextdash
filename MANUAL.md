@@ -1060,14 +1060,14 @@ A filter with nothing in it hides until it fills; Broken, Content, Duplicates, U
 | `m` | More actions |
 | `i` | Monitor statistics |
 | `f` | Work through |
-| `x` / `X` / `Ctrl+A` | Select one / all the filter shows |
+| `x` / `X` / `Ctrl+A` | Select one / all the filter shows (again to untick) |
 | `n` / `z` | Ignore a condition |
 | `R` or `?` | Reload the report |
 | `Esc` | Close a menu, clear the selection, or leave |
 
 ### 13.3 Working through the list
 
-**Several rows.** Tick rows (or `x`). The bar offers **Set checking**, **Re-check**, **Open**, **Copy links**, **Mute alerts** / **Unmute**, **Follow redirects** (asks each row where it goes now and applies the answers after one confirmation), **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk** and **Delete**. The slow ones run one page at a time behind a progress bar. A row that changed since the report was built is skipped rather than deleted. Ticks survive a filter change; the bar says how many are hidden. On a filtered list, a button switches all visible rows to Periodic or Monitor at once — never on the unfiltered list.
+**Several rows.** Tick rows (or `x`, or **Select all** in the ⋯ menu, which reads **Deselect all** once they all are). The bar offers **Set checking**, **Re-check**, **Open**, **Copy links**, **Mute alerts** / **Unmute**, **Follow redirects** (asks each row where it goes now and applies the answers after one confirmation), **Accept drift**, **Rebuild previews**, **Refresh favicons**, **Save a copy on this disk** and **Delete**. The slow ones run one page at a time behind a progress bar. A row that changed since the report was built is skipped rather than deleted. Ticks survive a filter change; the bar says how many are hidden. On a filtered list, a button switches all visible rows to Periodic or Monitor at once — never on the unfiltered list.
 
 **Work through** (**`f`**) shows one row at a time with large actions: re-check (`p`), open (`Enter`), delete (`d`), **ignore for 30 days** (`z`), skip (`j`) and back (`k`). It starts at the row your cursor is on; `Esc` leaves and keeps your place.
 
@@ -1216,7 +1216,7 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 | `n` | Note |
 | `z` | Snooze |
 | `x` | Tick and move on |
-| `Shift + ↑/↓`, `Ctrl/Cmd + A` | Extend / select all shown |
+| `Shift + ↑/↓`, `Ctrl/Cmd + A` | Extend / select all shown (again to untick) |
 | `d` | Delete (undo in the toast) |
 | `t` | Triage |
 | `R` | Reload |
@@ -1226,7 +1226,7 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 - **Snooze** — three hours, tomorrow, the weekend, next week, or a date (waking at 09:00). A snoozed link is left out of every count; a line under the list says how many are asleep. **Wake now** brings one back.
 - **Notes and tags** — plain-text notes; tags from the capture show as chips, and can be edited from the right-click menu.
 - **Promote** — opens the bookmark form filled in, with every page and category. The inbox entry goes when the bookmark is saved.
-- **Several at once** — promote (to one page), open, copy links, mark read, snooze, delete.
+- **Several at once** — promote (to one page), open, copy links, mark read, snooze, delete. **Select all** in the ⋯ menu ticks every link the filters leave, and reads **Deselect all** once they all are.
 - **Mark all read** and **Clear read** — for the whole (shown) list. Clear read leaves snoozed links alone.
 - **Stats** — how many links were added, promoted and deleted, and how long links wait.
 - **Export and import** — CSV and JSON of what is shown; **Import** reads a JSON export back and skips links already there.

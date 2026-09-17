@@ -295,6 +295,10 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **fix — the health trend widget drew itself twice** when two renders overlapped.
 - **fix — the spread card, the settings-search promo and what was left of the side rail are gone**, along with the button style they described.
 
+### Inbox and health
+
+- **new — Select all in the ⋯ menu of both views.** It ticks every row the current filter shows and reads *Deselect all* once they all are, so the whole bulk bar is reachable without knowing the `Ctrl/Cmd + A` chord. Ticks made under another filter are left alone, the way they already were.
+
 ### Docs
 
 - **docs — the config help and the tips are rewritten for the app as it is**, with an Appearance tab and a Logs tab, and old links to panels that moved still land on them.
