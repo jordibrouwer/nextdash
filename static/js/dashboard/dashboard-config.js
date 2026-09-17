@@ -17147,6 +17147,8 @@ class DashboardConfig {
      * nothing.
      */
     static GUIDED_TOURS = [
+        { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed',
+          whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',

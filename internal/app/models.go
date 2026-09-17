@@ -425,6 +425,7 @@ type Settings struct {
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
 	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
 	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
+	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
@@ -1437,6 +1438,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
 			ActionBarRightMigrated:          true,
+			FirstRunInstall:                 true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -3642,6 +3644,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
 			ActionBarRightMigrated:          true,
+			FirstRunInstall:                 true,
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -4339,6 +4342,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
 			settings.ActionKeysOffMigrated = settings.ActionKeysOffMigrated || stored.ActionKeysOffMigrated
 			settings.ActionBarRightMigrated = settings.ActionBarRightMigrated || stored.ActionBarRightMigrated
+			settings.FirstRunInstall = settings.FirstRunInstall || stored.FirstRunInstall
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated

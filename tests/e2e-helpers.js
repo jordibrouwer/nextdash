@@ -148,6 +148,19 @@ async function markInboxTutorialSeen(page) {
 }
 
 /**
+ * The same, for the one-time "what has changed" tour.
+ * @param {import('@playwright/test').Page} page
+ */
+async function markChangesTourSeen(page) {
+    // The card that offers it lands in the corner nine seconds in, and the
+    // tour itself is a modal: both are furniture in the way of every spec that
+    // is about something else. The tour's own spec puts the tip back.
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.markTipSeen?.('changesTourV1', { persist: false });
+    });
+}
+
+/**
  * The same, for the one-time Widgets tour. Config → Widgets checks the tip
  * before it fetches the tour at all, so marking it here keeps the modal out of
  * every spec that only wants the widgets panel. The tour's own spec puts it
@@ -198,6 +211,7 @@ async function dismissBlockingOverlays(page) {
     await markHealthTutorialSeen(page);
     await markInboxTutorialSeen(page);
     await markWidgetsTutorialSeen(page);
+    await markChangesTourSeen(page);
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -622,6 +636,7 @@ module.exports = {
     markHealthTutorialSeen,
     markInboxTutorialSeen,
     markWidgetsTutorialSeen,
+    markChangesTourSeen,
     dismissBlockingOverlays,
     markConfigSettingPromosSeen,
     prepareDashboardInteraction,
