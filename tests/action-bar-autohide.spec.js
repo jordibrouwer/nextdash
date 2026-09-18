@@ -252,11 +252,44 @@ test('a page switch leaves a slid-away bar where it is', async ({ page }) => {
     }
 });
 
-test('shown again, it keeps its delay before sliding off', async ({ page }) => {
+test('called by the edge, it keeps its delay before sliding off', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    const edge = await page.evaluate(() => document.documentElement.clientWidth - 1);
+    await page.mouse.move(edge, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+    await page.mouse.move(750, 450);
+    await page.waitForTimeout(1200);
+    expect(await hidden(page), 'gone before its time').toBe(false);
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+});
+
+// Called by a key, the bar stays: the reader may be about to use it with the
+// keys. The key again, or the pointer passing over it and leaving, lets it go.
+test("brought back by ' it stays until the key again", async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', actionBarAutoHideSeconds: 2 });
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
     await page.keyboard.press("'");
     await expect.poll(() => hidden(page)).toBe(false);
+    await page.waitForTimeout(3500);
+    expect(await hidden(page), 'slid away although a key called it').toBe(false);
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(true);
+});
+
+test('brought back by Shift+O it goes once the pointer has passed over it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await page.keyboard.press('Shift+O');
+    await expect.poll(() => hidden(page)).toBe(false);
+    await page.waitForTimeout(400);
+    const box = await bar(page).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(3000);
+    expect(await hidden(page), 'slid away under the pointer').toBe(false);
+
+    // Leaving hands it back to the delay.
+    await page.mouse.move(750, 450);
     await page.waitForTimeout(1200);
     expect(await hidden(page), 'gone before its time').toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
