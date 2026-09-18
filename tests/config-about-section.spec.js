@@ -23,12 +23,20 @@ async function openConfig(page, section) {
 }
 
 test.describe('About in the rail', () => {
-    test('sits last, after Help', async ({ page }) => {
+    /*
+     * About stays last. What sits above it changed when Logs became a section of
+     * its own and landed between Help and About, so this checks the order the
+     * rail is built from rather than naming the neighbour by hand.
+     */
+    test('sits last in the rail, in the order SECTIONS gives', async ({ page }) => {
         await openConfig(page, 'overview');
-        const sections = await page.locator('[data-config-section]').evaluateAll((els) =>
-            els.map((e) => e.getAttribute('data-config-section')));
-        expect(sections[sections.length - 1]).toBe('about');
-        expect(sections[sections.length - 2]).toBe('help');
+        const { rail, declared } = await page.evaluate(() => ({
+            rail: [...document.querySelectorAll('[data-config-section]')]
+                .map((e) => e.getAttribute('data-config-section')),
+            declared: window.DashboardConfig.SECTIONS,
+        }));
+        expect(rail[rail.length - 1]).toBe('about');
+        expect(rail).toEqual(declared);
     });
 
     test('Help no longer carries it as a tab', async ({ page }) => {

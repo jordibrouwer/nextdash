@@ -39,6 +39,10 @@ test.describe('config deep links', () => {
     });
 
     test('clicking the header config link opens the view', async ({ page }) => {
+        // Wide enough that the header shows its destinations rather than folding
+        // them behind the overflow control; at the default 1280x720 they are in
+        // the DOM but not clickable.
+        await page.setViewportSize({ width: 1500, height: 950 });
         await page.goto('/');
         await waitReady(page);
         await page.click('a[href="/#config"]');

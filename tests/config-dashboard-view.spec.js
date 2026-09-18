@@ -12,6 +12,12 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markHealthTutorialS
 
 /** Load the dashboard and wait until the instance is ready to be driven. */
 async function loadDashboard(page) {
+    // Wide enough that the header shows its destinations rather than folding
+    // them behind the overflow control. The header gained that fold with the
+    // one-row rewrite, and at Playwright's default 1280x720 the config and
+    // health links are in the DOM but not clickable — which is what these tests
+    // then timed out on, waiting for `.config-link a`.
+    await page.setViewportSize({ width: 1500, height: 950 });
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
@@ -149,12 +155,23 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(anchor).toHaveClass(/active/);
         await expect(anchor).toHaveAttribute('aria-current', 'page');
 
-        // The active look is the tab treatment, not just a class.
-        const active = await page.evaluate(() => {
+        /*
+         * The active look is drawn, not just a class — but which way it is drawn
+         * is now a setting. Plain underlines whatever is current; plated gives
+         * each control its own filled box, which is what this used to assert
+         * outright. A fresh install is plain, so demanding a background failed on
+         * a header that was marking the icon correctly.
+         */
+        // Polled, not read once: the class lands before the header repaints, so a
+        // single read caught the icon after it was marked and before it was
+        // drawn, and reported transparent for a marker that appears a tick later.
+        await expect.poll(async () => page.evaluate(() => {
             const s = getComputedStyle(document.querySelector('.config-link a'));
-            return { bg: s.backgroundColor, underline: s.borderBottomColor };
-        });
-        expect(active.bg).not.toBe('rgba(0, 0, 0, 0)');
+            const plated = s.backgroundColor !== 'rgba(0, 0, 0, 0)';
+            const underlined = s.borderBottomWidth !== '0px'
+                && s.borderBottomColor !== 'rgba(0, 0, 0, 0)';
+            return plated || underlined;
+        }), { timeout: 5_000 }).toBe(true);
 
         // Leaving the view clears it again.
         await page.locator('body').press('Escape');
@@ -1093,16 +1110,33 @@ test.describe('sub-tab deep links', () => {
         await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeChecked();
     });
 
-    test('config header breadcrumb reflects section and bookmarks page filter', async ({ page }) => {
+    /*
+     * The trail is gone on purpose. Config is drawn as a list view now: the rail
+     * marks the section, the title names it, and the line under the title is the
+     * section's own description rather than a path repeating what both already
+     * say. This checks the three that carry that information, instead of the
+     * paragraph that used to hold a breadcrumb and now holds prose.
+     */
+    test('the section, not a breadcrumb, is what says where you are', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         const pageId = await page.evaluate(() => String(window.dashboardInstance.pages[0]?.id || ''));
         await page.click(`#config-bm-rail [data-bm-rail="page"][data-value="${pageId}"]`);
+
+        // No trail, anywhere.
         await expect(page.locator('.config-view-breadcrumb')).toHaveCount(0);
-        // The dashboard heading names the view; the trail sits in the panel head
-        // with the section it describes, and carries the page filter.
+        await expect.poll(async () => page.locator('.config-view-head-breadcrumb').textContent())
+            .not.toMatch(/›/);
+
+        // The dashboard heading still names the view.
         await expect(page.locator('.title')).toHaveText('config');
-        await expect.poll(async () => page.locator('.config-view-head-breadcrumb').textContent()).toMatch(/bookmarks/i);
-        await expect.poll(async () => page.locator('.config-view-head-breadcrumb').textContent()).not.toBe('config › bookmarks');
+        // The panel head names the section.
+        await expect(page.locator('.config-view-section-title')).toHaveText(/bookmarks/i);
+        // And the rail marks it as the one you are on.
+        await expect(page.locator('[data-config-section="bookmarks"].is-active, [data-config-section="bookmarks"][aria-current]'))
+            .toHaveCount(1);
+        // The page filter is applied, which is what the trail used to report.
+        await expect.poll(async () => page.evaluate(
+            () => String(window.dashboardInstance.config.bmPageFilter || ''))).toBe(pageId);
     });
 });

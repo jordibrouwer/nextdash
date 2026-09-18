@@ -15,8 +15,23 @@ async function openConfigSection(page, section) {
 }
 
 test.describe('config keyboard discoverability', () => {
+    /*
+     * Behavior opens on a hub of tiles now, and a hub has no choices, sliders or
+     * sub-tabs for the legend to describe — so the legend appears once a group is
+     * open, which is where those keys apply. Opening one is part of the test
+     * rather than a workaround for it.
+     */
     test('form sections show a keyboard legend footer', async ({ page }) => {
         await openConfigSection(page, 'behavior');
+        // The hub opens on `.hub-start`; a tile's own button is what opens a group.
+        await expect(page.locator('#config-view-body .hub-start')).toBeVisible();
+        await page.locator('#config-view-body .hub-tile .hub-tile-main').first().click();
+        // The same three the legend itself waits for: choices, a slider, or a
+        // sub-tab strip. A group may carry any one of them.
+        await expect(page.locator(
+            '#config-view-body .config-choices, #config-view-body .config-range, #config-view-body .config-subtabs',
+        ).first()).toBeVisible();
+
         await expect(page.locator('.config-form-keyboard-legend')).toBeVisible();
         await expect(page.locator('.config-form-keyboard-legend')).toContainText(/Shift\+K|cheat sheet|spiekbriefje/i);
     });
