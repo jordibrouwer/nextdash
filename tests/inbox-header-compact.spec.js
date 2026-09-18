@@ -40,7 +40,13 @@ async function openInbox(page, titles = ['Header A', 'Header B']) {
         }
     }, titles);
 
-    await page.locator('#page-nav-inbox-btn').click();
+    /*
+     * Shift+I rather than the header button: this spec deliberately sets a
+     * narrow window, and the header folds its destinations away below about
+     * 1500px -- the button is in the DOM and 0x0, so a click on it waits its
+     * full timeout. The chord is a real entry point and does not fold.
+     */
+    await page.keyboard.press('Shift+I');
     await expect(page.locator('.inbox-layout')).toBeVisible();
     await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
     await expect.poll(() => page.evaluate(
