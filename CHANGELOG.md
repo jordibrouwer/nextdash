@@ -305,6 +305,7 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **docs — the manual is rewritten for the current app**, and the readme and the compose files list the newer variables.
 - **docs — the help, the tips and the new strings are translated into all six languages**, the strings the other languages still showed in English are gone, and so are the keys nothing uses.
 - **docs — the manual, the help and the tips carry the action bar's defaults**, the tour, and the key that appears on hover.
+- **docs — the release notes, the overview stream and About → News & features carry v1.11.0**, with five spotlight entries (the fixed buttons' placement, the one-row header, the list workbench, config's tiles, and Gloss) in all six languages. The manual documents the guided tours, and Help and the tips name *Select all* in health and the inbox.
 
 ---
 
