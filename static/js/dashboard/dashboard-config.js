@@ -4431,10 +4431,6 @@ class DashboardConfig {
         body.dataset.overviewClickBound = '1';
         body.addEventListener('click', (e) => {
             if (this.section !== 'overview') return;
-            if (e.target.closest('[data-overview-changed]')) {
-                this.openChangedSettings();
-                return;
-            }
             const chip = e.target.closest('[data-news-filter]');
             if (chip) {
                 this.setNewsFilter(chip.getAttribute('data-news-filter'));
@@ -12805,33 +12801,6 @@ class DashboardConfig {
      * panel half applied. The fields are written together, the chrome is
      * reapplied once, and one save covers the lot.
      */
-    /**
-     * Open the filtered view from the Overview's count.
-     *
-     * The changed settings are spread over several tabs and the filter works a
-     * tab at a time, so this lands on the one carrying the most of them rather
-     * than on a fixed tab — arriving at Behavior › General to be shown one of
-     * four would read as the count being wrong. The line under the count names
-     * the sections, so the rest are not a surprise.
-     */
-    openChangedSettings() {
-        const changed = this.changedSettings();
-        if (!changed.length) return;
-
-        const tally = new Map();
-        changed.forEach((e) => {
-            const key = `${e.section}|${e.subTab || ''}`;
-            tally.set(key, (tally.get(key) || 0) + 1);
-        });
-        const [best] = [...tally.entries()].sort((a, b) => b[1] - a[1]);
-        const [section, subTab] = best[0].split('|');
-
-        this.changedOnly = true;
-        const prop = DashboardConfig.SUB_TAB_STATE[section];
-        if (prop && subTab) this[prop] = subTab;
-        this.selectSection(section, 'overview-changed');
-    }
-
     /**
      * Apply "Only changed" to the hand-written Appearance controls.
      *

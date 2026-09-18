@@ -21,6 +21,23 @@ async function openConfig(page, section = 'overview') {
     await page.waitForSelector('.config-view', { timeout: 15_000 });
 }
 
+/**
+ * Open a settings group.
+ *
+ * Appearance and Behavior land on a hub of tiles, and a hub carries no fields —
+ * so the "Only changed" filter has nothing to act on until a group is open. The
+ * tests below drove the filter straight from the section and saw it refuse,
+ * which read as the filter being broken rather than as nothing being there yet.
+ */
+async function openFirstGroup(page) {
+    const tile = page.locator('#config-view-body .hub-tile .hub-tile-main').first();
+    if (await tile.count()) {
+        await tile.click();
+        await page.waitForSelector('#config-view-body [data-behavior-field], #config-view-body .config-field',
+            { timeout: 10_000 });
+    }
+}
+
 /** Drive real setting changes through the same path the controls use. */
 async function change(page, pairs) {
     await page.evaluate(async (list) => {
@@ -42,7 +59,14 @@ async function restore(page, fields) {
     await page.waitForTimeout(500);
 }
 
-test.describe('the changed-settings count', () => {
+/*
+ * The count that used to sit on the Overview is gone: the overview was rebuilt
+ * around the collection and no longer reports on settings. What the calculation
+ * still feeds is the "Only changed" filter and the per-panel reset, which is
+ * what the tests below cover. The reading itself — changedSettings() — is still
+ * the one thing all of it rests on.
+ */
+test.describe('what counts as a changed setting', () => {
     /**
      * With every setting at its default the count is zero and the line is not
      * rendered at all.
@@ -67,24 +91,6 @@ test.describe('the changed-settings count', () => {
         const changed = await page.evaluate(() =>
             window.dashboardInstance.config.changedSettings().map((e) => e.field));
         expect(changed, `these still differ after a reset:\n${changed.join('\n')}`).toEqual([]);
-        await expect(page.locator('[data-overview-changed]')).toHaveCount(0);
-    });
-
-    test('changing settings puts a count on the overview', async ({ page }) => {
-        await openConfig(page, 'overview');
-        // Relative to whatever a previous spec left behind, so this does not
-        // depend on the install being pristine.
-        const before = await page.evaluate(() =>
-            window.dashboardInstance.config.changedSettings().length);
-
-        await change(page, [['openInNewTab', false], ['globalShortcuts', false]]);
-        await page.evaluate(() => window.dashboardInstance.config.repaintOverview());
-
-        const line = page.locator('[data-overview-changed]');
-        await expect(line).toBeVisible();
-        await expect(line).toHaveText(new RegExp(`\\b${before + 2}\\b`));
-
-        await restore(page, ['openInNewTab', 'globalShortcuts']);
     });
 
     /** The count is over the declared index, not the rendered DOM. */
@@ -100,31 +106,12 @@ test.describe('the changed-settings count', () => {
         await restore(page, ['statusOfflineRetries']);
     });
 
-    test('the count links to the tab carrying the most of them', async ({ page }) => {
-        await openConfig(page, 'overview');
-        // Two on Behavior › General, one on Status: General should win, so the
-        // landing tab is not a fixed guess that shows one of three.
-        await change(page, [
-            ['openInNewTab', false],
-            ['globalShortcuts', false],
-            ['statusOfflineRetries', 7],
-        ]);
-        await page.evaluate(() => window.dashboardInstance.config.repaintOverview());
-        await page.locator('[data-overview-changed]').click();
-
-        await expect.poll(() => page.evaluate(() => ({
-            section: window.dashboardInstance.config.section,
-            tab: window.dashboardInstance.config.behaviorTab,
-            filtered: window.dashboardInstance.config.changedOnly,
-        }))).toEqual({ section: 'behavior', tab: 'general', filtered: true });
-
-        await restore(page, ['openInNewTab', 'globalShortcuts', 'statusOfflineRetries']);
-    });
 });
 
 test.describe('the "Only changed" filter', () => {
     test('it hides the settings that are still at their default', async ({ page }) => {
         await openConfig(page, 'behavior');
+        await openFirstGroup(page);
         await change(page, [['openInNewTab', false]]);
 
         const all = await page.locator('[data-behavior-field]').count();
