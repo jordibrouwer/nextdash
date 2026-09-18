@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.3 — 18 September 2026](#v1113--18-september-2026)
 - [v1.11.2 — 18 September 2026](#v1112--18-september-2026)
 - [v1.11.1 — 18 September 2026](#v1111--18-september-2026)
 - [v1.11.0 — 17 September 2026](#v1110--17-september-2026)
@@ -207,6 +208,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.3 — 18 September 2026
+
+One addition and one internal fix, held back from the What's new window (`hideFromModal`) like v1.11.1 and v1.11.2, so v1.11.0 keeps leading it.
+
+### Availability checking
+
+- **new — a corner card offers to switch every unchecked bookmark to Periodic at once.** Once 20 or more bookmarks have no availability checking at all (`CheckMode.of(bm) === CheckMode.OFF` — neither `checkStatus` nor `monitor`), `unchecked-bookmarks-notice.js` offers to switch them all to Periodic in one action, naming the count. It builds an explicit `{pageId, index, url}` target list from each affected page's current bookmark order and calls the existing `POST /api/health/check-mode-all` — the bulk endpoint deliberately refuses to turn checking on without one, so this does not ask the server to touch "everything". Shown at most once a month (`localStorage`, no server setting); a first "No thanks" brings it back next month, a second offers "Don't ask again" for good. `tests/unchecked-bookmarks-notice.spec.js` covers the threshold, the monthly gate, the escalating actions and a real accept round-trip.
+
+### Tests
+
+- **fix — a flaky header-shift assertion in `dashboard-merged-header.spec.js`.** `waitForTimeout(900)` sampled the header's measured positions once at a fixed delay, racing whatever layout/paint work follows the awaited `openInboxView()` rather than waiting for it — the same commit produced a different value on every CI retry. Replaced with `expect.poll()`, which waits until the measurement stops changing instead of guessing how long that takes.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.3.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v289` so a browser holding the old index learns this one exists, `DASHBOARD_RELEASE` is untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.3, v1.11.2 and v1.11.1 as held back. Config → Help's Availability & health panel and the "Keeping it healthy" tips group mention the card; `MANUAL.md` §13.1 does too. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

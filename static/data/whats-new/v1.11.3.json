@@ -1,0 +1,17 @@
+{
+  "tag": "v1.11.3",
+  "date": "18 September 2026",
+  "releasedAt": "2026-09-18",
+  "modalLead": "One addition: a way to switch on availability checking for everything that has none, in one go.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A card offers to check what nothing is checking.</strong> Once 20 or more bookmarks have no availability checking at all, a card in the bottom-left corner offers to switch them all to Periodic at once, naming the count. It shows at most once a month; a second no offers to stop asking."
+        }
+      ]
+    }
+  ]
+}

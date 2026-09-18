@@ -85,6 +85,7 @@
             titleFallback: 'Keeping it healthy',
             tips: [
                 'tipMaintHealth',
+                'tipMaintBulkCheck',
                 'tipMaintMonitorsPlace',
                 'tipMaintReview',
                 'tipMaintRotReport',
