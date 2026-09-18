@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.4 — 18 September 2026](#v1114--18-september-2026)
 - [v1.11.3 — 18 September 2026](#v1113--18-september-2026)
 - [v1.11.2 — 18 September 2026](#v1112--18-september-2026)
 - [v1.11.1 — 18 September 2026](#v1111--18-september-2026)
@@ -208,6 +209,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.4 — 18 September 2026
+
+One real fix and one test correction, held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.3, so v1.11.0 keeps leading it.
+
+### Search
+
+- **fix — a search reached from the address bar or a bookmarked `#search?q=…` query could be silently dropped.** `search.js` loads lazily on first use (`search-loader.js`); `dashboard.searchComponent` is only guaranteed to exist once that bundle has loaded and `initializeSearchComponent()` has run. Both hash-routing paths in `dashboard.js` (`routeFromHash()`'s `#search` branch and the `window.__nextdashBootSearch` boot-query consumer) called `this.searchComponent?.openSearchWithQuery?.(query)` directly — reaching either one before the bundle loaded made the optional chain no-op, and the boot-query path had already `delete`d `window.__nextdashBootSearch` by then, so nothing was left to retry once the bundle did arrive. Both now go through `SearchLoader.ensureReady()`, the same load-then-open pairing `loadThenOpen()` already used for a keypress that beat the bundle. Reproduced locally at roughly 1 in 4–6 runs of `tests/opensearch.spec.js`; 10/10 clean after the fix.
+
+### Tests
+
+- **fix — two more flaky assertions, found chasing unrelated CI failures on the runs for v1.11.2 and v1.11.3.** `tests/opensearch.spec.js`'s two arrival tests were missing the `dismissBlockingOverlays()` call their sibling test already had. `tests/config-tag-suggestions.spec.js`'s "applying a suggestion leaves the rows you ticked ticked" checked `cfg.bmSelected` once, right after a tag-count poll that only proved the tag mutation had landed — the selection-preserving step is separate work on the same refresh and wasn't part of what that poll observed. Not reproducible locally after 15 full-file runs; converted to `expect.poll()`, same class of fix as the `dashboard-merged-header.spec.js` correction in v1.11.3.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.4.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v290`, `DASHBOARD_RELEASE` untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.4 alongside v1.11.1–v1.11.3. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
