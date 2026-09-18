@@ -248,6 +248,7 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **new — recents answer one word with every kind and are drawn as tiles.**
 - **fix — the grid takes the focus back when the tag cloud closes**, and when search closes.
 - **fix — the pages panel and recents left the header**; both open from the search panel, which is where the rest of the modes already live.
+- **fix — the pages panel opens with the cursor on the page you are on.** It was placed before the panel was visible, where it does nothing, so the first arrow key walked from page one.
 
 ### Bookmarks → List
 
@@ -267,6 +268,7 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **new — Date & weather moved to Appearance**, and the weather location is a card of its own rather than a field behind *More settings*. It saves while it is typed, so the line answers as the town is written.
 - **new — the overview is rebuilt around the collection.**
 - **fix — *Toolbar & tabs* is called Header and buttons**, which is what it sets.
+- **fix — `:rows` reaches the row highlight.** Two commands were written with the same name, so the second quietly replaced the first and `:rows` had never run; both words work now.
 - **new — config fetches a section when you open it.** `dashboard-config.js` was 27,627 lines pulled down whole to draw one section; Logs and Help are files of their own now, loaded on demand through one `SECTION_MODULES` table, with the rest fetched on idle after the first paint.
 - **fix — *Only changed* shows that it is pressed.** The bar sits in the view head and the repaint that applies the filter replaces only the body, so the button kept the `aria-pressed` it was drawn with: the rows narrowed and the control went on reading *not pressed* to a screen reader and to its own styling.
 - **fix — the changed-settings count is gone from the overview.** The overview was rebuilt around the collection and stopped drawing it; the click handler and `openChangedSettings()` behind it were left standing and have been removed. *Only changed* per tab and *Reset panel* per group are unchanged.
@@ -296,12 +298,16 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **fix — the first-run setup window is gone.** A window of questions before the reader has seen the dashboard they are about asks for answers nobody can give yet; the checklist in the corner stays, and every setting it used to ask for is in config.
 - **fix — the ★ moved to the bottom-right corner**, the cards in the other corner stand at the bottom edge, the toast stands with them, and the old corner button is gone.
 - **fix — the health trend widget drew itself twice** when two renders overlapped.
+- **fix — `*` and `/` work whether or not their buttons are on screen.** Each used to open something different depending on whether its button was switched on — `*` the recents sheet or the panel's recents mode, `/` the tag cloud or the panel's tags. A keyboard shortcut does not answer to a setting about chrome. *Show the tag-cloud button* now only hides the button; it no longer switches the cloud off.
+- **fix — Escape stays inside an open widget or category menu.** The menu closed itself correctly and a moment later the search panel opened anyway and took the focus, because the guard listed the popovers written one at a time and not the ones the shared menu builder makes.
+- **fix — the filter bar lies over the grid it filters.** With packed columns off the grid is a fixed-width set of columns centred in the page, so above about 1280px the bar sat to the left of the rows it was filtering and ran wider than them.
 - **fix — the quick-start checklist can finish.** *Open Config* was ticked by a click handler on a header link that stopped existing when config became a view of its own, so nothing ever set the flag and the step asked for something you had already done. It reads the open view now.
 - **fix — the spread card, the settings-search promo and what was left of the side rail are gone**, along with the button style they described.
 
 ### Inbox and health
 
 - **new — Select all in the ⋯ menu of both views.** It ticks every row the current filter shows and reads *Deselect all* once they all are, so the whole bulk bar is reachable without knowing the `Ctrl/Cmd + A` chord. Ticks made under another filter are left alone, the way they already were.
+- **fix — the health and inbox header is opaque again.** It is a sticky band, so the rows were passing through it rather than behind it while you scrolled. The stylesheet said as much in a comment beside the rule that did the opposite.
 
 ### Docs
 
@@ -312,6 +318,8 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **docs — the release notes, the overview stream and About → News & features carry v1.11.0**, with five spotlight entries (the fixed buttons' placement, the one-row header, the list workbench, config's tiles, and Gloss) in all six languages. The manual documents the guided tours, and Help and the tips name *Select all* in health and the inbox.
 - **docs — the config split carries its own gates**: a census over every member of `DashboardConfig`, an extractor that moves a section verbatim and proves it byte for byte, a planner that works out which members a section actually owns, and a smoke spec that walks every section. `npm run test:config-split` pins the three mistakes they were built from.
 - **docs — the config specs follow the new header and the tile hub**, which they had drifted from: the destinations fold below 1500px, Behavior and Appearance open on tiles rather than fields, and the breadcrumb was replaced by the section's own description.
+- **docs — the test suite runs in a window wide enough to use.** Playwright opened 1280px wide, the header folds its destinations away below about 1500, and every click on the inbox or health button waited its full thirty-second timeout — 552 of them in one run, which made the health and inbox families look slow when they were only waiting. The slowest CI shard went from 49 minutes to six, and the shard weights added to work around it are gone again.
+- **docs — a Go test no longer races its neighbours for one settings file.** It wrote a theme and read the manifest back in parallel with the backup tests, which write themes of their own into the same store; it began failing when the default theme changed.
 
 ---
 
