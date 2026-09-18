@@ -42,7 +42,27 @@ jobs:
     # Six runners, each with its own machine, its own `go run .` and its own
     # data directory -- which is also why sharding is safe here while raising
     # `workers` inside one runner is not: every spec in a run shares one server.
-    # 1770 tests serially is ~1.4 h; split six ways it lands well under 20 min.
+    #
+    # Playwright splits a shard by test COUNT, and the specs are walked in file
+    # order -- so shard 5 drew the `h`-`i` slice, which is 47 health-* and 20
+    # inbox-* files out of 73. Those are the two slowest families in the suite:
+    # a health spec builds a report and waits on checks, an inbox spec seeds
+    # rows and waits for the view to fetch them. With an equal count of tests it
+    # ran 24 minutes and was still going while every other shard had finished in
+    # five to eight.
+    #
+    # PWTEST_SHARD_WEIGHTS below hands shard 5 a smaller share, so its
+    # neighbours take part of that block and the slow work is spread over three
+    # runners instead of sitting on one. The weights are per shard, in order.
+    #
+    # Two things to know before changing them. They are parsed with parseInt, so
+    # a decimal is truncated -- "0.6" becomes 0 and that shard silently runs no
+    # tests at all. And PWTEST_ marks an internal flag rather than a documented
+    # option, so a Playwright upgrade may take it away; if a shard suddenly
+    # reports 0 tests, look here first.
+    #
+    # These are one measurement, not a law: re-read the job durations after a
+    # green run and adjust if the spread has moved.
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +79,9 @@ jobs:
       - name: Install Playwright
         run: npm ci && npx playwright install chromium --with-deps
       - name: Run Playwright tests
+        env:
+          # shards 1-4 and 6 carry an equal share; 5 holds the health/inbox block.
+          PWTEST_SHARD_WEIGHTS: "16:16:16:16:5:16"
         run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
       - name: Upload report
         if: failure()
