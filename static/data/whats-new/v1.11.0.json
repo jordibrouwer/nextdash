@@ -1,0 +1,175 @@
+{
+  "tag": "v1.11.0",
+  "date": "17 September 2026",
+  "releasedAt": "2026-09-17",
+  "modalLead": "This is a big one &mdash; the largest release so far, with well over a hundred changes and countless smaller improvements throughout. Most of it answers a single question: where does a thing live. The top of the page is one row now instead of three bands, and the buttons that used to float over your bookmarks have a place to stand &mdash; a column at either edge, a dock at the bottom, the header, or one menu. Config opens on tiles, one subject each, and the bookmark list has become a workbench with filters on the left and an edit panel on the right. A fresh install starts on a new look. Because that is a lot to relearn at once, a card in the corner offers a one-minute tour of what moved, and every step where a default changed hands the old arrangement back in one click. Everything below is the short version; the changelog carries the rest.",
+  "sections": [
+    {
+      "title": "The top of the page",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One row, in three zones.</strong> The clock and the page name on the left, your page tabs in the middle, the destinations and the actions on the right. The band that used to carry the page name on its own is gone, so the grid starts higher up the screen."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The page switcher is a choice of four.</strong> Numbers beside the destinations, one segmented control, plain text tabs, or a single button with a list. Type <kbd>:switcher</kbd> to try them without opening config."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Your page tabs are shown before &ldquo;+N&rdquo;.</strong> Between three and nine of them, five to begin with. What does not fit is counted rather than dropped, and every page keeps its number key whether its tab is drawn or folded away."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The clock and the weather stand where you put them</strong> &mdash; beside the view name, in a column of their own, or on their own line with the name underneath, which is where they used to be and what every install now starts on."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Plain or plated controls.</strong> Plain underlines whatever is current; plated gives each control its own box."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The key chips at the top read properly now.</strong> They had a ring around them and sat dimmer than the words beside them, and the action symbols were a weight heavier than the buttons holding them. Contrast was measured on every theme."
+        }
+      ]
+    },
+    {
+      "title": "The fixed buttons",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>They have a place of their own at last.</strong> A column on the right, a column on the left, a dock along the bottom, up in the header, or tucked behind one menu &mdash; under <em>Appearance</em>, or type <kbd>:buttons</kbd>. The bar that used to float over your bookmarks is gone, and a side column takes its room from the page margin rather than from the grid."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A docked bar slides away and leaves a handle.</strong> After two seconds by default &mdash; or five, ten, thirty, or never. Touch that edge, or press <kbd>'</kbd>, and it comes back. A bar you are using never leaves while you are using it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every button is on to begin with</strong>, and up to nine stand before the fold. Whatever does not fit goes behind one control that names each action with its key."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The key on a button is a chip you can switch off.</strong> With the chips off, resting on a button shows its key beside it instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The tag cloud no longer opens underneath a docked bar.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "Your bookmark list",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The list is a workbench.</strong> Filters in a rail down the left, your rows in the middle, and an edit panel on the right &mdash; so changing something no longer means opening a dialog on top of the list you were reading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The panel edits one bookmark or fifty.</strong> Tick a selection and it edits all of them at once, with tag suggestions and the monitor interval right there."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rows are slabs you can walk with the keyboard.</strong> Whole favicons instead of cropped ones, the pin where it belongs, room for the name, and tags that do not fit are counted rather than silently dropped."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><kbd>Shift</kbd> + <kbd>E</kbd> opens the full dialog</strong> when you do want it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>On a narrow screen the rail folds into a drawer</strong> and the panel into a sheet."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The panel keeps your place</strong> after a move and after a bulk edit, and folding it gives the row its width back."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Appearance and Behavior open on tiles.</strong> One tile per subject; opening it shows the two to four settings that group leads with as cards, and everything else waits behind <em>More settings</em>. Escape goes back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every appearance setting says what it does</strong>, what its default is, and offers one kind of control rather than three."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Date &amp; weather moved to Appearance</strong>, and the weather location is a card of its own now. It saves as you type, so the line answers while the town is still being written."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Logs is a section of its own</strong>, split into the server log and the activity trail, each beside its own settings. The activity trail can record searches, keys, navigation, sessions and errors, and how a bookmark was opened."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><em>Toolbar &amp; tabs</em> is called Header and buttons</strong>, which is what it actually sets."
+        }
+      ]
+    },
+    {
+      "title": "How it looks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A fresh install opens on Tarnished Brass</strong>, in glass, with a soft glow. An install that already answered those questions keeps its answer."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ten Gloss themes, and a sheen any theme can wear.</strong> They catch the light and carry a badge in the theme browser, and the <em>Gloss</em> slider gives the same sheen to a theme of your own."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A theme of your own can set everything a packaged one can</strong> &mdash; depth, glow, glass, corner radius and sheen &mdash; and comes as a light and a dark half, like the built-ins."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The widgets take the page's colour.</strong> They used to read as grey-white panels pasted on the dashboard whatever theme you were on. Under glass they are see-through and blurred, with the lit edge back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A theme no longer loses its character when its colours are saved.</strong>"
+        }
+      ]
+    },
+    {
+      "title": "The dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A tour of what moved.</strong> A card in the corner offers it once &mdash; <em>Show me</em>, <em>Later</em>, <em>No thanks</em> &mdash; and eight steps say where the pages, the buttons, config, the list, the widgets, the tags and the themes are now. Where a default changed, the step hands the old arrangement back in one click. Reopen it from <em>Help &rarr; Guided tours</em> or with <kbd>:changes</kbd>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The corner asks for a town, a clock and a unit</strong>, once, and the weather line is on to begin with on a fresh install."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A bookmark opens by its own key</strong> while the cursor is on the grid, and a row tells you when it is being waited on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The setup window on first run is gone.</strong> It asked for a language, a theme and a link behaviour before you had seen the dashboard those answers are about. The checklist in the corner stays, and every setting it used to ask for is in config."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The &#9733; moved to the bottom-right corner</strong>, and the cards in the other corner stand at the bottom edge with the toast beside them."
+        }
+      ]
+    },
+    {
+      "title": "Inbox and health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Select all, in the &#8943; menu of both views.</strong> It ticks every row the filter is showing and reads <em>Deselect all</em> once they all are, so everything the bulk bar offers is reachable without knowing the <kbd>Ctrl</kbd> + <kbd>A</kbd> chord. Ticks you made under another filter are left alone."
+        }
+      ]
+    }
+  ]
+}
