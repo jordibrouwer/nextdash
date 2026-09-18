@@ -1,0 +1,17 @@
+{
+  "tag": "v1.11.2",
+  "date": "18 September 2026",
+  "releasedAt": "2026-09-18",
+  "modalLead": "One correction to v1.11.1: the action buttons no longer slide back in every time you switch page.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The action buttons stay tucked away while you move between pages.</strong> A bar set to slide into its edge came back every time you switched page or view. It now only returns when you reload, bring the pointer to its edge or press <kbd>'</kbd>, and then stays for the time you chose."
+        }
+      ]
+    }
+  ]
+}

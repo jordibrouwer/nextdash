@@ -199,3 +199,65 @@ test('no handle for a bar in the header', async ({ page }) => {
     await page.waitForTimeout(2500);
     await expect(handle(page)).toBeHidden();
 });
+
+// Browsing is not a reason to bring the bar back. Only a load, the pointer at
+// its edge, focus moving into it and ' / Shift+O are.
+test('a slid-away bar stays away while you browse the views', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+
+    const steps = [
+        ['Shift+H', 'health'],
+        ['Escape', 'bookmarks'],
+        ['Shift+I', 'inbox'],
+        ['Escape', 'bookmarks'],
+        ['Shift+S', 'config'],
+        ['Escape', 'bookmarks'],
+    ];
+    for (const [key, view] of steps) {
+        await page.keyboard.press(key);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { message: `${key} did not reach ${view}` })
+            .toBe(view);
+        await page.waitForTimeout(400);
+        expect(await hidden(page), `the bar came back after ${key}`).toBe(true);
+    }
+});
+
+test('a page switch leaves a slid-away bar where it is', async ({ page }) => {
+    // The shared data has one page; a second is added for this test and
+    // removed again, so the digit key has somewhere to go.
+    const NAME = 'action-bar-page-switch';
+    const pages = async (edit) => page.evaluate(async ({ name, add }) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const list = await (await api('/api/pages')).json();
+        const rest = list.filter((p) => p.name !== name);
+        const next = add ? [...rest, { id: Math.max(...rest.map((p) => p.id)) + 1, name }] : rest;
+        await api('/api/pages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+    }, { name: NAME, add: edit });
+
+    await page.goto('/');
+    await pages(true);
+    try {
+        await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+        expect(await page.evaluate(() => window.dashboardInstance.pages.length)).toBeGreaterThan(1);
+        await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+
+        const before = await page.evaluate(() => window.dashboardInstance.currentPageId);
+        await page.keyboard.press('2');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.currentPageId)).not.toBe(before);
+        await page.waitForTimeout(400);
+        expect(await hidden(page), 'the bar came back after a page switch').toBe(true);
+    } finally {
+        await pages(false);
+    }
+});
+
+test('shown again, it keeps its delay before sliding off', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(false);
+    await page.waitForTimeout(1200);
+    expect(await hidden(page), 'gone before its time').toBe(false);
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+});

@@ -170,10 +170,9 @@
             const el = bar();
             if (el && el.contains(e.target) && !el.contains(e.relatedTarget)) arm();
         });
-        // Arriving somewhere new is a moment the reader may want the actions.
-        global.addEventListener('hashchange', () => {
-            if (docked() && seconds()) show();
-        });
+        // Not on hashchange. Switching page or view used to bring the bar back,
+        // so a reader moving through pages had it slide in and out on every
+        // step. A load, the edge, focus and ' / Shift+O are what call it.
     }
 
     /** Settings changed: start over from a visible bar. */
