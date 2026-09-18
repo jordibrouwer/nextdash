@@ -267,6 +267,9 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **new — Date & weather moved to Appearance**, and the weather location is a card of its own rather than a field behind *More settings*. It saves while it is typed, so the line answers as the town is written.
 - **new — the overview is rebuilt around the collection.**
 - **fix — *Toolbar & tabs* is called Header and buttons**, which is what it sets.
+- **new — config fetches a section when you open it.** `dashboard-config.js` was 27,627 lines pulled down whole to draw one section; Logs and Help are files of their own now, loaded on demand through one `SECTION_MODULES` table, with the rest fetched on idle after the first paint.
+- **fix — *Only changed* shows that it is pressed.** The bar sits in the view head and the repaint that applies the filter replaces only the body, so the button kept the `aria-pressed` it was drawn with: the rows narrowed and the control went on reading *not pressed* to a screen reader and to its own styling.
+- **fix — the changed-settings count is gone from the overview.** The overview was rebuilt around the collection and stopped drawing it; the click handler and `openChangedSettings()` behind it were left standing and have been removed. *Only changed* per tab and *Reset panel* per group are unchanged.
 
 ### Logs
 
@@ -293,6 +296,7 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **fix — the first-run setup window is gone.** A window of questions before the reader has seen the dashboard they are about asks for answers nobody can give yet; the checklist in the corner stays, and every setting it used to ask for is in config.
 - **fix — the ★ moved to the bottom-right corner**, the cards in the other corner stand at the bottom edge, the toast stands with them, and the old corner button is gone.
 - **fix — the health trend widget drew itself twice** when two renders overlapped.
+- **fix — the quick-start checklist can finish.** *Open Config* was ticked by a click handler on a header link that stopped existing when config became a view of its own, so nothing ever set the flag and the step asked for something you had already done. It reads the open view now.
 - **fix — the spread card, the settings-search promo and what was left of the side rail are gone**, along with the button style they described.
 
 ### Inbox and health
@@ -306,6 +310,8 @@ And the look settled. A fresh install opens on Tarnished Brass in glass with a s
 - **docs — the help, the tips and the new strings are translated into all six languages**, the strings the other languages still showed in English are gone, and so are the keys nothing uses.
 - **docs — the manual, the help and the tips carry the action bar's defaults**, the tour, and the key that appears on hover.
 - **docs — the release notes, the overview stream and About → News & features carry v1.11.0**, with five spotlight entries (the fixed buttons' placement, the one-row header, the list workbench, config's tiles, and Gloss) in all six languages. The manual documents the guided tours, and Help and the tips name *Select all* in health and the inbox.
+- **docs — the config split carries its own gates**: a census over every member of `DashboardConfig`, an extractor that moves a section verbatim and proves it byte for byte, a planner that works out which members a section actually owns, and a smoke spec that walks every section. `npm run test:config-split` pins the three mistakes they were built from.
+- **docs — the config specs follow the new header and the tile hub**, which they had drifted from: the destinations fold below 1500px, Behavior and Appearance open on tiles rather than fields, and the breadcrumb was replaced by the section's own description.
 
 ---
 

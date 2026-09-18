@@ -109,6 +109,18 @@
         {
           "badge": "fix",
           "text": "<strong><em>Toolbar &amp; tabs</em> is called Header and buttons</strong>, which is what it actually sets."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config loads the part you are looking at.</strong> It used to pull the whole of itself down to draw one section. Logs and Help arrive on their own now, and the rest follows quietly once the page has settled."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><em>Only changed</em> looks switched on when it is.</strong> The filter worked, but the button went on looking — and reading, to a screen reader — as though it were off."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The settings count has left the overview.</strong> The overview is about your collection now. <em>Only changed</em> on each tab and <em>Reset panel</em> on each group still do the same work."
         }
       ]
     },
@@ -159,6 +171,10 @@
         {
           "badge": "fix",
           "text": "<strong>The &#9733; moved to the bottom-right corner</strong>, and the cards in the other corner stand at the bottom edge with the toast beside them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The quick-start checklist can be finished.</strong> <em>Open Config</em> stayed unticked however often you opened it, so the card never reached the end and went away."
         }
       ]
     },
