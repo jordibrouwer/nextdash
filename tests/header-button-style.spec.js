@@ -121,6 +121,18 @@ test('the rule under it is what says where you are', async ({ page }) => {
 
 test('plated puts every control back in a box', async ({ page }) => {
     await openDashboard(page);
+    /*
+     * Ask for the segmented switcher, which is what has a shell.
+     *
+     * It used to be the only one, and the assertion below still reads that way
+     * -- but the page switcher is a choice of four now and a fresh install
+     * starts on `classic`, which draws numbers beside the destinations and no
+     * shell at all. Plated has nothing to put a box around there.
+     */
+    await page.evaluate(async () => {
+        await window.dashboardInstance.config.setBehavior('pageSwitcherStyle', 'segmented', 'chrome');
+    });
+    await page.waitForTimeout(300);
     await chooseStyle(page, 'plated');
     const seen = await drawn(page);
 
