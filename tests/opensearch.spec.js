@@ -52,6 +52,7 @@ test.describe('searching from the address bar', () => {
         await page.goto('/#search?q=github');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
 
         await expect.poll(async () => page.evaluate(() => ({
             query: window.dashboardInstance?.searchComponent?.currentQuery,
@@ -79,6 +80,11 @@ test.describe('searching from the address bar', () => {
         await page.goto('/#search');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
+        // Same overlays the sibling test below already clears -- a fresh
+        // install's blocking favicon-prefetch panel or a stray app
+        // notification can otherwise sit over the page longer than usual
+        // under load, which this test had no wait for at all.
+        await dismissBlockingOverlays(page);
 
         await expect.poll(async () => page.evaluate(() =>
             window.dashboardInstance?.searchComponent?.searchActive),
