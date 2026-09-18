@@ -1970,6 +1970,21 @@ class DashboardConfig {
         body.appendChild(legend);
     }
 
+    /**
+     * Put every "Only changed" button in step with the filter it drives.
+     *
+     * The bar is rendered into the view head, and the repaint that applies the
+     * filter replaces only the body — so the button kept whatever `aria-pressed`
+     * and `is-active` it was drawn with, however often the filter was turned on
+     * and off. The rows narrowed correctly; only the control lied about it.
+     */
+    syncChangedToggles() {
+        document.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            btn.setAttribute('aria-pressed', this.changedOnly ? 'true' : 'false');
+            btn.classList.toggle('is-active', Boolean(this.changedOnly));
+        });
+    }
+
     /** Roving tabindex for a single `.config-choices` radiogroup. */
     syncChoiceGroup(group) {
         group.querySelectorAll('.config-choice').forEach((btn) => {
@@ -12899,6 +12914,12 @@ class DashboardConfig {
                 this.changedOnly = !this.changedOnly;
                 this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
                 this.repaintActiveControlPanels();
+                // The bar sits in the band, outside the body that repaint hands
+                // in, so its own button is never redrawn: the filter applied and
+                // the control went on reading "not pressed" to a screen reader
+                // and to its own styling. Pushed here rather than left to a
+                // repaint that structurally cannot reach it.
+                this.syncChangedToggles();
             });
         }));
         scopes.forEach((scope) => scope.querySelectorAll('[data-settings-filter]').forEach((field) => {
