@@ -216,12 +216,17 @@ test('the bar spans the window and its contents span the page', async ({ page })
 
     await page.evaluate(() => window.dashboardInstance.config.openConfigView());
     await page.waitForSelector('.config-view', { timeout: 20_000 });
-    await page.waitForTimeout(500);
-    expect(await places(), 'the header shifts when config opens').toEqual(onDashboard);
+    // A fixed sleep here raced whatever layout/paint work follows the awaited
+    // render -- comfortably enough headroom on a quiet machine, not always on
+    // a loaded CI runner (the inbox assertion below flaked in CI with values
+    // that differed run to run, which a race settles into rather than a real
+    // regression). Poll until the measurement stops changing instead of
+    // sampling once at a fixed delay; a genuine shift still fails, just after
+    // giving it the same room a slow machine needs to settle.
+    await expect.poll(places, { timeout: 5_000, message: 'the header shifts when config opens' }).toEqual(onDashboard);
 
     await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
-    await page.waitForTimeout(900);
-    expect(await places(), 'the header shifts when the inbox opens').toEqual(onDashboard);
+    await expect.poll(places, { timeout: 5_000, message: 'the header shifts when the inbox opens' }).toEqual(onDashboard);
 });
 
 /*
