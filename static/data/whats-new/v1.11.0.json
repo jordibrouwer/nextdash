@@ -175,6 +175,10 @@
         {
           "badge": "fix",
           "text": "<strong>The quick-start checklist can be finished.</strong> <em>Open Config</em> stayed unticked however often you opened it, so the card never reached the end and went away."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The keys work whether or not their buttons are on screen.</strong> <kbd>*</kbd> opens recent bookmarks and <kbd>/</kbd> opens the tag cloud, even with those buttons switched off — switching off the tag-cloud button used to switch off the cloud itself."
         }
       ]
     },
