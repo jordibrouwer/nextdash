@@ -119,6 +119,10 @@ class SearchCommandsComponent {
             'weather': this.handleWeatherCommand.bind(this),
             'spacing': this.handleSpacingCommand.bind(this),
             'margins': this.handleMarginsCommand.bind(this),
+            // Same command as `rows` above, under the word it used to have.
+            // There were two methods of this name; the second silently replaced
+            // the first, so `:ROWS` was dead code and both words reached the
+            // older implementation.
             'highlight': this.handleRowHighlightCommand.bind(this),
             'items': this.handleItemsCommand.bind(this),
             'collapse': this.handleCollapseCommand.bind(this),
@@ -3027,18 +3031,6 @@ class SearchCommandsComponent {
         }, args);
     }
 
-    handleRowHighlightCommand(args) {
-        const t = (key, fb) => this._t(key, fb);
-        return this._settingCommand({
-            field: 'rowHighlight',
-            shortcut: ':HIGHLIGHT',
-            apply: 'chrome',
-            options: [
-                { value: 'subtle', label: t('config.rowHighlightSubtle', 'Subtle') },
-                { value: 'strong', label: t('config.rowHighlightStrong', 'Strong') },
-            ],
-        }, args);
-    }
 
     handleItemsCommand(args) {
         const t = (key, fb) => this._t(key, fb);
