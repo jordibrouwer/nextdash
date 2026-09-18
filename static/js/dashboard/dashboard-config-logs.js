@@ -26,15 +26,6 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
-    /** Human label for the Logs section's sub-tab strip. */
-    logsTabLabel(tab) {
-        const map = {
-            server: ['config.logsTabServer', 'Server logs'],
-            trail: ['config.logsTabTrail', 'Activity trail'],
-        };
-        const [key, fallback] = map[tab] || [tab, tab];
-        return this.t(key, fallback);
-    },
 
     /**
      * Its own top-level section now, a real tab strip: Server logs (the

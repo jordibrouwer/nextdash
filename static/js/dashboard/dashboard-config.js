@@ -2772,6 +2772,23 @@ class DashboardConfig {
         { section: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
     ];
 
+    /*
+     * Stays in the core although Logs owns it, the same way LOGS_TABS does.
+     * subTabLabel dispatches on section, which makes it look section-scoped —
+     * but cacheSettingsJumpFields runs from afterRender and asks it for every
+     * section's labels at once, so it is called for logs while the reader is
+     * on any other section. Nothing behind ensureSection guards that path, and
+     * a label method living in the module would not be there yet.
+     */
+    logsTabLabel(tab) {
+        const map = {
+            server: ['config.logsTabServer', 'Server logs'],
+            trail: ['config.logsTabTrail', 'Activity trail'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
     subTabLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel(tab);
