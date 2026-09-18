@@ -46,6 +46,10 @@ async function openDashboard(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
+    // A rendered bookmark is not the same promise as a built dashboard: on a
+    // loaded runner the evaluate that follows reached a null dashboardInstance.
+    await page.waitForFunction(
+        () => window.dashboardInstance?.searchComponent != null, null, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
 }
