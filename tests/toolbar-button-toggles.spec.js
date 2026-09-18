@@ -122,7 +122,16 @@ test.describe('toolbar button visibility', () => {
          */
         const flip = async () => {
             await reveal();
-            await toggle.click({ force: true });
+            // Not toggle.click(): that resolves the element over the
+            // Playwright protocol, then clicks it in a second round trip --
+            // a window this self-rebuilding control can and did land a
+            // rebuild inside, under CI load ("element was detached from the
+            // DOM, retrying", eventually exceeding the test timeout). A
+            // dispatched click from inside the page queries and clicks in
+            // one synchronous step, so there is no gap left to race.
+            await page.evaluate(() => {
+                document.querySelector('[data-behavior-field="showCollapseAllButton"]')?.click();
+            });
         };
         await reveal();
         // The button ships off, and the specs above this one set it either way,
