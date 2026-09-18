@@ -122,9 +122,30 @@
             ];
         }
 
+        /**
+         * Tick the config step when config is actually open.
+         *
+         * The step used to be ticked by a click handler on `.config-link a`, and
+         * that element stopped existing when config became a view of its own
+         * rather than a page you navigate to. Nothing else ever set the flag, so
+         * the checklist asked a reader to open config and then went on asking
+         * after they had — on every fresh install since.
+         *
+         * Read from the live view instead of listening for a click: refresh()
+         * already runs on a timer and on focus, so a tick lands while config is
+         * open and the flag is persisted from there.
+         */
+        latchConfigVisit() {
+            if (this.state().visitedConfig === true) return;
+            if (this.dash?.activeView !== 'config') return;
+            this.state().visitedConfig = true;
+            this.saveKeepAlive();
+        }
+
         // A full navigation to /config would race the settings POST, so persist the
         // flag with a keepalive request that survives the page unload. Unlike
         // sendBeacon, keepalive fetch can still send the write-token header.
+        // Kept for the addressable `/config` URL, which is still a real way in.
         markConfigVisitOnNavigation() {
             const links = document.querySelectorAll('.config-link a, a[href="/config"], a[href^="/config#"]');
             links.forEach((link) => {
@@ -233,6 +254,10 @@
         }
 
         refresh() {
+            // Before the card check, not after: the card belongs to the dashboard
+            // and config is a different view, so `this.el` may well be gone at the
+            // exact moment there is something to record.
+            this.latchConfigVisit();
             if (!this.el) return;
             const d = this.dash;
             // Capture here rather than at render time: this runs once the page's
