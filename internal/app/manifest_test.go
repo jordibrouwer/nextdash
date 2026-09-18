@@ -52,8 +52,21 @@ func TestFaviconMimeFromPath(t *testing.T) {
 }
 
 func TestWebAppManifestThemeColors(t *testing.T) {
-	t.Parallel()
-
+	/*
+	 * Not parallel, deliberately.
+	 *
+	 * NewStore() resolves the one data directory every test in this package
+	 * shares, so this writes a theme into the same settings.json that
+	 * backup_test.go's parallel cases rewrite with themes of their own. With
+	 * t.Parallel() here the manifest was read between somebody else's save and
+	 * this one, and the colours came back belonging to another theme entirely.
+	 *
+	 * The value it failed on says which: "#0E1210" is tarnished-brass-dark,
+	 * the theme a fresh install now starts on, against "#131210" for the
+	 * moss-stone-dark this test asks for. So the settings it read were a
+	 * neighbour's reset rather than its own save -- which is why this began
+	 * failing when the default theme changed and not before.
+	 */
 	h := &Handlers{store: NewStore()}
 	settings := h.store.GetSettings()
 	settings.Theme = "moss-stone-dark"
