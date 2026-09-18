@@ -510,6 +510,18 @@
         },
 
         onToggleClick() {
+            // The button rides the header, which stands over every view, while
+            // the cloud filters the grid. Pressed from config, health or inbox
+            // it takes you back to the page it acts on and opens there.
+            const dash = window.dashboardInstance;
+            if (this.isFeatureAvailable() && dash && !dash.isBookmarksView()) {
+                void Promise.resolve(dash.requestPageNavigation(dash.currentPageId))
+                    .then(() => {
+                        this.syncFromSettings();
+                        this.openModal();
+                    });
+                return;
+            }
             if (!this.isEligible()) return;
             if (this.modalOpen) {
                 this.closeModal();
@@ -520,6 +532,18 @@
 
         openModal() {
             if (!this.isEligible() || !this.modal) return;
+            /*
+             * The wrap is what carries the cloud, and it is hidden until it is
+             * told it is eligible.
+             *
+             * The class that shows it is written by syncFromSettings, which
+             * runs when the setting changes and on a view switch -- so a cloud
+             * opened in the same tick the setting was turned on drew itself
+             * inside a `display: none` parent: a modal that is open, has its
+             * tags in it, answers the keyboard, and is nowhere on screen.
+             * Asked here as well, where it costs one class toggle.
+             */
+            this.syncFromSettings();
             window.nextdashTrack?.('modal:tag-cloud');
             if (this._closeTimerId) {
                 clearTimeout(this._closeTimerId);
@@ -588,7 +612,14 @@
                 if (focusBookmarks) {
                     this.restoreBookmarkFocus();
                 } else if (document.activeElement?.closest?.('#tag-cloud-modal')) {
-                    this.toggle?.focus?.();
+                    // The grid is where the reader was, and the button in the
+                    // bar is not: sending the focus back up there leaves a
+                    // lit control behind and costs a walk back down.
+                    const kn = window.dashboardInstance?.keyboardNavigation;
+                    document.activeElement.blur?.();
+                    if (!kn?.focusRowAfterOverlay?.(kn.currentIndex)) {
+                        this.toggle?.focus?.();
+                    }
                 }
             };
             if (!animate || !this.modalOpen) {
@@ -606,18 +637,12 @@
             }, 180);
         },
 
-        getModalMaxHeight(rect, margin, vh, anchor = 'above', { sideRail = false } = {}) {
+        getModalMaxHeight(rect, margin, vh, anchor = 'above') {
             const spaceAlongAnchor = anchor === 'below'
                 ? Math.max(120, vh - rect.bottom - margin * 2)
                 : Math.max(120, rect.top - margin * 2);
             let maxH = Math.min(vh * 0.88, spaceAlongAnchor);
 
-            if (sideRail) {
-                const spaceBelow = Math.max(120, vh - rect.top - margin);
-                const spaceAbove = Math.max(120, rect.top - margin);
-                maxH = Math.min(vh * 0.88, Math.max(spaceBelow, spaceAbove));
-                return Math.round(maxH);
-            }
 
             const layout = document.getElementById('dashboard-layout');
             if (layout) {
@@ -670,6 +695,69 @@
             this.body.classList.add('is-scrollable');
         },
 
+        /**
+         * Hang the cloud under the header button, fully inside the window.
+         *
+         * Right-aligned to the button rather than left, because the actions sit
+         * at the right end of the bar: left-aligned, a wide cloud would run off
+         * the screen before the clamp caught it and land somewhere it was never
+         * anchored to.
+         */
+        positionModalUnderHeaderButton(rect, margin, vw, vh, maxW) {
+            let left = rect.right - maxW;
+            if (left + maxW > vw - margin) left = vw - margin - maxW;
+            if (left < margin) left = margin;
+
+            const top = rect.bottom + margin;
+            // What is left of the window under the button, and never taller.
+            const maxH = Math.max(160, Math.round(vh - top - margin));
+            this.syncModalSize(maxH);
+
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
+        },
+
+        /**
+         * Open away from a docked bar, fully inside the window.
+         *
+         * The button stands in the same group wherever the bar is, so the
+         * header's "hang under it" also ran for a bar at the bottom of the
+         * window -- and put the cloud under the window's edge. A bottom dock
+         * opens it above the button; a side column beside it, towards the page.
+         * A dock that has slid away still has a place to open from: the edge it
+         * slid into, which the clamps below keep the cloud inside of.
+         */
+        positionModalBesideDock(place, rect, margin, vw, vh, maxW) {
+            if (place === 'bottom') {
+                const edge = Math.min(rect.top, vh - margin);
+                const maxH = Math.max(160, Math.round(edge - margin * 2));
+                this.syncModalSize(maxH);
+                const centre = rect.left + rect.width / 2;
+                let left = centre - maxW / 2;
+                left = Math.min(Math.max(left, margin), vw - margin - maxW);
+                this.modal.style.left = `${Math.round(left)}px`;
+                this.modal.style.right = 'auto';
+                this.modal.style.top = 'auto';
+                this.modal.style.bottom = `${Math.round(vh - edge + margin)}px`;
+                return;
+            }
+            const maxH = Math.max(160, Math.round(vh - margin * 2));
+            this.syncModalSize(maxH);
+            const modalH = this.modal.offsetHeight || 200;
+            let left = place === 'left'
+                ? Math.max(rect.right, 0) + margin
+                : Math.min(rect.left, vw) - margin - maxW;
+            left = Math.min(Math.max(left, margin), vw - margin - maxW);
+            let top = rect.top + rect.height / 2 - modalH / 2;
+            top = Math.min(Math.max(top, margin), vh - margin - modalH);
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
+        },
+
         positionModalForActiveTagFilter(toggleRect, margin, vw, vh, maxW) {
             const banner = document.getElementById('tag-filter-banner');
             if (!banner || !window.dashboardInstance?.hasActiveTagFilters?.()) {
@@ -700,47 +788,6 @@
             return true;
         },
 
-        positionModalSideRail(rect, margin, vw, vh, maxW) {
-            let left = rect.right + margin;
-            if (left + maxW > vw - margin) {
-                left = Math.max(margin, vw - margin - maxW);
-            }
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.transformOrigin = 'top left';
-
-            const spaceBelow = Math.max(120, vh - rect.top - margin);
-            const spaceAbove = Math.max(120, rect.top - margin);
-
-            this.syncModalSize(spaceBelow);
-            const naturalH = this.measureModalNaturalHeight();
-
-            let top;
-            if (naturalH <= spaceBelow + 1) {
-                this.syncModalSize(spaceBelow);
-                top = rect.top;
-            } else if (naturalH <= spaceAbove + 1) {
-                this.syncModalSize(spaceAbove);
-                top = rect.top - this.modal.offsetHeight - margin;
-            } else if (spaceBelow >= spaceAbove) {
-                this.syncModalSize(spaceBelow);
-                top = rect.top;
-            } else {
-                this.syncModalSize(spaceAbove);
-                top = margin;
-            }
-
-            top = Math.max(margin, top);
-            const placedH = this.modal.offsetHeight || naturalH;
-            if (top + placedH > vh - margin) {
-                top = Math.max(margin, vh - margin - placedH);
-                this.syncModalSize(vh - top - margin);
-            }
-
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-        },
-
         positionModal() {
             if (!this.modal || !this.toggle) return;
             const rect = this.toggle.getBoundingClientRect();
@@ -754,18 +801,33 @@
             this.modal.style.width = `${Math.round(maxW)}px`;
             this.modal.style.maxWidth = `${Math.round(maxW)}px`;
 
+            // The button moved to the header, and everything below was written
+            // for a corner FAB: it pins the modal by its *bottom* edge, which
+            // from the top of the window threw it against the far corner --
+            // and the two ways in disagreed, because the / key and the button
+            // reached this code in different states. From the header it is a
+            // dropdown: under the button, hanging from its right edge, clamped
+            // into the window on both axes.
+            if (this.toggle.closest('.header-shortcuts')) {
+                let place = document.body.getAttribute('data-action-bar') || 'header';
+                // On a phone the side columns stand at the bottom.
+                if ((place === 'left' || place === 'right')
+                    && window.matchMedia?.('(max-width: 700px)').matches) {
+                    place = 'bottom';
+                }
+                if (place === 'bottom' || place === 'left' || place === 'right') {
+                    this.positionModalBesideDock(place, rect, margin, vw, vh, maxW);
+                } else {
+                    this.positionModalUnderHeaderButton(rect, margin, vw, vh, maxW);
+                }
+                return;
+            }
+
             if (this.positionModalForActiveTagFilter(rect, margin, vw, vh, maxW)) {
                 return;
             }
 
-            const isSideRail = document.body.hasAttribute('data-rail');
-            if (isSideRail) {
-                this.positionModalSideRail(rect, margin, vw, vh, maxW);
-                return;
-            }
-
-            const dockRight = document.body.getAttribute('data-button-position') === 'bottom-left';
-            let left = dockRight ? rect.right - maxW : rect.left;
+            let left = rect.left;
             if (left + maxW > vw - margin) {
                 left = vw - margin - maxW;
             }

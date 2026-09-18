@@ -51,24 +51,72 @@
 .config-view {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
+    /* Named, like the shell's own grid: the band spans both columns and the
+       rail and the panel sit under it. Left to auto-placement the band landed
+       in a third row, in the second column. */
+    /* The shell's own names: .lvs-header carries `grid-area: header`, so an
+       area called anything else is an implicit one and the band is placed after
+       the columns -- which put it at the bottom right corner of the view. */
+    grid-template-areas:
+        "header header"
+        "rail main";
     gap: 28px;
-    max-width: 1040px;
+    /* The width of the page, like health and the inbox: they were capped at
+       68rem and 1040px while the header above them runs the width of the grid,
+       so each view sat in a column of its own. */
+    max-width: 100%;
     margin: 0 auto;
-    padding: 8px 0 48px;
+    /* No top padding: the band is the first thing, and it starts where the
+       shell's own band starts in health and the inbox. */
+    padding: 0 0 48px;
 }
 
 @media (max-width: 720px) {
     .config-view {
         grid-template-columns: minmax(0, 1fr);
+        /* One column, so the areas have to be redeclared: a two-column template
+           against a one-column grid is invalid, and the whole thing falls back
+           to auto-placement -- which stacked the rail into a 6px sliver. */
+        grid-template-areas:
+            "header"
+            "rail"
+            "main";
         gap: 18px;
     }
 }
 
 /* ── Section navigation ─────────────────────────────────────────────────── */
 
+/*
+ * The rail's own heading, and the two rules in the list.
+ *
+ * "Config sections" is two steps up from the rows it names, with a line under
+ * it -- it is a heading, not another destination. The second line falls between
+ * Widgets and Statistics, which is where the rail turns from the things you set
+ * to the things it tells you.
+ */
+.config-nav-column .lvs-group-title {
+    font-size: calc(var(--font-size-text) * 1.14);
+    letter-spacing: 0;
+    color: var(--text-primary);
+    padding-bottom: var(--space-1-5, 0.35rem);
+    margin-bottom: var(--space-1, 0.25rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-nav .config-nav-item[data-config-section="stats"] {
+    margin-top: var(--space-2, 0.5rem);
+    padding-top: calc(var(--space-1) + var(--space-2, 0.5rem));
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: 0 0 var(--layout-radius-sm) var(--layout-radius-sm);
+}
+
 .config-nav-column {
+    grid-area: rail;
     display: flex;
     flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-2);
     position: sticky;
     top: 8px;
     align-self: start;
@@ -94,6 +142,34 @@
  * scrolls sideways is the bug this is meant to avoid.
  */
 @media (max-width: 720px) {
+    /*
+     * The rail's groups are a column of rows on a wide screen; in the strip the
+     * nav is the only thing in them and has to keep the whole width. The
+     * shell's own narrow rule turns .lvs-group into a row, which squeezed the
+     * scroller down to 6px and left every section outside its own box.
+     */
+    .config-nav-column .lvs-group {
+        display: block;
+        min-width: 0;
+    }
+
+    .config-nav-column .lvs-group-title {
+        display: none;
+    }
+
+    /* In the strip the rule falls between two buttons side by side, so it is a
+       left edge rather than a top one -- as a top border it pushed that button
+       onto a second line. */
+    .config-nav .config-nav-item[data-config-section="stats"] {
+        margin-top: 0;
+        padding-top: var(--space-1);
+        border-top: 0;
+        margin-left: var(--space-2, 0.5rem);
+        padding-left: calc(var(--space-2) + var(--space-2, 0.5rem));
+        border-left: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+        border-radius: var(--layout-radius-sm);
+    }
+
     .config-nav-column {
         position: static;
         /* The strip is edge-to-edge, so its scrollbar and the fade below can
@@ -121,6 +197,10 @@
 
     .config-nav .config-nav-item {
         flex: none;
+        /* The rail row fills its column on a wide screen; in the strip each
+           button is its own width, or one of them fills the scroller and the
+           rest sit outside it. */
+        width: auto;
         scroll-snap-align: start;
         white-space: nowrap;
     }
@@ -133,36 +213,53 @@
  * one line rather than every name being kept short enough for the widest
  * language. The full name stays available as a tooltip.
  */
+/*
+ * The same row health and the inbox draw.
+ *
+ * Config's rail had its own type scale, its own greys (--text-muted, a
+ * --hover-bg of flat grey) and its own idea of active (bold, a grey wash) --
+ * three views with one job and three answers. This is .lvs-filter /
+ * .lvs-section from list-view-shell.css, to the declaration.
+ */
 .config-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    width: 100%;
     text-align: left;
-    padding: 9px 12px;
+    padding: var(--space-1) var(--space-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: none;
-    border-radius: var(--radius-5, 8px);
+    border: 0;
+    border-radius: var(--layout-radius-sm);
     background: transparent;
-    color: var(--text-muted, #777);
+    color: var(--text-secondary);
     font: inherit;
-    font-size: calc(var(--font-size-text) * 1.029);
+    /* The reader's own text size, which is what the rows beside it are set in:
+       --text-sm is a fixed step, so a rail written against it stayed put while
+       every other word on the page grew -- and at 0.8rem it read as a caption
+       rather than as the list you navigate by. */
+    font-size: var(--font-size-text);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
 }
 
 .config-nav-item:hover {
-    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
-    color: var(--text-color, inherit);
+    background: var(--background-secondary);
 }
 
 .config-nav-item.is-active {
-    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
-    color: var(--accent-color, var(--text-color, inherit));
-    font-weight: 600;
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+    font-weight: 500;
 }
 
+/* The fallback is load-bearing -- see the note on .lvs-filter:focus-visible. */
 .config-nav-item:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 1px;
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
 }
 
 .config-nav-search {
@@ -189,6 +286,7 @@
 /* ── Section body ───────────────────────────────────────────────────────── */
 
 .config-view-main {
+    grid-area: main;
     min-width: 0;
 }
 
@@ -392,7 +490,7 @@
 .config-crud-toolbar--view .config-select {
     padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
     border-radius: var(--radius-4, 0.4rem);
-    background: var(--background-primary);
+    background: var(--card-bg, color-mix(in srgb, var(--background-secondary) 55%, transparent));
     color: var(--text-secondary);
     font-size: var(--text-sm, 0.8rem);
 }
@@ -537,7 +635,6 @@
 .config-tile--crit    { --tile-stripe: #d1493f; }
 
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
-
 
 .config-tile--action {
     cursor: pointer;
@@ -1900,6 +1997,327 @@
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
 /*
+ * The landing section: a row of figures, then four blocks.
+ *
+ * The figures are the install at a glance and the blocks answer one question
+ * each -- what needs you, how you use this, how tidy it is, whether the links
+ * answer. Everything about nextDash itself (the release, the developer, what
+ * is new, a tip) has its own address in About and Help, so this section is
+ * about your own collection and nothing else.
+ */
+.config-overview-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-5, 1.5rem);
+}
+
+.config-overview-blocks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4, 1rem);
+}
+
+/* One column before the blocks get too narrow to hold a sentence. */
+@media (max-width: 900px) {
+    .config-overview-tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-overview-blocks {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/*
+ * The block is the tier-2 slab the inbox and health already use, so the three
+ * views are one material rather than three descriptions of one.
+ */
+.config-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--card-bg, color-mix(in srgb, var(--background-secondary) 55%, transparent));
+}
+
+.config-block-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* The handle marks where a block starts without spending a second type size. */
+.config-block-handle {
+    color: var(--accent-primary);
+    opacity: 0.55;
+}
+
+.config-block-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.07);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* What the block is for. Two steps down, so it explains without competing. */
+.config-block-what {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-block-body {
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* The one accented block: a tint here means "this wants something from you". */
+.config-block--attention {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--card-bg, transparent));
+}
+
+.config-attention-sentences {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/*
+ * A problem is a line you can read, with the way out beside it. The count used
+ * to sit in a column of its own, which made every problem a figure to
+ * interpret rather than a sentence to act on.
+ */
+.config-attention-sentence {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-1-5, 0.35rem) 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.config-attention-sentence:last-child {
+    border-bottom: 0;
+}
+
+.config-attention-text {
+    min-width: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+}
+
+.config-attention-sentence--crit .config-attention-text {
+    color: var(--accent-error, #ef4444);
+}
+
+.config-attention-sentence--warn .config-attention-text {
+    color: var(--accent-warning, #f59e0b);
+}
+
+.config-attention-chip {
+    flex: 0 0 auto;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.68rem);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-attention-chip:hover {
+    background: var(--background-secondary);
+    color: var(--accent-primary);
+}
+
+.config-attention-chip:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
+/* Prose, so it is set to be read rather than scanned. */
+.config-habits {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--font-size-controls);
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.config-habits p {
+    margin: 0;
+}
+
+.config-cleanup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5, 1.5rem);
+}
+
+.config-cleanup-score {
+    font-size: calc(var(--font-size-text) * 2.6);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent-primary);
+}
+
+.config-cleanup-score--warn { color: var(--accent-warning, #f59e0b); }
+.config-cleanup-score--crit { color: var(--accent-error, #ef4444); }
+
+.config-cleanup-meter {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-cleanup-bar {
+    height: 6px;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    overflow: hidden;
+}
+
+.config-cleanup-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-primary);
+}
+
+.config-cleanup-bar-fill--warn { background: var(--accent-warning, #f59e0b); }
+.config-cleanup-bar-fill--crit { background: var(--accent-error, #ef4444); }
+
+.config-cleanup-reason {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-health-glance {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5, 1.5rem);
+}
+
+/*
+ * The share that answers, as a ring. --config-health-pct is set inline because
+ * it is data, not style: the number comes from the report every repaint.
+ */
+.config-health-ring {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--accent-primary) calc(var(--config-health-pct, 0) * 1%),
+        color-mix(in srgb, var(--text-primary) 8%, transparent) 0
+    );
+}
+
+.config-health-ring::after {
+    content: "";
+    grid-area: 1 / 1;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--background-primary);
+}
+
+.config-health-ring-value {
+    grid-area: 1 / 1;
+    z-index: 1;
+    font-size: var(--font-size-controls);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.config-health-counts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-health-state {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-health-label {
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-health-count {
+    font-size: var(--font-size-text);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.config-health-count--healthy { color: var(--accent-success, #10b981); }
+.config-health-count--content { color: var(--accent-warning, #f59e0b); }
+.config-health-count--down { color: var(--accent-error, #ef4444); }
+.config-health-count--broken { color: var(--accent-error, #ef4444); }
+
+/*
+ * The update line. Absent on a current install -- the bar it replaces spent a
+ * framed row saying nothing had happened.
+ */
+.config-update-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4, 1rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-warning, #f59e0b) 45%, transparent);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--accent-warning, #f59e0b) 8%, transparent);
+}
+
+.config-update-notice-text {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-primary);
+}
+
+/*
+ * The colophon line: which release is running, with its notes a button away.
+ * Quiet on purpose -- it is the last thing on the page, not an announcement.
+ */
+.config-overview-footnote {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-5, 1.5rem) 0 0;
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-secondary);
+}
+
+.config-update-notice-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+/*
  * Overview reads top-down as: act → know → read → tips. Only the act zone is
  * framed, so a border on this page means "this wants something from you".
  */
@@ -2771,20 +3189,59 @@ body.no-animations .config-new-features-panel-star {
 
 /* ── Save state ──────────────────────────────────────────────────────────── */
 
+/*
+ * The head is the shell's band now (.lvs-header): it spans both columns, the
+ * way the shell's own header spans the rail and the list, and the layout comes
+ * from list-view-shell.css. What is left here is the two lines inside it.
+ */
 .config-view-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
+    grid-area: header;
 }
 
-/* Full-width so it breaks onto its own line under the heading rather than
-   trailing beside it, and sits directly above the section intro. */
+.config-view-head .config-view-section-title {
+    margin: 0;
+}
+
 .config-view-head-breadcrumb {
-    flex-basis: 100%;
-    margin: 0 0 4px;
+    margin: 2px 0 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
+}
+
+.config-view-head-breadcrumb[hidden] {
+    display: none;
+}
+
+/*
+ * The filter and the search box ride the band's right edge, where health and
+ * the inbox keep their own actions. They were a full-width strip above the
+ * panels, so the band above it said one word and held nothing.
+ */
+.config-view-head .lvs-header-actions .config-changed-bar {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    /* One line: wrapped, the search box dropped under the toggle and the band
+       grew from 58px to nearly a hundred. */
+    flex-wrap: nowrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-view-head .lvs-header-actions .config-settings-filter {
+    max-width: 14rem;
+}
+
+.config-view-head .lvs-header-actions .config-btn,
+.config-view-head .lvs-header-actions .config-changed-count {
+    white-space: nowrap;
+}
+
+/* The count between them is the first thing to give when the window narrows. */
+@media (max-width: 1100px) {
+    .config-view-head .lvs-header-actions .config-changed-count {
+        display: none;
+    }
 }
 
 .config-view-head-breadcrumb[hidden] {
@@ -3398,35 +3855,7 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
 }
 
-/* A bookmark row stacks its own grid: the summary and the action buttons share
-   the top line, and the editor drops onto a second line when expanded. The
-   shared .config-crud-row is flex with no wrap, which would squeeze the summary
-   column to nothing, so this overrides the display outright rather than trying
-   to make the editor fit beside it. */
-/* A bookmark row stacks icon + body like the health/inbox feeds, with the
-   inline editor spanning the full width when expanded. */
-.config-bm-feed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.65rem);
-    margin: 0 0 16px;
-}
-
-/* Card, hover and keyboard cursor come from feed-row.css. The ticked edge is
-   applied as feed-row--edge-accent by the renderer. */
-
-
-.config-bm-check {
-    position: absolute;
-    top: 0.55rem;
-    left: 0.55rem;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
+/* The row's selection box; the row itself is drawn by config-bookmarks-workbench.css. */
 .config-bm-tick {
     width: 0.95rem;
     height: 0.95rem;
@@ -3436,18 +3865,6 @@ body.no-animations .config-new-features-panel-star {
     border-radius: var(--radius-2, 0.2rem);
     box-shadow: 0 0 0 2px var(--background-secondary);
     background: var(--background-secondary);
-}
-
-.config-bm-tick:not(:checked) {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.config-bm-item:hover .config-bm-tick:not(:checked),
-.config-bm-item:focus-within .config-bm-tick:not(:checked),
-.config-bm-item.keyboard-selected .config-bm-tick:not(:checked),
-.config-bm-item.is-checked .config-bm-tick:not(:checked) {
-    opacity: 1;
 }
 
 .config-bm-icon {
@@ -3472,133 +3889,6 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-icon--placeholder {
     color: var(--text-tertiary);
-}
-
-.config-bm-body {
-    min-width: 0;
-}
-
-.config-bm-title {
-    margin: 0;
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-}
-
-/*
- * The row borrows .health-view-item-meta, which is built for that feed's two
- * children: a left block and a right-aligned date column, spread by
- * space-between. This row puts six kinds of child in there — domain, pin,
- * shortcut, duplicate badge, every tag chip, check mode — so space-between
- * pushed each one to a position that depended on how many tags the bookmark
- * happened to have, and no two rows lined up.
- *
- * Left-aligned and wrapping instead, so the domain always starts at the same x
- * and a long tag list breaks to the next line rather than overflowing the card.
- */
-.config-bm-meta-primary {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-    gap: var(--space-1-5, 0.35rem) var(--space-2, 0.6rem);
-    min-width: 0;
-}
-
-.config-bm-meta-primary > * {
-    min-width: 0;
-}
-
-/*
- * Check mode is a property of the bookmark rather than part of its name, so it
- * sits in the right-hand column with the usage line below it instead of
- * trailing the tags at whatever x the tag list happens to end. `margin-left:
- * auto` rather than space-between on the parent: the left group must stay
- * packed, and only this one child is pushed over.
- */
-.config-bm-meta-primary .health-check-mode-wrap {
-    margin-left: auto;
-    flex: none;
-}
-
-/*
- * Tags get their own line once there are more than two, so a long list stops
- * competing with the domain for the identifying line above it.
- */
-/* Matches .inbox-item-tags. */
-.config-bm-tag-row {
-    margin: var(--space-1, 0.3rem) 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-    min-width: 0;
-}
-
-.config-bm-shortcut-pill {
-    font-variant-numeric: tabular-nums;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.config-bm-actions {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    opacity: 0;
-    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
-}
-
-.config-bm-actions-inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem);
-    min-height: 0;
-    overflow: hidden;
-}
-
-.config-bm-item:hover .config-bm-actions,
-.config-bm-item:focus-within .config-bm-actions,
-.config-bm-item.keyboard-selected .config-bm-actions,
-.config-bm-item.is-open .config-bm-actions {
-    grid-template-rows: 1fr;
-    margin-top: var(--space-2, 0.55rem);
-    opacity: 1;
-}
-
-.config-bm-action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1-5, 0.35rem);
-    padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
-    border-radius: var(--radius-4, 0.35rem);
-    border: 1px solid var(--border-primary);
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font-size: var(--text-sm, 0.78rem);
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.config-bm-action-btn kbd {
-    font-size: var(--text-2xs, 0.68rem);
-    padding: var(--space-hairline, 0.02rem) var(--space-1, 0.28rem);
-    border-radius: var(--radius-3, 0.25rem);
-    border: 1px solid var(--border-secondary);
-    background: var(--background-secondary);
-    color: var(--text-tertiary);
-    line-height: 1.4;
-}
-
-.config-bm-action-btn:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-bm-action-btn--danger:hover {
-    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
-    color: var(--accent-error);
 }
 
 /* The keyboard legend that closes a view. Inbox (.inbox-legend) and Health
@@ -3646,337 +3936,11 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-secondary);
 }
 
-/* Config → Bookmarks reuses the health feed row chrome (icon column, meta line,
-   action bar, overflow menu). Only the bulk-select checkbox is config-specific. */
-.config-bm-feed .health-view-item {
-    position: relative;
-}
-
-.config-bm-feed .health-view-item.is-checked {
-    border-left: 3px solid var(--accent-primary);
-}
-
-.config-bm-feed .config-bm-check {
-    position: absolute;
-    top: 0.55rem;
-    left: 0.55rem;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.config-bm-feed .config-bm-tick {
-    width: 0.95rem;
-    height: 0.95rem;
-    margin: 0;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-    border-radius: var(--radius-2, 0.2rem);
-    box-shadow: 0 0 0 2px var(--background-secondary);
-    background: var(--background-secondary);
-}
-
-.config-bm-feed .config-bm-tick:not(:checked) {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.config-bm-feed .health-view-item:hover .config-bm-tick:not(:checked),
-.config-bm-feed .health-view-item:focus-within .config-bm-tick:not(:checked),
-.config-bm-feed .health-view-item.keyboard-selected .config-bm-tick:not(:checked),
-.config-bm-feed .health-view-item.is-checked .config-bm-tick:not(:checked) {
-    opacity: 1;
-}
-
-.config-bm-meta-category {
-    margin: var(--space-1, 0.25rem) 0 0;
-    /* Larger than the 0.78rem it was: this line answers "where does this live",
-       which is the question the list is most often open for, and it was set
-       smaller than the tag chips beside it. */
-    font-size: var(--text-base, 0.86rem);
-    color: var(--text-secondary);
-    overflow-wrap: anywhere;
-}
-
-/* Page › category as one pill in two halves. Bordered rather than underlined:
-   the click filters the list, and an underline promises navigation. Squarer
-   than the tag chips above it, so the two read as different kinds of fact. */
-.config-bm-crumb {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-1, 0.3rem);
-    max-width: 100%;
-    padding: var(--space-hairline, 0.1rem) var(--space-2, 0.5rem);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-4, 0.4rem);
-    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
-}
-
-.config-bm-crumb-part {
-    padding: 0;
-    border: none;
-    background: none;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    overflow-wrap: anywhere;
-}
-
-/* The page is the container, the category the thing inside it: the muted half
-   and the plain half say which is which without a label. */
-.config-bm-crumb-page {
-    color: var(--text-tertiary);
-}
-
-.config-bm-crumb-category {
-    color: var(--text-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-.config-bm-crumb-part:hover,
-.config-bm-crumb-part:focus-visible {
-    color: var(--accent-primary);
-    text-decoration: underline;
-    text-underline-offset: 0.14em;
-}
-
-.config-bm-crumb-sep {
-    color: var(--text-tertiary);
-    font-size: 0.9em;
-}
-
-.config-bm-meta-footer {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    margin-top: var(--space-1-5, 0.35rem);
-    min-height: 1.35rem;
-}
-
-.config-bm-page-name {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-size: var(--text-sm, 0.78rem);
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.config-bm-page-name--empty {
-    visibility: hidden;
-}
-
-.config-bm-usage-col {
-    flex: none;
-    display: inline-flex;
-    align-items: baseline;
-    justify-content: flex-end;
-    gap: var(--space-1-5, 0.35rem);
-    min-width: 10rem;
-    max-width: 48%;
-    text-align: right;
-    font-size: var(--text-sm, 0.78rem);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.config-bm-feed .config-bm-meta-footer .health-view-item-opened,
-.config-bm-feed .config-bm-meta-footer .config-bm-usage {
-    font-size: inherit;
-}
-
-.config-bm-tiles-wrap {
-    margin-bottom: var(--space-3, 0.75rem);
-}
-
-.config-bm-tiles-hint {
-    margin: 0 0 var(--space-1-5, 0.35rem);
-    font-size: calc(var(--font-size-text) * 0.821);
-    color: var(--text-muted, #888);
-}
-
-.config-bm-list-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    margin: 0 0 var(--space-3, 0.65rem);
-}
-
 .config-bm-count {
     font-size: calc(var(--font-size-text) * 0.914);
     font-weight: 600;
     color: var(--text-secondary);
     white-space: nowrap;
-}
-
-.config-bm-filter-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem);
-    min-width: 0;
-}
-
-.config-bm-filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-hairline, 0.12rem) var(--space-2, 0.45rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-secondary);
-    background: var(--background-secondary);
-    color: var(--text-secondary);
-    font-size: var(--text-xs, 0.72rem);
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.config-bm-filter-chip:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-bm-filter-chip--clear {
-    font-weight: 600;
-}
-
-/* ── Bookmark tag cloud ──────────────────────────────────────────────────── */
-
-.config-bm-cloud {
-    margin: 0 0 var(--space-2, 0.6rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 0.5rem);
-    background: color-mix(in srgb, var(--background-secondary) 40%, transparent);
-}
-
-.config-bm-cloud-summary {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 0.5rem);
-    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
-    cursor: pointer;
-    font-size: var(--text-sm, 0.78rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-secondary);
-    list-style: none;
-}
-
-.config-bm-cloud-summary::-webkit-details-marker {
-    display: none;
-}
-
-.config-bm-cloud-summary::before {
-    content: "▸";
-    font-size: 0.7em;
-    transition: transform 0.15s ease;
-}
-
-.config-bm-cloud[open] .config-bm-cloud-summary::before {
-    transform: rotate(90deg);
-}
-
-.config-bm-cloud-summary-note {
-    font-weight: var(--font-weight-normal);
-    color: var(--text-tertiary);
-}
-
-.config-bm-cloud-body {
-    padding: 0 var(--space-2, 0.6rem) var(--space-2, 0.55rem);
-}
-
-.config-bm-cloud-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1, 0.3rem) var(--space-1-5, 0.35rem);
-    /* A large library can carry a hundred tags; cap the cloud and scroll rather
-       than pushing the list it filters off the screen. */
-    max-height: 11rem;
-    overflow-y: auto;
-}
-
-.config-bm-cloud-tag {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-1, 0.28rem);
-    padding: var(--space-hairline, 0.08rem) var(--space-2, 0.45rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-secondary);
-    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: var(--text-xs, 0.74rem);
-    cursor: pointer;
-}
-
-/* Weight by use, in four steps — enough to show which tags matter without the
-   rows losing their common baseline. */
-/* --s0 is the base size the rule above already sets; it exists so every chip
-   carries a step class and the scale reads as four deliberate steps. */
-.config-bm-cloud-tag--s0 { font-size: var(--text-xs, 0.74rem); }
-
-.config-bm-cloud-tag--s1 { font-size: var(--text-sm, 0.79rem); }
-
-.config-bm-cloud-tag--s2 { font-size: var(--text-sm, 0.85rem); }
-
-.config-bm-cloud-tag--s3 { font-size: var(--text-base, 0.92rem); font-weight: var(--font-weight-semibold); }
-
-.config-bm-cloud-tag:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-bm-cloud-tag.is-active {
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-    color: var(--text-primary);
-}
-
-.config-bm-cloud-count {
-    font-size: 0.68em;
-    color: var(--text-tertiary);
-    font-variant-numeric: tabular-nums;
-}
-
-.config-bm-cloud-tag.is-active .config-bm-cloud-count {
-    color: inherit;
-}
-
-.config-bm-cloud-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem);
-    margin-top: var(--space-2, 0.5rem);
-}
-
-/* Same chip as the inbox rows (.inbox-item-tag): a tag should look like a tag
-   wherever it is listed, and the two were drifting — a tinted fill against a
-   solid one, and two different border tokens. */
-.config-bm-tag-chip {
-    padding: var(--space-hairline, 0.05rem) var(--space-2, 0.45rem);
-    border-radius: var(--radius-pill, 999px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    color: var(--text-secondary);
-    font-size: var(--text-2xs, 0.68rem);
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.config-bm-tag-chip:hover,
-.config-bm-tag-chip:focus-visible {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
-    color: var(--accent-primary);
-}
-
-.config-bm-pin-icon {
-    font-size: 0.85em;
-    line-height: 1;
 }
 
 .config-bm-duplicate-badge {
@@ -3991,25 +3955,6 @@ body.no-animations .config-new-features-panel-star {
     letter-spacing: 0.03em;
 }
 
-.config-bm-meta-category-link,
-.config-bm-page-name--link {
-    padding: 0;
-    border: none;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 0.12em;
-}
-
-.config-bm-meta-category-link:hover,
-.config-bm-page-name--link:hover {
-    color: var(--accent-primary);
-}
-
 .config-bm-load-sentinel {
     height: 1px;
     width: 100%;
@@ -4021,45 +3966,6 @@ body.no-animations .config-new-features-panel-star {
     font-size: calc(var(--font-size-text) * 0.821);
     color: var(--text-muted, #888);
     text-align: center;
-}
-
-.config-bm-feed .health-view-item-actions {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    opacity: 0;
-    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
-}
-
-.config-bm-feed .health-view-item:hover .health-view-item-actions,
-.config-bm-feed .health-view-item:focus-within .health-view-item-actions,
-.config-bm-feed .health-view-item.keyboard-selected .health-view-item-actions {
-    grid-template-rows: 1fr;
-    margin-top: var(--space-2, 0.55rem);
-    opacity: 1;
-}
-
-@media (hover: none) {
-    .config-bm-feed .health-view-item-actions {
-        grid-template-rows: 1fr;
-        margin-top: var(--space-2, 0.55rem);
-        opacity: 1;
-    }
-}
-
-@media (max-width: 720px) {
-    .config-bm-usage-col {
-        min-width: 7rem;
-        max-width: 52%;
-    }
-}
-
-.config-bm-usage {
-    color: var(--text-secondary);
-}
-
-/* Legacy hooks kept for tests; layout lives on .health-view-item. */
-.config-bm-row {
 }
 
 /* Bulk bar: groups wrap as a unit so a group's controls never split across lines. */
@@ -4113,48 +4019,9 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
 }
 
-/* Inputs fill their cell rather than sitting at some default width. */
-.config-bm-cell .config-text,
-.config-bm-cell .config-select {
-    width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-.config-bm-url-row .config-text {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.config-bm-url-row .config-btn {
-    flex: none;
-}
-
-.config-bm-icon-row .config-text {
-    flex: 1 1 12rem;
-    min-width: 0;
-}
-
 .config-bm-icon-img {
     max-width: 100%;
     max-height: 100%;
-}
-
-/* Under the narrow breakpoint the paired cells stack rather than squeezing. */
-@media (max-width: 720px) {
-    .config-bm-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-.config-bm-newcat .config-text {
-    flex: 1 1 12rem;
-    min-width: 0;
-}
-
-.config-bm-editor .config-text,
-.config-bm-editor .config-select {
-    min-width: 0;
 }
 
 .config-bm-main {
@@ -4176,49 +4043,12 @@ body.no-animations .config-new-features-panel-star {
     overflow-wrap: anywhere;
 }
 
-/* Names the cleanup filter the list was opened with, and offers the way out.
-   Tinted so it reads as a temporary state rather than part of the toolbar. */
-.config-cleanup-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 0 0 12px;
-    padding: 8px 12px;
-    border-left: 3px solid var(--accent-color, #4a90d9);
-    border-radius: 0 6px 6px 0;
-    background: color-mix(in srgb, var(--accent-color, #4a90d9) 10%, transparent);
-}
-
-.config-cleanup-banner-text {
-    font-size: calc(var(--font-size-text) * 0.914);
-    font-weight: 600;
-    color: var(--text-primary, inherit);
-}
-
 /* Count and its button travel together at the end of a cleanup row. */
 .config-cleanup-actions {
     display: inline-flex;
     align-items: center;
     gap: 10px;
     flex: none;
-}
-
-/* Usage sits under the meta line, dimmer than it: the meta line says where the
-   bookmark lives, this says whether it is used. Never-opened is tinted rather
-   than merely worded, so a list of dead links is visible without reading it. */
-.config-bm-usage {
-    font-size: inherit;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    opacity: 0.85;
-    white-space: nowrap;
-}
-
-.config-bm-usage.is-never {
-    color: var(--text-disabled, #9a9a9a);
-    font-style: italic;
 }
 
 .config-help-tips {
@@ -4589,6 +4419,39 @@ body.no-animations .config-new-features-panel-star {
     margin-top: 8px;
 }
 
+/* Shape & character: a fold under the colours, one row per field. A row can
+   hold a mode picker as well as a slider, so it wraps rather than using the
+   field grid's fixed columns. */
+.config-theme-character {
+    margin-top: 18px;
+}
+
+.config-theme-character > summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.config-field.config-theme-char {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 10px;
+}
+
+.config-theme-char > .config-field-label {
+    flex: 0 0 min(100%, 220px);
+}
+
+.config-theme-char > .config-range {
+    flex: 1 1 160px;
+    max-width: 260px;
+}
+
+.config-theme-char > [hidden] {
+    display: none;
+}
+
 .config-theme-group-title {
     margin: 0 0 8px;
     font-size: calc(var(--font-size-text) * 0.9);
@@ -4866,14 +4729,139 @@ body.no-animations .config-new-features-panel-star {
 @media (prefers-reduced-motion: reduce) {
 }
 
+/* ── Server logs toolbar ──────────────────────────────────────────────────── */
+
+/*
+ * One row: the level filter, search, follow, the action buttons and the
+ * settings gear. Wraps rather than scrolling sideways when it does not fit —
+ * a toolbar that hides its own buttons behind a scrollbar is worse than one
+ * that grows a second line.
+ */
+.config-log-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin: 4px 0 12px;
+}
+
+.config-log-toolbar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-log-toolbar-item .config-field-label {
+    white-space: nowrap;
+}
+
+/*
+ * Grows only enough to use spare room, never enough to push the action
+ * buttons onto a second line — a search box wants width, but the buttons at
+ * the end of the row are the ones that must not be the thing that wraps.
+ */
+.config-log-toolbar-search {
+    flex: 0 1 200px;
+    min-width: 140px;
+}
+
+.config-log-toolbar-search .config-text {
+    width: 100%;
+}
+
+.config-log-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.config-icon-btn {
+    padding: 7px 10px;
+    line-height: 1;
+    font-size: calc(var(--font-size-text) * 1.1);
+}
+
+/* ── Log settings popover ─────────────────────────────────────────────────── */
+
+/*
+ * The settings that used to be their own panel, collected behind the gear so
+ * the toolbar stays one row and the viewer keeps the width. Wears the same
+ * surface as every menu in the app (.move-popover); only the size and the
+ * stacked fields below are its own, since it holds selects and hints rather
+ * than a list of items.
+ */
+.config-log-settings-popover {
+    width: min(320px, calc(100vw - 24px));
+    max-width: min(320px, calc(100vw - 24px));
+    padding: 0;
+}
+
+.config-log-settings-popover[hidden] {
+    display: none;
+}
+
+.config-log-settings-body {
+    padding: 2px 14px 12px;
+}
+
+.config-log-settings-body .config-field {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.config-log-settings-body .config-field-label {
+    grid-column: 1 / -1;
+}
+
+.config-log-settings-body .config-select {
+    width: 100%;
+}
+
+/* ── Activity trail cards ─────────────────────────────────────────────────── */
+
+/*
+ * The three channel groups (Changes, Usage, Client) as cards rather than
+ * blocks in one long panel — auto-fit so three sit side by side on a wide
+ * screen and stack on a narrow one without a breakpoint to maintain.
+ */
+.config-log-trail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.config-log-trail-card.config-panel {
+    margin-top: 0;
+}
+
+.config-log-trail-footer {
+    margin-top: 20px;
+}
+
+.config-log-trail-footer:empty {
+    margin-top: 0;
+}
+
+/* Below this, three across is a squeeze even with auto-fit's own minimum. */
+@media (max-width: 720px) {
+    .config-log-trail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ── Server log viewer ───────────────────────────────────────────────────── */
 
 /*
- * A scrolling tail inside the panel rather than a growing page: the log can be
- * two thousand lines, and the buttons under it have to stay reachable.
+ * A scrolling tail that fills the height the panel has to give it, rather
+ * than a fixed box: the log is the one thing in the section read continuously,
+ * so it is worth more of the screen than a few hundred pixels.
  */
 .config-log-view {
-    max-height: 420px;
+    height: calc(100vh - 420px);
+    min-height: 320px;
     overflow-y: auto;
     margin: 12px 0;
     padding: 8px 10px;
@@ -5020,44 +5008,6 @@ body.no-animations .config-new-features-panel-star {
     margin-top: 4px;
 }
 
-/* ── Inline edits and scope marks in the bookmark list ──────────────────────
-   Name and shortcut are edited where they are read: the row keeps its place,
-   Enter saves, Escape puts the old value back. The empty shortcut pill is
-   deliberately visible — assigning one to fifty rows used to mean fifty
-   modals, and an absent pill gave the pointer nothing to aim at. */
-.config-bm-inline-input {
-    font: inherit;
-    color: var(--text-primary);
-    background: var(--background-primary);
-    border: 1px solid var(--accent-primary);
-    border-radius: var(--radius-3, 4px);
-    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
-    min-width: 4rem;
-    max-width: 100%;
-}
-
-.config-bm-inline-input--name {
-    width: min(28rem, 100%);
-}
-
-.config-bm-inline-input--shortcut {
-    width: 4.5rem;
-    text-transform: uppercase;
-}
-
-button.config-bm-shortcut-pill {
-    font: inherit;
-    cursor: pointer;
-}
-
-.config-bm-shortcut-pill--empty {
-    opacity: 0.45;
-}
-
-.config-bm-shortcut-pill--empty:hover {
-    opacity: 1;
-}
-
 /* Which settings do not follow the rule the rest follow — see fieldScopeNote. */
 .config-field-scope {
     margin-left: var(--space-1-5, 0.35rem);
@@ -5083,21 +5033,6 @@ button.config-bm-shortcut-pill {
 .config-dist-label--link:hover {
     color: var(--accent-primary);
     text-decoration: underline;
-}
-
-/* The shortcut a row is trying to take, and who already has it. Shown while the
-   field is open — a conflict found later is a red row in Health; a conflict
-   found here is one Escape away from not happening. */
-.config-bm-inline-input.is-invalid {
-    border-color: var(--accent-error);
-}
-
-.config-bm-inline-conflict {
-    display: inline-block;
-    margin-left: var(--space-1-5, 0.4rem);
-    color: var(--accent-error);
-    font-size: var(--text-xs, 0.72rem);
-    white-space: nowrap;
 }
 
 /* The Tips tab filters itself, at the grain of one tip: help's own search
@@ -5224,25 +5159,6 @@ button.config-bm-shortcut-pill {
     margin: 0 0 var(--space-2, 0.5rem);
     font-size: var(--text-sm, 0.82rem);
     color: var(--text-muted, #777);
-}
-
-/* The three orders people use, and the filter that answers "what did I touch".
-   A row of chips above the list: a select shows one option and hides the rest,
-   which is where "most opened" went to be never found. */
-.config-bm-quickbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1-5, 0.4rem);
-    margin: 0 0 var(--space-2, 0.6rem);
-}
-
-.config-bm-quickbar-label {
-    font-size: var(--text-xs, 0.75rem);
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--text-muted, #777);
-    margin-right: var(--space-hairline, 0.15rem);
 }
 
 .config-choice--small {
@@ -7039,7 +6955,6 @@ button.config-bm-shortcut-pill {
 .config-panel-note--warn {
     color: var(--warn, #cf9014);
 }
-
 
 /*
  * A key named in a tip looks like a key.

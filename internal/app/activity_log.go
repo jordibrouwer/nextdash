@@ -3,7 +3,9 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -36,10 +38,15 @@ const (
 )
 
 type activityLogConfig struct {
-	enabled  map[string]bool
-	persist  bool
-	filePath string
-	disabled bool
+	enabled     map[string]bool
+	persist     bool
+	filePath    string
+	disabled    bool
+	openDetail  string
+	format      string
+	urls        string
+	sampleRates map[string]float64
+	maxAgeDays  int
 }
 
 var (
@@ -77,6 +84,27 @@ func loadActivityLogConfig() activityLogConfig {
 	}
 
 	cfg := activityLogConfig{enabled: enabled}
+	cfg.openDetail = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_OPEN_DETAIL"))
+	cfg.format = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_FORMAT"))
+	cfg.urls = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_URLS"))
+	if sampleRaw := strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_SAMPLE")); sampleRaw != "" {
+		rates, badPart := parseActivitySampleRates(sampleRaw)
+		if badPart != "" {
+			// Once, at startup: a malformed rate is a configuration mistake to
+			// notice and fix, not a line to repeat on every request that would
+			// otherwise have been sampled.
+			logWarn(logComponentServer,
+				"NEXTDASH_ACTIVITY_LOG_SAMPLE: %q is not channel=rate with rate in [0,1]; sampling is off, every channel logs in full",
+				badPart)
+		} else {
+			cfg.sampleRates = rates
+		}
+	}
+	if ageRaw := strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_MAX_AGE_DAYS")); ageRaw != "" {
+		if days, err := strconv.Atoi(ageRaw); err == nil && days > 0 {
+			cfg.maxAgeDays = days
+		}
+	}
 	if strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_PERSIST")) == "1" {
 		cfg.persist = true
 		cfg.filePath = strings.TrimSpace(os.Getenv("NEXTDASH_ACTIVITY_LOG_FILE"))
@@ -120,6 +148,154 @@ func setActivityChannelsForRuntime(enabled map[string]bool) {
 	activityCfg = cfg
 }
 
+/*
+setActivityOpenDetailForRuntime replaces how much an open record carries, the
+same way setActivityChannelsForRuntime replaces which channels are on —
+persistence and the channel list are left exactly as they were.
+*/
+func setActivityOpenDetailForRuntime(level string) {
+	cfg := activityConfig()
+	cfg.openDetail = level
+	activityCfgMu.Lock()
+	defer activityCfgMu.Unlock()
+	if activityCfgTest != nil {
+		*activityCfgTest = cfg
+		return
+	}
+	activityCfgOnce.Do(func() {})
+	activityCfg = cfg
+}
+
+// activityOpenDetailLevel is how much the open record carries beyond the
+// pageId/index it always had: off strips source/method back out, basic is
+// exactly Phase 1's two fields, and full adds the client-supplied extras.
+// Basic is the default for the same reason the eight channels default off —
+// an unset or unrecognised value must read as whatever a reader who has
+// never touched this setting already has, which is Phase 1's shape.
+func activityOpenDetailLevel() string {
+	switch strings.ToLower(strings.TrimSpace(activityConfig().openDetail)) {
+	case "off":
+		return "off"
+	case "full":
+		return "full"
+	default:
+		return "basic"
+	}
+}
+
+// activityLogFormatValue is text unless the reader asked for json, the same
+// unset-reads-as-today's-shape rule every other knob here follows.
+func activityLogFormatValue() string {
+	if strings.EqualFold(strings.TrimSpace(activityConfig().format), "json") {
+		return "json"
+	}
+	return "text"
+}
+
+// activityLogURLsValue is full — today's behaviour, complete URLs and query
+// text — unless the reader asked for less.
+func activityLogURLsValue() string {
+	switch strings.ToLower(strings.TrimSpace(activityConfig().urls)) {
+	case "host":
+		return "host"
+	case "off":
+		return "off"
+	default:
+		return "full"
+	}
+}
+
+// activityHostOnly keeps a URL's scheme and host and drops everything after
+// it — path, query, fragment — since the query string is exactly where a
+// token or a search term would otherwise ride along. Text that does not
+// parse as a URL (an ordinary search query, most of the time) has no host to
+// reduce it to, so it passes through unchanged: "host" is a statement about
+// URLs, not a general redaction of anything that might resemble one.
+func activityHostOnly(s string) string {
+	trimmed := strings.TrimSpace(s)
+	if trimmed == "" {
+		return trimmed
+	}
+	parsed, err := neturl.Parse(trimmed)
+	if err != nil || parsed.Host == "" {
+		return trimmed
+	}
+	return parsed.Scheme + "://" + parsed.Host
+}
+
+// activityURL is activityUserText's sibling for a call site that interpolates
+// a URL directly into a readable sentence with fmt.Sprintf, rather than
+// through a fields map. A field can drop out silently when its value is
+// empty — logActivity already does that — but a sentence with a blank pair
+// of parens reads as broken, so "off" here returns a fixed placeholder
+// instead of "". Every place that builds a sentence containing a bookmark's
+// address calls this rather than interpolating bm.URL, so NEXTDASH_ACTIVITY_LOG_URLS
+// governs the sentence and the field the same way.
+func activityURL(u string) string {
+	switch activityLogURLsValue() {
+	case "off":
+		return "(url hidden)"
+	case "host":
+		return activityHostOnly(u)
+	default:
+		return u
+	}
+}
+
+// activitySampleRand is a var so a test can pin the roll instead of
+// tolerating a probabilistic assertion.
+var activitySampleRand = rand.Float64
+
+// activitySampleAllows is the per-channel sampling gate. A channel absent
+// from the configured rates is unsampled — every line is logged, exactly as
+// before this setting existed — and a malformed NEXTDASH_ACTIVITY_LOG_SAMPLE
+// leaves the map empty, which reads the same way for every channel.
+func activitySampleAllows(category string) bool {
+	rates := activityConfig().sampleRates
+	if rates == nil {
+		return true
+	}
+	rate, ok := rates[category]
+	if !ok {
+		return true
+	}
+	if rate <= 0 {
+		return false
+	}
+	if rate >= 1 {
+		return true
+	}
+	return activitySampleRand() < rate
+}
+
+// parseActivitySampleRates reads "open=0.1,keys=0.25". The second return is
+// the exact segment that failed to parse, so the startup warning can name it
+// rather than making whoever set the variable guess which of several
+// channels was the problem.
+func parseActivitySampleRates(raw string) (map[string]float64, string) {
+	rates := make(map[string]float64)
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) != 2 {
+			return nil, part
+		}
+		channel := strings.ToLower(strings.TrimSpace(kv[0]))
+		rate, err := strconv.ParseFloat(strings.TrimSpace(kv[1]), 64)
+		if channel == "" || err != nil || rate < 0 || rate > 1 {
+			return nil, part
+		}
+		rates[channel] = rate
+	}
+	if len(rates) == 0 {
+		return nil, raw
+	}
+	return rates, ""
+}
+
 func activityEnabled(category string) bool {
 	cfg := activityConfig()
 	if cfg.disabled {
@@ -149,6 +325,9 @@ func logActivity(category, event string, fields map[string]any, sentence string)
 	if !activityEnabled(category) {
 		return
 	}
+	if !activitySampleAllows(category) {
+		return
+	}
 	entry := map[string]any{
 		"ts":    time.Now().UTC().Format(time.RFC3339),
 		"event": event,
@@ -168,7 +347,18 @@ func logActivity(category, event string, fields map[string]any, sentence string)
 		return
 	}
 	line := append(payload, '\n')
-	if trimmed := strings.TrimSpace(sentence); trimmed != "" {
+	// text (the default) writes exactly what it always has: the readable
+	// sentence, to the container log. json instead puts the same structured
+	// line docker logs sees there too, so a setup piping stdout straight into
+	// Loki or Vector — with no file mounted at all — gets one parseable
+	// stream instead of a sentence that tool would have to throw away.
+	if activityLogFormatValue() == "json" {
+		if category == activityCategorySecurity {
+			logWarn(category, "%s", string(payload))
+		} else {
+			logInfo(category, "%s", string(payload))
+		}
+	} else if trimmed := strings.TrimSpace(sentence); trimmed != "" {
 		// Security is the exception to the INFO default: a denied write or a
 		// rate limit hit should be visible without switching a channel on.
 		if category == activityCategorySecurity {
@@ -186,7 +376,7 @@ func writeActivityLogLine(line []byte) {
 		return
 	}
 	activityFileOnce.Do(func() {
-		activityFile = &activityRotatingFile{path: cfg.filePath}
+		activityFile = &activityRotatingFile{path: cfg.filePath, maxAgeDays: cfg.maxAgeDays}
 	})
 	_ = activityFile.write(line)
 }
@@ -209,6 +399,11 @@ type activityRotatingFile struct {
 	backups  int
 	keepOpen bool
 	fh       *os.File
+	// maxAgeDays prunes rotated backups older than this many days, on top of
+	// the size ceiling above rather than instead of it — whichever a backup
+	// hits first is the one that removes it. Zero (the default) leaves every
+	// backup exactly as long as the count above already did.
+	maxAgeDays int
 }
 
 func (f *activityRotatingFile) limit() int64 {
@@ -228,6 +423,8 @@ func (f *activityRotatingFile) backupCount() int {
 func (f *activityRotatingFile) write(line []byte) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	f.pruneOldBackupsLocked()
 
 	// With a handle held open, size is tracked in memory and only re-read when
 	// the file is first opened; stat-ing per line is what made this expensive.
@@ -279,6 +476,29 @@ func (f *activityRotatingFile) closeHandleLocked() {
 	if f.fh != nil {
 		_ = f.fh.Close()
 		f.fh = nil
+	}
+}
+
+// pruneOldBackupsLocked removes a rotated backup once it is older than
+// maxAgeDays, independent of whether the count-based limit above would have
+// kept it. A zero maxAgeDays (the default) costs one comparison and touches
+// no file, so an install that never sets NEXTDASH_ACTIVITY_LOG_MAX_AGE_DAYS
+// sees no change in behaviour or in how often this stats the disk. Caller
+// holds the mutex.
+func (f *activityRotatingFile) pruneOldBackupsLocked() {
+	if f.maxAgeDays <= 0 {
+		return
+	}
+	cutoff := time.Now().Add(-time.Duration(f.maxAgeDays) * 24 * time.Hour)
+	for i := 1; i <= f.backupCount(); i++ {
+		path := f.path + "." + strconv.Itoa(i)
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+		if info.ModTime().Before(cutoff) {
+			_ = os.Remove(path)
+		}
 	}
 }
 
@@ -413,7 +633,7 @@ func logBookmarkStatus(url string, result PingResult, source string, force bool)
 		return
 	}
 	fields := map[string]any{
-		"url":    url,
+		"url":    activityUserText(url),
 		"status": result.Status,
 		"source": source,
 	}
@@ -427,7 +647,7 @@ func logBookmarkStatus(url string, result PingResult, source string, force bool)
 		fields["httpStatus"] = result.HTTPStatus
 	}
 	logActivity(activityCategoryStatus, "bookmark.status", fields,
-		bookmarkStatusSentence(url, result))
+		bookmarkStatusSentence(activityURL(url), result))
 }
 
 func logBookmarkStatusBatch(tested, online, offline int, source string) {

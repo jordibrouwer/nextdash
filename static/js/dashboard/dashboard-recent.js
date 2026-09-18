@@ -105,14 +105,23 @@ class DashboardRecent {
             ).join('')
         }</div>`;
 
+        /*
+         * It hangs from the header, the way the pages panel does.
+         *
+         * Recents is opened from the bar in that band and answers a question
+         * about the page under it -- what did I open last -- so it drops out of
+         * the band rather than floating over a dimmed screen. The anchor is
+         * measured at open time: the band's height is the reader's.
+         */
+        window.DashboardUiHelpers?.publishHeaderSheetAnchor?.();
+        const grid = this.recentSheetIsGrid();
+
         window.AppModal.show({
             title: d.language.t('dashboard.recentBookmarksTitle') || 'Recent bookmarks',
             htmlMessage: skeletonHtml,
             confirmText: d.language.t('dashboard.close') || 'Close',
             showCancel: false,
-            modalClass: 'recent-bookmarks-modal',
-            modalMaxWidth: '440px',
-            modalWidth: '92vw',
+            modalClass: `recent-bookmarks-modal header-sheet recents-sheet${grid ? ' is-grid' : ' is-compact'}`,
             onHide: () => {
                 this._cleanupRecentModalKeyHandler();
             },
@@ -154,6 +163,37 @@ class DashboardRecent {
     }
 
 
+    /**
+     * Past this many entries the sheet spans the page's column and lays the
+     * rows out across it. Three: one full line of the widest layout, so the
+     * fourth is the first that would leave a hole in it.
+     */
+    static SHEET_GRID_FROM = 3;
+
+    recentSheetIsGrid() {
+        const d = this.dash;
+        if (!d?._bookmarksReady) return true;
+        const shown = this.getRecentBookmarks(d.bookmarks, DashboardBookmarkRows.RECENT_MODAL_DISPLAY_LIMIT);
+        return shown.length > DashboardRecent.SHEET_GRID_FROM;
+    }
+
+    /**
+     * The shape follows what the list turned out to hold.
+     *
+     * The panel opens before the bookmarks are counted -- it shows a skeleton
+     * while they load -- so the shape it opened with is a guess. Corrected
+     * here, where the rows are known.
+     */
+    _syncRecentSheetShape(count) {
+        const panel = document.querySelector('.recent-bookmarks-modal');
+        if (!panel) return;
+        const grid = count > DashboardRecent.SHEET_GRID_FROM;
+        panel.classList.toggle('is-grid', grid);
+        panel.classList.toggle('is-compact', !grid);
+        panel.classList.toggle('is-empty', count === 0);
+        panel.classList.toggle('is-single', count === 1);
+    }
+
     _fillRecentBookmarksModal() {
         const d = this.dash;
         const panel = document.querySelector('.recent-bookmarks-modal');
@@ -193,14 +233,31 @@ class DashboardRecent {
                    ${recentBookmarks.map((bookmark, index) => {
                        const safeName = d.escapeHtml(bookmark.name || d.bookmarkFallbackName());
                        const safeUrl = this.safeHttpBookmarkHref(bookmark.url);
-                       const safeCategory = d.escapeHtml(bookmark.category || (d.language.t('dashboard.uncategorized') || 'Other'));
+                       /*
+                        * A bookmark's category is an id. Printed raw it read as
+                        * "// cat_mrjjzqik_o2rt0", which is the store talking to
+                        * itself.
+                        */
+                       const category = (d.categories || [])
+                           .find((item) => String(item.id) === String(bookmark.category));
+                       const safeCategory = d.escapeHtml(category?.name
+                           || bookmark.category
+                           || (d.language.t('dashboard.uncategorized') || 'Other'));
                        const recency = d.escapeHtml(this.formatRecentRecency(bookmark.lastOpened));
                        const openCount = this.formatRecentOpenCount(bookmark.openCount);
                        const openCountHtml = openCount
                            ? `<span class="recent-bookmarks-modal-opens">${d.escapeHtml(openCount)}</span>`
                            : '';
                        const target = openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+                       /*
+                        * The key the reader would type, where the pages sheet
+                        * puts its number. Reserved whether or not there is one,
+                        * so the names line up down the column instead of each
+                        * starting where the one above it ended.
+                        */
+                       const shortcut = String(bookmark.shortcut || '').toUpperCase();
                        return `<a class="recent-bookmarks-modal-item" href="${safeUrl}" data-recent-index="${index}"${target}>
+                                   <span class="recent-bookmarks-modal-shortcut" aria-hidden="true">${d.escapeHtml(shortcut)}</span>
                                    ${this.recentIconHtml(bookmark)}
                                    <span class="recent-bookmarks-modal-name">${safeName}</span>
                                    <span class="recent-bookmarks-modal-detail">// ${safeCategory}</span>
@@ -220,6 +277,7 @@ class DashboardRecent {
 
         contentEl.innerHTML = listHtml;
         contentEl.setAttribute('aria-busy', 'false');
+        this._syncRecentSheetShape(recentBookmarks.length);
 
         if (recentBookmarks.length > 0) {
             contentEl.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {
@@ -284,7 +342,8 @@ class DashboardRecent {
                 this._cleanupRecentModalKeyHandler();
                 return;
             }
-            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') {
+            const walks = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'];
+            if (!walks.includes(e.key)) {
                 return;
             }
             const items = getFocusables();
@@ -300,16 +359,39 @@ class DashboardRecent {
                 idx = 0;
             } else if (e.key === 'End') {
                 idx = items.length - 1;
-            } else if (e.key === 'ArrowDown') {
+            } else if (e.key === 'ArrowRight') {
                 idx = (idx + 1) % items.length;
-            } else {
+            } else if (e.key === 'ArrowLeft') {
                 idx = (idx - 1 + items.length) % items.length;
+            } else {
+                /*
+                 * Down means down.
+                 *
+                 * The rows lie across the sheet now, so a step of one is a step
+                 * sideways and the vertical arrows stopped doing anything
+                 * vertical. The step is the number of entries standing on a
+                 * line, counted off the layout rather than configured -- the
+                 * count falls out of the sheet's width.
+                 */
+                const step = this._recentRowsAcross(items);
+                idx = e.key === 'ArrowDown'
+                    ? Math.min(items.length - 1, idx + step)
+                    : Math.max(0, idx - step);
             }
             items[idx].focus({ preventScroll: true });
         };
         document.addEventListener('keydown', d._recentModalKeyHandler, true);
     }
 
+
+    /** How many entries stand on one line of the sheet. */
+    _recentRowsAcross(items) {
+        const rows = (items || []).filter((el) => el.classList?.contains('recent-bookmarks-modal-item'));
+        if (rows.length < 2) return 1;
+        const top = Math.round(rows[0].getBoundingClientRect().top);
+        const across = rows.filter((el) => Math.abs(Math.round(el.getBoundingClientRect().top) - top) <= 2).length;
+        return Math.max(1, across);
+    }
 
     _cleanupRecentModalKeyHandler() {
         const d = this.dash;
@@ -393,7 +475,7 @@ class DashboardRecent {
     }
 
 
-    recordBookmarkOpened(bookmark, bookmarkIndex, source = 'dashboard') {
+    recordBookmarkOpened(bookmark, bookmarkIndex, source = 'dashboard', method, extra) {
         const d = this.dash;
         if (!bookmark) return;
 
@@ -412,7 +494,7 @@ class DashboardRecent {
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 
         if (index >= 0 && pageId > 0) {
-            d.analytics?.trackBookmarkOpen(pageId, index, source);
+            d.analytics?.trackBookmarkOpen(pageId, index, source, method, extra);
         }
     }
 

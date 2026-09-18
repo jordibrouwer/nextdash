@@ -499,9 +499,13 @@ body.no-animations .inbox-item-actions {
     padding: var(--space-1-5, 0.35rem) var(--space-2, 0.55rem);
     border-radius: var(--radius-4, 0.4rem);
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    /* The surface the rows and the band are drawn on, not the page colour: a
+       field painted in --background-primary reads as a hole in the view rather
+       than as part of it. Same token the panels and tiles use. */
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     color: var(--text-primary);
-    font-size: var(--text-sm, 0.82rem);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-text) * 0.914);
 }
 
 .inbox-triage-btn,

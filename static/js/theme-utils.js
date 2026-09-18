@@ -55,10 +55,18 @@
     function getPairedThemeVariant(themeId, wantsDark, options) {
         const opts = options || {};
         const base = String(themeId || 'dark');
-        if (isUserCustomThemeId(base)) {
-            return base;
-        }
         const customIds = opts.customThemeIds ?? getCustomThemeIds();
+        /*
+         * A custom theme made into a pair is named the way the packaged ones
+         * are, <base>-light and <base>-dark, and swaps like them -- but only
+         * when the other half exists. A single custom theme stays itself.
+         */
+        if (isUserCustomThemeId(base)) {
+            const pair = base.match(/^(.*)-(dark|light)$/);
+            if (!pair) return base;
+            const other = `${pair[1]}-${wantsDark ? 'dark' : 'light'}`;
+            return Array.isArray(customIds) && customIds.includes(other) ? other : base;
+        }
         if (Array.isArray(customIds) && customIds.includes(base)) {
             return base;
         }

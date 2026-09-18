@@ -210,3 +210,40 @@
     flex: 0 0 auto;
     white-space: nowrap;
 }
+
+/* Gloss themes: a badge beside the name, and the light they catch drawn over
+   the swatches, so the card shows the difference before it is picked. */
+.theme-browser-badge {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: linear-gradient(180deg,
+        color-mix(in srgb, white 22%, var(--accent-wash, transparent)) 0%,
+        var(--accent-wash, transparent) 60%);
+    color: var(--accent-primary);
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.theme-browser-card.is-gloss .theme-browser-swatches {
+    position: relative;
+}
+
+.theme-browser-card.is-gloss .theme-browser-swatches::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, white 34%, transparent) 0%,
+        color-mix(in srgb, white 8%, transparent) 45%,
+        transparent 55%);
+    pointer-events: none;
+}
+
+.theme-browser-card-name {
+    margin-right: auto;
+}

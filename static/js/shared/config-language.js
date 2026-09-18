@@ -220,6 +220,9 @@ class ConfigLanguage {
             'finders-button',
             'recent-bookmarks-button',
             'help-button',
+            'collapse-all-button',
+            'page-overview-header-btn',
+            'tag-cloud-toggle-btn',
         ]);
         const tooltipElements = document.querySelectorAll('[data-i18n-tooltip]');
         tooltipElements.forEach(element => {

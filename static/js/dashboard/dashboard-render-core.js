@@ -954,10 +954,14 @@ class DashboardRenderCore {
             // same repaint the full render gets below. This is the common route
             // — most mutations never reach the full rebuild.
             d.multiSelect?.prune();
+            // msSinceRender (the "full" open-detail extra) measures from here:
+            // the grid the reader is looking at, whichever path last painted it.
+            d._bookmarkGridRenderedAt = Date.now();
             return;
         }
         const animate = options && options.animate === true;
         d._renderAnimationsEnabled = animate;
+        d._bookmarkGridRenderedAt = Date.now();
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         container.classList.remove('inbox-layout', 'health-layout', 'config-layout');
@@ -1230,6 +1234,7 @@ class DashboardRenderCore {
             d.collapsedCategories[key] = target;
         });
         d.saveCollapsedStates();
+        window.nextdashTrackNav?.(target ? 'category-collapse' : 'category-expand', 'all');
     }
 
     initializeCategoryReorder() {
@@ -2672,6 +2677,7 @@ class DashboardRenderCore {
             titleElement.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             d.collapsedCategories[collapsedKey] = collapsed;
             d.saveCollapsedStates();
+            window.nextdashTrackNav?.(collapsed ? 'category-collapse' : 'category-expand');
         };
 
         titleElement.addEventListener('click', (e) => {

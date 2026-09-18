@@ -6,9 +6,42 @@ class DashboardSetup {
         this.dash = dashboard;
     }
 
+    /**
+     * Says whether the page has been scrolled away from the top.
+     *
+     * The view header is a sticky band drawn at 55% of the surface, which reads
+     * as part of the page while the page starts under it -- and as a smear once
+     * rows are passing behind it. This is the one fact the CSS needs to paint it
+     * solid while that is true, and it is a fact about the window rather than
+     * about the inbox, health or config in particular, so it is answered once
+     * here instead of three times over there.
+     *
+     * Bound once and never removed: the handler is a comparison and an attribute
+     * write, and the page it is bound to outlives every view.
+     */
+    bindScrolledState() {
+        if (this._scrolledStateBound) return;
+        this._scrolledStateBound = true;
+        const sync = () => {
+            const y = window.scrollY || document.documentElement.scrollTop || 0;
+            document.body.setAttribute('data-scrolled', y > 4 ? 'true' : 'false');
+        };
+        window.addEventListener('scroll', sync, { passive: true });
+        // A reload starts at the top, and so does the back/forward cache after
+        // the browser restores the scroll position -- hence both.
+        window.addEventListener('pageshow', sync);
+        this._syncScrolledState = sync;
+        sync();
+    }
+
+
     setupDOM() {
         const d = this.dash;
         d.updateDateVisibility();
+        this.bindScrolledState();
+        // Opening a view scrolls the page back to the top, and that happens
+        // without a scroll event to hear about it.
+        this._syncScrolledState?.();
 
         document.body.setAttribute('data-show-title', d.settings.showTitle);
         // How far a row's accent carries when it lights up. Written here as
@@ -19,6 +52,9 @@ class DashboardSetup {
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-health-dashboard', d.settings.showHealthDashboard === true);
+        document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
+        document.body.setAttribute('data-show-inbox-button', d.settings.showInboxButton !== false);
+        document.body.setAttribute('data-show-dashboard-button', d.settings.showDashboardButton !== false);
         document.body.setAttribute('data-show-cheatsheet-button', d.settings.showCheatSheetButton !== false);
         document.body.setAttribute('data-show-collapse-all-button', d.settings.showCollapseAllButton !== false);
         document.body.setAttribute('data-show-add-bookmark-button', d.settings.showAddBookmarkButton !== false);
@@ -30,21 +66,53 @@ class DashboardSetup {
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
         );
-        const barPosition = d.settings.buttonBarPosition || 'bottom-right';
-        document.body.setAttribute('data-button-position', barPosition);
-        // Side-agnostic hook: layout-side-rail.css keys every rail rule off this
-        // and reads the physical side from variables, so the two rails share one
-        // set of rules instead of mirrored copies.
-        if (barPosition === 'side-left' || barPosition === 'side-right') {
-            document.body.setAttribute('data-rail', barPosition === 'side-left' ? 'left' : 'right');
-        } else {
-            document.body.removeAttribute('data-rail');
-        }
+        // Where the clock and the weather are drawn: beside the name, or in a
+        // zone of their own between the name and the pages. CSS reads it off
+        // <body>, so switching it is a repaint rather than a re-render.
+        document.body.setAttribute(
+            'data-header-clock',
+            ['own-zone', 'classic'].includes(d.settings.headerClockPlacement)
+                ? d.settings.headerClockPlacement
+                : 'beside-name'
+        );
+        // How much room the pages take in the middle of the band: one segmented
+        // control, plain text with an underline, or a single button naming the
+        // page you are on. CSS reads it off <body>; the compact one also takes
+        // a cap of one tab, which dashboard-page-nav.js reads from the setting.
+        // Plain glyphs with a rule under the current one, or a plate around
+        // every control: one answer for the tabs, the actions and the
+        // destinations alike. CSS reads it off <body>.
+        // Where the action buttons stand. CSS moves the one group that already
+        // holds them, so the buttons, their keys and their handlers stay put.
+        document.body.setAttribute(
+            'data-action-bar',
+            ['bottom', 'left', 'right', 'menu'].includes(d.settings.actionBarPosition)
+                ? d.settings.actionBarPosition
+                : 'header'
+        );
+        // Off draws no action buttons anywhere; their keys keep working. The
+        // seconds are what the dock waits before sliding into its edge.
+        document.body.setAttribute('data-action-bar-enabled',
+            d.settings.actionBarEnabled === false ? 'off' : 'on');
+        document.body.setAttribute('data-action-keys',
+            d.settings.showActionKeys === false ? 'off' : 'on');
+        window.ActionBarAutoHide?.sync();
+        document.body.setAttribute(
+            'data-header-buttons',
+            d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'
+        );
+        const switcher = d.settings.pageSwitcherStyle;
+        document.body.setAttribute(
+            'data-page-switcher',
+            ['text', 'segmented', 'compact'].includes(switcher) ? switcher : 'classic'
+        );
 
         d.publishButtonBarHeight?.();
 
         d.syncTagCloudButtonPlacement();
-        d.syncSideRailDiscoverability?.();
+        // After the data-show-* attributes above: which actions are on the bar
+        // at all is their answer, and the fold takes what is left.
+        d.syncHeaderActionOverflow?.();
 
         // One attribute, three answers. The row always builds the label when the
         // bookmark has one; whether it is on screen, and whether it stands in
@@ -102,6 +170,9 @@ class DashboardSetup {
 
         // Control page tabs visibility dynamically
         d.updatePageTabsVisibility();
+        // After the three above: each of them decides whether one side of the
+        // band draws anything, and the rule between them follows that.
+        d.visual?.syncHeaderZoneDividers?.();
         this.initializeButtonTipsRotation();
 
         // Apply columns setting
@@ -286,6 +357,7 @@ class DashboardSetup {
             if (e.key === 'F1') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('! or F1');
                 d.showKeyboardCheatSheet();
                 return;
             }
@@ -293,8 +365,19 @@ class DashboardSetup {
             if (e.key === ',') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.(',');
                 d.showPageOverlay();
                 return;
+            }
+
+            // ' or Shift+O — slide a docked action bar out of view or back.
+            if (e.key === "'" || (e.code === 'KeyO' && e.shiftKey)) {
+                if (window.ActionBarAutoHide?.toggle()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.("' or Shift+O");
+                    return;
+                }
             }
 
             // '<' (Shift+,) — jump to config. Layout-independent: also accept the
@@ -302,6 +385,7 @@ class DashboardSetup {
             if (e.key === '<' || (e.code === 'Comma' && e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('<');
                 window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                 // Same destination as Shift+S: the config view, in place. This
                 // used to navigate to the standalone /config page with a full
@@ -319,6 +403,7 @@ class DashboardSetup {
             if (e.key === '&') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('&');
                 d.showOmnibox();
                 return;
             }
@@ -339,9 +424,12 @@ class DashboardSetup {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
+                // Swallowed either way: with the inbox off there is nothing for
+                // 0 to open, and letting it through put the shortcut palette on
+                // screen instead -- see the digit branch below.
+                e.preventDefault();
+                e.stopPropagation();
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     void d.inbox.openInboxView();
                 }
                 return;
@@ -356,6 +444,7 @@ class DashboardSetup {
                 if (d.health?.isEnabled?.()) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + H');
                     void d.health.openHealthView();
                 }
                 return;
@@ -369,6 +458,7 @@ class DashboardSetup {
             if (e.shiftKey && e.code === 'KeyQ') {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + Q');
                 void d.toggleSearchMode?.();
                 return;
             }
@@ -377,6 +467,7 @@ class DashboardSetup {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + I');
                     void d.inbox.openInboxView();
                 }
                 return;
@@ -389,6 +480,7 @@ class DashboardSetup {
                 if (d.config?.openConfigView) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + S');
                     window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                     void d.config.openConfigView();
                 }
@@ -405,6 +497,7 @@ class DashboardSetup {
                 if (d.config?.openThemeBrowser) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + A');
                     window.nextdashTrack?.('nav:theme-browser-shortcut');
                     void d.config.openThemeBrowser();
                 }
@@ -416,15 +509,30 @@ class DashboardSetup {
                 }
 
                 const pageIndex = parseInt(key, 10) - 1;
-                
-                // Check if this page exists
+
                 if (pageIndex < d.pages.length) {
                     e.preventDefault();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('1–9');
 
                     const page = d.pages[pageIndex];
                     void d.requestPageNavigation(page.id);
+                    return;
                 }
+
+                /*
+                 * A digit with no page behind it is still the pages' key.
+                 *
+                 * Left to fall through it reached the shortcut palette, so 5 on
+                 * a two-page install opened a search box while 2 switched pages
+                 * -- the same key doing two unrelated things depending on how
+                 * many pages you happen to have, and changing meaning the
+                 * moment you add one. Swallowed here instead: 1-9 switch pages
+                 * or do nothing at all.
+                 */
+                e.preventDefault();
+                e.stopPropagation();
+                return;
             }
 
             // Handle Shift + Arrow keys for page navigation
@@ -522,10 +630,7 @@ class DashboardSetup {
             hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
         }
 
-        const isSideRail = document.body.hasAttribute('data-rail');
-        const storageKey = isSideRail
-            ? 'nextdash:search-flow-hint-side-rail-v1'
-            : 'nextdash:search-flow-hint-v2';
+        const storageKey = 'nextdash:search-flow-hint-v2';
         try {
             if (localStorage.getItem(storageKey)) return;
         } catch {}

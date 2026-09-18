@@ -237,3 +237,60 @@ body[data-shortcut-display="hover"] .bookmarks-list .bookmark-link:is(:hover, .k
 body.no-animations[data-shortcut-display="hover"] .bookmarks-list .bookmark-link > .bookmark-open[data-shortcut]::after {
     transition: none;
 }
+
+
+/* ── Waiting on a bookmark ───────────────────────────────────────────────────
+   Opening in the same tab leaves nextDash on screen until the other end
+   answers. The row that was pressed says so: its icon turns into a spinner and
+   the word sits at the end of the row. Drawn only after 150ms -- see
+   markBookmarkOpening() in dashboard-visual.js -- so a bookmark that opens at
+   once never flickers.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.bookmark-link.is-opening .bookmark-icon-slot > * {
+    opacity: 0.12;
+}
+
+.bookmark-link.is-opening .bookmark-icon-slot {
+    position: relative;
+}
+
+.bookmark-link.is-opening .bookmark-icon-slot::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 13px;
+    height: 13px;
+    margin: -7px 0 0 -7px;
+    border: 2px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: bookmark-opening-spin 0.7s linear infinite;
+}
+
+.bookmark-opening-note {
+    margin-left: auto;
+    padding-left: var(--space-2, 0.5rem);
+    color: var(--accent-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+@keyframes bookmark-opening-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Reduced motion and the no-animations setting: the spinner stops turning and
+   reads as a ring, which still says "this row is the one you are waiting on". */
+body.no-animations .bookmark-link.is-opening .bookmark-icon-slot::after {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-link.is-opening .bookmark-icon-slot::after {
+        animation: none;
+    }
+}

@@ -250,11 +250,20 @@ class DashboardPageNav {
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
-            const selected = index === pageIndex && d.isBookmarksView();
+            // The page you were last on stays marked in config, health and the
+            // inbox: it is where the dashboard button and Escape take you back.
+            const selected = index === pageIndex;
             btn.classList.toggle('active', selected);
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
         });
+        // Which tabs the strip can show depends on which one is active: the
+        // page you are on is never the one folded away. Switching pages moves
+        // that marker without rebuilding the strip, so the fit has to be taken
+        // again here -- without it, navigating to a folded-away page left the
+        // strip showing the first few and no sign of where you actually were.
+        this.fitPageTabs();
+
         const inboxBtn = document.getElementById('page-nav-inbox-btn');
         if (inboxBtn) {
             const inboxSelected = d.activeView === 'inbox';
@@ -267,6 +276,11 @@ class DashboardPageNav {
         // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
         d.visual?.syncConfigLinkActiveState?.();
+        d.visual?.syncDashboardLinkActiveState?.();
+        // The inbox tab is built here, so this is where the destination cluster
+        // can go from empty to occupied.
+        d.visual?.syncHeaderZoneDividers?.();
+        this.syncPageWalkButtons();
     }
 
 
@@ -362,6 +376,424 @@ class DashboardPageNav {
     }
 
 
+    /**
+     * What the header gives up, and in which order, as the window narrows.
+     *
+     * The row is one line by design, and every zone in it has a natural width;
+     * once they no longer add up, something has to go. Left to the browser that
+     * "something" is whatever happens to be last, so the order is set here
+     * instead, cheapest first:
+     *
+     *   1. the destinations (inbox, health, config) -- every one of them has a
+     *      key and a place in the pages panel;
+     *   2. the actions -- same bargain, their keys all still work;
+     *   3. the pages button -- the `,` panel it opens is a key away;
+     *   4. the page strip folds to the page you are on plus the chip that
+     *      counts the rest, which is a page switcher in one control;
+     *   5. the clock and the weather, leaving the name and the switcher.
+     *
+     * Measured rather than guessed at fixed widths: the zones' widths depend on
+     * the page name, the reader's font size, how many actions are switched on
+     * and which language the labels are in, so a breakpoint that fits one
+     * install crops another.
+     */
+    fitHeaderZones() {
+        const row = document.querySelector('.dashboard-section.section-controls .header-top');
+        if (!row) return;
+
+        const available = row.clientWidth;
+        if (!available) return;
+
+        const apply = (step) => {
+            document.body.setAttribute('data-header-fit', String(step));
+            if (step >= 3) this.fitPageTabs();
+        };
+
+        /*
+         * What the row needs, as against what it has.
+         *
+         * Measured per zone rather than by summing row.children: the identity
+         * is `display: contents` in the default clock placement, so the row's
+         * children are not the zones -- and the track is the one that shrinks,
+         * which is exactly why an overflow never shows up in scrollWidth.
+         */
+        const needs = () => {
+            const gap = parseFloat(window.getComputedStyle(row).columnGap) || 0;
+
+            /*
+             * The zones are found, not listed.
+             *
+             * Several wrappers in the header are `display: contents` -- the
+             * identity block, the primary block inside it, the date element --
+             * so the boxes on the row are their grandchildren, and a wrapper
+             * measures 0 while the clock standing in its place takes 270px.
+             * Naming the wrappers therefore said "everything fits" at a width
+             * where the track had been squeezed to 62px. What counts is every
+             * descendant that actually takes a column: walk down through the
+             * transparent ones and stop at the first box.
+             */
+            const atoms = [];
+            const walk = (el) => {
+                [...el.children].forEach((child) => {
+                    if (child.hidden) return;
+                    const style = window.getComputedStyle(child);
+                    if (style.display === 'none') return;
+                    if (style.display === 'contents') { walk(child); return; }
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
+                    if (style.gridColumn === '1 / -1') return;
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
+                    /*
+                     * Something that spans the row has a line to itself, so it
+                     * competes with nothing: the classic clock placement puts
+                     * the view's name on its own line under the controls, and
+                     * counted among them a 1300px name meant the row was
+                     * always too full -- the ladder then hid the clock and the
+                     * actions on a window with room to spare.
+                     */
+                    atoms.push(child);
+                });
+            };
+            walk(row);
+
+            let needed = 0;
+            let parts = 0;
+            atoms.forEach((el) => {
+                // The track is the one zone that may be drawn smaller than it
+                // is: what it needs is one tab and the chip, not its width.
+                const width = el.classList.contains('header-track')
+                    ? this.trackMinimumWidth(el)
+                    : el.getBoundingClientRect().width;
+                if (width <= 0) return;
+                needed += width;
+                parts += 1;
+            });
+            return needed + Math.max(0, parts - 1) * gap;
+        };
+
+        for (let step = 0; step <= 4; step += 1) {
+            apply(step);
+            if (needs() <= available) break;
+        }
+        // The cap follows the step, so the strip is drawn once the ladder has
+        // settled: stepping through 4 on the way to 2 otherwise left it folded
+        // to one tab with room to spare.
+        this.fitPageTabs();
+        // The actions read the same rung: past the first one, each fold takes
+        // one more button off the bar and puts it behind the "+N".
+        this.dash.syncHeaderActionOverflow?.();
+    }
+
+
+    /**
+     * The narrowest the page strip can be drawn: one tab and the chip.
+     *
+     * Read off the strip rather than assumed, because a tab is as wide as the
+     * page it names -- "1" and "infrastructure" are the same control.
+     */
+    trackMinimumWidth(track) {
+        const gap = parseFloat(window.getComputedStyle(track).columnGap) || 0;
+        const active = track.querySelector('.page-nav-btn.active') || track.querySelector('.page-nav-btn');
+        const chip = track.querySelector('.page-nav-overflow');
+        let min = 0;
+        if (active) min += active.getBoundingClientRect().width;
+        if (chip) min += chip.getBoundingClientRect().width + gap;
+        [...track.querySelectorAll('.page-walk-hint')].forEach((hint) => {
+            if (window.getComputedStyle(hint).display === 'none') return;
+            min += hint.getBoundingClientRect().width + gap;
+        });
+        return min;
+    }
+
+
+    /**
+     * How many page tabs the strip draws at most.
+     *
+     * The same reading the server does, so a value that has not been round
+     * tripped yet draws the same strip it will after a reload: 3-9, and zero
+     * -- what a settings file written before this setting carries -- means
+     * nobody chose, which is the default rather than the floor.
+     */
+    /**
+     * How the pages are drawn: 'segmented', 'text' or 'compact'.
+     *
+     * Read from the settings rather than from <body>, so a value that has not
+     * been round tripped yet draws the same switcher it will after a reload --
+     * the same reading the server does.
+     */
+    /**
+     * The two keys printed beside the strip are buttons as well.
+     *
+     * They have always said what Shift+Left and Shift+Right do; a reader with a
+     * pointer had to take that as advice rather than as a control. They walk
+     * one page now, and they stop at the ends: the keys wrap around, a button
+     * that looks pressable and does nothing does not. With one page there is
+     * nowhere to walk, so both are disabled.
+     */
+    syncPageWalkButtons() {
+        const d = this.dash;
+        const buttons = [...document.querySelectorAll('.header-track .page-walk-hint')];
+        if (!buttons.length) return;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        const at = pages.findIndex((page) => d.samePageId(page.id, d.currentPageId));
+        buttons.forEach((btn) => {
+            const step = btn.dataset.pageWalk === 'prev' ? -1 : 1;
+            const target = at < 0 ? -1 : at + step;
+            const page = target >= 0 && target < pages.length ? pages[target] : null;
+            btn.disabled = !page;
+            btn.setAttribute('aria-disabled', page ? 'false' : 'true');
+            if (!btn.dataset.walkBound) {
+                btn.dataset.walkBound = '1';
+                btn.addEventListener('click', () => {
+                    const pos = pages.findIndex((p) => d.samePageId(p.id, d.currentPageId));
+                    const next = this.dash.pages?.[pos + step];
+                    if (next) void this.requestPageNavigation(next.id);
+                });
+            }
+        });
+    }
+
+
+    pageSwitcherStyle() {
+        const raw = this.dash?.settings?.pageSwitcherStyle;
+        return ['text', 'segmented', 'compact'].includes(raw) ? raw : 'classic';
+    }
+
+
+    pageTabCap() {
+        // The compact switcher is one tab by definition: it names the page you
+        // are on and the panel behind it holds the rest.
+        if (this.pageSwitcherStyle() === 'compact') return 1;
+        // Step 3 of the ladder: the strip folds to the page you are on and the
+        // chip that counts the rest -- see fitHeaderZones().
+        if (Number(document.body.getAttribute('data-header-fit')) >= 3) return 1;
+        // And on the narrow layout that is the only shape there is room for:
+        // the row holds the name and one switcher, and the panel behind the
+        // chip lists every page.
+        if (window.matchMedia?.('(max-width: 767px)')?.matches) return 1;
+        const raw = Math.round(Number(this.dash?.settings?.maxPageTabs));
+        if (!Number.isFinite(raw) || raw === 0) return 5;
+        return Math.min(9, Math.max(3, raw));
+    }
+
+    /**
+     * Show the tabs that fit on one line, and count the rest on a chip.
+     *
+     * The track used to wrap, so a twelfth page added a second row to the
+     * header and carried the toolbar icons down with it. It is one line now,
+     * which means something has to decide what does not fit -- and a tab that
+     * does not fit is hidden rather than clipped, because a clipped tab is
+     * still focusable and tabbing to something invisible is worse than not
+     * having it at all.
+     *
+     * The active tab is never the one dropped: you have to be able to see
+     * where you are. If it falls outside the budget it takes the place of the
+     * last tab that fitted.
+     *
+     * Width is not the only limit. A tab labelled "7" is 28px wide where one
+     * labelled "websites" is 87px, so measuring alone let the same header carry
+     * ten tabs with page names off and four with them on. maxPageTabs is the
+     * count that holds either way; the width pass can still show fewer.
+     */
+    fitPageTabs() {
+        const container = document.getElementById('page-navigation');
+        if (!container) return;
+
+        const chip = container.querySelector('.page-nav-overflow');
+        if (chip) chip.remove();
+        const tabs = [...container.querySelectorAll('.page-nav-btn')];
+        tabs.forEach((tab) => { tab.hidden = false; });
+        if (!tabs.length) return;
+
+        // The gap between tabs counts towards the budget as much as the tabs do.
+        const gap = parseFloat(window.getComputedStyle(container).columnGap) || 0;
+
+        // The room to fill is the zone's, not the track's own.
+        //
+        // The track is content-sized so the walk hints stay beside the tabs
+        // rather than at the far ends of the header, which means its width is
+        // whatever its tabs happen to need -- measuring against that says
+        // "everything fits" while the last tab runs off the header. What is
+        // actually available is the zone minus the hints standing in it.
+        const zone = container.closest('.header-track');
+        let budget = container.clientWidth;
+        if (zone) {
+            const zoneStyle = window.getComputedStyle(zone);
+            const zoneGap = parseFloat(zoneStyle.columnGap) || 0;
+            const taken = [...zone.children]
+                .filter((el) => el !== container && !el.hidden)
+                .reduce((sum, el) => sum + el.getBoundingClientRect().width + zoneGap, 0);
+            budget = zone.clientWidth - taken;
+        }
+        const cap = this.pageTabCap();
+
+        /*
+         * The cap holds even when nothing can be measured.
+         *
+         * A header that is not laid out yet -- a view still opening, a hidden
+         * ancestor, a frame that runs before the fonts land -- reports a zone
+         * of zero, and the width walk below has nothing to walk. Returning
+         * there used to leave every tab shown, because the first thing this
+         * does is unhide them all: ten pages, no chip, a second row. The cap
+         * needs no measurement, so it is applied first and the width walk only
+         * narrows it further.
+         */
+        let shown = Math.min(cap, tabs.length);
+        /*
+         * Classic stands in a column sized by its own tabs, so its width is
+         * never a budget: measured against it, the room kept for the chip
+         * pushed out the second tab of three. The name beside it gives way
+         * first, and a window too narrow for both is the header-fit ladder's
+         * to handle -- which caps the strip at one from step 3.
+         */
+        if (this.pageSwitcherStyle() === 'classic') {
+            budget = Number.POSITIVE_INFINITY;
+        }
+        if (!budget || budget < 0) {
+            // And try again once the header has a width to report.
+            if (!this._pageTabRefitQueued) {
+                this._pageTabRefitQueued = true;
+                requestAnimationFrame(() => {
+                    this._pageTabRefitQueued = false;
+                    this.fitPageTabs();
+                });
+            }
+        } else {
+            // Room kept for the chip itself, so adding it cannot push out the
+            // tab it was measured against. Its own width is not knowable until
+            // it exists, and a tab is the closest thing to it that does.
+            const chipRoom = tabs[0].getBoundingClientRect().width + gap;
+            let used = 0;
+            shown = 0;
+            for (const tab of tabs) {
+                if (shown >= cap) break;
+                const width = tab.getBoundingClientRect().width;
+                const next = used + width + (shown ? gap : 0);
+                // Everything fits, or this one still does with room left for a chip.
+                const isLast = tab === tabs[tabs.length - 1] && tabs.length <= cap;
+                if (next <= budget - (isLast ? 0 : chipRoom)) {
+                    used = next;
+                    shown += 1;
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (shown >= tabs.length) return;
+        if (shown < 1) shown = 1;
+
+        const visible = tabs.slice(0, shown);
+        const hidden = tabs.slice(shown);
+        const active = tabs.find((tab) => tab.classList.contains('active'));
+        if (active && hidden.includes(active)) {
+            // It trades places with the last tab that fitted, and the trade is
+            // made by hiding one and showing the other -- not by moving either.
+            // A hidden tab takes no room, so the active one still paints in the
+            // slot the displaced tab gave up, directly before the chip. Moving
+            // it would also break setActivePageNavButton, which reads the page
+            // a tab stands for from its position among its siblings.
+            const displaced = visible[visible.length - 1];
+            hidden.splice(hidden.indexOf(active), 1);
+            hidden.push(displaced);
+        }
+        hidden.forEach((tab) => { tab.hidden = true; });
+
+        const d = this.dash;
+        /*
+         * Compact has no chip: the control is the way in.
+         *
+         * The chip counts what the row could not show and opens the full
+         * panel. In compact nothing is shown but the page you are on, so the
+         * count would be "every other page" -- which the control beside it
+         * already offers, in a menu, without a modal.
+         */
+        if (this.pageSwitcherStyle() === 'compact') return;
+        const more = document.createElement('button');
+        more.type = 'button';
+        // Deliberately not .page-nav-btn: fitPageTabs runs again on resize, and
+        // a chip wearing the tab class would be measured as a tab and then
+        // hidden behind a second chip.
+        more.className = 'page-nav-overflow';
+        // Count, chevron, key: what is folded away, that it opens downward, and
+        // the key that opens it without the pointer.
+        more.innerHTML = ''
+            + `<span class="page-nav-overflow-count">+${hidden.length}</span>`
+            + '<svg class="page-nav-overflow-caret" viewBox="0 0 24 24" width="12" height="12" fill="none"'
+            + ' stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"'
+            + ' aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>'
+            + '<span class="page-nav-overflow-key" aria-hidden="true">,</span>';
+        more.setAttribute('aria-label',
+            d.formatDashboardLabel('pageTabsOverflow', { n: hidden.length }, `${hidden.length} more pages`));
+        more.title = more.getAttribute('aria-label');
+        // The whole list already has a home; the chip is a way to it.
+        more.addEventListener('click', () => d.showPageOverlay?.());
+        container.appendChild(more);
+    }
+
+    /**
+     * Re-measure when the header's width changes.
+     *
+     * Bound once, and to the container rather than to the window: the track's
+     * cap is a share of the viewport, so it also moves when a side panel opens
+     * or the zoom changes, neither of which fires a resize.
+     */
+    observePageTabFit() {
+        /*
+         * Crossing the phone breakpoint changes the cap, not the container's
+         * width, so a ResizeObserver on the track can miss it: the row is
+         * already as wide as it will get by the time the media query flips.
+         */
+        /*
+         * And once more when the page has finished arriving.
+         *
+         * The first fit runs on markup whose web font may not have landed yet,
+         * so every zone is measured in the fallback face -- narrower for some
+         * scripts, wider for others -- and nothing re-runs, because no element
+         * changed size enough for the observer to fire.
+         */
+        if (!this._pageTabFontsHooked && document.fonts?.ready) {
+            this._pageTabFontsHooked = true;
+            document.fonts.ready.then(() => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            }).catch(() => { /* the observer below still covers resizes */ });
+        }
+
+        if (!this._pageTabMediaQuery && typeof window.matchMedia === 'function') {
+            this._pageTabMediaQuery = window.matchMedia('(max-width: 767px)');
+            this._pageTabMediaQuery.addEventListener?.('change', () => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            });
+        }
+        if (this._pageTabFitObserver) return;
+        const container = document.getElementById('page-navigation');
+        if (!container || typeof ResizeObserver === 'undefined') return;
+        let frame = 0;
+        this._pageTabFitObserver = new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+                this.fitHeaderZones();
+                this.fitPageTabs();
+            });
+        });
+        this._pageTabFitObserver.observe(container);
+    }
+
     renderPageNavigation() {
         const d = this.dash;
         const container = document.getElementById('page-navigation');
@@ -403,6 +835,13 @@ class DashboardPageNav {
             pageBtn.addEventListener('mouseenter', prefetchPage, { passive: true });
             pageBtn.addEventListener('focus', prefetchPage, { passive: true });
             pageBtn.addEventListener('click', async () => {
+                // The compact switcher is a way into the list, not a tab: the
+                // one control on the row names the page you are on, so pressing
+                // it opens the panel that holds every page.
+                if (this.pageSwitcherStyle() === 'compact') {
+                    this.togglePageSwitcherMenu(pageBtn);
+                    return;
+                }
                 const switched = await this.requestPageNavigation(page.id);
                 if (!switched) {
                     return;
@@ -467,6 +906,16 @@ class DashboardPageNav {
             this.updateInboxTabBadge();
             this.syncInboxTabHighlight();
         }
+
+        this.syncPageWalkButtons();
+
+        // Measured after the tabs are in the DOM: widths are not knowable before
+        // the browser has laid them out.
+        requestAnimationFrame(() => {
+            this.fitHeaderZones();
+            this.fitPageTabs();
+        });
+        this.observePageTabFit();
 
         if (activeBtn) {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
@@ -540,6 +989,30 @@ class DashboardPageNav {
         label.textContent = d.settings.showPageNamesInTabs ? page.name : (index + 1).toString();
         btn.appendChild(label);
 
+        // The key that switches to this page, printed small and high beside its
+        // name -- the way a footnote marks a line. Only with names shown: a
+        // numbered tab already *is* its key, and 1 with a superscript 1 beside
+        // it says the same thing twice. Only the first nine, because that is
+        // how many keys there are.
+        if (d.settings.showPageNamesInTabs && index < 9) {
+            const key = document.createElement('sup');
+            key.className = 'page-tab-key';
+            key.setAttribute('aria-hidden', 'true');
+            key.textContent = String(index + 1);
+            btn.appendChild(key);
+        }
+
+        /*
+         * Compact is one control naming the page you are on, and what it does
+         * is open the list of pages.
+         */
+        if (this.pageSwitcherStyle() === 'compact') {
+            // The caret itself is drawn in CSS, on the active tab; what is said
+            // here is what it means -- this control opens something.
+            btn.setAttribute('aria-haspopup', 'menu');
+            btn.setAttribute('aria-expanded', this._pageSwitcherMenu ? 'true' : 'false');
+        }
+
         // With names switched off the tab reads as a bare "1", which is what a
         // screen reader announces and what a tooltip would have said too. The
         // page's own name is the useful part, so it is carried here regardless
@@ -553,6 +1026,296 @@ class DashboardPageNav {
                 `Page ${index + 1}`);
         btn.setAttribute('aria-label', accessible);
         btn.title = accessible;
+    }
+
+    /**
+     * The compact switcher's own list.
+     *
+     * Compact used to be one tab that opened the full pages panel -- a modal
+     * over the page, with its own scroll and its own way out, to answer "which
+     * page am I going to". The list is short and the question is small, so it
+     * is answered where it is asked: a menu under the control, on the surface
+     * every other menu in the product stands on.
+     */
+    static SWITCHER_FILTER_FROM = 8;
+
+    togglePageSwitcherMenu(anchorEl) {
+        if (this._pageSwitcherMenu) {
+            this.closePageSwitcherMenu();
+            return;
+        }
+        this.openPageSwitcherMenu(anchorEl);
+    }
+
+    closePageSwitcherMenu({ focusAnchor = false } = {}) {
+        const menu = this._pageSwitcherMenu;
+        if (!menu) return;
+        this._pageSwitcherMenu = null;
+        menu.remove();
+        document.removeEventListener('pointerdown', this._pageSwitcherOutside, true);
+        window.removeEventListener('keydown', this._pageSwitcherKeys, true);
+        window.removeEventListener('resize', this._pageSwitcherReflow);
+        this._pageSwitcherOutside = null;
+        this._pageSwitcherKeys = null;
+        this._pageSwitcherReflow = null;
+        const anchor = this._pageSwitcherAnchor;
+        this._pageSwitcherAnchor = null;
+        anchor?.setAttribute('aria-expanded', 'false');
+        if (focusAnchor) anchor?.focus?.({ preventScroll: true });
+    }
+
+    openPageSwitcherMenu(anchorEl) {
+        const d = this.dash;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        if (!anchorEl || !pages.length) return;
+
+        const menu = document.createElement('div');
+        // The one menu surface in the product: the context menus, the move
+        // picker and the check-mode popover all stand on it, and it is the one
+        // that carries no backdrop-filter -- blur on a menu is what gave Safari
+        // a composited layer that hit-tests in front of what it covers.
+        menu.className = 'move-popover page-switcher-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label',
+            d.formatDashboardLabel('pageTabsAria', {}, 'Dashboard pages'));
+
+        const withFilter = pages.length > DashboardPageNav.SWITCHER_FILTER_FROM;
+        if (withFilter) {
+            const filterWrap = document.createElement('div');
+            filterWrap.className = 'page-switcher-filter';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'page-switcher-filter-input';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.placeholder = d.formatDashboardLabel('pageOverviewFilter', {}, 'Filter pages…');
+            input.setAttribute('aria-label', input.placeholder);
+            filterWrap.appendChild(input);
+            menu.appendChild(filterWrap);
+        }
+
+        const list = document.createElement('div');
+        list.className = 'page-switcher-list';
+        menu.appendChild(list);
+
+        pages.forEach((page, index) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'page-switcher-item';
+            row.setAttribute('role', 'menuitem');
+            const current = d.isBookmarksView() && d.samePageId(page.id, d.currentPageId);
+            if (current) {
+                row.classList.add('is-current');
+                row.setAttribute('aria-current', 'page');
+            }
+            row.dataset.pageName = String(page.name || '').toLowerCase();
+            row.innerHTML = ''
+                + `<span class="page-switcher-item-name"></span>`
+                + (index < 9 ? `<span class="page-switcher-item-key">${index + 1}</span>` : '');
+            row.querySelector('.page-switcher-item-name').textContent = page.name || String(index + 1);
+            row.addEventListener('click', async () => {
+                this.closePageSwitcherMenu();
+                await this.requestPageNavigation(page.id);
+            });
+            list.appendChild(row);
+        });
+
+        const foot = document.createElement('div');
+        foot.className = 'page-switcher-foot';
+
+        const addRow = document.createElement('button');
+        addRow.type = 'button';
+        addRow.className = 'page-switcher-item page-switcher-add';
+        addRow.setAttribute('role', 'menuitem');
+        addRow.innerHTML = ''
+            + `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel('pageOverviewNewPage', {}, 'New page'))}</span>`
+            + '<span class="page-switcher-item-key">⇧N</span>';
+        addRow.addEventListener('click', () => this._openSwitcherCreateRow(menu, addRow));
+        foot.appendChild(addRow);
+
+        const allRow = document.createElement('button');
+        allRow.type = 'button';
+        allRow.className = 'page-switcher-item page-switcher-all';
+        allRow.setAttribute('role', 'menuitem');
+        allRow.innerHTML = ''
+            + `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel('pageSwitcherAllPages', {}, 'All pages'))}</span>`
+            + '<span class="page-switcher-item-key">,</span>';
+        allRow.addEventListener('click', () => {
+            this.closePageSwitcherMenu();
+            d.showPageOverlay?.();
+        });
+        foot.appendChild(allRow);
+        menu.appendChild(foot);
+
+        document.body.appendChild(menu);
+        this._pageSwitcherMenu = menu;
+        this._pageSwitcherAnchor = anchorEl;
+        anchorEl.setAttribute('aria-expanded', 'true');
+        this._positionPageTabPopover(menu, anchorEl, { initial: true });
+
+        this._pageSwitcherReflow = () => this._positionPageTabPopover(menu, anchorEl);
+        window.addEventListener('resize', this._pageSwitcherReflow);
+
+        this._pageSwitcherOutside = (e) => {
+            if (menu.contains(e.target) || anchorEl.contains(e.target)) return;
+            this.closePageSwitcherMenu();
+        };
+        document.addEventListener('pointerdown', this._pageSwitcherOutside, true);
+
+        /*
+         * On the window, in the capture phase: the grid's own navigation
+         * listens on document in capture as well, and it was bound first --
+         * so an arrow pressed with this menu open moved the cursor through the
+         * bookmarks behind it and Enter opened one. The window sees the event
+         * before the document does.
+         */
+        this._pageSwitcherKeys = (e) => this._handleSwitcherKey(e, menu);
+        window.addEventListener('keydown', this._pageSwitcherKeys, true);
+
+        const filterInput = menu.querySelector('.page-switcher-filter-input');
+        if (filterInput) {
+            filterInput.addEventListener('input', () => this._applySwitcherFilter(menu, filterInput.value));
+        }
+        /*
+         * After the frame, because the click that opened this is not finished:
+         * the browser focuses the button it was pressed on once the handler
+         * returns, so anything focused here is focused and then let go of.
+         */
+        requestAnimationFrame(() => {
+            if (this._pageSwitcherMenu !== menu) return;
+            const target = filterInput
+                || menu.querySelector('.page-switcher-item.is-current')
+                || menu.querySelector('.page-switcher-item');
+            target?.focus({ preventScroll: true });
+        });
+    }
+
+    _escapeSwitcher(text) {
+        const div = document.createElement('div');
+        div.textContent = String(text ?? '');
+        return div.innerHTML;
+    }
+
+    /** Rows the filter left standing, in the order they are drawn. */
+    _switcherRows(menu) {
+        return [...menu.querySelectorAll('.page-switcher-item')]
+            .filter((row) => !row.hidden && row.offsetParent !== null);
+    }
+
+    _applySwitcherFilter(menu, term) {
+        const needle = String(term || '').trim().toLowerCase();
+        menu.querySelectorAll('.page-switcher-list .page-switcher-item').forEach((row) => {
+            row.hidden = needle.length > 0 && !row.dataset.pageName.includes(needle);
+        });
+        this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+    }
+
+    _handleSwitcherKey(e, menu) {
+        if (!this._pageSwitcherMenu) return;
+        const rows = this._switcherRows(menu);
+        const at = rows.indexOf(document.activeElement);
+        // Everything below belongs to the menu while it is open; nothing behind
+        // it may act on the same key.
+        const mine = () => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        };
+
+        if (e.key === 'Escape') {
+            mine();
+            this.closePageSwitcherMenu({ focusAnchor: true });
+            return;
+        }
+        if (e.key === 'Tab') {
+            this.closePageSwitcherMenu();
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            mine();
+            if (!rows.length) return;
+            const step = e.key === 'ArrowDown' ? 1 : -1;
+            const next = at < 0
+                ? (step > 0 ? 0 : rows.length - 1)
+                : (at + step + rows.length) % rows.length;
+            rows[next].focus({ preventScroll: true });
+            return;
+        }
+        if (e.key === 'Home' || e.key === 'End') {
+            if (!rows.length) return;
+            mine();
+            rows[e.key === 'Home' ? 0 : rows.length - 1].focus({ preventScroll: true });
+            return;
+        }
+
+        /*
+         * Enter and Space act on the row the keyboard is on. The button would
+         * do that by itself, but the grid behind the menu answers Enter too,
+         * and it is listening in the same phase.
+         */
+        if ((e.key === 'Enter' || e.key === ' ') && at >= 0) {
+            mine();
+            rows[at].click();
+        }
+    }
+
+    /**
+     * Add a page without leaving the menu.
+     *
+     * The same inline row the pages panel uses -- one implementation of "name
+     * it, press enter" rather than a second one that drifts from it.
+     */
+    _openSwitcherCreateRow(menu, trigger) {
+        const d = this.dash;
+        if (!window.InlineCreateRow) {
+            this.closePageSwitcherMenu();
+            d.showPageOverlay?.();
+            return;
+        }
+        const ui = window.InlineCreateRow.create({
+            kind: 'page',
+            placeholder: d.configLabel?.('newPageNamePlaceholder', 'Page name') || 'Page name',
+            labels: {
+                create: d.configLabel?.('create', 'Create') || 'Create',
+                cancel: d.formatDashboardLabel('cancel', {}, 'Cancel'),
+                group: d.formatDashboardLabel('pageOverviewNewPage', {}, 'New page'),
+            },
+        });
+        ui.box.classList.add('page-switcher-create');
+        trigger.hidden = true;
+        menu.querySelector('.page-switcher-foot').insertBefore(ui.box, trigger);
+        ui.box.hidden = false;
+        this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+        ui.input.focus({ preventScroll: true });
+
+        window.InlineCreateRow.wire(ui, {
+            submit: async (name) => {
+                const created = await d.structureCreate.createPageFromForm(name);
+                if (created.error) return created.error;
+                this.closePageSwitcherMenu();
+                await d.requestPageNavigation(created.id);
+                return null;
+            },
+            onCancel: () => {
+                ui.box.remove();
+                trigger.hidden = false;
+                trigger.focus({ preventScroll: true });
+                this._positionPageTabPopover(menu, this._pageSwitcherAnchor);
+            },
+        });
+    }
+
+    /**
+     * Anchor a popover under a control, for anyone outside this module.
+     *
+     * The placement rules -- below unless that runs off the bottom, nudged
+     * back inside on both axes -- belong to no one control in particular, and
+     * a second copy of them would drift from this one.
+     */
+    positionPopover(popover, anchorEl, options = {}) {
+        return this._positionPageTabPopover(popover, anchorEl, options);
     }
 
     /**

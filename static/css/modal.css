@@ -40,6 +40,45 @@
     opacity: 1;
 }
 
+/*
+ * Out of the control that opened it.
+ *
+ * ModalOrigin (modal.js) writes the offset from the panel's centre to the
+ * button's; the panel plays that distance back in 160ms. A keyframe rather
+ * than a transition: the class and `.show` land in the same tick, and a
+ * transition started from a state the browser never painted does nothing at
+ * all -- which is what "no animation" looked like.
+ */
+@keyframes modal-from-origin {
+    from {
+        transform:
+            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
+            scale(0.4);
+        opacity: 0;
+    }
+    to {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-overlay.show .modal.from-origin {
+    animation: modal-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: center;
+}
+
+/* Reduced motion and the no-animations setting: the panel simply appears where
+   it belongs. The origin is a nicety, and a nicety is the first thing to go. */
+body.no-animations .modal-overlay.show .modal.from-origin {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay.show .modal.from-origin {
+        animation: none;
+    }
+}
+
 /* 36rem, not the 52rem the cheat sheet uses: this modal is one column of prose,
    and at 52rem its lines ran to ~84 characters — well past the 45–75 where the
    eye still finds the next line reliably. It sat at 40rem (~61 characters) and
@@ -776,7 +815,6 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     height: 13px;
 }
 
-
 .modal.keyboard-cheat-sheet-modal {
     max-width: min(52rem, calc(100vw - 2.5rem));
     width: min(52rem, calc(100vw - 2.5rem));
@@ -795,181 +833,10 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     padding-right: var(--space-1, 0.25rem);
 }
 
-.modal.inbox-intro-modal {
-    max-width: min(40rem, calc(100vw - 2.5rem));
-    width: min(40rem, calc(100vw - 2.5rem));
-    margin: auto;
-    max-height: 90vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    padding: var(--space-4, 1rem) 1.2rem;
-}
-
-.modal.inbox-intro-modal .modal-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding-right: var(--space-1, 0.25rem);
-}
-
-.inbox-intro-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4, 1.1rem);
-}
-
-.inbox-intro-hero {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3, 0.85rem);
-    padding: var(--space-3, 0.85rem) var(--space-4, 0.95rem);
-    border-radius: var(--layout-radius-sm, 8px);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
-    border-left: 3px solid var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
-}
-
-.inbox-intro-hero-icon {
-    flex-shrink: 0;
-    font-size: 1.65rem;
-    line-height: 1;
-    margin-top: var(--space-hairline, 0.05rem);
-}
-
-.inbox-intro-hero-text {
-    min-width: 0;
-}
-
-.inbox-intro-lead {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: var(--font-size-controls);
-    line-height: 1.55;
-}
-
-.inbox-intro-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.55rem);
-    margin: 0;
-    padding: 0;
-}
-
-.inbox-intro-section-title {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.45rem);
-    margin: 0;
-    font-size: var(--font-size-category);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    letter-spacing: 0.01em;
-}
-
-.inbox-intro-section-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.35rem;
-    height: 1.35rem;
-    font-size: var(--text-base, 0.95rem);
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.inbox-intro-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--space-2, 0.5rem);
-}
-
-.inbox-intro-item {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3, 0.65rem);
-    padding: var(--space-2, 0.55rem) var(--space-3, 0.65rem);
-    border-radius: var(--layout-radius-sm, 8px);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
-    line-height: 1.5;
-}
-
-.inbox-intro-item-icon {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.65rem;
-    height: 1.65rem;
-    border-radius: var(--radius-4, 0.4rem);
-    font-size: var(--text-md, 1rem);
-    line-height: 1;
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary));
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
-}
-
-.inbox-intro-item-text {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--font-size-text);
-    color: var(--text-secondary);
-}
-
-.inbox-intro-item-text strong {
-    color: var(--text-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-.inbox-intro-item-text code,
-.inbox-intro-item-text kbd,
-.inbox-intro-shortcut code,
-.inbox-intro-shortcut kbd {
-    font-family: var(--font-family-main);
-    font-size: 0.88em;
-    background: var(--background-primary);
-    border: 1px solid var(--border-primary);
-    padding: var(--space-hairline, 0.05rem) var(--space-1, 0.3rem);
-    border-radius: var(--radius-3, 0.25rem);
-    color: var(--text-primary);
-}
-
-.inbox-intro-shortcuts {
-    display: grid;
-    gap: var(--space-2, 0.45rem);
-}
-
-.inbox-intro-shortcut {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
-    border-radius: var(--layout-radius-sm, 8px);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 6%, var(--background-secondary));
-    font-size: var(--font-size-text);
-    color: var(--text-secondary);
-    line-height: 1.45;
-}
-
-.inbox-intro-shortcut kbd,
-.inbox-intro-shortcut code {
-    flex-shrink: 0;
-    font-weight: var(--font-weight-semibold);
-}
-
-.modal.inbox-intro-modal .modal-header .modal-title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1-5, 0.35rem);
-}
-
 /* Page overview — compact centered modal (dashboard header pages button) */
 .modal.page-overview-modal {
-    max-width: min(22rem, calc(100vw - 2.5rem));
-    width: min(22rem, calc(100vw - 2.5rem));
+    max-width: min(26rem, calc(100vw - 2.5rem));
+    width: min(26rem, calc(100vw - 2.5rem));
     margin: auto;
     max-height: min(70vh, calc(100vh - 4rem));
     overflow: hidden;
@@ -981,7 +848,20 @@ body.no-animations .wn-earlier-chevron { transition: none; }
 .modal.page-overview-modal .modal-body {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    /*
+     * One scrollbar, and it belongs to the rows.
+     *
+     * The list scrolls itself (max-height below), so a scrolling body put a
+     * second bar beside the first the moment the pages outgrew the panel --
+     * two tracks for one list, and the outer one moved the filter and the foot
+     * out of view along with it.
+     *
+     * A column, so the parts that must stay -- the filter, the new-page entry
+     * and the foot -- keep their height and the rows take whatever is left.
+     */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     padding-right: var(--space-1, 0.2rem);
     /* The last child ends flush with this scroll box, and overflow clipping eats
        the final pixel row — the name input's bottom border went missing. A pixel
@@ -991,49 +871,115 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     margin-bottom: var(--space-1, 0.25rem);
 }
 
+/*
+ * One slab holding the rows, the way the recents panel holds its own.
+ *
+ * Every page was an outlined card with a gap under it, so a dozen pages read
+ * as a dozen objects rather than as one list -- and the boxes competed with
+ * the panel's own edge. The surface comes from the shared overlay-slab rule
+ * (see the :is() list below, which the recents list and the cheat sheet's
+ * groups already stand on); only the layout is here.
+ */
+/* AppModal wraps htmlMessage in .modal-text, so the column passes through it:
+   without this the slab is laid out inside a block of content height and the
+   body overflows however tall the panel is. */
+.modal.page-overview-modal .modal-body > .modal-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/*
+ * One slab, holding the rows and the way to make another page.
+ *
+ * The surface used to sit on the list itself, so the new-page entry stood on a
+ * block of its own under it -- a gap, a second set of corners and a second
+ * shadow for one more line. The slab is the wrapper now; the list scrolls
+ * inside it and the entry sits flush under the last row.
+ */
+.page-overview-modal-slab {
+    display: flex;
+    flex-direction: column;
+    /* Takes the room the filter and the foot leave, and gives it to the rows. */
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
 .page-overview-modal-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.45rem);
-    max-height: min(52vh, 24rem);
+    gap: 0;
+    /* No fixed ceiling: the panel's own max-height decides how tall it gets,
+       and the rows scroll inside whatever that leaves. A 52vh cap here meant
+       the body overflowed on a short window and grew a second scrollbar. */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
 }
 
 .page-overview-modal-item {
     margin: 0;
     padding: 0;
+    /* One line between rows rather than a gap: a gap makes every row an object, a
+       rule makes them a list. */
+    border-top: 1px solid var(--hairline, var(--border-primary));
+}
+
+.page-overview-modal-item:first-child,
+.page-overview-modal-item[hidden] + .page-overview-modal-item {
+    border-top: none;
 }
 
 .page-overview-modal-link {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--space-3, 0.65rem);
+    gap: 0.6rem;
     width: 100%;
     margin: 0;
-    padding: var(--space-2, 0.55rem) var(--space-3, 0.7rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-primary);
+    /* 52px of row: a list you aim at with a pointer, one vertical run of
+       targets, no diagonal travel between two columns -- and room for the name
+       at the size everything else on the page is read at. */
+    min-height: 52px;
+    padding: 0.6rem 0.65rem;
+    border: none;
+    border-radius: var(--radius-3, 4px);
+    background: transparent;
     cursor: pointer;
     font: inherit;
-    font-size: var(--font-size-text);
+    font-size: var(--font-size-controls);
     text-align: left;
     color: var(--text-primary);
+    /* The name is the thing being chosen, so it is read rather than scanned. */
+    font-size: var(--font-size-text);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    transition: background 0.1s ease, color 0.1s ease;
 }
 
+/*
+ * Hover and the keyboard land on the same row, and the focused one carries
+ * the accent bar on its left edge -- the same treatment the recents rows take,
+ * because choosing a page and choosing a bookmark are the same gesture.
+ */
 .page-overview-modal-link:hover,
 .page-overview-modal-link:focus-visible,
 .page-overview-modal-item.is-focused .page-overview-modal-link {
-    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
-    border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     outline: none;
+}
+
+.page-overview-modal-link:focus-visible,
+.page-overview-modal-item.is-focused .page-overview-modal-link {
+    box-shadow:
+        inset 3px 0 0 var(--accent-primary),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
 }
 
 .page-overview-modal-item.is-current .page-overview-modal-name {
@@ -1041,12 +987,31 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     font-weight: var(--font-weight-semibold);
 }
 
+/*
+ * The page you are on, said on the row rather than only in its name.
+ *
+ * The focused row already carries an accent bar on its left edge; this is the
+ * same mark held permanently for the current page, with the wash behind it, so
+ * "where I am" survives walking the list with the arrows.
+ */
+.page-overview-modal-item.is-current .page-overview-modal-link {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.page-overview-modal-item[hidden] {
+    display: none;
+}
+
+/* A fixed column for the number, left aligned: the names then start on one
+   vertical line whether a page is 1 or 10. */
 .page-overview-modal-lead {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1, 0.25rem);
+    width: 1.5rem;
     min-width: 1.5rem;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .page-overview-modal-num {
@@ -1066,47 +1031,272 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     text-overflow: ellipsis;
 }
 
+/* The count is a fact about the page, not part of its name: a pill holds it
+   apart, the way a badge does elsewhere in the app. */
 .page-overview-modal-count {
-    font-size: 0.82em;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    font-size: 0.78em;
     color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
-/* ─── "New page" — the overlay's one action ──────────────────────────────────
-   It borrows .page-overview-modal-link for its shape so it lines up with the
-   pages above, and is set apart by the rule above it and a muted, dashed
-   border: a thing to do, not a page to go to. */
-
-.page-overview-modal-actions {
-    margin-top: var(--space-2, 0.55rem);
-    padding-top: var(--space-2, 0.55rem);
-    border-top: 1px solid var(--border-primary);
+.page-overview-modal-item.is-current .page-overview-modal-count {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
 }
 
-.page-overview-modal-new {
-    border-style: dashed;
+/* ─── The filter, past eight pages ───────────────────────────────────────────
+   Drawn only when the list is long enough to search rather than read; see
+   PAGE_FILTER_FROM in dashboard-ui-helpers.js. It takes focus when the panel
+   opens, so typing narrows at once. */
+
+.page-overview-modal-filterbar {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.page-overview-modal-filter {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+}
+
+.page-overview-modal-filter:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.page-overview-modal-filter::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* ─── One page: the offer is the point ───────────────────────────────────────
+   With a single page the panel is not a list to choose from, so the New page
+   entry stops being a small row at the foot and becomes what the panel is for,
+   with the one line that says what a page is. */
+
+.page-overview-modal-actions.is-alone .page-overview-modal-new {
+    justify-content: center;
+    padding-block: var(--space-3, 0.75rem);
+}
+
+.page-overview-modal-newhint {
+    display: block;
+    margin-top: var(--space-2, 0.5rem);
+    color: var(--text-tertiary);
+    font-size: var(--font-size-controls);
+    line-height: 1.4;
+    text-align: center;
+}
+
+/* ─── Deleting a page — asked twice ──────────────────────────────────────────
+   The cross sits at the end of the row, quiet until the row is hovered or the
+   cursor is on it. Armed, the row turns the colour of the thing it is about to
+   do and says what that is; the second press is the one that deletes. */
+
+.page-overview-modal-item {
+    position: relative;
+}
+
+/*
+ * Big enough to read, and out of the count's way.
+ *
+ * It was a 1.4rem cross at 0.7 opacity sitting on top of the bookmark count --
+ * two things in the same ten pixels, and the one you can press was the fainter
+ * of them. The row keeps a lane for it on the right, and the cross is drawn at
+ * full strength on its own plate.
+ */
+.page-overview-modal-item .page-overview-modal-link {
+    padding-right: 2.1rem;
+}
+
+.page-overview-modal-delete {
+    position: absolute;
+    top: 50%;
+    right: 0.35rem;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-3, 4px);
+    background: transparent;
     color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    /*
+     * Out of sight until the row is the one being acted on.
+     *
+     * A cross on every row is a delete offered ten times over, and it sat
+     * beside the count competing with it. Hover, the keyboard cursor and focus
+     * each bring it back -- see the rule below -- so the pointer and the
+     * keyboard reach it the same way.
+     */
+    /*
+     * Out of sight until the row is the one being acted on, but never out of
+     * reach: the box stays where it is and keeps taking the pointer, so aiming
+     * at it is the same gesture whether or not it has faded in yet. Hiding it
+     * with pointer-events made the target appear under the cursor mid-click.
+     */
+    opacity: 0;
+    transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.page-overview-modal-item:hover .page-overview-modal-delete,
+.page-overview-modal-item.is-focused .page-overview-modal-delete,
+.page-overview-modal-item.is-armed .page-overview-modal-delete,
+.page-overview-modal-delete:focus-visible {
+    opacity: 1;
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+    color: var(--accent-error);
+}
+
+.page-overview-modal-delete:hover,
+.page-overview-modal-delete:focus-visible {
+    opacity: 1;
+    color: var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+    outline: none;
+}
+
+/* Armed: the row says what the next press takes with it, and the cross it is
+   waiting on is filled rather than outlined. */
+.page-overview-modal-item.is-armed .page-overview-modal-link {
+    background: color-mix(in srgb, var(--accent-error) 12%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent-error);
+}
+
+/* Armed, the row grows a line of its own underneath -- so the cross stops
+   riding the middle of the row and stays on the line it belongs to. */
+.page-overview-modal-item.is-armed .page-overview-modal-delete {
+    top: 0.3rem;
+    transform: none;
+    opacity: 1;
+    border-color: var(--accent-error);
+    background: var(--accent-error);
+    color: var(--background-primary);
+}
+
+.page-overview-modal-confirm {
+    margin: 0.1rem 0 0.25rem;
+    /* Clear of the cross above it, which is what the next press lands on. */
+    padding: 0 2.4rem 0 0.8rem;
+    color: var(--accent-error);
+    font-size: var(--font-size-small, 0.72rem);
+    line-height: 1.35;
+}
+
+/* ─── "New page" — the overlay's one action ──────────────────────────────────
+   A button, not another row: the list above holds places to go and this is a
+   thing to do. It wears the accent chip the header key wears, so the two marks
+   the overlay makes in the accent colour are the same object at two sizes. */
+
+/* The last entry on the slab, and drawn as one of its rows: same height, same
+   padding, the same 1.5rem lead column so the + stands where the page numbers
+   do, and the same hairline above it. No padding of its own -- the slab already
+   carries it, and a wrapper with room around it made the entry taller than
+   every row above it. */
+.page-overview-modal-actions {
+    display: flex;
+    padding: 0;
+    border-top: 1px solid var(--hairline, var(--border-primary));
+}
+
+.page-overview-modal-actions.is-alone {
+    border-top: none;
+}
+
+/* The same three columns a page row stands in -- lead, name, chip -- rather
+   than a flex run, so the + lands under the numbers and the key lands under
+   the counts instead of near them. */
+.page-overview-modal-new {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    /* Fixed, not a minimum: the chip and the label together were pushing the
+       entry past the rows it stands under. */
+    height: 52px;
+    margin: 0;
+    /* Right padding matches a row's: the rows keep 2.1rem clear for the delete
+       cross, so a plain 0.65rem here put the key chip a cross-width further
+       right than every count above it. */
+    padding: 0 2.1rem 0 0.65rem;
+    border: none;
+    border-radius: var(--radius-3, 4px);
+    /* No tint of its own: it is the last row of the list, and a filled chip
+       under a run of plain rows read as a second object stuck to the panel. */
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s ease;
+}
+
+.page-overview-modal-new:hover,
+.page-overview-modal-new:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    outline: none;
+}
+
+.page-overview-modal-new:focus-visible {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
 }
 
 .page-overview-modal-new[hidden] {
     display: none;
 }
 
+/* The lead column, where the page numbers stand: same width, same edge. */
 .page-overview-modal-plus {
-    font-size: 1em;
-    color: var(--text-secondary);
+    display: block;
+    text-align: left;
+    font-size: 1.05em;
+    line-height: 1;
 }
 
-/* The shortcut hint sits where a page shows its bookmark count. */
+.page-overview-modal-newlabel {
+    text-align: left;
+}
+
+/* The shortcut hint reads the way the foot's ↵ does, in the accent rather than
+   the text colour because it sits inside the tinted chip -- and it takes the
+   count pill's box, so the right-hand column has one edge rather than two. */
 .page-overview-modal-hintkey {
-    opacity: 0.75;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    font-size: 0.78em;
+    opacity: 0.85;
 }
 
 /* The name row takes the button's place inside the same action block, so
    opening it does not change the modal's height. */
 .page-overview-modal-actions .bookmark-inline-create {
     display: flex;
+    /* The action block is a flex row for the button's sake; the name row that
+       takes its place still wants the whole width. */
+    flex: 1 1 100%;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1-5, 0.35rem);
@@ -1575,6 +1765,7 @@ body.no-animations .modal-button.danger.selected {
 body:not([data-depth="flat"]) :is(
     .cheat-sheet-group,
     .recent-bookmarks-modal-list,
+    .page-overview-modal-slab,
     .tag-cloud-modal-body,
     .wn-entries,
     .wn-earlier
@@ -1771,4 +1962,169 @@ body:not([data-depth="flat"]) .wn-earlier {
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
     background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+/* ── The pages sheet ──────────────────────────────────────────────────────────
+   The panel is opened from the page strip and answers the question the strip
+   asks, so it drops out of the band the strip stands in rather than floating
+   in the middle of the screen: the band's bottom edge and the sheet's top edge
+   are one line, the sheet is centred on the strip, and only its bottom corners
+   are round. Past a handful of pages it spans the page's own column and lays
+   the rows out in a grid; under that it is as wide as what it holds.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.modal-overlay:has(.header-sheet) {
+    /* The sheet places itself against the band; the overlay stops centring it. */
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.modal.header-sheet {
+    position: fixed;
+    top: var(--header-sheet-top, 96px);
+    /* On the strip's own centre line, which is the header row's: published by
+       showPageOverlay so the sheet follows the row at every width. */
+    left: var(--header-sheet-mid, 50%);
+    transform: translateX(-50%) translateY(-6px);
+    margin: 0;
+    /* Square where it meets the band, round where it leaves the page. */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 0;
+    max-height: min(70vh, calc(100vh - var(--header-sheet-top, 96px) - 2rem));
+    padding: var(--space-3, 0.8rem) var(--space-4, 1.15rem) var(--space-3, 0.8rem);
+}
+
+/*
+ * The sheet drops out of the band, and keeps its own centring while it does.
+ *
+ * The shared open animation animates `transform` from the control that was
+ * pressed, which overwrites the translate that puts this panel on the strip's
+ * centre line -- the sheet landed half its own width to the right. It gets an
+ * animation of its own instead: the same short fall, with the centring carried
+ * through every frame.
+ */
+.modal-overlay.show .modal.header-sheet,
+.modal-overlay.show .modal.header-sheet.from-origin {
+    animation: header-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform: translateX(-50%) translateY(0);
+}
+
+@keyframes header-sheet-drop {
+    from {
+        transform: translateX(-50%) translateY(-8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+body.no-animations .modal-overlay.show .modal.header-sheet,
+body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay.show .modal.header-sheet,
+    .modal-overlay.show .modal.header-sheet.from-origin {
+        animation: none;
+    }
+}
+
+/* Wide: the page's own column, the same width the grid below it has. */
+.modal.header-sheet.is-grid {
+    width: min(var(--header-sheet-width, 60rem), calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+}
+
+/* Narrow: as wide as the rows it holds, with a floor so two short names do not
+   draw a sheet the size of a tooltip. */
+.modal.header-sheet.is-compact {
+    width: max-content;
+    min-width: min(26rem, calc(100vw - 2.5rem));
+    max-width: min(52rem, calc(100vw - 2.5rem));
+}
+
+/*
+ * The rows lay out across the sheet.
+ *
+ * One column of nine rows is a list you scroll to read; three columns of three
+ * is a list you take in at once. The cells keep the row's own height, so what
+ * changes is how they are arranged, not what a row is.
+ */
+/*
+ * Three columns at most, fewer when the sheet is narrow.
+ *
+ * A minimum in rem lets a wide sheet fit four or five, and five names side by
+ * side is a table again. The floor is a share of the sheet instead, so the
+ * count falls out of the width: three across the page's column, two on a
+ * half-width window, one on a phone.
+ */
+.modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
+    gap: 0;
+    /*
+     * The rows scroll, and they are the only thing that does.
+     *
+     * In one column the <ul> was the scroller; here the list is the grid's
+     * cells (display: contents) and has no box to scroll, so the slab holding
+     * them takes the job -- otherwise the whole sheet grew a scrollbar and
+     * took the filter and the foot out of view with it.
+     */
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* The list is the grid's cells rather than a box inside one cell. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-list {
+    display: contents;
+}
+
+/* The way to make a page is the last cell, not a row under the grid. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-actions {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 1100px) {
+    .modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .modal.page-overview-sheet.is-grid .page-overview-modal-slab {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* The hairlines follow the grid: every cell carries the line under it, and the
+   ones that are not in the first column carry the line beside it. */
+.modal.page-overview-sheet.is-grid .page-overview-modal-item {
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.page-overview-sheet.is-compact .page-overview-modal-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.modal.page-overview-sheet.is-compact .page-overview-modal-item {
+    flex: 1 1 14rem;
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/* The way to make a page is the last cell of the grid rather than a row under
+   it: same height, same hairlines, a + where a page carries its number. */
+.modal.page-overview-sheet .page-overview-modal-actions:not(.is-alone) {
+    border-top: 0;
+}
+
+.modal.page-overview-sheet .page-overview-modal-foot {
+    padding-left: 0;
+    padding-right: 0;
 }

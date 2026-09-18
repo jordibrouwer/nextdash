@@ -388,6 +388,45 @@ class DashboardUiHelpers {
     }
 
 
+    /*
+     * How many pages it takes before the panel offers a filter.
+     *
+     * Eight rows fit in one look; a filter above them is a control nobody
+     * needs and a tab stop everybody meets. Past that the list is something to
+     * search rather than to read.
+     */
+    /**
+     * Where a panel that hangs from the header has to sit.
+     *
+     * The band's bottom edge is the sheet's top edge; the header row is its
+     * width and its centre line. Measured rather than written down -- the
+     * band's height is the reader's, and the row follows the page's container
+     * at every width -- and published so the placement is one rule in CSS
+     * rather than a second layout in JavaScript. Both sheets use it: the pages
+     * panel and recents.
+     */
+    static publishHeaderSheetAnchor() {
+        const band = document.querySelector('.dashboard-section.section-controls');
+        const row = document.querySelector('.header-top');
+        if (!band || !row) return;
+        const bandBox = band.getBoundingClientRect();
+        const rowBox = row.getBoundingClientRect();
+        const style = document.body.style;
+        style.setProperty('--header-sheet-top', `${Math.round(bandBox.bottom)}px`);
+        style.setProperty('--header-sheet-width', `${Math.round(rowBox.width)}px`);
+        style.setProperty('--header-sheet-mid', `${Math.round(rowBox.x + rowBox.width / 2)}px`);
+    }
+
+    static PAGE_FILTER_FROM = 8;
+
+    /**
+     * Past this many pages the sheet spans the page's column and lays the rows
+     * out in a grid. Three: that is one full row of the widest layout, so the
+     * fourth page is the first that would leave a hole in it.
+     */
+    static PAGE_SHEET_GRID_FROM = 3;
+
+
     _buildPageOverviewHtml(pages, allBookmarks) {
         const d = this.dash;
         const listLabel = this.formatDashboardLabel('pagesOverviewAria', {}, 'Page overview');
@@ -405,6 +444,21 @@ class DashboardUiHelpers {
             if (page.color) {
                 leadParts.push(`<span class="page-tab-dot" style="background:${d.escapeHtml(page.color)}" aria-hidden="true"></span>`);
             }
+            // The first page cannot be deleted -- the server refuses it, because
+            // a dashboard with no pages is not a state anything can render.
+            const deletable = Number(page.id) !== 1;
+            const deleteLabel = this.formatDashboardLabel('pageOverviewDeleteAria',
+                { name: pageName, count },
+                `Delete ${pageName} and its ${count} bookmarks`);
+            const deleteBtn = deletable
+                ? `<button type="button" class="page-overview-modal-delete"
+                        data-page-delete="${d.escapeHtml(String(page.id))}"
+                        data-page-count="${count}"
+                        aria-label="${d.escapeHtml(deleteLabel)}"
+                        title="${d.escapeHtml(deleteLabel)}">
+                        <span aria-hidden="true">\u00D7</span>
+                    </button>`
+                : '';
             return `
                 <li class="page-overview-modal-item${isCurrent ? ' is-current' : ''}" data-page-idx="${idx}">
                     <button type="button" class="page-overview-modal-link" data-page-id="${d.escapeHtml(String(page.id))}" aria-current="${isCurrent ? 'page' : 'false'}" aria-label="${d.escapeHtml(ariaLabel)}">
@@ -414,29 +468,80 @@ class DashboardUiHelpers {
                         </span>
                         <span class="page-overview-modal-count">${count}</span>
                     </button>
+                    ${deleteBtn}
                 </li>
             `;
         }).join('');
 
         // The overlay is where pages are chosen, so it is also where a new one is
-        // made. The row wears the item shape but is marked as an action, and it
-        // sits outside the listbox: it is not a page you can navigate to.
+        // made. It is a button rather than another row: the list holds places to
+        // go, this is a thing to do, and it sits outside the listbox.
+        const footHtml = `
+            <div class="page-overview-modal-foot">
+                <span>${d.escapeHtml(this.formatDashboardLabel('pageOverviewCount', { n: pages.length },
+                    pages.length === 1 ? '1 page' : `${pages.length} pages`))}</span>
+                <span><span class="page-overview-modal-footkey">\u21B5</span> ${d.escapeHtml(
+                    this.formatDashboardLabel('pageOverviewFootOpen', {}, 'open'))}</span>
+            </div>`;
+
+        /*
+         * One page is not a list with one thing in it.
+         *
+         * A reader who has never made a second page opens this to find a single
+         * row and a small dashed cell under it -- the panel answering a question
+         * they have not asked yet. With one page the offer is the point, so it
+         * is drawn at full width with the one line of explanation that says what
+         * a page is for. Past that it goes back to being the last entry.
+         */
+        const alone = pages.length === 1;
         const newLabel = this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page');
+        const newHint = alone
+            ? `<span class="page-overview-modal-newhint">${d.escapeHtml(this.formatDashboardLabel(
+                'pageOverviewNewPageHint', {},
+                'Pages keep separate sets of bookmarks; the digits 1-9 switch between them.'))}</span>`
+            : '';
         const newRow = `
-            <div class="page-overview-modal-actions">
-                <button type="button" class="page-overview-modal-link page-overview-modal-new" id="page-overview-new-page">
-                    <span class="page-overview-modal-lead">
-                        <span class="page-overview-modal-num page-overview-modal-plus" aria-hidden="true">+</span>
-                    </span>
-                    <span class="page-overview-modal-body">
-                        <span class="page-overview-modal-name">${d.escapeHtml(newLabel)}</span>
-                    </span>
-                    <span class="page-overview-modal-count page-overview-modal-hintkey" aria-hidden="true">n</span>
+            <div class="page-overview-modal-actions${alone ? ' is-alone' : ''}">
+                <button type="button" class="page-overview-modal-new" id="page-overview-new-page">
+                    <span class="page-overview-modal-plus" aria-hidden="true">+</span>
+                    <span class="page-overview-modal-newlabel">${d.escapeHtml(newLabel)}</span>
+                    <span class="page-overview-modal-hintkey" aria-hidden="true">n</span>
                 </button>
+                ${newHint}
             </div>
         `;
 
-        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>${newRow}`;
+        /*
+         * The filter, for the readers who have enough pages to need one.
+         *
+         * Under eight it is a line of chrome above a list you can already read
+         * in one look, so it is not drawn at all. Past eight it is the fastest
+         * way in: it takes focus when the panel opens, and typing narrows the
+         * rows. The digits keep jumping to the page they name, filtered or not
+         * -- the number belongs to the page, not to its place in the list.
+         */
+        const filterHtml = pages.length > DashboardUiHelpers.PAGE_FILTER_FROM
+            ? `<div class="page-overview-modal-filterbar">
+                    <input type="search" class="page-overview-modal-filter" id="page-overview-filter"
+                        autocomplete="off" spellcheck="false"
+                        placeholder="${d.escapeHtml(this.formatDashboardLabel('pageOverviewFilterPlaceholder', {}, 'filter pages…'))}"
+                        aria-label="${d.escapeHtml(this.formatDashboardLabel('pageOverviewFilterAria', {}, 'Filter pages by name'))}">
+                </div>`
+            : '';
+
+        /*
+         * The new-page entry continues the list without joining it.
+         *
+         * It sat in a tinted block of its own under the panel -- a gap, a
+         * second surface and a second set of corners for one more line. It now
+         * stands on the same slab, flush against the rows, with the hairline
+         * its neighbours carry. It stays OUTSIDE the listbox: a listbox holds
+         * options, and this is a button, so a screen reader must not count it
+         * as one more page to choose.
+         */
+        return `${filterHtml}<div class="page-overview-modal-slab">`
+            + `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`
+            + `${newRow}</div>${footHtml}`;
     }
 
 
@@ -500,6 +605,122 @@ class DashboardUiHelpers {
     }
 
 
+    /**
+     * Delete a page from the overview, asked twice.
+     *
+     * Deleting a page takes its bookmarks with it -- the server drops them in
+     * the trash, but the page you are looking at empties either way -- so one
+     * click is not enough of a decision. The row arms first and says what it is
+     * about to take; the second press is the one that does it. Ten seconds
+     * later it disarms itself, and so does moving the cursor, pressing Escape,
+     * or arming a different row.
+     *
+     * The first page is not offered: the server refuses to delete it, because a
+     * dashboard with no pages is not a state anything can draw.
+     */
+    _setupPageOverviewDelete(pages, listRoot) {
+        const d = this.dash;
+        if (!listRoot) return null;
+
+        let armedId = null;
+        let timer = 0;
+
+        const rowFor = (id) => listRoot.querySelector(`.page-overview-modal-delete[data-page-delete="${id}"]`)
+            ?.closest('.page-overview-modal-item');
+
+        const disarm = () => {
+            if (timer) { clearTimeout(timer); timer = 0; }
+            if (armedId === null) return;
+            const row = rowFor(armedId);
+            if (row) {
+                row.classList.remove('is-armed');
+                row.querySelector('.page-overview-modal-confirm')?.remove();
+                const btn = row.querySelector('.page-overview-modal-delete');
+                if (btn) btn.setAttribute('aria-pressed', 'false');
+            }
+            armedId = null;
+        };
+
+        const arm = (id) => {
+            if (Number(id) === 1) return;
+            if (armedId !== null && Number(armedId) === Number(id)) {
+                void confirmDelete(id);
+                return;
+            }
+            disarm();
+            const row = rowFor(id);
+            if (!row) return;
+            armedId = Number(id);
+            row.classList.add('is-armed');
+            const btn = row.querySelector('.page-overview-modal-delete');
+            if (btn) btn.setAttribute('aria-pressed', 'true');
+
+            const count = Number(btn?.dataset.pageCount || 0);
+            const note = document.createElement('p');
+            note.className = 'page-overview-modal-confirm';
+            note.setAttribute('role', 'alert');
+            note.textContent = this.formatDashboardLabel('pageOverviewDeleteConfirm', { n: count },
+                count === 1
+                    ? 'Delete this page and 1 bookmark? Press again.'
+                    : `Delete this page and ${count} bookmarks? Press again.`);
+            row.appendChild(note);
+
+            timer = window.setTimeout(disarm, 10_000);
+        };
+
+        const confirmDelete = async (id) => {
+            disarm();
+            const leaving = d.samePageId(id, d.currentPageId);
+            try {
+                const res = await dashFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            } catch {
+                d.showNotification?.(
+                    this.formatDashboardLabel('pageOverviewDeleteFailed', {}, 'Could not delete the page.'),
+                    'error',
+                );
+                return;
+            }
+
+            d.pages = (d.pages || []).filter((p) => Number(p.id) !== Number(id));
+            await d.loadAllBookmarks?.();
+            d.pageNav?.renderPageNavigation?.();
+            d.showNotification?.(
+                this.formatDashboardLabel('pageOverviewDeleted', {}, 'Page deleted.'),
+                'success',
+            );
+
+            // The page you were on has gone; the panel would otherwise stand
+            // over a grid that is still drawing it.
+            if (leaving && d.pages.length > 0) {
+                window.AppModal?.hide?.();
+                await d.requestPageNavigation(d.pages[0].id);
+                return;
+            }
+            if (d.pages.length === 0) {
+                window.AppModal?.hide?.();
+                return;
+            }
+            // Redraw the panel over the pages that are left.
+            window.AppModal?.hide?.();
+            await this.showPageOverlay();
+        };
+
+        listRoot.querySelectorAll('.page-overview-modal-delete').forEach((btn) => {
+            btn.setAttribute('aria-pressed', 'false');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                arm(btn.getAttribute('data-page-delete'));
+            });
+        });
+
+        const api = { arm, disarm, isArmed: () => armedId !== null };
+        this._pageOverviewDelete = api;
+        return api;
+    }
+
+
     _setupPageOverviewKeyboardNav(pages, listRoot) {
         const d = this.dash;
         this._cleanupPageOverviewKeyHandler();
@@ -520,23 +741,61 @@ class DashboardUiHelpers {
         const newPageIndex = create ? pages.length : -1;
         const ringSize = create ? pages.length + 1 : pages.length;
 
-        const setFocus = (idx) => {
+        /*
+         * How many pages stand on a line, counted off the layout.
+         *
+         * The sheet lays the rows out across the page's column now, so ↓ from
+         * the first row must land on the row under it rather than on its
+         * neighbour -- which is what a step of one gives you in a grid, and is
+         * why vertical navigation stopped working. Counted rather than
+         * configured: the number falls out of the sheet's width, and the
+         * filter can take rows out of the line at any moment.
+         */
+        const columnsAcross = () => {
+            const drawn = items().filter((el) => !el.hidden && el.offsetParent !== null);
+            if (drawn.length < 2) return 1;
+            const top = Math.round(drawn[0].getBoundingClientRect().top);
+            const across = drawn.filter((el) => Math.abs(Math.round(el.getBoundingClientRect().top) - top) <= 2).length;
+            return Math.max(1, across);
+        };
+
+        /*
+         * `move` says whether the keyboard goes with the cursor.
+         *
+         * While the filter is being typed into, the ring follows what is left
+         * on screen but the focus stays in the field -- moving it would take
+         * the next letter with it.
+         */
+        const setFocus = (idx, move = true) => {
             if (pages.length === 0) {
                 return;
             }
+            // Moving the cursor takes the safety catch off nothing: an armed row
+            // you have walked away from is a delete waiting for a keystroke it
+            // was never aimed at.
+            this._pageOverviewDelete?.disarm?.();
             focusedIndex = ((idx % ringSize) + ringSize) % ringSize;
+            // A hidden row is not a stop: with a filter on, walking past one
+            // would land the cursor on something nobody can see.
+            const visible = (i) => i === newPageIndex || !items()[i]?.hidden;
+            if (!visible(focusedIndex)) {
+                const step = idx >= 0 ? 1 : -1;
+                for (let n = 0; n < ringSize; n += 1) {
+                    focusedIndex = ((focusedIndex + step) % ringSize + ringSize) % ringSize;
+                    if (visible(focusedIndex)) break;
+                }
+            }
             const onNewPage = focusedIndex === newPageIndex;
             items().forEach((el, i) => {
                 el.classList.toggle('is-focused', !onNewPage && i === focusedIndex);
                 if (!onNewPage && i === focusedIndex) {
-                    const btn = el.querySelector('.page-overview-modal-link');
-                    btn?.focus({ preventScroll: true });
+                    if (move) el.querySelector('.page-overview-modal-link')?.focus({ preventScroll: true });
                     el.scrollIntoView({ block: 'nearest' });
                 }
             });
             if (onNewPage) {
                 const trigger = document.getElementById('page-overview-new-page');
-                trigger?.focus({ preventScroll: true });
+                if (move) trigger?.focus({ preventScroll: true });
                 trigger?.scrollIntoView({ block: 'nearest' });
             }
         };
@@ -557,6 +816,35 @@ class DashboardUiHelpers {
             });
         });
 
+        const remove = this._setupPageOverviewDelete(pages, listRoot);
+
+        /*
+         * Filtering hides rows; it does not renumber them.
+         *
+         * `3` means the third page whatever is on screen, so the filter only
+         * decides what is drawn. Walking with the arrows skips what is hidden,
+         * which is why setFocus is told which rows are still there rather than
+         * counting them itself.
+         */
+        const filterInput = document.getElementById('page-overview-filter');
+        if (filterInput) {
+            const apply = () => {
+                const needle = filterInput.value.trim().toLowerCase();
+                let firstVisible = -1;
+                items().forEach((el, i) => {
+                    const name = (el.querySelector('.page-overview-modal-name')?.textContent || '').toLowerCase();
+                    const hit = !needle || name.includes(needle);
+                    el.hidden = !hit;
+                    if (hit && firstVisible < 0) firstVisible = i;
+                });
+                this._pageOverviewDelete?.disarm?.();
+                if (needle && firstVisible >= 0) {
+                    setFocus(firstVisible, document.activeElement !== filterInput);
+                }
+            };
+            filterInput.addEventListener('input', apply);
+        }
+
         this._pageOverviewKeyHandler = (e) => {
             if (!this.isPageOverviewModalOpen()) {
                 this._cleanupPageOverviewKeyHandler();
@@ -566,6 +854,39 @@ class DashboardUiHelpers {
             // a character someone may be typing into it. The row handles its own
             // Enter and Escape.
             if (create?.isOpen()) {
+                return;
+            }
+            /*
+             * The filter line owns the characters while it has focus.
+             *
+             * `,`, `n` and the digits are the panel's keys, and every one of
+             * them is also a letter someone may be typing into the filter. The
+             * keys that mean the same thing either way -- the arrows, Enter,
+             * Escape -- stay with the panel.
+             */
+            const typing = document.activeElement?.id === 'page-overview-filter';
+            // A digit is a page's key wherever it is pressed: "3" means the
+            // third page, filtered or not, typed into or not. Every other
+            // character belongs to whatever is being typed.
+            const isPageDigit = e.key >= '1' && e.key <= '9';
+            if (typing && e.key.length === 1 && !isPageDigit) {
+                return;
+            }
+            /*
+             * A letter typed on a row goes to the filter.
+             *
+             * The panel's own keys are `,`, `n` and the digits; anything else
+             * of one character is somebody starting to type a page's name. It
+             * is handed over with the letter rather than swallowed, so the
+             * filter reads the same whether it had the focus or not.
+             */
+            if (!typing && filterInput && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey
+                && e.key !== ',' && e.key !== 'n' && e.key !== 'N' && !(e.key >= '1' && e.key <= '9')) {
+                e.preventDefault();
+                e.stopPropagation();
+                filterInput.focus({ preventScroll: true });
+                filterInput.value += e.key;
+                filterInput.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
             if (e.key === ',') {
@@ -580,10 +901,34 @@ class DashboardUiHelpers {
                 create?.open();
                 return;
             }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const page = pages[focusedIndex];
+                if (page && focusedIndex !== newPageIndex) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    remove?.arm(page.id);
+                }
+                return;
+            }
+            if (e.key === 'Escape' && remove?.isArmed()) {
+                // The armed row owns Escape: backing out of a delete is not the
+                // same gesture as closing the panel, and doing both at once
+                // would leave you unsure which one you had cancelled.
+                e.preventDefault();
+                e.stopPropagation();
+                remove.disarm();
+                return;
+            }
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setFocus(focusedIndex + 1);
+                setFocus(focusedIndex + columnsAcross());
             } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setFocus(focusedIndex - columnsAcross());
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setFocus(focusedIndex + 1);
+            } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
                 setFocus(focusedIndex - 1);
             } else if (e.key === 'Enter' || e.key === ' ') {
@@ -631,14 +976,60 @@ class DashboardUiHelpers {
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
+        /*
+         * The panel hangs from the header rather than floating over the page.
+         *
+         * It is opened from the strip and it answers a question the strip
+         * asks, so it drops out of the band the strip stands in: the band's
+         * bottom edge and the panel's top edge are one line, and the panel is
+         * centred on the strip. The top is measured here because the band's
+         * height is the reader's -- the clock placement and the font size both
+         * move it -- and published as a property CSS can read.
+         */
+        DashboardUiHelpers.publishHeaderSheetAnchor();
+
+        /*
+         * Wide enough for a grid, or as wide as what it holds.
+         *
+         * Past a handful of pages the rows lay out in columns across the
+         * page's own width -- one column of nine rows is a list you scroll to
+         * read. Under that the panel is the width of its contents, because a
+         * 1300px band holding two names is a table with nothing in it.
+         */
+        const grid = pages.length > DashboardUiHelpers.PAGE_SHEET_GRID_FROM;
+
         window.AppModal.show({
             title,
             htmlMessage: this._buildPageOverviewHtml(pages, allBookmarks),
             confirmText,
             showCancel: false,
-            modalClass: 'page-overview-modal',
-            modalMaxWidth: '22rem',
-            modalWidth: 'min(22rem, calc(100vw - 2.5rem))',
+            modalClass: `page-overview-modal header-sheet page-overview-sheet${grid ? ' is-grid' : ' is-compact'}`,
+            /*
+             * The page you are on takes the focus, not the way out.
+             *
+             * AppModal focuses the first focusable thing it finds, and the
+             * close button in the header is now the first -- so opening the
+             * panel put the cursor on "leave" and the first arrow key had to
+             * travel back into the list.
+             */
+            /*
+             * The page you are on is where the cursor belongs.
+             *
+             * With enough pages to earn a filter, the filter used to take the
+             * keyboard -- so the panel opened with the cursor at the top of the
+             * list whatever page you were standing on, and the first arrow key
+             * walked from page one rather than from here. Typing still filters:
+             * a letter pressed while a row has the focus is handed to the
+             * filter (see the key handler), which is the only thing the filter
+             * was taking the focus for.
+             */
+            initialFocusSelector: '.page-overview-modal-item.is-current .page-overview-modal-link',
+            /*
+             * The width is the sheet's own business (see page-overview-sheet
+             * in modal.css): the grid takes the page's column, the compact
+             * states take what they hold. Passing a width here would write an
+             * inline style that outranks both.
+             */
             onHide: () => {
                 this._cleanupPageOverviewKeyHandler();
                 const restoreTarget = document.getElementById('page-overview-header-btn');
@@ -647,6 +1038,34 @@ class DashboardUiHelpers {
                 }
             },
         });
+
+        /*
+         * The header names the key and carries the way out, as the other
+         * overlays do. The panel said "close" three times before this: a
+         * full-width button, an ESC hint under it, and nothing at all beside
+         * its name. Marked as header furniture so the next panel to use this
+         * one shell does not inherit it -- see AppModal.show.
+         */
+        const header = document.querySelector('#app-modal .page-overview-modal .modal-header');
+        if (header && !header.querySelector('.page-overview-modal-key')) {
+            const chip = document.createElement('span');
+            chip.className = 'page-overview-modal-key';
+            chip.dataset.modalHeaderExtra = 'true';
+            chip.setAttribute('aria-hidden', 'true');
+            chip.textContent = ',';
+            document.getElementById('modal-title')?.after(chip);
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'page-overview-modal-close';
+            close.dataset.modalHeaderExtra = 'true';
+            close.setAttribute('aria-label', closeLabel && closeLabel !== 'dashboard.closePageOverview'
+                ? closeLabel : 'Close');
+            close.innerHTML = '<span aria-hidden="true">Esc</span> \u00D7';
+            close.addEventListener('click', () => window.AppModal.hide());
+            header.appendChild(close);
+        }
+
 
         const listRoot = document.querySelector('#app-modal .page-overview-modal-list');
         this._setupPageOverviewKeyboardNav(pages, listRoot);

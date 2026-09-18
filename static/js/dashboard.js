@@ -67,7 +67,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'retro-crt-dark',
+            theme: 'tarnished-brass-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -136,7 +136,7 @@ class Dashboard {
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
             dateFormat: 'short-slash',
-            showWeatherWithDate: false,
+            showWeatherWithDate: true,
             weatherSource: 'manual',
             weatherLocation: '',
             weatherUnit: 'celsius',
@@ -351,6 +351,9 @@ class Dashboard {
 
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
+            // Once, per tab: which page this load landed on. Without a session
+            // id nothing later — an open, a search — can be related back to it.
+            window.nextdashTrackSession?.(this.currentPageId);
 
             /*
              * Back and Forward.
@@ -1040,6 +1043,7 @@ class Dashboard {
             return previous;
         }
         this.activeView = view;
+        window.nextdashTrackNav?.('view', view);
         // Leaving config stamps where you were, whichever route took you out —
         // the header buttons and page tabs switch view without config being
         // asked, and the five-minute expiry is measured from this moment rather
@@ -1545,12 +1549,16 @@ class Dashboard {
         this._buttonBarObserver.observe(bar);
     }
 
-    syncTagCloudButtonPlacement() {
-        return this.toolbar.syncTagCloudButtonPlacement(...arguments);
+    syncHeaderActionOverflow() {
+        return this.toolbar.syncHeaderActionOverflow(...arguments);
     }
 
-    syncSideRailDiscoverability() {
-        return this.toolbar.syncSideRailDiscoverability(...arguments);
+    closeHeaderActionMenu() {
+        return this.toolbar.closeHeaderActionMenu(...arguments);
+    }
+
+    syncTagCloudButtonPlacement() {
+        return this.toolbar.syncTagCloudButtonPlacement(...arguments);
     }
 
     refreshAddBookmarkToolbarLabel() {

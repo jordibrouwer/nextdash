@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,6 +97,7 @@
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
     <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/fresh-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/setting-art.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
     <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
@@ -106,7 +107,6 @@
     <link rel="stylesheet" href="{{asset "css/colors.css"}}">
         <link rel="stylesheet" href="{{asset "css/enhanced-features.css"}}">
     <link rel="stylesheet" href="{{asset "css/mobile-experience.css"}}">
-    <link rel="stylesheet" href="{{asset "css/layout-side-rail.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
@@ -118,6 +118,8 @@
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/config-bookmarks-workbench.css"}}">
+    <link rel="stylesheet" href="{{asset "css/config-hub.css"}}">
     <link rel="stylesheet" href="{{asset "css/list-view-shell.css"}}">
     <!-- /bundle:css-views -->
     <noscript>
@@ -143,7 +145,7 @@
         </style>
     </noscript>
 </head>
-<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}rich{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" data-row-highlight="{{if .RowHighlight}}{{.RowHighlight}}{{else}}subtle{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
+<body class="{{.Theme}} font-size-{{.FontSize}} loading" data-theme="{{.Theme}}" data-depth="{{if .ThemeDepth}}{{.ThemeDepth}}{{else}}flat{{end}}" data-glow="{{if .GlowStrength}}{{.GlowStrength}}{{else}}off{{end}}" data-header-buttons="{{if .HeaderButtonStyle}}{{.HeaderButtonStyle}}{{else}}plain{{end}}" data-pattern="{{if .BackgroundPattern}}{{.BackgroundPattern}}{{else}}auto{{end}}" data-show-title="{{.ShowTitle}}" data-theme-backdrop="{{if .ThemeBackdrop}}{{.ThemeBackdrop}}{{else}}on{{end}}" data-row-highlight="{{if .RowHighlight}}{{.RowHighlight}}{{else}}subtle{{end}}" style="--ink-gap-3: {{if .InkGap}}{{.InkGap}}{{else}}0.44{{end}}">
     <a class="skip-to-content" href="#dashboard-layout" data-i18n="dashboard.skipToContent">Skip to bookmarks</a>
     <noscript>
         <div class="dashboard-noscript" role="alert">
@@ -172,6 +174,18 @@
     <div class="dashboard-section section-controls">
         <div class="container">
             <div class="header-top">
+                <!--
+                    The view name and the clock are one block: the name says
+                    where you are and the line under it is ambient. They were
+                    two rows -- a 32px strip of clock and buttons, then a 60px
+                    band holding nothing but the name -- so the grid started
+                    92px down the page for one word.
+                -->
+                <div class="header-identity">
+                    <div class="title-wrapper skeleton-hide-while-loading">
+                        <h1 class="title"></h1>
+                        <p class="title-breadcrumb" hidden></p>
+                    </div>
                 <div class="header-top-primary skeleton-hide-while-loading">
                     <div id="date-element" class="date"></div>
                     <div id="dashboard-mini-status" class="dashboard-mini-status" aria-live="polite"></div>
@@ -181,23 +195,125 @@
                         <span class="status-loading-dots"></span>
                     </div>
                 </div>
+                </div>
                 <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" data-i18n-aria="dashboard.dateBadgeAria" aria-label="Date and time"></div>
-                <div class="header-actions skeleton-hide-while-loading">
+                <!--
+                    The middle zone: the pages, and on either side the key that
+                    walks them. Shift+Arrow has always moved a page at a time;
+                    the hint is the first thing in the header that says so.
+                -->
+                <div class="header-track skeleton-hide-while-loading">
+                    <button type="button" class="page-walk-hint" data-page-walk="prev" data-i18n-aria="dashboard.pageWalkPrev" aria-label="Previous page">&#8679;&#8592;</button>
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
-                    <div class="pages-link pages-link--icon">
-                        <button type="button" id="page-overview-header-btn" class="pages-link-anchor page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" data-i18n-tooltip="dashboard.pagesOverview" aria-label="Choose a page" title="pages">
-                            <svg class="pages-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                <rect x="3" y="3" width="7" height="7" rx="1"/>
-                                <rect x="14" y="3" width="7" height="7" rx="1"/>
-                                <rect x="3" y="14" width="7" height="7" rx="1"/>
-                                <rect x="14" y="14" width="7" height="7" rx="1"/>
-                            </svg>
-                        </button>
+                    <button type="button" class="page-walk-hint" data-page-walk="next" data-i18n-aria="dashboard.pageWalkNext" aria-label="Next page">&#8679;&#8594;</button>
+                </div>
+                <div class="header-actions skeleton-hide-while-loading">
+                    <!--
+                        The actions, in the header rather than floating over the
+                        grid. Same ids, so every handler and every keyboard
+                        shortcut is unchanged; the data-show-* attributes still
+                        decide which of them is drawn.
+
+                        The pages button is one of them now. It stood on its own
+                        beside the group, in its own 40px box with a rule between
+                        the two -- one button, drawn twice the size of the eight
+                        beside it, for a panel that is no more important than
+                        recents or the cheat sheet.
+                    -->
+                    <!-- Between the pages and the actions, where classic stands them side by side. -->
+                    <span class="header-zone-divider header-zone-divider--pages" aria-hidden="true"></span>
+                    <div class="header-shortcuts">
+                <div class="btn-group btn-group-primary">
+                    <button id="quick-add-toolbar-btn" type="button" class="search-button add-bookmark-button" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M12 5v14"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerAddLabel">add bookmark</span>
+                        <span class="search-button-icon" aria-hidden="true">+</span>
+                    </button>
+                    <button id="search-button" type="button" class="search-button" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m20 20-3.9-3.9"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
+                        <span class="search-button-icon" data-i18n="dashboard.searchPrefix" aria-hidden="true">></span>
+                    </button>
+                </div>
+                <div class="btn-group btn-group-secondary">
+                    <button id="commands-button" type="button" class="search-button commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="m5 8 4 4-4 4"/>
+                            <path d="M13 16h6"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
+                        <span class="search-button-icon" aria-hidden="true">:</span>
+                    </button>
+                    <button id="finders-button" type="button" class="search-button finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/>
+                            <path d="M12 17h.01"/>
+                            <circle cx="12" cy="12" r="9"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
+                        <span class="search-button-icon" aria-hidden="true">?</span>
+                    </button>
+                    <button id="collapse-all-button" type="button" class="search-button collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Fold every category">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="m7 9 5-5 5 5"/>
+                            <path d="m7 15 5 5 5-5"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.collapseAllLabel">fold all</span>
+                        <span class="search-button-icon" aria-hidden="true">.</span>
+                    </button>
+                    <button id="recent-bookmarks-button" type="button" class="search-button recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            <path d="M12 7v5l3.5 2"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
+                        <span class="search-button-icon" aria-hidden="true">*</span>
+                    </button>
+                    <button id="page-overview-header-btn" type="button" class="search-button page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" aria-label="Choose a page">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerPagesLabel">pages</span>
+                        <span class="search-button-icon" aria-hidden="true">,</span>
+                    </button>
+                    <button id="help-button" type="button" class="search-button help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet">
+                        <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <rect x="2" y="6" width="20" height="12" rx="2"/>
+                            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+                        </svg>
+                        <span class="search-button-label" data-i18n="dashboard.headerCheatLabel">cheat</span>
+                        <span class="search-button-icon" aria-hidden="true">!</span>
+                    </button>
+                </div>
                     </div>
+                    <span class="header-zone-divider" aria-hidden="true"></span>
                     <div class="header-destinations">
+                    <!--
+                        The way back. The other three leave the dashboard; this
+                        one returns to it, at the page you were last on, so the
+                        cluster reads as four places rather than three exits.
+                    -->
+                    <div class="dashboard-link dashboard-link--icon">
+                        <a href="/" id="dashboard-home-link" class="dashboard-link-anchor" data-i18n-aria="dashboard.dashboardLink" data-i18n-tooltip="dashboard.dashboardLink" aria-label="dashboard" title="dashboard">
+                            <svg class="dashboard-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M3 10.5 12 4l9 6.5"/>
+                                <path d="M5.5 10v9.5h13V10"/>
+                                <path d="M10 19.5V14h4v5.5"/>
+                            </svg>
+                        </a>
+                    </div>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
                         <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
@@ -216,16 +332,6 @@
                     </div>{{end}}
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Container 2: Title -->
-    <div class="dashboard-section section-title">
-        <div class="container">
-            <div class="title-wrapper skeleton-hide-while-loading">
-                <h1 class="title"></h1>
-                <p class="title-breadcrumb" hidden></p>
             </div>
         </div>
     </div>
@@ -274,26 +380,57 @@
                         data-i18n-aria="dashboard.searchClearAria" aria-label="Clear search">&times;</button>
             </div>
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
-            <div id="search-matches" class="search-matches"></div>
+            <div class="search-body">
+                <!--
+                    The rail says what there is to find before anything is
+                    chosen: one row per kind, with the key that scopes to it and
+                    how many of that kind the current query answers. The pills
+                    that used to do this sat under the list, at the far end of
+                    the panel from the line that sets the mode.
+                -->
+                <nav id="search-scope-rail" class="search-scope-rail"
+                     data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
+                    <button class="search-mode-tab search-scope" data-mode="search" type="button" aria-pressed="true">
+                        <span class="search-mode-tab-key">&gt;</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.scopeAll">everything</span>
+                        <span class="search-scope-count" data-scope-count="all"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="command" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">:</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
+                        <span class="search-scope-count" data-scope-count="commands"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="finder" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">?</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
+                        <span class="search-scope-count" data-scope-count="finders"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="tag" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">/</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.tagsLabel">tags</span>
+                        <span class="search-scope-count" data-scope-count="tags"></span>
+                    </button>
+                    <button class="search-mode-tab search-scope" data-mode="recent" type="button" aria-pressed="false">
+                        <span class="search-mode-tab-key">*</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.headerRecentsLabel">recents</span>
+                        <span class="search-scope-count" data-scope-count="recent"></span>
+                    </button>
+                    <span class="search-scope-rule" aria-hidden="true"></span>
+                    <!--
+                        The cheat sheet is documentation rather than a list of
+                        results, so this one is a door: it opens the sheet and
+                        leaves the panel in the scope it was in.
+                    -->
+                    <button class="search-mode-tab search-scope search-mode-tab--door" data-mode="keys" type="button">
+                        <span class="search-mode-tab-key">!</span>
+                        <span class="search-mode-tab-label" data-i18n="dashboard.headerCheatLabel">keys</span>
+                        <span class="search-scope-count"></span>
+                    </button>
+                    <span class="search-scope-hint" data-i18n="dashboard.scopeRailHint">tab switches</span>
+                </nav>
+                <div id="search-matches" class="search-matches"></div>
+            </div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-            <!-- The track sits on a plate of its own so the rule above it runs
-                 the full width of the sheet; see search.css. -->
-            <div class="search-mode-tabs-row">
-            <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
-                <button class="search-mode-tab" data-mode="search" type="button" aria-pressed="true">
-                    <span class="search-mode-tab-key">&gt;</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.searchLabel">search</span>
-                </button>
-                <button class="search-mode-tab" data-mode="command" type="button" aria-pressed="false">
-                    <span class="search-mode-tab-key">:</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
-                </button>
-                <button class="search-mode-tab" data-mode="finder" type="button" aria-pressed="false">
-                    <span class="search-mode-tab-key">?</span>
-                    <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
-                </button>
-            </div>
-            </div>
         </div>
     </div>
 
@@ -301,38 +438,6 @@
     <div class="button-container">
         <div id="search-flow-hint" class="search-flow-hint" role="status" aria-live="polite" hidden>
             <span class="search-flow-hint-text"><span class="sfh-seg"><kbd class="search-flow-chip">&gt;</kbd><span class="sfh-seg-label" data-i18n="dashboard.searchLabel">search</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">:</kbd><span class="sfh-seg-label" data-i18n="dashboard.commandsLabel">commands</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">?</kbd><span class="sfh-seg-label" data-i18n="dashboard.findersLabel">finders</span></span><span class="sfh-seg">&nbsp;·&nbsp;</span><span class="sfh-seg"><kbd class="search-flow-chip">+</kbd><span class="sfh-seg-label" data-i18n="dashboard.addBookmarkShort">bookmark</span></span><span class="sfh-seg sfh-seg-swipe hidden">&nbsp;·&nbsp;</span><span class="sfh-seg sfh-seg-swipe hidden" data-i18n="dashboard.swipePagesHint">swipe pages</span></span>
-        </div>
-        <div class="btn-group btn-group-primary">
-            <button id="quick-add-toolbar-btn" type="button" class="search-button search-button-labeled add-bookmark-button" data-i18n-aria="dashboard.addBookmarkAria" aria-label="Add bookmark" data-tooltip="+ bookmark">
-                <span class="search-button-icon">+</span>
-                <span class="search-button-label" data-i18n="dashboard.addBookmarkShort">bookmark</span>
-            </button>
-            <button id="search-button" type="button" class="search-button search-button-labeled" data-i18n-aria="dashboard.searchAriaLabel" aria-label="Open search" data-tooltip="> search">
-                <span class="search-button-icon" data-i18n="dashboard.searchPrefix">></span>
-                <span class="search-button-label" data-i18n="dashboard.searchLabel">search</span>
-            </button>
-            <button id="commands-button" type="button" class="search-button search-button-labeled commands-button" data-i18n-aria="dashboard.commandsAriaLabel" aria-label="Open commands" data-tooltip=": commands">
-                <span class="search-button-icon">:</span>
-                <span class="search-button-label" data-i18n="dashboard.commandsLabel">commands</span>
-            </button>
-            <button id="finders-button" type="button" class="search-button search-button-labeled finders-button" data-i18n-aria="dashboard.findersAriaLabel" aria-label="Open finders" data-tooltip="? finders">
-                <span class="search-button-icon">?</span>
-                <span class="search-button-label" data-i18n="dashboard.findersLabel">finders</span>
-            </button>
-        </div>
-        <div class="btn-group btn-group-secondary">
-            <button id="recent-bookmarks-button" type="button" class="search-button search-button-labeled recent-button" data-i18n-aria="dashboard.recentBookmarksAriaLabel" aria-label="Open recent bookmarks" data-tooltip="* recent bookmarks">
-                <span class="search-button-icon">*</span>
-                <span class="search-button-label" data-i18n="dashboard.recentLabel">recent</span>
-            </button>
-            <button id="help-button" type="button" class="search-button search-button-labeled help-button" data-i18n-aria="dashboard.helpAriaLabel" aria-label="Open keyboard cheat sheet" data-tooltip="! keyboard cheatsheet">
-                <span class="search-button-icon">!</span>
-                <span class="search-button-label" data-i18n="dashboard.helpLabel">help</span>
-            </button>
-            <button id="collapse-all-button" type="button" class="search-button search-button-labeled collapse-all-button" data-i18n-aria="dashboard.collapseAllAria" aria-label="Collapse or expand all categories" data-tooltip=". collapse all">
-                <span class="search-button-icon">.</span>
-                <span class="search-button-label" data-i18n="dashboard.collapseAllLabel">fold</span>
-            </button>
         </div>
     </div>
 
@@ -346,11 +451,13 @@
             aria-haspopup="dialog"
             aria-controls="tag-cloud-modal"
             data-i18n-aria="dashboard.tagCloudToggleAria"
-            data-i18n-tooltip="dashboard.tagCloudToggleTooltip"
-            data-tooltip="/ tags"
-            title="/ tags"
         >
-            <span class="search-button-icon">/</span>
+            <svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5Z"/>
+                <path d="M7.5 7.5h.01"/>
+            </svg>
+            <span class="search-button-label" data-i18n="dashboard.headerTagsLabel">tags</span>
+            <span class="search-button-icon" aria-hidden="true">/</span>
         </button>
         <div id="tag-cloud-modal-backdrop" class="tag-cloud-modal-backdrop" hidden aria-hidden="true"></div>
         <div
@@ -421,12 +528,12 @@
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
     <script src="{{asset "js/fresh-tutorial.js"}}" defer></script>
     <script src="{{asset "js/fresh-notice.js"}}" defer></script>
-    <script src="{{asset "js/side-rail-notice.js"}}" defer></script>
+    <script src="{{asset "js/clock-weather-notice.js"}}" defer></script>
+    <script src="{{asset "js/changes-tour.js"}}" defer></script>
     <script src="{{asset "js/theme-browser-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>
     <script src="{{asset "js/spread-tutorial.js"}}" defer></script>
-    <script src="{{asset "js/spread-notice.js"}}" defer></script>
     <script src="{{asset "js/weather.js"}}" defer></script>
     <script src="{{asset "js/tag-autocomplete.js"}}" defer></script>
     <script src="{{asset "js/quick-add.js"}}" defer></script>
@@ -434,6 +541,7 @@
     <!-- Stand-in drawings for settings whose difference is a shape; config and
          help both read from it, so it loads before either. -->
     <script src="{{asset "js/shared/setting-art.js"}}" defer></script>
+    <script src="{{asset "js/shared/config-hub.js"}}" defer></script>
     <!-- What a bookmark shortcut shares the keyboard with; read by every
          field that takes one. -->
     <script src="{{asset "js/shared/shortcut-keys.js"}}" defer></script>
@@ -528,6 +636,8 @@
     <script src="{{asset "js/shared/keyboard-view-legends.js"}}" defer></script>
     <script src="{{asset "js/shared/keyboard-cheat-sheet-registry.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-ui-helpers.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/action-bar-autohide.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/action-key-hint.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-setup.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-persistence.js"}}" defer></script>
     <script src="{{asset "js/dashboard.js"}}" defer></script>

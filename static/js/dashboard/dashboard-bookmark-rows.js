@@ -2168,11 +2168,39 @@ class DashboardBookmarkRows {
             return { link, row, safeHref: rawHref && rawHref !== '#' ? link.href : '' };
         };
 
-        const recordOpen = (row) => {
+        // Set on pointerdown and read back by the click it precedes, so a tap
+        // can be told apart from a mouse click without a third listener: touch
+        // fires pointerdown too, but leaves no other trace on the click event
+        // that follows it.
+        const pointerTypeByLink = new WeakMap();
+        grid.addEventListener('pointerdown', (e) => {
+            const link = e.target instanceof Element ? e.target.closest('a.bookmark-open') : null;
+            if (link) pointerTypeByLink.set(link, e.pointerType);
+        });
+
+        const recordOpen = (row, method, newTab) => {
             const bookmark = d.multiSelect?.bookmarkForRow?.(row);
             if (!bookmark) return;
             const index = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
-            d.recordBookmarkOpened(bookmark, index >= 0 ? index : undefined);
+            const renderedAt = d._bookmarkGridRenderedAt;
+            // Sent unconditionally; trackBookmarkOpen only lets these through
+            // when the reader has the "full" open detail level on.
+            const extra = {
+                newTab: Boolean(newTab),
+                category: bookmark.category || '',
+                rowIndex: index >= 0 ? index : undefined,
+                msSinceRender: typeof renderedAt === 'number' ? Date.now() - renderedAt : undefined,
+            };
+            d.recordBookmarkOpened(bookmark, index >= 0 ? index : undefined, 'dashboard', method, extra);
+        };
+
+        // A plain click's method: a tap if pointerdown just saw one on this
+        // link, keyboard-enter if the click carries no detail — Enter on a
+        // focused anchor synthesises exactly that — and mouse otherwise.
+        const plainClickMethod = (e, link) => {
+            if (pointerTypeByLink.get(link) === 'touch') return 'touch';
+            if (e.detail === 0) return 'keyboard-enter';
+            return 'mouse';
         };
 
         grid.addEventListener('click', (e) => {
@@ -2195,7 +2223,8 @@ class DashboardBookmarkRows {
                     e.preventDefault();
                     return;
                 }
-                recordOpen(row);
+                recordOpen(row, 'mouse-modifier', true);
+                d.visual?.markBookmarkOpening?.({ row, newTab: true });
                 return;
             }
 
@@ -2225,7 +2254,15 @@ class DashboardBookmarkRows {
                 e.preventDefault();
                 return;
             }
-            recordOpen(row);
+            recordOpen(row, plainClickMethod(e, hit.link), hit.link.target === '_blank');
+            // Hypr mode hands the address to the window manager and this tab
+            // stays put, so there is nothing to wait for.
+            if (!(window.hyprMode && window.hyprMode.isEnabled())) {
+                d.visual?.markBookmarkOpening?.({
+                    row,
+                    newTab: hit.link.target === '_blank',
+                });
+            }
             if (grid.classList.contains('layout-launcher')) {
                 this.restartRowAnimation(row, 'bookmark-pulse');
             }
@@ -2243,7 +2280,7 @@ class DashboardBookmarkRows {
                 e.preventDefault();
                 return;
             }
-            recordOpen(hit.row);
+            recordOpen(hit.row, 'mouse-middle', true);
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
                 window.hyprMode.handleBookmarkClick(hit.safeHref);

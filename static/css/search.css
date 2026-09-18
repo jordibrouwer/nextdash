@@ -62,6 +62,41 @@
     transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
 
+/*
+ * Out of the control that opened it, like every other panel.
+ *
+ * Same keyframe shape as the modals (modal.css): the class and `.show` arrive
+ * together, so a transition would have no painted start state to run from.
+ * Opened by key instead, the origin is unset and the ordinary rise below is
+ * what plays.
+ */
+@keyframes search-from-origin {
+    from {
+        transform:
+            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
+            scale(0.4);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.shortcut-search.show .search-container.from-origin {
+    animation: search-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+body.no-animations .shortcut-search.show .search-container.from-origin {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shortcut-search.show .search-container.from-origin {
+        animation: none;
+    }
+}
+
 .shortcut-search.show .search-container {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -503,6 +538,20 @@
     opacity: 0.7;
 }
 
+/*
+ * With no buttons left in it, this is an anchor, not a row.
+ *
+ * The actions moved into the header and the container kept only the flow hint,
+ * which is absolutely positioned against it. The plate below still drew: a
+ * 24px blob of padding and blur at the bottom of the screen, a bubble over the
+ * grid with nothing in it. The plate is for buttons, so it is drawn only when
+ * there are any, and what is left takes no clicks.
+ */
+.button-container:not(:has(> *:not(.search-flow-hint))) {
+    padding: 0;
+    pointer-events: none;
+}
+
 /* Button Container - Centered at bottom */
 /* Fixed max width so tip text length does not change container width (avoids button row jumping). */
 .button-container {
@@ -700,31 +749,6 @@ body.no-animations .search-button[data-tooltip]::after {
     user-select: none;
 }
 
-/* The classic dock has no plate of its own -- .button-container is deliberately
-   border-less, fill-less and blur-less -- so these buttons are the only thing
-   between the page and the eye. At 74% over nothing, a scrolled grid reads
-   straight through them: bookmark names run across the icons.
- *
- * The fix composites the same 74% over --background-primary instead of over
- * transparent. The face keeps exactly the colour it has today wherever the dock
- * sits over empty page, so nothing about the design changes -- it just stops
- * being a window.
- *
- * It moves a variable rather than the background itself on purpose. An override
- * specific enough to name the dock would also outrank `.search-button:hover`,
- * which sets `background` flat out, and the rest state would win over the hover
- * state. Feeding the base declaration instead leaves every interaction rule
- * exactly as specific as it was.
- *
- * Not for the modern layout: it puts a blurred plate under the row (centre) or
- * under each group (corners) and keeps the faces translucent against it, which
- * is a whole answer to the same question. Not for the rail either -- there the
- * buttons sit on the rail's own surface. */
-body:not([data-rail]) .button-container .search-button,
-body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
-    --search-button-under: var(--background-primary);
-}
-
 .search-button:hover {
     background: var(--background-secondary);
     color: var(--text-primary);
@@ -767,12 +791,21 @@ body:not([data-rail]) .tag-cloud-toggle-btn.search-button {
     100% { opacity: 1; }
 }
 
-#search-button .search-button-icon,
-.add-bookmark-button .search-button-icon,
-.commands-button .search-button-icon,
-.finders-button .search-button-icon,
-.recent-button .search-button-icon,
-.help-button .search-button-icon {
+/*
+ * Not in the header.
+ *
+ * The pulse was a hint for a glyph floating over the grid; in the header that
+ * same span is the key printed on the button's corner, and a keycap that
+ * blinks every ten seconds reads as a fault rather than an invitation.
+ */
+body:not(:has(.header-shortcuts)) :is(
+    #search-button,
+    .add-bookmark-button,
+    .commands-button,
+    .finders-button,
+    .recent-button,
+    .help-button
+) .search-button-icon {
     animation: btnIconPulse 10.8s ease-in-out infinite;
 }
 #search-button .search-button-icon         { animation-delay: 1s;   }
@@ -823,95 +856,9 @@ body.no-animations .search-match.keyboard-selected {
     display: contents;
 }
 
-
-/* ─── Side-dock: gedeeld (left + right) ──────────────────────────────────── */
-body[data-button-position="bottom-left"] .button-container,
-body[data-button-position="bottom-right"] .button-container {
-    flex-direction: row;
-    align-items: flex-end;
-    width: auto;
-    padding: 0;
-    gap: var(--space-1-5, 0.35rem);
-    border-radius: 0;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: none;
-    box-shadow: none;
-    left: unset;
-    transform: none;
-    bottom: 1.5rem;
-}
-
-body[data-button-position="bottom-left"] .btn-group,
-body[data-button-position="bottom-right"] .btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.3rem);
-}
-
-body[data-button-position="bottom-left"] .btn-group-secondary,
-body[data-button-position="bottom-right"] .btn-group-secondary {
-    padding-top: 0;
-    border-top: none;
-}
-
-
-/* search-flow-hint past niet in de dock */
-body[data-button-position="bottom-left"] .search-flow-hint,
-body[data-button-position="bottom-right"] .search-flow-hint {
-    display: none !important;
-}
-
-/* ─── Rechter-dock ───────────────────────────────────────────────────────── */
-body[data-button-position="bottom-right"] .button-container {
-    right: 1rem;
-}
-body[data-button-position="bottom-right"] .btn-group-secondary { order: 0; }
-body[data-button-position="bottom-right"] .btn-group-primary   { order: 1; }
-
-/* ─── Linker-dock ────────────────────────────────────────────────────────── */
-body[data-button-position="bottom-left"] .button-container {
-    left: 1rem;
-}
-body[data-button-position="bottom-left"] .btn-group-primary   { order: 0; }
-body[data-button-position="bottom-left"] .btn-group-secondary { order: 1; }
-
-/* ─── Tooltips richting omdraaien in side-dock ───────────────────────────── */
-body[data-button-position="bottom-left"] .search-button[data-tooltip]::after {
-    bottom: auto;
-    top: 50%;
-    left: calc(100% + 8px);
-    transform: translateY(-50%);
-}
-body[data-button-position="bottom-right"] .search-button[data-tooltip]::after {
-    bottom: auto;
-    top: 50%;
-    right: calc(100% + 8px);
-    left: auto;
-    transform: translateY(-50%);
-}
-
-
-/* ─── Hover-richting: weg van de rand ────────────────────────────────────── */
-body[data-button-position="bottom-right"] .search-button:hover {
-    transform: translateX(-2px);
-}
-body[data-button-position="bottom-left"] .search-button:hover {
-    transform: translateX(2px);
-}
-body[data-button-position="bottom-right"] .search-button:active,
-body[data-button-position="bottom-left"] .search-button:active {
-    transform: translateX(0);
-}
-
 /* Ensure button container remains centered when animations are disabled */
 body.no-animations .button-container {
     transform: translateX(-50%) !important;
-}
-/* Side rail: no-animations must not re-center the rail */
-body.no-animations[data-button-position="side-left"] .button-container {
-    transform: none !important;
 }
 
 body.no-animations .shortcut-search,
@@ -1160,20 +1107,6 @@ body.no-animations .search-history-remove {
     transition: none !important;
 }
 
-/* Side rail / corner docks: keep centered placement */
-body[data-button-position="side-left"] .shortcut-search,
-body[data-button-position="bottom-left"] .shortcut-search,
-body[data-button-position="bottom-right"] .shortcut-search {
-    justify-content: center;
-    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
-}
-
-body[data-button-position="side-left"] .shortcut-search .search-container,
-body[data-button-position="bottom-left"] .shortcut-search .search-container,
-body[data-button-position="bottom-right"] .shortcut-search .search-container {
-    max-height: calc(100vh - 2rem);
-}
-
 .search-command-chip {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: var(--text-2xs, 0.68rem);
@@ -1296,7 +1229,7 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
  * Not on flat. Whoever asked for flat asked for no plate either, and the
  * rules above that made this transparent stay the whole story there.
  */
-body:not([data-depth="flat"]) .button-container {
+body:not([data-depth="flat"]) .button-container:has(> *:not(.search-flow-hint)) {
     /* Sized to the buttons it holds, because a plate the width of the old
        transparent row would be a slab across half the screen. The ceiling is
        the one the row already had, so a narrow window still wraps inside it
@@ -1312,4 +1245,289 @@ body:not([data-depth="flat"]) .button-container {
         var(--edge-light),
         var(--edge-dark),
         0 12px 48px color-mix(in srgb, black 40%, transparent);
+}
+
+/* ── Recents: the last four as tiles, the rest as rows ────────────────────────
+   Nine times in ten what you want from recents is one of the last few, and a
+   row is a poor target for that -- one line of text among twenty identical
+   lines. The four newest get a box with the time they were opened; everything
+   older stays a row, and every row is one grid so a bookmark without a
+   shortcut no longer shifts the name and the icon out of column.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.search-recent-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.search-recent-tile {
+    display: grid;
+    gap: var(--space-1, 0.3rem);
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+    cursor: pointer;
+    min-width: 0;
+    transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.search-recent-tile:hover,
+.search-recent-tile.keyboard-selected {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.search-recent-tile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* The slot carries a row's right margin; in a tile it is one of two things on
+   a line that sets its own spacing. */
+.search-recent-tile-top .search-match-favicon-slot {
+    margin-right: 0;
+}
+
+.search-recent-tile-top .search-match-shortcut {
+    margin-right: 0;
+    min-width: 0;
+    font-size: calc(var(--font-size-controls) * 0.8);
+}
+
+.search-recent-tile-name {
+    font-size: calc(var(--font-size-controls) * 0.95);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-recent-tile-when {
+    font-size: calc(var(--font-size-controls) * 0.8);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*
+ * A row is a grid, not a line of things pushed along by whatever precedes them.
+ *
+ * As a flex row the shortcut was `min-width: 3ch` and absent on a bookmark
+ * that has none, so the icon and the name of every such row started somewhere
+ * else. One column for the key, whether or not there is one.
+ */
+.search-match.search-match--recent {
+    display: grid;
+    grid-template-columns: 4.5ch 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2, 0.6rem);
+}
+
+.search-match.search-match--recent .search-match-shortcut,
+.search-match.search-match--recent .search-match-favicon-slot {
+    margin-right: 0;
+    min-width: 0;
+}
+
+/* The key column stands empty rather than closing up when there is no key. */
+.search-match.search-match--recent .search-match-name {
+    grid-column: 3;
+    min-width: 0;
+}
+
+.search-match-when {
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ── The scope rail, and the sections in the list ─────────────────────────────
+   The panel answered one kind at a time, and which kind was set at the top and
+   shown at the bottom -- a row of pills under the results, at the far end of
+   the sheet from the line that sets it. The rail stands beside the list, names
+   every kind with the key that scopes to it, and counts what the current query
+   answers per kind. Tab walks it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.search-body {
+    display: grid;
+    grid-template-columns: 10.5rem minmax(0, 1fr);
+    min-height: 0;
+}
+
+.search-scope-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+    padding: var(--space-2, 0.45rem) 0;
+    border-right: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+    min-width: 0;
+}
+
+/* In the rail a scope is a row, not a pill: the pill shape belonged to a
+   centred track of three, and a column of six reads as a list. */
+.search-scope.search-mode-tab {
+    display: grid;
+    grid-template-columns: 1.2rem minmax(0, 1fr) auto;
+    gap: var(--space-2, 0.45rem);
+    align-items: center;
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    padding: 0.3rem var(--space-3, 0.8rem);
+    text-align: left;
+    box-shadow: none;
+    background: transparent;
+}
+
+.search-scope.search-mode-tab:hover {
+    border: 0;
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    color: var(--text-secondary);
+}
+
+/* The one it is in: a bar on the edge it is attached to, not an outline. */
+.search-scope.search-mode-tab.active,
+.search-scope.search-mode-tab.active[data-mode="search"],
+.search-scope.search-mode-tab.active[data-mode="command"],
+.search-scope.search-mode-tab.active[data-mode="finder"] {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    border: 0;
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.search-scope .search-mode-tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-scope .search-mode-tab-key {
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.85);
+}
+
+.search-scope.active .search-mode-tab-key {
+    color: var(--accent-primary);
+}
+
+.search-scope-count {
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A kind the query does not reach is dimmed rather than removed: a rail that
+   changes length while you type is a rail you cannot aim at. */
+.search-scope.is-empty {
+    opacity: 0.35;
+}
+
+.search-scope-rule {
+    height: 1px;
+    margin: var(--space-2, 0.4rem) var(--space-3, 0.8rem);
+    background: color-mix(in srgb, var(--border-primary) 45%, transparent);
+}
+
+.search-scope-hint {
+    padding: var(--space-1, 0.2rem) var(--space-3, 0.8rem);
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.75);
+    line-height: 1.35;
+}
+
+/* The heading over a kind's rows: what they are, and how many there are in all. */
+.search-scope-section {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem) var(--space-1, 0.25rem);
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.75);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.search-scope-section::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: color-mix(in srgb, var(--border-primary) 35%, transparent);
+    order: 1;
+}
+
+.search-scope-section-count {
+    order: 2;
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+}
+
+/* What a capped section left out, and the key that shows all of it. */
+.search-scope-more {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.3rem var(--space-4, 1rem) 0.5rem;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+}
+
+.search-scope-more:hover,
+.search-scope-more.keyboard-selected {
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    border-left-color: var(--accent-primary);
+}
+
+.search-scope-more-key {
+    font-weight: var(--font-weight-bold);
+    color: var(--accent-primary);
+}
+
+/* Narrow: the rail lies down over the list as a row of pills. */
+@media (max-width: 780px) {
+    .search-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .search-scope-rail {
+        flex-direction: row;
+        gap: var(--space-1, 0.3rem);
+        overflow-x: auto;
+        padding: var(--space-2, 0.45rem) var(--space-3, 0.7rem);
+        border-right: 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
+    }
+
+    .search-scope.search-mode-tab {
+        width: auto;
+        grid-template-columns: auto auto auto;
+        border: 1px solid color-mix(in srgb, var(--border-primary) 60%, transparent);
+        border-radius: var(--radius-pill, 999px);
+        padding: 0.1rem 0.6rem;
+    }
+
+    .search-scope.search-mode-tab.active {
+        box-shadow: none;
+        border: 1px solid var(--accent-primary);
+    }
+
+    .search-scope-rule,
+    .search-scope-hint {
+        display: none;
+    }
 }

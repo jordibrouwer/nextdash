@@ -23,7 +23,9 @@
     padding: var(--space-1-5, 0.375rem) var(--space-2, 0.5rem);
     border: none;
     border: 1px solid var(--border-primary);
-    background: var(--background-primary);
+    /* The surface the rows and the band are drawn on, not the page colour: a
+       control painted in --background-primary reads as a hole in the view. */
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     color: var(--text-primary);
     font-size: var(--font-size-text);
     font-family: var(--font-family-main);

@@ -2,6 +2,90 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureButtonHomeTitle",
+      "titleFallback": "The fixed buttons have a home",
+      "whatKey": "config.overviewNewFeatureButtonHomeWhat",
+      "whatFallback": "They floated on a bar over the grid with no fixed place, so they sat on top of whatever you were reading and moved when the page did.",
+      "howKey": "config.overviewNewFeatureButtonHomeHow",
+      "howFallback": "Pick where they stand: a column on the right or the left, a dock along the bottom, up in the header, or behind one menu. A docked bar slides into its edge after a couple of seconds and leaves a handle to bring it back, and a side column takes its room from the page margin rather than from the grid.",
+      "enableKey": "config.overviewNewFeatureButtonHomeEnable",
+      "enableFallback": "Config → Appearance → Header and buttons.",
+      "ctaKey": "config.overviewNewFeatureButtonHomeCta",
+      "ctaFallback": "Open Header and buttons →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      },
+      "since": "v1.11.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHeaderOneRowTitle",
+      "titleFallback": "One header row in three zones",
+      "whatKey": "config.overviewNewFeatureHeaderOneRowWhat",
+      "whatFallback": "The clock, the page name and the page tabs each owned a band of their own, so three strips stood between the top of the window and the first bookmark.",
+      "howKey": "config.overviewNewFeatureHeaderOneRowHow",
+      "howFallback": "They are one row now: the clock and the page name on the left, your page tabs in the centre, the destinations and the actions on the right. The page switcher comes in four shapes, tabs fold into a count rather than being dropped, and the clock and weather can stand in three different places.",
+      "enableKey": "config.overviewNewFeatureHeaderOneRowEnable",
+      "enableFallback": "Config → Appearance → Header and buttons.",
+      "ctaKey": "config.overviewNewFeatureHeaderOneRowCta",
+      "ctaFallback": "Open Header and buttons →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "header"
+      },
+      "since": "v1.11.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureListWorkbenchTitle",
+      "titleFallback": "The bookmark list is a workbench",
+      "whatKey": "config.overviewNewFeatureListWorkbenchWhat",
+      "whatFallback": "It was a table with a dialog on top of it: every edit covered the list you were working through, and a bulk change meant leaving the rows behind.",
+      "howKey": "config.overviewNewFeatureListWorkbenchHow",
+      "howFallback": "Filters in a rail on the left, rows in the middle, an edit panel on the right that edits one bookmark or a whole selection, tag suggestions and the monitor interval included. Rows are slabs you can walk with the keyboard. On a narrow screen the rail folds into a drawer and the panel into a sheet.",
+      "enableKey": "config.overviewNewFeatureListWorkbenchEnable",
+      "enableFallback": "Config → Bookmarks → List.",
+      "ctaKey": "config.overviewNewFeatureListWorkbenchCta",
+      "ctaFallback": "Open the list →",
+      "go": {
+        "section": "bookmarks"
+      },
+      "since": "v1.11.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureConfigTilesTitle",
+      "titleFallback": "Config opens on tiles",
+      "whatKey": "config.overviewNewFeatureConfigTilesWhat",
+      "whatFallback": "Appearance and Behavior each opened on a wall of every setting they held, so finding one meant reading past the rest.",
+      "howKey": "config.overviewNewFeatureConfigTilesHow",
+      "howFallback": "One tile per subject. Opening a tile shows the two to four settings that group leads with as cards, and the rest waits behind More settings; Escape goes back. Every appearance setting now says what it does, what its default is, and offers one kind of control.",
+      "enableKey": "config.overviewNewFeatureConfigTilesEnable",
+      "enableFallback": "Config → Appearance.",
+      "ctaKey": "config.overviewNewFeatureConfigTilesCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      },
+      "since": "v1.11.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureGlossSheenTitle",
+      "titleFallback": "Ten Gloss themes and a sheen of your own",
+      "whatKey": "config.overviewNewFeatureGlossSheenWhat",
+      "whatFallback": "A theme could set its colours, but the way it caught the light was fixed, and the widgets read as grey-white panels pasted on the page whatever theme you were on.",
+      "howKey": "config.overviewNewFeatureGlossSheenHow",
+      "howFallback": "Ten Gloss families carry a lit band and a badge in the theme browser, and the Gloss slider gives the same sheen to a theme of your own. A custom theme can now set depth, glow, glass, corner radius and sheen, in a light and a dark half. The widgets take the page colour instead of standing on it.",
+      "enableKey": "config.overviewNewFeatureGlossSheenEnable",
+      "enableFallback": "Config → Appearance → Themes.",
+      "ctaKey": "config.overviewNewFeatureGlossSheenCta",
+      "ctaFallback": "Open Themes →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "custom-themes"
+      },
+      "since": "v1.11.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureOneLayoutTitle",
       "titleFallback": "One layout instead of two",
       "whatKey": "config.overviewNewFeatureOneLayoutWhat",
@@ -195,7 +279,7 @@
       "howKey": "config.overviewNewFeatureWeatherWidgetHow",
       "howFallback": "A Weather widget puts the conditions now beside a forecast — three days, five days, or the next 24 hours, whichever you pick per block. It reads the location, source and unit you already set for the header line, so there is nothing to fill in twice, and it refreshes itself while the page is open.",
       "enableKey": "config.overviewNewFeatureWeatherWidgetEnable",
-      "enableFallback": "Config → Widgets → Add a widget → Weather. Set the location first under Behavior → Date & weather.",
+      "enableFallback": "Config → Widgets → Add a widget → Weather. Set the location first under Appearance → Date & weather.",
       "ctaKey": "config.overviewNewFeatureWeatherWidgetCta",
       "ctaFallback": "Open Widgets →",
       "go": {
@@ -211,12 +295,12 @@
       "howKey": "config.overviewNewFeatureCalendarWidgetHow",
       "howFallback": "A Calendar widget lists what is coming up from your own calendar. Paste the sharing address your calendar app gives you once, and every calendar block reads it, each with its own look-ahead in days and its own number of rows. A repeating appointment shows the date it names rather than every repeat.",
       "enableKey": "config.overviewNewFeatureCalendarWidgetEnable",
-      "enableFallback": "Behavior → Date & weather → Calendar feed URL, then Config → Widgets → Add a widget → Calendar.",
+      "enableFallback": "Appearance → Date & weather → Calendar feed URL, then Config → Widgets → Add a widget → Calendar.",
       "ctaKey": "config.overviewNewFeatureCalendarWidgetCta",
       "ctaFallback": "Open Date & weather →",
       "go": {
-        "section": "behavior",
-        "behaviorTab": "datetime"
+        "section": "appearance",
+        "appearanceTab": "datetime"
       },
       "since": "v1.7.0"
     },
@@ -1387,7 +1471,7 @@
       "whatKey": "config.overviewNewFeatureChangedSettingsWhat",
       "whatFallback": "Working out why your dashboard behaves differently from the guide meant opening every tab and looking for a ↺ beside each setting.",
       "howKey": "config.overviewNewFeatureChangedSettingsHow",
-      "howFallback": "At a glance now says how many settings differ from the standard and takes you to them. Each tab of settings gained Only changed, and each group a Reset panel that puts the whole lot back at once.",
+      "howFallback": "Each tab of settings has Only changed, which hides everything still at its default, and each group a Reset panel that puts the whole lot back at once. A ↺ beside a single setting resets just that one.",
       "enableKey": "config.overviewNewFeatureChangedSettingsEnable",
       "enableFallback": "Nothing to switch on. The line stays out of the way while everything is still standard.",
       "ctaKey": "config.overviewNewFeatureChangedSettingsCta",

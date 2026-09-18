@@ -294,6 +294,31 @@ class DashboardVisual {
 
 
     /**
+     * Mark the dashboard icon as the view you are in.
+     *
+     * The other three destinations light up while their view is open; this one
+     * is lit whenever a page of bookmarks is what you are looking at, which is
+     * the state the other three are not in. It is a link to the dashboard, not
+     * to a page, so the mark says "you are here" rather than "this is page 2".
+     */
+    syncDashboardLinkActiveState() {
+        const d = this.dash;
+        const anchor = document.querySelector('.dashboard-link a.dashboard-link-anchor');
+        if (!anchor) {
+            return;
+        }
+        const active = d.isBookmarksView?.() === true;
+        anchor.classList.toggle('active', active);
+        // aria-current, not aria-selected: this is a link, not a tab in a tablist.
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
+        }
+    }
+
+
+    /**
      * Mark the header config icon as the current view, mirroring the health icon.
      * Config is reached from a header link rather than a page tab, so
      * setActivePageNavButton never reaches it.
@@ -528,6 +553,8 @@ class DashboardVisual {
              */
             d.healthSummary = summary;
             d.renderCore?.refreshWidgets?.('health');
+            // The trend tile reads the same score, counts and last day.
+            d.renderCore?.refreshWidgets?.('trend');
             // The same response carries the certificates map, kept by
             // HealthFacts; the certificates widget reads it from there rather
             // than fetching a report of its own.
@@ -593,6 +620,211 @@ class DashboardVisual {
     }
 
 
+    /**
+     * A rule needs something on both sides of it.
+     *
+     * The band has one hairline left, between what you do and where you go, and
+     * both halves are the reader's to empty: switch every action off and the
+     * surround goes, switch off the dashboard, inbox, health and config icons
+     * and the cluster goes -- and the rule stayed either way, a line standing
+     * against the edge of the band with nothing beside it.
+     *
+     * Measured rather than derived from the settings: the inbox draws only when
+     * the feature is on and health only when it is enabled, so "is anything
+     * drawn on this side" is a question about the page, not about the toggles.
+     */
+    syncHeaderZoneDividers() {
+        const row = document.querySelector('.dashboard-section.section-controls .header-actions');
+        if (!row) return;
+        const drawn = (el) => {
+            if (!el || el.hidden) return false;
+            if (window.getComputedStyle(el).display === 'none') return false;
+            return el.getBoundingClientRect().width > 0;
+        };
+        const hasContent = (host) => {
+            if (!drawn(host)) return false;
+            return [...host.children].some(drawn);
+        };
+        const left = drawn(row.querySelector('.header-shortcuts'));
+        const right = hasContent(row.querySelector('.header-destinations'));
+        // The pages stand before the actions only in classic, and only a tab
+        // that is drawn counts as pages.
+        const pages = [...document.querySelectorAll('#page-navigation .page-nav-btn')].some(drawn);
+        row.querySelectorAll('.header-zone-divider').forEach((rule) => {
+            rule.hidden = rule.classList.contains('header-zone-divider--pages')
+                ? !(left && pages)
+                : !(left && right);
+        });
+    }
+
+
+    /*
+     * ── Waiting on a bookmark ────────────────────────────────────────────────
+     *
+     * Opening a bookmark in the same tab leaves nextDash on screen until the
+     * other end answers, and nothing said so: the row you pressed looked
+     * exactly as it had a moment before, so a slow host read as a key that had
+     * not worked. Two marks, both cheap: the row you opened wears a spinner in
+     * its icon slot and says `opening…`, and a 2px line under the header band
+     * says the same thing for a row that is scrolled out of sight or a
+     * shortcut pressed from another view.
+     *
+     * Nothing is drawn for the first 150ms. A bookmark on the same machine
+     * opens faster than that, and a mark that appears and vanishes inside a
+     * frame is worse than no mark at all.
+     */
+    static OPEN_FEEDBACK_DELAY_MS = 150;
+
+    /** A new tab does not take this one away, so the mark is a pulse. */
+    static OPEN_FEEDBACK_NEW_TAB_MS = 600;
+
+    /** Past this, the open has gone wrong or the host is gone. */
+    static OPEN_FEEDBACK_GIVE_UP_MS = 8000;
+
+    /**
+     * Say that a bookmark is being waited on.
+     *
+     * @param {{bookmark?: object, row?: Element|null, newTab?: boolean}} options
+     */
+    markBookmarkOpening({ bookmark = null, row = null, newTab = false } = {}) {
+        this.clearBookmarkOpening();
+        const target = row || this._rowForBookmark(bookmark);
+        const label = this._openingLabel(bookmark, target);
+
+        this._bindOpenFeedbackListeners();
+        this._openFeedbackTimer = setTimeout(() => {
+            this._openFeedbackTimer = null;
+            this._showOpenFeedback(target, label);
+            if (newTab) {
+                this._openFeedbackPulseTimer = setTimeout(
+                    () => this.clearBookmarkOpening(),
+                    DashboardVisual.OPEN_FEEDBACK_NEW_TAB_MS,
+                );
+                return;
+            }
+            this._openFeedbackGiveUpTimer = setTimeout(() => {
+                this._openFeedbackGiveUpTimer = null;
+                const name = label || this.dash.formatDashboardLabel?.('bookmarkOpeningFallback', {}, 'the bookmark');
+                this.clearBookmarkOpening();
+                const message = this.dash.language?.t?.('dashboard.bookmarkOpenSlow');
+                this.dash.showNotification?.(
+                    message && message !== 'dashboard.bookmarkOpenSlow'
+                        ? message.replace('{name}', name)
+                        : `still waiting on ${name}`,
+                    'info',
+                    { duration: 5000 },
+                );
+            }, DashboardVisual.OPEN_FEEDBACK_GIVE_UP_MS);
+        }, DashboardVisual.OPEN_FEEDBACK_DELAY_MS);
+    }
+
+    /** Take every mark back off, whether it was drawn yet or not. */
+    clearBookmarkOpening() {
+        [this._openFeedbackTimer, this._openFeedbackPulseTimer, this._openFeedbackGiveUpTimer]
+            .forEach((timer) => { if (timer) clearTimeout(timer); });
+        this._openFeedbackTimer = null;
+        this._openFeedbackPulseTimer = null;
+        this._openFeedbackGiveUpTimer = null;
+        if (this._openFeedbackKeepAlive) {
+            clearInterval(this._openFeedbackKeepAlive);
+            this._openFeedbackKeepAlive = null;
+        }
+        this._openingHref = null;
+
+        document.querySelectorAll('.bookmark-link.is-opening').forEach((el) => {
+            el.classList.remove('is-opening');
+            el.querySelector('.bookmark-opening-note')?.remove();
+        });
+        document.getElementById('bookmark-open-progress')?.remove();
+    }
+
+    _rowForBookmark(bookmark) {
+        const url = bookmark?.url;
+        if (!url) return null;
+        const links = [...document.querySelectorAll('#dashboard-layout a.bookmark-open')];
+        const hit = links.find((link) => link.href === url || link.getAttribute('href') === url);
+        return hit ? hit.closest('.bookmark-link') : null;
+    }
+
+    _openingLabel(bookmark, row) {
+        const fromBookmark = bookmark?.name || bookmark?.title;
+        if (fromBookmark) return String(fromBookmark);
+        const text = row?.querySelector('.bookmark-text')?.textContent;
+        return text ? text.trim() : '';
+    }
+
+    _showOpenFeedback(row, label) {
+        const word = this.dash.language?.t?.('dashboard.bookmarkOpening');
+        const opening = word && word !== 'dashboard.bookmarkOpening' ? word : 'opening…';
+
+        /*
+         * The row is re-applied, not just marked once.
+         *
+         * Recording the open repaints the grid -- the recents list and the open
+         * count both live on the row -- and the repaint builds a fresh element
+         * without the mark, so a spinner set here was gone a frame later. The
+         * row is found again by the address it opens, which survives the
+         * repaint; the loop stops when the mark is cleared.
+         */
+        this._openingHref = row?.querySelector('a.bookmark-open')?.href || null;
+        if (this._openingHref && !this._openFeedbackKeepAlive) {
+            this._openFeedbackKeepAlive = setInterval(() => {
+                if (!this._openingHref) return;
+                if (document.querySelector('.bookmark-link.is-opening')) return;
+                const link = [...document.querySelectorAll('#dashboard-layout a.bookmark-open')]
+                    .find((el) => el.href === this._openingHref);
+                const fresh = link?.closest('.bookmark-link');
+                if (fresh) this._showOpenFeedback(fresh, label);
+            }, 200);
+        }
+
+        if (row) {
+            row.classList.add('is-opening');
+            if (!row.querySelector('.bookmark-opening-note')) {
+                const note = document.createElement('span');
+                note.className = 'bookmark-opening-note';
+                // The row already names the bookmark; this only says what is
+                // happening to it, so it is decoration to a screen reader --
+                // the live region below is what announces the wait.
+                note.setAttribute('aria-hidden', 'true');
+                note.textContent = opening;
+                row.appendChild(note);
+            }
+        }
+
+        if (!document.getElementById('bookmark-open-progress')) {
+            const band = document.querySelector('.dashboard-section.section-controls');
+            const bar = document.createElement('div');
+            bar.id = 'bookmark-open-progress';
+            bar.className = 'bookmark-open-progress';
+            bar.setAttribute('role', 'status');
+            bar.setAttribute('aria-live', 'polite');
+            bar.innerHTML = '<span class="bookmark-open-progress-track"></span>'
+                + `<span class="sr-only">${this.dash.escapeHtml?.(label ? `${opening} ${label}` : opening) || opening}</span>`;
+            (band || document.body).appendChild(bar);
+        }
+    }
+
+    /**
+     * Bound once, and never removed: the events they listen for are the ways
+     * this tab comes back from an open, and the handler is a no-op when nothing
+     * is waiting.
+     */
+    _bindOpenFeedbackListeners() {
+        if (this._openFeedbackBound) return;
+        this._openFeedbackBound = true;
+        const clear = () => this.clearBookmarkOpening();
+        // Leaving for the other page, and coming back to this one -- including
+        // out of the back/forward cache, which restores the DOM exactly as it
+        // was left, spinner and all.
+        window.addEventListener('pagehide', clear);
+        window.addEventListener('pageshow', clear);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') clear();
+        });
+    }
+
+
     updatePageTabsVisibility() {
         const d = this.dash;
         const pageNavigation = document.getElementById('page-navigation');
@@ -602,10 +834,18 @@ class DashboardVisual {
             // and the header icons on three different baselines.
             pageNavigation.style.display = d.settings.showPageTabs ? '' : 'none';
         }
-        const inboxHost = document.getElementById('page-nav-inbox-host');
-        if (inboxHost) {
-            inboxHost.style.display = d.settings.showPageTabs ? '' : 'none';
-        }
+        /*
+         * The keys that walk the pages go with the tabs.
+         *
+         * Shift+Left and Shift+Right are what the two hints beside the strip
+         * name, so with the strip switched off they stood in an empty middle
+         * zone pointing at nothing. The keys themselves keep working -- see
+         * the cheat sheet -- it is the printing of them that is tied to the
+         * tabs being drawn.
+         */
+        [...document.querySelectorAll('.header-track .page-walk-hint')].forEach((hint) => {
+            hint.style.display = d.settings.showPageTabs ? '' : 'none';
+        });
     }
 
 

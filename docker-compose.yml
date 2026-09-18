@@ -20,7 +20,7 @@ services:
       - ./locales:/app/locales
       - ./templates:/app/templates
       # ---------------------------------------------------------------------
-      # System widgets (Processor, Disks) -- both mounts are read-only.
+      # System widgets (Processor, Disks, Containers) -- all mounts are read-only.
       #
       # These stay commented out because this file has to start anywhere: on
       # macOS and Windows there is no /mnt, and Docker refuses to start a
@@ -49,6 +49,11 @@ services:
       # the host knows them (/mnt/user, /mnt/cache) -- never as the container
       # sees them. The settings panel offers whatever it finds mounted.
       # - /mnt:/host/root/mnt:ro,rslave
+      #
+      # Containers: the Docker socket. Read-only still exposes the daemon's
+      # whole read API -- every container, image, environment and mount --
+      # so add it only if that is acceptable, or point a socket proxy here.
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       # ---------------------------------------------------------------------
     environment:
       - PORT=8080
@@ -61,12 +66,30 @@ services:
       # that belongs to the host's own tree: mounting /mnt at /host/root/mnt
       # means the root is /host/root.
       # - NEXTDASH_HOST_ROOT=/host/root
+      # Containers widget: where the socket above landed. Unset hides the widget.
+      # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      # Turn the daily GitHub release check or the nextdash.cc news feed off for everyone.
+      # - DISABLE_UPDATE_CHECK=true
+      # - DISABLE_NEWS_FEED=true
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.
       # - DISABLE_TELEMETRY=true
       # Optional: require X-NextDash-Token on destructive/write API calls (reset, import, colors reset, delete page, health write endpoints, clear/refresh previews)
       # - NEXTDASH_WRITE_TOKEN=change-me
+      # Capture (bookmarklet, share sheet, /add) without handing out the write token:
+      # - NEXTDASH_CAPTURE_TOKEN=a-second-long-random-string
+      # Automatic backups: how many are kept (1-50) and where (absolute path;
+      # mount a volume there so they live outside ./data).
+      # - NEXTDASH_AUTO_BACKUP_KEEP=3
+      # - NEXTDASH_AUTO_BACKUP_DIR=/backups
+      # Logging. The app's Config -> Logs wins over these once set there.
+      # - NEXTDASH_LOG_LEVEL=info                    # error, warn, info, debug
+      # - NEXTDASH_ACTIVITY_LOG_FORMAT=text          # or json, for Loki or Vector
+      # - NEXTDASH_ACTIVITY_LOG_URLS=full            # full, host or off
+      # - NEXTDASH_ACTIVITY_LOG_SAMPLE=open=0.1      # sampling per channel
+      # - NEXTDASH_ACTIVITY_LOG_MAX_AGE_DAYS=30      # delete old rotated files
+      # - NEXTDASH_ACTIVITY_OPEN_DETAIL=basic        # off, basic or full
     restart: unless-stopped
     container_name: nextdash
     

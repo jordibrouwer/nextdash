@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'retro-crt-dark';
+    const DEFAULT_THEME = 'tarnished-brass-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -271,10 +271,25 @@
      * copy is not the one that counts.
      */
     function applyThemeDepth(depth) {
-        const value = ['flat', 'soft', 'rich', 'glass'].includes(depth) ? depth : 'rich';
+        const value = ['flat', 'soft', 'rich', 'glass'].includes(depth) ? depth : 'flat';
         document.documentElement.setAttribute('data-depth', value);
         if (document.body) {
             document.body.setAttribute('data-depth', value);
+        }
+        return value;
+    }
+
+    /**
+     * Mirrors the glow choice onto <html> and <body>.
+     *
+     * Same shape as the depth above, and for the same reason: the server
+     * writes it for the first paint, this exists for the moment it changes.
+     */
+    function applyGlowStrength(strength) {
+        const value = ['off', 'soft', 'full'].includes(strength) ? strength : 'off';
+        document.documentElement.setAttribute('data-glow', value);
+        if (document.body) {
+            document.body.setAttribute('data-glow', value);
         }
         return value;
     }
@@ -591,6 +606,7 @@
         getFontSize: getFontSize,
         applyTheme: applyTheme,
         applyThemeDepth: applyThemeDepth,
+        applyGlowStrength: applyGlowStrength,
         applyInkGap: applyInkGap,
         applyThemeBackdrop: applyThemeBackdrop,
         applyBackgroundPattern: applyBackgroundPattern,

@@ -25,27 +25,6 @@
     pointer-events: none;
 }
 
-/*
- * Out of the button bar's way when the two share a corner.
- *
- * Both are fixed to the bottom right, and a shown toast takes pointer events
- * -- so with the bar in that corner its buttons could not be clicked for the
- * twelve seconds an unprompted tip is on screen. The bar's own origin is
- * bottom: 2rem, and its height is published by publishButtonBarHeight()
- * (dashboard.js) because it is one row of buttons or two depending on how
- * many are switched on and how wide the window is.
- *
- * The right rail is the same problem lying down: there the bar runs the full
- * height of that edge, so the toast steps left of it rather than above it.
- */
-body[data-button-position="bottom-right"] .app-notification {
-    bottom: calc(2rem + var(--button-bar-height, 3rem) + 0.75rem);
-}
-
-body[data-rail="right"] .app-notification {
-    right: calc(var(--rail-width, 44px) + max(1rem, env(safe-area-inset-right)));
-}
-
 .app-notification.show {
     opacity: 1;
     visibility: visible;

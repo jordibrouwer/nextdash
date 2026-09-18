@@ -1033,7 +1033,7 @@ class DashboardHealth {
             if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.multiSelect?.selectAllVisible();
+            this.multiSelect?.toggleAllVisible();
             return true;
         }
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
@@ -1077,6 +1077,7 @@ class DashboardHealth {
         if ((e.key === 'R' || e.key === 'r' || e.key === '?') && !onRowControl && !isSearch) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('R');
             void this.refreshReportFromKeyboard();
             return true;
         }
@@ -1134,7 +1135,7 @@ class DashboardHealth {
         if (e.key === 'X') {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.multiSelect?.selectAllVisible();
+            this.multiSelect?.toggleAllVisible();
             return true;
         }
         if (e.key === 's' && this.selectedKey) {
@@ -5191,6 +5192,30 @@ class DashboardHealth {
      * offered once there is enough history for renderTrendChart to draw
      * something, so the button can never open an empty modal.
      */
+    /**
+     * Tick the whole filtered list from the menu.
+     *
+     * X and Ctrl/Cmd+A already did this, which left it reachable only to
+     * somebody who had read the cheat sheet. Same toggle, so the button and the
+     * keys stay one behaviour, and the label says which way the next click goes.
+     *
+     * Left out when the filter shows nothing: a Select all over an empty list
+     * has nothing to select.
+     */
+    renderSelectAllButton() {
+        const count = this.getFilteredIssues().length;
+        if (!count) return '';
+        const all = this.multiSelect?.allVisibleSelected?.();
+        const label = all
+            ? this.t('dashboard.healthDeselectAll', 'Deselect all')
+            : this.t('dashboard.healthSelectAll', 'Select all ({count})', { count });
+        const hint = all
+            ? this.t('dashboard.healthDeselectAllHint', 'Untick every row the current filter shows')
+            : this.t('dashboard.healthSelectAllHint', 'Tick every row the current filter shows');
+        return `<button type="button" class="health-view-select-all-btn" data-health-select-all
+            title="${this.escape(hint)}">${this.escape(label)}</button>`;
+    }
+
     renderTrendOpenButton() {
         if (this.trendPoints().length < 3) return '';
         return `<button type="button" class="health-view-trend-open-btn" data-health-trend-open
@@ -5210,6 +5235,7 @@ class DashboardHealth {
         const checkedCount = this.checkedCount();
 
         menu.innerHTML = `
+            ${this.renderSelectAllButton()}
             <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
             ${this.renderHistoryExportButton()}
             ${this.renderOpenBrokenButton()}
@@ -5223,6 +5249,14 @@ class DashboardHealth {
             ${this.renderBulkEnableButtons()}
             ${this.renderSettingsLink()}
         `;
+
+        menu.querySelector('[data-health-select-all]')?.addEventListener('click', () => {
+            this.multiSelect?.toggleAllVisible();
+            // The label it was just clicked on has flipped meaning, and the menu
+            // stays open — so redraw it rather than leave "Select all" standing
+            // over a list that is now entirely ticked.
+            this.syncHeaderMenu();
+        });
 
         menu.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();

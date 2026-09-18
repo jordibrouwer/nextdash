@@ -41,6 +41,18 @@ body {
     --theme-depth: 1;
 }
 
+html[data-theme] body[data-glow="off"] {
+    --glow-strength: 0;
+}
+
+html[data-theme] body[data-glow="soft"] {
+    --glow-strength: 0.6;
+}
+
+html[data-theme] body[data-glow="full"] {
+    --glow-strength: 1;
+}
+
 html[data-theme] body[data-depth="flat"] {
     --theme-tint: 0%;
     --theme-depth: 0;
@@ -117,8 +129,19 @@ html[data-theme] body {
        restate it, at 6%, and quietly won -- so raising the number here moved
        nothing at all. One percentage, one place. */
     --edge-top: inset 0 1px 0 color-mix(in srgb,
-        var(--text-primary) calc(16% * var(--theme-depth)), transparent);
-    --edge-light: var(--edge-top);
+        var(--text-primary) calc((16% + 30% * var(--theme-sheen, 0)) * var(--theme-depth)), transparent);
+    /*
+     * And the same light down the left edge, at two thirds.
+     *
+     * A lit top edge alone is a highlight with no source; a second line down
+     * the side puts the light somewhere -- top left, where every interface
+     * since the first one has kept it -- and the surface stops reading as a
+     * rectangle with a stripe on it. Weaker than the top, because a face
+     * turned away from the light is what makes the direction legible.
+     */
+    --edge-side: inset 1px 0 0 color-mix(in srgb,
+        var(--text-primary) calc(10% * var(--theme-depth)), transparent);
+    --edge-light: var(--edge-top), var(--edge-side);
 
     /*
      * And the shaded bottom edge, which is the other half of the same cue.
@@ -153,8 +176,19 @@ html[data-theme] body {
      * Scaled by --theme-depth, so flat resolves it to a fully transparent
      * colour and paints nothing.
      */
+    /*
+     * How much of both glows is drawn, as a multiplier the reader sets.
+     *
+     * The strength lives here rather than in each glow, so "quieter" is one
+     * number for the state bloom and the ambient ring alike -- and a theme that
+     * asks for no glow at all still paints none, because zero times anything is
+     * zero. 1 is what shipped, 0.6 is the quiet middle, and the default is 0:
+     * an effect that ships on is one every reader has to find the switch for.
+     */
+    --glow-strength: 0;
+
     --bloom: 0 0 12px color-mix(in srgb,
-        var(--accent-primary) calc(40% * var(--theme-depth)), transparent);
+        var(--accent-primary) calc(40% * var(--theme-depth) * var(--glow-strength, 0)), transparent);
 
     /*
      * And the shadow the surface casts.
@@ -176,11 +210,35 @@ html[data-theme] body {
      * invisible when you look for it, and the reason a large surface stops
      * looking like a swatch.
      */
-    --surface-sheen: linear-gradient(
+    --surface-sheen: var(--surface-gloss), linear-gradient(
         180deg,
         color-mix(in srgb, var(--text-primary) calc(2.5% * var(--theme-depth)), transparent) 0%,
         transparent 40%
     );
+
+    /*
+     * Gloss: the light a lacquered surface catches.
+     *
+     * A theme's `sheen` (0-1, handlers.go) sets it; zero draws nothing, so
+     * every theme that never mentions it looks exactly as before. Two layers:
+     * a bright band across the top, and a soft highlight at the top left where
+     * the lit edges already put the light. White rather than --text-primary:
+     * a reflection is the colour of the light, not of the ink, and on a light
+     * theme it still reads as a shine on the surface.
+     */
+    --surface-gloss:
+        radial-gradient(120% 70% at 18% 0%,
+            color-mix(in srgb, white calc(12% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            transparent 62%),
+        linear-gradient(180deg,
+            color-mix(in srgb, white calc(15% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            color-mix(in srgb, white calc(4% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 42%,
+            transparent 58%);
+
+    /* The same light on a control under the pointer. */
+    --gloss-hover: linear-gradient(180deg,
+        color-mix(in srgb, white calc(18% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+        transparent 70%);
 
     /*
      * Accent washes, for what is selected, hovered or currently true. Named by
@@ -210,6 +268,7 @@ html[data-theme] body {
            de kleurbeweging die deze voorkeur weg wil hebben. Dat geldt net zo
            voor de toestandsbloom: de focus-outline draagt de betekenis al. */
         --theme-surface-glow: 0;
+        --glow-strength: 0;
         --bloom: none;
     }
 }
@@ -325,16 +384,14 @@ body:not([data-depth="flat"]) .dashboard-grid.layout-widgets .category {
 /*
  * The widget body.
  *
- * A tile is the one block on the dashboard that is nothing but a surface with
- * figures on it, so it is where a flat palette shows most. It mixed 5% of the
- * secondary text colour into nothing, which is a surface without being on the
- * ladder — surface-2 puts it a step above the card it sits in.
+ * Deliberately off the ladder. surface-2 lifted every tile a step above the
+ * card it sits in, and on every theme that read as a grey panel pasted on the
+ * page. The tile keeps its page-coloured ground from dashboard.css; depth gives it a
+ * hairline and the soft shadow, not the lit edges.
  */
 body:not([data-depth="flat"]) .dashboard-widget .dashboard-widget-body {
-    background: var(--surface-2);
-    background-image: var(--surface-sheen);
     border: 1px solid var(--hairline);
-    box-shadow: var(--edge-light), var(--edge-dark), var(--surface-cast);
+    box-shadow: var(--surface-cast);
 }
 
 /*
@@ -864,3 +921,38 @@ html[data-theme="bone-china-light"] body {
     --theme-title-spacing: 0.02em;
 }
 
+
+
+/*
+ * Gloss on the surfaces that are not cards.
+ *
+ * Only the gloss layer, not the base wash: these surfaces never carried the
+ * 2.5% sheen, and a theme without `sheen` must draw them exactly as it did.
+ */
+body:not([data-depth="flat"]) :is(
+    .config-panel,
+    .lvs-summary,
+    .hub-card,
+    .hub-tile,
+    .search-container
+) {
+    background-image: var(--surface-gloss);
+}
+
+/* The dock and the plated header controls are plates of their own. */
+body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
+    .dashboard-section.section-controls .header-shortcuts,
+body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-destinations :is(
+    .dashboard-link-anchor,
+    .health-link-anchor,
+    .config-link-anchor,
+    .page-nav-btn--inbox
+) {
+    background-image: var(--surface-gloss);
+}
+
+body:not([data-depth="flat"]) :is(.config-btn, .hub-choice, .dashboard-widget-health-row, .dashboard-widget-trend-row):hover,
+body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
+    .dashboard-section.section-controls .header-shortcuts .search-button:hover {
+    background-image: var(--gloss-hover);
+}

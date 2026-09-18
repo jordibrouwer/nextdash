@@ -175,6 +175,9 @@ func applyLogSettings(s Settings) {
 		}
 		setActivityChannelsForRuntime(enabled)
 	}
+	if level := strings.TrimSpace(s.ActivityOpenDetail); level != "" {
+		setActivityOpenDetailForRuntime(level)
+	}
 }
 
 /*

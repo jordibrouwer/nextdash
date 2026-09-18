@@ -2914,6 +2914,10 @@ variations on one gradient would still read as one background.
 */
 func themeBackdropImage(themeID string, tc ThemeColors) string {
 	h := fnv32(themeBackdropHashID(themeID))
+	recipe := pick23(h)
+	if chosen := themeBackdropRecipeIndex(tc.Backdrop); chosen >= 0 {
+		recipe = chosen
+	}
 	pick := func(shift uint, span int) int {
 		if span <= 0 {
 			return 0
@@ -2943,7 +2947,7 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
 		wash(accent, 6) + " 0%, var(--background-primary) 68%)"
 
-	switch pick(23, 9) {
+	switch recipe {
 	case 0: // twee zachte blooms, de vorm van de referentie
 		return "radial-gradient(120% 88% at " + pct(x1) + " " + pct(y1) + ", " + veil(second, 26) + " 0%, transparent 56%), " +
 			"radial-gradient(110% 80% at " + pct(x2) + " " + pct(y2) + ", " + veil(accent, 24) + " 0%, transparent 60%), " + base
@@ -2971,6 +2975,28 @@ func themeBackdropImage(themeID string, tc ThemeColors) string {
 		return "linear-gradient(" + strconv.Itoa(178+pick(2, 6)) + "deg, " + veil(accent, 16) + " 0%, transparent " + pct(34+pick(5, 16)) + "), " +
 			"radial-gradient(140% 60% at " + pct(x2) + " 100%, " + veil(second, 18) + " 0%, transparent 58%), " + base
 	}
+}
+
+// themeBackdropRecipes names the nine recipes above, in their switch order, so
+// a theme can pick one instead of taking the one its id hashes to.
+var themeBackdropRecipes = []string{
+	"blooms", "sweep", "wireframe", "glow", "band", "rings", "scanlines", "crosshatch", "horizon",
+}
+
+// themeBackdropRecipeIndex is the recipe a name stands for, or -1.
+func themeBackdropRecipeIndex(name string) int {
+	name = strings.ToLower(strings.TrimSpace(name))
+	for i, known := range themeBackdropRecipes {
+		if name == known {
+			return i
+		}
+	}
+	return -1
+}
+
+// pick23 is the recipe an id hashes to: the same bits pick() reads for it.
+func pick23(h uint32) int {
+	return int((h >> 23) % uint32(len(themeBackdropRecipes)))
 }
 
 // themeBackdropHashID maps a "-dark" theme id onto its "-light" counterpart so
@@ -3094,6 +3120,7 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
     --theme-surface-step: ` + themeSurfaceStep(tc) + `;
     --theme-glow-lift: ` + themeGlowLift(tc) + `;
     --theme-radius-scale: ` + formatFloat(clampFloat(tc.RadiusScale, 0.05, 1.6, 1)) + `;
+    --theme-sheen: ` + formatFloat(clampFloat(tc.Sheen, 0, 1, 0)) + `;
     --theme-label-transform: ` + themeLabelTransform(tc.LabelTransform) + `;
     --theme-label-spacing: ` + themeLabelSpacing(tc.LabelSpacing) + `;
     --theme-label-weight: ` + themeLabelWeight(tc.LabelWeight) + `;
@@ -3834,9 +3861,130 @@ func (h *Handlers) TrackBookmarkOpen(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logBookmarkOpen(pageID, index, bookmark, r)
+	// Cached JS in an open tab, or the browser extension, may still be
+	// posting the old {pageId, index} shape, so these two are read loosely
+	// and left absent rather than rejecting a request that lacks them.
+	// logBookmarkOpen drops anything outside its allowlists.
+	source, _ := raw["source"].(string)
+	method, _ := raw["method"].(string)
+	sessionID, _ := raw["sessionId"].(string)
+	logBookmarkOpen(pageID, index, bookmark, source, method, sessionID, raw, r)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// trackOK decodes the body into a loose map and answers the two-line reply
+// every one of these five endpoints gives — {"status":"ok"} on success, a
+// bare 400 on a body that is not JSON at all. Every field inside is optional
+// from here down: the corresponding log function is where each one is
+// actually validated, and it drops rather than rejects.
+func trackOK(w http.ResponseWriter, r *http.Request) (map[string]interface{}, bool) {
+	w.Header().Set("Content-Type", "application/json")
+	var raw map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, false
+	}
+	return raw, true
+}
+
+func trackRespondOK(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// TrackSearch records that a search was issued, how many results it found,
+// and whether it ended in an open — the single best signal for a bookmark
+// that should exist and does not.
+func (h *Handlers) TrackSearch(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	query, _ := raw["query"].(string)
+	resultCount, _ := parseIntFromAny(raw["resultCount"])
+	opened, _ := raw["opened"].(bool)
+	sessionID, _ := raw["sessionId"].(string)
+	logSearchActivity(query, resultCount, opened, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackKeys records which keyboard shortcuts fired, aggregated by the client
+// over an interval rather than one line per press.
+func (h *Handlers) TrackKeys(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	counts := map[string]int{}
+	if keys, ok := raw["keys"].(map[string]interface{}); ok {
+		for key, value := range keys {
+			if n, ok := parseIntFromAny(value); ok {
+				counts[key] = n
+			}
+		}
+	}
+	sessionID, _ := raw["sessionId"].(string)
+	logKeyActivity(counts, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackNav records a page switch, a category folding open or closed, or a
+// layout change — whether the shape of the dashboard matches what people
+// actually use.
+func (h *Handlers) TrackNav(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	action, _ := raw["action"].(string)
+	detail, _ := raw["detail"].(string)
+	sessionID, _ := raw["sessionId"].(string)
+	logNavActivity(action, detail, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackSession records that a dashboard tab loaded and which page it landed
+// on, so later opens and searches from the same tab can be related to it.
+func (h *Handlers) TrackSession(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	pageID, _ := parseIntFromAny(raw["pageId"])
+	sessionID, _ := raw["sessionId"].(string)
+	logSessionActivity(pageID, sessionID, r)
+	trackRespondOK(w)
+}
+
+// TrackClientError records a JS error the page caught about itself — a
+// widget broken only in one browser is invisible on the server otherwise.
+func (h *Handlers) TrackClientError(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	raw, ok := trackOK(w, r)
+	if !ok {
+		return
+	}
+	message, _ := raw["message"].(string)
+	stack, _ := raw["stack"].(string)
+	script, _ := raw["script"].(string)
+	sessionID, _ := raw["sessionId"].(string)
+	logClientErrorActivity(message, stack, script, sessionID, r)
+	trackRespondOK(w)
 }
 
 func parseIntFromAny(value interface{}) (int, bool) {

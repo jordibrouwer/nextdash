@@ -50,12 +50,15 @@ body {
 }
 
 .dashboard-section.section-controls {
-    padding-top: var(--space-6, 2rem);
-    padding-bottom: 0;
-}
-
-.dashboard-section.section-title {
-    padding-top: 0;
+    /*
+     * The bar starts at the top of the window.
+     *
+     * 2rem of air above it was there to lift a card off the page; the bar runs
+     * edge to edge now and carries no card, so the air was only pushing the
+     * grid down. What is left is enough for the row not to touch the window's
+     * own edge.
+     */
+    padding-top: var(--space-2, 0.5rem);
     padding-bottom: 0;
 }
 
@@ -100,7 +103,37 @@ body[data-side-margin="airy"] {
 .header-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    /* The identity block is two lines tall and the actions are one, so they
+       align on the top rather than on a centre neither of them shares. */
+    align-items: flex-start;
+    gap: var(--space-4, 1rem);
+}
+
+/*
+ * Identity: the view name, and the clock under it.
+ *
+ * These were a 32px strip of clock and buttons with a 60px band under it that
+ * held nothing but the name, so the grid began 92px down the page to say one
+ * word. One block now: the name owns the left edge and the clock is the quiet
+ * line beneath it.
+ */
+.header-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-hairline, 0.15rem);
+    min-width: 0;
+}
+
+/*
+ * The clock line does not stretch.
+ *
+ * dashboard-enhancements.css gives .header-top-primary `flex: 1 1 12rem`,
+ * which was right while its parent was the header row -- it meant "take the
+ * width left over". Its parent is this column now, so the same declaration
+ * means "take the height left over", and one line of clock grew to 192px.
+ */
+.header-identity > .header-top-primary {
+    flex: 0 0 auto;
 }
 
 .date {
@@ -631,6 +664,8 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 }
 
 .title {
+    margin: 0;
+    line-height: 1.05;
     font-size: var(--font-size-title);
     font-family: var(--font-family-main);
     font-weight: var(--font-weight-black);
@@ -653,12 +688,205 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     display: none;
 }
 
+.dashboard-section.section-controls .header-actions {
+    justify-self: end;
+}
+
 .header-actions {
     --header-control-gap: var(--space-2, 0.5rem);
     display: flex;
     align-items: center;
     gap: var(--header-control-gap);
     margin-left: auto;
+    /* One line: the track inside it shrinks rather than the row breaking. */
+    flex-wrap: nowrap;
+    min-width: 0;
+    /*
+     * Takes the room the identity block does not.
+     *
+     * Content-sized, it stayed at its own intrinsic width while the header had
+     * 750px going spare, and the seven action buttons that moved in here
+     * overflowed it by 120px -- the config icon was pushed off the screen with
+     * free space beside it. It grows to fill instead, and the track inside it
+     * is what gives when there is genuinely not enough.
+     */
+    flex: 1 1 auto;
+    justify-content: flex-end;
+}
+
+/*
+ * The actions, as one control rather than a bar floating over the grid.
+ *
+ * They sat in .button-container, a slab pinned to a corner of the viewport,
+ * which meant the things you do here lived somewhere else from the places you
+ * go. One surround, one row, beside the destinations they are not: a hairline
+ * between the two groups says which is which.
+ *
+ * Which of them are drawn is still the reader's, through the same
+ * data-show-* attributes -- and the keys keep working whatever is shown,
+ * because the handlers are on the document and never asked.
+ */
+.header-shortcuts {
+    display: flex;
+    align-items: center;
+    /* Tighter than the gap between destinations: these are one control with
+       several buttons in it, and the surround is what says so. */
+    gap: var(--space-1, 0.25rem);
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.15rem 0.25rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+}
+
+/*
+ * An empty surround is a box around nothing.
+ *
+ * Each action is the reader's to switch off, and all three off leaves a border
+ * with no buttons in it -- so the surround goes when the last one does.
+ */
+body[data-show-add-bookmark-button="false"][data-show-search-button="false"][data-show-commands-button="false"][data-show-finders-button="false"][data-show-tag-cloud-button="false"][data-show-recent-button="false"][data-show-pages-button="false"][data-show-collapse-all-button="false"][data-show-cheatsheet-button="false"] .header-shortcuts {
+    display: none;
+}
+
+/*
+ * A switched-off action stays switched off.
+ *
+ * The rules above that hide each button (body[data-show-*-button="false"] ...)
+ * are one class and one attribute; the header treatment below is three
+ * classes, so styling the buttons made them outrank the settings and a button
+ * the reader had turned off came back. Repeated here at the header's own
+ * weight, so the answer to "is it drawn" stays the reader's.
+ */
+body[data-show-add-bookmark-button="false"] .header-shortcuts #quick-add-toolbar-btn,
+body[data-show-search-button="false"] .header-shortcuts #search-button,
+body[data-show-commands-button="false"] .header-shortcuts #commands-button,
+body[data-show-finders-button="false"] .header-shortcuts #finders-button,
+body[data-show-recent-button="false"] .header-shortcuts .recent-button,
+body[data-show-pages-button="false"] .header-shortcuts #page-overview-header-btn,
+body[data-show-collapse-all-button="false"] .header-shortcuts #collapse-all-button,
+body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
+    display: none;
+}
+
+/*
+ * An action reads as a header control, not as a dock button.
+ *
+ * They arrived wearing what they wore while floating over the grid -- a filled
+ * plate at 74% over nothing, a label beside every icon, a wider box -- which
+ * beside the flat destination buttons read as two different kinds of thing in
+ * one bar. They are the same kind of thing: something you press in the header.
+ * So they take the destinations' treatment exactly (see .health-link--icon and
+ * friends above): transparent, secondary ink, the same padding and corner, and
+ * the same 2px underline that says which one you are on.
+ */
+.header-actions .header-shortcuts .search-button {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--space-1, 0.3rem);
+    /* Inside a surround of its own, so tighter than a destination standing on
+       the bare header: the padding that reads as room around a lone icon reads
+       as a gap inside a box. */
+    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.4rem);
+    border-radius: var(--radius-3, 4px);
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    min-width: 0;
+    width: auto;
+    height: auto;
+    opacity: 1;
+    transition: color 0.3s ease;
+}
+
+/* Inside the surround a button can take a fill on hover without competing
+   with the bar: the box already bounds it. */
+.header-actions .header-shortcuts .search-button:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    text-shadow: none;
+    transform: none;
+}
+
+.header-actions .header-shortcuts .search-button:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/*
+ * The word, then the key that does the same thing.
+ *
+ * A row of bare glyphs asks the reader to already know what + and > and ! do,
+ * which is the thing a header is worst at teaching. Each action says what it
+ * is and then shows the key, so the key is learned from the button rather than
+ * from the manual -- the order the cheat sheet itself uses.
+ */
+.header-actions .header-shortcuts .search-button-label {
+    display: inline;
+    white-space: nowrap;
+    text-transform: lowercase;
+}
+
+/*
+ * The key reads as a key: quieter than the word it follows, in the same
+ * tabular face the cheat sheet and the overlay foots use for a keycap.
+ */
+.header-actions .header-shortcuts .search-button-icon {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1;
+    color: var(--text-tertiary);
+}
+
+.header-actions .header-shortcuts .search-button:hover .search-button-icon {
+    color: var(--text-secondary);
+}
+
+/*
+ * One order, whatever the markup says.
+ *
+ * The buttons arrive in two groups left over from the dock, and which of them
+ * are drawn is a setting -- so their order cannot come from the DOM or it
+ * changes as buttons are switched on and off. Add first, because it is the one
+ * that makes something, then search, then the list of what you opened last,
+ * then the sheet that says what every key does. Commands, finders and fold-all
+ * are not here: their keys still work from anywhere, and the row is shorter
+ * for it.
+ */
+.header-actions .header-shortcuts #quick-add-toolbar-btn   { order: 1; }
+.header-actions .header-shortcuts #search-button           { order: 2; }
+.header-actions .header-shortcuts #commands-button         { order: 3; }
+.header-actions .header-shortcuts #finders-button          { order: 4; }
+.header-actions .header-shortcuts #tag-cloud-toggle-btn    { order: 5; }
+.header-actions .header-shortcuts #recent-bookmarks-button { order: 6; }
+.header-actions .header-shortcuts #page-overview-header-btn { order: 7; }
+.header-actions .header-shortcuts #collapse-all-button     { order: 8; }
+.header-actions .header-shortcuts #help-button             { order: 9; }
+
+/*
+ * The groups dissolve, so every button is a sibling of every other.
+ *
+ * `order` only sorts within one flex container, and the two groups are the
+ * dock's own split -- primary and secondary, which meant something when they
+ * were stacked in a corner and means nothing in a row. display: contents makes
+ * the seven buttons direct children of .header-shortcuts, which is what lets
+ * the order above hold however many of them are switched on.
+ */
+.header-actions .header-shortcuts .btn-group {
+    display: contents;
+}
+
+/* A group with nothing left in it must not leave its gap behind. */
+/* The destinations keep their width; the track is what gives. */
+.header-actions > :not(.page-navigation) {
+    flex: 0 0 auto;
 }
 
 /* inbox · health · config — same gap as between page tabs and the pages icon. */
@@ -1092,10 +1320,72 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 }
 
 /* ── Page navigation ─────────────────────────────────────────────────────── */
+/*
+ * The page track keeps a footprint, however many pages there are.
+ *
+ * It wrapped, so a twelfth page added a second row to the header and moved the
+ * toolbar icons down with it -- the one part of the bar that should never move
+ * was the part that moved most. It is one line now, bounded, and what does not
+ * fit is counted on a chip at its end (see fitPageTabs in
+ * dashboard-page-nav.js). The cap is a share of the header rather than a fixed
+ * pixel width, so a narrow window gives the track less before the tabs
+ * themselves have to shrink.
+ */
 .page-navigation {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--space-1, 0.25rem);
+    /*
+     * The room that is left, not a share of the window.
+     *
+     * A viewport-relative cap let the track claim 52vw while the toolbar still
+     * needed its own width, so at 900px the header ran out of room and wrapped
+     * -- the actions dropped onto a second row, which is exactly what bounding
+     * the track was meant to prevent. Shrinking is what the track does: it
+     * gives up width first and folds the tabs that no longer fit.
+     */
+    flex: 0 1 auto;
+    /*
+     * A floor, so the track cannot be squeezed out of existence. Without it
+     * the flex shrink took it to two pixels at 760px and the strip became a
+     * chip with nothing beside it -- the active page has to stay visible, and
+     * that needs room for one tab and the count.
+     */
+    min-width: min(9rem, 100%);
+    overflow: hidden;
+}
+
+/* A tab that does not fit is out of the flow, not merely clipped: a clipped
+   tab is still focusable, and tabbing to something you cannot see is worse
+   than not having it. */
+.page-nav-btn[hidden] {
+    display: none;
+}
+
+/*
+ * The count of what the track could not show.
+ *
+ * Reads as one of the tabs rather than as a control of its own -- it is the
+ * rest of the same list -- and opens the page overview, which is where the
+ * whole list lives.
+ */
+.page-nav-overflow {
+    flex: 0 0 auto;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
+    font-size: var(--font-size-controls);
+    font-family: var(--font-family-main);
+    font-weight: var(--font-weight-semibold);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.page-nav-overflow:hover,
+.page-nav-overflow:focus-visible {
+    color: var(--text-primary);
 }
 
 .page-swipe-hint {
@@ -1121,6 +1411,8 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
    these are a dense row of tabs and padding them out to 44px would push the
    later pages off the strip for no gain. */
 @media (hover: none) and (pointer: coarse) {
+    /* The text styles set their tabs to their glyph's width; a finger needs more. */
+    body:not([data-mobile-layout="true"]):is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn,
     body:not([data-mobile-layout="true"]) .page-nav-btn {
         min-height: 44px;
         min-width: 44px;
@@ -1370,13 +1662,13 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 
 /* Icon variant: pages, health, config, and inbox (in the destination cluster)
    share one chrome; spacing is .header-actions / .header-destinations gap. */
-.pages-link--icon,
+.dashboard-link--icon,
 .health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
-.pages-link--icon .pages-link-anchor,
+.dashboard-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
@@ -1389,20 +1681,7 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
-.pages-link--icon .pages-link-anchor {
-    font-family: var(--font-family-main);
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-secondary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.pages-link--icon .pages-link-anchor:hover,
+.dashboard-link--icon a:hover,
 .health-link--icon a:hover,
 .config-link--icon a:hover,
 .header-destinations .page-nav-btn--inbox:hover {
@@ -1410,21 +1689,16 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     text-shadow: none;
 }
 
-.pages-link--icon .pages-link-anchor:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-}
-
 /* Active state matched to .page-nav-btn.active: header destinations are the
    same kind of tab as page tabs, so "you are here" must look the same. */
-.pages-link--icon .pages-link-anchor,
+.dashboard-link--icon a,
 .health-link--icon a,
 .config-link--icon a,
 .header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
 
-.pages-link--icon .pages-link-anchor.active,
+.dashboard-link--icon a.active,
 .health-link--icon a.active,
 .config-link--icon a.active,
 .header-destinations .page-nav-btn--inbox.active {
@@ -1435,7 +1709,7 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     border-bottom-right-radius: 0;
 }
 
-.pages-link--icon .pages-link-icon,
+.dashboard-link--icon .dashboard-link-icon,
 .health-link--icon .health-link-icon,
 .config-link--icon .config-link-icon,
 .header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
@@ -2328,7 +2602,10 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
 .whats-new-btn {
     position: fixed;
     bottom: var(--corner-fab-edge);
-    left: var(--corner-fab-edge);
+    /* Right, not left: the left corner is where the page's own content starts,
+       and the actions it belongs beside all sit at the right end of the bar. */
+    right: var(--corner-fab-edge);
+    left: auto;
     z-index: 1001;
     padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
     border: none;
@@ -2412,7 +2689,10 @@ body.no-animations .whats-new-btn-update-dot {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 6px);
-    left: 0;
+    /* Hung from the same edge the button is pinned to, so it opens inward
+       instead of off the screen. */
+    right: 0;
+    left: auto;
     white-space: nowrap;
     padding: var(--space-1, 0.2rem) var(--space-2, 0.5rem);
     background: var(--background-secondary);
@@ -2437,21 +2717,6 @@ body.no-animations .whats-new-btn-update-dot {
     .whats-new-btn[data-tooltip]::after {
         display: none;
     }
-}
-/* Linker-dock: what's new naar rechts (tegenover de knoppenbalk) */
-body[data-button-position="bottom-left"] .whats-new-btn {
-    left: auto;
-    right: var(--corner-fab-edge);
-}
-body[data-button-position="bottom-left"] .whats-new-btn[data-tooltip]::after {
-    left: auto;
-    right: 0;
-}
-
-/* Rechter-dock: what's new expliciet links (tegenover de knoppenbalk) */
-body[data-button-position="bottom-right"] .whats-new-btn {
-    left: var(--corner-fab-edge);
-    right: auto;
 }
 
 /* Density overrides (can be combined with layout presets) */
@@ -3614,11 +3879,6 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     min-width: 0;
 }
 
-.bookmark-inline-field.bookmark-inline-check {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-1-5, 0.4rem);
-}
 
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
    One horizontal row of pills instead of three stacked checkbox rows: the flags
@@ -4149,9 +4409,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     vertical-align: -0.05em;
 }
 
-.bookmark-link.smart-recent-promote {
-    animation: smartRecentPromote 320ms ease-out;
-}
 
 @keyframes smartRecentPromote {
     0% {
@@ -4485,15 +4742,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     position: relative;
 }
 
-.bookmark-link.bookmark-flash::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--accent-primary);
-    opacity: 0;
-    pointer-events: none;
-    animation: bookmarkFlash 380ms ease-out forwards;
-}
 
 /* Copy-URL row flash */
 @keyframes bookmarkCopyFlash {
@@ -4516,9 +4764,6 @@ body.no-animations .bookmarks-list.reorder-container::after {
     animation: none;
 }
 
-body.no-animations .bookmark-link.bookmark-flash::after {
-    animation: none !important;
-}
 
 /* Launcher scale-pulse on open */
 @keyframes bookmarkPulse {
@@ -4581,6 +4826,19 @@ body[data-show-config-button="false"] .config-link {
     display: none;
 }
 
+/* The inbox, on its own switch. Its host is filled by dashboard-inbox.js, so
+   it is hidden rather than left out. The pages button is one of the actions
+   now and hides with them, further up. */
+body[data-show-inbox-button="false"] #page-nav-inbox-host {
+    display: none;
+}
+
+/* The way back is the reader's too: the page tabs, `1`-`9` and Escape all
+   reach the dashboard without it. */
+body[data-show-dashboard-button="false"] .dashboard-link {
+    display: none;
+}
+
 /* Hide cheatsheet button when showCheatSheetButton is false */
 body[data-show-cheatsheet-button="false"] .help-button {
     display: none;
@@ -4634,12 +4892,17 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
 body:has(#dashboard-layout.health-layout) .button-container,
-body:has(#dashboard-layout.inbox-layout) .button-container {
-    display: none;
-}
-
-/* Side rail: / tag cloud is a direct .button-container child (not inside secondary group) */
-body[data-button-position="side-left"] .button-container > #tag-cloud-toggle-btn.is-eligible {
+body:has(#dashboard-layout.inbox-layout) .button-container,
+/* The actions moved into the header; the scoping had to move with them, or
+   Health and Inbox draw a fold-all and an add-bookmark for a grid that is not
+   there. The destinations beside them stay: those are how you leave. */
+/*
+ * The actions stand in every view.
+ *
+ * They were hidden in config, health and inbox, from back when they were a
+ * dock that belonged to the grid. In the header they are chrome like the
+ * destinations beside them: add, search, recents and the cheat sheet all open
+ * over whatever view you are in{
     display: flex !important;
 }
 
@@ -4907,11 +5170,6 @@ body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.la
     padding: 0.1rem 0.35rem;
 }
 
-.recent-bookmarks-modal-meta {
-    flex-shrink: 0;
-    color: var(--text-tertiary);
-    font-size: var(--font-size-controls);
-}
 
 .recent-bookmarks-empty {
     padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
@@ -4932,7 +5190,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     -webkit-backdrop-filter: blur(3px);
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+/* Not a sheet: one that hangs from the header sizes itself against the header
+   row, and a selector this specific would out-shout it. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     width: min(52rem, calc(100vw - 2.5rem));
@@ -4969,42 +5229,11 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
 }
 
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    max-height: calc(100vh - 4rem);
-}
-
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
-}
-
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal),
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) {
-    justify-content: center;
-    padding-bottom: max(var(--space-6, 2rem), env(safe-area-inset-bottom, 0px));
-}
-
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="side-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-left"] #app-modal.modal-overlay:has(.whats-new-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
-body:has(#dashboard-layout)[data-button-position="bottom-right"] #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    max-height: calc(100vh - 2rem);
 }
 
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
@@ -5015,40 +5244,85 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-ne
 }
 
 /* Inbox intro modal — centered above the inbox feed */
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) {
-    z-index: 13000 !important;
-    justify-content: center;
-    align-items: center;
-    padding: max(1.25rem, 2vw);
-    box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay.show:has(.inbox-intro-modal) {
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
-body:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
-    width: min(40rem, calc(100vw - 2.5rem));
-    max-width: 100%;
-    margin: 0;
-    max-height: min(85vh, calc(100vh - 2.5rem));
-    transform: translateY(0) scale(1);
-    opacity: 1 !important;
-    visibility: visible !important;
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
-}
 
-body.no-animations:has(#dashboard-layout.inbox-layout) #app-modal.modal-overlay:has(.inbox-intro-modal) .modal {
-    transform: none !important;
-    transition: opacity 0.15s ease !important;
-}
 
 /* Page overview modal — centered compact shell */
+/*
+ * The pages panel wears the same chrome as recent bookmarks.
+ *
+ * Both are a short list you open with one key and leave with another, so they
+ * are drawn the same: the name with its key beside it, a way out on the right,
+ * the rows in one slab, and a thin foot. It named itself and then said "close"
+ * three times -- a full-width button, an ESC hint under it, and nothing in the
+ * header.
+ */
+.modal.page-overview-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.modal.page-overview-modal .modal-title {
+    text-transform: lowercase;
+    font-size: var(--font-size-text);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.page-overview-modal-key {
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small, 0.72rem);
+    font-weight: 700;
+}
+
+.page-overview-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.72rem);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.page-overview-modal-close:hover,
+.page-overview-modal-close:focus-visible {
+    opacity: 1;
+}
+
+.modal.page-overview-modal .modal-actions,
+#app-modal:has(.page-overview-modal) .modal-esc-hint {
+    display: none;
+}
+
+.page-overview-modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-3, 0.75rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small, 0.65rem);
+    opacity: 0.6;
+}
+
+.page-overview-modal-footkey {
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
 body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     justify-content: center;
     align-items: center;
@@ -5058,7 +5332,9 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) {
     -webkit-backdrop-filter: blur(3px);
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal {
+/* Not the sheet: it sizes itself against the header row it hangs from, and a
+   selector this specific would out-shout it. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     width: min(22rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;
@@ -5337,20 +5613,12 @@ body.no-animations .bookmark-move-out {
     .bookmark-move-out { animation-duration: 0.01ms !important; transform: none !important; opacity: 1 !important; }
     .bookmark-link.bookmark-deep-link-focus,
     .bookmark-link.bookmark-copy-flash::after,
-    .bookmark-link.bookmark-flash::after,
     .layout-launcher .bookmark-link.bookmark-pulse {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }
     /* Decorative looping, nothing waits on it */
     .health-link a { animation: none !important; }
-    /* Promo balloons (entrance + float) */
-    .dashboard-feature-promo-balloon,
-    .dashboard-g-jump-promo-balloon,
-    .dashboard-grid-kbd-promo-balloon,
-    .dashboard-smart-collection-promo-balloon,
-    .dashboard-search-promo-balloon,
-    .dashboard-search-promo-badge { animation: none !important; }
     /* Date popover entrance */
     .date-popover { animation: none !important; }
 }
@@ -5361,7 +5629,7 @@ body.no-animations .bookmark-move-out {
 
 /* Inside the link, not a grid column: .bookmark-link is a subgrid whose columns
    line up across every category on the page, so a new column would move every
-   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag-chip)
+   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag)
    — a tag should look like a tag wherever it is listed. */
 .bookmark-tag-strip {
     display: inline-flex;
@@ -5705,45 +5973,50 @@ body[data-grid-keys="shown"] .dashboard-legend {
  * category title beside it.
  */
 /*
- * The two surfaces a readout is built from, and both are translucent on purpose.
+ * The surfaces a readout is built from: the page's own colour, one step off
+ * it, and solid.
  *
- * Mixed with `transparent` rather than with a named background, so they
- * composite over whatever the card turned out to be. Deriving them from
- * --background-primary was the first attempt and it does not survive contact
- * with the themes: measured across four, the cell came out lighter than the
- * card on two and darker on the other two, and on two of them the difference
- * was under 1% -- invisible. The card is not mixed from --background-primary,
- * so anything mixed from it lands wherever it lands.
+ * They were tints of --text-primary, one step towards the reader. On every
+ * theme that read as a grey-white panel pasted on the dashboard, and the cells
+ * inside it lighter still: mixing in the ink mixes in its whiteness. These take
+ * the page's hue and chroma and move only its lightness -- up on a dark theme,
+ * down on a light one, as --ink-dir says -- so a tile keeps the colour of the
+ * page it stands on. The theme's accent tint rides on top the way it does on
+ * the surface ladder.
  *
- * A tint of the text colour always moves away from the card in the same
- * direction the text does: lighter on a dark theme, darker on a light one.
- * That is one step towards the reader on every theme, which is the whole
- * relationship a readout needs.
+ * The cells sit one step further out than the tile. Their container paints the
+ * tile's own ground, so the 1px gaps between them draw the hairlines. The
+ * solid cell is kept under its own name so glass can thin it without a
+ * variable that refers to itself.
  *
- * --text-primary and not --text-secondary, which is what these mixed for a
- * long time and is why a readout came out grey on a themed dashboard. The
- * secondary ink is derived in theme-ink.css as oklch(from <surface> ...) with
- * `calc(c * 0.5)` -- half the chroma of the surface it stands on. On a dark
- * theme that surface is near-black and carries almost none to begin with, so
- * halving it lands at effectively zero: measured on retro-crt-dark, the cell
- * came out srgb(0.723 0.761 0.733), which is a grey on a green dashboard.
- * Scaling the chroma down is right for ink (it is what keeps a greyscale
- * theme neutral instead of picking up a tint), and wrong for a surface that
- * has to belong to the card it sits in. --text-primary comes straight from
- * the theme with its own chroma, so the tint carries the theme's hue and the
- * direction above still holds.
+ * Chroma is the page's own, unscaled: a neutral page has no hue to speak of,
+ * and inventing one would tint a greyscale theme red.
+ *
+ * The fallback, for a browser without relative colours, is the old ink tint at
+ * a lower strength over the solid page.
  */
 .dashboard-widget {
-    --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 13%, transparent);
-    --dashboard-widget-cell: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 16%, transparent);
+    --dashboard-widget-surface: color-mix(in srgb, var(--text-primary) 4%, var(--background-primary));
+    --dashboard-widget-cell-solid: color-mix(in srgb, var(--text-primary) 8%, var(--background-primary));
+    --dashboard-widget-cell: var(--dashboard-widget-cell-solid);
+    --dashboard-widget-rule: var(--dashboard-widget-surface);
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--dashboard-widget-cell) 88%, var(--text-primary));
+}
+
+@supports (color: oklch(from white l c h)) {
+    .dashboard-widget {
+        --dashboard-widget-surface: color-mix(in srgb, var(--accent-primary) var(--theme-tint, 0%),
+            oklch(from var(--background-primary) clamp(0, calc(l + 0.035 * var(--ink-dir, 1)), 1) c h));
+        --dashboard-widget-cell-solid: color-mix(in srgb, var(--accent-primary) var(--theme-tint, 0%),
+            oklch(from var(--background-primary) clamp(0, calc(l + 0.07 * var(--ink-dir, 1)), 1) c h));
+    }
 }
 
 .dashboard-widget .dashboard-widget-body {
     padding: var(--space-3, 0.75rem) var(--space-3, 0.85rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 9px);
-    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    background: var(--dashboard-widget-surface);
     /*
      * Reserved before the data arrives.
      *
@@ -6013,30 +6286,78 @@ button.dashboard-widget-row.keyboard-selected {
 
 .dashboard-widget-trend {
     display: flex;
+    flex-direction: column;
+    /* The health view's summary block, as a tile: label left, figure right,
+       and the line and its sentence on a row of their own. Hairlines between
+       rows, as .dashboard-widget-health draws them. */
+    gap: 1px;
+    padding: 1px;
+    border-radius: var(--radius-4, 7px);
+    overflow: hidden;
+    background: var(--dashboard-widget-rule);
+}
+
+.dashboard-widget-trend-row {
+    display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 2px var(--space-2, 0.55rem);
+    width: 100%;
+    padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
+    border: none;
+    background: var(--dashboard-widget-cell);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.dashboard-widget-trend-row {
+    cursor: pointer;
+}
+
+button.dashboard-widget-trend-row:hover,
+button.dashboard-widget-trend-row:focus-visible {
+    background: var(--dashboard-widget-cell-hover);
+}
+
+.dashboard-widget-trend-label {
+    color: var(--text-secondary);
 }
 
 .dashboard-widget-trend-value {
-    font-size: 1.5em;
+    color: var(--text-primary);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    line-height: 1;
 }
+
+.dashboard-widget-trend-row.is-good .dashboard-widget-trend-value { color: var(--accent-success); }
+.dashboard-widget-trend-row.is-warn .dashboard-widget-trend-value { color: var(--accent-warning); }
+.dashboard-widget-trend-row.is-bad .dashboard-widget-trend-value { color: var(--accent-error); }
 
 .dashboard-widget-trend-change {
     font-size: var(--font-size-small);
     font-variant-numeric: tabular-nums;
 }
 
-/* Fewer broken links is good news even when the number is still high, so the
-   direction carries the colour and the value stays neutral. */
+.dashboard-widget-trend-extra {
+    flex-basis: 100%;
+}
 
+/* The rail's sparkline: same currentColor line, same fixed axis. */
 .dashboard-widget-trend-line {
     display: block;
     width: 100%;
-    height: 40px;
+    height: 2rem;
     margin-top: 4px;
+    color: var(--accent-success);
+    opacity: 0.85;
+}
+
+.dashboard-widget-trend-note {
+    margin: 2px 0 0;
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
 }
 
 a.dashboard-widget-row {
@@ -6389,8 +6710,10 @@ button.dashboard-widget-stat.keyboard-selected {
     overflow: hidden;
     /* A track that can be seen when the fill is short: at four pixels on a
        16%-tint ground the empty part of the bar was invisible, so a bar at 5%
-       looked like a stray mark rather than like a bar that is nearly empty. */
-    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+       looked like a stray mark rather than like a bar that is nearly empty.
+       Solid on the cell's ground, and a lighter share of the ink: at 22% over
+       transparent it was the brightest thing on the tile. */
+    background: color-mix(in srgb, var(--text-primary) 14%, var(--dashboard-widget-cell));
 }
 
 .dashboard-widget-meter-fill {
@@ -6565,4 +6888,1933 @@ button.dashboard-widget-stat.keyboard-selected {
 
 body.no-animations .dashboard-widget-stat-key {
     transition: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The header band — the three-zone design, as drawn.
+
+   Taken from the Superdesign draft "nextDash — Responsive Header Evolution"
+   at 1500px: one slab holding three zones, left to right. The name and the
+   clock on the left in a fixed column; the pages in the middle, centred,
+   between the two keys that walk them; what you do and where you go on the
+   right, the actions boxed together and the destinations standing free.
+
+   The numbers below are the draft's own: 0.6rem/1.25rem of padding, 28px
+   controls, 4px corners inside an 8px slab, and a page tab that carries its
+   key as a superscript.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * The bar runs the width of the window; its contents run the width of the page.
+ *
+ * As a card it was an island: 1309px of slab with an 8px corner and a cast,
+ * floating over content 1040px wide that carries no card of its own -- and in
+ * config, inbox and health a second card started 24px below it, so the top of
+ * every view was two loose plates. Edge to edge with one hairline under it, it
+ * is chrome rather than a card, and there is no rim left to misalign.
+ *
+ * What still has to line up is what is *in* it: the name sits on the same
+ * vertical as the first column of the grid, and in a view on the same vertical
+ * as the panel. That is --header-column, set per view below.
+ */
+.dashboard-section.section-controls {
+    /*
+     * No fill of its own: the page's background runs straight through.
+     *
+     * A slab here was a second surface over the theme's own -- pattern,
+     * gradient and tint all stopped at the top of the page and started again
+     * below the bar. One hairline is enough to say where the chrome ends, and
+     * the controls carry their own plates.
+     */
+    background: transparent;
+    /*
+     * No rule under it either.
+     *
+     * The hairline was what said where the chrome ended while the bar was a
+     * slab over the page. With no fill and no card there is nothing to close
+     * off, and a line the full width of the window is the loudest thing on a
+     * page whose own content draws none. The gap below is unchanged: it takes
+     * over the pixel the rule used to occupy.
+     */
+    border-bottom: 0;
+    /* The air under the header belongs to the page, not to the bar: as padding
+       it was inside the fill and the hairline sat 24px below the controls. */
+    padding-bottom: 0;
+    /*
+     * The page used to breathe here.
+     *
+     * The band that held the view's name stood between the bar and the grid,
+     * so 60px of nothing separated the chrome from the first category. Folding
+     * the name into the header row took the band away and the air with it, and
+     * the columns ended up hard against the controls. The air is the point,
+     * not the band: it is measured out here instead.
+     */
+    margin-bottom: calc(var(--space-7, 3rem) + var(--space-3, 0.75rem));
+}
+
+.dashboard-section.section-controls .header-top {
+    display: grid;
+    /*
+     * The left zone is a width, not a measurement of what stands in it.
+     *
+     * At `auto` the column followed the identity, and the identity is three
+     * different widths: "config" against "main", the clock beside the name
+     * against the clock in a column of its own. The pages moved sideways with
+     * every one of them. One width for the zone, whatever it holds, and the
+     * strip stays where the reader left it.
+     */
+    --header-identity-width: 28rem;
+    /*
+     * Three columns, and the two outer ones are equal by construction: the
+     * strip in the middle therefore stands on the centre of the row whatever
+     * is beside it. A fixed left column held it still but not central -- the
+     * actions on the right are narrower than the identity on the left, so the
+     * free space between them was not centred on the page.
+     *
+     * The outer columns take 0 as their floor: neither may push the other off
+     * the row, and both cut their own content instead.
+     */
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    /* 10px rather than the draft's 9.6: at 0.6rem the row landed on a half
+       pixel, and the hairline under every control in it was the half that got
+       rounded away. */
+    padding: 0.625rem 0;
+    /* The page's own column, and centred in the bar the way the page is
+       centred on the screen. */
+    width: 100%;
+    max-width: var(--header-column, none);
+    margin-inline: auto;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/*
+ * One header, one position, whatever view is open.
+ *
+ * It followed each view's own column for a while -- 1040px in config, 68rem in
+ * the list views -- which meant the add button and the config icon moved as
+ * you walked between them: the same control in three places depending on where
+ * you had been. The dashboard is the one that sets it, and every view loads
+ * the header on those positions. --header-column stays unset, so the row keeps
+ * the page container's width.
+ */
+
+/* ── Left: the name, and the line under it ────────────────────────────────── */
+
+.dashboard-section.section-controls .header-identity {
+    /* Wide enough for the name and the clock beside it, and fixed so the
+       middle zone starts in the same place whatever the page is called. */
+    flex: 0 0 auto;
+    gap: 0;
+}
+
+.dashboard-section.section-controls .header-identity .title {
+    /* One line, cut rather than wrapped: a long page name wrapped into the
+       clock beside it and took the row to two lines -- the one thing this
+       header is built not to do. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    opacity: 1;
+}
+
+.dashboard-section.section-controls .header-identity .title-breadcrumb {
+    font-size: 0.65rem;
+    margin-top: 2px;
+}
+
+/*
+ * The clock reads as text, not as a footnote.
+ *
+ * It was 0.65rem of --text-tertiary at 60% opacity -- the smallest type on the
+ * page in its faintest colour, which on a light theme is barely there at all.
+ * The time now sits beside the name at the reader's own size and the weather
+ * runs under it, both at full strength.
+ *
+ * Laid out with `display: contents` on the wrappers so the two lines
+ * renderDateWeatherLine builds can be placed separately without rewriting what
+ * either of them says -- the popover and the error state still hang off them.
+ */
+.dashboard-section.section-controls .header-identity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: var(--space-2, 0.6rem);
+    row-gap: 2px;
+    /* As wide as it needs up to its own ceiling, and never wider than the
+       column it stands in. */
+    width: min(var(--header-identity-width), 100%);
+    justify-self: start;
+}
+
+.dashboard-section.section-controls .header-identity .title-wrapper {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.dashboard-section.section-controls .header-identity .header-top-primary,
+.dashboard-section.section-controls .header-identity .date {
+    display: contents;
+}
+
+.dashboard-section.section-controls .header-identity .date-time-line {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: calc(var(--font-size-text) * 1.14);
+    font-weight: var(--font-weight-semibold, 600);
+    line-height: 1.2;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.dashboard-section.section-controls .header-identity .date-weather-line {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: var(--font-size-text);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text-secondary);
+}
+
+/* Everything else the block carries -- the mini status, the tag chip, the
+   "checking status" line -- keeps its own row under the two. */
+.dashboard-section.section-controls .header-identity #dashboard-mini-status,
+.dashboard-section.section-controls .header-identity #tag-filter-indicator,
+.dashboard-section.section-controls .header-identity #status-loading-indicator {
+    grid-column: 1 / -1;
+}
+
+/*
+ * Or a zone of its own, between the name and the pages.
+ *
+ * Same two lines, more room: the clock takes a column beside the name rather
+ * than sharing its 18rem, which is what a larger face needs.
+ */
+/*
+ * The name keeps a fixed column, the clock takes what it needs.
+ *
+ * Left to `auto` the first column followed the view's name -- "config" is
+ * shorter than "main" is longer than "health" -- so the pages moved 26px
+ * sideways every time you switched view.
+ */
+/*
+ * Classic: the clock on a line of its own, the name in large type under it.
+ *
+ * How the top of the page was drawn before the header became one row -- a
+ * quiet line of clock and weather, then the view's name at --font-size-title
+ * with the grid under it. Folding the name into the row made the header
+ * shorter, which is what most of the work in this header was for; this is here
+ * because the tall version is calmer to look at, and that is a preference
+ * rather than a fact.
+ *
+ * The row keeps its three columns and gains a second line: the pages and the
+ * destinations stay on the first, beside the clock, and the name spans the
+ * full width underneath them.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-top {
+    row-gap: var(--space-2, 0.5rem);
+    align-items: start;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity {
+    display: contents;
+}
+
+/* First line: the clock at the left, the pages in the middle, the
+   destinations at the right -- the three columns the row already has. The two
+   lines of the clock stay one block, so the weather sits under the time rather
+   than under the tallest thing on the row. */
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-top-primary {
+    /* The default placement makes this `display: contents` so the two lines
+       can be placed apart; here they belong together, so it is a box again. */
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-identity .date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-time-line {
+    font-size: calc(var(--font-size-text) * 1.14);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .date-weather-line {
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-track,
+body[data-header-clock="classic"] .dashboard-section.section-controls .header-actions {
+    grid-row: 1;
+}
+
+/* Second line: the name, in the type it had, spanning the row. */
+body[data-header-clock="classic"] .dashboard-section.section-controls .title-wrapper {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+}
+
+body[data-header-clock="classic"] .dashboard-section.section-controls .title {
+    /* Two thirds of the old title: the band it used to stand in is gone, so
+       the name no longer has to fill one -- it only has to read as the name of
+       the page, above a grid that starts right under it. */
+    font-size: calc(var(--font-size-title, 3rem) * 0.66);
+    font-weight: var(--font-weight-black, 900);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    opacity: 0.8;
+}
+
+/*
+ * The name is already the air between the controls and the grid.
+ *
+ * The other two placements need the full gap under the bar because the row
+ * ends at the controls; here a line of large type stands between them, so the
+ * same gap on top of it left a hole.
+ */
+body[data-header-clock="classic"] .dashboard-section.section-controls {
+    margin-bottom: var(--space-4, 1rem);
+}
+
+/* Everything else the block carries keeps its own line under the name. */
+body[data-header-clock="classic"] .dashboard-section.section-controls #dashboard-mini-status,
+body[data-header-clock="classic"] .dashboard-section.section-controls #tag-filter-indicator,
+body[data-header-clock="classic"] .dashboard-section.section-controls #status-loading-indicator {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+/*
+ * The row keeps its three columns; the split happens inside the identity.
+ *
+ * As four columns on the row the clock widened the left of the header and the
+ * strip moved with it. The name and the clock share the identity's own grid
+ * now, so both placements hand the middle column the same edges.
+ */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    align-items: center;
+}
+
+/* Every zone may be cut; none may push its neighbour out of the row. */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .title-wrapper,
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-top-primary {
+    min-width: 0;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .header-top-primary,
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date {
+    display: contents;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .title-wrapper {
+    grid-column: 1;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-time-line {
+    font-size: calc(var(--font-size-text) * 1.43);
+    color: var(--text-primary);
+    /* The zone is a width now: a long line is cut here rather than widening
+       the column the strip starts after. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date-weather-line {
+    grid-column: 2;
+    font-size: calc(var(--font-size-text) * 1.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* The clock's own column: the two lines stack in it, apart from the name. */
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .header-top-primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    grid-column: 2;
+    padding-left: var(--space-3, 0.9rem);
+    border-left: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-identity .date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+/* ── Middle: the pages, between the keys that walk them ───────────────────── */
+
+.header-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+/*
+ * Shift+Arrow moves a page at a time, and has since long before anything said
+ * so. Printed at either end of the track, quiet enough to ignore.
+ */
+.page-walk-hint {
+    flex: 0 0 auto;
+    /* A button now, walking one page; it was a printed hint, and the reset is
+       what keeps it looking like one. */
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0.4;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.page-walk-hint:hover:not(:disabled),
+.page-walk-hint:focus-visible:not(:disabled) {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+/* At the first page, or the last: the keys wrap around, the buttons do not --
+   one that looks pressable and does nothing is worse than one that says so. */
+.page-walk-hint:disabled {
+    opacity: 0.15;
+    cursor: default;
+}
+
+
+/*
+ * The track fills the middle zone rather than sizing to its tabs.
+ *
+ * fitPageTabs measures against this element's own width, so a content-sized
+ * track reports "everything fits" however far past the header it runs -- the
+ * last tab was clipped in half and no chip was drawn at all. Filling the zone
+ * makes the measurement the honest one, and the tabs stay centred in it.
+ */
+.header-track .page-navigation {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow: hidden;
+    /* Sized by its tabs, so the walk hints stand beside them rather than at the
+       ends of the zone. What fits is measured against the zone -- see
+       fitPageTabs, which reads this element's parent. */
+    flex: 0 1 auto;
+}
+
+/* ── A page is a box with its key on it ───────────────────────────────────── */
+
+/*
+ * The corners of the band are soft, not square.
+ *
+ * Every control in the header -- the tabs, the chip that counts what is
+ * folded away, the action group and its buttons, the destinations -- was on
+ * --radius-3, which at 40px tall reads as a corner that was meant to be
+ * square and missed. They are all on --radius-6 now, and the keys printed on
+ * them on --radius-4, so the family keeps its proportions. The token scales
+ * with --theme-radius-scale, so a theme that asks for square corners (Retro
+ * CRT Mk II) still gets them.
+ */
+
+.header-track .page-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* A tab keeps its width. Allowed to shrink, the row squashed every tab
+       past the one that fitted and the names printed over each other instead
+       of the strip folding -- which is what fitPageTabs is for. */
+    flex: 0 0 auto;
+    /* Bigger than the draft's 28px: a numbered tab is one character wide, and
+       at the draft's size the middle zone read as a row of loose digits rather
+       than as the pages of the thing you are looking at. Raised twice since,
+       because the pages are the one thing in this bar you aim at by name. */
+    height: 40px;
+    min-width: 2.6rem;
+    padding: 0 1rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    /* The same surface the action group takes, so the two groups in the band
+       are made of one material. On glass this is the see-through step; on the
+       other depths it falls back to the block colour. */
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Written at the zone's own weight: the rule above is two classes and would
+   otherwise re-display a tab that fitPageTabs has folded away. */
+.header-track .page-nav-btn[hidden] {
+    display: none;
+}
+
+.header-track .page-nav-btn:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+
+.header-track .page-nav-btn.active {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+}
+
+.header-track .page-tab-key {
+    margin-left: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 400;
+    opacity: 0.5;
+    vertical-align: super;
+}
+
+/* ── What did not fit ─────────────────────────────────────────────────────── */
+
+.header-track .page-nav-overflow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    font-family: var(--font-family-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.header-track .page-nav-overflow:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+}
+
+.page-nav-overflow-caret {
+    flex: 0 0 auto;
+    opacity: 0.7;
+}
+
+.page-nav-overflow-key {
+    padding: 1px 5px;
+    border-radius: var(--radius-4, 6px);
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+/* ── Three weights for the same switcher ──────────────────────────────────────
+   Everything above draws a page as its own 40px box. That is the loudest
+   thing in a band whose other controls are 28px transparent icons, so it is
+   one of three settings now (pageSwitcherStyle, Appearance -> Header and
+   buttons). Written at the zone's own weight, because the rules above are
+   two classes deep and would otherwise win.
+
+   The tabs, the keys and the panel on `,` are the same in all three. This is
+   how much room the switcher takes, not what it can do.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Segmented (the default): one shell, the pages flat inside it.
+   The shell is the box the tabs used to carry one each -- the same material,
+   the same corner, the same 40px outer height as a destination -- and a
+   segment inside it is 28px, which is what an action measures. */
+body[data-page-switcher="segmented"] .header-track .page-navigation {
+    height: 40px;
+    align-items: center;
+    gap: 2px;
+    padding: 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    box-shadow: var(--header-plate-shadow);
+}
+
+body[data-page-switcher="segmented"] .header-track .page-nav-btn,
+body[data-page-switcher="segmented"] .header-track .page-nav-overflow {
+    height: 28px;
+    min-width: 2.1rem;
+    padding: 0 0.75rem;
+    /* No edge at all, not a transparent one: the shell is the box, and a
+       segment that keeps a hairline of its own is the old drawing wearing a
+       coat of paint. */
+    border: none;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.85rem;
+}
+
+body[data-page-switcher="segmented"] .header-track .page-nav-btn:hover,
+body[data-page-switcher="segmented"] .header-track .page-nav-overflow:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+}
+
+/* The wash marks the segment; the shell already carries the edge and the
+   cast, so the tab adds neither. */
+body[data-page-switcher="segmented"] .header-track .page-nav-btn.active {
+    background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+/* Text: no box at all. The page you are on takes the 2px underline the
+   destinations use, so "you are here" is said the same way in both halves of
+   the band. */
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-navigation {
+    gap: 1.1rem;
+    overflow: visible;
+}
+
+/* Tabs, not a control panel: the walk arrows and the printed `,` read as
+   stray marks beside words. Their keys keep working and are in the cheat
+   sheet; the buttons only go from this style. */
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-walk-hint,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow-key {
+    display: none;
+}
+
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow {
+    position: relative;
+    height: 32px;
+    min-width: 0;
+    padding: 0 0.15rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn:hover,
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow:hover {
+    background: transparent;
+    color: var(--text-primary);
+}
+
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn.active {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 700;
+    box-shadow: none;
+}
+
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.35rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent-primary);
+}
+
+/* The chip is a word among words here, not a control: the key it carries is
+   the same `,` printed on everything else that opens the panel. */
+body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow-key {
+    background: transparent;
+    padding: 0;
+}
+
+/* Classic: the text tabs, standing at the right beside the destinations
+   rather than on the centre of the band -- where they stood before the band
+   had a middle. The columns change, not the markup: the identity takes the
+   free room, and the pages and the actions size to what they hold. */
+body[data-page-switcher="classic"] .dashboard-section.section-controls .header-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
+}
+
+body[data-page-switcher="classic"] .dashboard-section.section-controls .header-track {
+    justify-content: flex-end;
+    justify-self: end;
+}
+
+/* On the destinations' line: as tall as they are, so the rule under the page
+   you are on is the rule under the view you are in -- one line, not two. */
+body[data-page-switcher="classic"] .header-track .page-nav-btn,
+body[data-page-switcher="classic"] .header-track .page-nav-overflow {
+    height: 40px;
+}
+
+body[data-page-switcher="classic"] .header-track .page-nav-btn.active::after {
+    bottom: -2px;
+}
+
+/* Compact: one button naming the page you are on.
+   pageTabCap() returns 1 for this style and the click opens the panel (see
+   dashboard-page-nav.js), so what stands in the zone is a single control the
+   size of an action, with a caret saying there is a list behind it. */
+body[data-page-switcher="compact"] .header-track .page-nav-btn {
+    height: 28px;
+    min-width: 0;
+    padding: 0 0.65rem;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+body[data-page-switcher="compact"] .header-track .page-nav-btn:hover {
+    border-color: var(--border-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+body[data-page-switcher="compact"] .header-track .page-nav-btn.active {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+/* Drawn rather than set in a glyph: two borders on a rotated square is a
+   chevron at any size, and it takes the button's own ink. */
+body[data-page-switcher="compact"] .header-track .page-nav-btn.active::after {
+    content: '';
+    width: 5px;
+    height: 5px;
+    margin: -3px 0 0 0.45rem;
+    border-right: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    transform: rotate(45deg);
+    opacity: 0.6;
+}
+
+/* The count would say the same thing the caret says. */
+body[data-page-switcher="compact"] .header-track .page-nav-overflow {
+    display: none;
+}
+
+/* ── Right: what you do, then where you go ────────────────────────────────── */
+
+.dashboard-section.section-controls .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+}
+
+/* Between what you do and where you go. */
+.header-zone-divider {
+    width: 1px;
+    height: 24px;
+    flex: 0 0 auto;
+    background: var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/* syncHeaderZoneDividers() hides it when either side of it is empty; `display`
+   is set on the element here so the flex gap goes with the rule rather than
+   leaving a hole where it stood. */
+.header-zone-divider[hidden] {
+    display: none;
+}
+
+/* The pages stand beside the actions only in classic; elsewhere the band's
+   middle already separates them. */
+body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
+    display: none;
+}
+
+/* The actions are one box of 28px squares, the way the draft draws them. */
+.dashboard-section.section-controls .header-shortcuts {
+    display: flex;
+    align-items: center;
+    /* Room for the key that sits on each button's corner: butted together, the
+       marks landed on the neighbour's icon and neither could be read. The
+       padding is what keeps those marks inside the group -- at 3px the last
+       one hung past the page's own edge on a 1280 window. */
+    gap: 5px;
+    padding: 5px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-glass-page, var(--background-secondary));
+}
+
+.header-actions .header-shortcuts .search-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-6, 10px);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    /* The same ink as the destinations beside them. They carried a 0.6 on top
+       of it, so two rows of the same colour read as two colours -- the actions
+       a shade fainter than the pages, inbox, health and config buttons they
+       sit next to. The keys keep the weight they had; see below. */
+    color: var(--text-tertiary);
+    overflow: visible;
+    transition: opacity 0.2s, color 0.2s, background 0.2s;
+}
+
+.header-actions .header-shortcuts .search-button:hover,
+.header-actions .header-shortcuts .search-button:focus-visible {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+    transform: none;
+}
+
+.header-action-glyph {
+    flex: 0 0 auto;
+    pointer-events: none;
+    /*
+     * The same weight as a destination's icon, not just the same colour.
+     *
+     * They carry the same ink, but these were drawn at 16px with a 2px stroke
+     * against the 18px and 2.2 of the pages, inbox, health and config buttons
+     * beside them -- thinner lines covering fewer pixels read as a paler grey,
+     * which is the difference the colour alone did not explain.
+     */
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.2;
+}
+
+/*
+ * The word is the accessible name, not a thing on screen.
+ *
+ * Five 28px squares is what the draft draws; a word beside each would be a
+ * strip again. Each button keeps its aria-label and its tooltip, so the word
+ * is a hover or a screen reader away.
+ */
+.header-actions .header-shortcuts .search-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/*
+ * The key sits on the corner of the button it belongs to.
+ *
+ * Opaque, so it reads over the glyph it labels: a translucent chip over an
+ * icon is two drawings in the same 10 pixels and neither survives it. It wore
+ * a hairline ring as well, which at this size is a box drawn around a single
+ * character -- the ground it paints already separates it.
+ */
+.header-actions .header-shortcuts .search-button-icon {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 12px;
+    padding: 0 3px;
+    border-radius: var(--radius-4, 6px);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 13px;
+    text-align: center;
+    /*
+     * Undimmed. It carried the 0.6 the button used to wear, and
+     * TestHeaderKeyChipContrastAcrossThemes measured what that cost across the
+     * register: 114 of 224 themes put the key under 3:1, the worst at 2.16.
+     * At full strength the worst is 4.33. The colour is unchanged --
+     * --text-secondary, a step quieter than the glyph it labels -- so the chip
+     * still reads as a note rather than as a second icon.
+     */
+    opacity: 1;
+}
+
+/* ── The destinations: the same square, standing on the band ──────────────── */
+
+.header-destinations {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/*
+ * A destination is the size of the group of actions beside it.
+ *
+ * They were 28px squares standing next to a box that measures 40 -- the same
+ * button, drawn smaller, because one of them had a surround and the other did
+ * not. The outer size is what the eye compares, so that is what matches:
+ * 28 + 2x5 of padding + 2x1 of border.
+ */
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .config-link-anchor,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-glass-page, var(--background-secondary));
+    color: var(--text-tertiary);
+    overflow: visible;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .config-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.dashboard-section.section-controls .header-actions .health-link-icon,
+.dashboard-section.section-controls .header-actions .config-link-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/*
+ * A count rides the corner of the square it counts for.
+ *
+ * Health drew its count as a pill standing beside the icon, which made the
+ * health link twice the width of every other destination and the only one
+ * whose width moved with its data. The draft puts both counts on the corner of
+ * their own square: 14px, filled, white on the colour that says what it is.
+ */
+.dashboard-section.section-controls .header-actions .page-inbox-badge,
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    left: auto;
+    bottom: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 16px, not the draft's 14: two digits at 14px is a number you can see but
+       not read. The ring in the band's colour is what lifts it off the icon. */
+    min-width: 16px;
+    width: auto;
+    height: 16px;
+    padding: 0 4px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--background-secondary) 92%, transparent),
+        0 1px 3px color-mix(in srgb, #000 40%, transparent);
+    z-index: 2;
+}
+
+.dashboard-section.section-controls .header-actions .page-inbox-badge {
+    background: var(--accent-primary);
+    color: var(--background-primary);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge {
+    background: var(--accent-error);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-warn {
+    background: var(--accent-warning);
+    color: var(--text-on-warning, #000);
+}
+
+.dashboard-section.section-controls .header-actions .health-link--icon .health-badge.health-badge-down {
+    background: var(--accent-error);
+    color: #fff;
+}
+
+/* ── Depth: the band is a slab, the groups are plates on it ───────────────────
+   The draft is a glass design: every surface carries a lit top edge, a dark
+   bottom one, and a shadow whose depth says how far off the page it sits. All
+   of it scales with --theme-depth, so "flat" in Appearance flattens the header
+   the way it flattens everything else.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * One plate, wherever it stands.
+ *
+ * The action group and the page tabs were built with two different casts --
+ * the group's shadow read as a raised plate and the tabs' as a hairline, so
+ * one half of the band looked pressed and the other drawn. This is the single
+ * recipe both take, and the destinations with them.
+ */
+.dashboard-section.section-controls .header-top {
+    --header-plate-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) calc(12% * var(--theme-depth, 1)), transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 calc(22% * var(--theme-depth, 1)), transparent),
+        0 1px 5px color-mix(in srgb, #000 calc(25% * var(--theme-depth, 1)), transparent);
+}
+
+.dashboard-section.section-controls .header-shortcuts {
+    box-shadow: var(--header-plate-shadow);
+}
+
+/* A page tab is a plate too, one step shallower than the group beside it. */
+/*
+ * The tabs, the chip and the destinations take the group's plate.
+ *
+ * Each carries both edges: the top was lit and the bottom was not, so on a row
+ * that lands on a half pixel the bottom hairline was the half that got rounded
+ * away -- a box with no floor.
+ */
+.header-track .page-nav-btn,
+.header-track .page-nav-overflow,
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+.dashboard-section.section-controls .header-actions .health-link-anchor,
+.dashboard-section.section-controls .header-actions .config-link-anchor,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    box-shadow: var(--header-plate-shadow);
+}
+
+/* The page you are on is lit from inside rather than raised. */
+/* The page you are on keeps the plate and adds the bloom. */
+.header-track .page-nav-btn.active {
+    box-shadow:
+        var(--header-plate-shadow),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+}
+
+/*
+ * Pressing puts a control back into its plate.
+ *
+ * The lit edge moves from the top to the inside and the shadow under it goes,
+ * which is the whole gesture -- raised, then pushed in.
+ */
+.header-actions .header-shortcuts .search-button:active,
+.header-track .page-nav-btn:active,
+.header-track .page-nav-overflow:active,
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
+.dashboard-section.section-controls .header-actions .health-link-anchor:active,
+.dashboard-section.section-controls .header-actions .config-link-anchor:active {
+    box-shadow:
+        inset 0 1px 3px color-mix(in srgb, #000 calc(45% * var(--theme-depth, 1)), transparent);
+    transform: translateY(calc(0.5px * var(--theme-depth, 1)));
+}
+
+
+/* ── The band as the window narrows ───────────────────────────────────────────
+   One line, and a fixed order of what it gives up when the zones no longer add
+   up. The step is measured and written onto <body> by fitHeaderZones(); these
+   rules are what each step means. Everything dropped here keeps its key, and
+   the pages panel (`,`) still lists every page.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Each step written past the zone's own rules on purpose: those are three
+   classes deep (.dashboard-section.section-controls .header-shortcuts and
+   friends), so a step keyed on one body attribute lost the cascade and hid
+   nothing at all. */
+
+/* 1 — the destinations. Shift+I, Shift+H and Shift+S still reach them. */
+body[data-header-fit="1"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="2"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-destinations,
+body[data-header-fit="1"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="2"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-zone-divider,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-zone-divider {
+    display: none;
+}
+
+/* 2 — the actions, keys and all. */
+body[data-header-fit="2"] .dashboard-section.section-controls .header-shortcuts,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-shortcuts,
+body[data-header-fit="4"] .dashboard-section.section-controls .header-shortcuts {
+    display: none;
+}
+
+/* 3 — the strip folds to the page you are on plus the chip (pageTabCap), and
+   the keys that walk it go with the room they took.
+
+   This was rung 4 while the pages button stood on its own between the track
+   and the actions and had a rung of its own. It is one of the actions now, so
+   rung 2 already takes it and there is nothing left for a rung of its own to
+   give up. */
+body[data-header-fit="3"] .dashboard-section.section-controls .page-walk-hint,
+body[data-header-fit="4"] .dashboard-section.section-controls .page-walk-hint {
+    display: none;
+}
+
+/* 4 — the clock and the weather, leaving the name and the switcher.
+   Everything that stands for the clock goes with it: the line itself, the
+   mini status beside it, and the compact date chip the narrow layout puts in
+   its place -- on the smallest window all three were on screen at once. */
+body[data-header-fit="4"] .dashboard-section.section-controls .header-top-primary,
+body[data-header-fit="4"] .dashboard-section.section-controls #date-badge-mobile,
+body[data-header-fit="4"] .dashboard-section.section-controls .date-badge-mobile:not(:empty) {
+    display: none;
+}
+
+/*
+ * The narrow layout is the last rung, whatever the measurement says.
+ *
+ * Below this width the row has the name and the page switcher and nothing
+ * else: the compact chip, the clock line and the mini status all say the time,
+ * and all three were drawn one under the other.
+ */
+@media (max-width: 767px) {
+    /* Written at the clock placement's own weight (body[data-header-clock] …
+       .header-identity .header-top-primary), which is what draws it. */
+    body[data-header-clock] .dashboard-section.section-controls .header-identity .header-top-primary,
+    body[data-header-clock] .dashboard-section.section-controls #date-badge-mobile,
+    body[data-header-clock] .dashboard-section.section-controls .date-badge-mobile:not(:empty),
+    body[data-header-clock] .dashboard-section.section-controls .header-actions,
+    body[data-header-clock] .dashboard-section.section-controls .page-walk-hint {
+        display: none;
+    }
+
+    /* Two zones left, so two tracks: the switcher sits straight after the
+       name instead of holding the place of the columns that are gone. */
+    body[data-header-clock] .dashboard-section.section-controls .header-top {
+        /* The name gives way, not the switcher: at 360px an eight-letter page
+           name plus a tab and a chip is 54px more than there is, and a name
+           that is cut short still says where you are where a switcher pushed
+           off the edge stops working. */
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 0.5rem 0.75rem;
+        gap: var(--space-2, 0.5rem);
+    }
+
+    body[data-header-clock] .dashboard-section.section-controls .title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body[data-header-clock] .dashboard-section.section-controls .header-track {
+        justify-content: flex-start;
+    }
+
+    /* The name is the whole left zone here. Its block keeps a second column
+       for the clock, and that column went on claiming 235px of a 520px window
+       with the clock switched off -- so the switcher stood in the middle of
+       the row rather than beside the name. */
+    body[data-header-clock] .dashboard-section.section-controls .header-identity {
+        display: block;
+    }
+}
+
+/* Only the room around them: the template keeps its four tracks, and a zone
+   that is display:none leaves the grid rather than pushing the rest onto a
+   second row -- which is what a two-column override did here. */
+body[data-header-fit="4"] .dashboard-section.section-controls .header-top,
+body[data-header-fit="3"] .dashboard-section.section-controls .header-top {
+    padding: 0.5rem 0.75rem;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* The keys printed on the action buttons are the first thing to go on a narrow
+   window, before the buttons themselves: at 1180 the row still holds them. */
+@media (max-width: 1180px) {
+    .header-actions .header-shortcuts .search-button-icon {
+        display: none;
+    }
+}
+
+
+/*
+ * The tag cloud is an action like the others.
+ *
+ * It was a corner FAB: fixed to the viewport, with a bottom-left anchor and a
+ * pulse on its glyph. In the row it is a 28px square between search and
+ * recents. The !important undoes dashboard-tag-cloud.css's own !important,
+ * which hid it outside the grid -- it stands in every view now, and pressing
+ * it from one goes back to the page it filters (see onToggleClick).
+ */
+.header-actions .header-shortcuts .tag-cloud-toggle-btn.search-button {
+    /* relative, not static: the key on its corner is positioned against this
+       button, and with no containing block of its own the chip fell back to
+       whatever was positioned above it and landed at the page's right edge. */
+    position: relative;
+    z-index: auto;
+    left: auto;
+    bottom: auto;
+    padding: 0;
+    pointer-events: auto;
+}
+
+/*
+ * In a view the cloud has nothing to filter, and the button keeps its place
+ * rather than letting the row shift under the reader -- which is what the
+ * `!important` is for. Not when the fold has put it away: then it has no place
+ * on the row to keep.
+ */
+body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:not(.is-eligible):not(.is-folded) {
+    display: inline-flex !important;
+}
+
+/*
+ * The destination you are in is lit.
+ *
+ * Health, config and the inbox tab all carry `active` while their view is open
+ * (setActivePageNavButton, syncHealthLinkActiveState, syncConfigLinkActiveState)
+ * and nothing in the header read it -- so the bar looked the same whether you
+ * were on the grid or three views deep. Same treatment the active page tab
+ * takes, because it says the same thing.
+ */
+.dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
+.dashboard-section.section-controls .header-actions .health-link-anchor.active,
+.dashboard-section.section-controls .header-actions .config-link-anchor.active,
+.dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow:
+        var(--header-plate-shadow),
+        0 0 12px color-mix(in srgb, var(--accent-primary) calc(40% * var(--theme-depth, 1)), transparent);
+}
+
+
+/* ── The line under the band ─────────────────────────────────────────────────
+   The second half of "waiting on a bookmark": a 2px rule under the header,
+   drawn while an open is in flight. It is the convention every browser uses
+   for the same wait, so it needs no explaining -- and unlike the row's own
+   spinner it is visible from a scrolled page, from health, and from the inbox.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.bookmark-open-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.dashboard-section.section-controls {
+    position: relative;
+}
+
+.bookmark-open-progress-track {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--accent-primary),
+        transparent
+    );
+    animation: bookmark-open-progress-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes bookmark-open-progress-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(340%); }
+}
+
+/* Standing still rather than sweeping: a band across the left third still says
+   "in flight", and nothing on the page moves. */
+body.no-animations .bookmark-open-progress-track {
+    animation: none;
+    background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-open-progress-track {
+        animation: none;
+        background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    }
+}
+
+/* ── Plain, or plated ─────────────────────────────────────────────────────────
+   Two answers to the same question, and the reader picks (headerButtonStyle,
+   Appearance -> Header and buttons).
+
+   Plated is everything above: every control in a box of its own, on the glass
+   surface, with an edge and a cast. Plain is the header as it was before the
+   three-zone draft -- bare glyphs on the band, nothing around them, and a 2px
+   accent rule under the one you are on.
+
+   Written last in the file and at the same weight as the rules it undoes, so
+   it wins by order rather than by piling on selectors. One answer for all
+   three groups: a header with two of them plated and one bare reads as a
+   mistake rather than as a choice.
+   ────────────────────────────────────────────────────────────────────────── */
+
+body[data-header-buttons="plain"] .header-track .page-navigation,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-shortcuts {
+    border: none;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    height: auto;
+}
+
+/* Plated boxes the destinations and the page tabs one by one; the actions stay
+   bare beside them. A surround around the actions on top of the boxes next to
+   them drew a frame around a row that is already framed. */
+body:not([data-header-buttons="plain"]) .dashboard-section.section-controls .header-shortcuts {
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+}
+
+body[data-header-buttons="plain"] .header-track .page-nav-btn,
+body[data-header-buttons="plain"] .header-track .page-nav-overflow,
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
+    border: none;
+    /* The rule that says where you are, kept transparent so nothing moves when
+       it lights up. */
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text-tertiary);
+}
+
+body[data-header-buttons="plain"] .header-track .page-nav-btn:hover,
+body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+    color: var(--text-primary);
+}
+
+/* The page you are on, the view you are in: one rule, in the theme's accent. */
+body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
+    border-bottom-color: var(--accent-primary);
+    background: none;
+    box-shadow: none;
+    color: var(--text-primary);
+}
+
+/* Pressed still says pressed, without a plate to sink into. */
+body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
+body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
+    box-shadow: none;
+    transform: none;
+    opacity: 0.7;
+}
+
+/* Plated boxes the destinations; the actions and the page tabs stay bare in
+   the header, and bare means bare on hover too -- the accent wash and its
+   cast drew a box around a control the rest of the time drawn without one.
+   The ink still lifts. A docked bar is a plate of its own and keeps its
+   hover as it was. */
+body:not([data-header-buttons="plain"]):not([data-action-bar="bottom"]):not([data-action-bar="left"]):not([data-action-bar="right"]) .dashboard-section.section-controls .header-shortcuts .search-button:is(:hover, :focus-visible, :active),
+body:not([data-header-buttons="plain"]):not([data-page-switcher="segmented"]) .dashboard-section.section-controls .header-track :is(.page-nav-btn, .page-nav-overflow):is(:hover, :active) {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+}
+
+/* The zones sit closer together with no boxes between them, and the rule that
+   separated the two groups has nothing to separate. */
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-shortcuts {
+    gap: var(--space-2, 0.5rem);
+}
+
+body[data-header-buttons="plain"] .header-zone-divider {
+    display: none;
+}
+
+/* ── The compact switcher's menu ──────────────────────────────────────────────
+   Compact used to be one tab that opened the full pages panel: a modal over
+   the page, with its own scroll and its own way out, to answer "which page am
+   I going to". The list is short and the question is small, so it is answered
+   where it is asked -- under the control, on the same surface the context
+   menus use.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.page-switcher-menu {
+    min-width: 13rem;
+    max-width: min(18rem, calc(100vw - 1rem));
+    padding: var(--space-1-5, 0.35rem);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    /* The list scrolls, not the menu: the filter above it and the two rows
+       under it stay in place while the pages move. */
+    overflow: hidden;
+}
+
+.page-switcher-filter {
+    padding: 0 0 var(--space-1, 0.25rem);
+}
+
+.page-switcher-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    border-radius: var(--radius-4, 6px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.9);
+}
+
+.page-switcher-filter-input:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.page-switcher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: min(50vh, 15rem);
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.page-switcher-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.95);
+    text-align: left;
+    cursor: pointer;
+}
+
+.page-switcher-item:hover,
+.page-switcher-item:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+/* The page you are on, marked the way the strip marks it. */
+.page-switcher-item.is-current {
+    color: var(--text-primary);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.page-switcher-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page-switcher-item-key {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Under a hairline: these two are about the list rather than in it. */
+.page-switcher-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: var(--space-1, 0.25rem);
+    padding-top: var(--space-1, 0.25rem);
+    border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+.page-switcher-create {
+    padding: var(--space-1, 0.25rem) 0;
+}
+
+/* ── The actions that did not fit ─────────────────────────────────────────────
+   The bar can hold nine buttons and most readers use three or four. Past the
+   reader's own cap the rest stand behind one control that says how many it
+   holds -- the same bargain the page tabs make with their "+N" chip. The
+   folded buttons stay in the DOM: the menu opens them by pressing them, so
+   what each action does is written once.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.header-shortcuts .search-button.is-folded {
+    display: none;
+}
+
+.header-action-overflow .header-action-overflow-count {
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-variant-numeric: tabular-nums;
+    margin-left: 0.15rem;
+}
+
+.header-action-menu {
+    min-width: 12rem;
+    padding: var(--space-1-5, 0.35rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.header-action-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.95);
+    text-align: left;
+    cursor: pointer;
+}
+
+.header-action-item:hover,
+.header-action-item:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.header-action-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The key that does the same thing without the menu. */
+.header-action-item-key {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Last on the row, whatever the buttons in front of it are ordered to. */
+.header-actions .header-shortcuts .header-action-overflow { order: 99; }
+
+/* ── Recents as a sheet under the header ──────────────────────────────────────
+   Same bargain the pages panel makes: it is opened from the band and answers a
+   question about the page under it, so it hangs from the band rather than
+   floating over a dimmed screen. The chrome -- the anchor, the square top
+   corners, the drop -- is .header-sheet in modal.css; what is here is the list.
+
+   And the list is drawn the way every list in the product is drawn: rows of
+   52px with the key the reader would type at the head of each one. It was a
+   27rem column of 27px lines, which is what a narrow panel wants and what a
+   band across the page cannot use.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.modal.recents-sheet .recent-bookmarks-modal-list {
+    gap: 0;
+    padding: 0;
+    max-height: min(52vh, 24rem);
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-item {
+    min-height: 52px;
+    padding: 0 var(--space-3, 0.8rem);
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+    gap: var(--space-3, 0.75rem);
+    /* key, favicon, name, category, how long ago, opens */
+    grid-template-columns: 4.5ch 1.1rem minmax(0, 1fr) auto auto auto;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-name {
+    font-size: var(--font-size-controls);
+}
+
+/*
+ * The key column stands whether or not the bookmark has one, so the names line
+ * up down the column instead of each starting where the one above it ended.
+ */
+.recent-bookmarks-modal-shortcut {
+    min-width: 4.5ch;
+    color: var(--accent-primary);
+    font-size: calc(var(--font-size-controls) * 0.78);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.modal.recents-sheet .recent-bookmarks-modal-recency,
+.modal.recents-sheet .recent-bookmarks-modal-opens {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Wide: the rows lay out across the page's column, three at most. */
+.modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.modal.recents-sheet.is-grid .recent-bookmarks-modal-item {
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+@media (max-width: 1100px) {
+    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+        grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .modal.recents-sheet.is-grid .recent-bookmarks-modal-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Narrow: as wide as what it holds, rows side by side while they fit. */
+.modal.recents-sheet.is-compact .recent-bookmarks-modal-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.modal.recents-sheet.is-compact .recent-bookmarks-modal-item {
+    flex: 1 1 18rem;
+    border-right: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
+}
+
+/*
+ * The actions and the foot run the sheet's width, on one line each.
+ *
+ * In a 27rem panel the buttons stacked over their hint; across the page they
+ * are a row with the command that does the same thing at the far end, the way
+ * the pages sheet puts its count and its keys at either end of the foot.
+ */
+.modal.recents-sheet .recent-bookmarks-modal-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4, 1rem);
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.modal.recents-sheet .recent-bookmarks-open-hint {
+    margin: 0;
+    text-align: right;
+}
+
+/*
+ * One bookmark is not a list, and none is not an empty list: with a single
+ * entry the row is the action, so the buttons that open "the last five" have
+ * nothing to act on; with none the panel says what fills it rather than
+ * drawing an empty box with a key hint under it.
+ */
+.modal.recents-sheet.is-single .recent-bookmarks-modal-toolbar,
+.modal.recents-sheet.is-empty .recent-bookmarks-modal-toolbar,
+.modal.recents-sheet.is-empty .recent-bookmarks-modal-foot {
+    display: none;
+}
+
+/* ── Where the action buttons stand ───────────────────────────────────────────
+   The same group, moved. In the header it is part of the band; out of it, it
+   is a dock of its own: at the bottom where the old button bar stood, or a
+   column on either side at half height. A dock always draws its own plate,
+   whatever the header's button style says -- a bare row floating over the
+   bookmarks has nothing telling it apart from them.
+   ────────────────────────────────────────────────────────────────────────── */
+
+body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    position: fixed;
+    z-index: 900;
+    height: auto;
+    padding: 6px;
+    gap: 6px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-3, var(--background-secondary));
+    box-shadow: 0 8px 24px color-mix(in srgb, #000 35%, transparent);
+}
+
+body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    flex-direction: row;
+}
+
+body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+}
+
+body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+    left: 12px;
+}
+
+body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    right: 12px;
+}
+
+/* The key chip on each action button can go; the keys keep working. */
+body[data-action-keys="off"] .header-shortcuts .search-button-icon,
+body[data-action-keys="off"] .header-action-item-key {
+    display: none;
+}
+
+/*
+ * The key, on hover, when the chips are off (action-key-hint.js).
+ *
+ * Above the docked bar (900) and never in the way of the pointer: it stands
+ * beside the button it names, and a click passes through it.
+ */
+.action-key-hint {
+    position: fixed;
+    z-index: 1002;
+    padding: var(--space-1, 0.25rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 7px);
+    background: var(--background-secondary);
+    box-shadow: 0 4px 14px color-mix(in srgb, black 22%, transparent);
+    pointer-events: none;
+}
+
+.action-key-hint kbd {
+    display: block;
+    min-width: 1.4em;
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-3, 0.25rem);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    line-height: 1.3;
+    text-align: center;
+}
+
+/* Switched off: no actions anywhere, and no divider waiting for them. */
+body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-zone-divider {
+    display: none;
+}
+
+/* A dock slides into the edge it stands on, and back out. The resting
+   transforms above stay as they are; hidden adds the way out. */
+body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+body[data-action-bar-hidden][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(-50%, calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+body[data-action-bar-hidden][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(calc(-100% - 20px), -50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    transform: translate(calc(100% + 20px), -50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/*
+ * The handle on the edge a bar slid into (action-bar-autohide.js).
+ *
+ * Plain enough at rest that the reader keeps knowing where the bar went, and
+ * larger and clearer as the pointer nears, through --edge-proximity (0 to 1). Only drawn while a
+ * docked bar is away; a click on it brings the bar back. No backdrop-filter:
+ * it takes clicks.
+ */
+.action-bar-edge-handle {
+    --edge-proximity: 0;
+    --edge-thick: calc(10px + 8px * var(--edge-proximity));
+    --edge-long: calc(64px + 40px * var(--edge-proximity));
+    position: fixed;
+    z-index: 899;
+    display: none;
+    background: color-mix(in srgb, var(--background-secondary) 92%, var(--text-primary));
+    border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    opacity: calc(0.65 + 0.3 * var(--edge-proximity));
+    cursor: pointer;
+    animation: action-bar-edge-handle-in 0.2s ease both;
+}
+
+.action-bar-edge-handle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) calc(50% + 30% * var(--edge-proximity)), transparent);
+}
+
+@keyframes action-bar-edge-handle-in {
+    from { opacity: 0; }
+}
+
+body[data-action-bar-hidden]:is([data-action-bar="left"], [data-action-bar="right"], [data-action-bar="bottom"]) .action-bar-edge-handle {
+    display: block;
+}
+
+body[data-action-bar="left"] .action-bar-edge-handle,
+body[data-action-bar="right"] .action-bar-edge-handle {
+    top: 50%;
+    translate: 0 -50%;
+    width: var(--edge-thick);
+    height: var(--edge-long);
+}
+
+body[data-action-bar="left"] .action-bar-edge-handle {
+    left: 0;
+    border-left: 0;
+    border-radius: 0 7px 7px 0;
+}
+
+body[data-action-bar="right"] .action-bar-edge-handle {
+    right: 0;
+    border-right: 0;
+    border-radius: 7px 0 0 7px;
+}
+
+body[data-action-bar="bottom"] .action-bar-edge-handle {
+    bottom: 0;
+    left: 50%;
+    translate: -50% 0;
+    width: var(--edge-long);
+    height: var(--edge-thick);
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+}
+
+body:is([data-action-bar="left"], [data-action-bar="right"]) .action-bar-edge-handle::after {
+    width: 2px;
+    height: calc(22px + 14px * var(--edge-proximity));
+}
+
+body[data-action-bar="bottom"] .action-bar-edge-handle::after {
+    width: calc(22px + 14px * var(--edge-proximity));
+    height: 2px;
+}
+
+/* Nothing left of the actions in the header, so nothing to divide. */
+body[data-action-bar="bottom"] .dashboard-section.section-controls .header-zone-divider,
+body[data-action-bar="left"] .dashboard-section.section-controls .header-zone-divider,
+body[data-action-bar="right"] .dashboard-section.section-controls .header-zone-divider {
+    display: none;
+}
+
+/* Room so the dock never sits on the last row or the first column. */
+body[data-action-bar="bottom"] #dashboard-layout {
+    padding-bottom: 72px;
+}
+
+/* A side column stands in the page's own margin, so nothing moves to make
+   room for it. Only where that margin is too narrow to hold it is room made,
+   on both sides so the grid keeps the centre the header stands on. */
+@media (max-width: 1199px) {
+    body[data-action-bar="left"] #dashboard-layout,
+    body[data-action-bar="right"] #dashboard-layout {
+        padding-left: 56px;
+        padding-right: 56px;
+    }
+}
+
+/* A side column has no room on a phone; it goes to the bottom instead. */
+@media (max-width: 700px) {
+    body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+    body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+        top: auto;
+        bottom: 16px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        flex-direction: row;
+    }
+
+    /* On a phone the side columns stand at the bottom, so they leave downwards. */
+    body[data-action-bar-hidden][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+    body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+        transform: translate(-50%, calc(100% + 24px));
+    }
+
+    body[data-action-bar="left"] #dashboard-layout,
+    body[data-action-bar="right"] #dashboard-layout {
+        padding-left: 0;
+        padding-right: 0;
+        padding-bottom: 72px;
+    }
 }

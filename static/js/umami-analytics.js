@@ -177,7 +177,6 @@
         ['fontPreset', pick('fontPreset', 'source-code-pro')],
         ['fontSize', pick('fontSize', 'm')],
         ['backgroundType', pick('backgroundType', 'none')],
-        ['buttonBarPosition', pick('buttonBarPosition', 'bottom')],
         ['launcherIconSize', pick('launcherIconSize', 'normal')],
         // The grid
         ['columns', bucketOf('columnsPerRow', [1, 2, 3, 4, 6])],

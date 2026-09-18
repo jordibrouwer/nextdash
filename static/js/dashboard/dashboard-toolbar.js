@@ -9,7 +9,7 @@ class DashboardToolbar {
     /**
      * The buttons that have a key, and which key.
      *
-     * One list feeds three things: the hover tooltip, the side-rail legend, and
+     * One list feeds two things: the hover tooltip and
      * the aria-keyshortcuts stamped on the buttons themselves. They used to be
      * three lists, which is how the header row ended up with tooltips and no
      * aria at all.
@@ -28,7 +28,8 @@ class DashboardToolbar {
             // No key: the star is a button you click, and a chip reading "★"
             // told people to press a key that does not exist.
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
-            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','], header: true },
+            // An action button like the rest, not a header destination.
+            { id: 'page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
             {
                 selector: '#page-nav-inbox-btn',
                 labelKey: 'dashboard.inboxPageTitle',
@@ -82,7 +83,6 @@ class DashboardToolbar {
         const d = this.dash;
         this.setupToolbarKbdTooltips();
         this.syncShortcutAriaHints();
-        this.syncSideRailDiscoverability();
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
             helpButton.addEventListener('click', () => {
@@ -143,6 +143,26 @@ class DashboardToolbar {
             // not "a modal is open, keep out". toggleRecentBookmarksModal()
             // refuses to stack on top of another modal by itself; swallowing the
             // key here as well keeps it from reaching anything behind.
+            /*
+             * `*` opens the panel in its recents mode.
+             *
+             * The recents panel is still there for anyone who switches its
+             * button back on; what the key reaches is the mode, because two
+             * surfaces for one list is the thing the header was carrying.
+             */
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*'
+                && d.settings?.showRecentButton === false) {
+                if (!d.isBookmarksView() || d.isModalOpen()) {
+                    return;
+                }
+                if (d.searchComponent?.isActive?.()) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                d.searchComponent?.openInRecentMode?.();
+                return;
+            }
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
                 // Recent bookmarks is a dashboard button; inert in a
                 // full-container view. (! stays live everywhere -- see below --
@@ -248,17 +268,17 @@ class DashboardToolbar {
         };
 
         const allDefs = this.shortcutButtonDefs();
-        const defs = allDefs.filter((def) => !def.header);
         const headerDefs = allDefs.filter((def) => def.header);
 
-        const toolbarButtons = [];
-        const defByButton = new Map();
-
-        defs.forEach((def) => {
+        /*
+         * The action buttons get no popover. Each already carries its key as a
+         * chip, so the popover only repeated it -- and in a dock it opened over
+         * the bookmarks the reader was aiming for. Their label stays in
+         * aria-label and the key in aria-keyshortcuts.
+         */
+        allDefs.filter((def) => !def.header).forEach((def) => {
             const btn = def.id ? document.getElementById(def.id) : document.querySelector(def.selector);
             if (!btn) return;
-            toolbarButtons.push(btn);
-            defByButton.set(btn, def);
             btn.removeAttribute('data-tooltip');
             btn.removeAttribute('data-i18n-tooltip');
         });
@@ -287,14 +307,7 @@ class DashboardToolbar {
             tip.classList.add('is-visible');
             tip.setAttribute('aria-hidden', 'false');
             tip.dataset.for = btn.id || 'toolbar-btn';
-            const isSideRail = document.body.hasAttribute('data-rail');
-            if (isSideRail) {
-                tip.classList.add('toolbar-kbd-tooltip--side-rail');
-                tip.classList.remove('toolbar-kbd-tooltip--below');
-                tip.style.left = `${rect.right + 8}px`;
-                tip.style.top = `${rect.top + rect.height / 2}px`;
-            } else {
-                tip.classList.remove('toolbar-kbd-tooltip--side-rail');
+            {
                 // The toolbar sits at the bottom of the window, so its tooltips
                 // open upwards. The header icons sit at the top, where that same
                 // direction runs off the screen and the popover gets clipped —
@@ -321,7 +334,7 @@ class DashboardToolbar {
             }
         };
 
-        // Resolved once, like toolbarButtons above. This runs on every
+        // Resolved once rather than per event. This runs on every
         // pointermove, and re-querying four selectors per mouse move cost a
         // document query plus a style resolution for each — for elements that do
         // not move between renders. Rebound on the next renderToolbar anyway.
@@ -336,18 +349,6 @@ class DashboardToolbar {
                     show(btn, def.labelKey, def.keys, { below: true });
                     return;
                 }
-            }
-            const hoveredBtn = toolbarButtons.find((btn) => btn.matches(':hover'));
-            if (hoveredBtn) {
-                const def = defByButton.get(hoveredBtn);
-                if (def) show(hoveredBtn, def.labelKey, def.keys);
-                return;
-            }
-            const focusedBtn = toolbarButtons.find((btn) => btn.matches(':focus-visible'));
-            if (focusedBtn) {
-                const def = defByButton.get(focusedBtn);
-                if (def) show(focusedBtn, def.labelKey, def.keys);
-                return;
             }
             hide();
         };
@@ -411,6 +412,51 @@ class DashboardToolbar {
 
     setupHeaderEnhancements() {
         const d = this.dash;
+
+        /*
+         * Health and config open in place, whatever the address looks like.
+         *
+         * They are anchors to `/#health` and `/#config`, which is a hash change
+         * -- and therefore a soft route -- only while the address has nothing
+         * else in it. Come from the inbox or a health filter and the URL
+         * carries a query string (ib_filter, hv_sort and friends), so the same
+         * click changes the path *and* the query: the browser reloads the whole
+         * app, and the view you asked for arrives after a blank page. The href
+         * stays for middle-click, for Copy link address, and for anyone with
+         * JavaScript off; the click is handled here instead.
+         *
+         * Delegated on the document rather than bound to the anchors: both are
+         * re-created by dashboard-visual when the chrome settings change.
+         */
+        document.addEventListener('click', (e) => {
+            const anchor = e.target?.closest?.(
+                '.config-link-anchor, .health-link-anchor, .dashboard-link-anchor'
+            );
+            if (!anchor) return;
+            // Leave the browser's own gestures alone: a modified click or a
+            // middle button is someone asking for a second tab.
+            if (e.defaultPrevented || e.button !== 0) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            if (anchor.classList.contains('config-link-anchor')) {
+                void d.config?.openConfigView?.();
+            } else if (anchor.classList.contains('health-link-anchor')) {
+                void d.health?.openHealthView?.();
+            } else {
+                /*
+                 * Back to the dashboard, at the page you left it on.
+                 *
+                 * currentPageId is not cleared while a view is open -- health,
+                 * the inbox and config are drawn over the dashboard rather than
+                 * instead of it -- so the page you were last on is still there
+                 * to return to. requestPageNavigation rebuilds the grid when it
+                 * is coming from a view, which is why the href never has to be
+                 * followed: `/` would be a full reload of the whole app.
+                 */
+                void d.pageNav?.requestPageNavigation?.(d.currentPageId);
+            }
+        });
+
         document.getElementById('page-overview-header-btn')?.addEventListener('click', () => {
             d.showPageOverlay();
         });
@@ -427,170 +473,276 @@ class DashboardToolbar {
     }
 
 
-    syncTagCloudButtonPlacement() {
+    /**
+     * Fold the actions the header cannot show into one control.
+     *
+     * The bar can hold nine buttons and most readers use three or four. Past
+     * the reader's own cap the rest go behind a control that says how many it
+     * holds -- the same bargain the page tabs make with their "+N" chip.
+     *
+     * Which buttons exist at all is still each `data-show-*` setting's answer:
+     * one that is switched off is not on the bar and not in the menu either.
+     * The folded ones stay in the DOM, hidden, because the menu opens them by
+     * clicking them -- one implementation of what each action does.
+     */
+    // Zero is allowed: every action behind the one control.
+    static HEADER_ACTION_MIN = 0;
+
+    static HEADER_ACTION_DEFAULT = 2;
+
+    headerActionCap() {
         const d = this.dash;
-        const toggle = document.getElementById('tag-cloud-toggle-btn');
-        const wrap = document.getElementById('dashboard-tag-cloud-wrap');
-        if (!toggle || !wrap) return;
-
-        const container = document.querySelector('.button-container');
-        const isSideRail = (d.settings?.buttonBarPosition || document.body.getAttribute('data-button-position')) === 'side-left';
-        if (isSideRail && container) {
-            // Direct child of .button-container — not inside .btn-group-secondary, which is
-            // display:none when Recent and Help are both hidden (fresh-install defaults).
-            if (toggle.parentElement !== container) {
-                container.appendChild(toggle);
-            }
-            this.syncSideRailDiscoverability();
-            return;
-        }
-
-        if (toggle.parentElement !== wrap) {
-            wrap.insertBefore(toggle, wrap.firstChild);
-        }
-        this.syncSideRailDiscoverability();
+        /*
+         * Out of the header, nothing folds: a dock or a side column has the
+         * room the band did not. The menu placement keeps the one action that
+         * makes something and puts the rest behind the control.
+         */
+        const place = document.body.getAttribute('data-action-bar');
+        if (place === 'bottom' || place === 'left' || place === 'right') return Infinity;
+        if (place === 'menu') return 1;
+        const raw = Math.round(Number(d.settings?.maxHeaderActions));
+        const chosen = Number.isFinite(raw) ? raw : DashboardToolbar.HEADER_ACTION_DEFAULT;
+        // Nine: every action button, so a full bar needs no control at all.
+        const capped = Math.min(9, Math.max(DashboardToolbar.HEADER_ACTION_MIN, chosen));
+        /*
+         * A narrow row folds one more away per rung of the header's own
+         * ladder: fitHeaderZones has already decided the row is too full, and
+         * an action behind the control is still one key away.
+         */
+        const step = Number(document.body.getAttribute('data-header-fit')) || 0;
+        return Math.max(DashboardToolbar.HEADER_ACTION_MIN, capped - Math.max(0, step - 1));
     }
 
-
-    syncSideRailDiscoverability() {
-        const d = this.dash;
-        const legendId = 'side-rail-legend';
-        const storageKey = 'nextdash:side-rail-legend-v1';
-        const isSideRail = document.body.hasAttribute('data-rail');
-        const canShow = isSideRail
-            && !d.isCoarsePointer()
-            && window.MobileExperience?.isMobileLayout?.() !== true
-            && window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false;
-
-        let legend = document.getElementById(legendId);
-        if (!canShow) {
-            if (legend) legend.hidden = true;
-            if (d._sideRailLegendTimer) {
-                clearTimeout(d._sideRailLegendTimer);
-                d._sideRailLegendTimer = null;
-            }
-            return;
-        }
-
-        const dismissLegend = ({ persist = true } = {}) => {
-            if (!legend) return;
-            legend.classList.add('is-dismissing');
-            if (d._sideRailLegendTimer) {
-                clearTimeout(d._sideRailLegendTimer);
-                d._sideRailLegendTimer = null;
-            }
-            setTimeout(() => {
-                legend.hidden = true;
-                legend.classList.remove('is-dismissing');
-            }, 360);
-            if (persist) {
-                try { localStorage.setItem(storageKey, '1'); } catch { /* ignore */ }
-            }
+    /**
+     * The action buttons a reader has left switched on, in the order drawn.
+     *
+     * Drawn, not written: the bar sets each button's place with `order` in
+     * CSS, so the first four on screen are not the first four in the markup.
+     * Folding by source order took the wrong four away.
+     */
+    headerActionButtons() {
+        const bar = document.querySelector('.header-shortcuts');
+        if (!bar) return [];
+        const place = (btn) => {
+            const value = Number(window.getComputedStyle(btn).order);
+            return Number.isFinite(value) ? value : 0;
         };
+        return [...bar.querySelectorAll('button.search-button')]
+            .filter((btn) => !btn.classList.contains('header-action-overflow'))
+            .filter((btn) => {
+                if (btn.hidden) return false;
+                // Folded buttons are hidden by this very rule, so they are read
+                // as shown: what decides is the setting behind them.
+                if (btn.classList.contains('is-folded')) return true;
+                return window.getComputedStyle(btn).display !== 'none';
+            })
+            .sort((a, b) => place(a) - place(b));
+    }
 
-        const isToolbarControlVisible = (btn) => {
-            if (!btn) return false;
-            const style = window.getComputedStyle(btn);
-            return style.display !== 'none' && style.visibility !== 'hidden';
-        };
+    syncHeaderActionOverflow() {
+        const bar = document.querySelector('.header-shortcuts');
+        if (!bar) return;
+        /*
+         * Unfold first, then look.
+         *
+         * A folded button is hidden by the fold's own rule, so asking whether
+         * it is drawn answers "no" for the button the reader switched off and
+         * "no" for the one this method put away -- and the one switched off
+         * then stayed in the menu. Cleared here, so what is read is each
+         * `data-show-*` setting's own answer.
+         */
+        bar.querySelectorAll('.is-folded').forEach((btn) => btn.classList.remove('is-folded'));
+        const buttons = this.headerActionButtons();
+        const cap = this.headerActionCap();
 
-        const buildLegendItems = () => {
-            const t = (key, fallback) => {
-                const fullKey = `dashboard.${key}`;
-                const value = d.language?.t?.(fullKey);
-                return value && value !== fullKey ? value : fallback;
-            };
-            const defs = [
-                { id: 'quick-add-toolbar-btn', key: '+', labelKey: 'addBookmarkShort', fallback: 'bookmark' },
-                { id: 'search-button', key: '>', labelKey: 'searchLabel', fallback: 'search' },
-                { id: 'finders-button', key: '?', labelKey: 'findersLabel', fallback: 'finders' },
-                { id: 'commands-button', key: ':', labelKey: 'commandsLabel', fallback: 'commands' },
-                { id: 'recent-bookmarks-button', key: '*', labelKey: 'tooltipRecent', fallback: 'recent' },
-                { id: 'tag-cloud-toggle-btn', key: '/', labelKey: 'tagCloudToggleAria', fallback: 'tag cloud' },
-                { id: 'help-button', key: '!', labelKey: 'tooltipCheatsheet', fallback: 'cheatsheet' },
-                { id: 'collapse-all-button', key: '.', labelKey: 'collapseAllLabel', fallback: 'fold' },
-                // What's new is left out rather than listed: it has no key, and
-                // the ★ that stood here was the button's own glyph printed in
-                // the same chip as the real keys beside it — a key to press,
-                // read literally.
-            ];
-            return defs
-                .map((def) => {
-                    const btn = document.getElementById(def.id);
-                    if (!isToolbarControlVisible(btn)) return null;
-                    return {
-                        key: def.key,
-                        label: t(def.labelKey, def.fallback),
-                    };
-                })
-                .filter(Boolean);
-        };
-
-        if (!legend) {
-            legend = document.createElement('aside');
-            legend.id = legendId;
-            legend.className = 'side-rail-legend';
-            legend.setAttribute('role', 'complementary');
-            legend.hidden = true;
-            document.body.appendChild(legend);
-        }
-
-        const items = buildLegendItems();
-        if (!items.length) {
-            legend.hidden = true;
-            return;
-        }
-
-        legend.replaceChildren();
-        const title = document.createElement('p');
-        title.className = 'side-rail-legend-title';
-        title.textContent = d.language?.t('dashboard.sideRailLegendTitle') || 'Side rail';
-        legend.appendChild(title);
-
-        const list = document.createElement('ul');
-        list.className = 'side-rail-legend-list';
-        items.forEach((item) => {
-            const li = document.createElement('li');
-            li.className = 'side-rail-legend-item';
-            const key = document.createElement('span');
-            key.className = 'side-rail-legend-key';
-            key.textContent = item.key;
-            const label = document.createElement('span');
-            label.className = 'side-rail-legend-label';
-            label.textContent = item.label;
-            li.append(key, label);
-            list.appendChild(li);
+        buttons.forEach((btn, index) => {
+            btn.classList.toggle('is-folded', index >= cap);
         });
-        legend.appendChild(list);
 
-        const foot = document.createElement('p');
-        foot.className = 'side-rail-legend-foot';
-        foot.textContent = d.language?.t('dashboard.sideRailLegendHover') || 'Hover any icon for shortcuts';
-        legend.appendChild(foot);
+        const folded = buttons.filter((btn) => btn.classList.contains('is-folded'));
+        let more = bar.querySelector('.header-action-overflow');
 
-        const dismissBtn = document.createElement('button');
-        dismissBtn.type = 'button';
-        dismissBtn.className = 'side-rail-legend-dismiss';
-        dismissBtn.textContent = d.language?.t('dashboard.sideRailLegendDismiss') || 'Got it';
-        dismissBtn.addEventListener('click', () => dismissLegend());
-        legend.appendChild(dismissBtn);
-
-        let shouldShow = false;
-        try {
-            shouldShow = !localStorage.getItem(storageKey);
-        } catch {
-            shouldShow = true;
-        }
-
-        if (!shouldShow || d.onboardingStartedInSession || d.settings?.onboardingCompleted !== true) {
-            legend.hidden = true;
+        if (!folded.length) {
+            this.closeHeaderActionMenu();
+            more?.remove();
             return;
         }
 
-        legend.hidden = false;
-        legend.classList.remove('is-dismissing');
-        if (d._sideRailLegendTimer) clearTimeout(d._sideRailLegendTimer);
-        d._sideRailLegendTimer = setTimeout(() => dismissLegend(), 14_000);
+        if (!more) {
+            more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'search-button header-action-overflow';
+            more.setAttribute('aria-haspopup', 'menu');
+            more.setAttribute('aria-expanded', 'false');
+            more.innerHTML = ''
+                + '<svg class="header-action-glyph" viewBox="0 0 24 24" width="16" height="16" fill="none"'
+                + ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+                + ' aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>'
+                + '<span class="header-action-overflow-count"></span>';
+            more.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleHeaderActionMenu(more);
+            });
+            bar.appendChild(more);
+        }
+        // Last in the bar, whatever was appended to it since.
+        if (more.nextElementSibling) bar.appendChild(more);
+
+        const label = this.dash.formatDashboardLabel('headerActionsOverflow', { n: folded.length },
+            `${folded.length} more actions`);
+        more.querySelector('.header-action-overflow-count').textContent = `+${folded.length}`;
+        more.setAttribute('aria-label', label);
+        more.title = label;
+
+        if (this._headerActionMenu) this.renderHeaderActionMenu(more);
+    }
+
+    toggleHeaderActionMenu(anchorEl) {
+        if (this._headerActionMenu) {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        this.openHeaderActionMenu(anchorEl);
+    }
+
+    closeHeaderActionMenu({ focusAnchor = false } = {}) {
+        const menu = this._headerActionMenu;
+        if (!menu) return;
+        this._headerActionMenu = null;
+        menu.remove();
+        window.removeEventListener('keydown', this._headerActionKeys, true);
+        document.removeEventListener('pointerdown', this._headerActionOutside, true);
+        window.removeEventListener('resize', this._headerActionReflow);
+        this._headerActionKeys = null;
+        this._headerActionOutside = null;
+        this._headerActionReflow = null;
+        const anchor = this._headerActionAnchor;
+        this._headerActionAnchor = null;
+        anchor?.setAttribute('aria-expanded', 'false');
+        if (focusAnchor) anchor?.focus?.({ preventScroll: true });
+    }
+
+    openHeaderActionMenu(anchorEl) {
+        const menu = document.createElement('div');
+        menu.className = 'move-popover header-action-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', anchorEl.getAttribute('aria-label') || 'More actions');
+        document.body.appendChild(menu);
+        this._headerActionMenu = menu;
+        this._headerActionAnchor = anchorEl;
+        anchorEl.setAttribute('aria-expanded', 'true');
+        this.renderHeaderActionMenu(anchorEl);
+
+        this._headerActionReflow = () => this.dash.pageNav?.positionPopover?.(menu, anchorEl);
+        window.addEventListener('resize', this._headerActionReflow);
+
+        this._headerActionOutside = (e) => {
+            if (menu.contains(e.target) || anchorEl.contains(e.target)) return;
+            this.closeHeaderActionMenu();
+        };
+        document.addEventListener('pointerdown', this._headerActionOutside, true);
+
+        // On the window in capture, for the reason the page switcher's menu is:
+        // the grid's own navigation listens on document and was bound first.
+        this._headerActionKeys = (e) => this._handleHeaderActionKey(e, menu);
+        window.addEventListener('keydown', this._headerActionKeys, true);
+
+        requestAnimationFrame(() => {
+            if (this._headerActionMenu !== menu) return;
+            menu.querySelector('.header-action-item')?.focus({ preventScroll: true });
+        });
+    }
+
+    renderHeaderActionMenu(anchorEl) {
+        const menu = this._headerActionMenu;
+        if (!menu) return;
+        menu.innerHTML = '';
+        const folded = this.headerActionButtons().filter((btn) => btn.classList.contains('is-folded'));
+        if (!folded.length) {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        folded.forEach((btn) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'header-action-item';
+            row.setAttribute('role', 'menuitem');
+            const name = btn.querySelector('.search-button-label')?.textContent?.trim()
+                || btn.getAttribute('aria-label') || '';
+            const key = btn.querySelector('.search-button-icon')?.textContent?.trim() || '';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'header-action-item-name';
+            nameEl.textContent = name;
+            row.appendChild(nameEl);
+            if (key) {
+                const keyEl = document.createElement('span');
+                keyEl.className = 'header-action-item-key';
+                keyEl.textContent = key;
+                row.appendChild(keyEl);
+            }
+            row.addEventListener('click', () => {
+                this.closeHeaderActionMenu();
+                // The button is what knows what the action does; this is a way
+                // to press it rather than a second copy of it.
+                btn.click();
+            });
+            menu.appendChild(row);
+        });
+        this.dash.pageNav?.positionPopover?.(menu, anchorEl, { initial: true });
+    }
+
+    _handleHeaderActionKey(e, menu) {
+        if (!this._headerActionMenu) return;
+        const rows = [...menu.querySelectorAll('.header-action-item')];
+        const at = rows.indexOf(document.activeElement);
+        const mine = () => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        };
+
+        if (e.key === 'Escape') {
+            mine();
+            this.closeHeaderActionMenu({ focusAnchor: true });
+            return;
+        }
+        if (e.key === 'Tab') {
+            this.closeHeaderActionMenu();
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            mine();
+            if (!rows.length) return;
+            const step = e.key === 'ArrowDown' ? 1 : -1;
+            const next = at < 0
+                ? (step > 0 ? 0 : rows.length - 1)
+                : (at + step + rows.length) % rows.length;
+            rows[next].focus({ preventScroll: true });
+            return;
+        }
+        if ((e.key === 'Home' || e.key === 'End') && rows.length) {
+            mine();
+            rows[e.key === 'Home' ? 0 : rows.length - 1].focus({ preventScroll: true });
+            return;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && at >= 0) {
+            mine();
+            rows[at].click();
+        }
+    }
+
+    syncTagCloudButtonPlacement() {
+        const toggle = document.getElementById('tag-cloud-toggle-btn');
+        const shortcuts = document.querySelector('.header-shortcuts');
+        if (!toggle || !shortcuts) return;
+
+        // The button is one of the actions. It stands between search and
+        // recents, which is the order the keys are learned in: find something,
+        // browse by tag, then what you opened last. The template has it in the
+        // cloud's wrap, and the header group is always there to move it into.
+        if (toggle.parentElement !== shortcuts) {
+            shortcuts.appendChild(toggle);
+        }
     }
 
 
@@ -599,7 +751,12 @@ class DashboardToolbar {
         const btn = document.getElementById('quick-add-toolbar-btn');
         const label = btn?.querySelector('.search-button-label');
         if (!label) return;
-        label.textContent = d.language?.t('dashboard.addBookmarkShort') || 'bookmark';
+        // The header names the action in full -- "add bookmark", not the
+        // "bookmark" the floating bar used, where the + beside it was the verb.
+        // Written here as well as in the template because this runs on a
+        // language change and on every mobile/desktop switch, and it was
+        // putting the old word back.
+        label.textContent = d.language?.t('dashboard.headerAddLabel') || 'add bookmark';
     }
 
 

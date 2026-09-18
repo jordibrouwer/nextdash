@@ -8,22 +8,31 @@ import (
 )
 
 // bookmarkActivityName is what to call a bookmark in a sentence. A nameless
-// one is not worth an empty pair of quotes, so it borrows its address.
+// one is not worth an empty pair of quotes, so it borrows its address —
+// through activityURL, since this fallback is itself a sentence value and
+// NEXTDASH_ACTIVITY_LOG_URLS must reach it the same as everywhere else.
 func bookmarkActivityName(bm Bookmark) string {
 	if name := strings.TrimSpace(bm.Name); name != "" {
 		return name
 	}
 	if url := strings.TrimSpace(bm.URL); url != "" {
-		return url
+		return activityURL(url)
 	}
 	return "an unnamed bookmark"
 }
 
+// bookmarkActivitySnapshot is where NEXTDASH_ACTIVITY_LOG_URLS reaches every
+// channel that logs a bookmark's address — mutate's add/update/delete and
+// open's own record alike — through the one field every one of them builds
+// from this function rather than reading bm.URL directly. The readable
+// sentence a caller prints alongside this (added %q (%s), say) still carries
+// the full URL: reducing that would mean rewriting every sentence, not one
+// field, and the container log has always shown it.
 func bookmarkActivitySnapshot(bm Bookmark) map[string]any {
 	return map[string]any{
 		"pageId": bm.PageID,
 		"name":   strings.TrimSpace(bm.Name),
-		"url":    strings.TrimSpace(bm.URL),
+		"url":    activityUserText(strings.TrimSpace(bm.URL)),
 	}
 }
 
@@ -117,7 +126,7 @@ func logBookmarkAdd(bm Bookmark, r *http.Request) {
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	logActivity(activityCategoryMutate, "bookmark.add", fields,
-		fmt.Sprintf("added %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("added %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBookmarkDelete(bm Bookmark, r *http.Request) {
@@ -127,7 +136,7 @@ func logBookmarkDelete(bm Bookmark, r *http.Request) {
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	logActivity(activityCategoryMutate, "bookmark.delete", fields,
-		fmt.Sprintf("deleted %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("deleted %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBookmarkRestore(item TrashedBookmark, r *http.Request) {
@@ -294,15 +303,113 @@ func logBookmarksDeletedAll(r *http.Request) {
 		"deleted every bookmark")
 }
 
-func logBookmarkOpen(pageID, index int, bm Bookmark, r *http.Request) {
+// The client's own account of how an open reached the server: which surface
+// showed the link (activityOpenSources) and which gesture triggered it
+// (activityOpenMethods). Both are what the page claims, not anything the
+// server observed, so a value outside these sets is dropped rather than
+// logged — free text here is free text a page could put anything in.
+var activityOpenSources = map[string]bool{
+	"dashboard":    true,
+	"search":       true,
+	"recent":       true,
+	"config":       true,
+	"context-menu": true,
+	"health":       true,
+	"shortcut":     true,
+}
+
+var activityOpenMethods = map[string]bool{
+	"mouse":             true,
+	"mouse-middle":      true,
+	"mouse-modifier":    true,
+	"keyboard-enter":    true,
+	"keyboard-shortcut": true,
+	"touch":             true,
+	"unknown":           true,
+}
+
+// Bounds for the "full" open-detail extras. Every one of these is what the
+// page claims about itself, not anything the server watched happen, so a
+// value of the right type but an absurd size is treated the same as one of
+// the wrong type: dropped rather than trusted onto the disk.
+const (
+	activityOpenDetailMaxRank          = 10000
+	activityOpenDetailMaxQueryLength   = 500
+	activityOpenDetailMaxRowIndex      = 100000
+	activityOpenDetailMaxMsSinceRender = 24 * 60 * 60 * 1000
+	activityOpenDetailMaxCategoryLen   = 64
+)
+
+// sanitizeOpenDetailExtras keeps only the "full"-level fields that are both
+// the right type and inside a sane range, so a page that sends a negative
+// rank, a category the length of an essay, or a string where a number was
+// asked for ends up with that one field missing rather than corrupting the
+// line it would have landed in.
+func sanitizeOpenDetailExtras(raw map[string]any) map[string]any {
+	out := map[string]any{}
+	if v, ok := parseIntFromAny(raw["resultRank"]); ok && v >= 0 && v <= activityOpenDetailMaxRank {
+		out["resultRank"] = v
+	}
+	if v, ok := parseIntFromAny(raw["queryLength"]); ok && v >= 0 && v <= activityOpenDetailMaxQueryLength {
+		out["queryLength"] = v
+	}
+	if v, ok := raw["newTab"].(bool); ok {
+		out["newTab"] = v
+	}
+	if v, ok := raw["category"].(string); ok {
+		if v = strings.TrimSpace(v); v != "" && len(v) <= activityOpenDetailMaxCategoryLen {
+			out["category"] = v
+		}
+	}
+	if v, ok := parseIntFromAny(raw["rowIndex"]); ok && v >= 0 && v <= activityOpenDetailMaxRowIndex {
+		out["rowIndex"] = v
+	}
+	if v, ok := parseIntFromAny(raw["msSinceRender"]); ok && v >= 0 && v <= activityOpenDetailMaxMsSinceRender {
+		out["msSinceRender"] = v
+	}
+	return out
+}
+
+func logBookmarkOpen(pageID, index int, bm Bookmark, source, method, sessionID string, extra map[string]any, r *http.Request) {
 	if !activityEnabled(activityCategoryOpen) {
 		return
 	}
 	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(bm))
 	fields["index"] = index
 	fields["pageId"] = pageID
+	// The session channel is what turns this id on at all — an open cannot
+	// relate itself to a page load or a search that never opened without one
+	// — but the field is attached here regardless of the open-detail level,
+	// since it identifies the tab rather than describing how this one open
+	// happened.
+	if sid := validActivitySessionID(sessionID); sid != "" {
+		fields["sessionId"] = sid
+	}
+	// "off" is the pre-Phase-1 shape: pageId/index and nothing else client-
+	// claimed, for a reader who turned the extra detail back down rather than
+	// merely never turning it up.
+	level := activityOpenDetailLevel()
+	if level != "off" {
+		// Logged as "openSource", not "source": activityFieldsFromRequest already
+		// puts the request's own transport under "source" (dashboard, extension or
+		// api), which today is the only way to tell a browser-extension open apart
+		// from one made on the page itself. The value here answers a different
+		// question — which surface of the dashboard the reader was looking at —
+		// and reusing "source" for it would silently overwrite the first answer.
+		if activityOpenSources[source] {
+			fields["openSource"] = source
+		}
+		if activityOpenMethods[method] {
+			fields["method"] = method
+		}
+	}
+	if level == "full" {
+		for key, value := range sanitizeOpenDetailExtras(extra) {
+			fields[key] = value
+		}
+	}
 	logActivity(activityCategoryOpen, "bookmark.open", fields,
-		fmt.Sprintf("opened %q (%s)", bookmarkActivityName(bm), bm.URL))
+		fmt.Sprintf("opened %q (%s)", bookmarkActivityName(bm), activityURL(bm.URL)))
 }
 
 func logBrowserImport(pageID, imported, skipped int, r *http.Request) {

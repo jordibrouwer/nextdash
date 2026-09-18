@@ -36,6 +36,11 @@ services:
       # On Unraid these are template rows: Config Type Path, Container Path
       # /host/root/mnt, Host Path /mnt, Access Mode Read Only.
       # - /mnt:/host/root/mnt:ro,rslave
+      #
+      # Containers: the Docker socket. Read-only still exposes the daemon's
+      # whole read API -- every container, image, environment and mount --
+      # so add it only if that is acceptable, or point a socket proxy here.
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       # ---------------------------------------------------------------------
     environment:
       - PORT=8080
@@ -45,6 +50,11 @@ services:
       # /mnt at /host/root/mnt means the root is /host/root.
       # - NEXTDASH_HOST_PROC=/host/proc
       # - NEXTDASH_HOST_ROOT=/host/root
+      # Containers widget: where the socket above landed. Unset hides the widget.
+      # - NEXTDASH_DOCKER_SOCKET=/var/run/docker.sock
+      # Turn the daily GitHub release check or the nextdash.cc news feed off for everyone.
+      # - DISABLE_UPDATE_CHECK=true
+      # - DISABLE_NEWS_FEED=true
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.
@@ -54,10 +64,24 @@ services:
       # - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
       # - NEXTDASH_ACTIVITY_LOG=mutate,status,security
       # - NEXTDASH_ACTIVITY_LOG_PERSIST=1
+      # Capture (bookmarklet, share sheet, /add) without handing out the write token:
+      # - NEXTDASH_CAPTURE_TOKEN=a-second-long-random-string
+      # Automatic backups: how many are kept (1-50) and where (absolute path;
+      # mount a volume there so they live outside ./data).
+      # - NEXTDASH_AUTO_BACKUP_KEEP=3
+      # - NEXTDASH_AUTO_BACKUP_DIR=/backups
+      # Logging. The app's Config -> Logs wins over these once set there.
+      # - NEXTDASH_LOG_LEVEL=info                    # error, warn, info, debug
+      # - NEXTDASH_ACTIVITY_LOG_FORMAT=text          # or json, for Loki or Vector
+      # - NEXTDASH_ACTIVITY_LOG_URLS=full            # full, host or off
+      # - NEXTDASH_ACTIVITY_LOG_SAMPLE=open=0.1      # sampling per channel
+      # - NEXTDASH_ACTIVITY_LOG_MAX_AGE_DAYS=30      # delete old rotated files
+      # - NEXTDASH_ACTIVITY_OPEN_DETAIL=basic        # off, basic or full
       # Optional tuning (background CPU/network on small VPS):
       # - NEXTDASH_DISABLE_PREFETCH=1
       # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
       # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
+      # - NEXTDASH_STATUS_PING_RATE_PER_MIN=300
       # - NEXTDASH_CSP=off
     restart: unless-stopped
     container_name: nextdash

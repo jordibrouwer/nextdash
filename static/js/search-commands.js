@@ -1,5 +1,22 @@
 // Search Commands Component JavaScript
 class SearchCommandsComponent {
+    /*
+     * The guided tours, mirrored from DashboardConfig.GUIDED_TOURS.
+     *
+     * Config is lazily loaded, and this list has to be answerable before it
+     * is. Kept in step by command-palette-settings.spec.js, which fails if the
+     * two lists diverge.
+     */
+    static GUIDED_TOURS = [
+        { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed' },
+        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps' },
+        { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health' },
+        { id: 'inboxTutorialV1', labelKey: 'config.tourInbox', label: 'Inbox' },
+        { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh' },
+        { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
+        { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category' },
+    ];
+
     constructor(language = null, currentBookmarks = [], allBookmarks = [], updateQueryCallback = null) {
         this.language = language;
         this.updateQueryCallback = updateQueryCallback;
@@ -30,7 +47,7 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupBookmarks',
                 commands: [
                     'new', 'add', 'remove', 'note', 'pin', 'move', 'edit', 'copy', 'tag',
-                    'open', 'goto', 'find', 'stale', 'duplicates',
+                    'open', 'goto', 'find', 'stale', 'duplicates', 'archive',
                 ],
             },
             {
@@ -45,25 +62,29 @@ class SearchCommandsComponent {
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
                     'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
-                    'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
+                    'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
-                    'buttons', 'shortcuts', 'locklayout',
+                    'buttons', 'action', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
+                    'clock', 'time', 'unit', 'weather', 'spacing', 'margins', 'highlight', 'items',
+                    'collapse', 'empty', 'tags', 'shortcuts', 'locklayout',
                 ],
             },
             {
                 id: 'collections',
                 label: 'Smart collections',
                 labelKey: 'commands.groupCollections',
-                commands: ['collections'],
+                commands: ['collections', 'fresh'],
             },
             {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'tour', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
-        // Track which groups are expanded (none by default)
+        // Which groups are open. None is, until the reader opens one: the
+        // palette answers a bare `:` with its five headings rather than with
+        // every command it has.
         this.expandedGroups = new Set();
 
         // Bookmark pre-selected via keyboard when : was pressed; used to pre-fill context commands
@@ -90,12 +111,31 @@ class SearchCommandsComponent {
             'layout': this.handleLayoutCommand.bind(this),
             'density': this.handleDensityCommand.bind(this),
             'buttons': this.handleButtonsCommand.bind(this),
+            'action': this.handleActionBarCommand.bind(this),
+            'actionbar': this.handleActionBarCommand.bind(this),
+            'clock': this.handleClockPlacementCommand.bind(this),
+            'time': this.handleTimeFormatCommand.bind(this),
+            'unit': this.handleWeatherUnitCommand.bind(this),
+            'weather': this.handleWeatherCommand.bind(this),
+            'spacing': this.handleSpacingCommand.bind(this),
+            'margins': this.handleMarginsCommand.bind(this),
+            'highlight': this.handleRowHighlightCommand.bind(this),
+            'items': this.handleItemsCommand.bind(this),
+            'collapse': this.handleCollapseCommand.bind(this),
+            'empty': this.handleEmptyCategoriesCommand.bind(this),
+            'tags': this.handleRowTagsCommand.bind(this),
+            'fresh': this.handleFreshCommand.bind(this),
+            'header': this.handleHeaderCommand.bind(this),
+            'glow': this.handleGlowCommand.bind(this),
+            'buttonstyle': this.handleButtonStyleCommand.bind(this),
+            'switcher': this.handlePageSwitcherCommand.bind(this),
+            'maxtabs': this.handleMaxTabsCommand.bind(this),
+            'maxactions': this.handleMaxActionsCommand.bind(this),
             'favicons': this.handleFaviconCommand.bind(this),
             'preview': this.handlePreviewCardsCommand.bind(this),
             'previews': this.handlePreviewCardsCommand.bind(this),
             'packed': this.handlePackedColumnsCommand.bind(this),
             'locklayout': this.handleLockLayoutCommand.bind(this),
-            'buttonbar': this.handleButtonBarCommand.bind(this),
             'goto': this.handleGotoCommand.bind(this),
             'stale': this.handleStaleCommand.bind(this),
             'duplicates': this.handleDuplicateCommand.bind(this),
@@ -112,6 +152,7 @@ class SearchCommandsComponent {
             'cheat': this.handleCheatCommand.bind(this),
             'help': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
+            'changes': this.handleChangesTourCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
             'config': this.handleConfigCommand.bind(this),
             'reload': this.handleReloadCommand.bind(this),
@@ -135,6 +176,9 @@ class SearchCommandsComponent {
             'metadata': this.handleMetadataCommand.bind(this),
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
+            'import': this.handleImportCommand.bind(this),
+            'tour': this.handleTourCommand.bind(this),
+            'archive': this.handleArchiveCommand.bind(this),
         };
 
         // Current page bookmarks and all bookmarks
@@ -273,6 +317,7 @@ class SearchCommandsComponent {
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
+        { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },
         { id: 'about', labelKey: 'commands.configAbout', fallback: 'About' },
         // The names that used to be sections and are now tabs, kept so typing
         // what you remember still arrives somewhere sensible.
@@ -302,7 +347,7 @@ class SearchCommandsComponent {
         this._closeCommandPalette();
         const dash = window.dashboardInstance;
         const section = entry.section || entry.id;
-        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab' }[section];
+        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab', logs: 'logsTab' }[section];
         if (dash?.config?.openConfigView) {
             if (entry.tab && state) dash.config[state] = entry.tab;
             void dash.config.openConfigView(section);
@@ -644,6 +689,45 @@ class SearchCommandsComponent {
         }
 
         return [];
+    }
+
+    /**
+     * Commands whose name answers a plain word, for the one list.
+     *
+     * The panel used to ask this question only after a `:` had been typed, so
+     * a reader who did not already know that "inbox" is also a command never
+     * met it. Names are matched from the front first and then anywhere, which
+     * is the order a reader expects: `:page` before `:homepage`.
+     *
+     * @param {string} query what was typed, without any prefix
+     * @param {number} limit how many rows to hand back
+     */
+    matchCommandNames(query, limit = 5) {
+        const needle = String(query || '').trim().toLowerCase();
+        if (!needle) return [];
+        const names = Object.keys(this.availableCommands);
+        const starts = names.filter((name) => name.startsWith(needle));
+        const inside = names.filter((name) => !name.startsWith(needle) && name.includes(needle));
+        const groupOf = (name) => this.commandGroups.find((g) => g.commands.includes(name));
+        return [...starts, ...inside].slice(0, limit).map((name) => {
+            const group = groupOf(name);
+            return {
+                name: '',
+                shortcut: `:${name.toUpperCase()}`,
+                completion: `:${name.toUpperCase()} `,
+                meta: group ? this._t(group.labelKey, group.label) : null,
+                type: 'command-completion',
+                scope: 'commands',
+            };
+        });
+    }
+
+    /** How many commands a plain word would answer with, uncapped. */
+    countCommandNames(query) {
+        const needle = String(query || '').trim().toLowerCase();
+        if (!needle) return 0;
+        return Object.keys(this.availableCommands)
+            .filter((name) => name.includes(needle)).length;
     }
 
     toggleGroup(groupId) {
@@ -1142,6 +1226,17 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => this._runOverlayAction(() => {
                 window.openWhatsNewModal?.({ force: true });
+            }),
+        }];
+    }
+
+    handleChangesTourCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.changesTourLabel', 'What has changed — the tour'),
+            shortcut: ':CHANGES',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                window.ChangesTour?.open?.();
             }),
         }];
     }
@@ -2480,44 +2575,6 @@ class SearchCommandsComponent {
         }));
     }
 
-    handleButtonBarCommand(args, fullQuery) {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard) return [];
-
-        const t = (key, fb) => (this.language?.t(key) && this.language.t(key) !== key ? this.language.t(key) : fb);
-        const positions = [
-            { value: 'bottom',       label: t('config.buttonBarPositionCmdBottom', 'bottom — centered (default)') },
-            { value: 'bottom-right', label: t('config.buttonBarPositionCmdBottomRight', 'bottom-right — corner dock') },
-            { value: 'bottom-left',  label: t('config.buttonBarPositionCmdBottomLeft', 'bottom-left — corner dock') },
-            { value: 'side-left',    label: t('config.buttonBarPositionCmdSideLeft', 'side-left — vertical rail') },
-            { value: 'side-right',   label: t('config.buttonBarPositionCmdSideRight', 'side-right — vertical rail') },
-        ];
-
-        const current = dashboard.settings.buttonBarPosition || 'bottom';
-        const arg = (args[0] || '').toLowerCase();
-
-        if (!arg) {
-            return positions.map(p => ({
-                ...this._markCurrentRow(p.label, p.value === current),
-                shortcut: ':BUTTONBAR',
-                stateId: `buttonbar:${p.value}`,
-                action: () => this.applyButtonBarPosition(dashboard, p.value),
-                type: 'command'
-            }));
-        }
-
-        const matches = positions.filter(p => p.value.startsWith(arg) || p.label.toLowerCase().includes(arg));
-        if (matches.length === 0) return [];
-
-        return matches.map(p => ({
-            ...this._markCurrentRow(p.label, p.value === current),
-            shortcut: ':BUTTONBAR',
-            stateId: `buttonbar:${p.value}`,
-            action: () => this.applyButtonBarPosition(dashboard, p.value),
-            type: 'command'
-        }));
-    }
-
     handleButtonsCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
@@ -2530,11 +2587,16 @@ class SearchCommandsComponent {
             cheatsheet: 'showCheatSheetButton',
             search: 'showSearchButton',
             tagcloud: 'showTagCloudButton',
+            pages: 'showPagesButton',
+            foldall: 'showCollapseAllButton',
         };
 
         const buttonAliases = {
             'tag-cloud': 'tagcloud',
             tags: 'tagcloud',
+            'fold-all': 'foldall',
+            fold: 'foldall',
+            page: 'pages',
         };
 
         const buttonName = buttonAliases[(args[0] || '').toLowerCase()] || (args[0] || '').toLowerCase();
@@ -2552,6 +2614,636 @@ class SearchCommandsComponent {
         return matchingButtons.map((name) => this._buildButtonRow(name, buttons[name], dashboard, explicitState));
     }
 
+
+    /*
+     * Appearance → Header and buttons, from the palette.
+     *
+     * The panel's own controls are a select and seven toggles; these are the
+     * same seven, named by what they show rather than by their setting key.
+     * The three selects beside them have commands of their own -- :buttonstyle,
+     * :switcher and :maxtabs -- because a value is not an on and an off.
+     */
+    handleHeaderCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        const toggles = {
+            tabs: 'showPageTabs',
+            names: 'showPageNamesInTabs',
+            title: 'showTitle',
+            dashboard: 'showDashboardButton',
+            inbox: 'showInboxButton',
+            health: 'showHealthDashboard',
+            config: 'showConfigButton',
+        };
+        const aliases = { pagetabs: 'tabs', pagenames: 'names', home: 'dashboard' };
+
+        const typed = aliases[(args[0] || '').toLowerCase()] || (args[0] || '').toLowerCase();
+        const stateArg = (args[1] || '').toLowerCase();
+        const names = Object.keys(toggles).filter((name) => !typed || name.startsWith(typed));
+        if (!names.length) return [];
+
+        const explicit = stateArg === 'on' ? true : stateArg === 'off' ? false : null;
+        return names.map((name) => {
+            const key = toggles[name];
+            const enabled = dashboard.settings[key] !== false;
+            return {
+                name: `${name} (${this._stateOnOff(enabled)})`,
+                shortcut: ':HEADER',
+                stateId: `header:${name}`,
+                type: 'command',
+                current: enabled,
+                action: () => this.setButtonVisibility(
+                    dashboard, key, explicit !== null ? explicit : !enabled, `header-${name}`),
+            };
+        });
+    }
+
+    /** How much of the theme's own colour carries around a surface. */
+    handleGlowCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'glow',
+            shortcut: ':GLOW',
+            options: [
+                { value: 'off', label: t('config.glowStrengthOff', 'Off') },
+                { value: 'soft', label: t('config.glowStrengthSoft', 'Soft') },
+                { value: 'full', label: t('config.glowStrengthFull', 'Full') },
+            ],
+            current: (d) => d.settings.glowStrength || 'off',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'glowStrength', value,
+                (v) => window.ThemeLoader?.applyGlowStrength?.(v), `glow:${value}`),
+        }, args);
+    }
+
+    /** Plain glyphs with a rule under the current one, or a plate around each. */
+    handleButtonStyleCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'buttonstyle',
+            shortcut: ':BUTTONSTYLE',
+            options: [
+                { value: 'plain', label: t('config.headerButtonsPlain', 'Plain, underlined when current') },
+                { value: 'plated', label: t('config.headerButtonsPlated', 'Each in its own box') },
+            ],
+            current: (d) => (d.settings.headerButtonStyle === 'plated' ? 'plated' : 'plain'),
+            apply: (value) => this._applyChromeSetting('headerButtonStyle', value, `buttonstyle:${value}`),
+        }, args);
+    }
+
+    /** How the pages are drawn in the middle of the header. */
+    handlePageSwitcherCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'switcher',
+            shortcut: ':SWITCHER',
+            options: [
+                { value: 'classic', label: t('config.pageSwitcherClassic', 'Numbers beside the destinations') },
+                { value: 'segmented', label: t('config.pageSwitcherSegmented', 'One segmented control') },
+                { value: 'text', label: t('config.pageSwitcherText', 'Plain text, underlined') },
+                { value: 'compact', label: t('config.pageSwitcherCompact', 'One button with a list') },
+            ],
+            current: (d) => d.settings.pageSwitcherStyle || 'classic',
+            apply: (value) => this._applyChromeSetting('pageSwitcherStyle', value, `switcher:${value}`),
+        }, args);
+    }
+
+    /** How many page tabs the header draws before the rest fold onto the chip. */
+    handleMaxTabsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const current = Math.min(9, Math.max(3, Math.round(Number(dashboard.settings.maxPageTabs) || 4)));
+        const values = [3, 4, 5, 6, 7, 8, 9].filter((n) => !typed || String(n).startsWith(typed));
+        return values.map((n) => ({
+            name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
+            shortcut: ':MAXTABS',
+            stateId: `maxtabs:${n}`,
+            type: 'command',
+            current: n === current,
+            action: () => this._applyChromeSetting('maxPageTabs', n, `maxtabs:${n}`),
+        }));
+    }
+
+    /** How many actions stand in the bar before the rest fold behind "+N". */
+    handleMaxActionsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const stored = Math.round(Number(dashboard.settings.maxHeaderActions));
+        const current = Math.min(9, Math.max(0, Number.isFinite(stored) ? stored : 2));
+        const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !typed || String(n).startsWith(typed));
+        return values.map((n) => ({
+            name: `${n}${n === current ? ` (${this._t('commands.stateCurrent', 'current')})` : ''}`,
+            shortcut: ':MAXACTIONS',
+            stateId: `maxactions:${n}`,
+            type: 'command',
+            current: n === current,
+            action: () => this._applyChromeSetting('maxHeaderActions', n, `maxactions:${n}`),
+        }));
+    }
+
+    /**
+     * Write a setting the header reads off <body>, and redraw the chrome.
+     *
+     * setupDOM writes the attributes and renderPageNavigation rebuilds the
+     * tabs; config's own controls go through the same two, so the palette and
+     * the panel cannot drift apart.
+     */
+    _applyChromeSetting(key, value, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[key] = value;
+        dashboard.setupDOM?.();
+        dashboard.renderPageNavigation?.();
+        dashboard.pageNav?.setActivePageNavButton?.(dashboard.currentPageId);
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
+    }
+
+
+    /*
+     * Where the action buttons stand, and how they behave there.
+     *
+     * `:buttons` says WHICH buttons are drawn; this one says where the bar is
+     * and what it does once it is there -- the settings the release moved, and
+     * the ones a reader is most likely to want back. Four shapes on one word:
+     *
+     *   :action                 the five places, the current one ticked
+     *   :action left|bottom|…   go straight there
+     *   :action on|off          the whole bar
+     *   :action hide 0|2|5|…    seconds before a docked bar slides away
+     *   :action keys on|off     the key chip on each button
+     */
+    handleActionBarCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const first = (args[0] || '').toLowerCase();
+        const second = (args[1] || '').toLowerCase();
+
+        const places = [
+            { value: 'right', label: t('config.actionBarRight', 'A column on the right') },
+            { value: 'left', label: t('config.actionBarLeft', 'A column on the left') },
+            { value: 'bottom', label: t('config.actionBarBottom', 'A dock at the bottom') },
+            { value: 'header', label: t('config.actionBarHeader', 'In the header') },
+            { value: 'menu', label: t('config.actionBarMenu', 'Behind one menu') },
+        ];
+
+        const stateRow = (label, on, stateId, apply) => ({
+            ...this._markCurrentRow(label, on),
+            shortcut: ':ACTION',
+            type: 'command',
+            stateId,
+            action: apply,
+        });
+
+        // The bar itself, on or off.
+        if (first === 'on' || first === 'off') {
+            const on = first === 'on';
+            return [stateRow(
+                on ? t('commands.actionBarOn', 'Show the action buttons') : t('commands.actionBarOff', 'Hide the action buttons'),
+                dashboard.settings.actionBarEnabled !== false === on,
+                `action:enabled:${first}`,
+                () => this._applyActionBarSetting('actionBarEnabled', on, `action:enabled:${first}`),
+            )];
+        }
+
+        // The key chip on each button.
+        if (first === 'keys') {
+            const current = dashboard.settings.showActionKeys !== false;
+            const states = second === 'on' ? [true] : second === 'off' ? [false] : [true, false];
+            return states.map((on) => stateRow(
+                on ? t('commands.actionKeysOn', 'Show the key on each button') : t('commands.actionKeysOff', 'Hide the key on each button'),
+                current === on,
+                `action:keys:${on}`,
+                () => this._applyActionBarSetting('showActionKeys', on, `action:keys:${on}`),
+            ));
+        }
+
+        // How long a docked bar waits before it slides into its edge.
+        if (first === 'hide') {
+            const current = Number(dashboard.settings.actionBarAutoHideSeconds) || 0;
+            const seconds = [0, 2, 5, 10, 30].filter((n) => !second || String(n).startsWith(second));
+            return seconds.map((n) => stateRow(
+                n === 0
+                    ? t('config.actionBarAutoHideNever', 'Always in view')
+                    : t('commands.actionBarAfterSeconds', 'Slide away after {n}s').replace('{n}', String(n)),
+                current === n,
+                `action:hide:${n}`,
+                () => this._applyActionBarSetting('actionBarAutoHideSeconds', n, `action:hide:${n}`),
+            ));
+        }
+
+        const current = dashboard.settings.actionBarPosition || 'header';
+        const matches = first ? places.filter(({ value }) => value.startsWith(first)) : places;
+        if (!matches.length) return [];
+        return matches.map(({ value, label }) => stateRow(
+            label, value === current, `action:${value}`,
+            () => this._applyActionBarSetting('actionBarPosition', value, `action:${value}`),
+        ));
+    }
+
+    /**
+     * Write one action-bar setting and let the bar answer for it.
+     *
+     * The same two the panel calls: setupDOM puts the attributes on <body>,
+     * and the autohide module re-reads the delay and comes out of hiding, so
+     * a bar switched on while it was away is visible rather than merely set.
+     */
+    _applyActionBarSetting(key, value, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[key] = value;
+        dashboard.setupDOM?.();
+        window.ActionBarAutoHide?.sync?.();
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
+    }
+
+
+    /*
+     * The settings a reader changes often, each on its own word.
+     *
+     * All of them are choices with two to five answers, so they share the
+     * appearance-row machinery: the current answer is ticked, typing narrows,
+     * Enter writes and applies. `special` says what has to be redrawn after,
+     * matching what the config panel does for the same field.
+     */
+    _settingCommand(spec, args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').toLowerCase();
+        const options = typed
+            ? spec.options.filter(({ value }) => String(value).toLowerCase().startsWith(typed))
+            : spec.options;
+        if (!options.length) return [];
+        const current = dashboard.settings[spec.field];
+        return options.map(({ value, label }) => ({
+            ...this._markCurrentRow(label, String(current) === String(value)),
+            shortcut: spec.shortcut,
+            type: 'command',
+            stateId: `${spec.field}:${value}`,
+            action: () => this._applySettingValue(spec.field, value, spec.apply, `${spec.field}:${value}`),
+        }));
+    }
+
+    /** Write a setting and redraw what reads it. */
+    _applySettingValue(field, value, apply, stateId) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        dashboard.settings[field] = value;
+        if (apply === 'chrome') {
+            dashboard.setupDOM?.();
+        } else if (apply === 'render') {
+            dashboard.renderDashboard?.({ animate: false });
+        } else if (apply === 'chromeRender') {
+            dashboard.setupDOM?.();
+            dashboard.renderDashboard?.({ animate: false });
+        } else if (apply === 'datetime') {
+            dashboard.renderDateWeatherLine?.();
+            dashboard.refreshWeather?.(true);
+        }
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(stateId);
+    }
+
+    handleClockPlacementCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'headerClockPlacement',
+            shortcut: ':CLOCK',
+            apply: 'chrome',
+            options: [
+                { value: 'classic', label: t('config.headerClockClassic', 'On their own line, name underneath') },
+                { value: 'beside-name', label: t('config.headerClockBesideName', 'Beside the view name') },
+                { value: 'own-zone', label: t('config.headerClockOwnZone', 'In a column of their own') },
+            ],
+        }, args);
+    }
+
+    handleTimeFormatCommand(args) {
+        return this._settingCommand({
+            field: 'timeFormat',
+            shortcut: ':TIME',
+            apply: 'datetime',
+            options: [{ value: '24h', label: '23:59' }, { value: '12h', label: '11:59 PM' }],
+        }, args);
+    }
+
+    handleWeatherUnitCommand(args) {
+        return this._settingCommand({
+            field: 'weatherUnit',
+            shortcut: ':UNIT',
+            apply: 'datetime',
+            options: [{ value: 'celsius', label: '°C' }, { value: 'fahrenheit', label: '°F' }],
+        }, args);
+    }
+
+    /*
+     * The town the weather is read from -- a name, not a choice.
+     *
+     * Bare, it says which town is set and offers to clear it; with words after
+     * it, it sets them. Switching the line on comes with it: a town nobody can
+     * see the weather of is an answer to nothing.
+     */
+    handleWeatherCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const typed = String(fullQuery || '').replace(/^:\s*weather\s*/i, '').trim();
+        const current = String(dashboard.settings.weatherLocation || '').trim();
+
+        if (!typed) {
+            const rows = [{
+                name: current
+                    ? t('commands.weatherCurrent', 'Weather from {place}').replace('{place}', current)
+                    : t('commands.weatherNone', 'No town set — type one after :weather'),
+                shortcut: ':WEATHER',
+                type: 'command',
+                stateId: `weather:${current}`,
+                action: () => this._paletteRefresh(`weather:${current}`),
+            }];
+            if (current) {
+                rows.push({
+                    name: t('commands.weatherClear', 'Clear the town'),
+                    shortcut: ':WEATHER',
+                    type: 'command',
+                    stateId: 'weather:clear',
+                    action: () => this._applyWeatherLocation(''),
+                });
+            }
+            return rows;
+        }
+
+        return [{
+            name: t('commands.weatherSet', 'Read the weather from {place}').replace('{place}', typed),
+            shortcut: ':WEATHER',
+            type: 'command',
+            stateId: `weather:set:${typed}`,
+            action: () => this._applyWeatherLocation(typed),
+        }];
+    }
+
+    _applyWeatherLocation(place) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        Object.assign(dashboard.settings, {
+            weatherLocation: place,
+            weatherSource: 'manual',
+            showWeatherWithDate: place ? true : dashboard.settings.showWeatherWithDate,
+        });
+        dashboard.renderDateWeatherLine?.();
+        dashboard.refreshWeather?.(true);
+        dashboard.saveSettings?.();
+        return this._paletteRefresh(`weather:${place}`);
+    }
+
+    handleSpacingCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'categorySpacing',
+            shortcut: ':SPACING',
+            apply: 'chromeRender',
+            options: [
+                { value: 'snug', label: t('config.spacingSnug', 'Snug') },
+                { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+            ],
+        }, args);
+    }
+
+    handleMarginsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'sideMargin',
+            shortcut: ':MARGINS',
+            apply: 'chromeRender',
+            options: [
+                { value: 'snug', label: t('config.spacingSnug', 'Snug') },
+                { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+            ],
+        }, args);
+    }
+
+    handleRowHighlightCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'rowHighlight',
+            shortcut: ':HIGHLIGHT',
+            apply: 'chrome',
+            options: [
+                { value: 'subtle', label: t('config.rowHighlightSubtle', 'Subtle') },
+                { value: 'strong', label: t('config.rowHighlightStrong', 'Strong') },
+            ],
+        }, args);
+    }
+
+    handleItemsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const typed = (args[0] || '').trim();
+        const current = Number(dashboard.settings.categoryItemLimit) || 0;
+        const counts = [0, 5, 8, 10, 15, 20].filter((n) => !typed || String(n).startsWith(typed));
+        const asked = Number(typed);
+        if (!counts.length && Number.isFinite(asked) && asked >= 0 && asked <= 200) counts.push(asked);
+        return counts.map((n) => ({
+            ...this._markCurrentRow(
+                n === 0
+                    ? t('commands.itemsAll', 'Every bookmark in a category')
+                    : t('commands.itemsBefore', '{n} before “+N more”').replace('{n}', String(n)),
+                current === n,
+            ),
+            shortcut: ':ITEMS',
+            type: 'command',
+            stateId: `items:${n}`,
+            action: () => this._applySettingValue('categoryItemLimit', n, 'render', `items:${n}`),
+        }));
+    }
+
+    /** The two-answer settings, each drawn the same way. */
+    _toggleSettingCommand({ field, shortcut, onLabel, offLabel, apply, invert = false }, args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const stored = dashboard.settings[field];
+        const current = invert ? stored !== true : stored !== false;
+        const asked = (args[0] || '').toLowerCase();
+        const states = asked === 'on' ? [true] : asked === 'off' ? [false] : [true, false];
+        return states.map((on) => ({
+            ...this._markCurrentRow(on ? onLabel : offLabel, current === on),
+            shortcut,
+            type: 'command',
+            stateId: `${field}:${on}`,
+            action: () => this._applySettingValue(field, invert ? !on : on, apply, `${field}:${on}`),
+        }));
+    }
+
+    handleCollapseCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'alwaysCollapseCategories',
+            shortcut: ':COLLAPSE',
+            apply: 'render',
+            invert: true,
+            onLabel: t('commands.collapseOn', 'Start every category folded'),
+            offLabel: t('commands.collapseOff', 'Start every category open'),
+        }, args);
+    }
+
+    handleEmptyCategoriesCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'hideEmptyCategories',
+            shortcut: ':EMPTY',
+            apply: 'render',
+            invert: true,
+            onLabel: t('commands.emptyHide', 'Hide categories with nothing in them'),
+            offLabel: t('commands.emptyShow', 'Show every category'),
+        }, args);
+    }
+
+    handleRowTagsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'showRowTags',
+            shortcut: ':TAGS',
+            apply: 'render',
+            onLabel: t('commands.rowTagsOn', 'Show tags on the rows'),
+            offLabel: t('commands.rowTagsOff', 'Hide tags on the rows'),
+        }, args);
+    }
+
+    handleFreshCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._toggleSettingCommand({
+            field: 'feedsEnabled',
+            shortcut: ':FRESH',
+            apply: 'render',
+            onLabel: t('commands.freshOn', 'Count what the pages you saved have published'),
+            offLabel: t('commands.freshOff', 'Stop counting new items'),
+        }, args);
+    }
+
+
+    /*
+     * The guided tours, replayed from the palette.
+     *
+     * Config → Help → Guided tours is where they live; this is the same list
+     * with the same effect, for a reader who already knows which one they
+     * want. `:tour` alone names them all; a word picks one.
+     */
+    handleTourCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard?.config) return [];
+        /*
+         * Named here rather than read off config.
+         *
+         * The config module is lazily loaded, so on a dashboard nobody has
+         * opened config on yet its GUIDED_TOURS list does not exist -- and a
+         * command that answers with nothing until you have been somewhere else
+         * is worse than no command. Replaying still goes through config, which
+         * loads on the way.
+         */
+        const tours = SearchCommandsComponent.GUIDED_TOURS;
+        const typed = (args[0] || '').toLowerCase();
+        const matches = tours.filter(({ id, label }) => !typed
+            || id.toLowerCase().includes(typed)
+            || label.toLowerCase().startsWith(typed));
+        return matches.map(({ id, labelKey, label }) => ({
+            name: this._t(labelKey, label),
+            shortcut: ':TOUR',
+            type: 'command',
+            stateId: `tour:${id}`,
+            action: () => this._runOverlayAction(() => {
+                if (id === 'changesTourV1' && window.ChangesTour?.open) {
+                    window.ChangesTour.open();
+                    return;
+                }
+                void dashboard.config.replayTour(id);
+            }),
+        }));
+    }
+
+    /** Restoring from a backup lives in config; this is the way in. */
+    handleImportCommand() {
+        return [{
+            name: this._t('commands.importLabel', 'Restore from a backup (.zip)'),
+            shortcut: ':IMPORT',
+            type: 'command',
+            action: () => this._runOverlayAction(() => {
+                window.location.hash = '#config/data/backups';
+            }),
+        }];
+    }
+
+    /*
+     * A copy of a page, kept on this machine.
+     *
+     * The bookmark the cursor is on, or the one named after the command. The
+     * same endpoint Health's "save a local copy" uses, and the same answer
+     * when monolith is not installed.
+     */
+    handleArchiveCommand(args, fullQuery) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fb) => this._t(key, fb);
+        const typed = String(fullQuery || '').replace(/^:\s*archive\s*/i, '').trim();
+        const context = this.contextBookmark;
+        const pool = Array.isArray(dashboard.allBookmarks) && dashboard.allBookmarks.length
+            ? dashboard.allBookmarks
+            : (dashboard.bookmarks || []);
+
+        const targets = typed
+            ? pool.filter((b) => String(b.name || '').toLowerCase().includes(typed.toLowerCase())).slice(0, 8)
+            : (context ? [context] : []);
+
+        if (!targets.length) {
+            return [{
+                name: typed
+                    ? t('commands.archiveNoMatch', 'No bookmark of that name to save a copy of')
+                    : t('commands.archiveHint', 'Type a bookmark’s name to keep a copy of its page'),
+                shortcut: ':ARCHIVE',
+                type: 'command-completion',
+                completion: ':archive ',
+            }];
+        }
+
+        return targets.map((bookmark) => ({
+            name: t('commands.archiveOne', 'Keep a copy of {name}').replace('{name}', bookmark.name || bookmark.url),
+            shortcut: ':ARCHIVE',
+            type: 'command',
+            stateId: `archive:${bookmark.id || bookmark.url}`,
+            action: () => this._runOverlayAction(() => this._captureArchive(bookmark)),
+        }));
+    }
+
+    async _captureArchive(bookmark) {
+        const dashboard = window.dashboardInstance;
+        const url = bookmark?.url;
+        if (!dashboard || !url) return;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        dashboard.showNotification?.(
+            this._t('commands.archiveSaving', 'Saving a copy…'), 'info');
+        try {
+            const res = await fetcher(`/api/archives/capture?url=${encodeURIComponent(url)}`, { method: 'POST' });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                // 412 is monolith missing, which is a setup step rather than a
+                // failure of the page -- same answer Health gives.
+                dashboard.showNotification?.(res.status === 412
+                    ? this._t('commands.archiveMissingTool', 'monolith is not installed — see Config → Data & backups → Sources.')
+                    : (body.error || this._t('commands.archiveError', 'Could not save a copy of that page.')), 'error');
+                return;
+            }
+            dashboard.showNotification?.(
+                this._t('commands.archiveDone', 'A copy is kept.'), 'success');
+        } catch {
+            dashboard.showNotification?.(
+                this._t('commands.archiveError', 'Could not save a copy of that page.'), 'error');
+        }
+    }
 
     handleFaviconCommand(args, fullQuery) {
         const dashboard = window.dashboardInstance;
@@ -2710,19 +3402,6 @@ class SearchCommandsComponent {
         }
 
         return this._paletteRefresh(`density:${densityMode}`);
-    }
-
-    applyButtonBarPosition(dashboard, position) {
-        const valid = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'];
-        const applied = valid.includes(position) ? position : 'bottom';
-        dashboard.settings.buttonBarPosition = applied;
-        if (typeof dashboard.setupDOM === 'function') {
-            dashboard.setupDOM();
-        }
-        if (typeof dashboard.saveSettings === 'function') {
-            dashboard.saveSettings();
-        }
-        return this._paletteRefresh(`buttonbar:${applied}`);
     }
 
     toggleButtonVisibility(dashboard, settingKey, buttonId) {
@@ -3432,12 +4111,96 @@ class SearchCommandsComponent {
         return this.removeCommandHandler.handle(args, fullQuery);
     }
 
+    /*
+     * Light or dark, and whether the clock decides.
+     *
+     * It used to be the follow-the-system switch alone, which is the setting
+     * and not the thing: `:dark` reads as "make it dark", and did not. The
+     * first two rows are the halves of the theme you are on; the two under
+     * them are the switch, saying which way it stands.
+     *
+     *   :dark            all four, the current answers ticked
+     *   :dark dark|light the half, now
+     *   :dark auto on|off  whether it follows the system
+     */
     handleDarkCommand(args) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
-        const enabled = dashboard.settings.autoDarkMode === true;
-        const apply = (value) => this.setAutoDarkMode(dashboard, value);
-        return this._handleSimpleToggle(args, { shortcut: ':DARK', prefix: 'dark', enabled, apply });
+        const t = (key, fb) => this._t(key, fb);
+        const first = (args[0] || '').toLowerCase();
+        const second = (args[1] || '').toLowerCase();
+        const auto = dashboard.settings.autoDarkMode === true;
+        const theme = String(dashboard.settings.theme || 'dark');
+        const isDark = !(theme.endsWith('-light') || theme === 'light');
+
+        const autoRows = () => {
+            const states = second === 'on' ? [true] : second === 'off' ? [false] : [true, false];
+            return states.map((on) => ({
+                ...this._markCurrentRow(on
+                    ? t('commands.darkAutoOn', 'Follow the system, light by day and dark by night')
+                    : t('commands.darkAutoOff', 'Keep the half I picked, whatever the system says'), auto === on),
+                shortcut: ':DARK',
+                type: 'command',
+                stateId: `dark:auto:${on}`,
+                action: () => this.setAutoDarkMode(dashboard, on),
+            }));
+        };
+
+        const halfRow = (wantsDark) => ({
+            ...this._markCurrentRow(wantsDark
+                ? t('config.themeDark', 'Dark')
+                : t('config.themeLight', 'Light'), isDark === wantsDark),
+            shortcut: ':DARK',
+            type: 'command',
+            stateId: `dark:half:${wantsDark ? 'dark' : 'light'}`,
+            action: () => this._applyThemeHalf(wantsDark),
+        });
+
+        if (first === 'auto' || first === 'system' || first === 'on' || first === 'off') {
+            // `:dark on|off` answered the switch before this command had halves,
+            // and a reader who learnt it should not find it doing something else.
+            if (first === 'on' || first === 'off') {
+                return [{
+                    ...this._markCurrentRow(first === 'on'
+                        ? t('commands.darkAutoOn', 'Follow the system, light by day and dark by night')
+                        : t('commands.darkAutoOff', 'Keep the half I picked, whatever the system says'),
+                    auto === (first === 'on')),
+                    shortcut: ':DARK',
+                    type: 'command',
+                    stateId: `dark:auto:${first}`,
+                    action: () => this.setAutoDarkMode(dashboard, first === 'on'),
+                }];
+            }
+            return autoRows();
+        }
+        if (first === 'dark') return [halfRow(true)];
+        if (first === 'light') return [halfRow(false)];
+        if (first) return [];
+
+        return [halfRow(true), halfRow(false), ...autoRows()];
+    }
+
+    /**
+     * Switch to the other half of the theme you are on.
+     *
+     * The family's own pair, not the two legacy ids: a reader on Tarnished
+     * Brass wants its light half, not "light". Through the config view's
+     * quick-mode path, which knows about custom themes with only one half and
+     * about the random-theme rotation.
+     */
+    _applyThemeHalf(wantsDark) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return null;
+        const stateId = `dark:half:${wantsDark ? 'dark' : 'light'}`;
+        if (dashboard.config?.setQuickMode) {
+            void dashboard.config.setQuickMode(wantsDark ? 'dark' : 'light');
+            return this._paletteRefresh(stateId);
+        }
+        const current = String(dashboard.settings.theme || 'dark');
+        const swapped = window.ThemeUtils?.getPairedThemeVariant?.(current, wantsDark);
+        const next = !swapped || swapped === current ? (wantsDark ? 'dark' : 'light') : swapped;
+        void this.themeCommandHandler.applyTheme(next);
+        return this._paletteRefresh(stateId);
     }
 
     handleTitleCommand(args) {

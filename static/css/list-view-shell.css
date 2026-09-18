@@ -6,8 +6,15 @@
  * mount() already stamps on every host replaces both; a future host (config)
  * gets it for free the moment it mounts this shell.
  */
+/*
+ * As wide as the page, not as wide as a column of its own.
+ *
+ * It was capped at 68rem while the header above it runs the width of the grid,
+ * so health and inbox sat in a narrower column than the bar that heads them.
+ * The dashboard sets the width; these follow it.
+ */
 .lvs-host {
-    max-width: min(100%, 68rem);
+    max-width: 100%;
     margin: 0 auto;
     width: 100%;
 }
@@ -62,15 +69,18 @@
     border-radius: var(--radius-5, 9px);
 }
 
+/* Sized from the reader's own text size rather than a fixed step: the band is
+   config's section heading too now, and a heading that ignores the font-size
+   setting is the one word on the page that does. 1.1rem at size M. */
 .lvs-title {
     margin: 0;
-    font-size: var(--text-lg);
+    font-size: calc(var(--font-size-text) * 1.257);
     font-weight: 500;
 }
 
 .lvs-description {
     margin: var(--space-1) 0 0;
-    font-size: var(--text-sm);
+    font-size: calc(var(--font-size-text) * 0.914);
     color: var(--text-secondary);
 }
 
@@ -212,7 +222,7 @@
 }
 
 .lvs-group-title {
-    font-size: var(--text-xs);
+    font-size: calc(var(--font-size-text) * 0.86);
     letter-spacing: 0.05em;
     color: var(--text-secondary);
     padding: 0 var(--space-2) var(--space-1);
@@ -230,7 +240,11 @@
     background: transparent;
     color: var(--text-secondary);
     font: inherit;
-    font-size: var(--text-sm);
+    /* The reader's own text size, which is what the rows beside it are set in:
+       --text-sm is a fixed step, so a rail written against it stayed put while
+       every other word on the page grew -- and at 0.8rem it read as a caption
+       rather than as the list you navigate by. */
+    font-size: var(--font-size-text);
     text-align: left;
     border-radius: var(--layout-radius-sm);
     cursor: pointer;
@@ -279,8 +293,19 @@
     /* layer-tokens.css: the sticky band above the row list. A row raises
        itself above this (--layer-row-raised) while its own menu is open, so
        a menu that opens upward across the header still draws whole. */
-    z-index: var(--layer-sticky-band, 5);
-    background: color-mix(in srgb, var(--text-primary) 5%, var(--background-primary));
+    /*
+     * Above the teaching popovers, not under them.
+     *
+     * config-setting-promo.css opens its card at z-index 1200, anchored to a
+     * control in the rail -- which is directly under this band. With the band
+     * on 5 the card covered the filter and the search box in it, and a pointer
+     * landed on the card instead: the controls were visible and unreachable.
+     */
+    z-index: calc(var(--layer-sticky-band, 5) + 1300);
+    /* The surface the rows and the tiles under it are drawn on, rather than a
+       grey of its own: the band is part of the same page, not a strip laid over
+       it. Same token config's panels use (--card-bg in config-view.css). */
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     /*
      * No margin under it.
      *
@@ -291,6 +316,29 @@
      * the last filter nudged the whole page down. The gap below already comes
      * from the padding-top on .lvs-rail and .lvs-main.
      */
+}
+
+/*
+ * Solid once the page is moving under it.
+ *
+ * At rest the band is 55% of the surface, which is what makes it read as part
+ * of the page rather than as a strip laid over it. That only holds while there
+ * is page under it: scroll, and rows and tiles pass behind the title, the
+ * filter and the search box, and the words in the band stop being readable.
+ *
+ * data-scrolled is written onto <body> by bindScrolledState() in
+ * dashboard-setup.js -- one fact about the window, so the inbox, health and
+ * config all answer to it. Back at the top, or after a reload, it is 55% again.
+ */
+body[data-scrolled="true"] .lvs-header {
+    background: color-mix(in srgb, var(--background-secondary) 96%, transparent);
+    border-bottom: 1px solid var(--hairline, var(--border-primary));
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+body.no-animations [data-scrolled] .lvs-header,
+body.no-animations .lvs-header {
+    transition: none;
 }
 
 /* The theme's own light, on the depths that have any. */
@@ -319,6 +367,30 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
 .lvs-header.is-collapsed .lvs-description { display: none; }
 .lvs-header.is-collapsed .lvs-crumb { display: inline; }
 
+/*
+ * The toolbar's own controls, themed like everything around them.
+ *
+ * A native <select> paints itself in the platform's colours unless it is told
+ * otherwise, so the sort and group pickers sat white on a page in the reader's
+ * theme. Same surface as the rows, same border, same face.
+ */
+.lvs-toolbar select,
+.lvs-toolbar input:not([type="checkbox"]):not([type="radio"]) {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-text) * 0.914);
+}
+
+.lvs-toolbar select:focus-visible,
+.lvs-toolbar input:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid var(--accent-primary));
+    outline-offset: 2px;
+}
+
 .lvs-action {
     padding: var(--space-1) var(--space-3);
     border: 1px solid var(--border-primary);
@@ -342,10 +414,12 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
     font-weight: 500;
 }
 
+/* The pair is one control, on the same surface as the field beside it. */
 .lvs-density {
     display: inline-flex;
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     overflow: hidden;
     margin-left: auto;
 }
@@ -360,7 +434,7 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
 }
 
 .lvs-density-btn[aria-pressed="true"] {
-    background: var(--background-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
     color: var(--text-primary);
 }
 

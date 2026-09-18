@@ -222,6 +222,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + M');
                     this.openMovePopoverForCurrent();
                     return;
                 }
@@ -229,6 +230,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + D');
                     this.openDeletePopoverForCurrent();
                     return;
                 }
@@ -236,6 +238,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + T');
                     this.openTagPopoverForCurrent();
                     return;
                 }
@@ -243,6 +246,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + C');
                     this.openCheckModePopoverForCurrent();
                     return;
                 }
@@ -253,6 +257,7 @@ class KeyboardNavigation {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + P');
                     this.togglePinForCurrent();
                     return;
                 }
@@ -274,6 +279,7 @@ class KeyboardNavigation {
                         e.preventDefault();
                         e.stopImmediatePropagation();
                         e.stopPropagation();
+                        window.nextdashRecordKey?.('Shift + E');
                     }
                     return;
                 }
@@ -1197,8 +1203,65 @@ class KeyboardNavigation {
         this.syncGridActiveDescendant();
     }
 
+    /**
+     * Letters the grid keeps for itself.
+     *
+     * j/k are the cursor, x ticks a row, g arms the jump chord. A bookmark
+     * whose shortcut is one of these is still reachable the way it always was
+     * -- open search and type it -- but on the grid the key does its own job,
+     * because a reader who is walking rows with j cannot have j mean "open the
+     * bookmark called jellyfin" halfway down the page.
+     */
+    static GRID_RESERVED_LETTERS = new Set(['j', 'k', 'x', 'g']);
+
+    /**
+     * A bookmark's own key, pressed while the cursor is on the grid.
+     *
+     * Shortcuts have always been search's: you open the panel, type the letter
+     * and it opens. On the grid the same letter opened the panel with the
+     * letter typed into it instead -- one more key and a panel in the way, for
+     * a bookmark the reader had already named. With the cursor on a row the
+     * letter opens the bookmark; with no cursor it still starts a search, which
+     * is what Escape leaves you with.
+     *
+     * @returns {boolean} whether the key was spent on a bookmark
+     */
+    _openShortcutFromGrid(key) {
+        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
+            return false;
+        }
+        const letter = key.toLowerCase();
+        if (KeyboardNavigation.GRID_RESERVED_LETTERS.has(letter)) {
+            return false;
+        }
+        const search = this.dashboard?.searchComponent;
+        const bookmark = search?.shortcuts?.get?.(letter);
+        if (!bookmark || !bookmark.url) {
+            return false;
+        }
+        // Through search's own opener: it records the open, honours Hypr mode
+        // and closes anything search has on screen, which is what a shortcut
+        // typed into the panel does.
+        search.openBookmark(bookmark);
+        return true;
+    }
+
+
     handleKeyPress(e) {
         const key = e.key;
+
+        // A bookmark's own key wins while the cursor is on the grid -- except
+        // the handful of letters the grid itself uses, which are checked inside.
+        if (
+            this._gridNavActive()
+            && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+            && !this._gPressed
+            && this._openShortcutFromGrid(key)
+        ) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
 
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {
@@ -1437,7 +1500,15 @@ class KeyboardNavigation {
                     this.dashboard.multiSelect.clear();
                     break;
                 }
-                this.clearSelection();
+                if (this.currentIndex >= 0) {
+                    // Without restoreFocus the cursor simply goes: handing
+                    // focus to the first row instead puts it straight back,
+                    // because focusin moves the cursor to whatever takes focus.
+                    this.clearSelection({ restoreFocus: false });
+                    break;
+                }
+                this.clearSelection({ restoreFocus: false });
+                this._escapeFallback();
                 break;
 
             case 'g':
@@ -1466,6 +1537,77 @@ class KeyboardNavigation {
                 break;
         }
     }
+
+    /**
+     * Escape with nothing left to close: home, then search.
+     *
+     * Every overlay in the dashboard answers Escape, and the key travels the
+     * whole chain when none of them is open (see the census at the top of this
+     * file) -- so on a bare grid it reached this file, cleared a cursor that was
+     * not there, and stopped. Two steps out of that dead end:
+     *
+     *   - On any page but the first, it is the way home, the same way Escape
+     *     leaves config or the inbox. `1` already goes there; this is the key
+     *     you press when you do not remember which page you are on.
+     *   - On the first page there is nowhere further out, so it opens search --
+     *     the thing you reach for when the dashboard in front of you is not
+     *     what you were looking for.
+     *
+     * Every other reading of Escape has already had its turn by the time this
+     * runs: a modal or an active search returns before handleKeyPress, the
+     * multi-select clears above, and a cursor on a row is dropped first.
+     */
+    _escapeFallback() {
+        const dash = this.dashboard;
+        if (!dash || dash.isBookmarksView?.() !== true) {
+            return;
+        }
+        // An inline edit is a thing on screen even though it is not an overlay:
+        // leaving the page under it would throw the text away.
+        if (dash.isInlineEditActive?.() || dash.isModalOpen?.() || dash.searchComponent?.isActive?.()) {
+            return;
+        }
+        const first = dash.pages?.[0];
+        if (first && !dash.samePageId?.(first.id, dash.currentPageId)) {
+            /*
+             * The ring goes with the page.
+             *
+             * closeSearch() hands focus back to #search-button, so the button
+             * keeps the focus ring long after the panel is gone -- and pressing
+             * Escape on a page while that ring sits in the header reads as "the
+             * key focused search" rather than "the key went home". Nothing on
+             * the header should hold focus once the page under it changes.
+             */
+            const dropHeaderFocus = () => {
+                const active = document.activeElement;
+                if (active && active !== document.body && active.closest?.('.section-controls')) {
+                    active.blur();
+                }
+            };
+            dropHeaderFocus();
+            // Through the same request a tab click makes, so an unsaved inline
+            // edit is confirmed and the history entry is written once. The
+            // second pass is for the header the navigation redraws underneath
+            // it, which can put the ring back on the button it rebuilt.
+            void Promise.resolve(dash.pageNav?.requestPageNavigation?.(first.id))
+                .then(dropHeaderFocus);
+            return;
+        }
+        /*
+         * Already home: the way out of the dashboard is the way into everything
+         * in it.
+         *
+         * Opened on the next turn of the loop, not here. This runs in the
+         * capture phase, and search.js has its own Escape listener further down
+         * the chain -- opening the panel inside the keystroke meant the same
+         * press closed it again, so the key did nothing at all.
+         */
+        setTimeout(() => {
+            if (dash.searchComponent?.isActive?.()) return;
+            dash.searchComponent?.openSearchInterface?.();
+        }, 0);
+    }
+
 
     /** Open the "name your category" row, if the dashboard can take it now. */
     _openCategoryAdd() {
@@ -1813,6 +1955,40 @@ class KeyboardNavigation {
         
         return bestMatch;
     }
+
+    /**
+     * Put the cursor back on the grid after an overlay closes.
+     *
+     * An overlay takes the selection with it when it opens (see
+     * _beginSearchSession in search.js, which clears it so the highlight does
+     * not sit under the panel), and handed focus back to the button it was
+     * opened from -- so closing search left the ring on a header icon and the
+     * next arrow key started from the top of the page again. The row you were
+     * on is where you were; the first row is where a reader starts.
+     *
+     * @param {number} [preferredIndex] the stop to go back to, if it is still there
+     * @returns {boolean} whether a stop took the cursor
+     */
+    focusRowAfterOverlay(preferredIndex) {
+        if (this.dashboard?.isBookmarksView?.() === false) {
+            return false;
+        }
+        this.updateNavigableElements();
+        if (!this.navigableElements.length) {
+            return false;
+        }
+        const wanted = Number(preferredIndex);
+        const index = Number.isFinite(wanted) && wanted >= 0
+            ? Math.min(wanted, this.navigableElements.length - 1)
+            : 0;
+        this.currentIndex = index;
+        // The cursor arrived by keyboard: the next arrow key continues from it
+        // rather than starting over.
+        this._selectionFromKeyboard = true;
+        this.highlightCurrentElement({ focus: true });
+        return true;
+    }
+
 
     highlightCurrentElement(options = {}) {
         const doFocus = options.focus !== false;

@@ -100,6 +100,8 @@
     let healthCertificates = {};
     const healthFacts = new Map();
     let healthFactsAt = 0;
+    /** When the server built the report these facts came from. */
+    let healthFactsGeneratedAt = 0;
 
     /*
      * The heartbeat, as a list of states and nothing else.
@@ -189,8 +191,16 @@
                     ratio: Number(entry?.monitorStats?.uptime7d?.ratio || 0),
                     samples: Number(entry?.monitorStats?.uptime7d?.samples || 0),
                 };
+            const day = rows
+                ? { ratio: Number(entry?.uptime24h || 0), samples: Number(entry?.uptime24hSamples || 0) }
+                : {
+                    ratio: Number(entry?.monitorStats?.uptime24h?.ratio || 0),
+                    samples: Number(entry?.monitorStats?.uptime24h?.samples || 0),
+                };
             const facts = {
                 monitor: Boolean(entry?.monitor),
+                uptime24h: day.samples > 0 ? day.ratio : null,
+                uptime24hSamples: day.samples,
                 uptime30d: samples > 0 ? ratio : null,
                 uptimeSamples: samples,
                 uptime7d: week.samples > 0 ? week.ratio : null,
@@ -210,6 +220,23 @@
             healthFacts.set(key, facts);
         });
         healthFactsAt = Date.now();
+        healthFactsGeneratedAt = Number(report?.generatedAt) || 0;
+    }
+
+    /**
+     * The fleet's last day, pooled the way the health view pools it: every
+     * monitor's samples counted together, so a monitor checked every minute
+     * weighs what its checks weigh. Null when no monitor has a sample yet.
+     */
+    function fleetUptime24h() {
+        let up = 0;
+        let total = 0;
+        healthFacts.forEach((facts) => {
+            if (!facts.monitor || !facts.uptime24hSamples) return;
+            up += facts.uptime24h * facts.uptime24hSamples;
+            total += facts.uptime24hSamples;
+        });
+        return total ? { ratio: up / total, samples: total } : null;
     }
 
     function getHealthFacts(url) {
@@ -248,5 +275,7 @@
         get certificates() { return healthCertificates; },
         get size() { return healthFacts.size; },
         get updatedAt() { return healthFactsAt; },
+        get generatedAt() { return healthFactsGeneratedAt; },
+        fleetUptime24h,
     };
 })();

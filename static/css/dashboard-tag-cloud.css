@@ -1,4 +1,4 @@
-/* Dashboard tag word cloud — / FAB + anchored modal (desktop / wide layout only) */
+/* Dashboard tag word cloud — the / action button's anchored modal (desktop / wide layout only) */
 
 .dashboard-tag-cloud-wrap {
     position: fixed;
@@ -18,21 +18,6 @@ body[data-show-tag-cloud-button="false"] #tag-cloud-toggle-btn,
     display: none !important;
 }
 
-/* / FAB — fixed like launcher / what's new; same palette as toolbar buttons */
-.tag-cloud-toggle-btn.search-button {
-    position: fixed;
-    z-index: 1002;
-    left: var(--corner-fab-edge);
-    bottom: calc(var(--corner-fab-edge) + var(--corner-fab-height) + var(--corner-fab-gap));
-    padding: var(--space-2, 0.62rem) var(--space-3, 0.82rem);
-    pointer-events: auto;
-}
-
-.tag-cloud-toggle-btn .search-button-icon {
-    animation: btnIconPulse 10.8s ease-in-out infinite;
-    animation-delay: 6.4s;
-}
-
 body.no-animations .tag-cloud-toggle-btn .search-button-icon {
     animation: none !important;
 }
@@ -44,45 +29,6 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
 
 .tag-cloud-toggle-btn.is-active .search-button-icon {
     color: var(--accent-primary);
-}
-
-.tag-cloud-toggle-btn[data-tooltip]::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    max-width: min(14rem, calc(100vw - 2 * var(--corner-fab-edge)));
-    white-space: normal;
-    text-align: center;
-    line-height: 1.35;
-    padding: var(--space-1, 0.28rem) var(--space-2, 0.5rem);
-    background: var(--background-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-3, 0.3rem);
-    color: var(--text-secondary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-controls) * 0.85);
-    font-weight: var(--font-weight-normal);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.15s ease, visibility 0.15s ease;
-    z-index: 1003;
-}
-
-.tag-cloud-toggle-btn[data-tooltip]:hover::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%);
-}
-
-@media (pointer: coarse) {
-    .tag-cloud-toggle-btn[data-tooltip]::after {
-        display: none;
-    }
 }
 
 /* Backdrop (click outside) */
@@ -394,27 +340,4 @@ body.no-animations .tag-cloud-wordcloud--live .tag-cloud-word {
     outline-offset: 2px;
     border-color: var(--accent-primary);
     color: var(--text-primary);
-}
-
-/* Dock corners */
-body[data-button-position="bottom-left"] .tag-cloud-toggle-btn.search-button {
-    left: auto;
-    right: var(--corner-fab-edge);
-}
-
-body[data-button-position="bottom-left"] .tag-cloud-modal {
-    transform-origin: bottom right;
-}
-
-body[data-button-position="bottom-right"] .tag-cloud-toggle-btn.search-button {
-    left: var(--corner-fab-edge);
-    right: auto;
-}
-
-body[data-button-position="bottom-right"] .tag-cloud-modal {
-    transform-origin: bottom left;
-}
-
-body[data-button-position="side-left"] .tag-cloud-modal {
-    transform-origin: top left;
 }

@@ -1,3 +1,98 @@
+/*
+ * Where a panel came from.
+ *
+ * A modal opened from a button in the header band starts at that button and
+ * settles into place, so the eye follows it instead of hunting for what just
+ * appeared. The origin is remembered on the way in -- the click, or the key
+ * that stands for the same control -- and read by whatever opens next, as long
+ * as it opens promptly: a panel drawn a second later has nothing to do with
+ * the last thing pressed.
+ *
+ * Two custom properties and one class; the movement itself is in modal.css, so
+ * `prefers-reduced-motion` and the no-animations setting can take it away
+ * without this file knowing about either.
+ */
+window.ModalOrigin = (() => {
+    const MAX_AGE_MS = 600;
+    let origin = null;
+
+    /** Remember the middle of an element as where the next panel comes from. */
+    function remember(element) {
+        if (!element || typeof element.getBoundingClientRect !== 'function') {
+            origin = null;
+            return;
+        }
+        const rect = element.getBoundingClientRect();
+        if (!rect.width && !rect.height) {
+            origin = null;
+            return;
+        }
+        origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, at: Date.now() };
+    }
+
+    /** Forget it: something else is opening, or nothing is. */
+    function clear() {
+        origin = null;
+    }
+
+    /**
+     * Point a panel at the origin, if there is a fresh one.
+     *
+     * The offset is from the panel's own centre, so the transform is the same
+     * whatever size the panel is and wherever it sits.
+     */
+    function applyTo(panel) {
+        if (!panel) return false;
+        panel.classList.remove('from-origin');
+        panel.style.removeProperty('--modal-origin-x');
+        panel.style.removeProperty('--modal-origin-y');
+        if (!origin || Date.now() - origin.at > MAX_AGE_MS) {
+            return false;
+        }
+        // Measured after the panel is laid out but before it is shown: at this
+        // point it already has its size, which is what the offset is against.
+        const rect = panel.getBoundingClientRect();
+        const centreX = rect.left + rect.width / 2;
+        const centreY = rect.top + rect.height / 2;
+        panel.style.setProperty('--modal-origin-x', `${Math.round(origin.x - centreX)}px`);
+        panel.style.setProperty('--modal-origin-y', `${Math.round(origin.y - centreY)}px`);
+        panel.classList.add('from-origin');
+        /*
+         * Read a layout property, so the browser keeps the starting state.
+         *
+         * The caller adds `.show` in the same tick. Without a flush between
+         * the two, style resolution happens once and the panel is simply born
+         * at its final transform -- the transition has nothing to run from,
+         * which is exactly what "no animation" looked like.
+         */
+        void panel.offsetWidth;
+        // One panel per press.
+        origin = null;
+        return true;
+    }
+
+    /*
+     * The band's own controls, caught on the way down.
+     *
+     * Delegated on the document in the capture phase: the buttons are rebuilt
+     * whenever the chrome settings change, and a listener per button would
+     * have to be rebuilt with them.
+     */
+    document.addEventListener('pointerdown', (e) => {
+        const control = e.target?.closest?.(
+            '.header-shortcuts .search-button, .header-actions .search-button,'
+            + ' .header-destinations a, .header-destinations button'
+        );
+        if (control) {
+            remember(control);
+        } else if (!e.target?.closest?.('.modal, #shortcut-search')) {
+            clear();
+        }
+    }, true);
+
+    return { remember, clear, applyTo };
+})();
+
 class Modal {
     constructor(language = null) {
         this.language = language;
@@ -272,6 +367,20 @@ class Modal {
             this.modalPanel.style.width = modalWidth;
         }
 
+        /*
+         * Opened from a control: start there.
+         *
+         * A panel that fades in at the centre leaves the reader looking for
+         * where it came from. Started from the button that was pressed, the
+         * eye follows it -- so the modal carries the offset to its origin as
+         * two custom properties and the CSS runs the 160ms back to zero.
+         *
+         * Only for a control in the header band: a modal opened from a row, a
+         * menu or a key has no single point to grow out of, and inventing one
+         * would point at the wrong place.
+         */
+        window.ModalOrigin?.applyTo?.(this.modalPanel);
+
         this.modal.classList.add('show');
         this.modal.setAttribute('aria-hidden', 'false');
         this._setBackgroundInert();
@@ -364,6 +473,10 @@ class Modal {
 
         if (this.modal) {
             this.modal.classList.remove('show');
+            // The origin belongs to one opening: closing with the class still
+            // on would send the panel back into a button that may not be the
+            // one it came from next time.
+            this.modalPanel?.classList.remove('from-origin');
             this.modal.setAttribute('aria-hidden', 'true');
             this._setBackgroundInert();
             if (this.activeModalClasses.length > 0) {

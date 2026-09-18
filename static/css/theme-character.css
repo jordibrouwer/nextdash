@@ -99,8 +99,11 @@ html[data-theme] body[data-depth="glass"] {
      * themakeuze is: wat tekst draagt om op te handelen staat op vaste grond,
      * en haalt zijn diepte uit zijn randen en zijn schaduw.
      */
+    /* Chrome draagt nauwelijks tekst, dus die trede mag het verst open: 62%
+       in plaats van 70%. De twee tredes eronder blijven waar ze staan, want
+       daar wordt wel gelezen. */
     --surface-glass-page: color-mix(in srgb,
-        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 70%), transparent);
+        var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 62%), transparent);
     --surface-glass-slab: color-mix(in srgb,
         var(--background-secondary) calc(var(--theme-surface-alpha, 1) * 88%), transparent);
     /* Vast, niet meeschalend: een theme mag zijn blokken zo dun maken als het
@@ -114,9 +117,51 @@ html[data-theme] body[data-depth="glass"] {
      * genoeg van over om zijn rand van de pagina te scheiden; meer zou over
      * zijn eigen tekst heen wassen.
      */
-    --glass-blur-page: var(--theme-surface-blur, 0px);
+    /*
+     * Licht valt de andere kant op als de pagina zelf licht is.
+     *
+     * Op een donker theme is wat doorschijnt donker, en dat mag iets opgetild:
+     * dan leest het vlak als glas met licht erachter. Op een licht theme is het
+     * wit, en optrekken wast de tekst weg -- daar hoort het juist iets omlaag.
+     * --ink-dir zegt welke van de twee (1 donker, -1 licht), dus dit rekent het
+     * uit in plaats van het per theme te herhalen: 1.06 tegen 0.98.
+     */
+    --glass-brightness: calc(1.02 + 0.04 * var(--ink-dir, 1));
+
+    --glass-blur-page: calc(var(--theme-surface-blur, 0px) * 1.25);
     --glass-blur-slab: calc(var(--theme-surface-blur, 0px) * 0.6);
     --glass-blur-overlay: calc(var(--theme-surface-blur, 0px) * 0.25);
+
+    /*
+     * Glas hangt, het ligt niet.
+     *
+     * De slagschaduw is dezelfde als die van rich, en dat leest als plastic:
+     * een doorzichtig vlak met een massieve schaduw eronder is geen glas maar
+     * een gekleurd plaatje. Zestig procent van de val, zodat het vlak nog los
+     * staat van de pagina zonder erop te drukken.
+     */
+    --surface-cast: 0 calc(1.2px * var(--theme-depth)) calc(6px * var(--theme-depth))
+        color-mix(in srgb, black calc(14% * var(--theme-depth)), transparent);
+
+    /*
+     * En iets om doorheen te kijken.
+     *
+     * Dit is waar glas op valt of staat: blur van een egale pagina levert niets
+     * op, dus zonder verloop achter de vlakken is doorzichtigheid alleen een
+     * lichtere kleur. De twee wolken die elke diepte al tekent staan hier
+     * sterker en krijgen een derde, laag in beeld, zodat een vlak halverwege de
+     * pagina ook iets te vertonen heeft.
+     */
+    --depth-wash:
+        radial-gradient(70rem 50rem at 10% -14%,
+            color-mix(in srgb, var(--accent-primary) calc(13% * var(--theme-depth)), transparent),
+            transparent 70%),
+        radial-gradient(58rem 40rem at 98% 4%,
+            color-mix(in srgb, var(--accent-warning) calc(9% * var(--theme-depth)), transparent),
+            transparent 70%),
+        radial-gradient(60rem 42rem at 40% 105%,
+            color-mix(in srgb, var(--accent-success) calc(7% * var(--theme-depth)), transparent),
+            transparent 72%);
 }
 
 /* ── De drie tredes, toegepast ──────────────────────────────────────────
@@ -127,18 +172,57 @@ html[data-theme] body[data-depth="glass"] {
 
 /* Chrome: knoppen, tabs, de balk. Weinig tekst, veel doorkijk. */
 html[data-theme] body[data-depth="glass"] :is(
-    .pages-link--icon .pages-link-anchor,
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
-    :not([data-button-position="side-left"]) .button-container,
+    /* De kop: de tabs, de chip en het actieblok zijn chrome zoals de knoppen
+       hierboven. Zonder deze regels stond het actieblok wel op glas en de
+       pagina's ernaast als kale omlijning -- twee materialen in een balk. */
+    .header-track .page-nav-btn,
+    .header-track .page-nav-overflow,
+    .header-shortcuts,
+    .header-destinations .health-link-anchor,
+    .header-destinations .config-link-anchor,
     .button-container,
     .search-button,
     .btn-group,
     .tag-cloud-toggle-btn.search-button
 ) {
-    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+}
+
+/* Kale kopknoppen zijn kaal: zonder vlak is er geen glas om door te kijken,
+   en de blur tekende toch een getinte doos achter elk icoon. Alleen "elk in
+   een eigen doos" houdt het glas. */
+html[data-theme] body[data-depth="glass"][data-header-buttons="plain"] .header-top :is(
+    .page-overview-header-btn,
+    .page-navigation,
+    .page-nav-btn,
+    .page-nav-overflow,
+    .header-shortcuts,
+    .dashboard-link-anchor,
+    .health-link-anchor,
+    .config-link-anchor,
+    .search-button,
+    .btn-group
+) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Ook onder "elk in een eigen doos" staan de acties en de paginatabs in de kop
+   kaal, dus zonder glas. Een dock aan de rand is wel een plaat en houdt het;
+   de segmented schaal is de plaat van de tabs en houdt het ook. */
+html[data-theme] body[data-depth="glass"]:not([data-action-bar="bottom"]):not([data-action-bar="left"]):not([data-action-bar="right"]) .header-top :is(
+    .header-shortcuts,
+    .search-button,
+    .btn-group
+),
+html[data-theme] body[data-depth="glass"] .header-top .header-track :is(.page-nav-btn, .page-nav-overflow),
+html[data-theme] body[data-depth="glass"]:not([data-page-switcher="segmented"]) .header-top .page-navigation {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 /* Blokken en rails: een lijst om te lezen, geen venster om door te kijken. */
@@ -151,13 +235,17 @@ html[data-theme] body[data-depth="glass"] :is(
     .quickstart-card,
     .inbox-item,
     .lvs-summary,
-    .lvs-group,
+    /* .lvs-group staat hier bewust niet: een rail is een lijst, geen plaat. Op
+       200px breed en tien rijen hoog leest de slagschaduw als een harde rand
+       met gloed langs beide zijden -- de rijen dragen hun eigen hover en hun
+       eigen actieve staat. Config's rail draagt dezelfde klassen, dus beide
+       zien er hetzelfde uit. */
     .lvs-filter,
     .health-view-item,
     .health-monitor-stat
 ) {
-    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 /* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
@@ -166,8 +254,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .search-container,
     .bookmark-form-modal-dialog
 ) {
-    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 /*
@@ -176,8 +264,8 @@ html[data-theme] body[data-depth="glass"] :is(
  * Hierboven worden --layout-surface en --background-modal doorzichtig, en dat
  * dekt de moderne layout, de modals en het zoekvenster. In classic komen de
  * opgetilde vlakken ergens anders vandaan: theme-depth.css schildert de
- * kaart-presets en het widgetlichaam rechtstreeks met --surface-1 en
- * --surface-2. Zonder deze regel bleef glas daar dus onzichtbaar, en dat is
+ * kaart-presets rechtstreeks met --surface-1 en --surface-2. Het
+ * widgetlichaam staat hieronder apart: het houdt de kleur van de pagina. Zonder deze regel bleef glas daar dus onzichtbaar, en dat is
  * precies de layout waar de default op staat.
  *
  * Het gaat op de achtergrond van die elementen en niet op --surface-2 zelf,
@@ -187,31 +275,60 @@ html[data-theme] body[data-depth="glass"] :is(
  *
  * Wat glas hier níet doet is de kaart-presets die geen vlak hebben er een
  * geven. Masonry en de standaardweergave tekenen bewust geen kaart; daar
- * blijft glas dus beperkt tot de widgets en de overlays. Doorzichtigheid is
+ * blijft glas dus beperkt tot de overlays. Doorzichtigheid is
  * een eigenschap van een vlak, en waar geen vlak is valt niets door te kijken.
  */
-html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category,
-html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category {
     background-color: color-mix(in srgb,
         var(--surface-2) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
 }
 
 html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {
     background-color: color-mix(in srgb,
         var(--surface-1) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+}
+
+/*
+ * Het widgetlichaam onder glas.
+ *
+ * Zelfde vlak als buiten glas -- de kleur van de pagina, een stap ernaast --
+ * maar doorschijnend en met blur, en met de lichte bovenrand die een ruit
+ * leesbaar maakt als ruit. De cellen erin gaan mee: een massieve cel op een
+ * doorzichtig vlak leest weer als een grijs blokje.
+ */
+html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+    background-color: color-mix(in srgb,
+        var(--dashboard-widget-surface) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    box-shadow: var(--edge-light), var(--surface-cast);
+}
+
+html[data-theme] body[data-depth="glass"] .dashboard-widget {
+    --dashboard-widget-cell: color-mix(in srgb,
+        var(--dashboard-widget-cell-solid) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
     html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category,
-    html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category,
-    html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+    html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {
         background-color: var(--surface-2);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+    }
+
+    html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
+        background-color: var(--dashboard-widget-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    html[data-theme] body[data-depth="glass"] .dashboard-widget {
+        --dashboard-widget-cell: var(--dashboard-widget-cell-solid);
     }
 }
 
@@ -254,7 +371,9 @@ html[data-theme] body:not([data-depth="flat"]) {
     --glow-y: calc(6px + 4px * var(--theme-glow-lift, 1));
     --glow-blur: calc(18px + 8px * var(--theme-glow-lift, 1));
     --glow-spread: calc(-6px - 6px * var(--theme-glow-lift, 1));
-    --glow-pct: calc(34% + 16% * var(--theme-glow-lift, 1));
+    /* Dezelfde knop als de bloom in theme-depth.css: één sterkte voor beide
+       gloeilagen, zodat "rustiger" niet op twee plekken apart hoeft. */
+    --glow-pct: calc((34% + 16% * var(--theme-glow-lift, 1)) * var(--glow-strength, 0));
 
     --surface-glow-ring:
         0 var(--glow-y) var(--glow-blur) var(--glow-spread)
@@ -267,7 +386,7 @@ html[data-theme] body:not([data-depth="flat"]) {
    --layout-shadow-* zijn die van de moderne layout. */
 
 html[data-theme] body:not([data-depth="flat"]) {
-    --edge-light: var(--edge-top), var(--surface-glow-ring);
+    --edge-light: var(--edge-top), var(--edge-side), var(--surface-glow-ring);
 }
 
 /* ── Gloed in classic ────────────────────────────────────────────────────
@@ -289,8 +408,10 @@ html[data-theme] body:not([data-depth="flat"]) :is(
     .config-tile,
     .config-panel,
     .config-choices,
+    .hub-tile,
+    .hub-card,
+    .hub-ill,
     .lvs-summary,
-    .lvs-group,
     .quickstart-card,
     .health-monitor-stat
 ) {
@@ -327,11 +448,9 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
         .config-tile,
     .config-panel,
     .config-choices,
-    .pages-link--icon .pages-link-anchor,
     .page-overview-header-btn,
     .page-navigation,
     .page-nav-btn[data-view-tab],
-    :not([data-button-position="side-left"]) .button-container,
     .search-button,
     .btn-group,
     .tag-cloud-toggle-btn.search-button,
@@ -342,7 +461,6 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
     .quickstart-card,
     .inbox-item,
     .lvs-summary,
-    .lvs-group,
     .lvs-filter,
     .health-view-item,
     .health-monitor-stat,
@@ -352,3 +470,5 @@ html[data-theme] body:not([data-depth="flat"]) .search-container {
         -webkit-backdrop-filter: none;
     }
 }
+
+

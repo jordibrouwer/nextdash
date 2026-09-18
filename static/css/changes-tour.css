@@ -1,0 +1,448 @@
+/*
+ * The "what has changed" tour: a step in the app modal, and the spotlight it
+ * casts on the real thing behind it.
+ *
+ * Shaped like the other walkthroughs (fresh, inbox, health): a progress line, a
+ * title, one small drawing made from the shapes of the real element, a short
+ * paragraph and a row of dots. What it adds is the choice row -- where a
+ * default moved, the step carries the setting -- and the two buttons that leave
+ * the window: Show me, which dims it, and Open, which goes somewhere.
+ */
+
+.changes-tour {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.55rem);
+    text-align: left;
+}
+
+.changes-tour-progress {
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+}
+
+.changes-tour-step-title {
+    margin: 0;
+    font-size: var(--font-size-heading, 1rem);
+    color: var(--text-primary);
+}
+
+.changes-tour-step-body {
+    margin: 0;
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+/* A key named in a step, drawn as a key. */
+.changes-tour-step-body kbd {
+    padding: 0.05rem 0.3rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-3, 4px);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: 0.88em;
+    white-space: nowrap;
+}
+
+/* ---- the drawings ---------------------------------------------------- */
+
+.changes-tour-art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 5.5rem;
+    padding: var(--space-3, 0.8rem);
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-5, 9px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small, 0.72rem);
+}
+
+.changes-tour-dim { color: var(--text-tertiary); }
+
+/* The header, with the tabs where they stand. */
+.changes-tour-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.8rem);
+    width: 100%;
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.7rem);
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-4, 7px);
+}
+
+.changes-tour-tabs {
+    display: flex;
+    gap: var(--space-1-5, 0.3rem);
+    margin-left: auto;
+}
+
+.changes-tour-tabs b,
+.changes-tour-tabs i {
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-3, 5px);
+    font-style: normal;
+    font-weight: normal;
+    color: var(--text-tertiary);
+}
+
+.changes-tour-tabs b {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
+}
+
+/* The page, with the bar at its right edge and the handle beside it. */
+.changes-tour-page {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.8rem);
+    width: 100%;
+    min-height: 4.5rem;
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-4, 7px);
+}
+
+.changes-tour-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+}
+
+.changes-tour-lines i {
+    height: 0.35rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.changes-tour-lines i:nth-child(2) { width: 70%; }
+.changes-tour-lines i:nth-child(3) { width: 45%; }
+
+.changes-tour-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-4, 7px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.changes-tour-rail i {
+    display: grid;
+    place-items: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 4px;
+    font-style: normal;
+    color: var(--text-tertiary);
+}
+
+.changes-tour-handle {
+    width: 0.5rem;
+    height: 2.4rem;
+    border-radius: 4px 0 0 4px;
+    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+
+/* Config's tiles, the workbench's three columns, a widget's figures. */
+.changes-tour-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.changes-tour-tiles i {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.3rem 0.4rem;
+    min-width: 0;
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-4, 6px);
+    font-style: normal;
+}
+
+.changes-tour-tiles b {
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: 0.92em;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.changes-tour-tiles em {
+    font-style: normal;
+    font-size: 0.85em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.changes-tour-bench {
+    display: flex;
+    gap: 0.4rem;
+    width: 100%;
+    height: 3.6rem;
+}
+
+.changes-tour-bench i {
+    display: flex;
+    flex-direction: column;
+    gap: 0.22rem;
+    min-width: 0;
+    padding: 0.3rem 0.35rem;
+    border: 1px solid var(--hairline, var(--border-primary));
+    border-radius: var(--radius-4, 6px);
+    font-style: normal;
+}
+
+/* The column's own name, then what stands in it: a tick, or a row. */
+.changes-tour-bench b {
+    font-weight: normal;
+    font-size: 0.85em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.changes-tour-bench s,
+.changes-tour-bench u {
+    height: 0.3rem;
+    border-radius: 2px;
+    text-decoration: none;
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.changes-tour-bench u.is-picked {
+    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.changes-tour-bench-filters { flex: 0 0 20%; }
+.changes-tour-bench-list { flex: 1; background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+.changes-tour-bench-edit { flex: 0 0 28%; }
+
+.changes-tour-widget {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.1rem var(--space-3, 0.9rem);
+    align-items: baseline;
+}
+
+.changes-tour-widget b {
+    font-size: 1.5em;
+    font-weight: normal;
+    color: var(--text-primary);
+}
+
+.changes-tour-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.changes-tour-tags i {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-style: normal;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.changes-tour-tags i.is-own {
+    background: none;
+    border: 1px dashed var(--hairline, var(--border-primary));
+    color: var(--text-tertiary);
+}
+
+.changes-tour-swatches {
+    display: flex;
+    gap: 0.6rem;
+}
+
+/*
+ * A theme card: a ground, a row of its accents, and for the lacquered one a
+ * lit band across the top and the badge the theme browser puts on it.
+ */
+.changes-tour-swatches i {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    width: 4.6rem;
+    height: 3.2rem;
+    padding: 0.35rem;
+    border-radius: var(--radius-5, 9px);
+    border: 1px solid var(--hairline, var(--border-primary));
+    overflow: hidden;
+    font-style: normal;
+}
+
+.changes-tour-chips {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.changes-tour-chips u {
+    flex: 1;
+    height: 0.45rem;
+    border-radius: 2px;
+    text-decoration: none;
+}
+
+.changes-tour-chips u:nth-child(1) { background: var(--accent-primary); }
+.changes-tour-chips u:nth-child(2) { background: var(--accent-success, var(--accent-primary)); }
+.changes-tour-chips u:nth-child(3) { background: var(--accent-warning, var(--accent-primary)); }
+
+.changes-tour-swatches i.is-gloss {
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, white 34%, transparent) 0%,
+            color-mix(in srgb, white 6%, transparent) 38%,
+            transparent 58%),
+        linear-gradient(160deg,
+            color-mix(in srgb, var(--accent-primary) 55%, transparent) 0%,
+            color-mix(in srgb, var(--accent-primary) 18%, var(--background-secondary)) 100%);
+}
+
+/* The badge the theme browser puts on a Gloss family. */
+.changes-tour-swatches i.is-gloss b {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.35rem;
+    padding: 0 0.28rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+    color: var(--text-primary);
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.02em;
+}
+
+.changes-tour-swatches i.is-light {
+    background: color-mix(in srgb, white 88%, var(--accent-primary));
+}
+
+.changes-tour-swatches i.is-dark {
+    background: color-mix(in srgb, black 82%, var(--accent-primary));
+}
+
+.changes-tour-done {
+    font-size: 1.8rem;
+    color: var(--accent-primary);
+}
+
+/* ---- the choice, and the two buttons that leave ---------------------- */
+
+.changes-tour-choice-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.35rem);
+}
+
+.changes-tour-choice-label {
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+.changes-tour-choices,
+.changes-tour-extra {
+    display: flex;
+    gap: var(--space-1-5, 0.35rem);
+    flex-wrap: wrap;
+}
+
+.changes-tour-choice,
+.changes-tour-extra-btn {
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.74rem);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.35rem);
+    cursor: pointer;
+}
+
+.changes-tour-choice[aria-pressed="true"] {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.changes-tour-dots {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.changes-tour-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--border-primary);
+}
+
+.changes-tour-dot.is-active { background: var(--accent-primary); }
+
+/* ---- Show me: the window steps aside and the real thing lights up ---- */
+
+body.changes-tour-peeking .modal-overlay {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+/*
+ * The sheet over the page while something on it is lit.
+ *
+ * Under the lit element and over everything else, so the thing being pointed
+ * at is visible and nothing on the dashboard can be pressed by accident. The
+ * dimming itself is the lit element's own outer shadow.
+ */
+.changes-tour-peek-guard {
+    position: fixed;
+    inset: 0;
+    z-index: 2150;
+    background: transparent;
+    cursor: default;
+}
+
+.changes-tour-lit {
+    position: relative;
+    z-index: 2200;
+    border-radius: var(--radius-5, 9px);
+    box-shadow: 0 0 0 3px var(--accent-primary), 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /*
+ * The sheet over the page while something on it is lit.
+ *
+ * Under the lit element and over everything else, so the thing being pointed
+ * at is visible and nothing on the dashboard can be pressed by accident. The
+ * dimming itself is the lit element's own outer shadow.
+ */
+.changes-tour-peek-guard {
+    position: fixed;
+    inset: 0;
+    z-index: 2150;
+    background: transparent;
+    cursor: default;
+}
+
+.changes-tour-lit { animation: changes-tour-pulse 1.1s ease-in-out 2; }
+}
+
+@keyframes changes-tour-pulse {
+    50% { box-shadow: 0 0 0 6px var(--accent-primary), 0 0 0 9999px rgba(0, 0, 0, 0.45); }
+}

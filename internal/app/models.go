@@ -405,6 +405,9 @@ type Settings struct {
 	WeatherRefreshMinutes           int    `json:"weatherRefreshMinutes"`
 	ShowConfigButton                bool   `json:"showConfigButton"`
 	ShowHealthDashboard             bool   `json:"showHealthDashboard"`
+	ShowPagesButton                 bool   `json:"showPagesButton"`
+	ShowInboxButton                 bool   `json:"showInboxButton"`
+	ShowDashboardButton             bool   `json:"showDashboardButton"`
 	ShowSearchButton                bool   `json:"showSearchButton"`
 	ShowAddBookmarkButton           bool   `json:"showAddBookmarkButton"`
 	ShowFindersButton               bool   `json:"showFindersButton"`
@@ -416,6 +419,15 @@ type Settings struct {
 	ShortcutTooltipsOffMigrated     bool   `json:"shortcutTooltipsOffMigrated,omitempty"`     // one-time: default the toolbar shortcut hints to off
 	ShortcutOpenModeInstantMigrated bool   `json:"shortcutOpenModeInstantMigrated,omitempty"` // one-time: undo v1.2.0's "Enter opens" default
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
+	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
+	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
+	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
+	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
+	ActionKeysOffMigrated           bool   `json:"actionKeysOffMigrated,omitempty"`           // one-time: key chips off for existing installs
+	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
+	HeaderClockClassicMigrated      bool   `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
+	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
+	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
 	ShowCollapseAllButton           bool   `json:"showCollapseAllButton"`
@@ -436,6 +448,17 @@ type Settings struct {
 	CustomTitle                     string `json:"customTitle"`                             // Custom page title
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
 	ShowPageNamesInTabs             bool   `json:"showPageNamesInTabs"`                     // Show page names in tabs instead of numbers
+	MaxPageTabs                     int    `json:"maxPageTabs"`                             // Page tabs shown in the header before a "+N" chip (3-9)
+	MaxHeaderActions                int    `json:"maxHeaderActions"`                        // Action buttons shown in the header before a "+N" button (0-9)
+	PageSwitcherTextMigrated        bool   `json:"pageSwitcherTextMigrated,omitempty"`      // one-time: the page switcher default moved from segmented to text
+	PageSwitcherClassicMigrated     bool   `json:"pageSwitcherClassicMigrated,omitempty"`   // one-time: the page switcher default moved from text to classic
+	HeaderClockPlacement            string `json:"headerClockPlacement"`                    // Where the clock and weather sit in the header: beside the name, or in a zone of their own
+	PageSwitcherStyle               string `json:"pageSwitcherStyle"`                       // How the page tabs are drawn: numbers beside the destinations, one segmented control, plain text, or a single button naming the page
+	ActionBarPosition               string `json:"actionBarPosition"`                       // Where the action buttons stand: in the header, a dock at the bottom, a column on either side, or one menu
+	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
+	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
+	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
+	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
 	EnableCustomFont                bool   `json:"enableCustomFont"`                        // Enable custom font
@@ -478,7 +501,6 @@ type Settings struct {
 	SortMethod                     string                       `json:"sortMethod,omitempty"`                     // Legacy global sort (migrated to per-category sortMode)
 	CategorySortModes              map[string]map[string]string `json:"categorySortModes,omitempty"`              // Per-page sort for uncategorized/orphan categories
 	CategorySortModesMigrated      bool                         `json:"categorySortModesMigrated"`                // Legacy sortMethod migrated to per-category modes
-	PreviewImagesStrippedMigrated  bool                         `json:"previewImagesStrippedMigrated"`            // Cached image taken off every bookmark; the preview cache owns media now
 	LayoutPreset                   string                       `json:"layoutPreset"`                             // Dashboard layout preset
 	/*
 	 * ThemeDepth is how much of a theme's depth treatment is drawn: the tint in
@@ -488,9 +510,24 @@ type Settings struct {
 	 * every one of these is measured against — somebody who liked the old look
 	 * has to be able to say so in one control rather than by not upgrading.
 	 *
-	 * flat | soft | rich. Empty means rich.
+	 * flat | soft | rich | glass. Empty means flat.
 	 */
 	ThemeDepth string `json:"themeDepth,omitempty"`
+
+	/*
+	 * GlowStrength is how much of the accent glow is drawn, on the depths that
+	 * draw one at all.
+	 *
+	 * Two layers answer to it: the ambient ring under a resting surface and
+	 * the state bloom on what is focused or selected. Both are the theme's own
+	 * accent, and on a saturated palette at rich or glass they carried far
+	 * enough to read as a halo -- which is decoration competing with the thing
+	 * it decorates.
+	 *
+	 * off | soft | full. Empty means off: the glow is an effect, and an effect
+	 * that ships on is one every reader has to find the switch for.
+	 */
+	GlowStrength string `json:"glowStrength,omitempty"`
 
 	/*
 	 * RowHighlight is how strongly a bookmark row lights up under the pointer
@@ -568,7 +605,6 @@ type Settings struct {
 	LauncherIconSize            string                     `json:"launcherIconSize"`                  // Launcher tile icon size: small, normal, large
 	CalendarUrl                 string                     `json:"calendarUrl"`                       // URL for calendar link in date popover (empty = hidden)
 	CalendarIcsUrl              string                     `json:"calendarIcsUrl"`                    // ICS feed address the Calendar widget reads (empty = widget shows nothing)
-	ButtonBarPosition           string                     `json:"buttonBarPosition"`                 // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
 	BackgroundOpacity           float64                    `json:"backgroundOpacity"`                 // Background opacity (0.0-1.0)
 	FontWeight                  string                     `json:"fontWeight"`                        // Font weight: normal, 600, bold
 	FontPreset                  string                     `json:"fontPreset"`                        // UI font preset: source-code-pro, jetbrains-mono, etc.
@@ -619,29 +655,20 @@ type Settings struct {
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
-	HealthCheckTimeoutSeconds      int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
-	QuickStart                     QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
-	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
-	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
-	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
-	ConfigStatsTourCompleted       bool                             `json:"configStatsTourCompleted"`
-	ConfigCategoriesTourCompleted  bool                             `json:"configCategoriesTourCompleted"`
-	ConfigTagsTourCompleted        bool                             `json:"configTagsTourCompleted"`
-	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
-	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
-	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	BackgroundType                 string                           `json:"backgroundType"`     // "auto", "none", "gradient", "image"
-	BackgroundGradient             string                           `json:"backgroundGradient"` // preset name used when type="gradient"
-	BackgroundImageUrl             string                           `json:"backgroundImageUrl"` // URL used when type="image"
-	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled                   bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
-	PasteDestination               string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls                bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems                  int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
+	HealthCheckTimeoutSeconds int                              `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	QuickStart                QuickStartState                  `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
+	BackgroundType            string                           `json:"backgroundType"`                      // "auto", "none", "gradient", "image"
+	BackgroundGradient        string                           `json:"backgroundGradient"`                  // preset name used when type="gradient"
+	BackgroundImageUrl        string                           `json:"backgroundImageUrl"`                  // URL used when type="image"
+	ThemeIconStyling          map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
+	PasteUrlQuickAdd          bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled              bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
+	PasteDestination          string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls           bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
+	InboxMaxItems             int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs       bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote   bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks       bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
 	/*
 	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
 	 *
@@ -714,9 +741,14 @@ type Settings struct {
 	ServerLogLevel string `json:"serverLogLevel,omitempty"`
 	// ActivityChannels are the JSON trail's channels. Empty means the
 	// environment's choice, and failing that the defaults (mutate, status).
-	ActivityChannels     []string `json:"activityChannels,omitempty"`
-	MonitorNotifyURL     string   `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
-	MonitorNotifyRetries int      `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	ActivityChannels []string `json:"activityChannels,omitempty"`
+	// ActivityOpenDetail is how much the open record carries: "off", "basic"
+	// or "full". Empty means the environment's choice, and failing that
+	// "basic" — exactly Phase 1's source/method, so turning this setting on
+	// for the first time changes nothing until it is actually moved.
+	ActivityOpenDetail   string `json:"activityOpenDetail,omitempty"`
+	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// MonitorNotifyPreset shapes the webhook body for a specific service instead
 	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
 	// existing webhook receiver built against the raw shape needs no migration.
@@ -830,10 +862,23 @@ const defaultHealthWidgetID = "w_000000000001"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "retro-crt-dark"
+const defaultThemeID = "tarnished-brass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "retro-crt-light"
+const defaultThemeLightID = "tarnished-brass-light"
+
+/*
+The look a fresh install opens on, beside its theme.
+
+Glass and a soft glow because Tarnished Brass is built for them -- its surfaces
+are meant to be seen through and its accent to carry a little light. Contrast
+stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
+is the theme's own.
+*/
+const (
+	defaultThemeDepth   = "glass"
+	defaultGlowStrength = "soft"
+)
 
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
@@ -862,7 +907,6 @@ func defaultThemeIconStyling() map[string]ThemeIconStylingEntry {
 // QuickStartState tracks first-run quick-start progress, persisted per-user in
 // settings JSON (not client localStorage) so it is consistent across devices.
 type QuickStartState struct {
-	SetupDone           bool `json:"setupDone"`           // Compact setup card finished or skipped
 	Dismissed           bool `json:"dismissed"`           // Checklist completed or dismissed
 	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
 	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)
@@ -1068,6 +1112,16 @@ type ThemeColors struct {
 	LabelTransform string `json:"labelTransform,omitempty"` // none | uppercase | lowercase
 	LabelSpacing   string `json:"labelSpacing,omitempty"`   // an em length, e.g. "0.14em"
 	LabelWeight    int    `json:"labelWeight,omitempty"`    // 400-800
+
+	// Sheen is how much light a raised surface catches, 0 to 1: a lit band
+	// across its top, a brighter top edge and a lift on hover. Unset is the
+	// faint wash every theme had before, so nothing changes until a theme
+	// asks. Only spent at rich and glass depth; flat stays flat.
+	Sheen float64 `json:"sheen,omitempty"`
+
+	// Backdrop names one of the nine backdrop recipes (see themeBackdropRecipes
+	// in handlers.go). Empty keeps the one the theme's id hashes to.
+	Backdrop string `json:"backdrop,omitempty"`
 }
 
 type Store interface {
@@ -1308,110 +1362,132 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTime:                  true,
 			TimeFormat:                "24h",
 			DateFormat:                "short-slash",
-			ShowWeatherWithDate:       false,
+			ShowWeatherWithDate:       true,
 			WeatherSource:             "manual",
 			WeatherLocation:           "",
 			WeatherUnit:               "celsius",
 			WeatherRefreshMinutes:     30,
 			ShowConfigButton:          true,
 			ShowHealthDashboard:       true,
+			ShowPagesButton:           true,
+			ShowInboxButton:           true,
+			ShowDashboardButton:       true,
 			ShowSearchButton:          true,
 			ShowAddBookmarkButton:     true,
-			// Off by default. Search, commands and finders are one panel
-			// that changes mode on a key, and the pills at its foot say so
-			// now -- three doors to one room is two more than it needs. The
-			// search button stays, and both of these are one toggle away in
-			// Config for anyone who wants them back.
-			ShowFindersButton:            false,
-			ShowCommandsButton:           false,
-			ShowRecentButton:             false,
-			ShowTagCloudButton:           true,
-			ShowSearchFlowBanner:         true,
-			ShowCheatSheetButton:         false,
-			ShowCollapseAllButton:        false,
-			ShowStatus:                   true,
-			ColorizeStatus:               true,
-			MonitorEmphasis:              "problems",
-			ShowPing:                     true,
-			ShowStatusLoading:            false,
-			SkipFastPing:                 false,
-			StatusOfflineRetries:         3,
-			StatusOfflineRetryDelayMs:    450,
-			StatusRecheckIntervalMinutes: 5,
-			GlobalShortcuts:              true,
-			HyprMode:                     false,
-			LockLayout:                   false,
-			AnimationsEnabled:            true,
-			EnableCustomTitle:            false,
-			CustomTitle:                  "",
-			ShowPageInTitle:              false,
-			ShowPageNamesInTabs:          false,
-			EnableCustomFavicon:          false,
-			CustomFaviconPath:            "",
-			EnableCustomFont:             false,
-			CustomFontPath:               "",
-			Language:                     "en",
-			InterleaveMode:               false,
-			ShowPageTabs:                 true,
-			AlwaysCollapseCategories:     false,
-			HideEmptyCategories:          true,
-			EnableFuzzySuggestions:       false,
-			FuzzySuggestionsStartWith:    false,
-			KeepSearchOpenWhenEmpty:      false,
-			ShowIcons:                    true,
-			ShowLinkPreviewCards:         true,
-			LinkPreviewMode:              "hover",
-			ShowSiteNews:                 true,
-			PreviewImageCacheMB:          200,
-			LinkPreviewHoverDelayMs:      250,
-			ShowShortcuts:                true,
-			ShortcutDisplay:              shortcutDisplayAlways,
-			ShowPinIcon:                  false,
-			ShowNoteIcon:                 true,
-			IncludeFindersInSearch:       true,
-			SortMethod:                   "order",
-			LayoutPreset:                 "default",
-			ThemeDepth:                   "rich",
-			RowHighlight:                 "subtle",
-			InkGap:                       defaultInkGap,
-			ThemeBackdrop:                "on",
-			BackgroundPattern:            "auto",
-			BackgroundOpacity:            1,
-			FontWeight:                   "normal",
-			FontPreset:                   "source-code-pro",
-			AutoDarkMode:                 false,
-			ShowSmartRecentCollection:    false,
-			ShowSmartTodayCollection:     true,
-			ShowSmartStaleCollection:     false,
-			ShowSmartMostUsedCollection:  false,
-			SmartTodayLimit:              8,
-			SmartRecentLimit:             50,
-			SmartMostUsedLimit:           25,
-			CategoryItemLimit:            15,
-			QuickStart:                   QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
-			SmartTodayWorkKeywords:       "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
-			SmartTodayEveningKeywords:    "youtube,spotify,netflix,reddit",
-			SmartTodayWeekendKeywords:    "news,weather,maps",
-			SmartTodayPageIds:            []int{},
-			SmartRecentPageIds:           []int{},
-			SmartStalePageIds:            []int{},
-			SmartMostUsedPageIds:         []int{},
-			SmartAddedPageIds:            []int{},
-			SmartAddedLimit:              20,
-			RowTagsMax:                   2,
-			FaviconRefreshPolicy:         "on-save",
-			OnboardingCompleted:          false,
-			ConfigBookmarksSort:          defaultConfigBookmarksSort,
-			ConfigBookmarksPageSize:      defaultConfigBookmarksPageSize,
-			BookmarkDeleteConfirmFrom:    defaultBookmarkDeleteConfirmFrom,
-			DefaultMonitorIntervalMin:    defaultMonitorIntervalMinutes,
-			NewBookmarkCheckMode:         defaultNewBookmarkCheckMode,
-			BookmarkStaleDays:            defaultBookmarkStaleDays,
-			BookmarkArchiveUrl:           defaultBookmarkArchiveUrl,
-			ThemeIconStyling:             defaultThemeIconStyling(),
-			PackedColumns:                true,
-			DefaultCategorySpread:        false,
-			CategorySpreadResetScope:     defaultCategorySpreadResetScope,
+			// Every action button is on: the bar is where a new reader
+			// learns what the keys do, and the fold keeps a full bar tidy.
+			ShowFindersButton:               true,
+			ShowCommandsButton:              true,
+			ShowRecentButton:                true,
+			ShowTagCloudButton:              true,
+			ShowSearchFlowBanner:            true,
+			ShowCheatSheetButton:            true,
+			ShowCollapseAllButton:           true,
+			ShowStatus:                      true,
+			ColorizeStatus:                  true,
+			MonitorEmphasis:                 "problems",
+			ShowPing:                        true,
+			ShowStatusLoading:               false,
+			SkipFastPing:                    false,
+			StatusOfflineRetries:            3,
+			StatusOfflineRetryDelayMs:       450,
+			StatusRecheckIntervalMinutes:    5,
+			GlobalShortcuts:                 true,
+			HyprMode:                        false,
+			LockLayout:                      false,
+			AnimationsEnabled:               true,
+			EnableCustomTitle:               false,
+			CustomTitle:                     "",
+			ShowPageInTitle:                 false,
+			ShowPageNamesInTabs:             false,
+			MaxPageTabs:                     defaultMaxPageTabs,
+			MaxHeaderActions:                defaultMaxHeaderActions,
+			HeaderClockPlacement:            defaultHeaderClockPlacement,
+			PageSwitcherStyle:               defaultPageSwitcherStyle,
+			HeaderButtonStyle:               defaultHeaderButtonStyle,
+			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
+			ActionBarEnabled:                true,
+			ShowActionKeys:                  true,
+			EnableCustomFavicon:             false,
+			CustomFaviconPath:               "",
+			EnableCustomFont:                false,
+			CustomFontPath:                  "",
+			Language:                        "en",
+			InterleaveMode:                  false,
+			ShowPageTabs:                    true,
+			AlwaysCollapseCategories:        false,
+			HideEmptyCategories:             true,
+			EnableFuzzySuggestions:          false,
+			FuzzySuggestionsStartWith:       false,
+			KeepSearchOpenWhenEmpty:         false,
+			ShowIcons:                       true,
+			ShowLinkPreviewCards:            true,
+			LinkPreviewMode:                 "hover",
+			ShowSiteNews:                    true,
+			PreviewImageCacheMB:             200,
+			LinkPreviewHoverDelayMs:         250,
+			ShowShortcuts:                   true,
+			ShortcutDisplay:                 shortcutDisplayAlways,
+			ShowPinIcon:                     false,
+			ShowNoteIcon:                    true,
+			IncludeFindersInSearch:          true,
+			SortMethod:                      "order",
+			LayoutPreset:                    "default",
+			ThemeDepth:                      defaultThemeDepth,
+			GlowStrength:                    defaultGlowStrength,
+			SurfaceDefaultsMigrated:         true,
+			DepthDefaultFlatMigrated:        true,
+			LauncherDefaultsMigrated:        true,
+			ActionButtonsAllOnMigrated:      true,
+			ActionKeysOffMigrated:           true,
+			ActionBarRightMigrated:          true,
+			HeaderClockClassicMigrated:      true,
+			FirstRunInstall:                 true,
+			HeaderActionsDefaultTwoMigrated: true,
+			PageSwitcherTextMigrated:        true,
+			PageSwitcherClassicMigrated:     true,
+			TagCloudDefaultMigrated:         true,
+			RowHighlight:                    "subtle",
+			InkGap:                          defaultInkGap,
+			ThemeBackdrop:                   "on",
+			BackgroundPattern:               "auto",
+			BackgroundOpacity:               1,
+			FontWeight:                      "normal",
+			FontPreset:                      "source-code-pro",
+			AutoDarkMode:                    false,
+			ShowSmartRecentCollection:       false,
+			ShowSmartTodayCollection:        true,
+			ShowSmartStaleCollection:        false,
+			ShowSmartMostUsedCollection:     false,
+			SmartTodayLimit:                 8,
+			SmartRecentLimit:                50,
+			SmartMostUsedLimit:              25,
+			CategoryItemLimit:               15,
+			QuickStart:                      QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
+			SmartTodayWorkKeywords:          "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
+			SmartTodayEveningKeywords:       "youtube,spotify,netflix,reddit",
+			SmartTodayWeekendKeywords:       "news,weather,maps",
+			SmartTodayPageIds:               []int{},
+			SmartRecentPageIds:              []int{},
+			SmartStalePageIds:               []int{},
+			SmartMostUsedPageIds:            []int{},
+			SmartAddedPageIds:               []int{},
+			SmartAddedLimit:                 20,
+			RowTagsMax:                      2,
+			FaviconRefreshPolicy:            "on-save",
+			OnboardingCompleted:             false,
+			ConfigBookmarksSort:             defaultConfigBookmarksSort,
+			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
+			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
+			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
+			BookmarkStaleDays:               defaultBookmarkStaleDays,
+			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
+			ThemeIconStyling:                defaultThemeIconStyling(),
+			PackedColumns:                   true,
+			DefaultCategorySpread:           false,
+			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
 			// Was omitted here while both other Settings constructions set it,
 			// so a fresh install was served "" for a field whose documented
 			// default is "none". Harmless to the rendering, which treats an
@@ -1420,7 +1496,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			// install nobody had touched.
 			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
-			ButtonBarPosition:              "bottom-right",
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",
@@ -2824,6 +2899,112 @@ const (
 	defaultCategorySpreadResetScope  = "page"
 )
 
+// How many page tabs the header draws before the rest collapse into a "+N"
+// chip. The strip fits on one line by measuring widths, but a tab labelled with
+// a bare number is a third of the width of one labelled with a name -- so width
+// alone let the same header carry four tabs or ten depending on an unrelated
+// toggle. This is the count that holds either way.
+const (
+	defaultMaxPageTabs = 4
+	minPageTabs        = 3
+	maxPageTabsCap     = 9
+)
+
+// Where the clock and the weather sit in the header.
+//
+// Beside the name they are the second thing read and the column holds both on
+// two lines; in a zone of their own they stand between the name and the pages
+// with room for a larger face. Both are the same two lines -- this is where
+// they are drawn, not what they say.
+/*
+How many actions the header shows before it folds the rest away.
+
+The bar holds up to nine buttons and most readers use three or four of
+them. Past this many the rest go behind one control that says how many it
+holds -- the same bargain the page tabs make with their "+N" chip, and for
+the same reason: a row of nine identical glyphs is a row nobody reads.
+
+Zero is a real answer: every action behind the one control.
+*/
+const (
+	minHeaderActions        = 0
+	maxHeaderActionsCap     = 9
+	defaultMaxHeaderActions = 2
+)
+
+const (
+	headerClockBesideName = "beside-name"
+	headerClockOwnZone    = "own-zone"
+	// The way it was drawn before the header was merged into one row: the
+	// clock and the weather on a line of their own, with the view's name in
+	// large type under them.
+	headerClockClassic          = "classic"
+	defaultHeaderClockPlacement = headerClockClassic
+)
+
+/*
+How the pages are drawn in the middle of the header.
+
+Three weights for the same control. Segmented is one shell with the pages as
+flat segments inside it -- a single box in the band rather than one box per
+page. Text drops the box entirely and marks the page you are on with the
+underline the destinations use. Compact is one button naming the page you are
+on, with the panel behind it for the rest.
+
+What they share: the same tabs, the same keys, the same panel on `,`. This is
+how much room the switcher takes, not what it can do.
+*/
+/*
+How the header's controls are drawn.
+
+Plain is the header as it was before the three-zone draft: bare glyphs on the
+band, with a 2px rule under the one you are on and nothing around any of them.
+Plated is the draft's own answer: every control in a box of its own, on the
+theme's glass surface, with an edge and a cast.
+
+One answer for all three groups -- the page tabs, the actions and the
+destinations -- because a header with two of them plated and one bare reads as
+a mistake rather than as a choice.
+*/
+/*
+Where the action buttons stand.
+
+The header carried them beside the pages and the destinations, and with six or
+seven of them the band read as clutter. They can stand in a dock at the bottom
+(the old button bar's place), in a column on either side, or behind one menu
+in the header. Every install starts with a column on the right that slides
+into its edge after two seconds: out of the page's way, and back the moment
+the pointer touches that edge. An install that predates this default is moved
+there once (see ActionBarRightMigrated).
+*/
+const (
+	actionBarHeader         = "header"
+	actionBarBottom         = "bottom"
+	actionBarLeft           = "left"
+	actionBarRight          = "right"
+	actionBarMenu           = "menu"
+	defaultActionBarFresh   = actionBarRight
+	defaultActionBarUpgrade = actionBarRight
+	// An unknown stored value falls back to where the actions always were.
+	fallbackActionBar = actionBarHeader
+	// Seconds before the default right column slides away.
+	defaultActionBarAutoHide = 2
+)
+
+const (
+	headerButtonsPlain       = "plain"
+	headerButtonsPlated      = "plated"
+	defaultHeaderButtonStyle = headerButtonsPlain
+)
+
+const (
+	pageSwitcherSegmented    = "segmented"
+	pageSwitcherText         = "text"
+	pageSwitcherCompact      = "compact"
+	pageSwitcherClassic      = "classic"
+	defaultPageSwitcherStyle = pageSwitcherClassic
+)
+
 // categorySpreadResetScopes are the reaches "turn spreading off" offers.
 var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
@@ -2910,6 +3091,52 @@ func clampBookmarkSettings(s *Settings) {
 		if s.AutoBackupIntervalDays > 30 {
 			s.AutoBackupIntervalDays = 30
 		}
+	}
+	// Anything the view does not draw reads as the default, the way every other
+	// named choice in this file does.
+	switch s.HeaderClockPlacement {
+	case headerClockBesideName, headerClockOwnZone, headerClockClassic:
+	default:
+		s.HeaderClockPlacement = defaultHeaderClockPlacement
+	}
+	switch s.PageSwitcherStyle {
+	case pageSwitcherClassic, pageSwitcherSegmented, pageSwitcherText, pageSwitcherCompact:
+	default:
+		s.PageSwitcherStyle = defaultPageSwitcherStyle
+	}
+	switch s.ActionBarPosition {
+	case actionBarHeader, actionBarBottom, actionBarLeft, actionBarRight, actionBarMenu:
+	default:
+		s.ActionBarPosition = fallbackActionBar
+	}
+	switch s.ActionBarAutoHideSeconds {
+	case 0, 2, 5, 10, 30:
+	default:
+		s.ActionBarAutoHideSeconds = 0
+	}
+	switch s.HeaderButtonStyle {
+	case headerButtonsPlain, headerButtonsPlated:
+	default:
+		s.HeaderButtonStyle = defaultHeaderButtonStyle
+	}
+	// Zero is what an older settings file carries, not a choice: there is no
+	// header without tabs, so it means "never set" and takes the default.
+	if s.MaxPageTabs == 0 {
+		s.MaxPageTabs = defaultMaxPageTabs
+	}
+	if s.MaxPageTabs < minPageTabs {
+		s.MaxPageTabs = minPageTabs
+	}
+	if s.MaxPageTabs > maxPageTabsCap {
+		s.MaxPageTabs = maxPageTabsCap
+	}
+	// Unlike the tabs, zero is a choice here -- a header with every action
+	// folded away. "Never set" is decided on load, from the missing key.
+	if s.MaxHeaderActions < minHeaderActions {
+		s.MaxHeaderActions = minHeaderActions
+	}
+	if s.MaxHeaderActions > maxHeaderActionsCap {
+		s.MaxHeaderActions = maxHeaderActionsCap
 	}
 	if s.RowTagsMax < 1 {
 		s.RowTagsMax = 1
@@ -3297,136 +3524,162 @@ func (fs *FileStore) GetSettings() Settings {
 	if err != nil {
 		// Return default settings if file doesn't exist
 		settings := Settings{
-			CurrentPage:                    1,
-			Theme:                          defaultThemeID,
-			OpenInNewTab:                   true,
-			AnalyticsOptIn:                 false,
-			EnableSessionTips:              true,
-			EnableTagSuggestionNotice:      true,
-			EnableHealthReviewNotice:       true,
-			ShowShortcutTooltips:           false,
-			ShowGridKeyLegend:              true,
-			ShortcutOpenMode:               "instant",
-			RememberScrollPosition:         true,
-			DetectSoftNotFound:             true,
-			ColumnsPerRow:                  3,
-			FontSize:                       "m",
-			ShowTitle:                      true,
-			ShowDate:                       true,
-			ShowTime:                       true,
-			TimeFormat:                     "24h",
-			DateFormat:                     "short-slash",
-			ShowWeatherWithDate:            false,
-			WeatherSource:                  "manual",
-			WeatherLocation:                "",
-			WeatherUnit:                    "celsius",
-			WeatherRefreshMinutes:          30,
-			ShowConfigButton:               true,
-			ShowHealthDashboard:            true,
-			ShowSearchButton:               true,
-			ShowAddBookmarkButton:          true,
-			ShowFindersButton:              false,
-			ShowCommandsButton:             false,
-			ShowRecentButton:               true,
-			ShowSearchFlowBanner:           true,
-			ShowCheatSheetButton:           true,
-			ShowCollapseAllButton:          false,
-			ShowStatus:                     true,
-			ColorizeStatus:                 true,
-			MonitorEmphasis:                "problems",
-			ShowPing:                       true,
-			ShowStatusLoading:              false,
-			SkipFastPing:                   false,
-			StatusOfflineRetries:           3,
-			StatusOfflineRetryDelayMs:      450,
-			StatusRecheckIntervalMinutes:   5,
-			GlobalShortcuts:                true,
-			HyprMode:                       false,
-			LockLayout:                     false,
-			AnimationsEnabled:              true,
-			EnableCustomTitle:              false,
-			CustomTitle:                    "",
-			ShowPageInTitle:                false,
-			ShowPageNamesInTabs:            false,
-			EnableCustomFavicon:            false,
-			CustomFaviconPath:              "",
-			EnableCustomFont:               false,
-			CustomFontPath:                 "",
-			Language:                       "en",
-			InterleaveMode:                 false,
-			ShowPageTabs:                   true,
-			AlwaysCollapseCategories:       false,
-			HideEmptyCategories:            true,
-			EnableFuzzySuggestions:         false,
-			FuzzySuggestionsStartWith:      false,
-			KeepSearchOpenWhenEmpty:        false,
-			ShowIcons:                      true,
-			ShowLinkPreviewCards:           true,
-			LinkPreviewMode:                "hover",
-			ShowSiteNews:                   true,
-			PreviewImageCacheMB:            200,
-			LinkPreviewHoverDelayMs:        250,
-			ShowShortcuts:                  true,
-			ShortcutDisplay:                shortcutDisplayAlways,
-			ShowPinIcon:                    false,
-			ShowNoteIcon:                   true,
-			IncludeFindersInSearch:         true,
-			BackgroundOpacity:              1,
-			FontWeight:                     "normal",
-			FontPreset:                     "source-code-pro",
-			AutoDarkMode:                   false,
-			ShowSmartRecentCollection:      false,
-			ShowSmartTodayCollection:       true,
-			ShowSmartStaleCollection:       false,
-			SmartTodayLimit:                8,
-			SmartRecentLimit:               50,
-			SmartStaleLimit:                50,
-			CategoryItemLimit:              15,
-			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
-			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
-			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
-			SmartTodayWeekendKeywords:      "news,weather,maps",
-			SmartTodayPageIds:              []int{},
-			SmartRecentPageIds:             []int{},
-			SmartStalePageIds:              []int{},
-			SmartAddedPageIds:              []int{},
-			SmartAddedLimit:                20,
-			RowTagsMax:                     2,
-			FaviconRefreshPolicy:           "on-save",
-			ConfigBookmarksSort:            defaultConfigBookmarksSort,
-			ConfigBookmarksPageSize:        defaultConfigBookmarksPageSize,
-			BookmarkDeleteConfirmFrom:      defaultBookmarkDeleteConfirmFrom,
-			DefaultMonitorIntervalMin:      defaultMonitorIntervalMinutes,
-			NewBookmarkCheckMode:           defaultNewBookmarkCheckMode,
-			BookmarkStaleDays:              defaultBookmarkStaleDays,
-			BookmarkArchiveUrl:             defaultBookmarkArchiveUrl,
-			LayoutPreset:                   "default",
-			ThemeDepth:                     "rich",
-			RowHighlight:                   "subtle",
-			InkGap:                         defaultInkGap,
-			ThemeBackdrop:                  "on",
-			BackgroundPattern:              "auto",
-			DensityMode:                    "compact",
-			CategorySpacing:                "balanced",
-			SideMargin:                     "balanced",
-			PackedColumns:                  true,
-			DefaultCategorySpread:          false,
-			CategorySpreadResetScope:       defaultCategorySpreadResetScope,
-			BackgroundType:                 "none",
-			BackgroundGradient:             "",
-			BackgroundImageUrl:             "",
-			ThemeIconStyling:               defaultThemeIconStyling(),
-			PasteUrlQuickAdd:               true,
-			InboxEnabled:                   true,
-			PasteDestination:               "ask",
-			InboxDedupeUrls:                true,
-			InboxMaxItems:                  500,
-			InboxShowInPageTabs:            true,
-			InboxDeleteAfterPromote:        true,
-			AllowLocalBookmarks:            true,
-			AutoBackupEnabled:              true,
-			HealthAutoRecheckEnabled:       false,
-			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
+			CurrentPage:                     1,
+			Theme:                           defaultThemeID,
+			OpenInNewTab:                    true,
+			AnalyticsOptIn:                  false,
+			EnableSessionTips:               true,
+			EnableTagSuggestionNotice:       true,
+			EnableHealthReviewNotice:        true,
+			ShowShortcutTooltips:            false,
+			ShowGridKeyLegend:               true,
+			ShortcutOpenMode:                "instant",
+			RememberScrollPosition:          true,
+			DetectSoftNotFound:              true,
+			ColumnsPerRow:                   3,
+			FontSize:                        "m",
+			ShowTitle:                       true,
+			ShowDate:                        true,
+			ShowTime:                        true,
+			TimeFormat:                      "24h",
+			DateFormat:                      "short-slash",
+			ShowWeatherWithDate:             true,
+			WeatherSource:                   "manual",
+			WeatherLocation:                 "",
+			WeatherUnit:                     "celsius",
+			WeatherRefreshMinutes:           30,
+			ShowConfigButton:                true,
+			ShowHealthDashboard:             true,
+			ShowPagesButton:                 true,
+			ShowInboxButton:                 true,
+			ShowDashboardButton:             true,
+			ShowSearchButton:                true,
+			ShowAddBookmarkButton:           true,
+			ShowFindersButton:               true,
+			ShowCommandsButton:              true,
+			ShowRecentButton:                true,
+			ShowTagCloudButton:              true,
+			ShowSearchFlowBanner:            true,
+			ShowCheatSheetButton:            true,
+			ShowCollapseAllButton:           true,
+			ShowStatus:                      true,
+			ColorizeStatus:                  true,
+			MonitorEmphasis:                 "problems",
+			ShowPing:                        true,
+			ShowStatusLoading:               false,
+			SkipFastPing:                    false,
+			StatusOfflineRetries:            3,
+			StatusOfflineRetryDelayMs:       450,
+			StatusRecheckIntervalMinutes:    5,
+			GlobalShortcuts:                 true,
+			HyprMode:                        false,
+			LockLayout:                      false,
+			AnimationsEnabled:               true,
+			EnableCustomTitle:               false,
+			CustomTitle:                     "",
+			ShowPageInTitle:                 false,
+			ShowPageNamesInTabs:             false,
+			MaxPageTabs:                     defaultMaxPageTabs,
+			MaxHeaderActions:                defaultMaxHeaderActions,
+			HeaderClockPlacement:            defaultHeaderClockPlacement,
+			PageSwitcherStyle:               defaultPageSwitcherStyle,
+			HeaderButtonStyle:               defaultHeaderButtonStyle,
+			ActionBarPosition:               defaultActionBarFresh,
+			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
+			ActionBarEnabled:                true,
+			ShowActionKeys:                  true,
+			EnableCustomFavicon:             false,
+			CustomFaviconPath:               "",
+			EnableCustomFont:                false,
+			CustomFontPath:                  "",
+			Language:                        "en",
+			InterleaveMode:                  false,
+			ShowPageTabs:                    true,
+			AlwaysCollapseCategories:        false,
+			HideEmptyCategories:             true,
+			EnableFuzzySuggestions:          false,
+			FuzzySuggestionsStartWith:       false,
+			KeepSearchOpenWhenEmpty:         false,
+			ShowIcons:                       true,
+			ShowLinkPreviewCards:            true,
+			LinkPreviewMode:                 "hover",
+			ShowSiteNews:                    true,
+			PreviewImageCacheMB:             200,
+			LinkPreviewHoverDelayMs:         250,
+			ShowShortcuts:                   true,
+			ShortcutDisplay:                 shortcutDisplayAlways,
+			ShowPinIcon:                     false,
+			ShowNoteIcon:                    true,
+			IncludeFindersInSearch:          true,
+			BackgroundOpacity:               1,
+			FontWeight:                      "normal",
+			FontPreset:                      "source-code-pro",
+			AutoDarkMode:                    false,
+			ShowSmartRecentCollection:       false,
+			ShowSmartTodayCollection:        true,
+			ShowSmartStaleCollection:        false,
+			SmartTodayLimit:                 8,
+			SmartRecentLimit:                50,
+			SmartStaleLimit:                 50,
+			CategoryItemLimit:               15,
+			QuickStart:                      QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
+			SmartTodayWorkKeywords:          "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
+			SmartTodayEveningKeywords:       "youtube,spotify,netflix,reddit",
+			SmartTodayWeekendKeywords:       "news,weather,maps",
+			SmartTodayPageIds:               []int{},
+			SmartRecentPageIds:              []int{},
+			SmartStalePageIds:               []int{},
+			SmartAddedPageIds:               []int{},
+			SmartAddedLimit:                 20,
+			RowTagsMax:                      2,
+			FaviconRefreshPolicy:            "on-save",
+			ConfigBookmarksSort:             defaultConfigBookmarksSort,
+			ConfigBookmarksPageSize:         defaultConfigBookmarksPageSize,
+			BookmarkDeleteConfirmFrom:       defaultBookmarkDeleteConfirmFrom,
+			DefaultMonitorIntervalMin:       defaultMonitorIntervalMinutes,
+			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
+			BookmarkStaleDays:               defaultBookmarkStaleDays,
+			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
+			LayoutPreset:                    "default",
+			ThemeDepth:                      defaultThemeDepth,
+			GlowStrength:                    defaultGlowStrength,
+			SurfaceDefaultsMigrated:         true,
+			DepthDefaultFlatMigrated:        true,
+			LauncherDefaultsMigrated:        true,
+			ActionButtonsAllOnMigrated:      true,
+			ActionKeysOffMigrated:           true,
+			ActionBarRightMigrated:          true,
+			HeaderClockClassicMigrated:      true,
+			FirstRunInstall:                 true,
+			HeaderActionsDefaultTwoMigrated: true,
+			PageSwitcherTextMigrated:        true,
+			PageSwitcherClassicMigrated:     true,
+			TagCloudDefaultMigrated:         true,
+			RowHighlight:                    "subtle",
+			InkGap:                          defaultInkGap,
+			ThemeBackdrop:                   "on",
+			BackgroundPattern:               "auto",
+			DensityMode:                     "compact",
+			CategorySpacing:                 "balanced",
+			SideMargin:                      "balanced",
+			PackedColumns:                   true,
+			DefaultCategorySpread:           false,
+			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
+			BackgroundType:                  "none",
+			BackgroundGradient:              "",
+			BackgroundImageUrl:              "",
+			ThemeIconStyling:                defaultThemeIconStyling(),
+			PasteUrlQuickAdd:                true,
+			InboxEnabled:                    true,
+			PasteDestination:                "ask",
+			InboxDedupeUrls:                 true,
+			InboxMaxItems:                   500,
+			InboxShowInPageTabs:             true,
+			InboxDeleteAfterPromote:         true,
+			AllowLocalBookmarks:             true,
+			AutoBackupEnabled:               true,
+			HealthAutoRecheckEnabled:        false,
+			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			// Set explicitly rather than left to the clamp, which would normalise
 			// them on read anyway: a stored 0 / "" reads as a setting nobody
 			// chose, and config compares against the documented default.
@@ -3446,6 +3699,45 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// Zero is a choice for this one, so an absent key is how an older
+		// file says it never answered.
+		if _, ok := rawSettings["actionBarPosition"]; !ok {
+			settings.ActionBarPosition = defaultActionBarUpgrade
+		}
+		// The bar was always drawn before this switch existed.
+		if _, ok := rawSettings["actionBarEnabled"]; !ok {
+			settings.ActionBarEnabled = true
+		}
+		/*
+		 * A settings file that never answered the look questions.
+		 *
+		 * Not the same as an upgrade: the migrations below move an install that
+		 * answered them under an older default, and each leaves its marker. A
+		 * file with the marker but without the key is an incomplete one -- hand
+		 * written, half restored, or written by a build that did not know the
+		 * setting -- and it gets what a fresh install gets rather than the zero
+		 * value, which for a depth is no depth at all.
+		 */
+		if _, ok := rawSettings["theme"]; !ok {
+			settings.Theme = defaultThemeID
+		}
+		// Both markers: without the flat one this is an install from before the
+		// depth ladder, which the migration below moves to flat on purpose.
+		if _, ok := rawSettings["themeDepth"]; !ok && settings.SurfaceDefaultsMigrated && settings.DepthDefaultFlatMigrated {
+			settings.ThemeDepth = defaultThemeDepth
+		}
+		if _, ok := rawSettings["glowStrength"]; !ok && settings.SurfaceDefaultsMigrated {
+			settings.GlowStrength = defaultGlowStrength
+		}
+		if _, ok := rawSettings["themeBackdrop"]; !ok {
+			settings.ThemeBackdrop = "on"
+		}
+		if _, ok := rawSettings["backgroundPattern"]; !ok {
+			settings.BackgroundPattern = "auto"
+		}
+		if _, ok := rawSettings["maxHeaderActions"]; !ok {
+			settings.MaxHeaderActions = defaultMaxHeaderActions
 		}
 		// Absent for everyone until this setting existed, and the button it
 		// controls was visible all that time. Defaulting to false would take it
@@ -3555,6 +3847,17 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.ShowHealthDashboard = true
 		if _, ok := rawSettings["showConfigButton"]; !ok {
 			settings.ShowConfigButton = true
+		}
+		// Both predate no settings file: a stored file written before they
+		// existed means nobody chose, and the header drew them, so on.
+		if _, ok := rawSettings["showPagesButton"]; !ok {
+			settings.ShowPagesButton = true
+		}
+		if _, ok := rawSettings["showInboxButton"]; !ok {
+			settings.ShowInboxButton = true
+		}
+		if _, ok := rawSettings["showDashboardButton"]; !ok {
+			settings.ShowDashboardButton = true
 		}
 		if _, ok := rawSettings["showIcons"]; !ok {
 			settings.ShowIcons = true
@@ -3739,7 +4042,148 @@ func (fs *FileStore) GetSettings() Settings {
 		switch settings.ThemeDepth {
 		case "flat", "soft", "rich", "glass":
 		default:
-			settings.ThemeDepth = "rich"
+			settings.ThemeDepth = "flat"
+		}
+		switch settings.GlowStrength {
+		case "off", "soft", "full":
+		default:
+			settings.GlowStrength = "off"
+		}
+		/*
+		 * The three Surfaces answers, set once for everybody.
+		 *
+		 * New installs get them from the defaults above; an install that
+		 * predates the glow dial has no answer at all, and one that has been
+		 * running since before the depth ladder has whichever answer it drifted
+		 * to. This puts all three on the same footing — backdrop on, glow off,
+		 * depth rich — and then never touches them again, so a reader who
+		 * changes one keeps it.
+		 */
+		if !settings.SurfaceDefaultsMigrated {
+			settings.ThemeBackdrop = "on"
+			settings.GlowStrength = "off"
+			settings.ThemeDepth = "flat"
+			settings.SurfaceDefaultsMigrated = true
+			settings.DepthDefaultFlatMigrated = true
+		}
+		/*
+		 * And the depth again, once.
+		 *
+		 * The pass above shipped with rich. Flat is the answer now: no tint in
+		 * the greys, no raised surfaces, no wash behind the page -- the theme's
+		 * colours and nothing drawn on top of them. An install that already
+		 * took the first pass has to be moved on as well, and only once, so it
+		 * gets a marker of its own rather than re-running the whole block.
+		 */
+		if !settings.DepthDefaultFlatMigrated {
+			settings.ThemeDepth = "flat"
+			settings.DepthDefaultFlatMigrated = true
+		}
+		/*
+		 * Four buttons that became modes.
+		 *
+		 * Tags, recents and the cheat sheet are standing in the search panel
+		 * now, and the pages button opens the panel the page tabs already are.
+		 * Each keeps its key and each keeps its toggle in Config -- this only
+		 * moves the answer for readers who never chose one, and only once, so
+		 * switching a button back on sticks.
+		 */
+		if !settings.LauncherDefaultsMigrated {
+			// The tag-cloud pass above turns its button on for an install that
+			// predates it; this one is later and says where the tags live now,
+			// so it also closes that pass off rather than fighting it on every
+			// load.
+			settings.TagCloudDefaultMigrated = true
+			settings.ShowTagCloudButton = false
+			settings.ShowRecentButton = false
+			settings.ShowCheatSheetButton = false
+			settings.ShowPagesButton = false
+			settings.LauncherDefaultsMigrated = true
+		}
+		/*
+		 * Every action button on, once.
+		 *
+		 * The buttons left the bar for the search panel's modes, and a reader
+		 * who never learnt the keys lost the only thing that named them. They
+		 * are all on again; a button switched off after this stays off.
+		 */
+		if !settings.ActionButtonsAllOnMigrated {
+			settings.ShowAddBookmarkButton = true
+			settings.ShowSearchButton = true
+			settings.ShowCommandsButton = true
+			settings.ShowFindersButton = true
+			settings.ShowTagCloudButton = true
+			settings.ShowRecentButton = true
+			settings.ShowPagesButton = true
+			settings.ShowCollapseAllButton = true
+			settings.ShowCheatSheetButton = true
+			settings.ActionButtonsAllOnMigrated = true
+		}
+		/*
+		 * Key chips off, once, for a dashboard that already existed.
+		 *
+		 * Every action button came back on at the same time, and a bar of
+		 * nine buttons each with its chip is a lot to meet on upgrade. The
+		 * keys still work, and resting on a button shows its key. A fresh
+		 * install starts with the chips on (see the constructors above); a
+		 * reader who turns them on after this keeps them.
+		 */
+		if !settings.ActionKeysOffMigrated {
+			settings.ShowActionKeys = false
+			settings.ActionKeysOffMigrated = true
+		}
+		/*
+		 * The action bar to the right column, sliding after two seconds, once.
+		 *
+		 * The same default a fresh install starts with. A position or delay
+		 * chosen after this is kept.
+		 */
+		if !settings.ActionBarRightMigrated {
+			settings.ActionBarPosition = actionBarRight
+			settings.ActionBarAutoHideSeconds = defaultActionBarAutoHide
+			settings.ActionBarRightMigrated = true
+		}
+		/*
+		 * The clock and the weather onto a line of their own, once.
+		 *
+		 * Beside the view's name they shared a row with the page tabs and the
+		 * actions, and on a narrow window that row gave up the weather first --
+		 * the part of it that changes. The same default a fresh install starts
+		 * with; a placement chosen after this is kept.
+		 */
+		if !settings.HeaderClockClassicMigrated {
+			settings.HeaderClockPlacement = headerClockClassic
+			settings.HeaderClockClassicMigrated = true
+		}
+		/*
+		 * Two actions before "+N", not four.
+		 *
+		 * Four was the default every install was written with, so a stored 4
+		 * is almost always the default rather than an answer. It moves to the
+		 * new default once; a 4 chosen afterwards stays.
+		 */
+		if !settings.HeaderActionsDefaultTwoMigrated {
+			if settings.MaxHeaderActions == 4 {
+				settings.MaxHeaderActions = defaultMaxHeaderActions
+			}
+			settings.HeaderActionsDefaultTwoMigrated = true
+		}
+		// Segmented was the switcher every install was written with; text is
+		// the default now, and a stored segmented moves once.
+		if !settings.PageSwitcherTextMigrated {
+			if settings.PageSwitcherStyle == pageSwitcherSegmented || settings.PageSwitcherStyle == "" {
+				settings.PageSwitcherStyle = pageSwitcherText
+			}
+			settings.PageSwitcherTextMigrated = true
+		}
+		// Classic -- the numbers beside the destinations -- is the default
+		// now. Text was the default until then, so a stored text moves once;
+		// segmented and compact were chosen and stay.
+		if !settings.PageSwitcherClassicMigrated {
+			if settings.PageSwitcherStyle == pageSwitcherText || settings.PageSwitcherStyle == "" {
+				settings.PageSwitcherStyle = pageSwitcherClassic
+			}
+			settings.PageSwitcherClassicMigrated = true
 		}
 		switch settings.RowHighlight {
 		case "subtle", "strong":
@@ -3776,9 +4220,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// of the bookmarks instead of floating over them. Only for a file that
 		// does not name a position -- anyone who chose one has the key, and
 		// this leaves their choice alone.
-		if _, ok := rawSettings["buttonBarPosition"]; !ok || (settings.ButtonBarPosition != "bottom" && settings.ButtonBarPosition != "bottom-left" && settings.ButtonBarPosition != "bottom-right" && settings.ButtonBarPosition != "side-left" && settings.ButtonBarPosition != "side-right") {
-			settings.ButtonBarPosition = "bottom-right"
-		}
 		if _, ok := rawSettings["dateFormat"]; !ok || settings.DateFormat == "" {
 			settings.DateFormat = "short-slash"
 		}
@@ -3788,6 +4229,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["timeFormat"]; !ok || (settings.TimeFormat != "24h" && settings.TimeFormat != "12h") {
 			settings.TimeFormat = "24h"
 		}
+		// Absent means an install from before the weather line, not a request
+		// for one: a fresh install starts with it on (see the constructors
+		// above), an upgrade keeps the dashboard it had.
 		if _, ok := rawSettings["showWeatherWithDate"]; !ok {
 			settings.ShowWeatherWithDate = false
 		}
@@ -3940,6 +4384,17 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
+			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
+			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
+			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
+			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
+			settings.ActionKeysOffMigrated = settings.ActionKeysOffMigrated || stored.ActionKeysOffMigrated
+			settings.ActionBarRightMigrated = settings.ActionBarRightMigrated || stored.ActionBarRightMigrated
+			settings.HeaderClockClassicMigrated = settings.HeaderClockClassicMigrated || stored.HeaderClockClassicMigrated
+			settings.FirstRunInstall = settings.FirstRunInstall || stored.FirstRunInstall
+			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
+			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
+			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated
 			settings.IncludeFindersInSearchMigrated = settings.IncludeFindersInSearchMigrated || stored.IncludeFindersInSearchMigrated
 			settings.BraveFinderSeededMigrated = settings.BraveFinderSeededMigrated || stored.BraveFinderSeededMigrated
 		}
@@ -4097,6 +4552,36 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"retro-crt-mk2-light": {Name: "Retro CRT Mk II [light]", TextPrimary: "#082410", TextSecondary: "#1F5B2E", TextTertiary: "#3D7A4C", BackgroundPrimary: "#F3FAF3", BackgroundSecondary: "#E6F3E7", BackgroundDots: "#D2E8D5", BackgroundModal: "rgba(243, 250, 243, 0.93)", BorderPrimary: "#BEDCC2", BorderSecondary: "#D8ECDA", AccentPrimary: "#1B7A38", AccentSuccess: "#1B7A38", AccentWarning: "#7A6B00", AccentError: "#B03040", SurfaceAlpha: 0.9, SurfaceGlow: 0.5, RadiusScale: 0.05, LabelTransform: "uppercase", LabelSpacing: "0.14em", LabelWeight: 700},
 		"porcelain-dark":      {Name: "Porcelain [dark]", TextPrimary: "#F2EFE8", TextSecondary: "#C2BDB2", TextTertiary: "#8C877C", BackgroundPrimary: "#16150F", BackgroundSecondary: "#1F1E17", BackgroundDots: "#2A2820", BackgroundModal: "rgba(22, 21, 15, 0.92)", BorderPrimary: "#332F26", BorderSecondary: "#25231C", AccentPrimary: "#7FC0AC", AccentSuccess: "#7FC0AC", AccentWarning: "#D6A75A", AccentError: "#D97070", SurfaceGlow: -1, RadiusScale: 0.8, LabelSpacing: "0.01em", LabelWeight: 600},
 		"porcelain-light":     {Name: "Porcelain [light]", TextPrimary: "#22201C", TextSecondary: "#56524A", TextTertiary: "#8B857A", BackgroundPrimary: "#FBFAF7", BackgroundSecondary: "#F1EFE9", BackgroundDots: "#E4E1D8", BackgroundModal: "rgba(251, 250, 247, 0.93)", BorderPrimary: "#E2DED4", BorderSecondary: "#EDEAE2", AccentPrimary: "#2F6F5E", AccentSuccess: "#2F6F5E", AccentWarning: "#9A6B1F", AccentError: "#A33A3A", SurfaceGlow: -1, RadiusScale: 0.8, LabelSpacing: "0.01em", LabelWeight: 600},
+
+		/*
+		 * Gloss: themes that catch the light.
+		 *
+		 * Every other family is matte: a flat palette with, at most, a glow
+		 * around it. These set `sheen`, so their surfaces carry a lit band and
+		 * a brighter top edge, and they pair it with saturated accents, glass
+		 * and a glow -- lacquer rather than paint. "Gloss" leads each name so
+		 * they sort together and say what they are in every picker.
+		 */
+		"gloss-obsidian-mirror-dark":  {Name: "Gloss Obsidian [dark]", TextPrimary: "#EEF4FA", TextSecondary: "#AFC0D2", TextTertiary: "#7F93AA", BackgroundPrimary: "#07090D", BackgroundSecondary: "#0F141C", BackgroundDots: "#18202B", BackgroundModal: "rgba(7, 9, 13, 0.9)", BorderPrimary: "#243041", BorderSecondary: "#18212D", AccentPrimary: "#5CE1FF", AccentSuccess: "#3EE6A6", AccentWarning: "#FFC857", AccentError: "#FF6B8A", SurfaceAlpha: 0.55, SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.9, LabelWeight: 600},
+		"gloss-obsidian-mirror-light": {Name: "Gloss Obsidian [light]", TextPrimary: "#0E1620", TextSecondary: "#3A4A5C", TextTertiary: "#56677A", BackgroundPrimary: "#F3F7FB", BackgroundSecondary: "#E7EEF6", BackgroundDots: "#D5E0EC", BackgroundModal: "rgba(243, 247, 251, 0.92)", BorderPrimary: "#C3D1E0", BorderSecondary: "#DCE5EF", AccentPrimary: "#0A6E94", AccentSuccess: "#0B7A50", AccentWarning: "#8A5A00", AccentError: "#B82C4A", SurfaceAlpha: 0.62, SurfaceBlur: 18, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.7, LabelWeight: 600},
+		"gloss-liquid-chrome-dark":    {Name: "Gloss Chrome [dark]", TextPrimary: "#F2F4F7", TextSecondary: "#BCC2CC", TextTertiary: "#8E95A1", BackgroundPrimary: "#0C0D10", BackgroundSecondary: "#16181D", BackgroundDots: "#22252C", BackgroundModal: "rgba(12, 13, 16, 0.9)", BorderPrimary: "#30343C", BorderSecondary: "#20232A", AccentPrimary: "#C9D4E3", AccentSuccess: "#7FD1B9", AccentWarning: "#E8C170", AccentError: "#F07A7A", SurfaceAlpha: 0.7, SurfaceBlur: 16, SurfaceGlow: 0.6, RadiusScale: 1.2, Sheen: 1, LabelWeight: 600},
+		"gloss-liquid-chrome-light":   {Name: "Gloss Chrome [light]", TextPrimary: "#15171B", TextSecondary: "#464B54", TextTertiary: "#62686F", BackgroundPrimary: "#F5F6F8", BackgroundSecondary: "#EBEDF1", BackgroundDots: "#DADDE3", BackgroundModal: "rgba(245, 246, 248, 0.92)", BorderPrimary: "#C9CDD5", BorderSecondary: "#E0E3E8", AccentPrimary: "#434E60", AccentSuccess: "#2A7355", AccentWarning: "#855C00", AccentError: "#B03636", SurfaceAlpha: 0.7, SurfaceBlur: 14, SurfaceGlow: 0.3, RadiusScale: 1.2, Sheen: 0.8, LabelWeight: 600},
+		"gloss-candy-lacquer-dark":    {Name: "Gloss Candy [dark]", TextPrimary: "#FFEFF3", TextSecondary: "#F2B8C6", TextTertiary: "#C48B99", BackgroundPrimary: "#12060A", BackgroundSecondary: "#1E0B12", BackgroundDots: "#2C121C", BackgroundModal: "rgba(18, 6, 10, 0.9)", BorderPrimary: "#3E1A27", BorderSecondary: "#2A111B", AccentPrimary: "#FF4D7A", AccentSuccess: "#45E0A0", AccentWarning: "#FFB547", AccentError: "#FF5A5A", SurfaceAlpha: 0.72, SurfaceBlur: 14, SurfaceGlow: 1, RadiusScale: 1.5, Sheen: 0.95, LabelWeight: 600},
+		"gloss-candy-lacquer-light":   {Name: "Gloss Candy [light]", TextPrimary: "#2A0A14", TextSecondary: "#6B2A3C", TextTertiary: "#834455", BackgroundPrimary: "#FFF5F7", BackgroundSecondary: "#FDE8EE", BackgroundDots: "#F8D2DE", BackgroundModal: "rgba(255, 245, 247, 0.92)", BorderPrimary: "#F1BFCD", BorderSecondary: "#F8DCE4", AccentPrimary: "#B8143F", AccentSuccess: "#18704B", AccentWarning: "#835400", AccentError: "#A8231C", SurfaceAlpha: 0.7, SurfaceBlur: 12, SurfaceGlow: 0.5, RadiusScale: 1.5, Sheen: 0.8, LabelWeight: 600},
+		"gloss-amber-resin-dark":      {Name: "Gloss Amber [dark]", TextPrimary: "#FFF3DE", TextSecondary: "#F0CF9A", TextTertiary: "#BF9A6A", BackgroundPrimary: "#120C04", BackgroundSecondary: "#1D1408", BackgroundDots: "#2A1D0C", BackgroundModal: "rgba(18, 12, 4, 0.9)", BorderPrimary: "#3D2A12", BorderSecondary: "#2A1D0C", AccentPrimary: "#FFB23E", AccentSuccess: "#9BD86A", AccentWarning: "#FFD166", AccentError: "#FF7A59", SurfaceAlpha: 0.6, SurfaceBlur: 20, SurfaceGlow: 1, RadiusScale: 1.2, Sheen: 0.85, LabelWeight: 600},
+		"gloss-amber-resin-light":     {Name: "Gloss Amber [light]", TextPrimary: "#2B1A05", TextSecondary: "#5E4012", TextTertiary: "#76531E", BackgroundPrimary: "#FFF8EC", BackgroundSecondary: "#FBEFD9", BackgroundDots: "#F2DFBC", BackgroundModal: "rgba(255, 248, 236, 0.92)", BorderPrimary: "#E6CE9E", BorderSecondary: "#F2E3C4", AccentPrimary: "#955A08", AccentSuccess: "#37701A", AccentWarning: "#835400", AccentError: "#A8361B", SurfaceAlpha: 0.66, SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.2, Sheen: 0.75, LabelWeight: 600},
+		"gloss-emerald-enamel-dark":   {Name: "Gloss Emerald [dark]", TextPrimary: "#E8FFF4", TextSecondary: "#A8E3C7", TextTertiary: "#78B89A", BackgroundPrimary: "#04110C", BackgroundSecondary: "#0A1C15", BackgroundDots: "#11291F", BackgroundModal: "rgba(4, 17, 12, 0.9)", BorderPrimary: "#1B3D2F", BorderSecondary: "#11291F", AccentPrimary: "#2EE89A", AccentSuccess: "#2EE89A", AccentWarning: "#F5C84C", AccentError: "#FF6B6B", AccentInfo: "#E3C06A", SurfaceAlpha: 0.7, SurfaceBlur: 16, SurfaceGlow: 1, RadiusScale: 1.1, Sheen: 0.85, LabelWeight: 600},
+		"gloss-emerald-enamel-light":  {Name: "Gloss Emerald [light]", TextPrimary: "#06261A", TextSecondary: "#245440", TextTertiary: "#3A6A56", BackgroundPrimary: "#F1FBF6", BackgroundSecondary: "#E2F5EB", BackgroundDots: "#CBEBDB", BackgroundModal: "rgba(241, 251, 246, 0.92)", BorderPrimary: "#B3DEC8", BorderSecondary: "#D4EEE0", AccentPrimary: "#0A7046", AccentSuccess: "#0A7046", AccentWarning: "#835A00", AccentError: "#A8231C", AccentInfo: "#7A5A00", SurfaceAlpha: 0.68, SurfaceBlur: 14, SurfaceGlow: 0.5, RadiusScale: 1.1, Sheen: 0.75, LabelWeight: 600},
+		"gloss-sapphire-night-dark":   {Name: "Gloss Sapphire [dark]", TextPrimary: "#EAF0FF", TextSecondary: "#AFC0F2", TextTertiary: "#8093CC", BackgroundPrimary: "#050A1A", BackgroundSecondary: "#0B1330", BackgroundDots: "#131E45", BackgroundModal: "rgba(5, 10, 26, 0.9)", BorderPrimary: "#1F2E62", BorderSecondary: "#141F48", AccentPrimary: "#6A9DFF", AccentSuccess: "#3FD9A6", AccentWarning: "#FFC14D", AccentError: "#FF6384", AccentInfo: "#9FD8FF", SurfaceAlpha: 0.58, SurfaceBlur: 22, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.9, LabelWeight: 600},
+		"gloss-sapphire-night-light":  {Name: "Gloss Sapphire [light]", TextPrimary: "#0B1638", TextSecondary: "#2F3F75", TextTertiary: "#4A5990", BackgroundPrimary: "#F2F5FF", BackgroundSecondary: "#E4EAFD", BackgroundDots: "#CFD9FA", BackgroundModal: "rgba(242, 245, 255, 0.92)", BorderPrimary: "#B9C7F2", BorderSecondary: "#D6DFFA", AccentPrimary: "#1F4CC4", AccentSuccess: "#0D7050", AccentWarning: "#835800", AccentError: "#B02A48", SurfaceAlpha: 0.64, SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.75, LabelWeight: 600},
+		"gloss-neon-tide-dark":        {Name: "Gloss Neon Tide [dark]", TextPrimary: "#E6FBFF", TextSecondary: "#9FE3F0", TextTertiary: "#6DB3C2", BackgroundPrimary: "#030B14", BackgroundSecondary: "#071726", BackgroundDots: "#0C2236", BackgroundModal: "rgba(3, 11, 20, 0.9)", BorderPrimary: "#12345A", BorderSecondary: "#0C2540", AccentPrimary: "#00F0D0", AccentSuccess: "#00F0D0", AccentWarning: "#FFD23F", AccentError: "#FF3EA5", AccentInfo: "#B26BFF", SurfaceAlpha: 0.55, SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.8, LabelWeight: 600},
+		"gloss-neon-tide-light":       {Name: "Gloss Neon Tide [light]", TextPrimary: "#032027", TextSecondary: "#1C4D57", TextTertiary: "#35636D", BackgroundPrimary: "#F0FBFC", BackgroundSecondary: "#DFF5F7", BackgroundDots: "#C4EAEE", BackgroundModal: "rgba(240, 251, 252, 0.92)", BorderPrimary: "#A8DDE3", BorderSecondary: "#CDEDF0", AccentPrimary: "#006E62", AccentSuccess: "#006E62", AccentWarning: "#835800", AccentError: "#A5165F", SurfaceAlpha: 0.62, SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.75, LabelWeight: 600},
+		"gloss-pearl-dark":            {Name: "Gloss Pearl [dark]", TextPrimary: "#F7F1FB", TextSecondary: "#D2C4DE", TextTertiary: "#A698B4", BackgroundPrimary: "#141019", BackgroundSecondary: "#1E1826", BackgroundDots: "#2A2234", BackgroundModal: "rgba(20, 16, 25, 0.9)", BorderPrimary: "#3A3048", BorderSecondary: "#2A2234", AccentPrimary: "#C4A2FF", AccentSuccess: "#7FE0C2", AccentWarning: "#F2C879", AccentError: "#FF8FAE", SurfaceAlpha: 0.66, SurfaceBlur: 18, SurfaceGlow: 0.9, RadiusScale: 1.5, Sheen: 0.85, LabelWeight: 600},
+		"gloss-pearl-light":           {Name: "Gloss Pearl [light]", TextPrimary: "#231B29", TextSecondary: "#544860", TextTertiary: "#6C6078", BackgroundPrimary: "#FBF8FB", BackgroundSecondary: "#F3EEF5", BackgroundDots: "#E6DEEB", BackgroundModal: "rgba(251, 248, 251, 0.92)", BorderPrimary: "#D9CEE0", BorderSecondary: "#EAE3EE", AccentPrimary: "#7A48C4", AccentSuccess: "#257A5D", AccentWarning: "#835800", AccentError: "#AB3055", AccentInfo: "#2F6EAD", SurfaceAlpha: 0.64, SurfaceBlur: 18, SurfaceGlow: 0.5, RadiusScale: 1.5, Sheen: 0.9, LabelWeight: 600},
+		"gloss-rose-gold-dark":        {Name: "Gloss Rose Gold [dark]", TextPrimary: "#FFF1EC", TextSecondary: "#EBC2B6", TextTertiary: "#BA948A", BackgroundPrimary: "#140C0C", BackgroundSecondary: "#201414", BackgroundDots: "#2E1D1C", BackgroundModal: "rgba(20, 12, 12, 0.9)", BorderPrimary: "#43292A", BorderSecondary: "#2E1D1C", AccentPrimary: "#F2A68C", AccentSuccess: "#9ED6B0", AccentWarning: "#F5CC7A", AccentError: "#FF7B7B", SurfaceAlpha: 0.66, SurfaceBlur: 18, SurfaceGlow: 0.9, RadiusScale: 1.4, Sheen: 0.9, LabelWeight: 600},
+		"gloss-rose-gold-light":       {Name: "Gloss Rose Gold [light]", TextPrimary: "#2A1511", TextSecondary: "#613A30", TextTertiary: "#7A5046", BackgroundPrimary: "#FFF6F2", BackgroundSecondary: "#FBEAE3", BackgroundDots: "#F2D6CB", BackgroundModal: "rgba(255, 246, 242, 0.92)", BorderPrimary: "#E8C3B5", BorderSecondary: "#F3DDD4", AccentPrimary: "#9A4833", AccentSuccess: "#28704A", AccentWarning: "#835800", AccentError: "#A82A35", SurfaceAlpha: 0.68, SurfaceBlur: 14, SurfaceGlow: 0.5, RadiusScale: 1.4, Sheen: 0.8, LabelWeight: 600},
+		"gloss-ultraviolet-dark":      {Name: "Gloss Ultraviolet [dark]", TextPrimary: "#F4EEFF", TextSecondary: "#C9B7F2", TextTertiary: "#9D8ACC", BackgroundPrimary: "#0B0615", BackgroundSecondary: "#140B26", BackgroundDots: "#1E1238", BackgroundModal: "rgba(11, 6, 21, 0.9)", BorderPrimary: "#2E1C52", BorderSecondary: "#1F1239", AccentPrimary: "#B383FF", AccentSuccess: "#4BE3B3", AccentWarning: "#FFCB5C", AccentError: "#FF5C93", AccentInfo: "#5CC8FF", SurfaceAlpha: 0.56, SurfaceBlur: 24, SurfaceGlow: 1, RadiusScale: 1.3, Sheen: 0.85, LabelWeight: 600},
+		"gloss-ultraviolet-light":     {Name: "Gloss Ultraviolet [light]", TextPrimary: "#1A0E33", TextSecondary: "#45327A", TextTertiary: "#5C4B92", BackgroundPrimary: "#F7F3FF", BackgroundSecondary: "#EDE5FE", BackgroundDots: "#DCCFFB", BackgroundModal: "rgba(247, 243, 255, 0.92)", BorderPrimary: "#C8B6F4", BorderSecondary: "#E2D8FB", AccentPrimary: "#5F29C4", AccentSuccess: "#0D7050", AccentWarning: "#835800", AccentError: "#AC2659", SurfaceAlpha: 0.62, SurfaceBlur: 16, SurfaceGlow: 0.5, RadiusScale: 1.3, Sheen: 0.8, LabelWeight: 600},
 		/*
 		 * Twenty-five more palettes people arrive already knowing.
 		 *
@@ -4545,12 +5030,59 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 			stored[themeID] = defaults
 			continue
 		}
-		if strings.TrimSpace(current.AccentPrimary) == "" && defaults.AccentPrimary != "" {
-			current.AccentPrimary = defaults.AccentPrimary
-			stored[themeID] = current
-		}
+		stored[themeID] = fillThemeCharacter(current, defaults)
 	}
 	return stored
+}
+
+/*
+fillThemeCharacter puts back what a built-in theme ships and the stored copy
+lacks: the primary and info accents and every character field.
+
+Only the empty ones. A colour someone changed stays theirs. The character
+fields had no editor until now, so an empty one on disk is either a file from
+before the field existed or one that a colours save stripped -- saves dropped
+them until this release -- and in both cases the shipped value is the one the
+reader never chose to give up.
+*/
+func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
+	if strings.TrimSpace(current.AccentPrimary) == "" {
+		current.AccentPrimary = defaults.AccentPrimary
+	}
+	if strings.TrimSpace(current.AccentInfo) == "" {
+		current.AccentInfo = defaults.AccentInfo
+	}
+	if current.SurfaceStep == 0 {
+		current.SurfaceStep = defaults.SurfaceStep
+	}
+	if current.SurfaceAlpha == 0 {
+		current.SurfaceAlpha = defaults.SurfaceAlpha
+	}
+	if current.SurfaceBlur == 0 {
+		current.SurfaceBlur = defaults.SurfaceBlur
+	}
+	if current.SurfaceGlow == 0 {
+		current.SurfaceGlow = defaults.SurfaceGlow
+	}
+	if current.RadiusScale == 0 {
+		current.RadiusScale = defaults.RadiusScale
+	}
+	if strings.TrimSpace(current.LabelTransform) == "" {
+		current.LabelTransform = defaults.LabelTransform
+	}
+	if strings.TrimSpace(current.LabelSpacing) == "" {
+		current.LabelSpacing = defaults.LabelSpacing
+	}
+	if current.LabelWeight == 0 {
+		current.LabelWeight = defaults.LabelWeight
+	}
+	if current.Sheen == 0 {
+		current.Sheen = defaults.Sheen
+	}
+	if strings.TrimSpace(current.Backdrop) == "" {
+		current.Backdrop = defaults.Backdrop
+	}
+	return current
 }
 
 func (fs *FileStore) SaveColors(colors ColorTheme) error {
@@ -4755,9 +5287,8 @@ type DuplicateWarning struct {
 }
 
 type DuplicateGroup struct {
-	URL        string        `json:"url"`
-	Bookmarks  []BookmarkRef `json:"bookmarks"`
-	MatchScore float64       `json:"matchScore"`
+	URL       string        `json:"url"`
+	Bookmarks []BookmarkRef `json:"bookmarks"`
 }
 
 type BookmarkRef struct {

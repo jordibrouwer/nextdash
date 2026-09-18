@@ -339,11 +339,23 @@ class SearchComponent {
             tab.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const mode = tab.dataset.mode;
+                if (mode === 'keys') {
+                    // A door rather than a mode: the sheet is documentation,
+                    // and the panel stays where it was behind it.
+                    window.dashboardInstance?.showKeyboardCheatSheet?.();
+                    return;
+                }
                 if (mode === 'command') {
                     this.currentQuery = ':';
                     this.commandsComponent.resetState();
                 } else if (mode === 'finder') {
                     this.currentQuery = this.finderModeQuery();
+                } else if (mode === 'tag') {
+                    this.currentQuery = SearchComponent.TAG_MODE_QUERY;
+                    this.commandsComponent.resetState();
+                } else if (mode === 'recent') {
+                    this.currentQuery = SearchComponent.RECENT_MODE_QUERY;
+                    this.commandsComponent.resetState();
                 } else {
                     this.currentQuery = '';
                     this.commandsComponent.resetState();
@@ -366,7 +378,23 @@ class SearchComponent {
      * than a mode, has no pill in the switch, and reads as a variant of search
      * rather than as a fourth place to be.
      */
-    static MODE_ENTRY = { '>': '', ':': ':', '?': '?' };
+    static MODE_ENTRY = { '>': '', ':': ':', '?': '?', '/': 'tag:', '*': '*' };
+
+    /*
+     * The two modes that used to be buttons in the header.
+     *
+     * Both answer with a list of bookmarks, which is what this panel draws, so
+     * folding them in costs nothing and takes two controls out of the bar. The
+     * tag mode is the `tag:` filter that already existed, opened with nothing
+     * typed after it; the recents mode is the one query the filter language has
+     * no word for -- what you opened last.
+     */
+    static TAG_MODE_QUERY = 'tag:';
+
+    static RECENT_MODE_QUERY = '*';
+
+    /** How many of the last-opened bookmarks the recents mode lists. */
+    static RECENT_MODE_LIMIT = 20;
 
     /**
      * True while the panel is open on a mode and nothing has been typed into
@@ -380,12 +408,107 @@ class SearchComponent {
     _isAtModeEntry() {
         const q = this.currentQuery;
         if (q === '' || q === ':' || q === '?') return true;
+        if (q === SearchComponent.TAG_MODE_QUERY || q === SearchComponent.RECENT_MODE_QUERY) return true;
         return /^\?[A-Za-z0-9]*\s?$/.test(q) && q !== '?';
     }
 
     /** The query a mode key opens its mode with. */
     _modeEntryQuery(key) {
         return key === '?' ? this.finderModeQuery() : (SearchComponent.MODE_ENTRY[key] ?? '');
+    }
+
+    /** Whether the query is the recents mode rather than a search for "*". */
+    _isRecentMode(query = this.currentQuery) {
+        return query === SearchComponent.RECENT_MODE_QUERY;
+    }
+
+    /**
+     * The bookmarks this reader opened last, newest first.
+     *
+     * Straight off the store rather than from the recents panel: both read the
+     * same two fields, and going through the panel would mean opening it to
+     * ask it a question.
+     */
+    _recentModeMatches() {
+        const pool = Array.isArray(this.allBookmarks) && this.allBookmarks.length
+            ? this.allBookmarks
+            : (Array.isArray(this.bookmarks) ? this.bookmarks : []);
+        return pool
+            .filter((b) => Number(b?.lastOpened) > 0)
+            .sort((a, b) => Number(b.lastOpened) - Number(a.lastOpened))
+            .slice(0, SearchComponent.RECENT_MODE_LIMIT)
+            .map((bookmark) => ({
+                type: 'bookmark',
+                bookmark,
+                name: bookmark.name,
+                shortcut: bookmark.shortcut || '',
+                url: bookmark.url,
+                /*
+                 * The page, only when it is not the page you are standing on.
+                 *
+                 * Every row named its page, and on a dashboard where most of
+                 * what you opened today lives on the page you are looking at
+                 * that is the same word twenty times over. What is worth
+                 * saying is the exception.
+                 */
+                meta: this._recentPageMeta(bookmark),
+                lastOpened: Number(bookmark.lastOpened) || 0,
+                recent: true,
+            }));
+    }
+
+    /** How many of the recents are drawn as tiles rather than as rows. */
+    static RECENT_TILE_COUNT = 4;
+
+    /** The page a recent row names, or nothing when it is the current one. */
+    _recentPageMeta(bookmark) {
+        const name = this._getPageName(bookmark?.pageId) || null;
+        if (!name) return null;
+        const dash = window.dashboardInstance;
+        const here = dash?.samePageId?.(bookmark.pageId, dash.currentPageId);
+        return here ? null : name;
+    }
+
+    /**
+     * When a bookmark was last opened, in as few characters as say it.
+     *
+     * A recents list without an axis is twenty names in a row: nothing says
+     * whether the third one is from five minutes ago or from last week. Coarse
+     * on purpose -- minutes, then hours, then the weekday, then the date --
+     * because what is being answered is "roughly when", not "at what time".
+     */
+    _relativeWhen(timestamp) {
+        const when = Number(timestamp) || 0;
+        if (!when) return '';
+        const now = Date.now();
+        const seconds = Math.max(0, Math.round((now - when) / 1000));
+        const t = (key, fallback) => {
+            const value = this.language?.t?.(key);
+            return value && value !== key ? value : fallback;
+        };
+        if (seconds < 60) return t('dashboard.recentJustNow', 'now');
+        const minutes = Math.round(seconds / 60);
+        if (minutes < 60) return `${minutes}${t('dashboard.recentMinuteSuffix', 'm')}`;
+        const hours = Math.round(minutes / 60);
+        if (hours < 24) return `${hours}${t('dashboard.recentHourSuffix', 'h')}`;
+        const date = new Date(when);
+        const days = Math.round(hours / 24);
+        const locale = document.documentElement.lang || undefined;
+        // Inside the week the weekday reads faster than a date does; past it a
+        // date is the only thing that still means something.
+        if (days <= 6) return date.toLocaleDateString(locale, { weekday: 'short' });
+        return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    }
+
+    /**
+     * True while the recents are drawn as tiles over a list.
+     *
+     * Only on the bare mode: the moment something is typed after the `*` the
+     * list is a result set, and a result set has no "last four".
+     */
+    _recentTilesActive() {
+        return this._isRecentMode()
+            && this.searchMatches.length > SearchComponent.RECENT_TILE_COUNT;
     }
 
     /**
@@ -423,6 +546,17 @@ class SearchComponent {
      * that mode — going through openSearchInterface() first would briefly run with
      * an empty query and report a plain search open as well.
      */
+    /** Open the panel on the list of what was opened last. */
+    openInRecentMode() {
+        this._openInMode(SearchComponent.RECENT_MODE_QUERY);
+    }
+
+    /** Open the panel on the tags, with nothing typed after the filter. */
+    openInTagMode() {
+        this._openInMode(SearchComponent.TAG_MODE_QUERY);
+    }
+
+
     _openInMode(prefix) {
         if (!this.searchActive) {
             this.searchMatches = [];
@@ -430,6 +564,7 @@ class SearchComponent {
         }
         this.commandsComponent.resetState();
         this.currentQuery = prefix === '?' ? this.finderModeQuery() : prefix;
+        this._beginSearchSession();
         this.updateSearch();
         this.renderSearchMatches();
     }
@@ -450,7 +585,11 @@ class SearchComponent {
             ? 'commands'
             : this.currentQuery.startsWith('?')
                 ? 'finders'
-                : 'search';
+                : this._isRecentMode()
+                    ? 'recents'
+                    : this.currentQuery === SearchComponent.TAG_MODE_QUERY
+                        ? 'tags'
+                        : 'search';
         if (mode === this._lastTrackedMode) return;
         this._lastTrackedMode = mode;
         window.nextdashTrack?.(`modal:${mode}`);
@@ -723,26 +862,24 @@ class SearchComponent {
             return;
         }
 
-        if (key === 'TAB' && this.searchActive) {
-            const root = document.querySelector('#shortcut-search .search-container');
-            if (root) {
-                const active = document.activeElement;
-                if (!(active instanceof Element) || !root.contains(active)) {
-                    e.preventDefault();
-                    const focusable = window.FocusTrapUtils?.getFocusableElements?.(root) || [];
-                    if (focusable.length > 0) {
-                        focusable[0].focus({ preventScroll: true });
-                    } else {
-                        this.focusSearchPanel();
-                    }
-                    return;
-                }
-                if (window.FocusTrapUtils?.trapTabKey(e, root)) {
-                    return;
-                }
+        // The tile band is a row, so it answers to the keys that walk a row.
+        if ((key === 'ARROWLEFT' || key === 'ARROWRIGHT') && this.searchActive) {
+            if (this.navigateRecentTiles(key === 'ARROWRIGHT' ? 1 : -1)) {
+                e.preventDefault();
+                return;
             }
+        }
+
+        /*
+         * Tab walks the rail.
+         *
+         * It used to step down the list, which the arrows already do, and the
+         * scope had no key of its own at all -- you either knew the prefix or
+         * reached for the mouse. Shift+Tab walks it back.
+         */
+        if (key === 'TAB' && this.searchActive) {
             e.preventDefault();
-            this.navigateMatches(e.shiftKey ? -1 : 1);
+            this.stepScope(e.shiftKey ? -1 : 1);
             return;
         }
         
@@ -767,6 +904,22 @@ class SearchComponent {
          * possible -- and switching mode under someone mid-sentence would
          * throw away what they had written.
          */
+        /*
+         * `!` is a door, not a mode.
+         *
+         * The rail lists it beside the kinds because that is where a reader
+         * looks for it, and the key it prints has to work from inside the
+         * panel as well -- it was swallowed as a character, so the one place
+         * the key is advertised was the one place it did nothing. The sheet
+         * opens over the panel; the panel keeps whatever was typed.
+         */
+        if (this.searchActive && e.key === '!' && this._isAtModeEntry()) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.dashboardInstance?.showKeyboardCheatSheet?.();
+            return;
+        }
+
         if (this.searchActive && Object.prototype.hasOwnProperty.call(SearchComponent.MODE_ENTRY, key) && this._isAtModeEntry()) {
             e.preventDefault();
             const next = this._modeEntryQuery(key);
@@ -837,8 +990,6 @@ class SearchComponent {
                 : null;
             if (selected && selected.name) {
                 this.commandsComponent.contextBookmark = selected;
-                // Auto-expand the Bookmarks group so context commands are immediately visible
-                this.commandsComponent.expandedGroups.add('bookmarks');
             }
             this.addToQuery(':');
             return;
@@ -847,6 +998,18 @@ class SearchComponent {
         // / toggles dashboard tag cloud when enabled; config Tags tab uses / for its filter
         if (key === '/') {
             const dash = window.dashboardInstance;
+            /*
+             * With the tag cloud out of the header, `/` opens the panel on its
+             * tags instead of the cloud. The cloud is still there for a reader
+             * who switches its button back on, and keeps the key while it is.
+             */
+            if (!this.searchActive && dash?.settings?.showTagCloudButton === false
+                && dash?.isBookmarksView?.() && !dash.isModalOpen?.()) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openInTagMode();
+                return;
+            }
             // Outside the bookmarks dashboard, / has nothing to filter -- and
             // without this the ineligible-tag-cloud fallback below would still
             // fall through to opening the search overlay from inside inbox or
@@ -987,14 +1150,23 @@ class SearchComponent {
             }
         }
 
-        // Only handle letter keys (A-Z) and numbers (0-9) when search is active, otherwise only letters and :
+        /*
+         * Which characters may start a query, and which may join one.
+         *
+         * A digit never starts one. 0-9 belong to the pages: 1-9 switch to the
+         * page they number and 0 opens the inbox, and the ones with no page
+         * behind them stay reserved rather than falling through to this palette
+         * -- a key that switches pages on one install and opens a search box on
+         * the next is a key you cannot learn. They are still typed *into* a
+         * query once it is open, which is what the first branch is for.
+         */
         if (this.searchActive) {
             if (!/^[A-Z0-9\-\._]$/.test(key)) {
                 return;
             }
         } else {
             if (this.interleaveMode) {
-                if (!/^[A-Z0-9/\-]$/.test(key)) {
+                if (!/^[A-Z/\-]$/.test(key)) {
                     return;
                 }
             } else {
@@ -1133,7 +1305,12 @@ class SearchComponent {
         if (!match) return;
 
         if (mode === 'instant') {
-            this.openBookmark(match);
+            // Typing a shortcut and having it open is not a search, even though
+            // it runs through the same query box. This used to fall through to
+            // openBookmark's 'search' default and report every shortcut open
+            // as a search pick.
+            window.nextdashRecordKey?.(match.shortcut);
+            this.openBookmark(match, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
             return;
         }
@@ -1147,7 +1324,8 @@ class SearchComponent {
             if (!this.searchActive || this.currentQuery !== query) return;
             const stillMatching = this.exactShortcutMatch();
             if (!stillMatching) return;
-            this.openBookmark(stillMatching);
+            window.nextdashRecordKey?.(stillMatching.shortcut);
+            this.openBookmark(stillMatching, { source: 'shortcut', method: 'keyboard-shortcut' });
             this.resetQuery();
         }, SearchComponent.SHORTCUT_OPEN_DELAY_MS);
     }
@@ -2039,6 +2217,31 @@ class SearchComponent {
         // Find matching shortcuts
         this.searchMatches = [];
 
+        /*
+         * Recents: the one list the filter language cannot express.
+         *
+         * Everything else in this panel answers a query; this answers "what did
+         * I open last", which is a fact about the store rather than about what
+         * was typed. Handled first so the bare `*` is never read as a search
+         * for an asterisk.
+         */
+        if (this._isRecentMode()) {
+            this.searchMatches = this._recentModeMatches();
+            if (!this.searchMatches.length) {
+                this.searchMatches = [{
+                    type: 'command-group-header',
+                    groupId: 'recent-hint',
+                    label: this.dashboardLabel('recentModeEmpty', 'Nothing opened yet'),
+                    count: 0,
+                    expanded: false,
+                }];
+            }
+            this.showSearch();
+            this.selectedMatchIndex = 0;
+            this.renderSearchMatches();
+            return;
+        }
+
         if (this.currentQuery.startsWith('@')) {
             // Handle global search across all pages
             const query = this.currentQuery.slice(1).trim();
@@ -2064,6 +2267,14 @@ class SearchComponent {
                 this.searchMatches = this._groupFuzzyMatches(labelled, query);
             }
         } else if (this.currentQuery.startsWith(':')) {
+            /*
+             * The bare `:` answers with the five headings, closed.
+             *
+             * They were opened for you, which put sixty commands on screen
+             * before anything had been asked for -- a list to scroll rather
+             * than a menu to read. Opening one is a keystroke, and typing past
+             * the colon skips the headings altogether.
+             */
             // Handle commands
             this.searchMatches = this.commandsComponent.handleCommand(this.currentQuery);
         } else if (this.currentQuery.startsWith('?')) {
@@ -2234,6 +2445,18 @@ class SearchComponent {
             }
         }
 
+        /*
+         * One question, one list.
+         *
+         * A plain word used to ask the bookmarks only: whoever did not already
+         * know that "inbox" is also a command, and that a finder can take the
+         * word straight to another site, had to type a prefix to find out. The
+         * word now asks all of them at once and the answers are stacked by
+         * kind, each kind capped, with the prefix still there for anyone who
+         * knows which drawer they want.
+         */
+        this.searchMatches = this._composeScopedSections(this.searchMatches);
+
         // Always show search interface, even with no matches
         this.showSearch();
         if (this.selectedMatchIndex === -1) {
@@ -2244,12 +2467,244 @@ class SearchComponent {
             // group instead of opening the bookmark it was aiming at. Only the
             // fuzzy groups move the selection: the empty state and the inline
             // filters put a header first on purpose.
+            /*
+             * Counted over the rows the keyboard can land on.
+             *
+             * selectedMatchIndex indexes matchElements, and the headings the
+             * one list puts over each kind are drawn but never pushed there --
+             * so a position read off searchMatches is one too far for every
+             * heading above it.
+             */
             this.selectedMatchIndex = this._fuzzyGroupsApplied
-                ? Math.max(0, this.searchMatches.findIndex((m) => m.type !== 'command-group-header'))
+                ? this._firstSelectableIndex((m) => m.type !== 'command-group-header')
                 : 0;
         }
         this.renderSearchMatches();
         this._dispatchLauncherFilter();
+    }
+
+    /** The scopes the rail lists, in the order it lists them. */
+    static SCOPES = [
+        { id: 'all', prefix: null, labelKey: 'dashboard.scopeAll', fallback: 'everything' },
+        { id: 'bookmarks', prefix: '', labelKey: 'dashboard.scopeBookmarks', fallback: 'bookmarks' },
+        { id: 'commands', prefix: ':', labelKey: 'dashboard.commandsLabel', fallback: 'commands' },
+        { id: 'finders', prefix: '?', labelKey: 'dashboard.findersLabel', fallback: 'finders' },
+        { id: 'tags', prefix: '/', labelKey: 'dashboard.tagsLabel', fallback: 'tags' },
+        { id: 'recent', prefix: '*', labelKey: 'dashboard.headerRecentsLabel', fallback: 'recents' },
+    ];
+
+    /** How many rows of one kind the one list shows before it says "more". */
+    static SCOPE_SECTION_CAP = 5;
+
+    /** Which scope the panel is in, read off what is typed. */
+    currentScope() {
+        const q = this.currentQuery || '';
+        if (this._isRecentMode()) return 'recent';
+        if (q.startsWith(':')) return 'commands';
+        if (q.startsWith('?')) return 'finders';
+        if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) return 'tags';
+        return 'all';
+    }
+
+    /** True while a plain word is being answered by every kind at once. */
+    _isUnifiedQuery() {
+        const q = this.currentQuery || '';
+        if (!q.length) return false;
+        if (this.currentScope() !== 'all') return false;
+        if (q.startsWith('@')) return false;
+        const raw = this._stripModeSwitchPrefix(q).trim();
+        if (!raw.length) return false;
+        // A half-typed filter (`tag:`) is a search for a filter, not a word.
+        return !this._isIncompleteFilterQuery(raw);
+    }
+
+    /**
+     * Go to one kind, from the rail or from a "more" row.
+     *
+     * The word already typed is kept: scoping is a narrowing of the question,
+     * not a new one -- switching to commands with "inbox" in the line asks the
+     * commands about "inbox".
+     */
+    setScope(scopeId) {
+        const scope = SearchComponent.SCOPES.find((sc) => sc.id === scopeId);
+        if (!scope) return;
+        const word = this._stripModeSwitchPrefix(this.currentQuery)
+            .replace(/^[:?*/]/, '')
+            .trim();
+        this.commandsComponent.resetState();
+        if (scope.id === 'all') {
+            this.currentQuery = word;
+        } else if (scope.id === 'recent') {
+            this.currentQuery = SearchComponent.RECENT_MODE_QUERY;
+        } else if (scope.id === 'tags') {
+            this.currentQuery = SearchComponent.TAG_MODE_QUERY + word;
+        } else if (scope.id === 'finders') {
+            this.currentQuery = word ? `?${word}` : this.finderModeQuery();
+        } else {
+            this.currentQuery = `${scope.prefix}${word}`;
+        }
+        this.selectedMatchIndex = 0;
+        this.updateSearch();
+    }
+
+    /**
+     * The next scope along the rail, wrapping.
+     *
+     * The rail's own order, which is not quite the list of scopes: bookmarks
+     * is a heading in the one list rather than a rail entry -- "everything"
+     * already answers with them -- so Tab would otherwise stop on a rung that
+     * looks exactly like the one before it.
+     */
+    stepScope(direction = 1) {
+        const order = SearchComponent.SCOPES
+            .filter((sc) => sc.id !== 'bookmarks')
+            .map((sc) => sc.id);
+        const at = Math.max(0, order.indexOf(this.currentScope()));
+        const next = (at + direction + order.length) % order.length;
+        this.setScope(order[next]);
+    }
+
+    /**
+     * What the rail says: which kind the panel is in, and how many of each kind
+     * the query answers. Only the counts that were actually worked out are
+     * printed -- a number nobody counted is worse than no number.
+     */
+    _syncScopeRail() {
+        const rail = document.getElementById('search-scope-rail');
+        if (!rail) return;
+        const counts = new Map();
+        this.searchMatches.forEach((match) => {
+            if (match.type === 'scope-section') counts.set(match.scope, Number(match.count) || 0);
+        });
+        if (!counts.size && this.currentQuery.length) {
+            /*
+             * One kind fills the panel, so the count is what is on screen --
+             * the results themselves, not the headings over them or the chip
+             * row of recent queries.
+             */
+            const furniture = new Set(['command-group-header', 'group-more', 'history-chips', 'command-chips', 'mode-hint']);
+            counts.set(
+                this.currentScope(),
+                this.searchMatches.filter((match) => !furniture.has(match.type)).length,
+            );
+        }
+        const all = [...counts.values()].reduce((sum, n) => sum + n, 0);
+        rail.querySelectorAll('.search-scope-count').forEach((el) => {
+            const scope = el.dataset.scopeCount;
+            if (!scope) { el.textContent = ''; return; }
+            const value = scope === 'all' ? all : counts.get(scope);
+            el.textContent = value ? String(value) : '';
+            el.closest('.search-scope')?.classList.toggle(
+                'is-empty',
+                this.currentQuery.length > 0 && !value && scope !== 'all' && scope !== 'recent',
+            );
+        });
+    }
+
+    /** Rows the keyboard never lands on, so they do not count towards a position. */
+    static UNSELECTABLE_TYPES = new Set(['scope-section']);
+
+    /**
+     * Where the first row answering `test` sits, counted the way the keyboard
+     * counts: headings drawn between the rows are skipped rather than numbered.
+     */
+    _firstSelectableIndex(test) {
+        let index = 0;
+        for (const match of this.searchMatches) {
+            if (SearchComponent.UNSELECTABLE_TYPES.has(match.type)) continue;
+            if (test(match)) return index;
+            index += 1;
+        }
+        return 0;
+    }
+
+    /** A heading in the one list: read, never selected. */
+    _sectionHead(scopeId, count) {
+        const scope = SearchComponent.SCOPES.find((s) => s.id === scopeId);
+        return {
+            type: 'scope-section',
+            scope: scopeId,
+            label: this._scopeLabel(scope),
+            count,
+        };
+    }
+
+    _scopeLabel(scope) {
+        if (!scope) return '';
+        const value = this.language?.t?.(scope.labelKey);
+        return value && value !== scope.labelKey ? value : scope.fallback;
+    }
+
+    /**
+     * Stack the kinds under their own heading, each capped.
+     *
+     * The bookmark rows keep the shape they already had -- their own fuzzy
+     * groups and filter completions included -- and the other kinds are added
+     * after them, so nothing about a bookmark search changes except what now
+     * follows it.
+     */
+    _composeScopedSections(bookmarkMatches) {
+        if (!this._isUnifiedQuery()) return bookmarkMatches;
+        /*
+         * Nothing matched at all, and that has its own answer already: the
+         * no-match panel names what was typed and offers the finders and the
+         * way to save it as a bookmark. Stacking one heading over one finder
+         * row here would replace that with something thinner.
+         */
+        if (!bookmarkMatches.length) return bookmarkMatches;
+
+        const cap = SearchComponent.SCOPE_SECTION_CAP;
+        const query = this._stripModeSwitchPrefix(this.currentQuery).trim();
+        const out = [];
+
+        if (bookmarkMatches.length) {
+            out.push(this._sectionHead('bookmarks', bookmarkMatches.length));
+            out.push(...bookmarkMatches);
+        }
+
+        const commands = this.commandsComponent?.matchCommandNames?.(query, cap) || [];
+        if (commands.length) {
+            const total = this.commandsComponent.countCommandNames(query);
+            out.push(this._sectionHead('commands', total));
+            out.push(...commands);
+            if (total > commands.length) {
+                out.push({ type: 'scope-more', scope: 'commands', rest: total - commands.length });
+            }
+        }
+
+        const finders = this._unifiedFinderMatches(query, cap);
+        if (finders.length) {
+            out.push(this._sectionHead('finders', finders.length));
+            out.push(...finders);
+        }
+
+        return out.length ? out : bookmarkMatches;
+    }
+
+    /**
+     * The finders a word reaches: the ones whose name it matches, and -- when
+     * there is exactly one -- the offer to take the word straight there.
+     */
+    _unifiedFinderMatches(query, cap) {
+        const finders = this.findersComponent;
+        if (!finders || !Array.isArray(finders.finders) || !finders.finders.length) return [];
+        const suggestions = (finders.getFinderSuggestions?.(query, cap) || [])
+            .map((match) => ({ ...match, scope: 'finders' }));
+        if (suggestions.length) return suggestions;
+
+        // Nothing matched by name, so what is on offer is the search itself.
+        const only = finders.finders.length === 1 ? finders.finders[0] : null;
+        if (!only) return [];
+        return [{
+            name: only.name,
+            shortcut: `?${String(only.shortcut || '').toUpperCase()}`,
+            searchText: query,
+            url: String(only.searchUrl || '').replace('%s', encodeURIComponent(query)),
+            meta: finders.getFinderMeta?.(only) || null,
+            action: () => finders.openFinder(only, query),
+            type: 'finder',
+            scope: 'finders',
+        }];
     }
 
     _dispatchLauncherFilter() {
@@ -2308,7 +2763,12 @@ class SearchComponent {
     _beginSearchSession() {
         if (this.searchActive) return;
         this._searchOpenerElement = document.activeElement;
-        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        // Remembered before the selection is cleared, because clearing it is
+        // what loses the row -- closeSearch() puts the cursor back there.
+        const nav = window.dashboardInstance?.keyboardNavigation;
+        this._gridCursorBeforeSearch = Number.isFinite(nav?.currentIndex) ? nav.currentIndex : -1;
+        this._searchSessionOpen = true;
+        nav?.clearSelection?.({ restoreFocus: false });
         // The open event is fired from _trackModeOpen(), which knows whether this
         // is a plain search, commands, or finders — see updateSearch().
         this.searchActive = true;
@@ -2316,6 +2776,12 @@ class SearchComponent {
 
     showSearch() {
         this._beginSearchSession();
+        // Started at the control that opened it, when there was one: see
+        // ModalOrigin in modal.js.
+        const container = document.querySelector('#shortcut-search .search-container');
+        if (container && !container.classList.contains('from-origin')) {
+            window.ModalOrigin?.applyTo?.(container);
+        }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
         const queryElement = document.getElementById('search-query');
@@ -2359,6 +2825,15 @@ class SearchComponent {
     }
 
     closeSearch() {
+        // One record per search session, sent as it ends, rather than one per
+        // keystroke: query and result count are both still moving while the
+        // reader is typing, and "did it end in an open" cannot be known until
+        // now anyway.
+        const query = String(this.currentQuery || '').trim();
+        if (query) {
+            window.nextdashTrackSearch?.(query, this._lastSearchResultCount || 0, Boolean(this._searchOpened));
+        }
+        this._searchOpened = false;
         if (this._debounceTimer) {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
@@ -2386,6 +2861,7 @@ class SearchComponent {
 
         if (searchElement) {
             searchElement.classList.remove('show');
+            searchElement.querySelector('.search-container')?.classList.remove('from-origin');
         }
         this._syncDashboardInert();
 
@@ -2414,6 +2890,41 @@ class SearchComponent {
 
         const opener = this._searchOpenerElement;
         this._searchOpenerElement = null;
+        /*
+         * Only a session that was open has focus to give back.
+         *
+         * closeSearch() is called on every Escape the panel might have been
+         * open for -- it is cheaper than asking first -- so without this the
+         * key moved focus to #search-button on a dashboard where search had
+         * never been opened at all, and (since this block now puts the cursor
+         * on the grid) re-selected a row the same Escape had just dropped.
+         */
+        const hadSession = this._searchSessionOpen === true;
+        this._searchSessionOpen = false;
+        if (!hadSession) {
+            this._gridCursorBeforeSearch = -1;
+            return;
+        }
+        /*
+         * On the dashboard, focus belongs to the grid rather than to the button
+         * the panel was opened from.
+         *
+         * Handing it back to #search-button left the ring on a header icon with
+         * nothing selected underneath it: the next arrow key started from the
+         * top of the page, and the row the reader had been on was gone. The row
+         * they were on comes back; a reader who had not picked one gets the
+         * first row on the page.
+         */
+        const cursor = this._gridCursorBeforeSearch;
+        this._gridCursorBeforeSearch = -1;
+        const nav = window.dashboardInstance?.keyboardNavigation;
+        if (
+            window.dashboardInstance?.isBookmarksView?.() === true
+            && !this.isAppModalOpen()
+            && nav?.focusRowAfterOverlay?.(cursor)
+        ) {
+            return;
+        }
         const fallback = document.getElementById('search-button');
         if (window.FocusTrapUtils?.focusIfConnected) {
             window.FocusTrapUtils.focusIfConnected(opener, fallback);
@@ -2499,6 +3010,12 @@ class SearchComponent {
         } else if (q.startsWith('?')) {
             mode = 'finder';
             label = this.language ? this.language.t('dashboard.searchModeFinder', 'FIND') : 'FIND';
+        } else if (this._isRecentMode(q)) {
+            mode = 'recent';
+            label = this.language ? this.language.t('dashboard.searchModeRecent', 'RECENT') : 'RECENT';
+        } else if (q === SearchComponent.TAG_MODE_QUERY || q.startsWith('tag:')) {
+            mode = 'tag';
+            label = this.language ? this.language.t('dashboard.searchModeTag', 'TAGS') : 'TAGS';
         } else if (q.startsWith('@')) {
             mode = 'global';
             label = this.language ? this.language.t('dashboard.searchModeGlobal', 'ALL') : 'ALL';
@@ -2518,7 +3035,7 @@ class SearchComponent {
         // to press when a single-letter bookmark shortcut would fire instead.
         const chevron = document.querySelector('.search-chevron');
         if (chevron) {
-            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/' };
+            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/', tag: '/', recent: '*' };
             chevron.textContent = KEYS[mode] || '>';
             chevron.dataset.mode = mode;
         }
@@ -2531,6 +3048,9 @@ class SearchComponent {
 
         // Sync mode tab active state
         document.querySelectorAll('.search-mode-tab').forEach(tab => {
+            // The cheat-sheet pill is a door, not a mode: it never becomes the
+            // state the panel is in, so it carries no pressed state to sync.
+            if (tab.classList.contains('search-mode-tab--door')) return;
             const isActive = tab.dataset.mode === mode;
             tab.classList.toggle('active', isActive);
             tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -2538,6 +3058,10 @@ class SearchComponent {
     }
 
     renderSearchMatches() {
+        // Captured here rather than recomputed at flush time: this is the one
+        // place every branch of updateSearch() converges on before painting,
+        // so it is the count the reader actually saw.
+        this._lastSearchResultCount = this.searchMatches.length;
         const matchesContainer = document.getElementById('search-matches');
         if (!matchesContainer) return;
 
@@ -2691,6 +3215,25 @@ class SearchComponent {
 
         // Use DocumentFragment for batch DOM operations (improves performance)
         const fragment = document.createDocumentFragment();
+
+        /*
+         * The last four, as tiles over the list.
+         *
+         * Nine times in ten the thing you open from recents is one of the last
+         * few, and a row is a poor target for that: it is a line of text among
+         * twenty identical lines. The four newest get a box, a name and the
+         * time they were opened; everything older stays a row. Both kinds are
+         * pushed into matchElements in order, so the keys count them as one
+         * list -- see navigateMatches().
+         */
+        const tiles = this._recentTilesActive()
+            ? (() => {
+                const band = document.createElement('div');
+                band.className = 'search-recent-tiles';
+                fragment.appendChild(band);
+                return band;
+            })()
+            : null;
         
         this.searchMatches.forEach((match) => {
             if (match.type === 'command-group-header') {
@@ -2716,6 +3259,46 @@ class SearchComponent {
                 fragment.appendChild(headerEl);
                 this.matchElements.push(headerEl);
                 this.selectableMatches.push(match);
+                return;
+            }
+
+            /*
+             * A heading, not a row: it says what the rows under it are and how
+             * many there are in all. Never pushed into matchElements, so the
+             * arrow keys walk results rather than stopping on the furniture.
+             */
+            if (match.type === 'scope-section') {
+                const head = document.createElement('div');
+                head.className = 'search-scope-section';
+                head.innerHTML = `
+                    <span class="search-scope-section-label">${this._escHtml(match.label)}</span>
+                    <span class="search-scope-section-count">${Number(match.count) || 0}</span>
+                `;
+                fragment.appendChild(head);
+                return;
+            }
+
+            // The tail of a capped section: what is left, and the way to all of it.
+            if (match.type === 'scope-more') {
+                const mySelectableIndex = this.matchElements.length;
+                const moreEl = document.createElement('div');
+                const selectedClass = mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '';
+                moreEl.className = `search-scope-more${selectedClass}`;
+                moreEl.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+                const scope = SearchComponent.SCOPES.find((sc) => sc.id === match.scope);
+                const label = this.dashboardLabel('scopeMore', '{n} more in {scope}')
+                    .replace('{n}', String(match.rest))
+                    .replace('{scope}', this._scopeLabel(scope));
+                moreEl.innerHTML = `
+                    <span class="search-scope-more-label">${this._escHtml(label)}</span>
+                    <span class="search-scope-more-key">${this._escHtml(scope?.prefix || '')}</span>
+                `;
+                const open = () => this.setScope(match.scope);
+                moreEl.addEventListener('click', open);
+                this._bindMatchKeyboardActivate(moreEl, mySelectableIndex);
+                fragment.appendChild(moreEl);
+                this.matchElements.push(moreEl);
+                this.selectableMatches.push({ ...match, action: open });
                 return;
             }
 
@@ -2793,8 +3376,41 @@ class SearchComponent {
             }
 
             const mySelectableIndex = this.matchElements.length;
+
+            if (tiles && mySelectableIndex < SearchComponent.RECENT_TILE_COUNT) {
+                const tile = document.createElement('div');
+                tile.className = 'search-recent-tile'
+                    + (mySelectableIndex === this.selectedMatchIndex ? ' keyboard-selected' : '');
+                tile.setAttribute('tabindex', mySelectableIndex === this.selectedMatchIndex ? '0' : '-1');
+                const key = match.shortcut
+                    ? `<span class="search-match-shortcut">${this._escHtml(match.shortcut.toUpperCase())}</span>`
+                    : '';
+                // A bookmark with no icon still holds the slot: without it the
+                // key slid to the left of the tile and the band read as two
+                // different layouts.
+                const icon = this.buildSearchBookmarkIconHtml(match)
+                    || '<span class="search-match-favicon-slot" aria-hidden="true"></span>';
+                tile.innerHTML = `
+                    <span class="search-recent-tile-top">
+                        ${icon}
+                        ${key}
+                    </span>
+                    <span class="search-recent-tile-name" title="${this._escHtml(match.name || '')}">${this._escHtml(match.name || '')}</span>
+                    <span class="search-recent-tile-when">${this._escHtml(this._relativeWhen(match.lastOpened))}${match.meta ? ` · ${this._escHtml(match.meta)}` : ''}</span>
+                `;
+                tile.addEventListener('click', () => this.openBookmark(match.bookmark, {
+                    resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
+                }));
+                this._bindMatchKeyboardActivate(tile, mySelectableIndex);
+                tiles.appendChild(tile);
+                this.matchElements.push(tile);
+                this.selectableMatches.push(match);
+                return;
+            }
+
             const matchElement = document.createElement('div');
-            const baseClass = `search-match ${mySelectableIndex === this.selectedMatchIndex ? 'keyboard-selected' : ''}`;
+            const recentClass = match.recent ? ' search-match--recent' : '';
+            const baseClass = `search-match${recentClass} ${mySelectableIndex === this.selectedMatchIndex ? 'keyboard-selected' : ''}`;
             const configClass = (match.type === 'config' || match.type === 'colors') ? ' config-entry' : '';
             const commandClass = (match.type === 'command' || match.type === 'command-completion') ? ' command-entry' : '';
             const finderClass = (match.type === 'finder' || match.type === 'finder-completion') ? ' finder-entry' : '';
@@ -2851,12 +3467,16 @@ class SearchComponent {
                 : '';
 
             const plainName = this._escHtml(match.bookmark?.name || match.name || '');
+            const whenHtml = match.recent
+                ? `<span class="search-match-when">${this._escHtml(this._relativeWhen(match.lastOpened))}</span>`
+                : '';
             matchElement.innerHTML = `
                 ${shortcutHtml}
                 ${bookmarkIconHtml}
                 <span class="search-match-name"${plainName ? ` title="${plainName}"` : ''}>${displayName}${match.meta ? `<span class="search-match-meta">${this._escHtml(match.meta)}</span>` : ''}</span>
                 ${finderUseBadge}
                 ${currentValueBadge}
+                ${whenHtml}
                 ${historyRemoveHtml}
             `;
 
@@ -2881,6 +3501,7 @@ class SearchComponent {
                     this.selectedMatchIndex = 0; // Auto-select first match after completion
                     this.updateSelectionHighlight(); // Update visual selection
                 } else if (match.type === 'finder') {
+                    window.nextdashRecordKey?.(match.shortcut);
                     this.recordSearchHistory(this.currentQuery);
                     match.action();
                     this.closeSearch();
@@ -2912,7 +3533,9 @@ class SearchComponent {
                     this.closeSearch();
                     window.openWhatsNewModal?.({ force: true });
                 } else {
-                    this.openBookmark(match.bookmark);
+                    this.openBookmark(match.bookmark, {
+                        resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
+                    });
                 }
             });
             this._bindMatchKeyboardActivate(matchElement, mySelectableIndex);
@@ -2924,15 +3547,55 @@ class SearchComponent {
         
         // Batch append to DOM
         matchesContainer.appendChild(fragment);
+        this._syncScopeRail();
         this.updateSelectionHighlight();
         if (this.searchActive) {
             requestAnimationFrame(() => this.focusSearchPanel());
         }
     }
 
+    /**
+     * Up and down across a band of tiles and a list under it.
+     *
+     * The tiles are one row, so stepping down out of any of them lands on the
+     * first row of the list rather than on the tile beside it -- down means
+     * down. Coming back up lands on the newest tile, which is where the
+     * selection starts when the panel opens. Left and right walk the band; see
+     * navigateRecentTiles().
+     */
+    _recentTileStep(direction) {
+        const tileCount = SearchComponent.RECENT_TILE_COUNT;
+        const index = this.selectedMatchIndex;
+        if (direction > 0 && index < tileCount) return tileCount;
+        if (direction < 0 && index === tileCount) return 0;
+        return null;
+    }
+
+    /** Left and right, inside the tile band only. */
+    navigateRecentTiles(direction) {
+        if (!this._recentTilesActive()) return false;
+        const tileCount = SearchComponent.RECENT_TILE_COUNT;
+        if (this.selectedMatchIndex >= tileCount) return false;
+        const next = this.selectedMatchIndex + direction;
+        if (next < 0 || next >= tileCount) return true;
+        this.selectedMatchIndex = next;
+        this.updateSelectionHighlight();
+        return true;
+    }
+
     navigateMatches(direction) {
         const count = this.matchElements.length;
         if (count === 0) return;
+
+        if (this._recentTilesActive()) {
+            const jump = this._recentTileStep(direction);
+            if (jump !== null && jump < count) {
+                this.selectedMatchIndex = jump;
+                this.selectedChipIndex = 0;
+                this.updateSelectionHighlight();
+                return;
+            }
+        }
 
         this.selectedMatchIndex += direction;
 
@@ -2967,6 +3630,10 @@ class SearchComponent {
                 this.updateSearch();
                 return;
             }
+            if (selectedMatch.type === 'scope-more') {
+                this.setScope(selectedMatch.scope);
+                return;
+            }
             if (selectedMatch.type === 'group-more') {
                 this.showAllInGroup(selectedMatch.groupId);
                 this.updateSearch();
@@ -2988,6 +3655,7 @@ class SearchComponent {
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
             } else if (selectedMatch.type === 'finder') {
+                window.nextdashRecordKey?.(selectedMatch.shortcut);
                 this.recordSearchHistory(this.currentQuery);
                 selectedMatch.action();
                 this.closeSearch();
@@ -3028,20 +3696,31 @@ class SearchComponent {
             } else if (selectedMatch.type === 'hint-new' || selectedMatch.type === 'hint-finder') {
                 selectedMatch.action?.();
             } else {
-                this.openBookmark(selectedMatch.bookmark, { newTab });
+                this.openBookmark(selectedMatch.bookmark, {
+                    newTab, resultRank: this.selectedMatchIndex, queryLength: String(this.currentQuery || '').length,
+                });
             }
         }
         // If no matches, do nothing (keep search open)
     }
 
-    openBookmark(bookmark, { newTab = false } = {}) {
+    openBookmark(bookmark, { newTab = false, source = 'search', method, resultRank, queryLength } = {}) {
+        // Read by closeSearch() when this session's search.query line goes
+        // out — "did it end in an open" cannot be answered any earlier.
+        this._searchOpened = true;
         this.recordSearchHistory(this.currentQuery);
         // The other half of the same fact: the history keeps what was typed,
         // this keeps what it turned out to mean.
         this.recordSearchPick(bookmark);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
-        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');
+        // resultRank/queryLength are the "full" open-detail extras for a search
+        // pick — how far down the list someone went to reach this. Only a
+        // caller that knows its position in the results passes them.
+        const extra = (resultRank !== undefined || queryLength !== undefined)
+            ? { resultRank, queryLength }
+            : undefined;
+        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, source, method, extra);
 
         // Close search first if it's active
         if (this.searchActive) {
@@ -3051,6 +3730,16 @@ class SearchComponent {
         if (this._openBookmarkTimer) {
             clearTimeout(this._openBookmarkTimer);
             this._openBookmarkTimer = null;
+        }
+
+        // Waiting on the other end is the reader's business: the row it came
+        // from wears a spinner and the band grows a line until this tab is
+        // taken away. See markBookmarkOpening() in dashboard-visual.js.
+        if (!(window.hyprMode && window.hyprMode.isEnabled())) {
+            window.dashboardInstance?.visual?.markBookmarkOpening?.({
+                bookmark,
+                newTab: Boolean(newTab || this.settings.openInNewTab),
+            });
         }
 
         // Small delay to ensure search is closed before opening bookmark
@@ -3305,6 +3994,7 @@ class SearchComponent {
         const known = this.commandsComponent?.availableCommands;
         if (!known || !Object.prototype.hasOwnProperty.call(known, name)) return;
         window.nextdashTrack?.('command', { name });
+        window.nextdashRecordKey?.(':' + name);
     }
 
     invokeCommand(match) {

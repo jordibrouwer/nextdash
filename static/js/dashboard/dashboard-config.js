@@ -37,8 +37,29 @@ class DashboardConfig {
         'widgets',
         'stats',
         'help',
+        'logs',
         'about',
     ];
+
+    /*
+     * Which file holds which section, and how to tell it has landed.
+     *
+     * One table rather than a method per section: the two that came before this
+     * (ensureBookmarkRenderers, ensureStatsRenderers) are the same twelve lines
+     * twice, and a third copy would have settled the shape by accident. A
+     * section with no entry is one that still lives in this file, which is how
+     * this list grows one section at a time.
+     */
+    static SECTION_MODULES = {
+        logs: {
+            file: 'js/dashboard/dashboard-config-logs.js',
+            datasetKey: 'dashboardConfigLogs',
+            ready: () => window.DashboardConfigLogsReady === true,
+        },
+    };
+
+    /** The Logs section's two sub-tabs. */
+    static LOGS_TABS = ['server', 'trail'];
 
     /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
     /**
@@ -125,6 +146,9 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        // Appearance and Behavior open on a start screen of tiles; a tile opens
+        // its group. False means the start screen is showing.
+        this.hubOpen = { appearance: false, behavior: false };
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -145,12 +169,14 @@ class DashboardConfig {
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
+        this.bmHealthFilter = '';
         // null until the list is first rendered, when it takes the stored
         // preference. Health and Inbox both remember their sort; this list was
         // the only one that reset to page order on every visit.
         this.bmSort = null;
         this.bmVisibleLimit = this.bmPageSize();
         this.bmSelected = new Set();
+        this.bmSelectAnchor = null;
         /** Rows with an in-flight network action (recheck, favicon refresh, …). */
         this._bmBusyKeys = new Set();
         /** Per-page category lists for the bookmarks section dropdowns. */
@@ -186,6 +212,9 @@ class DashboardConfig {
         // Data & backups sub-tab.
         this.dbTab = 'backups';
         this.bmTab = 'list';
+        // Logs section sub-tab — one tab today, kept a real sub-tab so a link
+        // to it follows the same shape as every other section.
+        this.logsTab = 'server';
         // Server log viewer. Refresh is off by default: an idle config page
         // should not poll, and the tab is usually opened to read one thing.
         this.logRefreshSeconds = 0;
@@ -285,6 +314,8 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
+        // Date & weather moved to Appearance; old links follow it there.
+        if (raw === 'config/behavior/datetime') return 'appearance';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -294,6 +325,9 @@ class DashboardConfig {
         if (raw.startsWith('config/pages-tags/')) return 'structure';
         // Branding stopped being a tab; its panel is the tail of Display.
         if (raw === 'config/appearance/branding') return 'appearance';
+        // The server log left Data & backups for its own section; an old link
+        // still names the tab it used to be.
+        if (raw === 'config/data-backups/logs') return 'logs';
         // A trailing /<tab> is optional and handled by subTabFromHash; help
         // adds a third segment naming one panel, which neither of them reads.
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
@@ -313,7 +347,10 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
+        if (raw === 'config/behavior/datetime') return 'datetime';
         if (raw === 'config/appearance/branding') return 'display';
+        // Same move as sectionFromHash above: the tab it lands on now.
+        if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
         // tab in its new home rather than on whatever tab opens first.
         if (raw === 'config/pages-tags/tags') return 'tags';
@@ -336,7 +373,10 @@ class DashboardConfig {
             return DashboardConfig.BM_TABS.includes(match[2]) ? match[2] : null;
         }
         const tabs = DashboardConfig.SUB_TABS[match[1]];
-        return tabs && tabs.includes(match[2]) ? match[2] : null;
+        const tab = match[1] === 'appearance'
+            ? (DashboardConfig.APPEARANCE_TAB_ALIASES[match[2]] || match[2])
+            : match[2];
+        return tabs && tabs.includes(tab) ? tab : null;
     }
 
     /** Page filter encoded as `#config/bookmarks/<pageId>`. */
@@ -390,6 +430,7 @@ class DashboardConfig {
             stats: DashboardConfig.STATS_TABS,
             'data-backups': DashboardConfig.DB_TABS,
             help: DashboardConfig.HELP_TABS,
+            logs: DashboardConfig.LOGS_TABS,
             bookmarks: DashboardConfig.BM_TABS,
             // About grew a second tab with the news stream; without it here the
             // tab was in SUB_TAB_STATE but not addressable, so `#config/about/
@@ -416,6 +457,9 @@ class DashboardConfig {
 
     static ABOUT_TABS = ['colophon', 'news'];
 
+    /** Sections drawn as a start screen of tiles by ConfigHub. */
+    static HUB_SECTIONS = ['appearance', 'behavior'];
+
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
         about: 'aboutTab',
@@ -424,6 +468,7 @@ class DashboardConfig {
         stats: 'statsTab',
         'data-backups': 'dbTab',
         help: 'helpTab',
+        logs: 'logsTab',
         bookmarks: 'bmTab',
         widgets: 'widgetsTab',
     };
@@ -441,6 +486,7 @@ class DashboardConfig {
         'data-stats-tab': 'stats',
         'data-db-tab': 'data-backups',
         'data-help-tab': 'help',
+        'data-logs-tab': 'logs',
         'data-bm-tab': 'bookmarks',
         'data-widgets-tab': 'widgets',
     };
@@ -453,6 +499,7 @@ class DashboardConfig {
         stats: 'data-stats-tab',
         'data-backups': 'data-db-tab',
         help: 'data-help-tab',
+        logs: 'data-logs-tab',
         bookmarks: 'data-bm-tab',
         widgets: 'data-widgets-tab',
     };
@@ -460,13 +507,25 @@ class DashboardConfig {
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
-        const tab = DashboardConfig.subTabFromHash(hash);
+        let tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
-        if (!tab || !prop) return false;
+        // A hub section's bare hash is its start screen, and a tab in it is
+        // the group that holds the tab.
+        let hubChanged = false;
+        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
+            const open = Boolean(tab);
+            hubChanged = this.hubOpen[section] !== open;
+            this.hubOpen[section] = open;
+        }
+        if (!tab || !prop) return hubChanged;
+        if (section === 'help') {
+            const moved = DashboardConfig.HELP_PANEL_MOVED[DashboardConfig.helpPanelFromHash(hash)];
+            if (moved && moved.from === tab) tab = moved.to;
+        }
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
-        if (this[prop] === tab) return false;
+        if (this[prop] === tab) return hubChanged;
         this[prop] = tab;
         return true;
     }
@@ -502,6 +561,7 @@ class DashboardConfig {
         add('q', this.bmQuery);
         add('cat', this.bmCategoryFilter);
         add('filter', this.bmCleanupFilter);
+        add('health', this.bmHealthFilter);
         const tags = this.bookmarkTagFilters();
         if (tags.length) add('tag', tags.join(','));
         const sort = this.bmSort ?? this.defaultBookmarksSort();
@@ -523,19 +583,21 @@ class DashboardConfig {
         const at = raw.indexOf('?');
         const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
         const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
 
         this.bmQuery = params.get('q') || '';
         this.bmCategoryFilter = params.get('cat') || '';
         const filter = params.get('filter') || '';
         this.bmCleanupFilter = DashboardConfig.CLEANUP_FILTERS[filter] ? filter : '';
+        const health = params.get('health') || '';
+        this.bmHealthFilter = DashboardConfig.HEALTH_FILTERS.includes(health) ? health : '';
         const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         this.bmTagFilter = tags;
         const sort = params.get('sort') || '';
         if (sort) this.bmSort = sort;
 
         const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
-            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+            this.bmCleanupFilter, this.bmHealthFilter, this.bookmarkTagFilters(), this.bmSort]);
         if (before === after) return false;
         this._bmDuplicateUrls = null;
         this.resetBookmarkVisibleLimit();
@@ -555,6 +617,11 @@ class DashboardConfig {
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const tab = prop ? this[prop] : null;
         const tabs = DashboardConfig.SUB_TABS[section];
+        // On a hub the first tab is a group like any other, so it is always
+        // named; leaving it out is what means the start screen.
+        if (DashboardConfig.HUB_SECTIONS.includes(section) && window.ConfigHub) {
+            return this.hubOpen[section] && tab ? `config/${section}/${tab}` : `config/${section}`;
+        }
         if (tab && tabs && tabs.includes(tab) && tab !== tabs[0]) {
             return `config/${section}/${tab}`;
         }
@@ -859,6 +926,7 @@ class DashboardConfig {
         // own data load runs in the meantime, and awaiting up here delayed it
         // enough that a refresh could land after the first paint.
         void this.ensureBookmarkRenderers();
+        void this.ensureSection(targetSection);
         this.applyBookmarksPageFromHash(window.location.hash);
         // A shared link carries the filters as well as the page, so opening
         // config from one lands on the list that link describes.
@@ -875,6 +943,7 @@ class DashboardConfig {
     }
 
     closeConfigView() {
+        this.closeWorkbenchOverlays?.();
         const d = this.dash;
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
@@ -916,9 +985,12 @@ class DashboardConfig {
         if (this.section === 'bookmarks' && typeof this.renderBookmarksList !== 'function') {
             await this.ensureBookmarkRenderers();
         }
+        // Started when config opened, so this is normally already resolved.
+        await this.ensureSection(this.section);
         // Phase 1 has no async data of its own yet; kept async so later phases can
         // fetch settings/stats here without touching the shell wiring.
         this.render();
+        this.preloadRemainingSections();
     }
 
     setupEscapeShortcut() {
@@ -936,14 +1008,9 @@ class DashboardConfig {
             // they were. Health and inbox already guard the same way.
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
-            // An open inline field owns Escape: it means "put the old value
-            // back", and the field is the only thing that knows what that was.
-            // Checked here rather than by the INPUT guard further down, which
-            // sits behind branches that stop the event — so Escape reached the
-            // field only when none of them happened to be armed, and otherwise
-            // the field was torn down by something else and its blur saved the
-            // half-typed value.
-            if (document.activeElement?.classList?.contains('config-bm-inline-input')) return;
+            // A panel field owns Escape: it means "put the old value back",
+            // and the field is the only thing that knows what that was.
+            if (document.activeElement?.matches?.('#config-bm-panel [data-bm-field]')) return;
             // The row's right-click menu is layered over the view and owns
             // Escape while it is up, the same as the theme picker below. This
             // handler is on document in the capture phase and registers first,
@@ -1009,7 +1076,27 @@ class DashboardConfig {
              * the right-click menu's branch above, and it calls the menu's own
              * handler rather than repeating what closing one means.
              */
+            if (this.closeWorkbenchOverlays?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
             if (this.handleBookmarkMenuKeys?.(e)) return;
+            // In the bookmark list Escape undoes the widest thing first: the
+            // selection, then the filters, then the cursor, then the view.
+            if (this.section === 'bookmarks' && this.bmSelected.size) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.bmSelected.clear();
+                this.afterSelectionChange();
+                return;
+            }
+            if (this.section === 'bookmarks' && this.bookmarksFiltersActive()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearBookmarkFilters();
+                return;
+            }
             if (this._bmKeyboardKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1031,6 +1118,23 @@ class DashboardConfig {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 this.closeThemePickerFromKeyboard();
+                return;
+            }
+            // The log settings popover takes Escape first, same reasoning as
+            // the theme picker just above: this handler is on document in the
+            // capture phase and registers before the popover's own listener.
+            if (this._logSettingsPopoverClose) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._logSettingsPopoverClose();
+                return;
+            }
+            // Inside a hub group Escape goes back to the tiles first.
+            if (DashboardConfig.HUB_SECTIONS.includes(this.section) && this.hubOpen?.[this.section]
+                && window.ConfigHub) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeHub(this.section);
                 return;
             }
             e.preventDefault();
@@ -1175,9 +1279,6 @@ class DashboardConfig {
      */
     shouldUseBookmarkKeyboardNav(target) {
         if (this.section !== 'bookmarks') return false;
-        // A menu is up: its keys are handled before anything else, including
-        // the Escape that would otherwise close the whole config view.
-        if (this.bookmarkListRoot()?.querySelector('.health-view-menu:not([hidden])')) return true;
         if (this._bmKeyboardKey) return true;
         const inList = target?.closest?.('#config-bm-list');
         if (inList) return this.getBookmarkKeyboardRows().length > 0;
@@ -1230,6 +1331,7 @@ class DashboardConfig {
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('Ctrl/Cmd + Shift + K');
             this.openSettingsJump();
             return true;
         }
@@ -1444,6 +1546,11 @@ class DashboardConfig {
                 return false;
         }
 
+        // Each branch above rewrites the body, which renders a fresh filter bar
+        // and a fresh intro. Without this the band kept the previous tab's copy
+        // and the new one stayed in the body -- two of each on one page.
+        this._fillShellHeadFromSection(container || document);
+
         this.syncSubTabStrip(ctx.attr, tab);
         const focusTarget = document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`);
         focusTarget?.focus();
@@ -1494,6 +1601,9 @@ class DashboardConfig {
             }
             btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
+                // Hub tiles are a grid of links, not a tablist: an arrow key
+                // must not open a group.
+                if (btn.closest('[data-hub-start]')) return;
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
                 e.preventDefault();
@@ -1544,6 +1654,7 @@ class DashboardConfig {
             widgets: ['config.sectionWidgets', 'Widgets'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
+            logs: ['config.sectionLogs', 'Logs'],
             about: ['config.sectionAbout', 'About'],
         };
         const [key, fallback] = map[section] || [section, section];
@@ -1579,22 +1690,110 @@ class DashboardConfig {
             case 'stats': return this.statsTabLabel?.(tab) || tab;
             case 'data-backups': return this.dbTabLabel?.(tab) || tab;
             case 'help': return this.helpTabLabel?.(tab) || tab;
+            case 'logs': return this.logsTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
+
+    /**
+     * Move the section's own line and its filter into the band.
+     *
+     * Both are rendered by the section — every renderSection() branch opens
+     * with a `.config-view-intro` and most with a changed-filter bar — and both
+     * belong in the header the shell draws: health and the inbox put their
+     * description on the left of that band and their controls on the right, and
+     * config's stood empty with a breadcrumb in it while the same two things
+     * sat loose above the panels.
+     *
+     * Done here rather than in twenty renderers: the band is one element, the
+     * pieces are already on the page, and a renderer that forgets to opt in
+     * simply leaves its half of the band empty.
+     */
+    _fillShellHeadFromSection(container = document, { reset = false } = {}) {
+        const head = container.querySelector('.config-view-head');
+        const body = container.querySelector('#config-view-body');
+        if (!head || !body) return;
+
+        const description = head.querySelector('.lvs-description');
+        /*
+         * The section's opening line, wherever that section chose to put it.
+         *
+         * Most render a `.config-view-intro` as the body's first child;
+         * Bookmarks wraps its line in a header block of its own with a count
+         * beside it. Both are the same sentence -- "what this section is" --
+         * and both belong on the band. A panel's own intro deeper in the tree
+         * is not: that describes the panel, not the section.
+         */
+        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'))
+            || body.querySelector(':scope > .config-bm-header .config-bm-subtitle');
+        /*
+         * A repaint that renders no intro of its own must not wipe the line the
+         * section already put there -- a sub-tab renders the body, not the
+         * section's opening sentence. `reset` marks the call that *is* a new
+         * section, where the old line is exactly what has to go.
+         */
+        if (description && intro) {
+            description.textContent = intro.textContent.trim();
+            description.hidden = false;
+            intro.remove();
+        } else if (description && (reset || !description.textContent.trim())) {
+            description.textContent = reset ? '' : description.textContent;
+            description.hidden = !description.textContent.trim();
+        }
+
+        const actions = head.querySelector('.lvs-header-actions');
+        // Rendered here from state rather than lifted out of the body.
+        //
+        // It used to be the body's markup, moved up after the fact -- and the
+        // body is rewritten on every change, so the node under the pointer was
+        // replaced mid-click and its handler went with it. One direction now:
+        // the band draws the bar, the body draws the settings.
+        const context = this._changedFilterContext();
+        const markup = context ? this.renderChangedFilterBar(context.section, context.tab) : '';
+        if (actions && actions.innerHTML.trim() !== markup.trim()) {
+            actions.innerHTML = markup;
+        }
+        const bar = null;
+        // Only swapped when the body actually rendered one: this runs again on
+        // every repaint, and clearing the band unconditionally threw away the
+        // bar it had just been given -- leaving neither. On a new section the
+        // old bar goes either way: Bookmarks has no filter, and Appearance's
+        // was still sitting there.
+        // Nothing in the body draws one any more; a stale copy from an older
+        // render would be a second count disagreeing about the same tab.
+        body.querySelectorAll('.config-changed-bar').forEach((el) => el.remove());
+    }
+
+
+    /**
+     * The section and tab the "only changed" filter answers for, or null.
+     *
+     * Appearance and Behavior carry schema panels and therefore a count worth
+     * offering; the rest (Overview, Bookmarks, Structure, Help, About) have
+     * nothing to filter, and their side of the band stays empty.
+     */
+    _changedFilterContext() {
+        if (this.section === 'appearance') {
+            const tab = ['general', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
+                ? this.appearanceTab
+                : null;
+            return tab ? { section: 'appearance', tab } : null;
+        }
+        if (this.section === 'behavior') {
+            return { section: 'behavior', tab: this.behaviorTab };
+        }
+        return null;
+    }
+
 
     /** Refresh section title in the panel head and dashboard header breadcrumb. */
     updateConfigShellHead() {
         const title = document.querySelector('.config-view-section-title');
         if (title) title.textContent = this.sectionLabel(this.section);
-        const crumb = document.querySelector('.config-view-head-breadcrumb');
-        if (crumb) {
-            const trail = this.headerBreadcrumb();
-            // A trail with no separator is just the section name again, which
-            // the heading directly above already says.
-            crumb.textContent = trail;
-            crumb.hidden = !trail.includes(' › ');
-        }
+        // The line under the name is the section's own description now, put
+        // there by _fillShellHeadFromSection; the trail it used to carry said
+        // the section name the heading already carries and the tab the strip
+        // below already names.
         this.dash.pageNav?.updatePageTitle?.();
         this.dash.pageNav?.updateDocumentTitle?.();
     }
@@ -1602,6 +1801,7 @@ class DashboardConfig {
     render() {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        this.closeWorkbenchOverlaysOffList();
         container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
         // Only the parts that changed. The rail, the search button and the panel
@@ -1617,6 +1817,15 @@ class DashboardConfig {
     }
 
     /**
+     * The drawer and sheet belong to the bookmark list. Anywhere else they
+     * would keep the scroll lock with nothing on screen to let it go.
+     */
+    closeWorkbenchOverlaysOffList() {
+        if (this.section === 'bookmarks' && this.bmTab === 'list') return;
+        this.closeWorkbenchOverlays?.();
+    }
+
+    /**
      * Redraw the section without rebuilding the shell around it.
      *
      * Returns false when there is no shell yet — the first render, or a return
@@ -1628,12 +1837,6 @@ class DashboardConfig {
         if (!panel || !title) return false;
         const esc = (v) => this.dash.escapeHtml(v);
         title.textContent = this.sectionLabel(this.section);
-        const crumb = container.querySelector('.config-view-head-breadcrumb');
-        if (crumb) {
-            const text = this.headerBreadcrumb();
-            crumb.textContent = text;
-            crumb.hidden = !text.includes(' › ');
-        }
         const main = container.querySelector('.config-view-main');
         if (main) main.setAttribute('aria-labelledby', `config-section-${esc(this.section)}`);
         panel.innerHTML = this.renderSection();
@@ -1642,6 +1845,10 @@ class DashboardConfig {
 
     /** Everything both render paths do once the markup is in place. */
     afterRender(container) {
+        // The band takes the section's own line and its filter before anything
+        // binds to them: both move rather than being copied, so a handler bound
+        // to the original would be bound to a node that is no longer there.
+        this._fillShellHeadFromSection(container, { reset: true });
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
@@ -1654,6 +1861,8 @@ class DashboardConfig {
         } else if (this.section === 'data-backups') {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
+        } else if (this.section === 'logs') {
+            this.bindLogsActions(container);
         } else if (this.section === 'widgets') {
             this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
@@ -1740,7 +1949,7 @@ class DashboardConfig {
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups']);
+        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups', 'logs']);
         if (!formSections.has(this.section)) return;
         const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
         if (!body) return;
@@ -1759,6 +1968,21 @@ class DashboardConfig {
             ['!', this.t('config.formKeyCheatSheet', 'cheat sheet')],
         ]);
         body.appendChild(legend);
+    }
+
+    /**
+     * Put every "Only changed" button in step with the filter it drives.
+     *
+     * The bar is rendered into the view head, and the repaint that applies the
+     * filter replaces only the body — so the button kept whatever `aria-pressed`
+     * and `is-active` it was drawn with, however often the filter was turned on
+     * and off. The rows narrowed correctly; only the control lied about it.
+     */
+    syncChangedToggles() {
+        document.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            btn.setAttribute('aria-pressed', this.changedOnly ? 'true' : 'false');
+            btn.classList.toggle('is-active', Boolean(this.changedOnly));
+        });
     }
 
     /** Roving tabindex for a single `.config-choices` radiogroup. */
@@ -2098,9 +2322,10 @@ class DashboardConfig {
 
     clearBookmarkKeyboardSelection() {
         this._bmKeyboardKey = null;
+        this._bmPanelHoldKey = null;
         document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
             row.classList.remove('keyboard-selected');
-            row.removeAttribute('aria-selected');
+            row.removeAttribute('aria-current');
         });
     }
 
@@ -2113,15 +2338,16 @@ class DashboardConfig {
             const selected = key !== null && key === this._bmKeyboardKey;
             row.classList.toggle('keyboard-selected', selected);
             if (selected) {
-                row.setAttribute('aria-selected', 'true');
+                row.setAttribute('aria-current', 'true');
                 row.scrollIntoView({
                     block: 'nearest',
                     behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
                 });
             } else {
-                row.removeAttribute('aria-selected');
+                row.removeAttribute('aria-current');
             }
         });
+        this.repaintWorkbenchPanel?.();
     }
 
     syncBookmarkKeyboardSelectionAfterRender() {
@@ -2164,7 +2390,7 @@ class DashboardConfig {
     moveBookmarkKeyboardSelectionWindowed(delta) {
         const all = this.visibleBookmarks();
         const shown = this.bookmarkVisibleLimit(all.length);
-        if (!this.bookmarkRowWindow(shown)) return false;
+        if (!this.bookmarkRowWindow()) return false;
 
         const rows = all.slice(0, shown);
         if (!rows.length) return false;
@@ -2177,7 +2403,7 @@ class DashboardConfig {
             else if (index >= keys.length) index = 0;
         }
         this._bmKeyboardKey = keys[index];
-        this.scrollBookmarkRowIntoWindow(index, keys.length);
+        this.scrollBookmarkRowIntoWindow(index);
         this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
         return true;
     }
@@ -2188,17 +2414,21 @@ class DashboardConfig {
      * A third of the way down rather than at the very edge: landing a selection
      * on the last visible pixel is the reason "the next one" feels like a jump.
      */
-    scrollBookmarkRowIntoWindow(index, total) {
+    scrollBookmarkRowIntoWindow(rowIndex) {
         const list = document.getElementById('config-bm-list');
-        if (!list) return;
+        const model = window.BookmarkWorkbenchModel;
+        if (!list || !model) return;
+        const items = this.workbenchItems();
+        const itemIndex = items.findIndex((i) => i.type === 'row' && i.index === rowIndex);
+        if (itemIndex < 0) return;
+        const { rowHeight, headHeight } = this.workbenchItemHeights();
         const host = this.bookmarkListScrollHost();
-        const rowHeight = this.bookmarkRowHeight();
         const box = list.getBoundingClientRect();
         const viewport = host ? host.clientHeight : window.innerHeight;
         const listTop = host
             ? host.scrollTop + (box.top - host.getBoundingClientRect().top)
             : window.scrollY + box.top;
-        const rowTop = listTop + index * rowHeight;
+        const rowTop = listTop + model.itemOffset(items, itemIndex, rowHeight, headHeight);
         const current = host ? host.scrollTop : window.scrollY;
         const above = rowTop < current + rowHeight;
         const below = rowTop > current + viewport - rowHeight * 2;
@@ -2208,14 +2438,14 @@ class DashboardConfig {
         else window.scrollTo(0, target);
         // The scroll listener repaints on the next frame; the selection has to
         // land on rows that exist now, so the window is drawn here as well.
-        const next = this.bookmarkRowWindow(total);
+        const next = this.bookmarkRowWindow();
         this._bmWindowKey = next ? `${next.start}-${next.end}` : 'all';
         this.repaintBookmarkRowsOnly();
     }
 
     async activateBookmarkKeyboardRow(key) {
         if (!key) return;
-        void this.openBookmarkEditModal(key);
+        this.focusWorkbenchPanel(key);
     }
 
     findBookmarkByKey(key) {
@@ -2267,10 +2497,20 @@ class DashboardConfig {
     refreshBookmarkUsageLine(key, bookmark) {
         if (!key || !bookmark) return;
         const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
-        const col = row?.querySelector('.config-bm-usage-col');
-        if (!col) return;
-        col.innerHTML = this.renderBookmarkUsageLine(bookmark);
-        col.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
+        if (!row) return;
+        // The slab row splits what the old combined usage line said into two
+        // columns; both are updated so an open shows up without a full repaint.
+        const opens = row.querySelector('.config-bm-opens');
+        const last = row.querySelector('.config-bm-last');
+        if (opens) {
+            opens.textContent = String(Number(bookmark.openCount || 0));
+            opens.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
+        }
+        if (last) {
+            const formatted = window.formatLastOpened?.(bookmark.lastOpened, { t: this.lastOpenedTranslator() })
+                || { label: '—', never: true };
+            last.textContent = formatted.label;
+        }
     }
 
     appendBookmarkKeyboardLegend(host) {
@@ -2428,7 +2668,14 @@ class DashboardConfig {
         if (onRowControl) {
             return false;
         }
-        if ((e.key === 'Enter' || e.key === ' ') && this._bmKeyboardKey) {
+        // A focused button beside the list (rail, panel, toolbar) is pressed
+        // by Enter and Space; the row cursor does not get to take them.
+        if ((e.key === 'Enter' || e.key === ' ')
+            && !target?.closest?.('#config-bm-list')
+            && target?.matches?.('button, a[href], [role="button"], summary')) {
+            return false;
+        }
+        if (e.key === 'Enter' && this._bmKeyboardKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.openBookmarkByKey(this._bmKeyboardKey);
@@ -2449,22 +2696,29 @@ class DashboardConfig {
             return true;
         }
         if (this._bmKeyboardKey) {
+            if (e.key === 'x' || e.key === ' ') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleBookmarkSelection(this._bmKeyboardKey);
+                return true;
+            }
+            if (e.key === 'X') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.selectBookmarkRange(this._bmKeyboardKey);
+                return true;
+            }
             if (e.key === 'e') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
                 return true;
             }
-            if (e.key === 'm') {
+            // The full dialog, as Shift+E is on the dashboard grid.
+            if (e.key === 'E') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                this.toggleBookmarkMenu(this._bmKeyboardKey, 'more');
-                return true;
-            }
-            if (e.key === 'c') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.toggleBookmarkMenu(this._bmKeyboardKey, 'check');
+                void this.openBookmarkEditModal(this._bmKeyboardKey);
                 return true;
             }
             if (e.key === 'd') {
@@ -2479,6 +2733,13 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+        }
+        // With or without a row in focus: the panel is folded for the list.
+        if (e.key === 'i') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.toggleWorkbenchPanel();
+            return true;
         }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
@@ -2498,7 +2759,10 @@ class DashboardConfig {
         { tab: 'start', titleKey: 'config.helpStartTitle', fallback: 'Getting started' },
         { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
         { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
-        { tab: 'config', titleKey: 'config.helpAppearanceTitle', fallback: 'Appearance & themes' },
+        { tab: 'config', titleKey: 'config.helpBehaviorTitle', fallback: 'Behavior' },
+        { tab: 'appearance', titleKey: 'config.helpThemesTitle', fallback: 'Themes' },
+        { tab: 'appearance', titleKey: 'config.helpHeaderTitle', fallback: 'Header & action buttons' },
+        { tab: 'appearance', titleKey: 'config.helpAppearanceTitle', fallback: 'Grid, display & date' },
         { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
@@ -2516,10 +2780,29 @@ class DashboardConfig {
         { tab: 'inbox', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
+        { tab: 'logs', titleKey: 'config.helpServerLogTitle', fallback: 'Server log' },
+        { tab: 'logs', titleKey: 'config.helpActivityTrailTitle', fallback: 'Activity trail' },
         // About is a section now, not a help tab, so it carries its own target
         // rather than a `tab` the help view would fail to open.
         { section: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
     ];
+
+    /*
+     * Stays in the core although Logs owns it, the same way LOGS_TABS does.
+     * subTabLabel dispatches on section, which makes it look section-scoped —
+     * but cacheSettingsJumpFields runs from afterRender and asks it for every
+     * section's labels at once, so it is called for logs while the reader is
+     * on any other section. Nothing behind ensureSection guards that path, and
+     * a label method living in the module would not be there yet.
+     */
+    logsTabLabel(tab) {
+        const map = {
+            server: ['config.logsTabServer', 'Server logs'],
+            trail: ['config.logsTabTrail', 'Activity trail'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
 
     subTabLabel(section, tab) {
         switch (section) {
@@ -2530,6 +2813,7 @@ class DashboardConfig {
             case 'data-backups': return this.dbTabLabel(tab);
             case 'bookmarks': return this.bmTabLabel(tab);
             case 'help': return this.helpTabLabel(tab);
+            case 'logs': return this.logsTabLabel(tab);
             default: return tab;
         }
     }
@@ -2565,7 +2849,6 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'inkGap', labelKey: 'inkGapLabel', fallback: 'Text contrast', section: 'appearance', subTab: 'general' },
         { field: 'themeBackdrop', labelKey: 'themeBackdropLabel', fallback: 'Theme backdrop', section: 'appearance', subTab: 'general' },
-        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
@@ -2631,7 +2914,6 @@ class DashboardConfig {
         backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
         inkGap: ['contrast', 'readability', 'text', 'legibility', 'faint', 'ink', 'accessibility'],
         themeBackdrop: ['backdrop', 'background', 'gradient', 'atmosphere', 'theme'],
-        buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
         showIcons: ['favicon', 'icon', 'image'],
         faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
         autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
@@ -3054,7 +3336,6 @@ class DashboardConfig {
         // Controls rendered as a group of buttons carry the value, not the
         // field, so they are addressed by the attribute that names the group.
         const groups = {
-            buttonBarPosition: '[data-appearance-barpos]',
             fontWeight: '[data-appearance-weight]',
             backgroundType: '[data-appearance-bg]',
             randomThemeMode: '[data-appearance-randommode]',
@@ -3188,31 +3469,61 @@ class DashboardConfig {
 
         return `
             <div class="config-view">
+                <!--
+                    The rail health and the inbox draw: named groups of rows,
+                    not one loose column of buttons. The heading sits outside
+                    the tablist -- a role="tablist" admits nothing but tabs, so
+                    it names the strip through aria-labelledby instead, the same
+                    way the shell does it.
+                -->
                 <div class="config-nav-column">
-                <nav class="config-nav" role="tablist" aria-label="${esc(this.t('config.sectionsNavAria', 'Config sections'))}">
-                    ${nav}
-                </nav>
-                <button type="button" class="config-nav-item config-nav-search"
-                        data-config-action="settings-jump"
-                        data-config-setting-promo-anchor="settingsJump"
-                        tabindex="0"
-                        aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
-                        title="${esc(`${searchLabel} (${searchShortcut})`)}">
-                    ${esc(searchLabel)}
-                    <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
-                </button>
+                <div class="lvs-group">
+                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
+                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
+                        ${nav}
+                    </nav>
+                </div>
+                <div class="lvs-group">
+                    <button type="button" class="config-nav-item config-nav-search"
+                            data-config-action="settings-jump"
+                            data-config-setting-promo-anchor="settingsJump"
+                            tabindex="0"
+                            aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
+                            title="${esc(`${searchLabel} (${searchShortcut})`)}">
+                        ${esc(searchLabel)}
+                        <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
+                    </button>
+                </div>
+                </div>
+                <!--
+                    The band health and the inbox stand under, worn here too: the
+                    section name and its trail sat loose above the panel, so
+                    walking between config and a view moved the first line of
+                    content up and down the page. A row of the grid rather than
+                    the first thing in the panel, because that is where the shell
+                    puts it -- see .lvs-header in list-view-shell.css.
+
+                    The save state itself lives on <body>, not here: the view
+                    animates with a transform on arrival, which would make it a
+                    containing block and pin the fixed indicator to the wrong
+                    place. See ensureSaveStateHost().
+                -->
+                <div class="config-view-head lvs-header">
+                    <div class="lvs-header-text">
+                        <h2 class="config-view-section-title lvs-title">${esc(this.sectionLabel(this.section))}</h2>
+                        <!--
+                            The section's own line, moved here after the body is
+                            rendered (see _fillShellHeadFromSection). It replaces
+                            the breadcrumb the band used to carry: the rail marks
+                            the section, the sub-tab strip names the tab, and a
+                            trail repeating both said nothing the page did not.
+                        -->
+                        <p class="config-view-head-breadcrumb lvs-description" hidden></p>
+                    </div>
+                    <div class="lvs-header-actions"></div>
                 </div>
                 <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
                      aria-labelledby="${activeNavId}">
-                    <div class="config-view-head">
-                        <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
-                        <p class="config-view-head-breadcrumb"${this.headerBreadcrumb().includes(' › ') ? '' : ' hidden'}>${esc(this.headerBreadcrumb())}</p>
-                        <!-- The save state itself lives on <body>, not here: this
-                             container animates with a transform on view change,
-                             which would make it a containing block and pin the
-                             fixed indicator to the wrong place. See
-                             ensureSaveStateHost(). -->
-                    </div>
                     <div class="config-view-body" id="config-view-body">
                         ${this.renderSection()}
                     </div>
@@ -3248,6 +3559,9 @@ class DashboardConfig {
         }
         if (this.section === 'help') {
             return this.renderHelp();
+        }
+        if (this.section === 'logs') {
+            return this.renderLogsSection();
         }
         if (this.section === 'about') {
             return this.renderAbout();
@@ -3391,133 +3705,242 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-overview-act">
-                ${this.renderOverviewUpdates()}
-                ${this.renderOverviewAttention()}
+            ${this.renderOverviewUpdateNotice()}
+            <div class="config-overview-tiles">
+                ${this.overviewSummaryTiles().map((t) => this.renderTile(t)).join('')}
             </div>
-            <div class="config-overview-layout">
-                ${this.renderZoneRule('project', this.t('config.overviewZoneProject', 'From nextDash'),
-                    `<a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer">nextdash.cc ↗</a>`)}
-                <div class="config-overview-about-row">
-                    ${this.renderOverviewAbout()}
-                    ${this.renderOverviewWhatsNew()}
-                </div>
-                ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
-                <div class="config-overview-install-row">
-                    ${this.renderOverviewStats()}
-                    ${this.renderOverviewChangedPanel()}
-                </div>
-                ${this.renderOverviewTips()}
+            <div class="config-overview-blocks">
+                ${this.renderOverviewAttentionBlock()}
+                ${this.renderOverviewHabitsBlock()}
+                ${this.renderOverviewCleanupBlock()}
+                ${this.renderOverviewHealthBlock()}
             </div>
+            ${this.renderOverviewFootnote()}
         `;
     }
 
     /**
-     * The line that names a zone.
+     * Which release is running, and the way into its notes.
      *
-     * A rule with a word on it, not a panel heading: the zones group what is
-     * already there rather than adding two more boxes to a page that had seven.
+     * The update bar that used to carry the version is a notice now, drawn only
+     * when there is a newer release -- and About has no version line by
+     * decision, because the app-version meta is an asset fingerprint rather
+     * than a release number. Without this line the number left config
+     * altogether. A colophon line, not a panel: one sentence at the foot.
      */
-    renderZoneRule(id, label, trailing = '') {
+    renderOverviewFootnote() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const current = this._updateStatus?.current;
+        if (!current) return '';
+
         return `
-            <div class="config-zone-rule" data-zone="${esc(id)}">
-                <span>${esc(label)}</span>
-                <i aria-hidden="true"></i>
-                ${trailing}
-            </div>`;
+            <p class="config-overview-footnote">
+                <span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>
+                <button type="button" class="config-btn config-btn--small"
+                        data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
+            </p>`;
     }
 
     /**
-     * Who makes nextDash, with the two links that follow from it.
+     * The shell every overview block wears.
      *
-     * Sits beside the latest-update panel at half width — reference material
-     * you go looking for rather than read on the way past.
-     *
-     * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
-     * same markup the what's-new modal uses, including the twinkling stars — so
-     * the two are identical by construction rather than by two descriptions that
-     * can drift apart.
+     * A block is a title, the line saying what it is for, and its body. The
+     * "what" line is not decoration: four blocks of bare figures is a page you
+     * have to already understand to read, and the section is the one a reader
+     * arrives at first.
      */
-    renderOverviewAbout() {
+    renderOverviewBlock(id, title, what, body) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
-
         return `
-            <div class="config-panel config-panel--plain config-about-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.overviewAboutBodyShort',
-                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.'))}</p>
-                <!-- One address per line rather than two buttons side by side:
-                     the column is narrower than the row this used to sit in,
-                     and a list of four is easier to scan than a wrapped pair.
-                     nextdash.cc and its feed are here because the project's own
-                     site appeared nowhere in the product before this release. -->
-                <ul class="config-about-links">
-                    <li><a href="https://nextdash.cc/" target="_blank" rel="noopener noreferrer"><span>nextdash.cc</span><span>${esc(this.t('config.overviewAboutSite', 'site ↗'))}</span></a></li>
-                    <li><a href="https://nextdash.cc/feed/" target="_blank" rel="noopener noreferrer"><span>RSS</span><span>${esc(this.t('config.overviewAboutRss', 'subscribe ↗'))}</span></a></li>
-                    <li><a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><span>GitHub</span><span>${esc(this.t('config.overviewAboutIssues', 'issues ↗'))}</span></a></li>
-                    <li><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer"><span>jordibrw.nl</span><span>${esc(this.t('config.overviewAboutWriting', 'writing ↗'))}</span></a></li>
-                </ul>
-                <div class="config-about-actions">
-                    <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer">
-                        <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>
-                        <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                        <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
-                    </a>
+            <section class="config-block config-block--${esc(id)}">
+                <div class="config-block-header">
+                    <span class="config-block-handle" aria-hidden="true">//</span>
+                    <h3 class="config-block-title">${esc(title)}</h3>
+                </div>
+                <p class="config-block-what">${esc(what)}</p>
+                <div class="config-block-body">${body}</div>
+            </section>`;
+    }
+
+    /** The install in eight figures, drawn by the shared tile. */
+    overviewSummaryTiles() {
+        const s = this.computeStats();
+        return [
+            { key: 'total', tone: 'accent', label: this.t('config.statsBookmarks', 'Bookmarks'), value: s.total },
+            { key: 'pages', tone: 'neutral', label: this.t('config.statsPages', 'Pages'), value: s.pages },
+            { key: 'categories', tone: 'neutral', label: this.t('config.statsCategoryCount', 'Categories'), value: s.categories },
+            { key: 'tags', tone: 'neutral', label: this.t('config.statsTagCount', 'Distinct tags'), value: s.tagCount },
+            {
+                key: 'monitored',
+                tone: s.monitored > 0 ? 'accent' : 'neutral',
+                label: this.t('config.statsMonitored', 'Monitored'),
+                value: s.monitored,
+            },
+            { key: 'shortcut', tone: 'neutral', label: this.t('config.statsWithShortcut', 'With shortcut'), value: s.withShortcut },
+            { key: 'pinned', tone: 'neutral', label: this.t('config.statsPinned', 'Pinned'), value: s.pinned },
+            {
+                key: 'edited',
+                tone: 'neutral',
+                label: this.t('config.overviewTileLastEdited', 'Last edited'),
+                // A date is not a count, so the tile says when rather than how
+                // many -- the shared component prints whatever it is given.
+                value: s.lastTouched ? this.formatRelative(s.lastTouched) : '—',
+            },
+        ];
+    }
+
+    /**
+     * What is waiting for you, as sentences rather than a count column.
+     *
+     * The same six checks the panel made, said as a line each with the action
+     * beside it: "4 broken links." reads as the problem it is, where a 4 in one
+     * column and "Broken links" in another reads as a figure to interpret.
+     */
+    renderOverviewAttentionBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = this.overviewAttentionItems();
+        const what = this.t('config.overviewAttentionWhat', 'Things nextDash noticed that you may want to act on.');
+
+        const body = items.length
+            ? `<ul class="config-attention-sentences">${items.map((i) => `
+                <li class="config-attention-sentence config-attention-sentence--${esc(i.tone)}">
+                    <span class="config-attention-text">${esc(i.sentence)}</span>
+                    <button type="button" class="config-attention-chip"
+                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
+                </li>`).join('')}</ul>`
+            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+
+        return this.renderOverviewBlock(
+            'attention',
+            this.t('config.overviewAttentionTitle', 'Needs attention'),
+            what,
+            body
+        );
+    }
+
+    /** How you reach for this collection, from figures it already keeps. */
+    renderOverviewHabitsBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.computeStats();
+        const share = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
+
+        const keys = this.t('config.overviewHabitsKeys',
+            'You reach for bookmarks by keystroke: {shortcut}% carry a shortcut, against {tagged}% carrying tags.')
+            .replace('{shortcut}', String(share(s.withShortcut)))
+            .replace('{tagged}', String(share(s.tagged)));
+
+        // The busiest page is counted by how much it holds; the top link by how
+        // often it was opened. Both are already computed for Statistics.
+        const busiest = [...(s.perPage || [])].sort((a, b) => b[1] - a[1])[0];
+        const top = (s.topOpened || [])[0];
+        const lines = [`<p>${esc(keys)}</p>`];
+        if (busiest && top) {
+            lines.push(`<p>${esc(this.t('config.overviewHabitsTop',
+                'Most of it lives on {page}; your most-opened link is “{link}” at {opens}.')
+                .replace('{page}', String(busiest[0]))
+                .replace('{link}', String(top[0]))
+                .replace('{opens}', String(top[1])))}</p>`);
+        }
+
+        return this.renderOverviewBlock(
+            'habits',
+            this.t('config.overviewHabitsTitle', 'How you use this collection'),
+            this.t('config.overviewHabitsWhat', 'A quick read on your habits, drawn from your own data.'),
+            `<div class="config-habits">${lines.join('')}</div>`
+        );
+    }
+
+    /** The score, and the one deduction that cost the most. */
+    renderOverviewCleanupBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const { score, details } = this.computeStats().cleanup;
+        const tone = score >= 80 ? 'good' : (score >= 50 ? 'warn' : 'crit');
+        // The biggest penalty, not the first detail: a number without its
+        // heaviest cause is a verdict the reader cannot act on.
+        const worst = [...details].sort((a, b) => (b.penalty || 0) - (a.penalty || 0))[0];
+
+        const body = `
+            <div class="config-cleanup">
+                <span class="config-cleanup-score config-cleanup-score--${tone}">${esc(String(score))}</span>
+                <div class="config-cleanup-meter">
+                    <div class="config-cleanup-bar">
+                        <span class="config-cleanup-bar-fill config-cleanup-bar-fill--${tone}" style="width:${score}%"></span>
+                    </div>
+                    <p class="config-cleanup-reason">${esc(worst ? worst.text : '')}</p>
                 </div>
             </div>`;
+
+        return this.renderOverviewBlock(
+            'cleanup',
+            this.t('config.overviewScoreLabel', 'Cleanup score'),
+            this.t('config.overviewCleanupWhat', 'How tidy the collection is. Higher is cleaner.'),
+            body
+        );
     }
 
     /**
-     * GitHub update check — manual refresh and status (opt-in).
+     * Whether the links still answer, in the four states the report keeps apart.
+     *
+     * Healthy, wrong content, a monitor that is down, an ordinary dead link: a
+     * bookmark is in exactly one of them, so the four add up to what was
+     * checked rather than double-counting an outage as two problems.
      */
-    renderOverviewUpdates() {
+    renderOverviewHealthBlock() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const sum = this.dash.health?.report?.summary || {};
+        const counts = [
+            ['healthy', this.t('config.overviewHealthHealthy', 'Healthy'), Number(sum.healthyCount) || 0],
+            ['content', this.t('config.overviewHealthContent', 'Wrong content'), Number(sum.contentCount) || 0],
+            ['down', this.t('config.overviewHealthDown', 'Monitor down'), Number(sum.monitorDownCount) || 0],
+            ['broken', this.t('config.overviewHealthBroken', 'Broken'), Number(sum.brokenCount) || 0],
+        ];
+        const checked = counts.reduce((n, c) => n + c[2], 0);
+        const pct = checked ? Math.round((counts[0][2] / checked) * 100) : 0;
+
+        const body = `
+            <div class="config-health-glance">
+                <span class="config-health-ring" style="--config-health-pct:${pct}">
+                    <span class="config-health-ring-value">${esc(String(pct))}%</span>
+                </span>
+                <ul class="config-health-counts">${counts.map(([id, label, n]) => `
+                    <li class="config-health-state">
+                        <span class="config-health-label">${esc(label)}</span>
+                        <span class="config-health-count config-health-count--${esc(id)}">${esc(String(n))}</span>
+                    </li>`).join('')}</ul>
+            </div>`;
+
+        return this.renderOverviewBlock(
+            'health',
+            this.t('config.overviewHealthTitle', 'Health at a glance'),
+            this.t('config.overviewHealthWhat', 'Live reachability of the links you monitor.'),
+            body
+        );
+    }
+
+    /**
+     * The update line, drawn only when there is a release to name.
+     *
+     * The bar this replaces was permanent: on a current install it spent a
+     * framed row of the landing section saying nothing had happened. Same rule
+     * as the attention block -- silence is the healthy state.
+     */
+    renderOverviewUpdateNotice() {
         if (!window.nextdashUpdateCheckEnabled?.()) return '';
 
         const esc = (v) => this.dash.escapeHtml(v);
-        const desc = window.nextdashDescribeUpdateStatus?.(
-            this._updateStatus,
-            this._updateStatusChecking
-        ) || { tone: 'neutral', message: '' };
-        const toneClass = esc(desc.tone || 'neutral');
-        const showDismiss = desc.tone === 'warn'
-            && this._updateStatus?.latest
-            && !this._updateStatusChecking;
-        let statusMessage = desc.message || '';
-        if (desc.tone === 'warn' && this._updateStatus?.latest && !this._updateStatusChecking) {
-            statusMessage = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
-                .replace(/\{latest\}/g, this._updateStatus.latest);
-        }
-        // When the check ran. The server caches its answer for 24 hours and
-        // ships checkedAt on every response, but nothing read it — so pressing
-        // "Check for updates" re-rendered the same sentence and the button read
-        // as broken, while the answer could be a day old.
-        const checkedAt = Number(this._updateStatus?.checkedAt) || 0;
-        if (statusMessage && checkedAt && !this._updateStatusChecking) {
-            const ago = this.formatRelative(checkedAt);
-            statusMessage = `${statusMessage} ${this.t('config.updateCheckedAt', '(checked {when})')
-                .replace('{when}', ago)}`;
-        }
-        const statusHidden = !statusMessage && !this._updateStatusChecking;
+        const desc = window.nextdashDescribeUpdateStatus?.(this._updateStatus, this._updateStatusChecking) || {};
+        if (desc.tone !== 'warn' || !this._updateStatus?.latest) return '';
+
+        const message = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
+            .replace(/\{latest\}/g, this._updateStatus.latest);
 
         return `
-            <div class="config-update-bar config-update-bar--${toneClass}" role="region" aria-label="${esc(this.t('config.updateCheckPanelTitle', 'Software updates'))}">
-                <p class="config-update-status" id="config-overview-update-status" aria-live="polite"${statusHidden ? ' hidden' : ''}>${esc(statusMessage)}</p>
-                <div class="config-update-actions config-actions">
+            <div class="config-update-notice" role="status">
+                <p class="config-update-notice-text">${esc(message)}</p>
+                <div class="config-update-notice-actions">
                     ${desc.releaseUrl ? `<a class="config-btn config-btn--small" href="${esc(desc.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}
-                    ${showDismiss ? `<button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>` : ''}
-                    <!-- Beside the release this bar already names, which is
-                         where it belongs; it used to sit in a panel further
-                         down that repeated the same version. -->
                     <button type="button" class="config-btn config-btn--small" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-action="check-update"
-                            ${statusHidden ? '' : 'aria-describedby="config-overview-update-status" '}
-                            aria-busy="${this._updateStatusChecking ? 'true' : 'false'}"
-                            ${this._updateStatusChecking ? 'disabled' : ''}>${esc(this._updateStatusChecking
-                                ? this.t('config.updateCheckChecking', 'Checking GitHub…')
-                                : this.t('config.updateCheckNow', 'Check for updates'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>
                 </div>
             </div>`;
     }
@@ -3527,69 +3950,56 @@ class DashboardConfig {
      * down, duplicates, an unread inbox. Only problems appear — a clean install
      * gets a single "nothing needs attention" line instead of five zeroes.
      */
-    renderOverviewAttention() {
-        const esc = (v) => this.dash.escapeHtml(v);
+    overviewAttentionItems() {
         const d = this.dash;
         const sum = d.health?.report?.summary || {};
         const inboxUnread = d.inbox?.unreadCount?.() || 0;
+        const say = (key, fallback, n) => this.t(key, fallback).replace('{n}', String(n));
 
-        const items = [
+        return [
             {
                 n: Number(sum.brokenCount) || 0, tone: 'crit',
                 label: this.t('config.overviewBroken', 'Broken links'),
+                sentence: say('config.statsSummaryBroken', '{n} links are not answering.', Number(sum.brokenCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'broken' },
             },
             {
                 n: Number(sum.monitorDownCount) || 0, tone: 'crit',
                 label: this.t('config.overviewMonitorsDown', 'Monitors down'),
+                sentence: say('config.overviewSentenceMonitors', '{n} monitors are down right now.', Number(sum.monitorDownCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'monitored' },
             },
             {
                 n: inboxUnread, tone: 'warn',
                 label: this.t('config.overviewInboxUnread', 'Unread in the inbox'),
+                sentence: say('config.overviewSentenceInbox', '{n} unfiled links are waiting in the inbox.', inboxUnread),
                 cta: this.t('config.overviewOpenInbox', 'Open inbox'),
                 action: { view: 'inbox' },
             },
             {
                 n: Number(sum.duplicateCount) || 0, tone: 'warn',
                 label: this.t('config.overviewDuplicates', 'Duplicate bookmarks'),
+                sentence: say('config.overviewSentenceDuplicates', '{n} duplicate URLs across your pages.', Number(sum.duplicateCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'duplicate' },
             },
             {
                 n: Number(sum.shortcutConflictCount) || 0, tone: 'warn',
                 label: this.t('config.overviewShortcutConflicts', 'Shortcut conflicts'),
+                sentence: say('config.overviewSentenceConflicts', '{n} shortcuts are claimed twice.', Number(sum.shortcutConflictCount) || 0),
                 cta: this.t('config.overviewOpenBookmarks', 'Open bookmarks'),
                 action: { section: 'bookmarks' },
             },
             {
                 n: Number(sum.uncheckedCount) || 0, tone: 'neutral',
                 label: this.t('config.overviewUnchecked', 'Never checked'),
+                sentence: say('config.overviewSentenceUnchecked', '{n} links have never been checked.', Number(sum.uncheckedCount) || 0),
                 cta: this.t('config.overviewFixInHealth', 'Open health'),
                 action: { view: 'health', filter: 'unchecked' },
             },
         ].filter((i) => i.n > 0);
-
-        // Nothing wrong means no panel at all, not a panel saying so. A framed
-        // block costing ~110px to report the absence of problems was the single
-        // largest thing on a healthy install's Overview.
-        if (!items.length) {
-            return `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
-        }
-
-        return `
-            <div class="config-panel config-panel--attention">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
-                <ul class="config-attention-list">${items.map((i) => `
-                    <li class="config-attention-row config-attention-row--${esc(i.tone)}">
-                        <span class="config-attention-count">${esc(String(i.n))}</span>
-                        <span class="config-attention-label">${esc(i.label)}</span>
-                        <button type="button" class="config-btn config-btn--small"
-                                data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
-                    </li>`).join('')}</ul>
-            </div>`;
     }
 
     /** Twinkling stars around the new-features panel border (decorative). */
@@ -3642,176 +4052,6 @@ class DashboardConfig {
                 return [];
             });
         return this._overviewFeaturesPromise;
-    }
-
-    /** A few headline numbers, with the full report a click away. */
-    renderOverviewStats() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.computeStats();
-        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
-        const scoreTone = s.cleanup.score >= 80 ? 'good' : (s.cleanup.score >= 50 ? 'warn' : 'crit');
-
-        const row = (label, value) => `
-            <li class="config-mini-row">
-                <span>${esc(label)}</span>
-                <span class="config-mini-value">${esc(String(value))}</span>
-            </li>`;
-
-        return `
-            <div class="config-panel config-panel--plain">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewStatsTitle', 'At a glance'))}</h3>
-                ${s.total ? `
-                    <div class="config-score config-score--compact">
-                        <span class="config-score-value config-score-value--${scoreTone}">${esc(String(s.cleanup.score))}</span>
-                        <div>
-                            <div class="config-bar">
-                                <span class="config-bar-fill config-bar-fill--${scoreTone}" style="width:${s.cleanup.score}%"></span>
-                            </div>
-                            <p class="config-field-hint">${esc(this.t('config.overviewScoreLabel', 'Cleanup score'))}</p>
-                        </div>
-                    </div>` : ''}
-                <ul class="config-mini-list">
-                    ${row(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
-                    ${row(this.t('config.statsPages', 'Pages'), s.pages)}
-                    ${row(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
-                    ${row(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
-                    ${row(this.t('config.statsTaggedBookmarks', 'Tagged'), `${s.tagged} (${pct}%)`)}
-                    ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
-                </ul>
-                <div class="config-actions">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"stats"}'>${esc(this.t('config.overviewMoreStats', 'All statistics →'))}</button>
-                </div>
-            </div>`;
-    }
-
-    /**
-     * How much of this install is not stock, with a way to go and look.
-     *
-     * This is the answer to "why does my dashboard behave differently from the
-     * documentation", which otherwise means opening every tab and reading for
-     * a ↺. The number was already computable — isFieldDefault decides whether
-     * each ↺ shows — it had just never been added up anywhere.
-     *
-     * Silent on a stock install rather than reporting a zero: "0 settings
-     * changed" is a line that never earns its place, and the panel it sits in
-     * is a summary, not a checklist.
-     */
-    renderOverviewChangedSettings() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const changed = this.changedSettings();
-        if (!changed.length) return '';
-
-        // Where they are, so the line says something the count alone does not.
-        const sections = [...new Set(changed.map((e) => e.section))]
-            .map((s) => this.sectionLabel(s));
-        const label = this.t('config.overviewChangedSettings', '{n} settings differ from the default')
-            .replace('{n}', String(changed.length));
-
-        return `
-            <p class="config-overview-changed">
-                <button type="button" class="config-link-button"
-                        data-overview-changed>${esc(label)}</button>
-                <span class="config-field-hint">${esc(sections.join(' · '))}</span>
-            </p>`;
-    }
-
-    /**
-     * What differs from a fresh install, as the other half of the zone.
-     *
-     * It used to be a line at the foot of At a glance, where a figure about
-     * *your choices* sat under six figures about *your bookmarks* and read as
-     * a seventh statistic. On its own it is a question with an answer: nothing
-     * differs, or these sections do.
-     */
-    renderOverviewChangedPanel() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const changed = this.changedSettings();
-
-        const body = changed.length
-            ? this.renderOverviewChangedSettings()
-            : `<p class="config-field-hint">${esc(this.t('config.overviewChangedNone',
-                'Everything is at its installation default.'))}</p>`;
-
-        return `
-            <div class="config-panel config-panel--plain">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewChangedTitle', 'Not stock'))}</h3>
-                ${body}
-            </div>`;
-    }
-
-    /**
-     * What is new, in four lines rather than in fourteen rows.
-     *
-     * The stream lives at About → News, which is where its own "All news &
-     * features" button already pointed. What belongs on a page called Overview
-     * is the answer to "is there anything new", not the reading itself: the
-     * newest release and its date, how much has arrived since, and the way in.
-     *
-     * Counted from the same stream the full list is built from, so the figures
-     * here and the list there cannot disagree. Undated back-catalogue features
-     * are left out of the count for the same reason they are left out of the
-     * stream -- they are not news, they are the drill-in.
-     */
-    renderOverviewWhatsNew() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const stream = this._newsStream;
-
-        const body = () => {
-            if (stream === undefined) {
-                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
-            }
-            if (!stream.length) {
-                return `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
-                    'No posts to show right now.'))}</p>`;
-            }
-            const newest = stream.find((item) => item.source === 'release');
-            const since = newest ? Number(newest.at) || 0 : 0;
-            const counts = {
-                feature: stream.filter((i) => i.source === 'feature' && (Number(i.at) || 0) >= since).length,
-                site: stream.filter((i) => i.source === 'site' && (Number(i.at) || 0) >= since).length,
-            };
-            const line = (label, value) => `
-                <div class="config-whats-new-line">
-                    <span class="config-whats-new-label">${esc(label)}</span>
-                    <span class="config-whats-new-value">${esc(value)}</span>
-                </div>`;
-
-            const rows = [];
-            if (newest) {
-                const title = newest.titleKey ? this.t(newest.titleKey, newest.title) : newest.title;
-                rows.push(line(this.t('config.overviewNewsSourceRelease', 'release'),
-                    `${title} · ${this.formatNewsDate(newest.at)}`));
-            }
-            if (counts.feature) {
-                rows.push(line(this.t('config.overviewWhatsNewFeatures', 'new settings'), String(counts.feature)));
-            }
-            if (counts.site) {
-                rows.push(line(this.t('config.overviewNewsSourceSite', 'nextdash.cc'), String(counts.site)));
-            }
-            return rows.join('');
-        };
-
-        /*
-         * This card does not mark the stream read.
-         *
-         * It is a summary with a link to it -- the release, a count of new
-         * settings, a count of posts -- and it stayed behind when the stream
-         * moved to About. Marking read here cleared the unread dots for a
-         * reader who had seen a count and not one item, which is the opposite
-         * of what the dots are for. renderAboutNews() marks it, where it is
-         * actually read.
-         */
-
-        return `
-            <div class="config-panel config-panel--plain config-whats-new">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'What\u2019s new'))}</h3>
-                ${body()}
-                <div class="config-news-foot config-news-foot--link">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
-                </div>
-            </div>`;
     }
 
     /**
@@ -4032,35 +4272,6 @@ class DashboardConfig {
     }
 
     /**
-     * A rotating handful of tips. Rotating rather than fixed so the row is worth
-     * glancing at more than once; seeded by the day so it does not shuffle on
-     * every repaint.
-     *
-     * A footer row rather than a panel: three keyboard hints did not need a
-     * heading and a frame at the bottom of the page, and as a panel it read as
-     * another block competing with the two above it.
-     */
-    renderOverviewTips() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const all = this.helpTips();
-        if (!all.length) return '';
-        const day = Math.floor(Date.now() / 86400000);
-        const start = day % all.length;
-        const picked = [0, 1, 2].map((i) => all[(start + i) % all.length]);
-
-        return `
-            <div class="config-overview-tips-row">
-                <span class="config-overview-tips-label">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</span>
-                <ul class="config-overview-tips-list">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
-                <div class="config-overview-tips-actions">
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
-                    ${this.renderCheatSheetPdfLink()}
-                </div>
-            </div>`;
-    }
-
-    /**
      * Link to the printable one-page shortcut sheet.
      *
      * A PDF, so it always opens in a new tab: replacing the dashboard with a
@@ -4220,10 +4431,6 @@ class DashboardConfig {
         body.dataset.overviewClickBound = '1';
         body.addEventListener('click', (e) => {
             if (this.section !== 'overview') return;
-            if (e.target.closest('[data-overview-changed]')) {
-                this.openChangedSettings();
-                return;
-            }
             const chip = e.target.closest('[data-news-filter]');
             if (chip) {
                 this.setNewsFilter(chip.getAttribute('data-news-filter'));
@@ -4304,6 +4511,14 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Logs has its own strip too, though today it holds one tab.
+            if (target.logsTab && target.section === 'logs') {
+                this.logsTab = target.logsTab;
+                if (this.section === 'logs') {
+                    this.render();
+                    return;
+                }
+            }
             // Bookmarks has a strip too, now that its settings live on one.
             if (target.bmTab && target.section === 'bookmarks') {
                 this.bmTab = target.bmTab;
@@ -4352,6 +4567,9 @@ class DashboardConfig {
         // Navigating away from Data & backups leaves the log tab behind, so its
         // poll has to stop with it.
         this.stopServerLogTimer();
+        // Same reasoning for the log settings popover: it belongs to a body
+        // that is about to be replaced, so Escape must not go looking for it.
+        this._logSettingsPopoverClose = null;
         this.section = section;
         this._trackAction('section', { section, via });
         // The bookmark list's renderers arrive on demand. Waiting for them is
@@ -4361,6 +4579,15 @@ class DashboardConfig {
         if (section === 'bookmarks' && typeof this.renderBookmarksList !== 'function') {
             void this.ensureBookmarkRenderers().then(() => {
                 if (this.section !== 'bookmarks') return;
+                this.render();
+                this.restoreConfigHash();
+            });
+            return;
+        }
+        const mod = DashboardConfig.SECTION_MODULES[section];
+        if (mod && !mod.ready()) {
+            void this.ensureSection(section).then(() => {
+                if (this.section !== section) return;
                 this.render();
                 this.restoreConfigHash();
             });
@@ -4644,6 +4871,42 @@ class DashboardConfig {
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>
         `;
+    }
+
+    /** Wire the Logs section's strip and hand the rest to whichever tab is up. */
+    bindLogsActions(container) {
+        this.bindSubTabStrip(container, 'data-logs-tab', (tab) => {
+            if (tab === this.logsTab) return;
+            // Leaving Server logs must take its timer with it, same as every
+            // other polling view in config.
+            if (this.logsTab === 'server') this.stopServerLogTimer();
+            this.logsTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-logs-body');
+            if (body) {
+                body.innerHTML = this.renderLogsTab();
+                this.bindLogsTabContent(body);
+            }
+            this.syncSubTabStrip('data-logs-tab', this.logsTab);
+        });
+        this.bindLogsTabContent(container);
+    }
+
+    /** The binding half of renderLogsTab(): whichever of the two tabs is up. */
+    bindLogsTabContent(container) {
+        // Every call means a fresh #config-log-settings-popover just landed in
+        // the DOM (hidden), so any older popover's close() is stale — holding
+        // onto it would make Escape try to act on a detached element instead
+        // of closing config.
+        this._logSettingsPopoverClose = null;
+        if (this.logsTab === 'trail') {
+            this.bindActivityTrailControls(container);
+            return;
+        }
+        this.bindServerLogControls(container);
+        this.bindLogSettingsPopover(container);
+        void this.loadServerLog({ reset: true });
+        this.updateServerLogTimer();
     }
 
     /*
@@ -5120,9 +5383,6 @@ class DashboardConfig {
             void this.refreshPreviewImageStats();
             return this.renderDataIcons();
         }
-        if (this.dbTab === 'logs') {
-            return this.renderDataLogs();
-        }
         return this.renderDataBackupsMain();
     }
 
@@ -5145,7 +5405,6 @@ class DashboardConfig {
             sources: ['config.dbTabSources', 'Sources'],
             webhooks: ['config.dbTabWebhooks', 'Webhooks'],
             icons: ['config.dbTabIcons', 'Icons & previews'],
-            logs: ['config.dbTabLogs', 'Server log'],
             trash: ['config.dbTabTrash', 'Trash'],
             reset: ['config.dbTabReset', 'Reset'],
         };
@@ -5393,32 +5652,6 @@ class DashboardConfig {
             ['debug', this.t('config.logDetailVerbose', 'Verbose — every step')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === detail ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
-        const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
-            ? s.activityChannels.map((c) => String(c).toLowerCase())
-            : DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
-        // Same rule the ↺ follows elsewhere in config: offered only when there
-        // is something to undo, so it is not a permanent button that usually
-        // does nothing.
-        const channelsAtDefault = this.activityChannelsAreDefault(activeChannels);
-        const channelBoxes = [
-            ['mutate', this.t('config.logChannelMutate', 'Changes')],
-            ['status', this.t('config.logChannelStatus', 'Check results')],
-            ['security', this.t('config.logChannelSecurity', 'Refused access')],
-            ['health', this.t('config.logChannelHealth', 'Health rounds')],
-            ['sources', this.t('config.logChannelSources', 'Imports')],
-            ['feeds', this.t('config.logChannelFeeds', 'Feed polls')],
-            ['archive', this.t('config.logChannelArchive', 'Saved copies')],
-            ['backup', this.t('config.logChannelBackup', 'Backups')],
-            ['store', this.t('config.logChannelStore', 'Failed writes')],
-            ['widgets', this.t('config.logChannelWidgets', 'Widget requests')],
-            ['notify', this.t('config.logChannelNotify', 'Alerts sent')],
-            ['open', this.t('config.logChannelOpen', 'Bookmarks opened')],
-        ].map(([key, label]) => `
-                    <label class="config-toggle">
-                        <input type="checkbox" data-activity-channel="${esc(key)}" ${activeChannels.includes(key) ? 'checked' : ''}>
-                        <span>${esc(label)}</span>
-                    </label>`).join('');
-
         const levelOptions = [
             ['', this.t('config.logLevelAll', 'Everything')],
             ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
@@ -5435,256 +5668,81 @@ class DashboardConfig {
 
             <div class="config-tiles" role="list" id="config-log-tiles">${this.renderServerLogTiles()}</div>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h3>
-                <label class="config-toggle">
-                    <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
-                </label>
-                <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
-                    <select class="config-select" data-log-select="interval">${intervalOptions}</select>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
-                    <select class="config-select" data-log-select="mode">${modeOptions}</select>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
-                    <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
-                    <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
-                </div>
-                <p class="config-panel-note">${esc(byCount
-                    ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
-                    : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
-                    <select class="config-select" data-log-select="detail">${detailOptions}</select>
-                </div>
-                <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
-                <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
-            </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.logChannelsTitle', 'Activity trail'))}${channelsAtDefault ? '' : `<button type="button"
-                        class="config-panel-reset" data-activity-reset
-                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`}</h3>
-                <p class="config-panel-note">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
-                ${channelBoxes}
-            </div>
-
-            <div class="config-panel">
+            <div class="config-panel config-log-main">
                 <h3 class="config-panel-title">${esc(this.t('config.logsPanelTitle', 'Server log'))}</h3>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
-                    <select class="config-select" data-log-select="level">${levelOptions}</select>
+
+                <div class="config-log-toolbar">
+                    <label class="config-log-toolbar-item">
+                        <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
+                        <select class="config-select" data-log-select="level">${levelOptions}</select>
+                    </label>
+                    <label class="config-log-toolbar-item config-log-toolbar-search">
+                        <span class="config-field-label sr-only">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
+                        <input type="search" class="config-text" data-log-search
+                            placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
+                            value="${esc(this.logQuery || '')}">
+                    </label>
+                    <label class="config-toggle config-log-toolbar-item">
+                        <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
+                        <span>${esc(this.t('config.logFollowLabel', 'Follow'))}</span>
+                    </label>
+                    <div class="config-log-toolbar-actions">
+                        <button type="button" class="config-btn config-icon-btn" data-log-action="refresh"
+                                title="${esc(this.t('config.logRefreshNow', 'Refresh now'))}" aria-label="${esc(this.t('config.logRefreshNow', 'Refresh now'))}">↻</button>
+                        <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
+                        <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
+                        <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear'))}</button>
+                        <button type="button" class="config-btn config-icon-btn" data-log-settings-toggle
+                                aria-haspopup="true" aria-expanded="false" aria-controls="config-log-settings-popover"
+                                title="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}"
+                                aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}">⚙</button>
+                    </div>
                 </div>
+
                 <p class="config-panel-note" data-log-floor-note>${esc(this.serverLogFloorNote())}</p>
                 <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
                     'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
-                    <input type="search" class="config-text" data-log-search
-                        placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
-                        value="${esc(this.logQuery || '')}">
-                </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
-                    <span>${esc(this.t('config.logFollowLabel', 'Scroll to newest lines'))}</span>
-                </label>
 
                 <div class="config-log-view" data-log-output>${this.renderServerLogLines()}</div>
 
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-log-action="refresh">${esc(this.t('config.logRefreshNow', 'Refresh now'))}</button>
-                    <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
-                    <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
-                    <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear log'))}</button>
+                <div class="move-popover config-log-settings-popover" id="config-log-settings-popover"
+                     role="dialog" aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}" hidden>
+                    <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
+                    <div class="config-log-settings-body">
+                        <label class="config-toggle">
+                            <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
+                            <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
+                        </label>
+                        <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
+                            <select class="config-select" data-log-select="interval">${intervalOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
+                            <select class="config-select" data-log-select="mode">${modeOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
+                            <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
+                        </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
+                            <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
+                        </div>
+                        <p class="config-panel-note">${esc(byCount
+                            ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
+                            : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
+                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
+                        </div>
+                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
+                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
+                    </div>
                 </div>
             </div>
         `;
-    }
-
-    /*
-     * The two channels the server records when nobody has chosen.
-     *
-     * Named here rather than written out at each use, because three places
-     * depend on them agreeing: the checkboxes when the setting is empty, the
-     * reset button, and the test that says what "default" means. The server
-     * has the same pair in loadActivityLogConfig.
-     */
-    static ACTIVITY_CHANNEL_DEFAULTS = ['mutate', 'status'];
-
-    /*
-     * Reset panel puts the trail back to the two channels nextDash records by
-     * default. Bound separately from the rest of the panel because the button
-     * comes and goes with the value, so a freshly inserted one has to be bound
-     * again rather than relying on the panel's own one-time pass.
-     */
-    bindActivityResetButton(container) {
-        const button = container.querySelector('[data-activity-reset]');
-        if (!button || button.dataset.bound === '1') return;
-        button.dataset.bound = '1';
-        button.addEventListener('click', () => {
-            this.dash.settings.activityChannels = DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
-            void this.saveSettingsWithFeedback();
-            // Twelve boxes change at once and the button itself goes away, so
-            // the panel is rebuilt rather than patched. Nothing worth keeping
-            // the focus on: the button the user clicked is what disappears.
-            this.repaintDbTabBody();
-        });
-    }
-
-    /*
-     * Put Reset panel on screen, or take it away.
-     *
-     * The button exists only while the channels differ from the defaults, so
-     * this adds and removes it rather than showing and hiding it. Done in place
-     * so the checkbox the user just clicked keeps the focus — repainting the
-     * whole tab body would take it away mid-click.
-     */
-    syncActivityResetButton(container, channels) {
-        const title = container.querySelector('.config-panel-title [data-activity-reset]')?.closest('.config-panel-title')
-            || [...container.querySelectorAll('.config-panel-title')]
-                .find((el) => el.parentElement?.querySelector('[data-activity-channel]'));
-        if (!title) return;
-        const existing = title.querySelector('[data-activity-reset]');
-        if (this.activityChannelsAreDefault(channels)) {
-            existing?.remove();
-            return;
-        }
-        if (existing) return;
-        const esc = (v) => this.dash.escapeHtml(v);
-        title.insertAdjacentHTML('beforeend', `<button type="button"
-                        class="config-panel-reset" data-activity-reset
-                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`);
-        this.bindActivityResetButton(container);
-    }
-
-    /** Whether a channel list is the default pair, in any order. */
-    activityChannelsAreDefault(channels) {
-        const chosen = [...new Set((channels || []).map((c) => String(c).toLowerCase()))].sort();
-        const defaults = [...DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS].sort();
-        return chosen.length === defaults.length && chosen.every((c, i) => c === defaults[i]);
-    }
-
-    /*
-     * What the floor is, said under the display filter.
-     *
-     * The two controls are easy to confuse — one decides what exists, the other
-     * decides what is shown — and someone who filtered for Everything and still
-     * sees nothing has been given no way to tell which one is the reason.
-     */
-    /*
-     * What the container log is doing right now, in the present tense.
-     *
-     * The setting acts on the next line written, with no restart, and that is
-     * the thing readers do not expect from a log level — so it is said as a
-     * fact about the running server rather than as a promise about the future.
-     */
-    serverLogLiveNote() {
-        const level = String(this.dash.settings?.serverLogLevel || 'info');
-        if (level === 'debug') {
-            return this.t('config.logDetailLiveVerbose',
-                'docker logs is now showing every step, from the next line onwards.');
-        }
-        if (level === 'warn' || level === 'error') {
-            return this.t('config.logDetailLiveQuiet',
-                'docker logs is now showing problems only, from the next line onwards.');
-        }
-        return this.t('config.logDetailLiveNormal',
-            'docker logs is now showing what the server does, from the next line onwards.');
-    }
-
-    serverLogFloorNote() {
-        const level = String(this.dash.settings?.serverLogLevel || 'info');
-        if (level === 'debug') {
-            return this.t('config.logFloorVerbose', 'Recording at Verbose — every step is kept.');
-        }
-        if (level === 'warn' || level === 'error') {
-            return this.t('config.logFloorQuiet', 'Recording at Quiet — only problems are kept, so this list will be short.');
-        }
-        return this.t('config.logFloorNormal', 'Recording at Normal — debug lines are not kept.');
-    }
-
-    /** Summary tiles above the log, in the same shape the other tabs use. */
-    renderServerLogTiles() {
-        const stats = this._logStats || { total: 0, warn: 0, error: 0 };
-        const dropped = this._logDropped || 0;
-        const retention = Number(this.dash.settings?.serverLogRetentionHours) || 0;
-
-        return [
-            {
-                label: this.t('config.logTileLines', 'Lines'),
-                value: stats.total,
-                tone: 'accent',
-                detail: dropped > 0
-                    ? this.t('config.logTileDropped', '{n} older lines dropped').replace('{n}', String(dropped))
-                    : (this.dash.settings?.serverLogRetentionMode === 'count'
-                        ? this.t('config.logTileMaxEntries', 'Newest {n} kept')
-                            .replace('{n}', Number(this.dash.settings?.serverLogMaxEntries
-                                || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES).toLocaleString())
-                        : this.t('config.logTileRetention', 'Kept for {span}').replace('{span}', this.logRetentionLabel(retention))),
-            },
-            {
-                label: this.t('config.logTileWarnings', 'Warnings'),
-                value: stats.warn,
-                tone: stats.warn > 0 ? 'warn' : 'neutral',
-            },
-            {
-                label: this.t('config.logTileErrors', 'Errors'),
-                value: stats.error,
-                tone: stats.error > 0 ? 'crit' : 'good',
-            },
-        ].map((t) => this.renderTile(t)).join('');
-    }
-
-    /** Human span for the retention tile. */
-    logRetentionLabel(hours) {
-        if (!hours) return this.t('config.logRetentionForever', 'Until cleared');
-        if (hours % 24 === 0) {
-            const days = hours / 24;
-            return days === 1
-                ? this.t('config.logRetention24h', '24 hours')
-                : this.t('config.logRetentionDays', '{n} days').replace('{n}', String(days));
-        }
-        return hours === 1
-            ? this.t('config.logRetention1h', '1 hour')
-            : this.t('config.logRetentionHours', '{n} hours').replace('{n}', String(hours));
-    }
-
-    /** The log lines themselves. */
-    renderServerLogLines() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const lines = this._logLines || [];
-
-        if (this._logLoading && lines.length === 0) {
-            return `<p class="config-view-loading">${esc(this.t('config.logLoading', 'Loading…'))}</p>`;
-        }
-        if (lines.length === 0) {
-            // "Nothing logged yet" would read as a fault when the reason is
-            // simply that collecting is switched off.
-            const empty = this.dash.settings?.serverLogEnabled === false
-                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Collect server log above to start.')
-                : this.t('config.logEmpty', 'Nothing logged yet.');
-            return `<p class="config-panel-empty">${esc(empty)}</p>`;
-        }
-
-        return lines.map((line) => {
-            const time = line.time ? this.formatLogTime(line.time) : '';
-            const source = line.source
-                ? `<span class="config-log-source">${esc(line.source)}</span>`
-                : '';
-            return `<div class="config-log-line config-log-line--${esc(line.level || 'info')}">`
-                + `<span class="config-log-time">${esc(time)}</span>`
-                + source
-                + `<span class="config-log-message">${esc(line.message)}</span>`
-                + `</div>`;
-        }).join('');
     }
 
     /** Clock time for a log line, on the reader's own clock like every other. */
@@ -5755,7 +5813,7 @@ class DashboardConfig {
      * and re-creating the search box on every poll would drop focus mid-typing.
      */
     repaintServerLog() {
-        if (this.section !== 'data-backups' || this.dbTab !== 'logs') return;
+        if (this.section !== 'logs' || this.logsTab !== 'server') return;
 
         const tiles = document.getElementById('config-log-tiles');
         if (tiles) tiles.innerHTML = this.renderServerLogTiles();
@@ -5772,12 +5830,21 @@ class DashboardConfig {
     }
 
     /**
-     * Rebuild the Data & backups body in place, keeping the tab strip.
+     * Rebuild the current section's tab body in place, keeping the tab strip.
      *
      * Same shape as the tab-switch repaint: only the body is replaced, because
-     * rebuilding the strip would drop the button that was just clicked.
+     * rebuilding the strip would drop the button that was just clicked. Shared
+     * by Data & backups and Logs, the two sections whose panels use it — each
+     * has its own body id and render/bind pair.
      */
     repaintDbTabBody() {
+        if (this.section === 'logs') {
+            const body = document.getElementById('config-logs-body');
+            if (!body) return;
+            body.innerHTML = this.renderLogsTab();
+            this.bindLogsTabContent(body);
+            return;
+        }
         const body = document.getElementById('config-db-body');
         if (!body) return;
         body.innerHTML = this.renderDbTab();
@@ -5791,7 +5858,7 @@ class DashboardConfig {
         this._logTimer = setInterval(() => {
             // Belt and braces: if a repaint ever loses the teardown, the timer
             // stops itself rather than polling behind a closed config view.
-            if (this.section !== 'data-backups' || this.dbTab !== 'logs') {
+            if (this.section !== 'logs' || this.logsTab !== 'server') {
                 this.stopServerLogTimer();
                 return;
             }
@@ -5870,29 +5937,6 @@ class DashboardConfig {
                 }
             });
         });
-
-        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
-            box.addEventListener('change', () => {
-                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
-                    .filter((input) => input.checked)
-                    .map((input) => input.dataset.activityChannel);
-                /*
-                 * An empty list would mean "the environment decides" to the
-                 * server, which is not what unticking everything looks like it
-                 * means. 'none' is a channel nothing writes to, so it records
-                 * the choice as made.
-                 */
-                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
-                void this.saveSettingsWithFeedback();
-                // Reset panel appears the moment the list leaves the defaults
-                // and goes again when it returns. Rebuilt rather than toggled,
-                // because the button is only in the DOM when it has something
-                // to do — the same rule the other panels follow.
-                this.syncActivityResetButton(container, chosen);
-            });
-        });
-
-        this.bindActivityResetButton(container);
 
         const search = container.querySelector('[data-log-search]');
         if (search) {
@@ -6593,11 +6637,6 @@ class DashboardConfig {
         if (this.dbTab === 'trash' && this._trashData == null) {
             void this.loadTrash();
         }
-        if (this.dbTab === 'logs') {
-            this.bindServerLogControls(container);
-            void this.loadServerLog({ reset: true });
-            this.updateServerLogTimer();
-        }
         if (this.dbTab === 'webhooks') {
             this.bindWebhookControls(container);
             // Fetched on open rather than with the section: the other tabs
@@ -6606,9 +6645,6 @@ class DashboardConfig {
         }
         this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
             if (tab === this.dbTab) return;
-            // Leaving the log tab must take its timer with it, or it keeps
-            // polling from behind whatever the user opened next.
-            if (this.dbTab === 'logs') this.stopServerLogTimer();
             this.dbTab = tab;
             this.restoreConfigHash();
             // Only the body is repainted; rebuilding the strip would replace
@@ -8277,9 +8313,6 @@ class DashboardConfig {
         // card was still dismissed, and so nothing appeared -- and it put the
         // two flags into exactly the disagreement that silences every
         // unprompted card (see dashboard-quickstart.js shouldStart).
-        //
-        // setupDone is left alone: replaying the tour is not a reason to ask
-        // again for a language and a theme that are already chosen.
         if (this.dash.settings.quickStart && typeof this.dash.settings.quickStart === 'object') {
             this.dash.settings.quickStart.dismissed = false;
         }
@@ -8436,6 +8469,11 @@ class DashboardConfig {
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
+        const hub = window.ConfigHub;
+        const apIntro = `<p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>`;
+        if (hub && !this.hubOpen.appearance) {
+            return apIntro + this.renderHubStart('appearance');
+        }
         // Which half of the current family is showing, so Quick mode marks the
         // right button whatever theme is picked. Reading s.theme directly only
         // ever matched the two legacy ids, leaving both buttons unlit on every
@@ -8481,7 +8519,6 @@ class DashboardConfig {
         const inkGap = Number.isFinite(Number(s.inkGap)) && Number(s.inkGap) > 0
             ? Math.min(0.58, Math.max(0.30, Number(s.inkGap)))
             : 0.44;
-        const inkGapLabel = esc(this.inkGapLabelFor(inkGap));
         const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
@@ -8528,10 +8565,13 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}${stars}</button>`;
         }).join('');
 
-        const shell = (body) => `
-            <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
+        const shell = (body) => (hub
+            ? hub.renderGroup(this, 'appearance', this.appearanceTab,
+                `<div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`)
+            : `
+            ${apIntro}
             <div class="config-subtabs" role="tablist">${apTabs}</div>
-            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`;
+            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`);
 
         if (this.appearanceTab === 'custom-themes') {
             return shell(this.renderCustomThemes());
@@ -8540,17 +8580,19 @@ class DashboardConfig {
             return shell(this.renderAppearanceLayoutBody());
         }
         if (this.appearanceTab === 'buttonbar') {
-            return shell(this.renderAppearanceButtonBarBody());
+            return shell(this.renderAppearanceActionBarBody());
+        }
+        if (this.appearanceTab === 'datetime') {
+            return shell(this.renderControlPanels(this.panelsFor('appearance', 'datetime'), 'behavior'));
         }
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
-        if (this.appearanceTab === 'toolbar') {
+        if (this.appearanceTab === 'header') {
             return shell(this.renderAppearanceToolbarBody());
         }
 
         return shell(`
-            ${this.renderChangedFilterBar('appearance', 'general')}
             ${tiles}
 
             <div class="config-panel">
@@ -8596,15 +8638,24 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeDepthLabel', 'Depth'))}</span>
                     <select class="config-select" data-appearance-select="themeDepth">
-                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'rich') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
+                        ${['flat', 'soft', 'rich', 'glass'].map((option) => `<option value="${option}"${(s.themeDepth || 'flat') === option ? ' selected' : ''}>${esc(this.t('config.themeDepth' + option.charAt(0).toUpperCase() + option.slice(1), option.charAt(0).toUpperCase() + option.slice(1)))}</option>`).join('')}
                     </select>
                     <p class="config-panel-note">${esc(this.t('config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Flat is the dashboard as it was before any of it.'))}</p>
                     ${this.appearanceAff('themeDepth')}
                 </div>
                 <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.glowStrengthLabel', 'Glow'))}</span>
+                    <select class="config-select" data-appearance-select="glowStrength">
+                        ${[['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']].map(([option, label]) => `<option value="${option}"${(s.glowStrength || 'off') === option ? ' selected' : ''}>${esc(this.t('config.glowStrength' + option.charAt(0).toUpperCase() + option.slice(1), label))}</option>`).join('')}
+                    </select>
+                    <p class="config-panel-note">${esc(this.t('config.glowStrengthNote', 'How far the theme\'s own colour carries around a surface and around what you are acting on. Off is the default; Full is what earlier versions drew, and Soft is the middle. Depth decides whether there is a glow at all — flat has none.'))}</p>
+                    ${this.appearanceAff('glowStrength')}
+                </div>
+                <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.inkGapLabel', 'Text contrast'))}</span>
-                    <input type="range" class="config-range" data-appearance-range="inkGap" min="0.30" max="0.58" step="0.01" value="${inkGap}">
-                    <span class="config-range-value">${inkGapLabel}</span>
+                    <select class="config-select" data-appearance-select="inkGap">
+                        ${DashboardConfig.INK_GAP_STEPS.map(([value, key, fallback]) => `<option value="${value}"${DashboardConfig.inkGapStepFor(inkGap) === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
                     <p class="config-panel-note">${esc(this.t('config.inkGapNote', 'How far the fainter text sits from the surface it is drawn on. Every theme is measured against this, so the note beside a bookmark stays readable no matter which palette you pick. Lower gives a softer hierarchy, higher pushes everything toward the foreground.'))}</p>
                     ${this.appearanceAff('inkGap')}
                 </div>
@@ -8685,8 +8736,7 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderChangedFilterBar('appearance', 'toolbar')
-            + this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
+        return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior');
     }
 
     /** The branding panel, appended to Display since it lost its own tab. */
@@ -8724,47 +8774,13 @@ class DashboardConfig {
      * the bar that carries it were separate errands, and the second one was
      * usually found by accident. Toolbar & tabs keeps the header strip, which
      * is a different object.
+     *
+     * It used to open with a five-up picker for where the bar sat -- centre,
+     * either corner, either rail. There is no bar to place any more: the
+     * actions are in the header, so what is left is which of them are drawn.
      */
-    renderAppearanceButtonBarBody() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.dash.settings || {};
-
-        // These five are the only values the server accepts; it silently
-        // rewrites anything else to 'bottom-right'. See models.go.
-        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
-            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom-right';
-        // Short labels: the full ones carry "(default)" and "corner", which is
-        // more than a button in a five-up group can show.
-        const barPositions = [
-            ['bottom', this.t('config.buttonBarPositionBottomShort', 'Center-bottom')],
-            ['bottom-left', this.t('config.buttonBarPositionLeftShort', 'Bottom-left')],
-            ['bottom-right', this.t('config.buttonBarPositionRightShort', 'Bottom-right')],
-            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Rail left')],
-            ['side-right', this.t('config.buttonBarPositionSideRightShort', 'Rail right')],
-        ];
-        // Five names for five places on the page, and no page to point at. Each
-        // button draws the dashboard with the bar where that option puts it.
-        const barChoices = barPositions.map(([val, label]) =>
-            `<button type="button" class="config-choice config-choice--art${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">`
-            + `${window.SettingArt?.render?.('barPosition', val) || ''}`
-            + `<span class="config-choice-label">${esc(label)}</span></button>`
-        ).join('');
-
-        // Where first, then what is on it: the position is the one choice that
-        // changes the shape of the thing the toggles below are describing.
+    renderAppearanceActionBarBody() {
         return `
-            ${this.renderChangedFilterBar('appearance', 'buttonbar')}
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
-                    <div class="config-choices" role="group">${barChoices}</div>
-                    ${this.appearanceAff('buttonBarPosition')}
-                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
-                </div>
-            </div>
 
             ${this.renderControlPanels(this.panelsFor('appearance', 'buttonbar'), 'behavior')}`;
     }
@@ -8774,7 +8790,6 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         // The button bar has a tab of its own; what is left here is the grid.
         return `
-            ${this.renderChangedFilterBar('appearance', 'layout')}
             ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
 `;
@@ -8784,7 +8799,6 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
-            ${this.renderChangedFilterBar('appearance', 'display')}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
@@ -9135,9 +9149,20 @@ class DashboardConfig {
     }
 
     bindAppearanceControls(container) {
+        /*
+         * The band is painted before anything binds, not after.
+         *
+         * Every appearance repaint lands here, and the band redraws its filter
+         * bar from state -- so painting it at the end replaced the very node
+         * the binder below had just wired, and the toggle was dead from the
+         * first repaint onward.
+         */
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
+
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
             void this.switchAppearanceTab(tab);
         });
+        this.bindHubControls(container);
         // The filter field is rendered by the shared bar, but this section is
         // hand-written markup — so it is applied to the DOM after each render
         // rather than while the controls are built.
@@ -9223,9 +9248,6 @@ class DashboardConfig {
         if (bgUrl) {
             bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
         }
-        container.querySelectorAll('[data-appearance-barpos]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
-        });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => {
                 const field = input.getAttribute('data-appearance-toggle');
@@ -9257,18 +9279,6 @@ class DashboardConfig {
                 if (out) out.textContent = `${Math.round(val * 100)}%`;
             });
             range.addEventListener('change', () => void this.saveSettingsWithFeedback());
-        }
-        const inkRange = container.querySelector('[data-appearance-range="inkGap"]');
-        if (inkRange) {
-            inkRange.addEventListener('input', () => {
-                // Applied before it is saved, same reason as the depth control:
-                // the whole point is watching the text lift while you drag.
-                const val = window.ThemeLoader?.applyInkGap?.(inkRange.value) ?? Number(inkRange.value);
-                this.dash.settings.inkGap = val;
-                const out = inkRange.parentElement?.querySelector('.config-range-value');
-                if (out) out.textContent = this.inkGapLabelFor(val);
-            });
-            inkRange.addEventListener('change', () => void this.saveSettingsWithFeedback());
         }
                 const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
         if (titleInput) {
@@ -9334,7 +9344,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'buttonbar', 'display', 'toolbar'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -9356,7 +9366,8 @@ class DashboardConfig {
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
     async switchAppearanceTab(tab) {
-        if (tab === this.appearanceTab) return;
+        const hubClosed = window.ConfigHub && !this.hubOpen.appearance;
+        if (tab === this.appearanceTab && !hubClosed) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
         }
@@ -9375,12 +9386,16 @@ class DashboardConfig {
             await this.applyThemeChoice(this._themeSelected);
         }
         this.appearanceTab = tab;
+        if (window.ConfigHub) this.hubOpen.appearance = true;
         this.restoreConfigHash();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
         if (tab !== 'custom-themes') this.clearThemePreview();
         this.render();
         if (tab === 'custom-themes') await this.openCustomThemes();
+        // openCustomThemes paints its own body after render, so the band is
+        // filled again here rather than only in afterRender.
+        this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
     }
 
     /** Persist a settings change and repaint the appearance section. */
@@ -9457,9 +9472,10 @@ class DashboardConfig {
         const map = {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
-            buttonbar: ['config.appearanceTabButtonBar', 'Button bar'],
+            buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
+            datetime: ['config.appearanceTabDateTime', 'Date & weather'],
             display: ['config.appearanceTabDisplay', 'Display'],
-            toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
+            header: ['config.appearanceTabHeaderButtons', 'Header and buttons'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -9478,7 +9494,28 @@ class DashboardConfig {
     static THEME_COLOR_GROUPS = [
         ['themeGroupText', 'Text', ['textPrimary', 'textSecondary', 'textTertiary']],
         ['themeGroupSurfaces', 'Surfaces', ['backgroundPrimary', 'backgroundSecondary', 'backgroundDots', 'backgroundModal', 'borderPrimary', 'borderSecondary']],
-        ['themeGroupAccents', 'Accents', ['accentSuccess', 'accentWarning', 'accentError']],
+        ['themeGroupAccents', 'Accents', ['accentPrimary', 'accentSuccess', 'accentWarning', 'accentError', 'accentInfo']],
+    ];
+
+    /** Colours a theme may leave empty: the server derives them instead. */
+    static THEME_OPTIONAL_COLORS = ['accentPrimary', 'accentInfo'];
+
+    /**
+     * Everything a theme can be besides a palette, as the editor offers it.
+     * Ranges match what the server keeps (security.go) and renders
+     * (handlers.go); an unset field is derived there.
+     */
+    static THEME_CHARACTER_FIELDS = [
+        { prop: 'surfaceStep', kind: 'range', min: 0.6, max: 1.8, step: 0.05, key: 'themeCharSurfaceStep', label: 'Space between surface layers' },
+        { prop: 'radiusScale', kind: 'range', min: 0.05, max: 1.6, step: 0.05, key: 'themeCharRadius', label: 'Corner roundness' },
+        { prop: 'surfaceAlpha', kind: 'range', min: 0.3, max: 1, step: 0.05, glass: true, key: 'themeCharSurfaceAlpha', label: 'Surface opacity' },
+        { prop: 'surfaceBlur', kind: 'range', min: 1, max: 32, step: 1, unit: 'px', glass: true, key: 'themeCharSurfaceBlur', label: 'Blur behind surfaces' },
+        { prop: 'surfaceGlow', kind: 'glow', min: 0.05, max: 1, step: 0.05, key: 'themeCharGlow', label: 'Glow around surfaces' },
+        { prop: 'labelTransform', kind: 'choice', options: ['none', 'uppercase', 'lowercase'], key: 'themeCharLabelCase', label: 'Category title case' },
+        { prop: 'labelSpacing', kind: 'range', min: -0.05, max: 0.25, step: 0.01, unit: 'em', key: 'themeCharLabelSpacing', label: 'Category title letter spacing' },
+        { prop: 'labelWeight', kind: 'select', options: [400, 500, 600, 700, 800], key: 'themeCharLabelWeight', label: 'Category title weight' },
+        { prop: 'sheen', kind: 'range', min: 0.05, max: 1, step: 0.05, key: 'themeCharSheen', label: 'Gloss' },
+        { prop: 'backdrop', kind: 'select', options: ['blooms', 'sweep', 'wireframe', 'glow', 'band', 'rings', 'scanlines', 'crosshatch', 'horizon'], key: 'themeCharBackdrop', label: 'Backdrop pattern' },
     ];
 
     themeColorLabel(prop) {
@@ -9492,7 +9529,9 @@ class DashboardConfig {
             backgroundModal: ['config.colorBackgroundModal', 'Modals'],
             borderPrimary: ['config.colorBorderPrimary', 'Borders'],
             borderSecondary: ['config.colorBorderSecondary', 'Subtle borders'],
-            accentSuccess: ['config.colorAccentSuccess', 'Accent'],
+            accentPrimary: ['config.colorAccentPrimary', 'Theme colour'],
+            accentSuccess: ['config.colorAccentSuccess', 'Success'],
+            accentInfo: ['config.colorAccentInfo', 'Info'],
             accentWarning: ['config.colorAccentWarning', 'Warning'],
             accentError: ['config.colorAccentError', 'Error'],
         };
@@ -9635,11 +9674,13 @@ class DashboardConfig {
                     // may use, so the text field is the source of truth and the
                     // swatch is a convenience that writes into it.
                     const forPicker = /^#[0-9a-fA-F]{6}$/.test(val) ? val : '#000000';
+                    const optional = DashboardConfig.THEME_OPTIONAL_COLORS.includes(prop);
+                    const placeholder = optional ? this.t('config.themeColorDerived', 'derived') : '#1a1a1a';
                     return `
                     <div class="config-field config-theme-field">
                         <span class="config-field-label">${esc(this.themeColorLabel(prop))}</span>
                         <input type="color" class="config-theme-color-input" data-theme-color-picker="${esc(prop)}" value="${esc(forPicker)}" aria-label="${esc(this.themeColorLabel(prop))}">
-                        <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}" value="${esc(val)}" spellcheck="false" placeholder="#1a1a1a">
+                        <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}"${optional ? ' data-theme-color-optional="1"' : ''} value="${esc(val)}" spellcheck="false" placeholder="${esc(placeholder)}">
                     </div>`;
                 }).join('')}
             </div>`).join('');
@@ -9654,6 +9695,8 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
                 <p class="config-field-warning" id="config-theme-contrast" hidden></p>
                 <div class="config-theme-groups">${groups}</div>
+                ${this.renderThemeCharacter(theme)}
+                ${isCustom ? this.renderThemePairRow(id) : ''}
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
                     <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
@@ -9662,6 +9705,170 @@ class DashboardConfig {
                     ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
                 </div>
             </div>`;
+    }
+
+    /**
+     * Shape, glass, glow and titles: what a theme is besides its colours.
+     *
+     * Each control can be left on "automatic", which is the value the server
+     * works out from the palette -- the way all the packaged themes that never
+     * mention a field get one.
+     */
+    renderThemeCharacter(theme) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const auto = this.t('config.themeCharAuto', 'Automatic');
+        const glassNote = this.t('config.themeCharGlassOnly', 'Shows with depth set to Glass.');
+        const rows = DashboardConfig.THEME_CHARACTER_FIELDS.map((f) => {
+            const label = this.t(`config.${f.key}`, f.label);
+            const raw = theme[f.prop];
+            let control;
+            if (f.kind === 'range' || f.kind === 'glow') {
+                const numeric = f.unit === 'em' ? parseFloat(raw) : Number(raw);
+                const set = f.kind === 'glow' ? numeric > 0 : (f.unit === 'em' ? Number.isFinite(numeric) && String(raw || '') !== '' : numeric > 0);
+                const value = set ? numeric : (f.min + f.max) / 2;
+                const readout = set ? `${value}${f.unit || ''}` : auto;
+                const glowSelect = f.kind === 'glow' ? `
+                    <select class="config-select" data-theme-glow-mode>
+                        <option value="auto" ${!(numeric > 0) && !(numeric < 0) ? 'selected' : ''}>${esc(auto)}</option>
+                        <option value="none" ${numeric < 0 ? 'selected' : ''}>${esc(this.t('config.themeCharGlowNone', 'None'))}</option>
+                        <option value="custom" ${numeric > 0 ? 'selected' : ''}>${esc(this.t('config.themeCharGlowCustom', 'This much'))}</option>
+                    </select>` : '';
+                const hideRange = f.kind === 'glow' && !(numeric > 0);
+                control = `${glowSelect}
+                    <input type="range" class="config-range" data-theme-char="${esc(f.prop)}" data-unit="${esc(f.unit || '')}"
+                           min="${f.min}" max="${f.max}" step="${f.step}" value="${esc(String(value))}" aria-label="${esc(label)}"${hideRange ? ' hidden' : ''}>
+                    <span class="config-range-value" data-theme-char-readout="${esc(f.prop)}"${hideRange ? ' hidden' : ''}>${esc(readout)}</span>`;
+            } else if (f.kind === 'choice') {
+                const current = raw || '';
+                const names = { '': auto, none: this.t('config.themeCharCaseNone', 'As typed'), uppercase: 'UPPERCASE', lowercase: 'lowercase' };
+                control = `<div class="config-choices" role="group" aria-label="${esc(label)}">${['', ...f.options].map((o) =>
+                    `<button type="button" class="config-choice${o === current ? ' is-active' : ''}" aria-pressed="${o === current}" data-theme-char-choice="${esc(f.prop)}" data-value="${esc(o)}">${esc(names[o])}</button>`).join('')}</div>`;
+            } else {
+                const current = raw ? String(raw) : '';
+                const optionLabel = (o) => (f.prop === 'backdrop'
+                    ? this.t(`config.themeBackdrop_${o}`, o.charAt(0).toUpperCase() + o.slice(1))
+                    : String(o));
+                control = `<select class="config-select" data-theme-char-select="${esc(f.prop)}" aria-label="${esc(label)}">
+                    <option value="" ${current === '' ? 'selected' : ''}>${esc(auto)}</option>
+                    ${f.options.map((o) => `<option value="${esc(String(o))}" ${String(o) === current ? 'selected' : ''}>${esc(optionLabel(o))}</option>`).join('')}
+                </select>`;
+            }
+            const unset = raw === undefined || raw === null || raw === '' || raw === 0;
+            return `
+                <div class="config-field config-theme-char" data-theme-char-row="${esc(f.prop)}">
+                    <span class="config-field-label">${esc(label)}</span>
+                    ${control}
+                    <span class="config-field-affordances">
+                        <button type="button" class="config-reset-btn${unset ? '' : ' is-visible'}" data-theme-char-reset="${esc(f.prop)}"
+                                aria-label="${esc(this.t('config.themeCharReset', 'Back to automatic'))}" title="${esc(this.t('config.themeCharReset', 'Back to automatic'))}">↺</button>
+                    </span>
+                </div>${f.glass ? `<p class="config-field-hint">${esc(glassNote)}</p>` : ''}`;
+        }).join('');
+        return `
+            <details class="config-theme-character" data-theme-character ${this._themeCharacterOpen ? 'open' : ''}>
+                <summary>${esc(this.t('config.themeCharTitle', 'Shape & character'))}</summary>
+                <p class="config-panel-note">${esc(this.t('config.themeCharNote', 'Corners, glass, glow, the category titles and the backdrop. Automatic is what nextDash works out from the colours.'))}</p>
+                ${rows}
+            </details>`;
+    }
+
+    /** The other half of a custom theme, or the button that makes one. */
+    renderThemePairRow(id) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pair = this.themePairOf(id);
+        if (pair.other && this._colorsData?.custom?.[pair.other]) {
+            const otherName = this._colorsData.custom[pair.other].name || pair.other;
+            return `
+                <p class="config-panel-note" data-theme-pair="${esc(pair.other)}">
+                    ${esc(this.t('config.themePairHas', 'Paired with {name}: Quick mode switches between the two.').replace('{name}', otherName))}
+                    <button type="button" class="config-btn config-btn--small" data-theme-edit="${esc(pair.other)}">${esc(this.t('config.themeEdit', 'Edit'))}</button>
+                </p>`;
+        }
+        return `
+            <p class="config-panel-note">
+                ${esc(this.t('config.themePairNone', 'A light and a dark half let Quick mode and "follow system dark mode" switch between them.'))}
+                <button type="button" class="config-btn config-btn--small" data-theme-action="pair">${esc(this.t('config.themePairMake', 'Make a light/dark pair'))}</button>
+            </p>`;
+    }
+
+    /** Which half a custom theme is, and the id of the other one. */
+    themePairOf(id) {
+        const m = String(id || '').match(/^(.*)-(dark|light)$/);
+        if (!m) return { base: id, half: null, other: null };
+        return { base: m[1], half: m[2], other: `${m[1]}-${m[2] === 'dark' ? 'light' : 'dark'}` };
+    }
+
+    /**
+     * Turn a single custom theme into a light/dark pair.
+     *
+     * The theme keeps its palette and takes the suffix of the half it already
+     * is, judged from its background; the other half starts from the base
+     * palette of that lightness with this theme's accents and character, so it
+     * is recognisably the same theme and readable from the start. Renaming the
+     * id moves every setting that names it with it.
+     */
+    async makeThemePair(id) {
+        const data = this._colorsData;
+        const theme = data?.custom?.[id];
+        if (!theme) return;
+        const lum = window.ColorValueUtils?.relativeLuminance?.(String(theme.backgroundPrimary || '').trim());
+        const half = lum != null && lum >= 0.4 ? 'light' : 'dark';
+        const other = half === 'dark' ? 'light' : 'dark';
+        const known = this.themePairOf(id);
+        const base = known.half ? known.base : id;
+        const ownId = `${base}-${half}`;
+        const otherId = `${base}-${other}`;
+        if (data.custom[otherId]) return;
+
+        const neutrals = data[other] || {};
+        const carried = {};
+        ['accentPrimary', 'accentSuccess', 'accentWarning', 'accentError', 'accentInfo',
+            ...DashboardConfig.THEME_CHARACTER_FIELDS.map((f) => f.prop)].forEach((k) => {
+            if (theme[k] !== undefined && theme[k] !== '') carried[k] = theme[k];
+        });
+        const names = Object.values(data.custom).map((t) => t.name);
+        const counterpart = {
+            ...neutrals,
+            ...carried,
+            name: DashboardConfig.uniqueNameFrom(`${theme.name || base} ${this.t(`config.themePairSuffix_${other}`, other)}`, names),
+        };
+
+        // Rebuilt in order, with the new half straight after the old one.
+        const next = {};
+        Object.entries(data.custom).forEach(([key, value]) => {
+            if (key === id) {
+                next[ownId] = value;
+                next[otherId] = counterpart;
+            } else {
+                next[key] = value;
+            }
+        });
+        data.custom = next;
+
+        if (ownId !== id) this.renameThemeInSettings(id, ownId);
+        this._themeSelected = ownId;
+        this.syncCustomThemeIds();
+        this.repaintAppearanceBody();
+        if (await this.saveColorsData() && ownId !== id) {
+            await this.saveSettingsWithFeedback();
+        }
+    }
+
+    /** Everything in the settings that names a theme by id follows a rename. */
+    renameThemeInSettings(from, to) {
+        const s = this.dash.settings;
+        if (!s) return;
+        if (s.theme === from) s.theme = to;
+        if (Array.isArray(s.favoriteThemes)) {
+            s.favoriteThemes = s.favoriteThemes.map((t) => (t === from ? to : t));
+        }
+        if (s.themeIconStyling && s.themeIconStyling[from]) {
+            s.themeIconStyling[to] = s.themeIconStyling[from];
+            delete s.themeIconStyling[from];
+        }
+        if (document.documentElement.getAttribute('data-theme') === from) {
+            document.documentElement.setAttribute('data-theme', to);
+        }
     }
 
     /**
@@ -9683,6 +9890,7 @@ class DashboardConfig {
         host.innerHTML = this.renderCustomThemes();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindAppearanceControls(container);
+        this._fillShellHeadFromSection(container || document);
     }
 
     /**
@@ -9786,21 +9994,15 @@ class DashboardConfig {
             this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
             return;
         }
-        // Either shape is accepted: what this exports, and a bare object of
-        // colours — someone who copied a palette out of a backup has the latter.
-        const colors = payload?.colors && typeof payload.colors === 'object'
-            ? payload.colors
-            : (payload && typeof payload === 'object' ? payload : null);
-        if (!colors || !colors.backgroundPrimary || !colors.textPrimary) {
+        // One reading of a theme file for both import buttons.
+        const theme = this.normalizeImportedTheme(payload);
+        if (!theme) {
             this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
             return;
         }
         const names = Object.values(data.custom || {}).map((t) => t.name);
-        const wanted = String(payload?.name || colors.name || this.t('config.customThemePrefix', 'My theme')).trim();
         const id = DashboardConfig.newThemeId();
-        const clean = { ...colors };
-        delete clean.name;
-        data.custom[id] = { ...clean, name: DashboardConfig.uniqueNameFrom(wanted, names) };
+        data.custom[id] = { ...theme, name: DashboardConfig.uniqueNameFrom(theme.name, names) };
         this._themeSelected = id;
         this.syncCustomThemeIds();
         this.repaintAppearanceBody();
@@ -10082,6 +10284,14 @@ class DashboardConfig {
                 }
             });
             input.addEventListener('change', () => {
+                // An optional colour left empty goes back to being derived.
+                if (input.dataset.themeColorOptional && !input.value.trim()) {
+                    delete theme[prop];
+                    window.ColorValueUtils?.validateTextInput?.(input);
+                    this.previewThemeColors(id);
+                    void this.saveColorsData();
+                    return;
+                }
                 if (!window.ColorValueUtils?.isValidCSSValue?.(input.value)) {
                     // Put back the stored value rather than saving something the
                     // server would reject or render as an empty variable.
@@ -10108,6 +10318,81 @@ class DashboardConfig {
 
         container.querySelectorAll('[data-theme-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleThemeAction(btn.getAttribute('data-theme-action'), id));
+        });
+        this.bindThemeCharacter(container, id, theme);
+    }
+
+    /** The Shape & character controls: preview while moving, save on release. */
+    bindThemeCharacter(container, id, theme) {
+        const fold = container.querySelector('[data-theme-character]');
+        fold?.addEventListener('toggle', () => { this._themeCharacterOpen = fold.open; });
+        const setValue = (prop, value, { save }) => {
+            if (value === undefined) delete theme[prop];
+            else theme[prop] = value;
+            this.previewThemeColors(id);
+            const reset = container.querySelector(`[data-theme-char-reset="${prop}"]`);
+            reset?.classList.toggle('is-visible', value !== undefined);
+            if (save) void this.saveColorsData();
+        };
+        container.querySelectorAll('[data-theme-char]').forEach((range) => {
+            const prop = range.dataset.themeChar;
+            const unit = range.dataset.unit || '';
+            const readout = container.querySelector(`[data-theme-char-readout="${prop}"]`);
+            const read = () => {
+                const n = Number(range.value);
+                return unit === 'em' ? `${n}em` : n;
+            };
+            range.addEventListener('input', () => {
+                if (readout) readout.textContent = `${range.value}${unit}`;
+                setValue(prop, read(), { save: false });
+            });
+            range.addEventListener('change', () => setValue(prop, read(), { save: true }));
+        });
+
+        const glowMode = container.querySelector('[data-theme-glow-mode]');
+        glowMode?.addEventListener('change', () => {
+            const range = container.querySelector('[data-theme-char="surfaceGlow"]');
+            const readout = container.querySelector('[data-theme-char-readout="surfaceGlow"]');
+            const custom = glowMode.value === 'custom';
+            if (range) range.hidden = !custom;
+            if (readout) {
+                readout.hidden = !custom;
+                readout.textContent = range?.value || '';
+            }
+            const value = glowMode.value === 'none' ? -1 : (custom ? Number(range?.value) : undefined);
+            setValue('surfaceGlow', value, { save: true });
+        });
+
+        container.querySelectorAll('[data-theme-char-choice]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.themeCharChoice;
+                const value = btn.dataset.value || undefined;
+                container.querySelectorAll(`[data-theme-char-choice="${prop}"]`).forEach((b) => {
+                    const on = b === btn;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', String(on));
+                });
+                setValue(prop, value, { save: true });
+            });
+        });
+
+        container.querySelectorAll('[data-theme-char-select]').forEach((select) => {
+            const prop = select.dataset.themeCharSelect;
+            select.addEventListener('change', () => {
+                const raw = select.value;
+                const value = raw === '' ? undefined : (prop === 'labelWeight' ? Number(raw) : raw);
+                setValue(prop, value, { save: true });
+            });
+        });
+
+        container.querySelectorAll('[data-theme-char-reset]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.themeCharReset;
+                setValue(prop, undefined, { save: true });
+                // Redraw the row's control as automatic.
+                this.repaintAppearanceBody();
+                if (this._themeSelected) this.previewThemeColors(this._themeSelected);
+            });
         });
     }
 
@@ -10165,16 +10450,19 @@ class DashboardConfig {
             return;
         }
         if (action === 'export') {
-            const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${String(theme.name || id).replace(/[^\w-]+/g, '-').toLowerCase()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+            // The same file the list's ⤓ writes, for packaged themes too.
+            const payload = { nextdashTheme: 1, name: theme.name || id, colors: { ...theme } };
+            delete payload.colors.name;
+            const safeName = String(theme.name || id).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            this.triggerDownload(
+                new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+                `nextdash-theme-${safeName || 'theme'}.json`);
         }
         if (action === 'import') {
             this.importThemeFromFile();
+        }
+        if (action === 'pair') {
+            await this.makeThemePair(id);
         }
     }
 
@@ -10227,14 +10515,24 @@ class DashboardConfig {
      */
     normalizeImportedTheme(parsed) {
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-        const colorKeys = Object.keys(parsed).filter((k) => k !== 'name'
-            && typeof parsed[k] === 'string' && /^(#|rgb|hsl|var\()/i.test(parsed[k].trim()));
-        if (!colorKeys.length) return null;
+        // Both shapes: an exported file wraps the theme in `colors`, and a bare
+        // object of fields is what a backup's colors.json holds.
+        const source = parsed.colors && typeof parsed.colors === 'object' ? parsed.colors : parsed;
+        const colorKeys = Object.keys(source).filter((k) => k !== 'name'
+            && typeof source[k] === 'string' && /^(#|rgb|hsl|var\()/i.test(source[k].trim()));
+        if (!colorKeys.length || !source.backgroundPrimary || !source.textPrimary) return null;
+        const rawName = parsed.name || source.name || this.t('config.themeImportedName', 'Imported theme');
         const out = { name: DashboardConfig.NAME_MAX_LENGTH
-            ? String(parsed.name || this.t('config.themeImportedName', 'Imported theme'))
-                .trim().slice(0, DashboardConfig.NAME_MAX_LENGTH)
-            : String(parsed.name || '') };
-        colorKeys.forEach((k) => { out[k] = parsed[k]; });
+            ? String(rawName).trim().slice(0, DashboardConfig.NAME_MAX_LENGTH)
+            : String(rawName) };
+        colorKeys.forEach((k) => { out[k] = source[k]; });
+        // The character fields come along too, in the type each one has; the
+        // server holds them to their ranges when the theme is saved.
+        DashboardConfig.THEME_CHARACTER_FIELDS.forEach(({ prop }) => {
+            const v = source[prop];
+            if (typeof v === 'number' && Number.isFinite(v)) out[prop] = v;
+            else if (typeof v === 'string' && v.trim() && !colorKeys.includes(prop)) out[prop] = v.trim();
+        });
         return out.name ? out : null;
     }
 
@@ -10381,6 +10679,39 @@ class DashboardConfig {
                 break;
             case 'launcherIconSize': this.setLauncherIconSize(value); break;
             case 'randomThemeMode': this.setRandomThemeMode(value); break;
+            /*
+             * The five that paint themselves.
+             *
+             * Each of these is drawn by an attribute or a custom property
+             * rather than by a re-render, so writing the settings object alone
+             * left the page exactly as it was and the ↺ looked broken. Same
+             * appliers the selects above them call.
+             */
+            case 'themeDepth':
+                this.dash.settings.themeDepth = value;
+                window.ThemeLoader?.applyThemeDepth?.(value);
+                this.persistAppearance();
+                break;
+            case 'glowStrength':
+                this.dash.settings.glowStrength = value;
+                window.ThemeLoader?.applyGlowStrength?.(value);
+                this.persistAppearance();
+                break;
+            case 'inkGap':
+                this.dash.settings.inkGap = DashboardConfig.inkGapStepFor(value);
+                window.ThemeLoader?.applyInkGap?.(this.dash.settings.inkGap);
+                this.persistAppearance();
+                break;
+            case 'themeBackdrop':
+                this.dash.settings.themeBackdrop = value;
+                window.ThemeLoader?.applyThemeBackdrop?.(value);
+                this.persistAppearance();
+                break;
+            case 'backgroundPattern':
+                this.dash.settings.backgroundPattern = value;
+                window.ThemeLoader?.applyBackgroundPattern?.(value);
+                this.persistAppearance();
+                break;
             default:
                 // Fall back to a plain settings write + repaint for any field
                 // without a dedicated live setter.
@@ -10441,7 +10772,32 @@ class DashboardConfig {
         if (randomActive && theme !== previous) {
             this.notify(this.t('config.randomThemeChoiceSavedHint',
                 'Random theme is on — your choice is saved, but the display keeps picking from the pool until you turn random off.'));
+        } else if (theme !== previous) {
+            await this.offerGlowForGloss(theme);
         }
+    }
+
+    /**
+     * A gloss theme with the glow switched off reads matte again, and the glow
+     * is the reader's setting rather than the theme's. So picking one while it
+     * is off asks, once per visit, with the switch in the question.
+     */
+    async offerGlowForGloss(theme) {
+        const s = this.dash.settings || {};
+        if ((s.glowStrength || 'off') !== 'off' || this._glossGlowOffered) return;
+        await this.loadColorsData();
+        const palette = this.themeById(theme);
+        if (!(Number(palette?.sheen) > 0)) return;
+        this._glossGlowOffered = true;
+        this.dash.showNotification?.(
+            this.t('config.glossGlowOffer', 'This is a gloss theme, made to be seen with Glow on. Turn Glow to Soft?'),
+            'info',
+            {
+                durationMs: 12000,
+                actionLabel: this.t('config.glossGlowOfferAction', 'Turn on'),
+                onAction: () => this.setAppearanceSelect('glowStrength', 'soft'),
+            },
+        );
     }
 
     setFontSize(size) {
@@ -10558,18 +10914,6 @@ class DashboardConfig {
         this.persistAppearance();
     }
 
-    /**
-     * Where the button bar sits. The position is written onto <body> as
-     * data-button-position by setupDOM and the rest is CSS, so reapplying the
-     * chrome is what moves the bar — the same path `:buttonbar` uses.
-     */
-    setButtonBarPosition(position) {
-        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'].includes(position)) return;
-        this.dash.settings.buttonBarPosition = position;
-        this.applyChromeSettings();
-        this.persistAppearance();
-    }
-
     setAppearanceSelect(name, value) {
         if (name === 'fontPreset') {
             this.dash.settings.fontPreset = value;
@@ -10599,8 +10943,25 @@ class DashboardConfig {
             this.persistAppearance();
             return;
         }
+        if (name === 'inkGap') {
+            const gap = DashboardConfig.inkGapStepFor(value);
+            this.dash.settings.inkGap = gap;
+            // Applied before it is saved, like the two controls above it.
+            window.ThemeLoader?.applyInkGap?.(gap);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'glowStrength') {
+            const strength = ['off', 'soft', 'full'].includes(value) ? value : 'off';
+            this.dash.settings.glowStrength = strength;
+            // Applied before it is saved, like the depth below it: the control
+            // exists to be seen.
+            window.ThemeLoader?.applyGlowStrength?.(strength);
+            this.persistAppearance();
+            return;
+        }
         if (name === 'themeDepth') {
-            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'rich';
+            const depth = ['flat', 'soft', 'rich', 'glass'].includes(value) ? value : 'flat';
             this.dash.settings.themeDepth = depth;
             // Applied before it is saved: the point of the control is seeing the
             // difference, and a round trip to the server is a second of nothing.
@@ -10618,6 +10979,36 @@ class DashboardConfig {
      * next band: below 0.36 some themes fall under 4.5:1, above 0.50 the faint
      * text starts competing with the bookmark names.
      */
+    /*
+     * Text contrast, as four answers rather than a slider.
+     *
+     * The value is a lightness step in OKLCH and the slider let you pick any of
+     * twenty-nine of them -- which is twenty-nine answers to a question with
+     * four meanings, drawn unlike the two controls above it. These are the
+     * midpoints of the bands inkGapLabelFor already named, so a dashboard that
+     * was set with the slider keeps the word it had.
+     */
+    /** How long a typed setting waits before it is saved. */
+    static HUB_TEXT_SAVE_MS = 450;
+
+    static INK_GAP_STEPS = [
+        [0.34, 'inkGapSoft', 'Soft'],
+        [0.44, 'inkGapNormal', 'Normal'],
+        [0.51, 'inkGapHigh', 'High'],
+        [0.58, 'inkGapMax', 'Maximum'],
+    ];
+
+    /** The step a stored number belongs to, so the select can show it. */
+    static inkGapStepFor(gap) {
+        const value = Number(gap);
+        if (!Number.isFinite(value)) return 0.44;
+        if (value < 0.36) return 0.34;
+        if (value < 0.48) return 0.44;
+        if (value < 0.54) return 0.51;
+        return 0.58;
+    }
+
+
     inkGapLabelFor(gap) {
         if (gap < 0.36) return this.t('config.inkGapSoft', 'Soft');
         if (gap < 0.48) return this.t('config.inkGapNormal', 'Normal');
@@ -10753,7 +11144,7 @@ class DashboardConfig {
         timeFormat: { info: ['timeFormatInfoTitle', 'timeFormatInfoMessage'], def: '24h' },
         showDate: { info: ['showDateInfoTitle', 'showDateInfoMessage'], def: true },
         showTime: { info: ['showTimeInfoTitle', 'showTimeInfoMessage'], def: true },
-        showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: false },
+        showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: true },
         weatherSource: { info: ['weatherSourceInfoTitle', 'weatherSourceInfoMessage'], def: 'manual' },
         weatherUnit: { info: ['weatherUnitInfoTitle', 'weatherUnitInfoMessage'], def: 'celsius' },
         weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'], def: '' },
@@ -10782,7 +11173,19 @@ class DashboardConfig {
         // Toolbar & tabs
         showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
         showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
+        maxPageTabs: { info: ['maxPageTabsInfoTitle', 'maxPageTabsInfoMessage'], def: 4 },
+        maxHeaderActions: { info: ['maxHeaderActionsInfoTitle', 'maxHeaderActionsInfoMessage'], def: 2 },
+        headerClockPlacement: { def: 'classic' },
+        pageSwitcherStyle: { info: ['pageSwitcherStyleInfoTitle', 'pageSwitcherStyleInfoMessage'], def: 'classic' },
+        headerButtonStyle: { info: ['headerButtonStyleInfoTitle', 'headerButtonStyleInfoMessage'], def: 'plain' },
+        actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
+        actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
+        actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
+        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
+        showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
+        showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
+        showDashboardButton: { info: ['showDashboardButtonInfoTitle', 'showDashboardButtonInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
         shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'instant' },
@@ -10828,7 +11231,15 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { def: 'ask' },
         monitorEmphasis: { def: 'problems' },
-        theme: { def: 'retro-crt-dark' },
+        theme: { def: 'tarnished-brass-dark' },
+        // Appearance → Theme: the three Surfaces answers and the two Backdrop
+        // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
+        // is why these five were the only controls on the page without one.
+        themeDepth: { def: 'glass' },
+        glowStrength: { def: 'soft' },
+        inkGap: { def: 0.44 },
+        themeBackdrop: { def: 'on' },
+        backgroundPattern: { def: 'auto' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
@@ -10837,16 +11248,15 @@ class DashboardConfig {
         pushNotifyBackup: { def: false },
         pushNotifySubject: { def: '' },
         // Toolbar & chrome
-        showRecentButton: { def: false },
-        showCheatSheetButton: { def: false },
-        showCollapseAllButton: { def: false },
-        showConfigButton: { def: true },
-        showHealthDashboard: { def: true },
-        showAddBookmarkButton: { def: true },
-        showSearchButton: { def: true },
-        showFindersButton: { def: false },
-        showCommandsButton: { def: false },
-        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom-right' },
+        showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
+        showCheatSheetButton: { info: ['showCheatSheetButtonInfoTitle', 'showCheatSheetButtonInfoMessage'], def: true },
+        showCollapseAllButton: { info: ['showCollapseAllButtonInfoTitle', 'showCollapseAllButtonInfoMessage'], def: true },
+        showConfigButton: { info: ['showConfigButtonInfoTitle', 'showConfigButtonInfoMessage'], def: true },
+        showHealthDashboard: { info: ['showHealthDashboardInfoTitle', 'showHealthDashboardInfoMessage'], def: true },
+        showAddBookmarkButton: { info: ['showAddBookmarkButtonInfoTitle', 'showAddBookmarkButtonInfoMessage'], def: true },
+        showSearchButton: { info: ['showSearchButtonInfoTitle', 'showSearchButtonInfoMessage'], def: true },
+        showFindersButton: { info: ['showFindersButtonInfoTitle', 'showFindersButtonInfoMessage'], def: true },
+        showCommandsButton: { info: ['showCommandsButtonInfoTitle', 'showCommandsButtonInfoMessage'], def: true },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
@@ -11172,7 +11582,7 @@ class DashboardConfig {
                 note: t('config.generalGroupKeyboardNote', 'Whether the keyboard works outside the dashboard, and whether it explains itself.'),
                 controls: [
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
-                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
+                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on header links'), special: 'shortcutTooltips' },
                     // Here rather than under Appearance: what it controls is
                     // whether the keyboard explains itself, not how the grid
                     // looks.
@@ -11223,7 +11633,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 // Three subjects, and the weather is five of the eleven fields
                 // on its own -- a reader setting a date format scrolled past a
@@ -11245,7 +11655,25 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                // Where the line is drawn, as against what it says: the three
+                // groups around this one set the date, the temperature and the
+                // feed, and this one is about the header that carries them.
+                section: 'appearance',
+                tab: 'datetime',
+                title: t('config.generalGroupHeaderClock', 'Header'),
+                note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
+                controls: [
+                    { field: 'headerClockPlacement', type: 'select', special: 'chrome',
+                        label: t('config.headerClockPlacementLabel', 'Clock and weather'),
+                        options: [
+                            opt('beside-name', t('config.headerClockBesideName', 'Beside the view name')),
+                            opt('own-zone', t('config.headerClockOwnZone', 'In a column of their own')),
+                            opt('classic', t('config.headerClockClassic', 'On their own line, name underneath')),
+                        ] },
+                ],
+            },
+            {
+                section: 'appearance',
                 tab: 'datetime',
                 title: t('config.generalGroupWeather', 'Weather'),
                 note: t('config.generalGroupWeatherNote', 'Whether the temperature joins the date line, where it is measured, and how often it is fetched.'),
@@ -11257,12 +11685,13 @@ class DashboardConfig {
                     { field: 'weatherUnit', type: 'select', label: t('config.weatherUnitLabel', 'Temperature unit'), special: 'datetime', options: [
                         opt('celsius', '°C'), opt('fahrenheit', '°F'),
                     ] },
-                    { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
+                    { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'),
+                      placeholder: t('config.weatherLocationPlaceholder', 'Leiden'), special: 'datetime' },
                     { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
                 ],
             },
             {
-                section: 'behavior',
+                section: 'appearance',
                 tab: 'datetime',
                 title: t('config.generalGroupCalendar', 'Calendar'),
                 note: t('config.generalGroupCalendarNote', 'A feed to read your next appointments from. Two addresses because the widget and the date line ask for different things.'),
@@ -11494,45 +11923,78 @@ class DashboardConfig {
              */
             {
                 section: 'appearance',
-                tab: 'toolbar',
+                tab: 'header',
                 title: t('config.chromeGroupHeader', 'Header'),
-                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the two icons on the right.'),
+                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the buttons on the right.'),
                 bulk: 'chrome',
                 controls: [
+                    { field: 'headerButtonStyle', type: 'select', special: 'chrome',
+                        label: t('config.headerButtonStyleLabel', 'Button style'),
+                        options: [
+                            opt('plain', t('config.headerButtonsPlain', 'Plain, underlined when current')),
+                            opt('plated', t('config.headerButtonsPlated', 'Each in its own box')),
+                        ] },
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
+                    { field: 'pageSwitcherStyle', type: 'select', special: 'chrome',
+                        label: t('config.pageSwitcherStyleLabel', 'Page switcher'),
+                        options: [
+                            opt('classic', t('config.pageSwitcherClassic', 'Numbers beside the destinations')),
+                            opt('segmented', t('config.pageSwitcherSegmented', 'One segmented control')),
+                            opt('text', t('config.pageSwitcherText', 'Plain text, underlined')),
+                            opt('compact', t('config.pageSwitcherCompact', 'One button with a list')),
+                        ] },
+                    { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
+                        label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
+                    chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                 ],
             },
             {
+                // One list, in the order the buttons stand in the header. They
+                // were two groups -- "main buttons" and "extras" -- which was
+                // the floating bar's own split into a primary row and a second
+                // one beside it. There is one row now, so there is one list.
                 section: 'appearance',
                 tab: 'buttonbar',
-                title: t('config.chromeGroupPrimary', 'Button bar — main buttons'),
-                note: t('config.chromeGroupPrimaryNote', 'The four everyday actions. Hiding one leaves its keyboard shortcut working.'),
+                title: t('config.actionBarGroup', 'The action bar'),
+                note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.'),
                 bulk: 'chrome',
                 controls: [
+                    { field: 'actionBarPosition', type: 'select', special: 'chrome',
+                        label: t('config.actionBarPositionLabel', 'Where the fixed buttons stand'),
+                        options: [
+                            opt('bottom', t('config.actionBarBottom', 'In a dock at the bottom')),
+                            opt('left', t('config.actionBarLeft', 'In a column on the left')),
+                            opt('right', t('config.actionBarRight', 'In a column on the right')),
+                            opt('header', t('config.actionBarHeader', 'In the header')),
+                            opt('menu', t('config.actionBarMenu', 'Behind one menu in the header')),
+                        ] },
+                    { field: 'maxHeaderActions', type: 'number', min: 0, max: 9, step: 1, special: 'chrome',
+                        label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
+                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
+                    { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
+                    { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
+                        label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
+                        options: [
+                            opt(0, t('config.actionBarAutoHideNever', 'Always in view')),
+                            opt(2, t('config.actionBarAutoHide2', '2 seconds')),
+                            opt(5, t('config.actionBarAutoHide5', '5 seconds')),
+                            opt(10, t('config.actionBarAutoHide10', '10 seconds')),
+                            opt(30, t('config.actionBarAutoHide30', '30 seconds')),
+                        ] },
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
                     chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
                     chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
-                ],
-            },
-            {
-                section: 'appearance',
-                tab: 'buttonbar',
-                title: t('config.chromeGroupSecondary', 'Button bar — extras'),
-                note: t('config.chromeGroupSecondaryNote', 'The second group, beside the main buttons. With all of these off the group disappears entirely.'),
-                bulk: 'chrome',
-                controls: [
-                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
-                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
-                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                     chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    // The position control sits above these, at the top of
-                    // this tab: where the bar is and what it carries are the
-                    // same errand.
+                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
+                    chrome('showPagesButton', 'config.showPagesButtonLabel', 'Show the pages button'),
+                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
+                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                 ],
             },
             {
@@ -12132,7 +12594,8 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const fields = (panel.controls || [])
-            .filter((c) => c.type === 'checkbox' && c.field)
+            // A switch for the whole panel is not one of the things it shows.
+            .filter((c) => c.type === 'checkbox' && c.field && !c.noBulk)
             .map((c) => c.field);
         if (fields.length < 2) return '';
 
@@ -12339,33 +12802,6 @@ class DashboardConfig {
      * reapplied once, and one save covers the lot.
      */
     /**
-     * Open the filtered view from the Overview's count.
-     *
-     * The changed settings are spread over several tabs and the filter works a
-     * tab at a time, so this lands on the one carrying the most of them rather
-     * than on a fixed tab — arriving at Behavior › General to be shown one of
-     * four would read as the count being wrong. The line under the count names
-     * the sections, so the rest are not a surprise.
-     */
-    openChangedSettings() {
-        const changed = this.changedSettings();
-        if (!changed.length) return;
-
-        const tally = new Map();
-        changed.forEach((e) => {
-            const key = `${e.section}|${e.subTab || ''}`;
-            tally.set(key, (tally.get(key) || 0) + 1);
-        });
-        const [best] = [...tally.entries()].sort((a, b) => b[1] - a[1]);
-        const [section, subTab] = best[0].split('|');
-
-        this.changedOnly = true;
-        const prop = DashboardConfig.SUB_TAB_STATE[section];
-        if (prop && subTab) this[prop] = subTab;
-        this.selectSection(section, 'overview-changed');
-    }
-
-    /**
      * Apply "Only changed" to the hand-written Appearance controls.
      *
      * The schema panels filter themselves at render time, from the declaration.
@@ -12429,14 +12865,33 @@ class DashboardConfig {
 
     /** The "Only changed" toggle above a tab of settings. */
     bindChangedFilter(container) {
-        container.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+        /*
+         * The bar stands in the band, which is outside the body a repaint hands
+         * in -- so binding to the container alone left the toggle dead on every
+         * path that rewrites only the body. Bound once per element, because
+         * this runs again on each repaint and a second listener would count the
+         * click twice.
+         */
+        const scopes = [container];
+        const head = document.querySelector('.config-view-head');
+        if (head && !container.contains(head)) scopes.push(head);
+
+        scopes.forEach((scope) => scope.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            if (btn.dataset.changedBound === '1') return;
+            btn.dataset.changedBound = '1';
             btn.addEventListener('click', () => {
                 this.changedOnly = !this.changedOnly;
                 this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
                 this.repaintActiveControlPanels();
+                // The bar sits in the band, outside the body that repaint hands
+                // in, so its own button is never redrawn: the filter applied and
+                // the control went on reading "not pressed" to a screen reader
+                // and to its own styling. Pushed here rather than left to a
+                // repaint that structurally cannot reach it.
+                this.syncChangedToggles();
             });
-        });
-        container.querySelectorAll('[data-settings-filter]').forEach((field) => {
+        }));
+        scopes.forEach((scope) => scope.querySelectorAll('[data-settings-filter]').forEach((field) => {
             if (field.dataset.filterBound === '1') return;
             field.dataset.filterBound = '1';
             let debounce = null;
@@ -12464,7 +12919,7 @@ class DashboardConfig {
                 field.value = '';
                 this.repaintActiveControlPanels();
             });
-        });
+        }));
     }
 
     /**
@@ -13041,7 +13496,7 @@ class DashboardConfig {
     // "has this moved on", and the two were only neighbours because both talk to
     // the internet on a schedule. Four panels down a tab named after something
     // else is also where a reader stops looking.
-    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'search', 'inbox', 'fresh', 'status', 'privacy'];
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -13071,6 +13526,13 @@ class DashboardConfig {
 
     renderBehavior() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const hub = window.ConfigHub;
+        const intro = `<p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>`;
+        if (hub) {
+            if (!this.hubOpen.behavior) return intro + this.renderHubStart('behavior');
+            return hub.renderGroup(this, 'behavior', this.behaviorTab,
+                `<div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>`);
+        }
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'behavior'
@@ -13094,8 +13556,7 @@ class DashboardConfig {
         // cannot come from the schema; they are appended to the General tab so
         // the whole of onboarding sits together as it did in the old config.
         const trailing = (this.behaviorTab === 'general' && !this.changedOnly) ? this.renderOnboardingActions() : '';
-        return this.renderChangedFilterBar('behavior', this.behaviorTab)
-            + lead
+        return lead
             + this.renderControlPanels(panels, 'behavior')
             + trailing;
     }
@@ -13312,6 +13773,13 @@ class DashboardConfig {
 
     bindBehaviorControls(container) {
         this.bindSubTabStrip(container, 'data-behavior-tab', (tab) => {
+            if (window.ConfigHub) {
+                this.behaviorTab = tab;
+                this.hubOpen.behavior = true;
+                this.restoreConfigHash();
+                this.render();
+                return;
+            }
             if (tab === this.behaviorTab) return;
             this.behaviorTab = tab;
             this.restoreConfigHash();
@@ -13326,6 +13794,7 @@ class DashboardConfig {
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
+        this.bindHubControls(container);
         this.bindFormKeyboard(container);
     }
 
@@ -13412,6 +13881,9 @@ class DashboardConfig {
             return;
         }
         d.settings[field] = value;
+        if (field === 'layoutPreset' || field === 'columnsPerRow') {
+            window.nextdashTrackNav?.('layout', field);
+        }
         // Which settings people actually change. The field name is a fixed enum
         // so it is safe to report; the value is not (titles, webhook URLs and
         // custom text are free-form and can be personal). Booleans are the one
@@ -13546,8 +14018,168 @@ class DashboardConfig {
         this.repaintActiveControlPanels();
     }
 
+    /* ── Config hub (Appearance and Behavior) ──────────────────────────────── */
+
+    /*
+     * Choosing a tab — a notice sending the reader to Privacy, a remembered
+     * location, a settings-search jump — means showing it, so on a hub it also
+     * opens the group that holds it. Only Back and a bare hash show the tiles.
+     */
+    get appearanceTab() { return this._appearanceTab; }
+
+    set appearanceTab(tab) {
+        this._appearanceTab = tab;
+        if (this.hubOpen) this.hubOpen.appearance = true;
+    }
+
+    get behaviorTab() { return this._behaviorTab; }
+
+    set behaviorTab(tab) {
+        this._behaviorTab = tab;
+        if (this.hubOpen) this.hubOpen.behavior = true;
+    }
+
     /**
-     * Reapply the header/toolbar chrome so a Toolbar & tabs toggle shows up at
+     * The tiles, or — while a search or "Only changed" is on — the matching
+     * settings of every group, each under the group it lives in.
+     */
+    renderHubStart(section) {
+        const hub = window.ConfigHub;
+        const searching = String(this.settingsFilter || '').trim() || this.changedOnly;
+        if (!searching) return hub.renderStart(this, section);
+        const esc = (v) => this.dash.escapeHtml(v);
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
+        const hits = hub.groups(section).map((g) => {
+            const panels = g.tabs.flatMap((tab) => this.panelsFor(section, tab));
+            if (!panels.length) return '';
+            const html = this.renderControlPanels(panels, 'behavior');
+            if (!html.trim() || html.includes('config-panel-empty')) return '';
+            return `
+                <section class="hub-hits" data-hub-hits="${esc(g.id)}">
+                    <button type="button" class="hub-hits-title" ${attr}="${esc(g.tabs[0])}">${esc(this.t(g.titleKey, g.title))} →</button>
+                    ${html}
+                </section>`;
+        }).join('');
+        const empty = this.changedOnly
+            ? this.t('config.hubChangedNone', 'Nothing here differs from its default.')
+            : this.t('config.hubSearchNone', 'No setting matches that.');
+        return `<div class="hub-start hub-start--hits" data-hub-start="${esc(section)}">${hits || `<p class="config-panel-empty">${esc(empty)}</p>`}</div>`;
+    }
+
+    closeHub(section) {
+        if (!this.hubOpen?.[section]) return;
+        // A field typed into is saved a moment after the last keystroke, and
+        // leaving the group inside that moment used to write anyway -- from an
+        // input that is no longer on screen.
+        clearTimeout(this._hubTextTimer);
+        this._hubTextTimer = null;
+        this.hubOpen[section] = false;
+        if (section === 'appearance') this.clearThemePreview?.();
+        this.restoreConfigHash();
+        this.render();
+        document.querySelector(`[data-hub-start="${section}"] button`)?.focus();
+    }
+
+    /** Back, the basics cards and the More settings fold. Safe to call twice. */
+    bindHubControls(container) {
+        const root = container.closest?.('#dashboard-layout') || container;
+        root.querySelectorAll('[data-hub-back]').forEach((btn) => {
+            if (btn.dataset.hubBound === '1') return;
+            btn.dataset.hubBound = '1';
+            btn.addEventListener('click', () => this.closeHub(btn.dataset.hubBack));
+        });
+        root.querySelectorAll('[data-hub-field]').forEach((btn) => {
+            if (btn.dataset.hubBound === '1') return;
+            btn.dataset.hubBound = '1';
+            btn.addEventListener('click', () => {
+                const raw = btn.dataset.hubValue;
+                const type = btn.dataset.hubType;
+                const value = type === 'bool' ? raw === 'true' : type === 'number' ? Number(raw) : raw;
+                void this.setBehavior(btn.dataset.hubField, value, btn.dataset.hubSpecial || undefined);
+            });
+        });
+        root.querySelectorAll('[data-hub-text]').forEach((input) => {
+            if (input.dataset.hubBound === '1') return;
+            input.dataset.hubBound = '1';
+            /*
+             * While it is typed, not only when it is left.
+             *
+             * The weather line answers to this field, and waiting for a blur
+             * meant typing a town and seeing nothing happen. Each keystroke
+             * restarts a short timer, so one word is one save and one fetch
+             * rather than five; the repaint that follows puts the cursor back
+             * where it was (repaintHubBasics).
+             */
+            const save = () => {
+                clearTimeout(this._hubTextTimer);
+                this._hubTextTimer = null;
+                void this.setBehavior(input.dataset.hubText, input.value.trim(),
+                    input.dataset.hubSpecial || undefined);
+            };
+            input.addEventListener('input', () => {
+                clearTimeout(this._hubTextTimer);
+                this._hubTextTimer = setTimeout(save, DashboardConfig.HUB_TEXT_SAVE_MS);
+            });
+            // Leaving the field, or pressing Enter, is not something to wait out.
+            input.addEventListener('change', save);
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') save();
+            });
+        });
+        root.querySelectorAll('[data-hub-more]').forEach((fold) => {
+            if (fold.dataset.hubBound === '1') return;
+            fold.dataset.hubBound = '1';
+            fold.addEventListener('toggle', () => {
+                try {
+                    localStorage.setItem(`nextdash.hubMore.${fold.dataset.hubMore}`, fold.open ? '1' : '0');
+                } catch { /* a browser refusing storage just forgets the fold */ }
+            });
+        });
+    }
+
+    /** Redraw the basics cards and the preview after a setting changed. */
+    repaintHubBasics(container) {
+        const hub = window.ConfigHub;
+        const section = this.section;
+        const tab = section === 'appearance' ? this.appearanceTab : this.behaviorTab;
+        const basics = container.querySelector('.hub-basics');
+        if (basics) {
+            const focused = document.activeElement?.closest?.('[data-hub-field]');
+            const key = focused ? [focused.dataset.hubField, focused.dataset.hubValue] : null;
+            // A field being typed into is redrawn under the reader's hands:
+            // what it holds and where the cursor sits have to survive that, or
+            // a saved keystroke sends the caret to the end of the word.
+            const typing = document.activeElement?.closest?.('[data-hub-text]');
+            const text = typing ? {
+                field: typing.dataset.hubText,
+                value: typing.value,
+                start: typing.selectionStart,
+                end: typing.selectionEnd,
+            } : null;
+            const tmp = document.createElement('div');
+            tmp.innerHTML = hub.renderBasics(this, section, tab);
+            const fresh = tmp.firstElementChild;
+            if (fresh) {
+                basics.replaceWith(fresh);
+                this.bindHubControls(container);
+                if (key) {
+                    fresh.querySelector(`[data-hub-field="${CSS.escape(key[0])}"][data-hub-value="${CSS.escape(key[1])}"]`)?.focus();
+                }
+                if (text) {
+                    const back = fresh.querySelector(`[data-hub-text="${CSS.escape(text.field)}"]`);
+                    if (back) {
+                        back.value = text.value;
+                        back.focus();
+                        back.setSelectionRange(text.start, text.end);
+                    }
+                }
+            }
+        }
+        if (section === 'appearance') hub.repaintPreview(this);
+    }
+
+    /**
+     * Reapply the header chrome so a Header and buttons toggle shows up at
      * once, without a reload.
      *
      * These settings are not read at render time: setupDOM writes them onto
@@ -13728,6 +14360,11 @@ class DashboardConfig {
         // while, with a comment explaining exactly this hazard; the settings
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
+        if (window.ConfigHub && DashboardConfig.HUB_SECTIONS.includes(this.section)) {
+            // The start screen's summaries and search hits are one block.
+            if (!this.hubOpen[this.section]) { this.render(); return; }
+            this.repaintHubBasics(container);
+        }
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
             if (body) {
@@ -13741,9 +14378,9 @@ class DashboardConfig {
         if (this.section === 'appearance') {
             const body = document.getElementById('config-appearance-body');
             const render = {
-                toolbar: () => this.renderAppearanceToolbarBody(),
+                header: () => this.renderAppearanceToolbarBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
-                buttonbar: () => this.renderAppearanceButtonBarBody(),
+                buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
                 branding: () => this.renderAppearanceBrandingBody(),
             }[this.appearanceTab];
@@ -13808,7 +14445,7 @@ class DashboardConfig {
      * these are places bookmarks come from and keep coming from. It is also what
      * the register underneath already calls them -- sources.json, /api/sources.
      */
-    static DB_TABS = ['backups', 'sources', 'webhooks', 'icons', 'logs', 'trash', 'reset'];
+    static DB_TABS = ['backups', 'sources', 'webhooks', 'icons', 'trash', 'reset'];
 
     /**
      * Bookmarks is a list section, so its settings used to sit after the list —
@@ -13831,7 +14468,19 @@ class DashboardConfig {
     // questions people ask about it — where it sits, which of the four main
     // buttons it carries, which extras — were answered two tabs apart, so
     // changing the bar meant finding it twice.
-    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'display', 'toolbar', 'custom-themes'];
+    // Date & weather came over from Behavior: the clock, the date line and the
+    // weather are things on screen, and the header they sit in is set here.
+    static APPEARANCE_TABS = ['general', 'layout', 'header', 'buttonbar', 'datetime', 'display', 'custom-themes'];
+
+    /*
+     * What a tab used to be called still opens it.
+     *
+     * The header tab was `toolbar` while it was named "Toolbar & tabs", and
+     * that word is in every link anyone saved, in the location config
+     * remembers between visits, and in the address bar of a tab left open
+     * across the change.
+     */
+    static APPEARANCE_TAB_ALIASES = { toolbar: 'header' };
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 
@@ -16166,7 +16815,9 @@ class DashboardConfig {
      * nothing.
      */
     static GUIDED_TOURS = [
-        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'Welcome tour',
+        { id: 'changesTourV1', labelKey: 'config.tourChanges', label: 'What has changed',
+          whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
+        { id: 'quickStart', labelKey: 'config.tourWelcome', label: 'First steps',
           whereKey: 'config.tourWhereDashboard', where: 'the next time you open the dashboard' },
         { id: 'healthTutorialV2', labelKey: 'config.tourHealth', label: 'Health',
           whereKey: 'config.tourWhereHealth', where: 'the next time you open Health' },
@@ -16332,7 +16983,7 @@ class DashboardConfig {
             { key: 'forecastRange', kind: 'choice',
               label: ['config.widgetForecastRange', 'Forecast range'],
               hint: ['config.widgetWeatherLocationHint',
-                     'Location, source and unit come from Behavior → Date & weather.'],
+                     'Location, source and unit come from Appearance → Date & weather.'],
               options: [
                   ['3day', ['config.widgetForecastRange3Day', '3 days']],
                   ['5day', ['config.widgetForecastRange5Day', '5 days']],
@@ -16354,7 +17005,7 @@ class DashboardConfig {
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetCalendarFeedHint',
-                     'Feed comes from Behavior → Date & weather → Calendar feed URL.'] },
+                     'Feed comes from Appearance → Date & weather → Calendar feed URL.'] },
         ],
         /*
          * The custom widget's scalars. Its fields[] is a list of objects, which
@@ -18230,7 +18881,7 @@ class DashboardConfig {
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
-            trend: 'Broken links over time, as a line — the direction is what a single number cannot show.',
+            trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',
@@ -18242,7 +18893,7 @@ class DashboardConfig {
             backups: 'How old the newest automatic backup is, and whether the last run failed.',
             custom: 'Any figure out of any JSON endpoint — for the service that has no widget of its own.',
             weather: 'Current conditions beside a forecast, for the location the header already reads.',
-            calendar: 'What is coming up, from the ICS feed set in Behavior → Date & weather.',
+            calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
         };
         const label = this.dash.language?.t?.(key);
@@ -20061,7 +20712,7 @@ class DashboardConfig {
         // bmTagFilter is a list, and an empty array is truthy — ask for its
         // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bookmarkTagFilters().length);
+            || this.bmCleanupFilter || this.bookmarkTagFilters().length || this.bmHealthFilter);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -20117,6 +20768,9 @@ class DashboardConfig {
 
     resetBookmarkVisibleLimit() {
         this.bmVisibleLimit = this.bmPageSize();
+        // A new filter is a new list: last scroll position from the old one
+        // must not be read as "already scrolled" here.
+        this._bmLoadMoreLastScrollTop = undefined;
     }
 
     /**
@@ -20147,11 +20801,7 @@ class DashboardConfig {
         }, 180);
     }
 
-
-
-
     updateBookmarkListChrome() {
-        this.updateBookmarkTagCloud();
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const shown = filtered.length;
@@ -20159,34 +20809,8 @@ class DashboardConfig {
         if (countEl) countEl.textContent = this.renderBookmarkCountLabelSafe(shown, total);
         const live = document.getElementById('config-bm-count-live');
         if (live) live.textContent = this.renderBookmarkCountLabelSafe(shown, total);
-        const chips = document.getElementById('config-bm-filter-chips');
-        if (chips) {
-            chips.innerHTML = this.renderBookmarkFilterChipsSafe();
-            this.bindBookmarkFilterChips(chips);
-        }
-        const selectAll = document.getElementById('config-bm-select-all');
-        if (selectAll) selectAll.textContent = this.selectAllBookmarksLabel();
-        const hint = document.getElementById('config-bm-tiles-hint');
-        if (hint) {
-            const active = this.bookmarksFiltersActive();
-            hint.hidden = !active;
-            hint.textContent = active
-                ? this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters')
-                : '';
-        }
-        const tilesHost = document.getElementById('config-bm-tiles');
-        if (tilesHost) {
-            const stats = this.bookmarksFiltersActive()
-                ? this.computeBookmarkSubsetStats(filtered)
-                : this.computeStats();
-            tilesHost.innerHTML = this.bookmarksSummaryTiles(stats).map((t) => this.renderTile(t)).join('');
-        }
-    }
-
-    bindBookmarkFilterChips(root) {
-        root.querySelectorAll('[data-bm-filter-clear]').forEach((btn) => {
-            btn.addEventListener('click', () => this.clearBookmarkFilterChip(btn.getAttribute('data-bm-filter-clear')));
-        });
+        this.repaintWorkbenchRail?.();
+        this.syncWorkbenchToolbar?.();
     }
 
     clearBookmarkFilterChip(key) {
@@ -20203,18 +20827,14 @@ class DashboardConfig {
             if (search) search.value = '';
         }
         if (key === 'all' || key === 'cleanup') this.bmCleanupFilter = '';
+        if (key === 'all' || key === 'health') this.bmHealthFilter = '';
         if (key === 'all') {
             this.clearBookmarkFilters();
             return;
         }
-        const pageEl = document.getElementById('config-bm-page');
-        if (pageEl && key === 'page') pageEl.value = this.bmPageFilter;
-        const catEl = document.getElementById('config-bm-category');
-        if (catEl && key === 'category') catEl.value = this.bmCategoryFilter;
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
         void this.ensureBookmarkCategoriesForFilter().then(() => {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
             this.restoreConfigHash();
             this.updateConfigShellHead();
@@ -20235,7 +20855,6 @@ class DashboardConfig {
             : DashboardConfig.categoryFilterKey(b.pageId, b.category);
         this.bmCategoryFilter = catKey;
         this.resetBookmarkVisibleLimit();
-        this.repaintBookmarksFilters();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
     }
@@ -20258,29 +20877,6 @@ class DashboardConfig {
             out.push(tag);
         }
         return out.sort((a, b) => a.localeCompare(b));
-    }
-
-    /**
-     * Every tag in use, with how many bookmarks carry it.
-     *
-     * Ranked by the same function the dashboard tag cloud uses, so both clouds
-     * order and count identically instead of drifting through two copies.
-     */
-    bookmarkTagCounts() {
-        const all = this.dash.allBookmarks || [];
-        const shared = window.DashboardTagCloud?.countTagsFromBookmarks;
-        if (typeof shared === 'function') return shared(all);
-        const counts = new Map();
-        for (const b of all) {
-            for (const raw of b.tags || []) {
-                const tag = String(raw || '').trim().toLowerCase();
-                if (!tag) continue;
-                counts.set(tag, (counts.get(tag) || 0) + 1);
-            }
-        }
-        return [...counts.entries()]
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .map(([tag, count]) => ({ tag, count }));
     }
 
     setBookmarkTagFilters(tags) {
@@ -20603,68 +21199,29 @@ class DashboardConfig {
      * in practice it has landed before anyone clicks Bookmarks.
      */
     /**
-     * How tall one row is, measured rather than assumed.
-     *
-     * The spacers above and below the window are this times a row count, so a
-     * wrong number shows up as a scrollbar that lies. Measured from the rows on
-     * screen the first time there are any, and kept: rows differ by a few pixels
-     * (a second line of tags), and the average is what the spacers want.
+     * Which slice of the list's items (rows and group headers) to draw, or
+     * null for all of them. Heights are fixed by the stylesheet, so the
+     * spacers are exact.
      */
-    bookmarkRowHeight() {
-        if (this._bmRowHeight) return this._bmRowHeight;
-        const rows = document.querySelectorAll('#config-bm-list .config-bm-row');
-        if (rows.length >= 2) {
-            const first = rows[0].getBoundingClientRect();
-            const last = rows[rows.length - 1].getBoundingClientRect();
-            const span = last.bottom - first.top;
-            const measured = span / rows.length;
-            if (measured > 20 && measured < 400) {
-                this._bmRowHeight = measured;
-                return measured;
-            }
-        }
-        // Until there is something to measure: the row's own min-height plus its
-        // gap, which is what the stylesheet asks for.
-        return 56;
-    }
-
-    /**
-     * Which slice of the loaded rows to draw, or null for all of them.
-     *
-     * Null below the threshold — a short list costs nothing to draw whole, and
-     * spacers on it would be arithmetic in exchange for nothing — and null while
-     * a row is expanded into its editor, whose height the spacers cannot know.
-     */
-    bookmarkRowWindow(total) {
-        const MIN_TO_WINDOW = 120;
-        const OVERSCAN = 25;
-        if (!Number.isFinite(total) || total <= MIN_TO_WINDOW) return null;
-
+    bookmarkRowWindow() {
+        const model = window.BookmarkWorkbenchModel;
+        if (!model || typeof this.workbenchItems !== 'function') return null;
+        const items = this.workbenchItems();
         const host = this.bookmarkListScrollHost();
-        const rowHeight = this.bookmarkRowHeight();
         const list = document.getElementById('config-bm-list');
-        // Where the list starts relative to whatever scrolls: the page, or a
-        // pane inside it.
         let offset = 0;
         let viewport = window.innerHeight;
         if (list) {
             const box = list.getBoundingClientRect();
             if (host) {
-                const hostBox = host.getBoundingClientRect();
-                offset = host.scrollTop + (box.top - hostBox.top);
+                offset = host.scrollTop + (box.top - host.getBoundingClientRect().top);
                 viewport = host.clientHeight;
             } else {
                 offset = window.scrollY + box.top;
             }
         }
-        const scrollTop = host ? host.scrollTop : window.scrollY;
-        const first = Math.floor(Math.max(0, scrollTop - offset) / rowHeight);
-        const rowsInView = Math.ceil(viewport / rowHeight);
-        const start = Math.max(0, first - OVERSCAN);
-        const end = Math.min(total, first + rowsInView + OVERSCAN);
-        // A window that would cover almost everything is not worth its spacers.
-        if (start === 0 && end >= total) return null;
-        return { start, end };
+        const scrollTop = (host ? host.scrollTop : window.scrollY) - offset;
+        return model.itemWindow(items, { scrollTop, viewport, ...this.workbenchItemHeights() });
     }
 
     /**
@@ -20687,9 +21244,7 @@ class DashboardConfig {
             frame = requestAnimationFrame(() => {
                 frame = 0;
                 if (this.section !== 'bookmarks' || !this.isActiveView()) return;
-                const rows = this.visibleBookmarks();
-                const shown = this.bookmarkVisibleLimit(rows.length);
-                const next = this.bookmarkRowWindow(shown);
+                const next = this.bookmarkRowWindow();
                 const key = next ? `${next.start}-${next.end}` : 'all';
                 if (key === this._bmWindowKey) return;
                 this._bmWindowKey = key;
@@ -20722,7 +21277,6 @@ class DashboardConfig {
          * over them.
          */
         if (document.querySelector('.move-popover, .config-bm-context-menu')) return;
-        if (document.querySelector('#config-bm-list .health-view-menu:not([hidden])')) return;
         // Focus lives on a row, and this replaces every row. Without putting it
         // back, closing a menu or finishing an edit drops the list's j/k
         // navigation on the floor.
@@ -20755,16 +21309,6 @@ class DashboardConfig {
     }
 
     /** The bulk bar, likewise — it is drawn from three places. */
-    renderBulkToolbarSafe() {
-        if (typeof this.renderBulkToolbar === 'function') return this.renderBulkToolbar();
-        return '';
-    }
-
-    /** The tag cloud, the chips and the banner, same reason. */
-    renderBookmarkTagCloudSafe() {
-        return typeof this.renderBookmarkTagCloud === 'function' ? this.renderBookmarkTagCloud() : '';
-    }
-
     /** What the engine needs: a key, an address and the tags it already has. */
     tagSuggestionItems() {
         return (this.dash.allBookmarks || []).map((b) => ({
@@ -21181,18 +21725,6 @@ class DashboardConfig {
         }
     }
 
-    renderBookmarkFilterChipsSafe() {
-        return typeof this.renderBookmarkFilterChips === 'function' ? this.renderBookmarkFilterChips() : '';
-    }
-
-    renderCleanupFilterBannerSafe() {
-        return typeof this.renderCleanupFilterBanner === 'function' ? this.renderCleanupFilterBanner() : '';
-    }
-
-    renderBookmarkQuickBarSafe() {
-        return typeof this.renderBookmarkQuickBar === 'function' ? this.renderBookmarkQuickBar() : '';
-    }
-
     renderBookmarkCountLabelSafe(shown, total) {
         return typeof this.renderBookmarkCountLabel === 'function'
             ? this.renderBookmarkCountLabel(shown, total)
@@ -21200,7 +21732,7 @@ class DashboardConfig {
     }
 
     /**
-     * Load the bookmark list renderers, once.
+     * Load the bookmark list renderers and the workbench, once.
      *
      * Repaints when they land, so the section fills itself in rather than
      * waiting for the next click. A failure leaves the placeholder, which says
@@ -21208,43 +21740,31 @@ class DashboardConfig {
      * library with nothing in it.
      */
     ensureBookmarkRenderers() {
-        if (window.DashboardConfigBookmarksReady) return Promise.resolve(true);
+        const ready = () => window.DashboardConfigBookmarksReady === true
+            && window.DashboardConfigWorkbenchReady === true
+            && Boolean(window.BookmarkWorkbenchModel);
+        if (ready()) return Promise.resolve(true);
         if (this._bookmarkRenderersPromise) return this._bookmarkRenderersPromise;
-        this._bookmarkRenderersPromise = window.LazyScript.loadScriptOnce(
-            'js/dashboard/dashboard-config-bookmarks.js',
-            'dashboardConfigBookmarks',
-            () => window.DashboardConfigBookmarksReady === true
-        ).then(() => {
-            const waiting = this._bookmarksAwaitingRenderers === true;
-            this._bookmarksAwaitingRenderers = false;
-            if (waiting && this.isActiveView() && this.section === 'bookmarks') this.render();
-            return true;
-        }).catch(() => false);
+        const load = window.LazyScript.loadScriptOnce;
+        // In order: the workbench builds on both of the others.
+        this._bookmarkRenderersPromise = load('js/shared/bookmark-workbench-model.js',
+            'bookmarkWorkbenchModel', () => Boolean(window.BookmarkWorkbenchModel))
+            .then(() => load('js/dashboard/dashboard-config-bookmarks.js',
+                'dashboardConfigBookmarks', () => window.DashboardConfigBookmarksReady === true))
+            .then(() => load('js/dashboard/dashboard-config-bookmarks-workbench.js',
+                'dashboardConfigWorkbench', () => window.DashboardConfigWorkbenchReady === true))
+            .then(() => {
+                const waiting = this._bookmarksAwaitingRenderers === true;
+                this._bookmarksAwaitingRenderers = false;
+                if (waiting && this.isActiveView() && this.section === 'bookmarks') this.render();
+                return true;
+            }).catch(() => false);
         return this._bookmarkRenderersPromise;
     }
 
-    renderBookmarksListTab() {
-        // Bookmarks are edited in place all over the app — a tag added, a pin
-        // toggled, an open counted — and none of that moves the array identity
-        // the memo keys on. Dropped here so a paint always starts from the data
-        // as it now is, and shared by every caller within that paint.
-        this.invalidateVisibleBookmarks();
+    bookmarkSortOptionsHtml() {
         const esc = (v) => this.dash.escapeHtml(v);
-        if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
-        const pages = this.dash.pages || [];
-        const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
-            .concat(pages.map((p) => {
-                const sel = String(this.bmPageFilter || '') === String(p.id) ? ' selected' : '';
-                return `<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`;
-            })).join('');
-
-        const catOptions = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
-            .concat(this.knownCategories().map((c) => {
-                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
-                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
-            })).join('');
-
-        const sortOptions = [
+        return [
             ['page', this.t('config.sortByPage', 'Page order')],
             ['name', this.t('config.sortByName', 'Name (A–Z)')],
             ['url', this.t('config.sortByUrl', 'URL')],
@@ -21256,101 +21776,32 @@ class DashboardConfig {
         ].map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
-        const filtered = this.visibleBookmarks();
-        const totalAll = (this.dash.allBookmarks || []).length;
-        const countLabel = this.renderBookmarkCountLabelSafe(filtered.length, totalAll);
-        return `
-            <div class="config-bm-tiles-wrap">
-                <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
-                <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
-            </div>
-            <div class="config-panel">
-                <div class="config-crud-toolbar config-crud-toolbar--view">
-                    <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
-                    <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
-                            data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
-                    <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
-                    <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
-                    <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
-                    <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
-                </div>
-                ${this.renderBookmarkQuickBarSafe()}
-                ${this.renderBookmarkTagCloudSafe()}
-                <div class="config-bm-list-meta">
-                    <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
-                    <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChipsSafe()}</div>
-                    <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
-                </div>
-                ${this.renderCleanupFilterBannerSafe()}
-                <div id="config-bm-bulk">${this.renderBulkToolbarSafe()}</div>
-                <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
-            </div>
-        `;
     }
 
-
-
-    /**
-     * Wire the tag cloud.
-     *
-     * Delegated from the container: repainting the list replaces the cloud's
-     * own markup, so listeners bound to individual chips would not survive the
-     * first click.
-     */
-    bindBookmarkTagCloud(container) {
-        const cloud = container.querySelector('#config-bm-cloud');
-        if (!cloud || cloud._bmCloudBound) return;
-        cloud._bmCloudBound = true;
-        cloud.addEventListener('click', (e) => {
-            const tagBtn = e.target.closest('[data-bm-cloud-tag]');
-            if (tagBtn) {
-                e.preventDefault();
-                this.toggleBookmarkTagFilter(tagBtn.getAttribute('data-bm-cloud-tag'));
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-clear]')) {
-                e.preventDefault();
-                this.setBookmarkTagFilters([]);
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-select]')) {
-                e.preventDefault();
-                this.selectFilteredBookmarks();
-            }
-        });
-    }
-
-    /**
-     * Repaint the cloud's chips in place.
-     *
-     * Rebuilding the whole <details> would snap it shut mid-selection and throw
-     * away the scroll position, so only the parts that change are rewritten.
-     */
-    updateBookmarkTagCloud() {
-        const cloud = document.getElementById('config-bm-cloud');
-        if (!cloud) return;
-        const active = new Set(this.bookmarkTagFilters());
-        cloud.querySelectorAll('[data-bm-cloud-tag]').forEach((btn) => {
-            const on = active.has(btn.getAttribute('data-bm-cloud-tag'));
-            btn.classList.toggle('is-active', on);
-            btn.setAttribute('aria-selected', String(on));
-        });
-        const note = cloud.querySelector('.config-bm-cloud-summary-note');
-        if (note) {
-            note.textContent = active.size
-                ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', active.size)
-                : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
+    renderBookmarksListTab() {
+        // Bookmarks are edited in place all over the app, and none of that
+        // moves the array identity the memo keys on, so a paint starts fresh.
+        this.invalidateVisibleBookmarks();
+        if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
+        void this.ensureBookmarkRenderers();
+        if (typeof this.renderBookmarksWorkbench !== 'function') {
+            // The rail (and its search box) only exists once the workbench
+            // module is in — until then, a minimal one keeps the section
+            // usable instead of going blank while the fetch is in flight, or
+            // stays this way for good if it never lands.
+            this._bookmarksAwaitingRenderers = true;
+            const esc = (v) => this.dash.escapeHtml(v);
+            return `
+                <div class="config-panel">
+                    <div class="config-crud-toolbar config-crud-toolbar--view">
+                        <input type="search" class="config-text" id="config-bm-search"
+                               placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}"
+                               value="${esc(this.bmQuery || '')}">
+                    </div>
+                    <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
+                </div>`;
         }
-        const actions = cloud.querySelector('.config-bm-cloud-actions');
-        if (actions) actions.hidden = active.size === 0;
-    }
-
-    /** Tick every row the current filters leave visible, for the bulk bar. */
-    selectFilteredBookmarks() {
-        const rows = this.visibleBookmarks() || [];
-        for (const b of rows) this.bmSelected.add(this.bookmarkKey(b));
-        this.repaintBookmarksList();
-        this.updateBookmarkListChrome();
+        return this.renderBookmarksWorkbench();
     }
 
     /** Human label for each named cleanup filter. */
@@ -21517,7 +21968,6 @@ class DashboardConfig {
         await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
         if (!this.isActiveView()) return;
         if (this.section === 'bookmarks') {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
         } else if (this.section === 'stats') {
             this.repaintStatsBody();
@@ -21563,17 +22013,6 @@ class DashboardConfig {
             });
             if (!valid) this.bmCategoryFilter = '';
         }
-    }
-
-    repaintBookmarksFilters() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const catEl = document.getElementById('config-bm-category');
-        if (!catEl) return;
-        catEl.innerHTML = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
-            .concat(this.knownCategories().map((c) => {
-                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
-                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
-            })).join('');
     }
 
     /** The rows currently passing search, page filter, category filter and sort. */
@@ -21652,6 +22091,50 @@ class DashboardConfig {
         changed: (b) => window.BookmarkPredicates.match('changed', b),
     };
 
+    static HEALTH_FILTERS = ['healthy', 'broken', 'down', 'unchecked'];
+
+    /** Where this bookmark stands with the checker, from what the dashboard already knows. */
+    bookmarkHealthState(b) {
+        const model = window.BookmarkWorkbenchModel;
+        if (!model) return b?.checkStatus === true ? 'healthy' : 'unchecked';
+        return model.healthState(b, window.HealthFacts?.get?.(b?.url) || null);
+    }
+
+    /**
+     * One predicate per filter, so the list and the rail's counts cannot
+     * disagree about what a filter means.
+     */
+    bookmarkFilterTests() {
+        const q = String(this.bmQuery || '').trim().toLowerCase();
+        const pageFilter = String(this.bmPageFilter || '');
+        const tagFilter = this.bookmarkTagFilters();
+        const cleanupKey = this.bmCleanupFilter;
+        const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
+        const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
+        const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter || '');
+        const health = this.bmHealthFilter;
+        return {
+            query: (b) => !q || [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
+                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q)),
+            page: (b) => !pageFilter || String(b.pageId) === pageFilter,
+            category: (b) => {
+                if (!categoryId) return true;
+                if (catPage && String(b.pageId) !== String(catPage)) return false;
+                return (b.category || '') === categoryId;
+            },
+            // OR, matching the dashboard tag cloud: a second tag widens.
+            tag: (b) => !tagFilter.length || (Array.isArray(b.tags) ? b.tags : [])
+                .map((t) => String(t).toLowerCase()).some((t) => tagFilter.includes(t)),
+            cleanup: (b) => {
+                if (!cleanup) return true;
+                return cleanupKey === 'duplicate'
+                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
+                    : cleanup(b);
+            },
+            health: (b) => !health || this.bookmarkHealthState(b) === health,
+        };
+    }
+
     /** Page id → position, built once so sort comparators can look up in O(1). */
     pageOrderIndex() {
         const pages = this.dash.pages || [];
@@ -21687,7 +22170,8 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort ?? this.defaultBookmarksSort(),
+            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
+            this.bmSort ?? this.defaultBookmarksSort(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -21710,36 +22194,8 @@ class DashboardConfig {
 
     computeVisibleBookmarks() {
         const all = this.dash.allBookmarks || [];
-        const q = String(this.bmQuery || '').trim().toLowerCase();
-        const pageFilter = String(this.bmPageFilter || '');
-        const catFilter = this.bmCategoryFilter || '';
-        const tagFilter = this.bookmarkTagFilters();
-        const cleanupKey = this.bmCleanupFilter;
-        const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
-        const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
-        const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
-        const rows = all.filter((b) => {
-            if (cleanup) {
-                const ok = cleanupKey === 'duplicate'
-                    ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
-                    : cleanup(b);
-                if (!ok) return false;
-            }
-            if (pageFilter && String(b.pageId) !== pageFilter) return false;
-            if (categoryId) {
-                if (catPage && String(b.pageId) !== String(catPage)) return false;
-                if ((b.category || '') !== categoryId) return false;
-            }
-            if (tagFilter.length) {
-                const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
-                // OR, matching the dashboard tag cloud: picking a second tag
-                // widens the result rather than narrowing it to nothing.
-                if (!tagFilter.some((t) => tags.includes(t))) return false;
-            }
-            if (!q) return true;
-            return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
-                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
-        });
+        const tests = Object.values(this.bookmarkFilterTests());
+        const rows = all.filter((b) => tests.every((test) => test(b)));
         const order = this.pageOrderIndex();
         const pageIndex = (id) => (order.has(String(id)) ? order.get(String(id)) : -1);
         const cmp = {
@@ -21812,30 +22268,6 @@ class DashboardConfig {
     }
 
     /**
-     * Warns when part of the selection sits outside the current filters.
-     *
-     * Ticks survive a filter change, so selecting rows on one page and then
-     * switching to another leaves a bar reading "7 selected" above a list where
-     * nothing is ticked — and Delete would still take all seven. Naming the
-     * hidden count, with a way to drop them, keeps the destructive buttons
-     * honest about their reach.
-     */
-    renderBulkOffscreenNotice(picked) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const visibleKeys = new Set(this.visibleBookmarks().map((b) => this.bookmarkKey(b)));
-        const hidden = picked.filter((b) => !visibleKeys.has(this.bookmarkKey(b))).length;
-        if (!hidden) return '';
-        const label = this.t('config.bulkSelectedOffscreen', '{n} not shown by the current filters')
-            .replace('{n}', String(hidden));
-        return `
-            <span class="config-bulk-offscreen">
-                <span class="config-bulk-offscreen-text">${esc(label)}</span>
-                <button type="button" class="config-btn config-btn--small" data-bulk="keep-visible">${esc(this.t('config.bulkKeepVisible', 'Select only these'))}</button>
-            </span>`;
-    }
-
-    /** The bulk-action bar, shown only once rows are ticked. */
-    /**
      * Selected rows that the current filter does not show.
      *
      * A selection used to be dropped whenever a filter changed, which is safe
@@ -21850,6 +22282,42 @@ class DashboardConfig {
         let hidden = 0;
         this.bmSelected.forEach((key) => { if (!visible.has(key)) hidden += 1; });
         return hidden;
+    }
+
+    toggleBookmarkSelection(key) {
+        if (!key) return;
+        if (this.bmSelected.has(key)) this.bmSelected.delete(key);
+        else this.bmSelected.add(key);
+        this.bmSelectAnchor = key;
+        this.afterSelectionChange();
+    }
+
+    /** Tick everything between the anchor and `key`, in the order the list shows. */
+    selectBookmarkRange(key) {
+        const keys = this.visibleBookmarks().map((b) => this.bookmarkKey(b));
+        const anchor = keys.includes(this.bmSelectAnchor) ? this.bmSelectAnchor : key;
+        window.BookmarkWorkbenchModel.rangeKeys(keys, anchor, key).forEach((k) => this.bmSelected.add(k));
+        this.bmSelectAnchor = key;
+        this.afterSelectionChange();
+    }
+
+    /** Every row of a page › category group, drawn or not. */
+    selectBookmarkGroup(groupKey) {
+        this.visibleBookmarks()
+            .filter((b) => this.workbenchGroupKey(b) === groupKey)
+            .forEach((b) => this.bmSelected.add(this.bookmarkKey(b)));
+        this.afterSelectionChange();
+    }
+
+    afterSelectionChange() {
+        document.querySelectorAll('#config-bm-list .config-bm-row').forEach((row) => {
+            const on = this.bmSelected.has(this.bookmarkRowKey(row));
+            row.classList.toggle('is-checked', on);
+            row.setAttribute('aria-selected', on ? 'true' : 'false');
+            const box = row.querySelector('.config-bm-tick');
+            if (box) box.checked = on;
+        });
+        this.repaintWorkbenchPanel?.();
     }
 
 
@@ -21875,29 +22343,6 @@ class DashboardConfig {
                 String(raw || '')
             );
         };
-    }
-
-    /**
-     * The one-line usage summary on a collapsed row: how often, how recently.
-     *
-     * Kept out of the meta line above it because that one describes where the
-     * bookmark lives (page, category, tags) and this describes whether it is
-     * used at all — the thing you scan the list for when clearing out dead
-     * links. Never-opened is stated outright rather than left blank, matching
-     * Health, where an empty slot would read as missing data instead.
-     */
-    renderBookmarkUsageLine(b) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const opens = Number(b.openCount || 0);
-        const { label, title, never } = window.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
-            || { label: '', title: '', never: true };
-        const openedCls = never ? 'health-view-item-opened is-never' : 'health-view-item-opened';
-        const openedHtml = `<span class="${openedCls}" title="${esc(title)}">${esc(never ? this.t('dashboard.healthNeverOpened', 'never opened') : label)}</span>`;
-        if (opens === 0) {
-            return openedHtml;
-        }
-        const count = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
-        return `${openedHtml}<span class="config-bm-usage" title="${esc(title)}">${esc(count)}</span>`;
     }
 
     /** Bookmark icons are stored as bare filenames; the dashboard serves them from /data/icons/. */
@@ -21930,35 +22375,6 @@ class DashboardConfig {
         return `<div class="config-bm-icon config-bm-icon--placeholder" aria-hidden="true">🔗</div>`;
     }
 
-    /*
-     * The row's More menu, built from the context menu's own list.
-     *
-     * The two used to be written out separately and had drifted: right-click
-     * offered Open in new tab, Edit, Pin, Checking, the three filters and
-     * Select; More offered nine of the sixteen and nothing else. Same row,
-     * same bookmark, two different answers to "what can I do with this".
-     *
-     * actionsFor() is the one list now, so a row added to either menu appears
-     * in both, and the click goes through the context menu's run() -- which
-     * already knows the handful of actions the row dispatcher never learned.
-     */
-    renderBookmarkRowMenu(b, key) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const menu = this.bookmarkContextMenu();
-        const actions = menu?.actionsFor?.(b);
-        if (!Array.isArray(actions) || !actions.length) return '';
-        const items = actions.map((action) => {
-            const danger = action.danger ? ' health-view-menu-item--danger' : '';
-            // A submenu entry opens a second menu rather than acting, and says
-            // so the way a menu is expected to: with a trailing marker.
-            const trailer = action.submenu ? ' <span aria-hidden="true">›</span>' : '';
-            return `<button type="button" class="health-view-menu-item${danger}" role="menuitem"`
-                + `${action.submenu ? ' aria-haspopup="menu"' : ''}`
-                + ` data-bm-menu-action="${esc(action.id)}">${esc(action.label)}${trailer}</button>`;
-        });
-        return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
-    }
-
     shareBookmarkActionLabel() {
         const menu = this.dash.contextMenu;
         if (menu?.shareActionLabel) {
@@ -21975,44 +22391,6 @@ class DashboardConfig {
 
     closeBookmarkMenus() {
         window.BookmarkFeedRow?.closeAllMenus?.(this.bookmarkListRoot() || document);
-    }
-
-    toggleBookmarkMenu(key, kind = 'more') {
-        this.fillBookmarkMenu(key, kind);
-        return window.BookmarkFeedRow?.toggleMenu?.(key, kind, this.bookmarkListRoot() || document) === true;
-    }
-
-    /**
-     * Build a row's menu the first time it is opened.
-     *
-     * Every row used to carry both menus fully rendered and hidden — the reason a
-     * row costs ~55 DOM nodes, times fifty rows on screen. The shell is what
-     * toggleMenu looks for; this fills it once, and the items are handled by one
-     * delegated listener on the list rather than by handlers bound per row.
-     */
-    fillBookmarkMenu(key, kind) {
-        const root = this.bookmarkListRoot() || document;
-        const menu = root.querySelector(
-            `.health-view-menu[data-menu-for="${CSS.escape(key)}"][data-menu-owner="${CSS.escape(kind)}"]`
-        );
-        if (!menu || menu.dataset.menuLazy !== kind) return;
-        const bookmark = this.findBookmarkByKey(key);
-        if (!bookmark) return;
-        const esc = (v) => this.dash.escapeHtml(v);
-        if (kind === 'check') {
-            const mode = window.CheckMode?.of?.(bookmark) || 'off';
-            const built = window.BookmarkFeedRow?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || '';
-            // renderCheckModeMenu returns the whole element; take its inside.
-            const wrap = document.createElement('div');
-            wrap.innerHTML = built;
-            menu.innerHTML = wrap.firstElementChild?.innerHTML || '';
-        } else {
-            const built = this.renderBookmarkRowMenu(bookmark, key);
-            const wrap = document.createElement('div');
-            wrap.innerHTML = built;
-            menu.innerHTML = wrap.firstElementChild?.innerHTML || '';
-        }
-        delete menu.dataset.menuLazy;
     }
 
     syncBookmarkRowBusy(key, busy) {
@@ -22042,133 +22420,6 @@ class DashboardConfig {
     }
 
     /**
-     * Swap a field on a row for an input, and write it on Enter.
-     *
-     * Deliberately narrow: name and shortcut are single, short values with an
-     * obvious success state. Anything with a picker — category, tags, checking —
-     * already has its own popover or menu, and reimplementing those here would
-     * be a second copy of each.
-     */
-    startInlineBookmarkEdit(el) {
-        if (!el || el.dataset.editing === 'true') return;
-        const field = el.getAttribute('data-bm-inline');
-        const row = el.closest('.config-bm-row');
-        const key = row?.getAttribute('data-bm-key');
-        if (!key || !field) return;
-
-        const bookmark = this.findBookmarkByKey(key);
-        const current = field === 'shortcut'
-            ? String(bookmark?.shortcut || '')
-            : String(bookmark?.name || '');
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = `config-bm-inline-input config-bm-inline-input--${field}`;
-        input.value = current;
-        if (field === 'shortcut') input.maxLength = 5;
-        input.setAttribute('aria-label', field === 'shortcut'
-            ? this.t('config.bookmarkShortcutAdd', 'Add a shortcut')
-            : this.t('config.bookmarkNameLabel', 'Name'));
-
-        const original = el.innerHTML;
-        el.dataset.editing = 'true';
-        el.innerHTML = '';
-        el.appendChild(input);
-        input.focus();
-        input.select();
-
-        // A shortcut belongs to one bookmark; two claiming it is a conflict the
-        // health view already reports and nothing prevented at the point of
-        // typing. Said here, while the field is still open and the old value is
-        // still one Escape away, rather than as a red row found later.
-        let warning = null;
-        const conflictOf = (value) => (field === 'shortcut'
-            ? this.findShortcutOwner(value, key)
-            : null);
-        const showConflict = (owner) => {
-            if (!owner) {
-                warning?.remove();
-                warning = null;
-                input.classList.remove('is-invalid');
-                return;
-            }
-            input.classList.add('is-invalid');
-            if (!warning) {
-                warning = document.createElement('span');
-                warning.className = 'config-bm-inline-conflict';
-                warning.setAttribute('role', 'alert');
-                el.appendChild(warning);
-            }
-            warning.textContent = this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
-                .replace('{key}', String(input.value || '').trim().toUpperCase())
-                .replace('{name}', owner.name || owner.url || '');
-        };
-
-        let done = false;
-        const cleanup = () => {
-            warning?.remove();
-            warning = null;
-        };
-        const restore = () => {
-            if (done) return;
-            done = true;
-            cleanup();
-            el.dataset.editing = 'false';
-            el.innerHTML = original;
-        };
-        const commit = async () => {
-            if (done) return;
-            const next = input.value.trim();
-            if (next === current) {
-                done = true;
-                cleanup();
-                el.dataset.editing = 'false';
-                el.innerHTML = original;
-                return;
-            }
-            const owner = conflictOf(next);
-            if (owner) {
-                // Refused rather than saved: two bookmarks sharing a shortcut
-                // means neither is reachable by it, so accepting the edit would
-                // break the one that already worked.
-                showConflict(owner);
-                input.focus();
-                input.select();
-                return;
-            }
-            done = true;
-            cleanup();
-            el.dataset.editing = 'false';
-            const saved = await this.saveInlineBookmarkField(key, field, next);
-            if (!saved) el.innerHTML = original;
-        };
-
-        input.addEventListener('input', () => showConflict(conflictOf(input.value.trim())));
-        input.addEventListener('keydown', (e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') { e.preventDefault(); void commit(); }
-            if (e.key === 'Escape') { e.preventDefault(); restore(); }
-        });
-        // Clicking away saves, the way the inline editor on the grid does: an
-        // abandoned edit that silently discarded what you typed is worse than
-        // one that keeps it, and Escape is right there for the other case. A
-        // conflicting value is the exception — it is put back, and said so,
-        // because saving it would break the bookmark that already holds the key.
-        input.addEventListener('blur', () => {
-            const next = input.value.trim();
-            const owner = next !== current ? conflictOf(next) : null;
-            if (owner) {
-                this.notify(this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
-                    .replace('{key}', next.toUpperCase())
-                    .replace('{name}', owner.name || owner.url || ''), 'error');
-                restore();
-                return;
-            }
-            void commit();
-        });
-    }
-
-    /**
      * The bookmark already using a shortcut, or null.
      *
      * Across every page, not just this one: the health report counts a conflict
@@ -22186,8 +22437,14 @@ class DashboardConfig {
         }) || null;
     }
 
-    /** Write one field of one bookmark, then repaint the list from the server. */
-    async saveInlineBookmarkField(key, field, value) {
+    /**
+     * Write some fields of one bookmark, then refresh.
+     *
+     * Returns false without writing when the page no longer has the bookmark
+     * or the server refuses; the panel keeps what was typed in that case. The
+     * panel follows the bookmark afterwards, because a new URL is a new key.
+     */
+    async saveBookmarkFields(key, patch) {
         const record = await this.findBookmarkRecord(key);
         if (!record) return false;
         const { pageId, index } = record;
@@ -22195,26 +22452,40 @@ class DashboardConfig {
             const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
             const list = res.ok ? await res.json() : null;
             if (!Array.isArray(list) || !list[index]) throw new Error('bookmark not found');
-            if (field === 'shortcut') {
-                list[index].shortcut = value.toUpperCase();
-            } else {
-                // An empty name would leave the row showing its URL with no way
-                // back to a name, so an emptied field keeps what was there.
-                if (!value) return false;
-                list[index].name = value;
+            const next = { ...list[index], ...patch };
+            if ('shortcut' in patch) next.shortcut = String(patch.shortcut || '').trim().toUpperCase();
+            // An emptied name or URL keeps what was there: a row with neither
+            // has nothing to show and nowhere to go.
+            if ('name' in patch && !String(patch.name || '').trim()) next.name = list[index].name;
+            if ('url' in patch) {
+                const url = window.BookmarkUrlUtils?.ensureHttpUrl?.(patch.url) || String(patch.url || '').trim();
+                next.url = url || list[index].url;
             }
+            list[index] = next;
             const saved = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(list),
             });
             if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
-            await this.refreshBookmarksAfterWrite();
+            // Only when the panel still shows this bookmark: a save that lands
+            // after a click on another row must not pull the panel back.
+            if (this._bmKeyboardKey === key) this._bmPendingFocus = { pageId: String(pageId), index };
+            // Silent: a whole-section render would replace the panel the reader
+            // is typing in and close the drawer it sits in. The list and panel
+            // are repainted by the refresh itself.
+            await this.refreshBookmarksAfterWrite({ silent: true });
             return true;
         } catch {
-            this.notify(this.t('config.bookmarkSaveFailed', 'Could not save this bookmark'), 'error');
             return false;
         }
+    }
+
+    /** The key of the n-th bookmark on a page, as the list now holds it. */
+    bookmarkKeyAt(pageId, index) {
+        const onPage = (this.dash.allBookmarks || []).filter((b) => String(b.pageId) === String(pageId));
+        const b = index < 0 ? onPage[onPage.length - 1] : onPage[index];
+        return b ? this.bookmarkKey(b) : null;
     }
 
     async openBookmarkEditModal(key) {
@@ -22498,12 +22769,13 @@ class DashboardConfig {
         }
     }
 
-    async setBookmarkCheckMode(key, mode) {
+    /** Returns whether the change was saved. */
+    async setBookmarkCheckMode(key, mode, intervalMinutes) {
         const record = await this.findBookmarkRecord(key);
-        if (!record || !window.CheckMode) return;
+        if (!record || !window.CheckMode) return false;
         this.closeBookmarkMenus();
         const updated = { ...record.record };
-        window.CheckMode.assign(updated, mode);
+        window.CheckMode.assign(updated, mode, intervalMinutes);
         try {
             await this.writePageBookmarks(record.pageId, (list) => {
                 const next = [...list];
@@ -22511,10 +22783,12 @@ class DashboardConfig {
                 next[record.index] = { ...next[record.index], ...updated };
                 return next;
             });
-            await this.refreshBookmarksAfterWrite();
+            await this.refreshBookmarksAfterWrite({ silent: true });
             this.dash.updateHealthBadge?.();
+            return true;
         } catch {
             this.notify(this.t('config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+            return false;
         }
     }
 
@@ -22558,11 +22832,12 @@ class DashboardConfig {
     renderBookmarkKeyboardLegend() {
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
-            ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
-            ['o', this.t('config.bookmarksKeyOpen', 'open')],
+            ['x', this.t('config.bmKeySelect', 'select')],
+            ['Shift X', this.t('config.bmKeyRange', 'range')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
-            ['m', this.t('config.bookmarksKeyMore', 'more')],
-            ['c', this.t('config.bookmarksKeyCheckMode', 'checking')],
+            ['Shift E', this.t('config.bmKeyEditDialog', 'edit in dialog')],
+            ['i', this.t('config.bmKeyPanel', 'panel')],
+            ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
@@ -22594,6 +22869,7 @@ class DashboardConfig {
             // leave that cursor pointing at a row nobody can see.
             this.clearListKeyboardSelection();
             this.bmTab = tab;
+            this.closeWorkbenchOverlaysOffList();
             this.restoreConfigHash();
             const body = document.getElementById('config-bm-body');
             if (!body) return;
@@ -22675,30 +22951,6 @@ class DashboardConfig {
                 this.scheduleBookmarkSearchRepaint();
             });
         }
-        container.querySelectorAll('[data-bm-sort-chip]').forEach((chip) => {
-            chip.addEventListener('click', () => {
-                this.bmSort = chip.getAttribute('data-bm-sort-chip');
-                this.resetBookmarkVisibleLimit();
-                this.render();
-                this.restoreConfigHash();
-            });
-        });
-        container.querySelector('[data-bm-changed-toggle]')?.addEventListener('click', () => {
-            this.bmCleanupFilter = this.bmCleanupFilter === 'changed' ? '' : 'changed';
-            this.resetBookmarkVisibleLimit();
-            this._bmDuplicateUrls = null;
-            this.render();
-            this.restoreConfigHash();
-        });
-        this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
-        this.bindBookmarkTagCloud(container);
-        container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
-            this.bmCleanupFilter = '';
-            this.bmSelected.clear();
-            // The banner is outside the list, so repainting the rows alone
-            // would leave it on screen describing a filter no longer applied.
-            this.render();
-        });
         const wire = (id, prop) => {
             const el = container.querySelector(id);
             if (!el) return;
@@ -22714,14 +22966,7 @@ class DashboardConfig {
             });
         };
         wire('#config-bm-sort', 'bmSort');
-        const pageEl = container.querySelector('#config-bm-page');
-        pageEl?.addEventListener('change', () => {
-            this.bmPageFilter = pageEl.value;
-            void this.onBookmarksPageFilterChange();
-        });
-        wire('#config-bm-category', 'bmCategoryFilter');
         void this.ensureBookmarkCategoriesForFilter().then(() => {
-            this.repaintBookmarksFilters();
             this.repaintBookmarksList();
         });
         container.querySelector('#config-bm-add')
@@ -22735,11 +22980,9 @@ class DashboardConfig {
                 this.clearBookmarkFilters();
             }
         });
-        container.querySelector('#config-bm-select-all')
-            ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
-        this.bindBulkToolbar(container);
         this.bindBookmarkKeyboard(container);
+        this.bindWorkbench?.(container);
     }
 
     clearBookmarkFilters() {
@@ -22748,6 +22991,7 @@ class DashboardConfig {
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
+        this.bmHealthFilter = '';
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
@@ -22765,7 +23009,6 @@ class DashboardConfig {
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
         await this.ensureBookmarkCategoriesForFilter();
-        this.repaintBookmarksFilters();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
         this.restoreConfigHash();
@@ -22825,6 +23068,10 @@ class DashboardConfig {
             // that runs on a separate promise chain; defer one frame so
             // allBookmarks is settled before we read it.
             requestAnimationFrame(() => {
+                // The dialog may have changed what the panel shows without
+                // changing the key it shows it for.
+                const panel = document.getElementById('config-bm-panel');
+                if (panel) panel.dataset.bmPanelSig = '';
                 this.repaintBookmarksList();
                 if (this._bmModalRestoreKey) {
                     this._bmKeyboardKey = this._bmModalRestoreKey;
@@ -22854,142 +23101,40 @@ class DashboardConfig {
     bindBookmarkRows(root) {
         this.bookmarkContextMenu()?.bindList(root);
         const listRoot = root.querySelector('#config-bm-list') || root;
-        // Name and shortcut, edited where they are read. Going through the full
-        // form for a typo or a two-letter shortcut is four clicks and a dialog
-        // over the list you were reading; here the row stays in place, Enter
-        // saves and Escape puts the old value back.
-        listRoot.querySelectorAll('[data-bm-inline]').forEach((el) => {
-            const start = () => this.startInlineBookmarkEdit(el);
-            el.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
-            // A shortcut pill is a button, so a single click is the natural way
-            // in; the title is a heading, where a click means "select the row".
-            if (el.getAttribute('data-bm-inline') === 'shortcut') {
-                el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
-            }
-        });
-        listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) this.openBookmarkByKey(key);
-            });
-        });
-        listRoot.querySelectorAll('[data-feed-action="edit"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) void this.openBookmarkEditModal(key);
-            });
-        });
-        listRoot.querySelectorAll('[data-feed-action="recheck"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
-                if (key) void this.recheckBookmarkByKey(key);
-            });
-        });
-        listRoot.querySelectorAll('.health-view-more-btn').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-menu-toggle');
-                if (key) this.toggleBookmarkMenu(key, 'more');
-            });
-        });
-        listRoot.querySelectorAll('.health-check-mode').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-menu-toggle');
-                if (key) this.toggleBookmarkMenu(key, 'check');
-            });
-        });
-        // One listener for every row's menu items, on the list itself: the items
-        // do not exist until a menu is opened (see fillBookmarkMenu), and fifty
-        // rows no longer mean a hundred handlers.
-        if (!listRoot.dataset.menuDelegated) {
-            listRoot.dataset.menuDelegated = 'true';
-            listRoot.addEventListener('click', (e) => {
-                const modeItem = e.target.closest?.('[data-check-mode]');
-                if (modeItem && listRoot.contains(modeItem)) {
-                    e.stopPropagation();
-                    const key = modeItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
-                    const mode = modeItem.getAttribute('data-check-mode');
-                    if (key && mode) void this.setBookmarkCheckMode(key, mode);
-                    return;
-                }
-                const actionItem = e.target.closest?.('[data-bm-menu-action]');
-                if (actionItem && listRoot.contains(actionItem)) {
-                    e.stopPropagation();
-                    const key = actionItem.closest('.health-view-menu')?.getAttribute('data-menu-for');
-                    const action = actionItem.getAttribute('data-bm-menu-action');
-                    if (!key || !action) return;
-                    /*
-                     * Through the context menu's dispatcher, because the menu
-                     * is now built from its list: Edit, Pin, the filters and
-                     * Select are actions this one never knew, and run() falls
-                     * through to handleBookmarkMenuAction for the rest anyway.
-                     * A submenu entry is anchored to the item that opened it,
-                     * so the second menu appears where the reader clicked.
-                     */
-                    const menu = this.bookmarkContextMenu();
-                    const bookmark = this.findBookmarkByKey(key);
-                    if (menu?.run && bookmark) {
-                        if (action === 'check-mode') {
-                            const box = actionItem.getBoundingClientRect();
-                            menu._anchor = { x: Math.round(box.right), y: Math.round(box.top) };
-                        }
-                        this.closeBookmarkMenus();
-                        void menu.run(action, key, bookmark);
-                        return;
-                    }
-                    this.handleBookmarkMenuAction(action, key);
-                }
-            });
-        }
-        listRoot.querySelectorAll('[data-bm-tick]').forEach((box) => {
-            box.addEventListener('change', () => {
-                const key = box.getAttribute('data-bm-tick');
-                if (box.checked) this.bmSelected.add(key);
-                else this.bmSelected.delete(key);
-                this.repaintBulkToolbar();
-                box.closest('.config-bm-item')?.classList.toggle('is-checked', box.checked);
-            });
-        });
         listRoot.querySelectorAll('.health-view-item-icon-img').forEach((img) => {
             window.BookmarkFeedRow?.bindIconFallback?.(img);
         });
-        listRoot.querySelectorAll('[data-bm-filter-page]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const pageId = btn.getAttribute('data-bm-filter-page');
-                if (pageId) void this.filterBookmarksByPage(pageId);
-            });
+        this.fitWorkbenchTags?.(listRoot);
+        // Delegated once per host: rows are replaced on every repaint.
+        if (listRoot.dataset.bmRowsWired === '1') return;
+        listRoot.dataset.bmRowsWired = '1';
+        listRoot.addEventListener('change', (e) => {
+            const box = e.target.closest('[data-bm-tick]');
+            if (!box) return;
+            const key = box.getAttribute('data-bm-tick');
+            if (box.checked) this.bmSelected.add(key);
+            else this.bmSelected.delete(key);
+            this.bmSelectAnchor = key;
+            this.afterSelectionChange();
         });
-        listRoot.querySelectorAll('[data-bm-row-key]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = btn.getAttribute('data-bm-row-key');
-                const b = key ? this.findBookmarkByKey(key) : null;
-                if (b) this.filterBookmarksByCategory(b);
-            });
+        listRoot.addEventListener('click', (e) => {
+            const group = e.target.closest('[data-bm-select-group]');
+            if (group) {
+                this.selectBookmarkGroup(group.getAttribute('data-bm-select-group'));
+                return;
+            }
+            const tick = e.target.closest('.config-bm-tick-cell');
+            const row = e.target.closest('.config-bm-row');
+            if (tick && row && e.shiftKey) {
+                e.preventDefault();
+                this.selectBookmarkRange(this.bookmarkRowKey(row));
+            }
         });
-        listRoot.querySelectorAll('[data-bm-filter-tag]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.filterBookmarksByTag(btn.getAttribute('data-bm-filter-tag'));
-            });
+        listRoot.addEventListener('dblclick', (e) => {
+            if (e.target.closest('button, label, input, select, a')) return;
+            const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
+            if (key) this.openBookmarkByKey(key);
         });
-        listRoot.querySelectorAll('.config-bm-row').forEach((row) => {
-            row.addEventListener('dblclick', (e) => {
-                if (e.target.closest('button, label, input, select, a')) return;
-                const key = row.getAttribute('data-bm-key');
-                if (key) this.openBookmarkByKey(key);
-            });
-        });
-        if (!listRoot.dataset.configBmPointerWired) {
-            listRoot.dataset.configBmPointerWired = '1';
-            listRoot.addEventListener('click', (e) => {
-                if (!e.target.closest('.health-view-menu') && !e.target.closest('[aria-haspopup="menu"]')) {
-                    this.closeBookmarkMenus();
-                }
-            });
-        }
     }
 
     /**
@@ -23308,49 +23453,6 @@ class DashboardConfig {
     }
 
     /**
-     * Tick every row the filters currently show, or clear them if they already
-     * are. Scoped to the visible rows, not the whole collection: acting on
-     * bookmarks you cannot see is how a bulk delete goes wrong.
-     */
-    /**
-     * "Select all" ticks every row the current filters match, which is usually
-     * more than the ~50 rendered — the rest arrive on scroll. Naming the count
-     * says so up front, since the next click may well be Delete.
-     */
-    selectAllBookmarksLabel() {
-        const total = this.visibleBookmarks().length;
-        const shown = Math.min(total, this.bookmarkVisibleLimit(total));
-        if (total > shown) {
-            return this.t('config.selectAllBookmarksCount', 'Select all {n}').replace('{n}', String(total));
-        }
-        return this.t('config.selectAllBookmarks', 'Select all');
-    }
-
-    toggleSelectAllBookmarks() {
-        const rows = this.visibleBookmarks();
-        const keys = rows.map((b) => this.bookmarkKey(b));
-        const allSelected = keys.length > 0 && keys.every((k) => this.bmSelected.has(k));
-        if (allSelected) {
-            keys.forEach((k) => this.bmSelected.delete(k));
-        } else {
-            keys.forEach((k) => this.bmSelected.add(k));
-        }
-        const host = document.getElementById('config-bm-list');
-        if (host) {
-            keys.forEach((key) => {
-                const row = host.querySelector(`.config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
-                if (!row) return;
-                const box = row.querySelector('.config-bm-tick');
-                if (box) box.checked = !allSelected;
-                row.classList.toggle('is-checked', !allSelected);
-            });
-            this.repaintBulkToolbar();
-            return;
-        }
-        this.repaintBookmarksList();
-    }
-
-    /**
      * Load the next page when the sentinel scrolls into view.
      *
      * Growing the list re-renders it, which rebuilds this observer; if the
@@ -23360,9 +23462,18 @@ class DashboardConfig {
      * DOM within a couple of seconds without anyone scrolling, and the 50-row
      * page size did nothing.
      *
-     * Each batch now needs a fresh scroll. `_bmLoadMoreArmed` is lowered as soon
-     * as one page is added and only raised again by a scroll on the list's own
-     * host, so an idle screen stays at the size it was rendered with.
+     * Each batch now needs a fresh scroll. That used to be tracked with a flag
+     * a 'scroll' listener raised, but the slab rows are short enough that the
+     * sentinel can cross into the viewport within the same tick the scroll
+     * starts, sometimes before the listener that arms it has run — and the
+     * windowing scroll handler can itself trigger a rebuild of this observer
+     * mid-gesture, which restarts an event-based arm sequence from scratch and
+     * eats the very report it was meant to catch.
+     *
+     * So "a fresh scroll" is read off the scroll position itself rather than
+     * an event: `_bmLoadMoreLastScrollTop` survives across rebuilds of this
+     * observer, so a load-more still fires once the position genuinely moves,
+     * however many times setup ran in between.
      */
     setupBookmarkLoadMore(host) {
         const sentinel = host?.querySelector('[data-bm-load-more]');
@@ -23371,39 +23482,20 @@ class DashboardConfig {
         sentinel.removeAttribute('aria-hidden');
         this._bmLoadMoreObserver?.disconnect?.();
         const root = this.bookmarkListScrollHost();
-        this.armBookmarkLoadMore(root);
+        const scrollTopNow = () => (root ? root.scrollTop : window.scrollY);
+        if (this._bmLoadMoreLastScrollTop === undefined) this._bmLoadMoreLastScrollTop = scrollTopNow();
         this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
-            if (!this._bmLoadMoreArmed) return;
+            const current = scrollTopNow();
+            const scrolled = current !== this._bmLoadMoreLastScrollTop;
+            this._bmLoadMoreLastScrollTop = current;
+            if (!scrolled) return;
             if (!entries.some((e) => e.isIntersecting)) return;
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
-            this._bmLoadMoreArmed = false;
             this.bmVisibleLimit += this.bmPageSize();
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
-    }
-
-    /**
-     * Re-arm the loader on the next scroll of the list's scroll host.
-     *
-     * `root` is whichever element actually scrolls, or null when that is the
-     * viewport. Window is listened to either way: a scroll container can still
-     * be carried up the page by an outer scroll, and with a null root the
-     * window listener is the only one that fires.
-     */
-    armBookmarkLoadMore(root) {
-        if (this._bmLoadMoreScrollTarget) {
-            this._bmLoadMoreScrollTarget.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-            window.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-        }
-        this._bmLoadMoreArmed = false;
-        this._bmLoadMoreScrollHandler = () => {
-            this._bmLoadMoreArmed = true;
-        };
-        this._bmLoadMoreScrollTarget = root || document;
-        this._bmLoadMoreScrollTarget.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
-        window.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
     }
 
     repaintBookmarksList() {
@@ -23430,7 +23522,7 @@ class DashboardConfig {
         host.innerHTML = this.renderBookmarksList();
         this.bindBookmarkRows(host);
         this.bindBookmarkKeyboard(host);
-        this.repaintBulkToolbar();
+        this.repaintWorkbenchPanel?.();
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
         else window.scrollTo(0, scrollTop);
@@ -23441,19 +23533,6 @@ class DashboardConfig {
                 .find((row) => this.bookmarkRowKey(row) === focusedKey);
             again?.focus({ preventScroll: true });
         }
-    }
-
-    repaintBulkToolbar() {
-        const host = document.getElementById('config-bm-bulk');
-        if (!host) return;
-        host.innerHTML = this.renderBulkToolbarSafe();
-        this.bindBulkToolbar(host);
-    }
-
-    bindBulkToolbar(root) {
-        root.querySelectorAll('[data-bulk]').forEach((btn) => {
-            btn.addEventListener('click', () => this.handleBulkAction(btn.getAttribute('data-bulk')));
-        });
     }
 
     /** Split a "pageId::url" row key back into its parts. */
@@ -23578,10 +23657,7 @@ class DashboardConfig {
         if (!picked.length) return;
 
         try {
-            if (action === 'move') await this.bulkMove(picked);
-            else if (action === 'tags') await this.bulkTags(picked);
-            else if (action === 'status') await this.bulkStatus(picked);
-            else if (action === 'pin') await this.bulkPin(picked);
+            if (action === 'pin') await this.bulkPin(picked);
             else if (action === 'favicons') await this.bulkFavicons(picked);
             else if (action === 'export') this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);
@@ -23706,17 +23782,20 @@ class DashboardConfig {
         };
     }
 
-    async bulkMove(picked) {
-        const targetPage = document.getElementById('config-bulk-page')?.value || '';
-        const rawCat = document.getElementById('config-bulk-category')?.value || '';
-        const { pageId: catPage, categoryId: targetCat } = DashboardConfig.parseCategoryFilter(rawCat);
+    /**
+     * Move bookmarks to a page, a category, or both.
+     *
+     * `category` left out (or null) keeps each row's own; an empty string
+     * takes it away. `keepSelection` is for a single row moved from the panel,
+     * which has nothing to do with what is ticked.
+     */
+    async bulkMove(picked, { pageId = '', category = null, keepSelection = false } = {}) {
+        const targetPage = String(pageId || '');
+        const targetCat = category == null ? null : String(category);
         if (!targetPage && !targetCat) return;
 
         if (targetCat && !targetPage) {
-            const applyTo = catPage
-                ? picked.filter((b) => String(b.pageId) === String(catPage))
-                : picked;
-            if (!applyTo.length) return;
+            const applyTo = picked;
             const pages = new Set(applyTo.map((b) => String(b.pageId)));
             for (const pageId of pages) {
                 await this.ensureCategoryOnPage(pageId, targetCat);
@@ -23734,7 +23813,7 @@ class DashboardConfig {
         const carried = moving.map((b) => {
             const copy = { ...b };
             delete copy.pageId;
-            if (targetCat) copy.category = targetCat;
+            if (targetCat !== null) copy.category = targetCat;
             return copy;
         });
         for (const [pageId, targets] of byPage) {
@@ -23750,60 +23829,29 @@ class DashboardConfig {
         // Targets are resolved before the refresh below, while the occurrence
         // index still describes the list these bookmarks were picked from.
         const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
-        if (targetCat && staying.length) {
+        if (targetCat !== null && staying.length) {
             const targets = this.selectionTargetsByPage(staying).get(String(targetPage)) || new Set();
             await this.refreshBookmarksAfterWrite({ silent: true });
             await this.writePageBookmarks(targetPage, (list) => DashboardConfig.withOccurrence(list)
                 .map(({ bookmark, target }) => (targets.has(target) ? { ...bookmark, category: targetCat } : bookmark)));
         }
-        this.bmSelected.clear();
-        await this.refreshBookmarksAfterWrite();
+        if (keepSelection) {
+            // A moved row has a new key, so its tick has nothing left to point at.
+            moving.forEach((b) => this.bmSelected.delete(this.bookmarkKey(b)));
+        } else {
+            this.bmSelected.clear();
+        }
+        // A row moved from the panel repaints only the list and panel: a
+        // whole-section render would replace the panel and close its drawer.
+        await this.refreshBookmarksAfterWrite({ silent: keepSelection });
         this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
     }
 
-    async bulkTags(picked) {
-        const raw = document.getElementById('config-bulk-tags')?.value || '';
-        const mode = document.getElementById('config-bulk-tags-mode')?.value || 'add';
-        const tags = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
-        if (!tags.length) return;
-        const snapshots = await this.mutateSelected(picked, (b) => {
-            const current = Array.isArray(b.tags) ? b.tags.map((t) => String(t).toLowerCase()) : [];
-            let next;
-            if (mode === 'replace') next = [...tags];
-            else if (mode === 'remove') next = current.filter((t) => !tags.includes(t));
-            else next = [...new Set([...current, ...tags])];
-            return { ...b, tags: next };
-        });
-        this.notify(this.t('config.bulkTagsDone', 'Tags updated.'), 'success', {
-            undoCallback: this.bulkUndo(snapshots, 'config.bulkTagsUndone', 'Tags put back.',
-                'config.bulkUndoFailed', 'Could not undo that.'),
-            duration: 8000,
-        });
-    }
-
-    async bulkStatus(picked) {
-        const mode = document.getElementById('config-bulk-status')?.value || 'off';
-        const snapshots = await this.mutateSelected(picked, (b) => {
-            const next = { ...b };
-            if (window.CheckMode) {
-                next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b)
-                    || Number(this.dash?.settings?.defaultMonitorIntervalMinutes) || 15;
-                window.CheckMode.assign(next, mode);
-            }
-            return next;
-        });
-        this.notify(this.t('config.bulkStatusDone', 'Availability checking updated.'), 'success', {
-            undoCallback: this.bulkUndo(snapshots, 'config.bulkStatusUndone', 'Availability checking put back.',
-                'config.bulkUndoFailed', 'Could not undo that.'),
-            duration: 8000,
-        });
-    }
-
-    async bulkPin(picked) {
-        // Mixed selections pin everything rather than flipping each: a toggle
-        // that leaves half pinned is not what "toggle pin" is asked to do.
-        const allPinned = picked.every((b) => b.pinned === true);
-        const snapshots = await this.mutateSelected(picked, (b) => ({ ...b, pinned: !allPinned }));
+    async bulkPin(picked, pinned) {
+        // Explicit when asked; otherwise a mixed selection pins everything
+        // rather than flipping each.
+        const target = typeof pinned === 'boolean' ? pinned : !picked.every((b) => b.pinned === true);
+        const snapshots = await this.mutateSelected(picked, (b) => ({ ...b, pinned: target }));
         this.notify(this.t('config.bulkPinDone', 'Pins updated.'), 'success', {
             undoCallback: this.bulkUndo(snapshots, 'config.bulkPinUndone', 'Pins put back.',
                 'config.bulkUndoFailed', 'Could not undo that.'),
@@ -24232,6 +24280,59 @@ class DashboardConfig {
      * the numbers could not be drawn — better than an empty panel that looks
      * like an install with no data.
      */
+    /**
+     * Fetch the file a section's methods live in, once.
+     *
+     * Awaited where the view changes, never inside the draw: renderSection()
+     * returns a string from inside a template literal, so it cannot wait for
+     * anything. A failure leaves the reader where they were with a line saying
+     * so — an empty body would read as a section with nothing in it.
+     */
+    ensureSection(id) {
+        const entry = DashboardConfig.SECTION_MODULES[id];
+        if (!entry || entry.ready()) return Promise.resolve(true);
+        this._sectionPromises = this._sectionPromises || {};
+        if (this._sectionPromises[id]) return this._sectionPromises[id];
+        this._sectionPromises[id] = window.LazyScript
+            .loadScriptOnce(entry.file, entry.datasetKey, entry.ready)
+            .then(() => true)
+            .catch(() => {
+                // Dropped rather than kept, so a later visit tries again instead
+                // of returning the same failure for the life of the tab.
+                delete this._sectionPromises[id];
+                this.notify(this.t('config.sectionLoadFailed',
+                    'That part of config could not be loaded. Check your connection and try again.'), 'error');
+                return false;
+            });
+        return this._sectionPromises[id];
+    }
+
+    /**
+     * The sections nobody asked for yet, fetched while the tab is idle.
+     *
+     * One at a time: eleven parallel scripts would queue in front of config's
+     * own data fetches, which is the thing this split was meant to speed up.
+     */
+    preloadRemainingSections() {
+        const ids = Object.keys(DashboardConfig.SECTION_MODULES)
+            .filter((id) => !DashboardConfig.SECTION_MODULES[id].ready());
+        if (!ids.length) return;
+        const next = () => {
+            const id = ids.shift();
+            if (!id) return;
+            this.ensureSection(id).then(() => schedule());
+        };
+        const schedule = () => {
+            if (!ids.length) return;
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(next, { timeout: 4000 });
+            } else {
+                setTimeout(next, 1200);
+            }
+        };
+        schedule();
+    }
+
     ensureStatsRenderers() {
         if (window.DashboardConfigStatsReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
@@ -25368,12 +25469,13 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
+    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'widgets', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     helpTabLabel(tab) {
         const map = {
             start: ['config.helpTabStart', 'Getting started'],
             config: ['config.helpTabConfig', 'Configuring'],
+            appearance: ['config.helpTabAppearance', 'Appearance'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
@@ -25383,6 +25485,7 @@ class DashboardConfig {
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
+            logs: ['config.helpTabLogs', 'Logs'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -25546,6 +25649,7 @@ class DashboardConfig {
         this.ensureHelpProse();
         switch (this.helpTab) {
             case 'config': return this.renderHelpConfig();
+            case 'appearance': return this.renderHelpAppearance();
             case 'organizing': return this.renderHelpOrganizing();
             case 'widgets': return this.renderHelpWidgets();
             case 'search': return this.renderHelpSearch();
@@ -25555,6 +25659,7 @@ class DashboardConfig {
             case 'inbox': return this.renderHelpInbox();
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
+            case 'logs': return this.renderHelpLogs();
             default: return this.renderHelpStart();
         }
     }
@@ -25614,6 +25719,19 @@ class DashboardConfig {
                 ${buttons}
             </p>`;
     }
+
+    /**
+     * Panels that changed tab, by panel id.
+     *
+     * A copied link names the tab the panel was on when it was copied. When a
+     * panel moves, the old link would open a tab that no longer holds it and
+     * scroll to nothing; this sends it to the tab that does.
+     */
+    static HELP_PANEL_MOVED = {
+        themes: { from: 'config', to: 'appearance' },
+        appearance: { from: 'config', to: 'appearance' },
+        'server-log': { from: 'data', to: 'logs' },
+    };
 
     /**
      * The pairs worth threading, by the panel the reader is on.
@@ -25838,7 +25956,7 @@ class DashboardConfig {
             { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
             { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
         ],
-        // ── v1.4.0 topics ──────────────────────────────────────────────────
+        // ── Widgets, sources, archive, webhooks, themes ────────────────────
         'config.helpWidgetsTitle': [
             {
                 kind: 'widgetSpan', value: 2,
@@ -25943,6 +26061,11 @@ class DashboardConfig {
                 captionKey: 'config.helpArtOutFlow', caption: 'Pushed, and signed',
             },
         ],
+        'config.helpHeaderTitle': [
+            // The keys for the three things the header now carries: the pages,
+            // the dock, and the theme browser behind the destinations.
+            { kind: 'keys', value: ['1–9', "'", 'Shift + A'] },
+        ],
         'config.helpThemesTitle': [
             // The browser first, because it is the change: what was a list of
             // 214 names is a grid you can see. Then the two things every theme
@@ -26005,7 +26128,7 @@ class DashboardConfig {
         ],
         'config.helpCommandsTitle': [
             {
-                kind: 'query', value: [['prefix', ':'], ['text', 'layout modern']],
+                kind: 'query', value: [['prefix', ':'], ['text', 'density compact']],
                 captionKey: 'config.helpArtCommandExample', caption: 'Actions, not destinations',
             },
         ],
@@ -26225,6 +26348,12 @@ class DashboardConfig {
                 ],
             },
         ],
+        'config.helpActivityTrailTitle': [
+            {
+                kind: 'flow',
+                value: [{ k: 'config.helpArtOutLabel', d: 'nextDash' }, 'JSON', 'activity.log'],
+            },
+        ],
         'config.helpSelfHostingTitle': [
             {
                 kind: 'boundary',
@@ -26248,7 +26377,7 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpInboxTitle': {
             isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'behavior', behaviorTab: 'search' },
+            go: { section: 'behavior', behaviorTab: 'inbox' },
         },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
@@ -26258,7 +26387,7 @@ class DashboardConfig {
             isOn: (s) => s.monitorNotifyEnabled === true,
             go: { section: 'behavior', behaviorTab: 'status' },
         },
-        'config.helpPrivacyTitle': {
+        'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
         },
@@ -26266,7 +26395,7 @@ class DashboardConfig {
         // most likely to follow the prose and find nothing where it says.
         'config.helpServerLogTitle': {
             isOn: (s) => s.serverLogEnabled === true,
-            go: { section: 'data-backups', dbTab: 'logs' },
+            go: { section: 'logs', logsTab: 'server' },
         },
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
@@ -26366,11 +26495,23 @@ class DashboardConfig {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
             + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
-                'config.helpBehaviorBody', '')
-            + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
-                'config.helpAppearanceBody', '')
-            + this.helpPanel('config.helpThemesTitle', 'Themes',
-                'config.helpThemesBody', '');
+                'config.helpBehaviorBody', '');
+    }
+
+    /**
+     * Appearance as a tab of its own.
+     *
+     * Themes, the grid and the header with its action buttons were three long
+     * panels on Configuring, beside the article about finding your way around
+     * config — a tab about the rail and the hub that was mostly about colours.
+     */
+    renderHelpAppearance() {
+        return this.helpPanel('config.helpThemesTitle', 'Themes',
+            'config.helpThemesBody', '')
+            + this.helpPanel('config.helpHeaderTitle', 'Header & action buttons',
+                'config.helpHeaderBody', '')
+            + this.helpPanel('config.helpAppearanceTitle', 'Grid, display & date',
+                'config.helpAppearanceBody', '');
     }
 
     renderHelpOrganizing() {
@@ -26628,18 +26769,23 @@ class DashboardConfig {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
             // Where bookmarks come from, where copies of them are kept, and what
-            // this install tells the outside — the three subjects the Data &
-            // backups section grew in v1.4.0, in the order its tabs carry them.
+            // this install tells the outside, in the order the tabs carry them.
             + this.helpPanel('config.helpSourcesTitle', 'Sources — where bookmarks come from',
                 'config.helpSourcesBody', '')
             + this.helpPanel('config.helpArchiveTitle', 'Keeping a copy of a page',
                 'config.helpArchiveBody', '')
-            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks & assistants',
+            + this.helpPanel('config.helpIntegrationsTitle', 'Webhooks',
                 'config.helpIntegrationsBody', '')
-            + this.helpPanel('config.helpServerLogTitle', 'Server log',
-                'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
                 'config.helpSelfHostingBody', '');
+    }
+
+    /** Logs is a section of config, so its two tabs get a help tab of their own. */
+    renderHelpLogs() {
+        return this.helpPanel('config.helpServerLogTitle', 'Server log',
+            'config.helpServerLogBody', '')
+            + this.helpPanel('config.helpActivityTrailTitle', 'Activity trail',
+                'config.helpActivityTrailBody', '');
     }
 
     /**

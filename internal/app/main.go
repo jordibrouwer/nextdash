@@ -275,6 +275,11 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/previews/images", handlers.PreviewImageStats).Methods("GET")
 	r.HandleFunc("/api/previews/images/clear", handlers.ClearPreviewImages).Methods("POST")
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")
+	r.HandleFunc("/api/track-search", handlers.TrackSearch).Methods("POST")
+	r.HandleFunc("/api/track-keys", handlers.TrackKeys).Methods("POST")
+	r.HandleFunc("/api/track-nav", handlers.TrackNav).Methods("POST")
+	r.HandleFunc("/api/track-session", handlers.TrackSession).Methods("POST")
+	r.HandleFunc("/api/track-clienterror", handlers.TrackClientError).Methods("POST")
 
 	// Data files: uploaded favicons, bookmark icons, cached preview media.
 	// See dataFileHandler for why the route names each case rather than

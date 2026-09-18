@@ -1817,6 +1817,7 @@ class DashboardInbox {
         if (e.key === 'R') {
             e.preventDefault();
             e.stopImmediatePropagation();
+            window.nextdashRecordKey?.('R');
             void this.refreshFromKeyboard();
             return true;
         }
@@ -3680,6 +3681,30 @@ class DashboardInbox {
     }
 
     /**
+     * Tick the whole filtered list from the menu.
+     *
+     * Ctrl/Cmd+A already did this, which left it reachable only to somebody who
+     * had read the cheat sheet. Same toggle as the chord, so button and keys
+     * stay one behaviour, and the label says which way the next click goes.
+     *
+     * Left out when the filters leave nothing: a Select all over an empty list
+     * has nothing to select.
+     */
+    renderSelectAllButton(rows) {
+        const count = rows.length;
+        if (!count) return '';
+        const all = rows.every((item) => this.checkedIds.has(item.id));
+        const label = all
+            ? this.t('dashboard.inboxDeselectAll', 'Deselect all')
+            : this.t('dashboard.inboxSelectAll', 'Select all ({count})', { count });
+        const hint = all
+            ? this.t('dashboard.inboxDeselectAllHint', 'Untick every link the current filter shows')
+            : this.t('dashboard.inboxSelectAllHint', 'Tick every link the current filter shows');
+        return `<button type="button" class="inbox-bulk-btn" data-inbox-select-all
+            title="${this.escape(hint)}">${this.escape(label)}</button>`;
+    }
+
+    /**
      * Fill the ⋯ menu. Its contents depend on the rows on screen — "Mark all
      * read" is pointless with nothing unread — so this runs per render, while
      * the menu element itself (and its open/closed state) is left alone.
@@ -3705,6 +3730,7 @@ class DashboardInbox {
             : this.t('dashboard.inboxMarkAllReadHint', 'Marks every unread link in the inbox');
 
         menu.innerHTML = `
+            ${this.renderSelectAllButton(rows)}
             ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
             <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
@@ -3713,6 +3739,13 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
             <button type="button" class="inbox-bulk-btn inbox-menu-narrow-only" data-inbox-menu-help>${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}</button>
         `;
+        menu.querySelector('[data-inbox-select-all]')?.addEventListener('click', () => {
+            this.checkAllVisible();
+            // setChecked only redraws the bulk bar, so the entry that was just
+            // clicked would keep reading "Select all" over a fully ticked list
+            // until the next full render.
+            this.renderToolbarMenu(this.getFilteredItems());
+        });
         menu.querySelector('[data-inbox-bulk="read"]')?.addEventListener('click', () => {
             void this.markAllRead();
         });
