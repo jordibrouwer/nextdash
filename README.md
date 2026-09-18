@@ -10,6 +10,8 @@
 
 My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
 
+Read more about the latest release, v1.11.0, on the [nextDash blog](https://nextdash.cc/2026/09/18/nextdash-1-11-x-we-moved-your-furniture-and-left-a-note/)
+
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machine — and any self-hosted service that answers with JSON.
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
