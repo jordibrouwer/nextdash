@@ -5784,11 +5784,16 @@ body[data-grid-keys="shown"] .dashboard-legend {
     display: flex;
     align-items: center;
     gap: var(--space-2, 0.5rem);
-    /* It sits above the grid rather than in it, so it takes the container's
-       width whatever shape the grid itself is in. */
-    width: 100%;
+    /* It sits above the grid rather than in it. The width and the offset are
+       measured from the grid and handed here by dashboard-grid-filter.js: the
+       grid's own width comes from how many fixed-width columns fit, which no
+       rule here can work out. Falls back to the container while they are unset,
+       which is what it always did. */
+    width: var(--grid-filter-width, 100%);
     box-sizing: border-box;
+    /* The offset comes after the shorthand, which would otherwise reset it. */
     margin: 0 0 var(--space-2, 0.6rem);
+    margin-left: var(--grid-filter-offset, 0);
     padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
