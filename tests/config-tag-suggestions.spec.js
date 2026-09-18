@@ -621,10 +621,15 @@ test.describe('the suggestions panel', () => {
                 .filter((b) => b.url.includes('keep.example') && (b.tags || []).includes('code')).length),
         { timeout: 15_000 }).toBe(4);
 
-        expect(await page.evaluate((key) => {
+        // The tag count above already proves the mutation landed; the
+        // selection-preserving step that follows it is a separate piece of
+        // work on the same refresh and isn't part of what that poll observed,
+        // so a single-shot check here raced it under load. Poll instead of
+        // sampling once -- a selection that never comes back still fails.
+        await expect.poll(() => page.evaluate((key) => {
             const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
             return cfg.bmSelected.has(key);
-        }, ticked)).toBe(true);
+        }, ticked), { timeout: 15_000 }).toBe(true);
     });
 
     test('a rule you write lands under the form that wrote it', async ({ page }) => {
