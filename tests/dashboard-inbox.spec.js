@@ -4,6 +4,10 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent,
 
 test.describe('dashboard inbox phase 1', () => {
     test.beforeEach(async ({ page }) => {
+        // Wide enough that the header shows its destinations rather than folding
+        // them behind the overflow control: at Playwright's default 1280x720 the
+        // inbox button is in the DOM but 0x0, so every click on it timed out.
+        await page.setViewportSize({ width: 1500, height: 950 });
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });

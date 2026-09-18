@@ -124,7 +124,16 @@ test('/ switches the mode with Switch Search Mode on', async ({ page }) => {
     expect(after).toBe('/abc');
 });
 
-test('pressing / on an empty search still types the character', async ({ page }) => {
+/*
+ * `/` on an empty box enters tag mode now.
+ *
+ * It used to type the character, because at the time `/` meant nothing there.
+ * When tags moved into the search panel it became that mode's prefix
+ * (SearchComponent.MODE_ENTRY), and a bare `/` sitting in an empty box was
+ * never useful. The mode switch itself is untouched: with something typed, `/`
+ * still leads the query, which is what the hint's Enter action builds.
+ */
+test('pressing / on an empty search enters tag mode', async ({ page }) => {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
@@ -137,8 +146,18 @@ test('pressing / on an empty search still types the character', async ({ page })
             { timeout: 15_000 })
         .toBe(true);
 
-    // Nothing to switch yet, so it behaves as the prefix being typed first.
     await page.keyboard.press('/');
     const after = await page.evaluate(() => window.dashboardInstance.searchComponent.currentQuery);
-    expect(after).toBe('/');
+    expect(after).toBe('tag:');
+
+    // And with something typed, the key still leads the query rather than
+    // replacing it — the mode switch the hint points at.
+    await page.evaluate(() => {
+        const sc = window.dashboardInstance.searchComponent;
+        sc.currentQuery = 'read';
+        sc.updateSearch();
+    });
+    await page.keyboard.press('/');
+    expect(await page.evaluate(
+        () => window.dashboardInstance.searchComponent.currentQuery)).toBe('/read');
 });

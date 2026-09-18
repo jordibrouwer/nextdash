@@ -92,14 +92,19 @@ test('every setting on the page carries a way back to its default', async ({ pag
 test('the reset puts the value back and repaints the page', async ({ page }) => {
     await openAppearance(page);
 
-    // Move all three Surfaces answers away from their defaults. Flat is the
-    // default now, so the depth moves the other way.
-    await page.locator('[data-appearance-select="themeDepth"]').selectOption('glass');
+    /*
+     * Move all three Surfaces answers away from their defaults — which changed
+     * with this release. A fresh install starts on glass with a soft glow
+     * (defaultThemeDepth / defaultGlowStrength in internal/app/models.go), so
+     * setting the depth to glass here left it sitting on its default and no ↺
+     * was offered, which is what this test had been reading as a broken reset.
+     */
+    await page.locator('[data-appearance-select="themeDepth"]').selectOption('flat');
     await page.locator('[data-appearance-select="glowStrength"]').selectOption('full');
     await page.locator('[data-appearance-select="inkGap"]').selectOption('0.58');
     await page.waitForTimeout(400);
 
-    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('glass');
+    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
     expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('full');
 
     // The ↺ is only offered while there is something to undo.
@@ -108,11 +113,11 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
 
     await reset('themeDepth').click();
     await expect.poll(() => page.evaluate(
-        () => document.body.getAttribute('data-depth')), { timeout: 5_000 }).toBe('flat');
+        () => document.body.getAttribute('data-depth')), { timeout: 5_000 }).toBe('glass');
 
     await reset('glowStrength').click();
     await expect.poll(() => page.evaluate(
-        () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('off');
+        () => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('soft');
 
     await reset('inkGap').click();
     await expect.poll(() => page.evaluate(

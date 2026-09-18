@@ -118,7 +118,11 @@ test('a digit with no page behind it does nothing at all', async ({ page }) => {
     await page.waitForTimeout(300);
 
     for (const key of ['5', '8', '0']) {
-        await page.keyboard.press('Escape');
+        // Reset through the component, not the Escape key: on a bare grid with
+        // nothing selected, Escape has its own job (it goes home, then opens
+        // search) — pressing it here would open the very panel this test is
+        // checking the digit does not.
+        await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
         await page.waitForTimeout(250);
         await page.keyboard.press(key);
         await page.waitForTimeout(600);

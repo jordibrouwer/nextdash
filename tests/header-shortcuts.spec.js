@@ -418,6 +418,19 @@ test('the groups in the band are all the same plate', async ({ page }) => {
     await openDashboard(page);
     await showEveryAction(page);
     await usePlatedHeader(page);
+    /*
+     * The segmented switcher, asked for rather than assumed.
+     *
+     * It used to be the only one, and the comment below still describes it —
+     * but the page switcher is a choice of four now and a fresh install starts
+     * on `classic`, which draws numbers beside the destinations and no shell at
+     * all. This test is about the shell's plate, so it pins the style that has
+     * one.
+     */
+    await page.evaluate(async () => {
+        await window.dashboardInstance.config.setBehavior('pageSwitcherStyle', 'segmented', 'chrome');
+    });
+    await page.waitForTimeout(300);
     // A second page, so there is a tab that is not the one you are on: the
     // active tab carries the bloom on top of the plate and would not compare.
     await page.evaluate(async () => {

@@ -13,7 +13,10 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
  */
 async function openDashboard(page) {
     await markWhatsNewSeen(page);
-    await page.setViewportSize({ width: 1280, height: 900 });
+    // Below ~1500px the header folds its destinations (inbox/health/config)
+    // behind an overflow control, so #page-nav-inbox-btn sits in the DOM at
+    // zero width and is never clickable. Wide enough that nothing folds.
+    await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.inbox != null,
         null, { timeout: 15_000 });

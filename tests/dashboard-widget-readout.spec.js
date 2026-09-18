@@ -133,6 +133,16 @@ test.describe('a widget reads as an instrument', () => {
         await withWidgets(page);
         const surfaces = await page.evaluate((channelsSource) => {
             const channels = eval(channelsSource);
+            /*
+             * Off glass for this one.
+             *
+             * The fresh install defaults to glass depth, where the tile and its
+             * cells are deliberately see-through and blurred (see
+             * widget-quiet-surface.spec.js). "One step off the card" is the
+             * solid-surface claim that holds at flat/soft/rich; pin the depth
+             * so this test isn't measuring glass's intentional transparency.
+             */
+            document.body.setAttribute('data-depth', 'flat');
             const tile = document.querySelector('.dashboard-widget[data-widget-type="archive"]');
             const card = tile.querySelector('.dashboard-widget-body');
             const cell = tile.querySelector('.dashboard-widget-stat');

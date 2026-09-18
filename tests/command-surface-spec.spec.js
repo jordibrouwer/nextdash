@@ -38,6 +38,10 @@ const style = (page, selector, props) => page.evaluate(([sel, list]) => {
 test.describe('the command surface', () => {
     test('is a sheet, not a padded card', async ({ page }) => {
         await openCommands(page);
+        // The draft states the sheet's own numbers; glass is the fresh-install
+        // default now and layers its own backdrop-filter on top of them (see
+        // theme-character.css), so pin flat to read the sheet's own values.
+        await page.evaluate(() => document.body.setAttribute('data-depth', 'flat'));
         const surface = await style(page, '.search-container',
             ['padding', 'borderRadius', 'backdropFilter', 'boxShadow']);
 

@@ -18,6 +18,10 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
  */
 
 async function openDashboard(page) {
+    // Wide enough that the header's destinations (Inbox included) sit on the
+    // bar itself rather than folded behind the overflow control, which below
+    // ~1500px is in the DOM but not clickable.
+    await page.setViewportSize({ width: 1500, height: 900 });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });

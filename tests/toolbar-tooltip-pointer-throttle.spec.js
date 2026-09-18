@@ -137,10 +137,12 @@ test.describe('the toolbar tooltip', () => {
 
     test('hovering a toolbar button still shows its tooltip', async ({ page }) => {
         await openDashboard(page);
-        // Search is in the tooltip's own defs list; fold-all is not — it gets
-        // its key hint from the separate inline-hint path.
-        const button = page.locator('#search-button');
-        test.skip(await button.count() === 0, 'search button is switched off');
+        // The dock buttons (search, commands, fold-all, ...) carry their own
+        // key as a permanent inline chip now and were dropped from the popover
+        // defs; only the header destinations (health/inbox/config) are still
+        // `header: true` and get this popover on hover.
+        const button = page.locator('.health-link-anchor');
+        test.skip(await button.count() === 0, 'health is switched off');
 
         await button.hover();
         const tip = page.locator('#toolbar-kbd-tooltip');

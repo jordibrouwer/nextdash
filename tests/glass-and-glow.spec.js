@@ -39,15 +39,18 @@ async function setDepth(page, depth) {
     await page.waitForTimeout(200);
 }
 
-test('the glow is off out of the box, and both layers read the dial', async ({ page }) => {
+test('the glow is soft out of the box, and both layers read the dial', async ({ page }) => {
     await openDashboard(page);
-    // The ambient ring is only defined on the depths that draw one, and flat --
-    // which is what an install now starts on -- is not one of them.
+    // The ambient ring is only defined on the depths that draw one, and rich
+    // is one of them.
     await setDepth(page, 'rich');
 
-    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('off');
-    expect(await token(page, '--glow-strength')).toBe('0');
+    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('soft');
+    expect(await token(page, '--glow-strength')).toBe('0.6');
 
+    await page.evaluate(() => window.ThemeLoader.applyGlowStrength('off'));
+    await page.waitForTimeout(150);
+    expect(await token(page, '--glow-strength')).toBe('0');
     const off = {
         bloom: await token(page, '--bloom'),
         ring: await token(page, '--surface-glow-ring'),
@@ -72,12 +75,12 @@ test('the glow is off out of the box, and both layers read the dial', async ({ p
 /*
  * The three Surfaces answers, agreed once.
  *
- * Backdrop on, glow off, depth rich — for a fresh install and for one that has
- * been running since before any of these existed. surfaceDefaultsMigrated is
- * what stops it happening twice: after the first pass the reader's own answers
- * are theirs.
+ * Backdrop on, glow soft, depth glass — for a fresh install, because
+ * Tarnished Brass (the fresh-install theme) is built for glass and a soft
+ * glow. surfaceDefaultsMigrated is what stops it happening twice: after the
+ * first pass the reader's own answers are theirs.
  */
-test('backdrop on, glow off, depth flat is what an install starts on', async ({ page }) => {
+test('backdrop on, glow soft, depth glass is what an install starts on', async ({ page }) => {
     await openDashboard(page);
 
     const stored = await page.evaluate(async () => {
@@ -86,13 +89,13 @@ test('backdrop on, glow off, depth flat is what an install starts on', async ({ 
     });
 
     expect(stored.themeBackdrop).toBe('on');
-    expect(stored.glowStrength).toBe('off');
-    expect(stored.themeDepth).toBe('flat');
+    expect(stored.glowStrength).toBe('soft');
+    expect(stored.themeDepth).toBe('glass');
     expect(stored.surfaceDefaultsMigrated, 'the migration marker was not written').toBe(true);
 
     // And the page is drawn that way, not just stored that way.
-    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
-    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('off');
+    expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('glass');
+    expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('soft');
     expect(await page.evaluate(
         () => document.body.getAttribute('data-theme-backdrop'))).toBe('on');
 });

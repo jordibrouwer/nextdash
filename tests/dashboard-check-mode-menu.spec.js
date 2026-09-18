@@ -36,6 +36,10 @@ function activeMode(page) {
 }
 
 async function setup(page) {
+    // Wide enough that the header shows its destinations rather than folding
+    // them behind the overflow control: at the default 1280x720 the health link
+    // is in the DOM but not clickable.
+    await page.setViewportSize({ width: 1500, height: 950 });
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);

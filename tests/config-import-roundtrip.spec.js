@@ -62,14 +62,30 @@ test.describe('CSV import', () => {
 });
 
 test.describe('theme import', () => {
+    /*
+     * Themes are named fields, not CSS custom properties. This used to hand in
+     * `--bg-primary` / `--text-primary`, which normalizeImportedTheme has not
+     * recognised since the theme shape became `backgroundPrimary` /
+     * `textPrimary` — so it returned null and the test read that as a broken
+     * import rather than as the wrong file shape.
+     */
     test('an exported theme comes back as a new theme', async ({ page }) => {
         await openConfig(page);
-        const result = await page.evaluate(() => {
-            const c = window.dashboardInstance.config;
-            const theme = c.normalizeImportedTheme({ name: 'Sunset', '--bg-primary': '#101020', '--text-primary': '#eee' });
-            return theme;
-        });
-        expect(result).toMatchObject({ name: 'Sunset', '--bg-primary': '#101020' });
+        const result = await page.evaluate(() => window.dashboardInstance.config.normalizeImportedTheme({
+            name: 'Sunset',
+            backgroundPrimary: '#101020',
+            textPrimary: '#eeeeee',
+        }));
+        expect(result).toMatchObject({ name: 'Sunset', backgroundPrimary: '#101020' });
+    });
+
+    test('the wrapped shape an export writes is read the same way', async ({ page }) => {
+        await openConfig(page);
+        const result = await page.evaluate(() => window.dashboardInstance.config.normalizeImportedTheme({
+            name: 'Sunset',
+            colors: { backgroundPrimary: '#101020', textPrimary: '#eeeeee' },
+        }));
+        expect(result).toMatchObject({ name: 'Sunset', backgroundPrimary: '#101020' });
     });
 
     test('a JSON file that is not a theme is refused', async ({ page }) => {

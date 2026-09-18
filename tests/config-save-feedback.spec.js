@@ -66,10 +66,19 @@ test.describe('config save feedback', () => {
         await openDisplayTab(page);
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
-        // Confirm the premise: the section header really is off-screen here, so
-        // an indicator living up there would be unreadable.
-        expect(await page.locator('.config-view-section-title')
-            .evaluate((el) => el.getBoundingClientRect().bottom)).toBeLessThan(0);
+        /*
+         * Confirm the premise, which changed with the shell.
+         *
+         * The section header used to scroll away, so an indicator living up
+         * there would have been unreadable. It is a sticky band now and stays
+         * put — so what this test is really about is the page being scrolled
+         * well past the control being changed, with the indicator still in
+         * view. Asserting the old premise read the sticky header as a failure.
+         */
+        expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+        const title = page.locator('.config-view-section-title');
+        expect(await title.evaluate((el) => el.getBoundingClientRect().bottom))
+            .toBeLessThan(await page.evaluate(() => window.innerHeight / 2));
 
         await page.locator('[data-behavior-field="showRecentButton"]').click();
         await expect(state(page)).toHaveClass(/is-saved/);
