@@ -431,7 +431,16 @@
                   : dash.bookmarks;
         },
 
-        isFeatureAllowedInSettings() {
+        /**
+         * Whether the button is drawn. Chrome, and nothing more.
+         *
+         * This used to gate the whole feature, so switching the button off took
+         * the tag cloud with it and `/` had nothing left to open — which is why
+         * the key fell back to the search panel's tag mode. A setting about
+         * whether a button is on screen should not decide whether a keyboard
+         * shortcut works.
+         */
+        isButtonShownInSettings() {
             return window.dashboardInstance?.settings?.showTagCloudButton === true;
         },
 
@@ -442,18 +451,15 @@
         /**
          * Can this library use the tag cloud at all?
          *
-         * Deliberately view-blind. Turning the setting off, having no tags
-         * left, or a phone-sized window means the filter itself has nowhere to
+         * Deliberately view-blind, and deliberately blind to the button: having
+         * no tags left or a phone-sized window means the filter has nowhere to
          * live, so an active one is dropped. Standing in another view is not
-         * that: the filter is still on the bookmarks grid you came from and is
-         * still on the grid you go back to.
+         * that — the filter is still on the bookmarks grid you came from and is
+         * still on the grid you go back to — and neither is hiding the button,
+         * which only takes the button away.
          */
         isFeatureAvailable() {
-            return (
-                this.isFeatureAllowedInSettings() &&
-                this.libraryHasTags() &&
-                !isMobileLayout()
-            );
+            return this.libraryHasTags() && !isMobileLayout();
         },
 
         isEligible() {
@@ -469,11 +475,14 @@
             if (!this.wrap) return;
 
             const eligible = this.isEligible();
-            this.wrap.classList.toggle('is-eligible', eligible);
-            this.toggle?.classList.toggle('is-eligible', eligible);
+            // The button is drawn only when it is both usable and asked for;
+            // the feature itself no longer depends on that second half.
+            const buttonShown = eligible && this.isButtonShownInSettings();
+            this.wrap.classList.toggle('is-eligible', buttonShown);
+            this.toggle?.classList.toggle('is-eligible', buttonShown);
             document.body.setAttribute(
                 'data-show-tag-cloud-button',
-                this.isFeatureAllowedInSettings() ? 'true' : 'false'
+                this.isButtonShownInSettings() ? 'true' : 'false'
             );
 
             if (!eligible) {

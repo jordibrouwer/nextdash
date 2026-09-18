@@ -67,10 +67,17 @@ test('the panel names the modes that used to be buttons', async ({ page }) => {
     expect(pills.map((p) => p.key)).toEqual(['>', ':', '?', '/', '*', '!']);
 });
 
-test('* opens the panel on what was opened last, with the recent button off', async ({ page }) => {
+/*
+ * These two used to assert the opposite: with the button off, the key opened
+ * the search panel's mode instead of the surface it names. That made a keyboard
+ * shortcut answer to a setting about whether a button is drawn, so `*` and `/`
+ * each meant one of two things depending on chrome the reader may never have
+ * touched. Both keys reach their own surface now, on or off.
+ */
+test('* opens recents whether or not its button is on screen', async ({ page }) => {
     await openDashboard(page);
     await buttonsOff(page);
-    // Something to have opened: the recents mode reads lastOpened off the store.
+    // Something to have opened: the recents list reads lastOpened off the store.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         const bookmark = d.bookmarks?.[0] || d.allBookmarks?.[0];
@@ -80,31 +87,30 @@ test('* opens the panel on what was opened last, with the recent button off', as
 
     await page.keyboard.press('*');
 
-    await expect.poll(() => page.evaluate(
-        () => window.dashboardInstance.searchComponent?.isActive?.() === true,
-    ), { timeout: 10_000 }).toBe(true);
+    await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toHaveCount(1);
+    // And the panel is not what opened instead.
     expect(await page.evaluate(
-        () => window.dashboardInstance.searchComponent.getCurrentQuery())).toBe('*');
-    // The recents panel is not what opened: one list, one surface.
-    await expect(page.locator('#app-modal.show .recent-bookmarks-modal')).toHaveCount(0);
+        () => window.dashboardInstance.searchComponent?.isActive?.() === true)).toBe(false);
 });
 
-test('/ opens the panel on the tags, with the tag cloud button off', async ({ page }) => {
+test('/ opens the tag cloud whether or not its button is on screen', async ({ page }) => {
     await openDashboard(page);
     await buttonsOff(page);
 
     await page.keyboard.press('/');
 
+    // Asked of the cloud itself rather than of a rectangle: the container lives
+    // in the page whether or not it is open, and it animates, so a height read
+    // at the wrong moment answers for the transition rather than for the cloud.
     await expect.poll(() => page.evaluate(
-        () => window.dashboardInstance.searchComponent?.getCurrentQuery()),
-    { timeout: 10_000 }).toBe('tag:');
-    // The cloud's own container lives in the page whether or not it is open, so
-    // what is asked here is whether it is on screen.
-    expect(await page.evaluate(() => {
-        const cloud = document.querySelector('.tag-cloud-modal');
-        return Boolean(cloud) && window.getComputedStyle(cloud).display !== 'none'
-            && cloud.getBoundingClientRect().height > 0;
-    }), 'the cloud opened as well').toBe(false);
+        () => window.DashboardTagCloud?.modalOpen === true), { timeout: 10_000 }).toBe(true);
+    // And the panel is not what opened instead.
+    expect(await page.evaluate(
+        () => window.dashboardInstance.searchComponent?.isActive?.() === true)).toBe(false);
+
+    // And the button really is gone, which is all that setting now decides.
+    expect(await page.evaluate(
+        () => document.body.getAttribute('data-show-tag-cloud-button'))).toBe('false');
 });
 
 test('the keys pill opens the cheat sheet, and leaves the panel behind it', async ({ page }) => {

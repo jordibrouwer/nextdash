@@ -999,17 +999,16 @@ class SearchComponent {
         if (key === '/') {
             const dash = window.dashboardInstance;
             /*
-             * With the tag cloud out of the header, `/` opens the panel on its
-             * tags instead of the cloud. The cloud is still there for a reader
-             * who switches its button back on, and keeps the key while it is.
+             * `/` opens the tag cloud whether or not its button is on screen.
+             *
+             * It used to fall back to the panel's tag mode while the button was
+             * switched off — because switching the button off used to switch the
+             * whole feature off, leaving the key nothing to open. The button and
+             * the feature are separate now (DashboardTagCloud.isButtonShownInSettings
+             * against isFeatureAvailable), so the key reaches the cloud either
+             * way and the check below hands it over. The panel's tag mode is
+             * still there under its own prefix, typed inside the panel.
              */
-            if (!this.searchActive && dash?.settings?.showTagCloudButton === false
-                && dash?.isBookmarksView?.() && !dash.isModalOpen?.()) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.openInTagMode();
-                return;
-            }
             // Outside the bookmarks dashboard, / has nothing to filter -- and
             // without this the ineligible-tag-cloud fallback below would still
             // fall through to opening the search overlay from inside inbox or

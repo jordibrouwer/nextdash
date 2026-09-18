@@ -55,8 +55,15 @@ async function openRecents(page) {
     await dismissBlockingOverlays(page);
     await seedRecent(page, 10);
 
-    // Through the key that opens it, not through the renderer.
-    await page.keyboard.press('Shift+Digit8');
+    /*
+     * The tile band is the search panel's recents mode, not the header sheet.
+     * `*` on the grid opens the sheet — a different surface with its own rows,
+     * its own tests and no band — so pressing it here waited for a tile that
+     * was never coming. Inside the panel, `*` is the prefix that mode is
+     * registered under (search.js), and openInRecentMode() is the entry point
+     * the panel itself uses for it.
+     */
+    await page.evaluate(() => window.dashboardInstance.searchComponent.openInRecentMode());
     await page.waitForSelector('.search-recent-tile', { timeout: 20_000 });
 }
 
