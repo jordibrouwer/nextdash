@@ -37,8 +37,21 @@ async function offer(page, typed) {
     await page.keyboard.press(':');
     await page.keyboard.type(typed, { delay: 15 });
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+    /*
+     * Wait for the whole word, not for the first row.
+     *
+     * Every keystroke re-runs the search, so "there is at least one match" is
+     * true after the `c` of `config` — and the rows standing at that moment
+     * belong to whatever `:c` matched. Reading there returned five entries with
+     * no name at all, which read as the config commands having lost their
+     * labels rather than as the query being one letter in.
+     */
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.searchComponent.currentQuery), { timeout: 5000 })
+        .toBe(`:${typed}`);
     await expect.poll(() => page.evaluate(() =>
-        (window.dashboardInstance.searchComponent.selectableMatches || []).length),
+        (window.dashboardInstance.searchComponent.selectableMatches || [])
+            .filter((m) => m.name).length),
     { timeout: 5000 }).toBeGreaterThan(0);
     return page.evaluate(() =>
         (window.dashboardInstance.searchComponent.selectableMatches || []).map((m) => m.name));
