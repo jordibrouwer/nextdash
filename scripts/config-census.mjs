@@ -38,8 +38,20 @@ const KEYWORDS = new Set([
 
 const out = new Set();
 
+/*
+ * A module file holds up to two Object.assign blocks: one against the prototype
+ * and one against the class. Members sit at the same indent in both, so which
+ * block we are inside is the only thing that says whether a name is a method or
+ * a static — and getting that wrong reports a static as having become a
+ * prototype member, which is exactly the kind of silent change this census
+ * exists to catch.
+ */
 function scan(lines) {
+    let assignTarget = null;
     lines.forEach((line) => {
+        if (/Object\.assign\(global\.DashboardConfig\.prototype/.test(line)) { assignTarget = 'proto'; return; }
+        if (/Object\.assign\(global\.DashboardConfig\s*,/.test(line)) { assignTarget = 'static'; return; }
+        if (/^ {4}\}\);?,?\s*$/.test(line)) { assignTarget = null; return; }
         // static NAME = …
         const field = line.match(/^ {4}static\s+([A-Za-z_]\w*)\s*=/);
         if (field) { out.add(`static:${field[1]}`); return; }
@@ -51,14 +63,16 @@ function scan(lines) {
         // get x() / set x() / static get x()
         const accessor = line.match(/^ {4}(static\s+)?(get|set)\s+([A-Za-z_]\w*)\s*\(/);
         if (accessor) {
-            out.add(`${accessor[1] ? 'static' : 'proto'}:${accessor[2]}:${accessor[3]}`);
+            const isStatic = Boolean(accessor[1]) || assignTarget === 'static';
+            out.add(`${isStatic ? 'static' : 'proto'}:${accessor[2]}:${accessor[3]}`);
             return;
         }
 
         // A method declaration: name, then an argument list, then an opening brace.
         const method = line.match(/^ {4}(static\s+)?(async\s+)?\*?([A-Za-z_]\w*)\s*\(/);
         if (method && !KEYWORDS.has(method[3])) {
-            out.add(`${method[1] ? 'static' : 'proto'}:${method[3]}`);
+            const isStatic = Boolean(method[1]) || assignTarget === 'static';
+            out.add(`${isStatic ? 'static' : 'proto'}:${method[3]}`);
         }
     });
 }

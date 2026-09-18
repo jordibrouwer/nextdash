@@ -29,7 +29,8 @@
  *
  *   node scripts/extract-config-section.mjs --section logs --verify
  *
- * Add --dry-run to see what would move without writing anything.
+ * Add --dry-run to see what would move without writing anything, and
+ * --skip-plan to move a set the planner rejects (say why in the commit).
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
@@ -43,6 +44,7 @@ function parseArgs(argv) {
         const arg = argv[i];
         if (arg === '--dry-run') { out.dryRun = true; continue; }
         if (arg === '--verify') { out.verify = true; continue; }
+        if (arg === '--skip-plan') { out.skipPlan = true; continue; }
         if (!arg.startsWith('--')) continue;
         const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
         out[key] = argv[i + 1];
@@ -234,7 +236,22 @@ if (args.verify) {
      * in a test three tasks later.
      */
     const { execSync } = await import('node:child_process');
-    const original = execSync(`git show HEAD:${CORE}`, { encoding: 'utf8', maxBuffer: 1 << 28 });
+    /*
+     * Which revision still holds the lines this module took?
+     *
+     * Before the move is committed that is HEAD. Afterwards it is not — HEAD's
+     * core no longer contains them, and comparing against it reports every
+     * moved line as a stray. So once the module file exists in history, the
+     * baseline is the parent of the commit that added it: the last revision
+     * where the core still held everything.
+     */
+    let base = args.base;
+    if (!base) {
+        const added = execSync(`git log --diff-filter=A --format=%H -1 -- ${modulePath}`,
+            { encoding: 'utf8' }).trim();
+        base = added ? `${added}^` : 'HEAD';
+    }
+    const original = execSync(`git show ${base}:${CORE}`, { encoding: 'utf8', maxBuffer: 1 << 28 });
     const originalLines = new Set(original.split('\n'));
     const moduleBody = readFileSync(modulePath, 'utf8').split('\n');
     /*
@@ -249,21 +266,27 @@ if (args.verify) {
      */
     const asOriginal = (l) => {
         if (/^ {4}\},$/.test(l)) return '    }';
-        const asStatic = l.replace(/^ {4}global\.DashboardConfig\./, '    static ');
-        return originalLines.has(asStatic) ? asStatic : l;
+        // A moved static field: `global.DashboardConfig.X =` was `static X =`.
+        const asField = l.replace(/^ {4}global\.DashboardConfig\./, '    static ');
+        if (originalLines.has(asField)) return asField;
+        // A moved static method: the `static ` prefix was dropped so the
+        // shorthand is valid inside Object.assign.
+        const asMethod = l.replace(/^ {4}/, '    static ');
+        if (originalLines.has(asMethod)) return asMethod;
+        return l;
     };
     const strays = moduleBody
         .map((l, i) => [l, i + 1])
         .filter(([l]) => l.trim() && !originalLines.has(asOriginal(l)));
     // The wrapper is ours, not moved, so it is expected to be new.
-    const wrapper = /^(\(function|\s*'use strict'|\s*if \(typeof global|\s*Object\.assign|\s*\}\);|\}\(typeof window|\s*global\.\w+Ready = true;|\s*\*|\s*\/\*|\s*\/\/)/;
+    const wrapper = /^(\(function|\s*'use strict'|\s*if \(typeof global|\s*Object\.assign|\s*\}\);?,?$|\}\(typeof window|\s*global\.\w+Ready = true;|\s*\*|\s*\/\*|\s*\/\/)/;
     const real = strays.filter(([l]) => !wrapper.test(l));
     if (real.length) {
         console.error(`${real.length} line(s) in ${modulePath} are not verbatim from ${CORE}:`);
         for (const [l, n] of real.slice(0, 20)) console.error(`  ${n}: ${l}`);
         process.exit(1);
     }
-    console.log(`ok  every moved line in ${modulePath} is byte-identical to ${CORE} at HEAD`);
+    console.log(`ok  every moved line in ${modulePath} is byte-identical to ${CORE} at ${base}`);
     process.exit(0);
 }
 
@@ -272,6 +295,33 @@ const statics = list(args.statics);
 if (!members.length && !statics.length) {
     console.error('need --members and/or --statics');
     process.exit(2);
+}
+
+/*
+ * Ask the planner whether this set is safe before touching anything.
+ *
+ * This exists because of Logs: three of the eighteen names the plan listed for
+ * that section were reached from elsewhere, the move broke every section in the
+ * app, and every mechanical check downstream of it passed. The planner is the
+ * only gate that can see that, so the extractor refuses to run ahead of it.
+ * `--skip-plan` is for the case where a member genuinely has to move against
+ * the analysis — and then the reason belongs in the commit message.
+ */
+if (!args.skipPlan) {
+    const { execFileSync } = await import('node:child_process');
+    const proposed = [...members, ...statics].join(',');
+    try {
+        execFileSync('node', ['scripts/config-section-plan.mjs',
+            '--section', args.section, '--members', proposed, '--json'],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 });
+    } catch (err) {
+        const report = JSON.parse(err.stdout || '{"wrong":[]}');
+        console.error(`the planner refuses ${report.wrong.length} of these names:\n`);
+        for (const w of report.wrong) console.error(`  \u2717 ${w.name} — ${w.why}`);
+        console.error('\nnothing was moved. Drop them from the list, or pass --skip-plan if you are');
+        console.error('certain and can say why in the commit message.');
+        process.exit(1);
+    }
 }
 
 const src = readFileSync(CORE, 'utf8');
@@ -303,12 +353,35 @@ const take = (m) => lines.slice(m.start, m.end + 1);
 const protoMembers = found.filter((m) => !m.isStatic);
 const staticMembers = found.filter((m) => m.isStatic);
 
-const staticBlock = staticMembers.map((m) => {
-    const body = take(m).join('\n');
-    // `    static X = …;` becomes `    global.DashboardConfig.X = …;` — the one
-    // line this script rewrites rather than copies, and it is one line.
-    return body.replace(/^ {4}static\s+/m, '    global.DashboardConfig.');
-}).join('\n\n');
+/*
+ * Statics come in two shapes and only one of them can be an assignment.
+ *
+ * `static X = […]` is a field, and becomes `global.DashboardConfig.X = […]` —
+ * one rewritten line, the rest copied. `static X() { … }` is a method, and
+ * rewriting it that way produces `global.DashboardConfig.X() {`, which is not
+ * JavaScript. Methods go into a second Object.assign against the class itself,
+ * where the shorthand they are already written in is valid as it stands and
+ * nothing is rewritten at all.
+ */
+const staticFields = staticMembers.filter((m) => /^ {4}static\s+[A-Za-z_]\w*\s*=/.test(lines[m.declLine]));
+const staticMethods = staticMembers.filter((m) => !staticFields.includes(m));
+
+const accessor = staticMembers.find((m) => /^ {4}static\s+(get|set)\s/.test(lines[m.declLine]));
+if (accessor) {
+    console.error(`${accessor.name} is a static accessor (static get/set).`);
+    console.error('Those cannot be moved by assignment or by Object.assign without changing what');
+    console.error('they are. Leave it in the core.');
+    process.exit(1);
+}
+
+const staticBlock = staticFields.map((m) => take(m).join('\n')
+    .replace(/^ {4}static\s+/m, '    global.DashboardConfig.')).join('\n\n');
+
+const staticMethodBlock = staticMethods.length
+    ? `    Object.assign(global.DashboardConfig, {\n\n${
+        staticMethods.map((m) => take(m).join('\n').replace(/^ {4}static\s+/m, '    ')).join(',\n\n')
+    }\n\n    });`
+    : '';
 
 const protoBlock = protoMembers.map((m) => take(m).join('\n')).join(',\n\n');
 
@@ -331,7 +404,7 @@ const moduleSource = `/**
     'use strict';
 
     if (typeof global.DashboardConfig !== 'function') return;
-${staticBlock ? `\n${staticBlock}\n` : ''}
+${staticBlock ? `\n${staticBlock}\n` : ''}${staticMethodBlock ? `\n${staticMethodBlock}\n` : ''}
     Object.assign(global.DashboardConfig.prototype, {
 
 ${protoBlock}

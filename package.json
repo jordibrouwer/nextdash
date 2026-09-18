@@ -20,7 +20,8 @@
     "validate:overview-features": "node scripts/validate-overview-features.cjs",
     "validate:tag-patterns": "node scripts/validate-tag-patterns.cjs",
     "test:news-stream": "node tests/news-stream-model.test.cjs",
-    "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs"
+    "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs",
+    "test:config-split": "node tests/config-section-plan.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
