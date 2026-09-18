@@ -100,7 +100,7 @@ class SearchCommandsComponent {
             'backdrop': this.handleBackdropCommand.bind(this),
             'pattern': this.handlePatternCommand.bind(this),
             'harmonize': this.handleHarmonizeCommand.bind(this),
-            'rows': this.handleRowHighlightCommand.bind(this),
+            'rows': this.handleRowsCommand.bind(this),
             'fontsize': this.handleFontSizeCommand.bind(this),
             'columns': this.handleColumnsCommand.bind(this),
             'width': this.handleWidthCommand.bind(this),
@@ -119,10 +119,6 @@ class SearchCommandsComponent {
             'weather': this.handleWeatherCommand.bind(this),
             'spacing': this.handleSpacingCommand.bind(this),
             'margins': this.handleMarginsCommand.bind(this),
-            // Same command as `rows` above, under the word it used to have.
-            // There were two methods of this name; the second silently replaced
-            // the first, so `:ROWS` was dead code and both words reached the
-            // older implementation.
             'highlight': this.handleRowHighlightCommand.bind(this),
             'items': this.handleItemsCommand.bind(this),
             'collapse': this.handleCollapseCommand.bind(this),
@@ -2514,7 +2510,15 @@ class SearchCommandsComponent {
         }, args);
     }
 
-    handleRowHighlightCommand(args) {
+    /**
+     * `:rows` — the row highlight, as an appearance command.
+     *
+     * Named apart from handleRowHighlightCommand below on purpose. Both were
+     * called that, so the second silently replaced the first and `:ROWS` was
+     * dead code that never ran; deleting either one loses a command, because
+     * the two build different rows.
+     */
+    handleRowsCommand(args) {
         const t = (key, fb) => this._t(key, fb);
         return this._appearanceCommand({
             prefix: 'rows',
@@ -3031,6 +3035,19 @@ class SearchCommandsComponent {
         }, args);
     }
 
+    /** `:highlight` — the same setting, written straight rather than as a row. */
+    handleRowHighlightCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'rowHighlight',
+            shortcut: ':HIGHLIGHT',
+            apply: 'chrome',
+            options: [
+                { value: 'subtle', label: t('config.rowHighlightSubtle', 'Subtle') },
+                { value: 'strong', label: t('config.rowHighlightStrong', 'Strong') },
+            ],
+        }, args);
+    }
 
     handleItemsCommand(args) {
         const t = (key, fb) => this._t(key, fb);
