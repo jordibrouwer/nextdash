@@ -98,12 +98,17 @@ test.describe('toolbar button visibility', () => {
          * and still folded away inside a group. It is on screen without this on
          * a fast machine and was not on a loaded runner, where the click waited
          * thirty seconds for an element that was never going to be visible.
+         *
+         * Called before each click rather than once: toggling the setting
+         * repaints the body, and the field can fold away again with it.
          */
-        if (!(await toggle.isVisible())) {
+        const reveal = async () => {
+            if (await toggle.isVisible()) return;
             const tile = page.locator('#config-view-body .hub-tile .hub-tile-main').first();
             if (await tile.count()) await tile.click();
-        }
-        await expect(toggle).toBeVisible({ timeout: 15_000 });
+            await expect(toggle).toBeVisible({ timeout: 15_000 });
+        };
+        await reveal();
         // The button ships off, and the specs above this one set it either way,
         // so what it starts as is not this test's business — the flip is.
         const startedOn = await toggle.isChecked();
@@ -118,6 +123,7 @@ test.describe('toolbar button visibility', () => {
         // Put it back: the settings file is shared with every other spec in the
         // run, and leaving this changed would move the toolbar under anything
         // that asserts on it afterwards.
+        await reveal();
         await toggle.click();
         await expect
             .poll(() => page.evaluate(() => document.body.getAttribute('data-show-collapse-all-button')))
