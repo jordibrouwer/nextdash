@@ -112,4 +112,66 @@ test.describe('config lazy load', () => {
         expect(result.notLoadedYet).toBe(true);
         expect(result.type).toBe('function');
     });
+
+    /**
+     * A section with a file and no id, or an id whose file never arrives, both
+     * fail the same way at runtime: the reader opens a section and gets an
+     * empty body. The table is small and hand-maintained, so it is checked
+     * against the section list rather than trusted.
+     */
+    test('every section module names a real section, and declares how to tell it landed', async ({ page }) => {
+        await page.goto('/#config/overview');
+        await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 15_000 });
+
+        const seen = await page.evaluate(() => {
+            const C = window.DashboardConfig;
+            return {
+                sections: C.SECTIONS,
+                modules: Object.entries(C.SECTION_MODULES).map(([id, entry]) => ({
+                    id,
+                    file: entry.file,
+                    datasetKey: entry.datasetKey,
+                    readyIsFunction: typeof entry.ready === 'function',
+                })),
+            };
+        });
+
+        expect(seen.modules.length).toBeGreaterThan(0);
+        for (const mod of seen.modules) {
+            expect(seen.sections, `${mod.id} has a file but is not a section`).toContain(mod.id);
+            expect(mod.file, `${mod.id} names no file`).toMatch(/^js\/dashboard\/dashboard-config-[\w-]+\.js$/);
+            expect(mod.datasetKey, `${mod.id} names no dataset key`).toBeTruthy();
+            expect(mod.readyIsFunction, `${mod.id} has no ready() test`).toBe(true);
+        }
+
+        /*
+         * Dataset keys are how LazyScript avoids fetching one file twice, so
+         * two sections may share a key only when they genuinely share a file —
+         * which is the arrangement About and Overview are planned to use.
+         * Sharing a key across two different files would make the second
+         * section believe the first section's script was its own, and it would
+         * then never fetch anything.
+         */
+        const byKey = new Map();
+        for (const mod of seen.modules) {
+            if (!byKey.has(mod.datasetKey)) byKey.set(mod.datasetKey, new Set());
+            byKey.get(mod.datasetKey).add(mod.file);
+        }
+        for (const [key, filesForKey] of byKey) {
+            expect(filesForKey.size, `dataset key ${key} is used for ${[...filesForKey].join(' and ')}`).toBe(1);
+        }
+    });
+
+    /**
+     * The section's own file must not be in the page's script tags: if it is,
+     * every dashboard load pays for it again and the split bought nothing.
+     */
+    test('a section module is not loaded with the page', async ({ page }) => {
+        await page.goto('/');
+        await waitReady(page);
+        const tagged = await page.evaluate(() => Array.from(document.scripts)
+            .map((s) => s.getAttribute('src') || '')
+            .filter((src) => /dashboard-config-(logs|help|overview|behavior|structure|data|widgets|appearance)\.js/.test(src)));
+        expect(tagged, `section modules in the initial page: ${tagged.join(', ')}`).toEqual([]);
+    });
 });

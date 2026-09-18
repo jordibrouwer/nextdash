@@ -41,6 +41,23 @@ class DashboardConfig {
         'about',
     ];
 
+    /*
+     * Which file holds which section, and how to tell it has landed.
+     *
+     * One table rather than a method per section: the two that came before this
+     * (ensureBookmarkRenderers, ensureStatsRenderers) are the same twelve lines
+     * twice, and a third copy would have settled the shape by accident. A
+     * section with no entry is one that still lives in this file, which is how
+     * this list grows one section at a time.
+     */
+    static SECTION_MODULES = {
+        logs: {
+            file: 'js/dashboard/dashboard-config-logs.js',
+            datasetKey: 'dashboardConfigLogs',
+            ready: () => window.DashboardConfigLogsReady === true,
+        },
+    };
+
     /** The Logs section's two sub-tabs. */
     static LOGS_TABS = ['server', 'trail'];
 
@@ -909,6 +926,7 @@ class DashboardConfig {
         // own data load runs in the meantime, and awaiting up here delayed it
         // enough that a refresh could land after the first paint.
         void this.ensureBookmarkRenderers();
+        void this.ensureSection(targetSection);
         this.applyBookmarksPageFromHash(window.location.hash);
         // A shared link carries the filters as well as the page, so opening
         // config from one lands on the list that link describes.
@@ -967,9 +985,12 @@ class DashboardConfig {
         if (this.section === 'bookmarks' && typeof this.renderBookmarksList !== 'function') {
             await this.ensureBookmarkRenderers();
         }
+        // Started when config opened, so this is normally already resolved.
+        await this.ensureSection(this.section);
         // Phase 1 has no async data of its own yet; kept async so later phases can
         // fetch settings/stats here without touching the shell wiring.
         this.render();
+        this.preloadRemainingSections();
     }
 
     setupEscapeShortcut() {
@@ -4535,6 +4556,15 @@ class DashboardConfig {
             });
             return;
         }
+        const mod = DashboardConfig.SECTION_MODULES[section];
+        if (mod && !mod.ready()) {
+            void this.ensureSection(section).then(() => {
+                if (this.section !== section) return;
+                this.render();
+                this.restoreConfigHash();
+            });
+            return;
+        }
         this.render();
         this.restoreConfigHash();
     }
@@ -4813,43 +4843,6 @@ class DashboardConfig {
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>
         `;
-    }
-
-    /** Human label for the Logs section's sub-tab strip. */
-    logsTabLabel(tab) {
-        const map = {
-            server: ['config.logsTabServer', 'Server logs'],
-            trail: ['config.logsTabTrail', 'Activity trail'],
-        };
-        const [key, fallback] = map[tab] || [tab, tab];
-        return this.t(key, fallback);
-    }
-
-    /**
-     * Its own top-level section now, a real tab strip: Server logs (the
-     * viewer and its settings) and Activity trail (which channels are kept).
-     * They used to be two panels stacked in one tab; two tabs keeps either
-     * one from crowding the other.
-     */
-    renderLogsSection() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const tabs = DashboardConfig.LOGS_TABS.map((tab) => {
-            const active = tab === this.logsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-logs-body" data-logs-tab="${esc(tab)}">${esc(this.logsTabLabel(tab))}</button>`;
-        }).join('');
-        return `
-            <p class="config-view-intro">${esc(this.t('config.logsSectionIntro', 'What the server has been doing.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-logs-body" role="tabpanel" tabindex="0">${this.renderLogsTab()}</div>
-        `;
-    }
-
-    /** Which sub-tab of Logs is showing. */
-    renderLogsTab() {
-        if (this.logsTab === 'trail') {
-            return this.renderActivityTrail();
-        }
-        return this.renderDataLogs();
     }
 
     /** Wire the Logs section's strip and hand the rest to whichever tab is up. */
@@ -5724,289 +5717,6 @@ class DashboardConfig {
         `;
     }
 
-    /**
-     * Activity trail: the three channel groups as cards side by side, with the
-     * reset action once at the bottom rather than per card — resetting puts
-     * every group back at once, so one button for all three is the honest
-     * shape.
-     */
-    renderActivityTrail() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const s = this.dash.settings || {};
-
-        const activeChannels = Array.isArray(s.activityChannels) && s.activityChannels.length
-            ? s.activityChannels.map((c) => String(c).toLowerCase())
-            : DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
-        // Same rule the ↺ follows elsewhere in config: offered only when there
-        // is something to undo, so it is not a permanent button that usually
-        // does nothing.
-        const channelsAtDefault = this.activityChannelsAreDefault(activeChannels);
-        /*
-         * Grouped by what each channel actually records, not alphabetically:
-         * Changes is everything the server itself writes or does in the
-         * background (mutations, imports, backups, health/security events —
-         * whatever is not a thing the *person* did just now); Usage is the
-         * person's own actions (opening a link, searching, a shortcut, nav,
-         * loading the dashboard); Client is the one channel the browser
-         * reports rather than the server.
-         */
-        const channelLabels = {
-            mutate: this.t('config.logChannelMutate', 'Changes'),
-            status: this.t('config.logChannelStatus', 'Check results'),
-            security: this.t('config.logChannelSecurity', 'Refused access'),
-            health: this.t('config.logChannelHealth', 'Health rounds'),
-            sources: this.t('config.logChannelSources', 'Imports'),
-            feeds: this.t('config.logChannelFeeds', 'Feed polls'),
-            archive: this.t('config.logChannelArchive', 'Saved copies'),
-            backup: this.t('config.logChannelBackup', 'Backups'),
-            store: this.t('config.logChannelStore', 'Failed writes'),
-            widgets: this.t('config.logChannelWidgets', 'Widget requests'),
-            notify: this.t('config.logChannelNotify', 'Alerts sent'),
-            open: this.t('config.logChannelOpen', 'Bookmarks opened'),
-            search: this.t('config.logChannelSearch', 'Searches'),
-            keys: this.t('config.logChannelKeys', 'Keyboard shortcuts'),
-            nav: this.t('config.logChannelNav', 'Navigation'),
-            session: this.t('config.logChannelSession', 'Dashboard loads'),
-            clienterror: this.t('config.logChannelClientError', 'Browser errors'),
-        };
-        const channelBox = (key) => `
-                    <label class="config-toggle">
-                        <input type="checkbox" data-activity-channel="${esc(key)}" ${activeChannels.includes(key) ? 'checked' : ''}>
-                        <span>${esc(channelLabels[key] || key)}</span>
-                    </label>`;
-
-        // A level inside the open channel, not a channel of its own: twelve
-        // checkboxes is already near what a person will read, and this is a
-        // question of how much one of them carries, not whether it fires.
-        const openDetailLevel = ['off', 'basic', 'full'].includes(String(s.activityOpenDetail || '').toLowerCase())
-            ? String(s.activityOpenDetail).toLowerCase()
-            : 'basic';
-        const openDetailOptions = [
-            ['off', this.t('config.openDetailOff', 'Off — just the open')],
-            ['basic', this.t('config.openDetailBasic', 'Basic — how it was opened')],
-            ['full', this.t('config.openDetailFull', 'Full — plus result rank and timing')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${v === openDetailLevel ? 'selected' : ''}>${esc(label)}</option>`).join('');
-        // Sits right under the Bookmarks opened checkbox rather than after the
-        // whole list: it only means anything in relation to that one channel.
-        const openDetailField = `
-                    <div class="config-field">
-                        <span class="config-field-label">${esc(this.t('config.openDetailLabel', 'Open detail'))}</span>
-                        <select class="config-select" data-activity-open-detail ${activeChannels.includes('open') ? '' : 'disabled'}>${openDetailOptions}</select>
-                    </div>
-                    <p class="config-panel-note">${esc(this.t('config.openDetailHint', 'How much an open record carries, once Bookmarks opened is on. Basic is the default: which surface and gesture opened it. Full adds where in the results it was and how long you waited.'))}</p>`;
-        const changesBoxes = ['mutate', 'status', 'security', 'health', 'sources', 'feeds', 'archive', 'backup', 'store', 'widgets', 'notify']
-            .map(channelBox).join('');
-        const usageBoxes = ['open', 'search', 'keys', 'nav', 'session']
-            .map((key) => channelBox(key) + (key === 'open' ? openDetailField : '')).join('');
-        const clientBoxes = ['clienterror'].map(channelBox).join('');
-
-        const resetButton = channelsAtDefault ? '' : `
-                <button type="button" class="config-btn" data-activity-reset
-                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`;
-
-        return `
-            <p class="config-view-intro">${esc(this.t('config.logChannelsHint', 'A machine-readable record of what happened, kept apart from the readable lines above. Pick what belongs in it.'))}</p>
-
-            <div class="config-log-trail-grid">
-                <div class="config-panel config-log-trail-card">
-                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupChanges', 'Changes'))}</h3>
-                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupChangesNote', 'What the server itself wrote or did in the background.'))}</p>
-                    ${changesBoxes}
-                </div>
-                <div class="config-panel config-log-trail-card">
-                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupUsage', 'Usage'))}</h3>
-                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupUsageNote', 'What the person at the dashboard did.'))}</p>
-                    ${usageBoxes}
-                </div>
-                <div class="config-panel config-log-trail-card">
-                    <h3 class="config-panel-title">${esc(this.t('config.logChannelGroupClient', 'Client'))}</h3>
-                    <p class="config-panel-note">${esc(this.t('config.logChannelGroupClientNote', 'What the browser itself reported.'))}</p>
-                    ${clientBoxes}
-                </div>
-            </div>
-
-            <div class="config-log-trail-footer" data-log-trail-footer>${resetButton}</div>
-        `;
-    }
-
-    /*
-     * The two channels the server records when nobody has chosen.
-     *
-     * Named here rather than written out at each use, because three places
-     * depend on them agreeing: the checkboxes when the setting is empty, the
-     * reset button, and the test that says what "default" means. The server
-     * has the same pair in loadActivityLogConfig.
-     */
-    static ACTIVITY_CHANNEL_DEFAULTS = ['mutate', 'status'];
-
-    /*
-     * Reset panel puts the trail back to the two channels nextDash records by
-     * default. Bound separately from the rest of the panel because the button
-     * comes and goes with the value, so a freshly inserted one has to be bound
-     * again rather than relying on the panel's own one-time pass.
-     */
-    bindActivityResetButton(container) {
-        const button = container.querySelector('[data-activity-reset]');
-        if (!button || button.dataset.bound === '1') return;
-        button.dataset.bound = '1';
-        button.addEventListener('click', () => {
-            this.dash.settings.activityChannels = DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS.slice();
-            void this.saveSettingsWithFeedback();
-            // Twelve boxes change at once and the button itself goes away, so
-            // the panel is rebuilt rather than patched. Nothing worth keeping
-            // the focus on: the button the user clicked is what disappears.
-            this.repaintDbTabBody();
-        });
-    }
-
-    /*
-     * Put Reset panel on screen, or take it away.
-     *
-     * The button exists only while the channels differ from the defaults, so
-     * this adds and removes it rather than showing and hiding it. Done in place
-     * so the checkbox the user just clicked keeps the focus — repainting the
-     * whole tab body would take it away mid-click. Lives in the tab's footer
-     * now that Activity trail is three cards rather than one panel with a
-     * title to hang the button on.
-     */
-    syncActivityResetButton(container, channels) {
-        const footer = container.querySelector('[data-log-trail-footer]');
-        if (!footer) return;
-        const existing = footer.querySelector('[data-activity-reset]');
-        if (this.activityChannelsAreDefault(channels)) {
-            existing?.remove();
-            return;
-        }
-        if (existing) return;
-        const esc = (v) => this.dash.escapeHtml(v);
-        footer.insertAdjacentHTML('beforeend', `<button type="button"
-                        class="config-btn" data-activity-reset
-                        title="${esc(this.t('config.logChannelsResetTitle', 'Record the two channels nextDash records by default'))}">${esc(this.t('config.panelResetAll', 'Reset panel'))}</button>`);
-        this.bindActivityResetButton(container);
-    }
-
-    /** Whether a channel list is the default pair, in any order. */
-    activityChannelsAreDefault(channels) {
-        const chosen = [...new Set((channels || []).map((c) => String(c).toLowerCase()))].sort();
-        const defaults = [...DashboardConfig.ACTIVITY_CHANNEL_DEFAULTS].sort();
-        return chosen.length === defaults.length && chosen.every((c, i) => c === defaults[i]);
-    }
-
-    /*
-     * What the floor is, said under the display filter.
-     *
-     * The two controls are easy to confuse — one decides what exists, the other
-     * decides what is shown — and someone who filtered for Everything and still
-     * sees nothing has been given no way to tell which one is the reason.
-     */
-    /*
-     * What the container log is doing right now, in the present tense.
-     *
-     * The setting acts on the next line written, with no restart, and that is
-     * the thing readers do not expect from a log level — so it is said as a
-     * fact about the running server rather than as a promise about the future.
-     */
-    serverLogLiveNote() {
-        const level = String(this.dash.settings?.serverLogLevel || 'info');
-        if (level === 'debug') {
-            return this.t('config.logDetailLiveVerbose',
-                'docker logs is now showing every step, from the next line onwards.');
-        }
-        if (level === 'warn' || level === 'error') {
-            return this.t('config.logDetailLiveQuiet',
-                'docker logs is now showing problems only, from the next line onwards.');
-        }
-        return this.t('config.logDetailLiveNormal',
-            'docker logs is now showing what the server does, from the next line onwards.');
-    }
-
-    serverLogFloorNote() {
-        const level = String(this.dash.settings?.serverLogLevel || 'info');
-        if (level === 'debug') {
-            return this.t('config.logFloorVerbose', 'Recording at Verbose — every step is kept.');
-        }
-        if (level === 'warn' || level === 'error') {
-            return this.t('config.logFloorQuiet', 'Recording at Quiet — only problems are kept, so this list will be short.');
-        }
-        return this.t('config.logFloorNormal', 'Recording at Normal — debug lines are not kept.');
-    }
-
-    /** Summary tiles above the log, in the same shape the other tabs use. */
-    renderServerLogTiles() {
-        const stats = this._logStats || { total: 0, warn: 0, error: 0 };
-        const dropped = this._logDropped || 0;
-        const retention = Number(this.dash.settings?.serverLogRetentionHours) || 0;
-
-        return [
-            {
-                label: this.t('config.logTileLines', 'Lines'),
-                value: stats.total,
-                tone: 'accent',
-                detail: dropped > 0
-                    ? this.t('config.logTileDropped', '{n} older lines dropped').replace('{n}', String(dropped))
-                    : (this.dash.settings?.serverLogRetentionMode === 'count'
-                        ? this.t('config.logTileMaxEntries', 'Newest {n} kept')
-                            .replace('{n}', Number(this.dash.settings?.serverLogMaxEntries
-                                || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES).toLocaleString())
-                        : this.t('config.logTileRetention', 'Kept for {span}').replace('{span}', this.logRetentionLabel(retention))),
-            },
-            {
-                label: this.t('config.logTileWarnings', 'Warnings'),
-                value: stats.warn,
-                tone: stats.warn > 0 ? 'warn' : 'neutral',
-            },
-            {
-                label: this.t('config.logTileErrors', 'Errors'),
-                value: stats.error,
-                tone: stats.error > 0 ? 'crit' : 'good',
-            },
-        ].map((t) => this.renderTile(t)).join('');
-    }
-
-    /** Human span for the retention tile. */
-    logRetentionLabel(hours) {
-        if (!hours) return this.t('config.logRetentionForever', 'Until cleared');
-        if (hours % 24 === 0) {
-            const days = hours / 24;
-            return days === 1
-                ? this.t('config.logRetention24h', '24 hours')
-                : this.t('config.logRetentionDays', '{n} days').replace('{n}', String(days));
-        }
-        return hours === 1
-            ? this.t('config.logRetention1h', '1 hour')
-            : this.t('config.logRetentionHours', '{n} hours').replace('{n}', String(hours));
-    }
-
-    /** The log lines themselves. */
-    renderServerLogLines() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const lines = this._logLines || [];
-
-        if (this._logLoading && lines.length === 0) {
-            return `<p class="config-view-loading">${esc(this.t('config.logLoading', 'Loading…'))}</p>`;
-        }
-        if (lines.length === 0) {
-            // "Nothing logged yet" would read as a fault when the reason is
-            // simply that collecting is switched off.
-            const empty = this.dash.settings?.serverLogEnabled === false
-                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Collect server log above to start.')
-                : this.t('config.logEmpty', 'Nothing logged yet.');
-            return `<p class="config-panel-empty">${esc(empty)}</p>`;
-        }
-
-        return lines.map((line) => {
-            const time = line.time ? this.formatLogTime(line.time) : '';
-            const source = line.source
-                ? `<span class="config-log-source">${esc(line.source)}</span>`
-                : '';
-            return `<div class="config-log-line config-log-line--${esc(line.level || 'info')}">`
-                + `<span class="config-log-time">${esc(time)}</span>`
-                + source
-                + `<span class="config-log-message">${esc(line.message)}</span>`
-                + `</div>`;
-        }).join('');
-    }
-
     /** Clock time for a log line, on the reader's own clock like every other. */
     formatLogTime(iso) {
         const d = new Date(iso);
@@ -6254,110 +5964,6 @@ class DashboardConfig {
                 void this.handleServerLogAction(btn.getAttribute('data-log-action'));
             });
         });
-    }
-
-    /**
-     * The gear at the end of the Server logs toolbar: a small popover holding
-     * the settings that used to be their own panel. Wears the app's one menu
-     * surface (.move-popover) rather than a new one, and follows the same
-     * contract every popover in config keeps — Escape and an outside click
-     * both close it, and closing returns focus to the button that opened it.
-     *
-     * Escape itself is handled by setupEscapeShortcut() above, not a listener
-     * here: that handler is on document in the capture phase and registers
-     * long before this popover ever opens, so a listener added here would
-     * never see the key first — the same reasoning as the theme picker and
-     * the bookmark row menu, which take Escape the same explicit way.
-     */
-    bindLogSettingsPopover(container) {
-        const toggle = container.querySelector('[data-log-settings-toggle]');
-        const pop = container.querySelector('#config-log-settings-popover');
-        if (!toggle || !pop || toggle.dataset.bound === '1') return;
-        toggle.dataset.bound = '1';
-
-        const position = () => {
-            const rect = toggle.getBoundingClientRect();
-            const popW = pop.offsetWidth || 280;
-            const popH = pop.offsetHeight || 200;
-            const left = Math.max(8, Math.min(rect.right - popW, window.innerWidth - popW - 8));
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const top = spaceBelow >= popH + 8 || rect.top < popH
-                ? rect.bottom + 6
-                : Math.max(8, rect.top - popH - 6);
-            pop.style.left = `${Math.round(left)}px`;
-            pop.style.top = `${Math.round(top)}px`;
-        };
-
-        let onOutside = null;
-        const close = () => {
-            if (pop.hidden) return;
-            pop.hidden = true;
-            toggle.setAttribute('aria-expanded', 'false');
-            document.removeEventListener('click', onOutside, true);
-            window.removeEventListener('resize', position);
-            window.removeEventListener('scroll', position, true);
-            if (this._logSettingsPopoverClose === close) this._logSettingsPopoverClose = null;
-            toggle.focus({ preventScroll: true });
-        };
-        const open = () => {
-            pop.hidden = false;
-            toggle.setAttribute('aria-expanded', 'true');
-            position();
-            onOutside = (e) => {
-                if (pop.contains(e.target) || toggle.contains(e.target)) return;
-                close();
-            };
-            // Bound on the next tick, or the very click that opens the popover
-            // closes it again.
-            setTimeout(() => document.addEventListener('click', onOutside, true), 0);
-            window.addEventListener('resize', position);
-            window.addEventListener('scroll', position, true);
-            this._logSettingsPopoverClose = close;
-        };
-
-        toggle.addEventListener('click', () => {
-            if (pop.hidden) open(); else close();
-        });
-    }
-
-    /** Wire the Activity trail tab: the three channel cards and the reset. */
-    bindActivityTrailControls(container) {
-        container.querySelectorAll('[data-activity-channel]').forEach((box) => {
-            box.addEventListener('change', () => {
-                const chosen = Array.from(container.querySelectorAll('[data-activity-channel]'))
-                    .filter((input) => input.checked)
-                    .map((input) => input.dataset.activityChannel);
-                /*
-                 * An empty list would mean "the environment decides" to the
-                 * server, which is not what unticking everything looks like it
-                 * means. 'none' is a channel nothing writes to, so it records
-                 * the choice as made.
-                 */
-                this.dash.settings.activityChannels = chosen.length ? chosen : ['none'];
-                void this.saveSettingsWithFeedback();
-                // Reset appears the moment the list leaves the defaults and
-                // goes again when it returns. Rebuilt rather than toggled,
-                // because the button is only in the DOM when it has something
-                // to do — the same rule the other panels follow.
-                this.syncActivityResetButton(container, chosen);
-                // The level only means anything once opens are actually being
-                // recorded, so it stays greyed out until that box is ticked —
-                // it is not cleared, so the choice is still there if Open goes
-                // back on.
-                const openDetailSelect = container.querySelector('[data-activity-open-detail]');
-                if (openDetailSelect) openDetailSelect.disabled = !chosen.includes('open');
-            });
-        });
-
-        this.bindActivityResetButton(container);
-
-        const openDetailSelect = container.querySelector('[data-activity-open-detail]');
-        if (openDetailSelect) {
-            openDetailSelect.addEventListener('change', () => {
-                this.dash.settings.activityOpenDetail = openDetailSelect.value;
-                void this.saveSettingsWithFeedback();
-            });
-        }
     }
 
     async handleServerLogAction(action) {
@@ -24667,6 +24273,59 @@ class DashboardConfig {
      * the numbers could not be drawn — better than an empty panel that looks
      * like an install with no data.
      */
+    /**
+     * Fetch the file a section's methods live in, once.
+     *
+     * Awaited where the view changes, never inside the draw: renderSection()
+     * returns a string from inside a template literal, so it cannot wait for
+     * anything. A failure leaves the reader where they were with a line saying
+     * so — an empty body would read as a section with nothing in it.
+     */
+    ensureSection(id) {
+        const entry = DashboardConfig.SECTION_MODULES[id];
+        if (!entry || entry.ready()) return Promise.resolve(true);
+        this._sectionPromises = this._sectionPromises || {};
+        if (this._sectionPromises[id]) return this._sectionPromises[id];
+        this._sectionPromises[id] = window.LazyScript
+            .loadScriptOnce(entry.file, entry.datasetKey, entry.ready)
+            .then(() => true)
+            .catch(() => {
+                // Dropped rather than kept, so a later visit tries again instead
+                // of returning the same failure for the life of the tab.
+                delete this._sectionPromises[id];
+                this.notify(this.t('config.sectionLoadFailed',
+                    'That part of config could not be loaded. Check your connection and try again.'), 'error');
+                return false;
+            });
+        return this._sectionPromises[id];
+    }
+
+    /**
+     * The sections nobody asked for yet, fetched while the tab is idle.
+     *
+     * One at a time: eleven parallel scripts would queue in front of config's
+     * own data fetches, which is the thing this split was meant to speed up.
+     */
+    preloadRemainingSections() {
+        const ids = Object.keys(DashboardConfig.SECTION_MODULES)
+            .filter((id) => !DashboardConfig.SECTION_MODULES[id].ready());
+        if (!ids.length) return;
+        const next = () => {
+            const id = ids.shift();
+            if (!id) return;
+            this.ensureSection(id).then(() => schedule());
+        };
+        const schedule = () => {
+            if (!ids.length) return;
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(next, { timeout: 4000 });
+            } else {
+                setTimeout(next, 1200);
+            }
+        };
+        schedule();
+    }
+
     ensureStatsRenderers() {
         if (window.DashboardConfigStatsReady) return Promise.resolve(true);
         if (this._statsRenderersPromise) return this._statsRenderersPromise;
