@@ -29,6 +29,18 @@ async function open(page, view) {
         await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
         await page.waitForSelector('.lvs-header', { timeout: 20_000 });
     }
+    /*
+     * Start at the top, and wait until the page agrees.
+     *
+     * `data-scrolled` is written by a scroll listener, and opening a view does
+     * not reset the window position -- so a test could begin with the flag left
+     * true by whatever ran before it, and the first assertion read that as the
+     * band being wrong. Scrolled home explicitly, then polled, because the flag
+     * lands a frame after the scroll does.
+     */
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-scrolled')), { timeout: 5_000 }).toBe('false');
     await page.waitForTimeout(400);
 }
 
