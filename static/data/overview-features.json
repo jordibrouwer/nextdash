@@ -1471,7 +1471,7 @@
       "whatKey": "config.overviewNewFeatureChangedSettingsWhat",
       "whatFallback": "Working out why your dashboard behaves differently from the guide meant opening every tab and looking for a ↺ beside each setting.",
       "howKey": "config.overviewNewFeatureChangedSettingsHow",
-      "howFallback": "At a glance now says how many settings differ from the standard and takes you to them. Each tab of settings gained Only changed, and each group a Reset panel that puts the whole lot back at once.",
+      "howFallback": "Each tab of settings has Only changed, which hides everything still at its default, and each group a Reset panel that puts the whole lot back at once. A ↺ beside a single setting resets just that one.",
       "enableKey": "config.overviewNewFeatureChangedSettingsEnable",
       "enableFallback": "Nothing to switch on. The line stays out of the way while everything is still standard.",
       "ctaKey": "config.overviewNewFeatureChangedSettingsCta",

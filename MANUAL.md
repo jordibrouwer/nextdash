@@ -1281,7 +1281,6 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 - **ℹ** beside a setting explains it.
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
 - **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option.
-- **Overview** says how many settings differ from the default.
 
 ### 15.3 Finding a setting
 

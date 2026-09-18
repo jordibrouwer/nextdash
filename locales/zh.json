@@ -4518,7 +4518,7 @@
     "overviewNewFeatureWorkThroughHow": "打开健康视图按 f，或者用「逐个处理」按钮。一个书签占满屏幕，它的动作放得很大——重新检查、打开、删除、跳过——j 和 k 在它们之间移动。Esc 会把你留在你走到的那一行上，所以进去修三个再出来不算切换模式。",
     "overviewNewFeatureThemePreviewHow": "打开「外观」下的主题列表，在里面移动：背后的仪表板会随着你走过而换上每一个主题。按 Esc 或者点开别处，你就回到出发的地方。另外还有 23 个新主题可以看。",
     "overviewNewFeatureSettingsSearchHow": "你一打开配置，每个设置就都能搜到了，而且设置认的不只是它确切的标签——「uptime」「wallpaper」和「hotkey」都能找到对的那个，哪怕这些词在屏幕上根本没出现过。",
-    "overviewNewFeatureChangedSettingsHow": "「一览」现在会说明有多少设置和标准不同，并带你过去。每个设置标签页都多了「只看改过的」，每个分组都多了一个「重置面板」，一次把整组放回去。",
+    "overviewNewFeatureChangedSettingsHow": "每个设置标签页都有「只看改过的」，会隐藏仍为默认值的项；每个分组都有「重置面板」，一次把整组放回去。单个设置旁边的 ↺ 只重置那一项。",
     "overviewNewFeatureToolbarGroupsHow": "顶栏那一条的分组留在「工具栏与标签」下；按钮栏的两半在「按钮栏」标签页上，就在那个决定这条栏放哪儿的控件下面。每个分组都有「全部显示」和「全部隐藏」，外加一个「显示了多少」的计数。",
     "overviewNewFeatureInboxExplainHow": "现在每个计数说的都是你此刻能动手的东西，每个小标签都带着自己的计数，工具栏下面还有一句话说明当前过滤条件选的是什么。「分拣」旁边的 ℹ 讲了暂缓、转为书签等等。",
     "overviewNewFeatureHealthStatsHow": "「监控中」过滤条件现在一打开就是所有监控汇总的在线率、可用性最低的那些、比上周慢的那些，以及每一次中断。标题栏会画出最近 90 天里健康书签的比例。",
