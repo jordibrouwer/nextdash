@@ -45,7 +45,11 @@ async function openHealthView(page, icon) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.click('.health-link a.health-link-anchor');
+    // Shift+H rather than the header link: one test here sets a 480px window to
+    // check the icon column on a phone, and the header folds its destinations
+    // away long before that -- the link is in the DOM and 0x0, so clicking it
+    // only waits. The chord is a real entry point and does not fold.
+    await page.keyboard.press('Shift+H');
     await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
 }
 
