@@ -708,6 +708,18 @@ test.describe('health dashboard view', () => {
             const cs = getComputedStyle(el);
             return `${cs.borderBottomColor} ${cs.borderBottomWidth}`;
         });
+        /*
+         * Read once it has settled, not while it is arriving.
+         *
+         * The underline fades in, so a single read caught it part-way and
+         * compared `rgba(200, 176, 96, 0.584)` against the inbox tab's finished
+         * `rgb(200, 176, 96)` — the same colour, one of them mid-transition.
+         * Both rules resolve to --accent-primary at full strength
+         * (dashboard.css, .health-link--icon a.active), which is what this
+         * waits for.
+         */
+        await expect.poll(() => underline(healthAnchor), { timeout: 5_000 })
+            .not.toMatch(/rgba\([^)]*,\s*0?\.\d+\)/);
         const healthUnderline = await underline(healthAnchor);
         expect(healthUnderline).not.toContain('rgba(0, 0, 0, 0)');
 
