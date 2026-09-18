@@ -950,6 +950,18 @@ class DashboardUiHelpers {
         };
         document.addEventListener('keydown', this._pageOverviewKeyHandler, true);
         setFocus(focusedIndex);
+        /*
+         * And again once the overlay is really on screen.
+         *
+         * AppModal.show() adds the class; the CSS transition commits a frame or
+         * two later, and .focus() on an element that is still
+         * `visibility: hidden` does nothing at all. The call above still runs
+         * first because it also draws the ring, which does not depend on
+         * visibility — this second pass only lands the focus it could not.
+         * Without it the row was focused by AppModal's own deferred pass, which
+         * picks the first focusable element rather than the page you are on.
+         */
+        requestAnimationFrame(() => requestAnimationFrame(() => setFocus(focusedIndex)));
     }
 
 

@@ -112,17 +112,26 @@ test('the cursor opens on the page you are on, not on the first', async ({ page 
     await page.keyboard.press(',');
     await page.waitForSelector('.page-overview-modal-list', { timeout: 10_000 });
 
-    const seen = await page.evaluate(() => {
+    /*
+     * Polled, not read once. The cursor is placed after the overlay is really
+     * visible rather than the instant its class is set — calling .focus() on an
+     * element that is still `visibility: hidden` does nothing at all — so the
+     * row is focused a frame or two after the list appears.
+     */
+    const read = () => page.evaluate(() => {
         const items = [...document.querySelectorAll('.page-overview-modal-item')];
         return {
             ring: items.findIndex((el) => el.classList.contains('is-focused')),
             focused: items.findIndex((el) => el.contains(document.activeElement)),
-            pageOfFocus: document.activeElement?.dataset?.pageId,
+            pageOfFocus: Number(document.activeElement?.dataset?.pageId) || null,
         };
     });
+    await expect.poll(async () => (await read()).focused,
+        { timeout: 10_000 }).toBe(1);
+
+    const seen = await read();
     expect(seen.ring, 'the ring sits on the first page').toBe(1);
-    expect(seen.focused, 'the focus sits on the first page').toBe(1);
-    expect(Number(seen.pageOfFocus)).toBe(second);
+    expect(seen.pageOfFocus).toBe(second);
 });
 
 test('the foot counts the pages instead of repeating Esc', async ({ page }) => {
