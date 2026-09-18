@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.1 — 18 September 2026](#v1111--18-september-2026)
 - [v1.11.0 — 17 September 2026](#v1110--17-september-2026)
 - [v1.10.0 — 13 September 2026](#v1100--13-september-2026)
 - [v1.9.0 — 11 September 2026](#v190--11-september-2026)
@@ -205,6 +206,45 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.1 — 18 September 2026
+
+Corrections to v1.11.0, and the specs brought up to the header, the tile hub and the new defaults it shipped with. Held back from the What's new window (`hideFromModal`), so v1.11.0 keeps leading it.
+
+### Dashboard
+
+- **fix — the corner cards have buttons again.** Dropping the first-run setup window (`8e011f63`) took the `.quickstart-btn` rules with it, and `NoticeCard` still draws every card's actions with that class — Fresh, the tour of what moved, clock and weather, and the analytics and theme-browser notices, which build theirs by hand. Each fell back to the browser's own grey buttons. The rules are back in `dashboard-quickstart.css`, beside `.notice-card-actions`.
+- **fix — a card's primary button and a finished quick-start step are drawn in the page's colour on the accent, not in white.** White on a light accent fell under 2:1 — 2.1 on Tarnished Brass, the new default — and under 3:1 on 111 of 242 themes. `--background-primary` is what every other filled accent button uses, and it clears 3:1 on all of them.
+- **fix — the filter bar lies over the grid it filters.** With packed columns off the grid is a fixed number of fixed-width columns centred in the container, and the bar spanned the container: in a 1500px window it stood 90px left of the rows and 180px wider than them. `dashboard-grid-filter.js` measures the grid and hands the width and offset to the stylesheet as custom properties.
+- **fix — `*` and `/` work whether or not their buttons are on screen.** Switching the tag-cloud button off took the tag cloud with it, so `/` fell back to the search panel's tag mode; the setting now only decides whether the button is drawn (`dashboard-tag-cloud.js`, `dashboard-toolbar.js`, `search.js`).
+- **fix — Escape stays inside an open widget or category menu.** Menus from the shared `_openMenu` builder carry `bookmark-context-menu` only as a class, so the check by id missed them: the menu closed itself, and the key went on to `_escapeFallback()`, which opened search a tick later (`keyboard-navigation.js`).
+- **fix — the page overview opens with its cursor on the page you are on.** `.focus()` ran while the overlay was still `visibility: hidden` and did nothing, so AppModal's own deferred pass focused the first row; the modal now places the cursor once it is on screen (`dashboard-ui-helpers.js`).
+
+### Config
+
+- **fix — a hub tile names a setting once.** The form's labels end in their own colon, so the summary printed *Weather location:: Leiden* and *3 columns per row: · Compact*. `config-hub.js` strips a trailing colon (full-width included) before composing the line, and the time format is named in front of its value: its options are examples, and *23:59* on its own read as a clock stuck at one minute to midnight.
+
+### Search & commands
+
+- **fix — `:rows` and `:highlight` are two commands again.** `search-commands.js` had two methods called `handleRowHighlightCommand`; the second replaced the first, so `:rows` never ran its own code and both words reached the older one. Each has a name of its own now, and both set the row highlight.
+
+### Health & Inbox
+
+- **fix — the header band is opaque, at rest and once scrolled.** Rows passed visibly behind it on glass themes, which its own comment said should not happen (`list-view-shell.css`).
+
+### Browser extension
+
+- **fix — the extension's bookmark form shows a row's status colour like the app does.** The preview read an absent setting as off; it is `!== false` now, like its neighbours (`bookmark-form-preview.js`).
+
+### Docs
+
+- **docs — the specs follow the one-row header, the tile hub and the v1.11.0 defaults.** Every spec gets a window wide enough to show the header's destinations, and the ones that need a narrow window open Health and the Inbox by key rather than by a link that has folded away. Waits were added for what a spec reads next — a whole command, an underline that fades in, the group a field sits in.
+- **docs — the CI shards are sized by measured speed, not test count**, and the shard weights went again once the slowness they answered turned out to be a timeout. The manifest spec stopped racing its neighbours for one settings file, and the widget-drift specs keep a window their page still scrolls in.
+- **docs — regression specs for this release.** `config-hub.spec.js` checks the tile summaries for a doubled or dangling colon and a named time format; `dashboard-fresh-notice.spec.js` checks that a card's buttons are drawn by the card, with page-coloured ink on the accent. Both fail against v1.11.0.
+- **docs — new README screenshots, taken from v1.11.0 with demo data.** The ten PNGs in `screenshots/` showed a real install on a teal theme from before the one-row header; eight JPGs replace them — dashboard, search, inbox, health, monitoring, the bookmark workbench, the config tiles and the Gloss themes — shot at 1920×1200 on Tarnished Brass from a data directory of public sites only. Statistics, the cheat sheet and the separate widgets shot are gone (the widgets stand on the dashboard shot now); the workbench and the config tiles are new. Each has a few lines of description under it in `README.md`, and the Unraid template (`templates/nextdash.xml`) points at the same eight files.
+- **docs — `static/data/whats-new/v1.11.1.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js` is untouched, so the window does not reopen for it. `tests/whats-new-hidden-release.spec.js` pins v1.11.1 as held back and v1.11.0 as leading. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

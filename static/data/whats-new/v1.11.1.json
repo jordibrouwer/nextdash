@@ -1,0 +1,69 @@
+{
+  "tag": "v1.11.1",
+  "date": "18 September 2026",
+  "releasedAt": "2026-09-18",
+  "modalLead": "Small corrections to v1.11.0: buttons that had gone grey, a few keys that stopped short, and settings tiles that stumbled over their own punctuation.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The cards in the corner have proper buttons again.</strong> Since v1.11.0 the cards offering Fresh, the tour of what moved and the clock and weather showed plain grey buttons. They are drawn in your theme again, and the main button&rsquo;s text is easier to read on light accent colours such as the new default, Tarnished Brass."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The filter bar lines up with your bookmarks.</strong> In a wide window it could sit to the left of the columns it filters and stick out past them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>/</kbd> opens the tag cloud and <kbd>*</kbd> your recent bookmarks even when their buttons are hidden.</strong> Hiding a button now only hides the button."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>Esc</kbd> closes a widget or category menu and nothing else.</strong> It used to close the menu and then open search as well."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The page overview opens on the page you are on</strong>, instead of on the first page in the list."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The tiles under Appearance read properly.</strong> <em>Date &amp; weather</em> said <em>Weather location:: Leiden &middot; 23:59</em>; it now reads <em>Weather location: Leiden &middot; Time format: 23:59</em>, and <em>Grid</em> lost its stray colon."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>:rows</kbd> works again.</strong> It quietly did the same as <kbd>:highlight</kbd>; both now set how strongly the current row is highlighted."
+        }
+      ]
+    },
+    {
+      "title": "Health and Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The bar at the top of Health and the Inbox is solid.</strong> On glass themes the rows showed through it as you scrolled."
+        }
+      ]
+    },
+    {
+      "title": "Browser extension",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The extension&rsquo;s bookmark form shows a link&rsquo;s status colour</strong>, the same way the dashboard does."
+        }
+      ]
+    }
+  ]
+}

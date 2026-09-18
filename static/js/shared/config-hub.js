@@ -71,6 +71,11 @@
         columnsPerRow: [2, 3, 4, 5, 6],
     };
 
+    // Options whose label is an example rather than a name: the time format
+    // offers "23:59" and "11:59 PM", which on a tile read as a clock stuck at
+    // one minute to midnight unless the setting is named in front of them.
+    const LABELLED_OPTIONS = new Set(['timeFormat']);
+
     /** What each Behavior group looks like, drawn instead of a live preview. */
     const ILLUSTRATIONS = {
         general: { art: '<span class="hub-ill-key">!</span><span class="hub-ill-key">&gt;</span><span class="hub-ill-key">⇧S</span>',
@@ -131,14 +136,19 @@
                     const control = controlFor(config, field);
                     if (!control) return;
                     const value = s[field];
+                    // The form's labels carry their own colon ("Weather
+                    // location:", "Columns per row:" -- a full-width one in
+                    // zh), which the summary then doubled or left dangling.
+                    const label = String(control.label || '').replace(/\s*[:：]\s*$/, '');
                     if (control.type === 'checkbox') {
-                        bits.push(`${control.label}: ${value ? config.t('config.hubOn', 'on') : config.t('config.hubOff', 'off')}`);
+                        bits.push(`${label}: ${value ? config.t('config.hubOn', 'on') : config.t('config.hubOff', 'off')}`);
                     } else if (control.options) {
-                        bits.push(optionLabel(config, control, value));
+                        const chosen = optionLabel(config, control, value);
+                        bits.push(LABELLED_OPTIONS.has(field) ? `${label}: ${chosen}` : chosen);
                     } else if (NUMBER_CHOICES[field]) {
-                        bits.push(`${value} ${control.label.toLowerCase()}`);
+                        bits.push(`${value} ${label.toLowerCase()}`);
                     } else if (value != null && value !== '') {
-                        bits.push(`${control.label}: ${value}`);
+                        bits.push(`${label}: ${value}`);
                     }
                 });
             });
