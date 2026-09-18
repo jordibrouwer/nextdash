@@ -89,6 +89,7 @@
                 'tipMaintReview',
                 'tipMaintRotReport',
                 'tipMaintMerge',
+                'tipMaintSelectAll',
                 'tipMaintMonitorStats',
                 'tipMaintStatsUptime',
                 'tipMaintCert',
