@@ -108,12 +108,28 @@ test.describe('toolbar button visibility', () => {
             if (await tile.count()) await tile.click();
             await expect(toggle).toBeVisible({ timeout: 15_000 });
         };
+        /*
+         * Clicked without the stability check, because this control replaces
+         * itself.
+         *
+         * It carries `data-behavior-special="chrome"`, so changing it repaints
+         * the panel and the input is rebuilt underneath the click. Playwright
+         * re-resolved it each time -- the log showed it landing on `checked`
+         * and then on an unchecked element a moment later -- and waited the
+         * full thirty seconds for something that was never going to hold still.
+         * The assertions below read the body attribute, which is what this test
+         * is really about.
+         */
+        const flip = async () => {
+            await reveal();
+            await toggle.click({ force: true });
+        };
         await reveal();
         // The button ships off, and the specs above this one set it either way,
         // so what it starts as is not this test's business — the flip is.
         const startedOn = await toggle.isChecked();
 
-        await toggle.click();
+        await flip();
         // A body attribute, so it needs the chrome branch of setBehavior —
         // `render` would redraw the grid and never rewrite <body>.
         await expect
@@ -123,8 +139,7 @@ test.describe('toolbar button visibility', () => {
         // Put it back: the settings file is shared with every other spec in the
         // run, and leaving this changed would move the toolbar under anything
         // that asserts on it afterwards.
-        await reveal();
-        await toggle.click();
+        await flip();
         await expect
             .poll(() => page.evaluate(() => document.body.getAttribute('data-show-collapse-all-button')))
             .toBe(String(startedOn));
