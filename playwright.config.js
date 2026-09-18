@@ -73,6 +73,21 @@ module.exports = defineConfig({
         baseURL,
         headless: true,
         trace: 'on-first-retry',
+        /*
+         * Wide enough that the header shows its destinations.
+         *
+         * The header folds them behind an overflow control below about 1500px,
+         * and Playwright's default is 1280x720 -- so `#page-nav-inbox-btn` and
+         * the health link are in the DOM and 0x0, and every click on them waits
+         * the full thirty seconds before failing. One CI shard spent 27 minutes
+         * on 114 of those timeouts across two dozen spec files, which also made
+         * the health and inbox families look inherently slow when they were
+         * merely waiting.
+         *
+         * A spec that means to test a narrow window still calls
+         * setViewportSize() itself, which wins over this.
+         */
+        viewport: { width: 1500, height: 950 },
     },
     webServer: (skipServer || Number(process.env.PW_WORKERS || 4) > 1)
         ? undefined
