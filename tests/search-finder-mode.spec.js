@@ -33,6 +33,9 @@ async function openDashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // And the component every test in this file reaches for straight after.
+    await page.waitForFunction(
+        () => window.dashboardInstance?.searchComponent != null, null, { timeout: 20_000 });
 }
 
 const openFinders = (page) => page.evaluate(

@@ -20,6 +20,10 @@ async function typeInSearch(page, query) {
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // A rendered bookmark is not the same promise as a built search component:
+    // on a loaded runner the evaluate below reached a null dashboardInstance.
+    await page.waitForFunction(
+        () => window.dashboardInstance?.searchComponent != null, null, { timeout: 20_000 });
     return page.evaluate((q) => {
         const s = window.dashboardInstance.searchComponent;
         s.interleaveMode = false;          // shortcut-first, the default
