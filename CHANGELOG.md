@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.2 — 18 September 2026](#v1112--18-september-2026)
 - [v1.11.1 — 18 September 2026](#v1111--18-september-2026)
 - [v1.11.0 — 17 September 2026](#v1110--17-september-2026)
 - [v1.10.0 — 13 September 2026](#v1100--13-september-2026)
@@ -206,6 +207,21 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.2 — 18 September 2026
+
+Two corrections to how a docked action bar comes and goes, held back from the What's new window (`hideFromModal`) like v1.11.1, so v1.11.0 keeps leading it.
+
+### Dashboard
+
+- **fix — a docked action bar that slid away stays away while you switch page or view.** A `hashchange` listener in `action-bar-autohide.js` called `show()` on every navigation, so each page switch brought the bar back, and moving through pages faster than its delay kept it on screen for good. The listener is gone: a load, the pointer at the edge, focus moving into the bar and `'` / `Shift + O` bring it back, and once back it keeps its delay. `action-bar-autohide.spec.js` switches page with a digit key and walks Health, the Inbox and config with the bar away.
+- **fix — a docked bar brought back with `'` or `Shift + O` stays until you are done with it.** The key called `show()`, which armed the same timer as the edge, so the bar slid off again after the delay while the reader was still reaching for it with the keys. `action-bar-autohide.js` now pins a bar the key brought back: no timer runs until the key is pressed again (which sends it away at once) or the pointer has passed over the bar and left it, which hands it back to the delay. The edge, the handle and a reload keep the delay as before. `action-bar-autohide.spec.js` holds a key-called bar for 3.5 s, and lets one go once the pointer has passed over it; the test that checked the delay after `'` now calls the bar from the edge.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.2.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js` is untouched, so the window does not reopen for it. `tests/whats-new-hidden-release.spec.js` pins v1.11.2 and v1.11.1 as held back and v1.11.0 as leading. `MANUAL.md` says that switching page or view leaves a slid-away bar where it is, and that a bar called by a key stays until the key again or the pointer has passed over it. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

@@ -8,6 +8,11 @@
  * focus moves into it, or on ' / Shift+O. In the header or behind the menu
  * nothing slides: the bar is part of the band there.
  *
+ * Brought back by ' / Shift+O it stays: the reader asked for it with a key and
+ * may be about to use it with the keys, so no timer runs. It goes when the key
+ * is pressed again, or when the pointer has been over the bar and leaves it --
+ * which hands the bar back to the delay, as if the edge had called it.
+ *
  * State lives on <body> as data-action-bar-hidden, so the slide itself is CSS
  * and reduced motion is handled where every other animation is.
  *
@@ -29,6 +34,8 @@
 
     let timer = null;
     let hidden = false;
+    /** Called by a key: stays until the key again, or the pointer passes over and leaves. */
+    let pinned = false;
     let bound = false;
     let frame = 0;
     let handle = null;
@@ -80,7 +87,7 @@
         clearTimeout(timer);
         timer = null;
         const wait = seconds();
-        if (!wait || !docked() || !enabled() || touchOnly()) return;
+        if (pinned || !wait || !docked() || !enabled() || touchOnly()) return;
         timer = setTimeout(() => {
             timer = null;
             if (inUse()) {
@@ -161,7 +168,11 @@
         });
         document.addEventListener('pointerout', (e) => {
             const el = bar();
-            if (el && el.contains(e.target) && !el.contains(e.relatedTarget)) arm();
+            if (el && el.contains(e.target) && !el.contains(e.relatedTarget)) {
+                // Passing over a bar a key called, and leaving it, is done with it.
+                pinned = false;
+                arm();
+            }
         });
         document.addEventListener('focusin', (e) => {
             if (bar()?.contains(e.target)) show();
@@ -170,15 +181,15 @@
             const el = bar();
             if (el && el.contains(e.target) && !el.contains(e.relatedTarget)) arm();
         });
-        // Arriving somewhere new is a moment the reader may want the actions.
-        global.addEventListener('hashchange', () => {
-            if (docked() && seconds()) show();
-        });
+        // Not on hashchange. Switching page or view used to bring the bar back,
+        // so a reader moving through pages had it slide in and out on every
+        // step. A load, the edge, focus and ' / Shift+O are what call it.
     }
 
     /** Settings changed: start over from a visible bar. */
     function sync() {
         bind();
+        pinned = false;
         setHidden(false);
         arm();
     }
@@ -189,11 +200,13 @@
      */
     function toggle() {
         if (!enabled() || !docked()) return false;
+        clearTimeout(timer);
+        timer = null;
         if (hidden) {
-            show();
+            pinned = true;
+            setHidden(false);
         } else {
-            clearTimeout(timer);
-            timer = null;
+            pinned = false;
             setHidden(true);
         }
         return true;
@@ -204,5 +217,6 @@
         toggle,
         show,
         isHidden: () => hidden,
+        isPinned: () => pinned,
     };
 }(typeof window !== 'undefined' ? window : globalThis));
