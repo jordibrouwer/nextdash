@@ -182,6 +182,15 @@ viewport, out of the reader's eye, and they had to go looking for the block they
 had just acted on.
 */
 test('the widget keeps its place in the viewport when its width changes', async ({ page }) => {
+    /*
+     * Pinned narrow, because the premise is a page long enough to scroll.
+     *
+     * The 26 bookmarks below are seeded to make the document overflow, so that
+     * a width change moves its end -- the case the clamp exists for. In a wider
+     * window the same rows fit in less height, the page stops scrolling, and
+     * there is no clamping left to measure.
+     */
+    await page.setViewportSize({ width: 1280, height: 720 });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -231,6 +240,15 @@ written in the same tick as the redraw is written against a page that has not
 been laid out yet. The second pass is what holds the widget still here.
 */
 test('the widget keeps its place with packed columns too', async ({ page }) => {
+    /*
+     * Pinned narrow, because the premise is a page long enough to scroll.
+     *
+     * The 26 bookmarks below are seeded to make the document overflow, so that
+     * a width change moves its end -- the case the clamp exists for. In a wider
+     * window the same rows fit in less height, the page stops scrolling, and
+     * there is no clamping left to measure.
+     */
+    await page.setViewportSize({ width: 1280, height: 720 });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
