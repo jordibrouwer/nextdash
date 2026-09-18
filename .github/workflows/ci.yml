@@ -43,33 +43,20 @@ jobs:
     # data directory -- which is also why sharding is safe here while raising
     # `workers` inside one runner is not: every spec in a run shares one server.
     #
-    # Playwright splits a shard by test COUNT, and the specs are walked in file
-    # order -- so shard 5 drew the `h`-`i` slice, which is 47 health-* and 20
-    # inbox-* files out of 73. Those are the two slowest families in the suite:
-    # a health spec builds a report and waits on checks, an inbox spec seeds
-    # rows and waits for the view to fetch them. With an equal count of tests it
-    # ran 24 minutes and was still going while every other shard had finished in
-    # five to eight.
+    # The shards are left at Playwright's own split, by test count.
     #
-    # PWTEST_SHARD_WEIGHTS below sizes each shard so the slow block is split
-    # three ways and the fast shards take the rest. The weights are per shard,
-    # in order, and they are not intuitive: shards 4 and 5 are tiny because they
-    # hold almost nothing but health and inbox.
+    # They were weighted for a while, with PWTEST_SHARD_WEIGHTS, because the
+    # `h`-`i` slice -- 47 health-* and 20 inbox-* files -- ran 24 minutes while
+    # every other shard finished in five to eight. That slowness was not real:
+    # those specs click the inbox and health destinations in the header, the
+    # header folds them away below about 1500px, and Playwright's default window
+    # is 1280 wide. Every one of those clicks waited its full thirty seconds.
+    # One run carried 552 of those timeouts.
     #
-    # They were computed rather than guessed, against two measured rates -- the
-    # health/inbox families run at about 0.30 tests a second and everything else
-    # at about 1.18. A first attempt at this only shrank shard 5, which moved the
-    # block onto its neighbours and left three shards at 16 minutes instead of
-    # one at 24; the numbers below level all six at about 10.
-    #
-    # Two things to know before changing them. They are parsed with parseInt, so
-    # a decimal is truncated -- "0.6" becomes 0 and that shard silently runs no
-    # tests at all. And PWTEST_ marks an internal flag rather than a documented
-    # option, so a Playwright upgrade may take it away; if a shard suddenly
-    # reports 0 tests, look here first.
-    #
-    # These are one measurement, not a law: re-read the job durations after a
-    # green run and adjust if the spread has moved.
+    # playwright.config.js sets a wide viewport now, and the same 24 spec files
+    # run in a minute. If a shard is ever the odd one out again, measure before
+    # weighting: a shard that is slow because its tests are waiting cannot be
+    # fixed by giving it fewer of them.
     strategy:
       fail-fast: false
       matrix:
@@ -86,10 +73,6 @@ jobs:
       - name: Install Playwright
         run: npm ci && npx playwright install chromium --with-deps
       - name: Run Playwright tests
-        env:
-          # Modelled split: 10m per shard, against 24m for the worst shard with
-          # no weights at all. Shards 4 and 5 are the health/inbox block.
-          PWTEST_SHARD_WEIGHTS: "16:16:13:4:4:12"
         run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
       - name: Upload report
         if: failure()
