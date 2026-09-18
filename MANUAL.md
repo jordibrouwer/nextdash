@@ -987,6 +987,8 @@ Every bookmark has one of three modes:
 
 Set the mode in the bookmark form, the side panel in Config → Bookmarks, the right-click menu, with **`Shift + C`**, or with **`c`** in the health view. On a monitored row the menu also shows the **check interval**: 5m, 15m, 30m, 1h, 6h or 24h.
 
+**Nothing checked at all?** Once 20 or more bookmarks are set to **Off**, a card in the bottom-left corner offers to switch them all to **Periodic** in one go, naming the count. It shows at most once a month; declining once brings it back next month, declining a second time offers to stop asking for good.
+
 **Behavior → Status & health** holds the rest:
 
 | Group | Settings |

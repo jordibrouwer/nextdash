@@ -427,7 +427,24 @@ class Dashboard {
             if (window.__nextdashBootSearch !== undefined) {
                 const query = window.__nextdashBootSearch;
                 delete window.__nextdashBootSearch;
-                this.searchComponent?.openSearchWithQuery?.(query);
+                // search.js is its own lazy bundle (see search-loader.js) --
+                // this.searchComponent is only guaranteed to exist once it has
+                // loaded and initializeSearchComponent() has run. Reaching here
+                // before that finished used to drop the query silently: the
+                // optional chain no-opped, and there was nothing left to retry
+                // once the bundle did arrive, since the query above was already
+                // deleted. SearchLoader.ensureReady() is the same load-then-wire
+                // pairing loadThenOpen() uses for a keypress that beats the
+                // bundle; resolving with undefined (no search in this build,
+                // or bundling off with the component already built) falls back
+                // to whatever this.searchComponent already is.
+                if (window.SearchLoader) {
+                    void window.SearchLoader.ensureReady().then((search) => {
+                        (search || this.searchComponent)?.openSearchWithQuery?.(query);
+                    });
+                } else {
+                    this.searchComponent?.openSearchWithQuery?.(query);
+                }
             }
             /*
              * The other two views the comment above names.
@@ -982,7 +999,14 @@ class Dashboard {
             if (hash === 'search' || hash.startsWith('search?')) {
                 const query = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''))
                     .get('q') || '';
-                this.searchComponent?.openSearchWithQuery?.(query);
+                // Same lazy-bundle race as the boot-search path above.
+                if (window.SearchLoader) {
+                    void window.SearchLoader.ensureReady().then((search) => {
+                        (search || this.searchComponent)?.openSearchWithQuery?.(query);
+                    });
+                } else {
+                    this.searchComponent?.openSearchWithQuery?.(query);
+                }
                 return;
             }
             if (hash === 'health' || hash.startsWith('health/')) {

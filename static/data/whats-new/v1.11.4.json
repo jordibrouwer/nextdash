@@ -1,0 +1,17 @@
+{
+  "tag": "v1.11.4",
+  "date": "18 September 2026",
+  "releasedAt": "2026-09-18",
+  "modalLead": "A fix to a search reached from the address bar or a bookmarked query, plus a flaky test correction.",
+  "sections": [
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Searching from the address bar no longer occasionally opens nothing.</strong> The search overlay loads in its own bundle on first use, and a query that arrived before it finished loading could be silently dropped rather than shown once the code caught up."
+        }
+      ]
+    }
+  ]
+}
