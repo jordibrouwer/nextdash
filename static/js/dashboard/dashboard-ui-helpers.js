@@ -949,6 +949,12 @@ class DashboardUiHelpers {
             }
         };
         document.addEventListener('keydown', this._pageOverviewKeyHandler, true);
+        /*
+         * Draws the ring. The focus itself is AppModal's job: it is handed
+         * `initialFocusSelector` for the current page's row and lands it after
+         * the overlay is really visible. A second deferred focus from here
+         * raced that one and sometimes left the cursor on neither.
+         */
         setFocus(focusedIndex);
     }
 

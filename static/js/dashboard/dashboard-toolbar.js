@@ -144,37 +144,35 @@ class DashboardToolbar {
             // refuses to stack on top of another modal by itself; swallowing the
             // key here as well keeps it from reaching anything behind.
             /*
-             * `*` opens the panel in its recents mode.
+             * `*` opens the recents sheet, always.
              *
-             * The recents panel is still there for anyone who switches its
-             * button back on; what the key reaches is the mode, because two
-             * surfaces for one list is the thing the header was carrying.
+             * It used to open the sheet while the recents button was on and the
+             * search panel's recents mode while it was off — so the key meant
+             * two different things depending on a setting about a button, which
+             * is not something a keyboard shortcut should answer to. The sheet
+             * wins because it is what the key has always reached on a default
+             * install; the panel's recents mode is still there under its own
+             * prefix, typed inside the panel (search.js registers `*` for it).
              */
-            if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*'
-                && d.settings?.showRecentButton === false) {
-                if (!d.isBookmarksView() || d.isModalOpen()) {
-                    return;
-                }
-                if (d.searchComponent?.isActive?.()) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                d.searchComponent?.openInRecentMode?.();
-                return;
-            }
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
-                // Recent bookmarks is a dashboard button; inert in a
+                // Recent bookmarks is a dashboard surface; inert in a
                 // full-container view. (! stays live everywhere -- see below --
                 // and is deliberately not given this same guard.)
                 if (!d.isBookmarksView()) {
                     return;
                 }
-                const ownModalOpen = d.isRecentBookmarksModalOpen?.() === true;
-                if (!ownModalOpen && d.isModalOpen()) {
+                // The sheet closes on the same key that would otherwise stack
+                // the panel on top of it.
+                if (d.isRecentBookmarksModalOpen?.() === true) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    d.toggleRecentBookmarksModal();
                     return;
                 }
-                if (d.searchComponent && d.searchComponent.isActive()) {
+                if (d.isModalOpen()) {
+                    return;
+                }
+                if (d.searchComponent?.isActive?.()) {
                     return;
                 }
                 e.preventDefault();

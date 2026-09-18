@@ -130,7 +130,10 @@
             const showShortcuts = (settings.shortcutDisplay || 'always') !== 'never';
             const showPinIcon = settings.showPinIcon === true;
             const showNoteIcon = settings.showNoteIcon !== false;
-            const showStatus = settings.showStatus === true;
+            // !== false, like its true-default neighbours above: the preview is
+            // handed whatever settings object the caller has, and an absent key
+            // there took the status colour out of a row that shows it.
+            const showStatus = settings.showStatus !== false;
 
             const untitled = this.t('config.bookmarkPreviewUntitled', 'Untitled');
             const name = String(bookmark?.name || '').trim() || untitled;

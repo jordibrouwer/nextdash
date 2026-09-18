@@ -163,6 +163,19 @@ class KeyboardNavigation {
                 || document.getElementById('multi-select-check-popover')
                 || document.getElementById('bookmark-context-menu')
                 || document.getElementById('bookmark-check-mode-menu')
+                /*
+                 * Every menu _openMenu builds, by the class it stamps on all of
+                 * them rather than by id.
+                 *
+                 * The ids above cover the popovers written one at a time; the
+                 * shared builder gives its menus an id of their own and
+                 * `bookmark-context-menu` only as a class, so the widget row's
+                 * menu and a category's menu both fell straight through. With
+                 * the cursor already cleared, Escape reached _escapeFallback(),
+                 * which opens the search overlay a tick later — the menu closed
+                 * itself correctly and then search took the focus anyway.
+                 */
+                || document.querySelector('.bookmark-context-menu')
             ) {
                 return;
             }

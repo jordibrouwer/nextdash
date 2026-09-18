@@ -118,7 +118,47 @@
             // survives a re-render of the grid without being rebuilt.
             const host = container.parentElement || container;
             host.insertBefore(bar, container);
+            this.syncBarToGrid(container, bar);
             return bar;
+        }
+
+        /**
+         * Lay the bar over the grid it filters, not over the container.
+         *
+         * Spanning the container is right while the grid fills it, which it does
+         * at the widths this was built at. With packed columns off the grid is
+         * `grid-template-columns` of a fixed width -- three 360px columns, 1128px
+         * in all -- centred by `margin: 0 auto` in whatever room is left. In a
+         * 1500px window that put the bar 90px to the left of the rows it filters
+         * and 180px wider than them.
+         *
+         * The grid's width comes from how many columns fit, so no CSS rule here
+         * can match it; it is measured. Kept in a custom property rather than an
+         * inline width so the stylesheet still owns the box, and re-read on
+         * resize because the column count changes with the window.
+         */
+        syncBarToGrid(container, bar) {
+            if (!container || !bar) return;
+            const apply = () => {
+                const live = document.getElementById('grid-filter-bar');
+                const grid = document.getElementById('dashboard-layout');
+                if (!live || !grid) return;
+                // Measured from where the bar itself sits with no offset, not
+                // from the container's edge: the container already insets its
+                // children, and counting that twice pushed the bar past the
+                // grid by exactly that inset.
+                live.style.setProperty('--grid-filter-offset', '0px');
+                live.style.setProperty('--grid-filter-width', `${Math.round(grid.getBoundingClientRect().width)}px`);
+                const delta = grid.getBoundingClientRect().left - live.getBoundingClientRect().left;
+                if (Math.abs(delta) >= 1) {
+                    live.style.setProperty('--grid-filter-offset', `${Math.round(delta)}px`);
+                }
+            };
+            apply();
+            if (!this._barResizeBound) {
+                this._barResizeBound = () => apply();
+                window.addEventListener('resize', this._barResizeBound);
+            }
         }
 
         /** The text a row is matched against: what you can see, plus its tags. */
@@ -186,7 +226,12 @@
                 return;
             }
             const container = document.getElementById('dashboard-layout');
-            if (container) this.ensureBar(container);
+            if (container) {
+                const bar = this.ensureBar(container);
+                // The grid was just redrawn, and its width is what the bar is
+                // measured against -- ensureBar only measures a bar it creates.
+                this.syncBarToGrid(container, bar);
+            }
             this.apply();
         }
     }
