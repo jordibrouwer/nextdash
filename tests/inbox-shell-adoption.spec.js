@@ -245,7 +245,11 @@ test('the glass depth still reaches the rail', async ({ page }) => {
         };
         return {
             summary: read('.lvs-summary'),
-            group: read('.lvs-group--filters'),
+            // .lvs-group is left out of the glass list on purpose -- see the
+            // comment beside it in theme-character.css: a rail is a list, not a
+            // plate, and at 200px wide the slab treatment reads as a hard edge
+            // with glow down both sides. The rows carry their own hover and
+            // their own active state instead, which is what `filter` checks.
             filter: read('.lvs-rail .lvs-filter'),
             row: read('.inbox-item'),
         };
