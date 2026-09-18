@@ -32,62 +32,50 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 <table border="0" width="100%">
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-dashboard.png" alt="Dashboard" width="100%" />
+      <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> — Categories, live status, and a cursor that never leaves the keyboard.</sub>
+      <sub><b>Dashboard</b> — Categories in columns with a live response time on every monitored link, and widgets for health and uptime between them. The header is one row — clock and weather, page tabs, destinations — and the action buttons stand in a column on the right edge.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-search.png" alt="Search" width="100%" />
+      <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
       <br />
-      <sub><b>Search</b> — One panel for bookmarks, filters, commands and finders.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-inbox.png" alt="Inbox view" width="100%" />
-      <br />
-      <sub><b>Inbox</b> — Links you want to keep before you know where they belong.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-health.png" alt="Health view" width="100%" />
-      <br />
-      <sub><b>Health</b> — Everything that needs attention, across all pages.</sub>
+      <sub><b>Search</b> — One panel for bookmarks, commands and finders. Type a letter and it answers from all three at once; the modes on the left narrow it down, and <kbd>Tab</kbd> switches between them.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-health-monitors.png" alt="Health monitoring" width="100%" />
+      <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
       <br />
-      <sub><b>Monitoring</b> — Uptime, response times and outages for the services you watch.</sub>
+      <sub><b>Inbox</b> — Links you saved before you knew where they belong, grouped by when they arrived. Filter by site or unread, search, and clear the lot one link at a time with Triage.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-statistics.png" alt="Statistics" width="100%" />
+      <img src="screenshots/nextdash-health.jpg" alt="Health view" width="100%" />
       <br />
-      <sub><b>Statistics</b> — What is in your collection, and how you use it.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-widgets.png" alt="Widgets" width="100%" />
-      <br />
-      <sub><b>Widgets</b> — Blocks that show something other than bookmarks.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-themes.png" alt="Theme browser" width="100%" />
-      <br />
-      <sub><b>Themes</b> — 121 theme families, light and dark, plus your own.</sub>
+      <sub><b>Health</b> — Everything that needs attention, across all pages: a link whose domain no longer exists, a monitored service that is down right now. Each row says why, and can be re-checked, opened or edited where it stands.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-bookmarks.png" alt="Bookmark manager" width="100%" />
+      <img src="screenshots/nextdash-health-monitors.jpg" alt="Health monitoring" width="100%" />
       <br />
-      <sub><b>Bookmarks</b> — Every bookmark in one list: filter, edit, tag, remove.</sub>
+      <sub><b>Monitoring</b> — The services you watch, checked by the server on their own interval. Every row carries its uptime, a response-time sparkline and a warning when its certificate is about to expire.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="screenshots/nextdash-shortcuts.png" alt="Keyboard shortcuts" width="100%" />
+      <img src="screenshots/nextdash-bookmarks.jpg" alt="Bookmark workbench" width="100%" />
       <br />
-      <sub><b>Keyboard</b> — The whole dashboard is reachable without the mouse.</sub>
+      <sub><b>Bookmarks</b> — Every bookmark in one list, as a workbench: filters on the left, rows in the middle, and an edit panel on the right. Tick three rows and the same panel edits all three — page, category, tags, pinning and checking.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-config.jpg" alt="Config hub" width="100%" />
+      <br />
+      <sub><b>Config</b> — Appearance and Behavior open on tiles, one subject each, and every tile shows what it is set to before you open it. A tile opens its group; <kbd>Esc</kbd> goes back.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-themes.jpg" alt="Theme browser" width="100%" />
+      <br />
+      <sub><b>Themes</b> — 122 theme families, each with a light and a dark half, searchable and filtered by mood. The Gloss filter shows the ten families that catch the light; press <kbd>Shift</kbd>+<kbd>A</kbd> to open the browser from anywhere.</sub>
     </td>
   </tr>
 </table>

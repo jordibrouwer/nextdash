@@ -98,4 +98,47 @@ test.describe('the Fresh notice', () => {
         });
         expect(shown).toBe(false);
     });
+
+    test('its buttons are drawn by the card, not by the browser', async ({ page }) => {
+        // The rules for .quickstart-btn left with the first-run setup window,
+        // and every corner card fell back to grey system buttons.
+        await loadWithCardPending(page);
+        await page.evaluate(() => window.DashboardFreshNotice.render());
+        const card = page.locator('.fresh-notice-card');
+        await expect(card).toBeVisible();
+
+        const look = await card.evaluate((el) => {
+            const accent = (() => {
+                const probe = document.createElement('span');
+                probe.style.color = 'var(--accent-primary)';
+                document.body.appendChild(probe);
+                const c = getComputedStyle(probe).color;
+                probe.remove();
+                return c;
+            })();
+            const page = (() => {
+                const probe = document.createElement('span');
+                probe.style.color = 'var(--background-primary)';
+                document.body.appendChild(probe);
+                const c = getComputedStyle(probe).color;
+                probe.remove();
+                return c;
+            })();
+            const style = (b) => { const c = getComputedStyle(b); return { bg: c.backgroundColor, ink: c.color, font: c.fontFamily }; };
+            return {
+                accent,
+                page,
+                body: getComputedStyle(el).fontFamily,
+                primary: style(el.querySelector('.quickstart-btn-primary')),
+                ghost: style(el.querySelector('.quickstart-btn-ghost')),
+            };
+        });
+        expect(look.primary.bg).toBe(look.accent);
+        // Page-coloured ink on the accent, as every filled accent button has:
+        // white fell under 2:1 on a light accent such as Tarnished Brass.
+        expect(look.primary.ink).toBe(look.page);
+        expect(look.ghost.bg).toBe('rgba(0, 0, 0, 0)');
+        // A system button brings its own typeface; the card's buttons inherit.
+        expect(look.primary.font).toBe(look.body);
+    });
 });

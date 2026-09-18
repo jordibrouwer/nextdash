@@ -157,6 +157,35 @@ test.describe('a group page', () => {
     });
 });
 
+test.describe('the tile summaries', () => {
+    test('name a setting once, without a stray colon', async ({ page }) => {
+        // The form's labels end in their own colon, which the summary doubled
+        // ("Weather location:: Leiden") or left hanging ("3 columns per
+        // row: · Compact"). The time format's options are examples, so on a
+        // tile "23:59" needs the setting's name in front of it.
+        await open(page, '#config/appearance/datetime');
+        const location = page.locator('#hub-text-weatherLocation');
+        const before = await location.inputValue();
+        await location.fill('Leiden');
+        await location.press('Tab');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('[data-hub-start="appearance"]')).toBeVisible();
+
+        const date = page.locator('[data-hub-group="datetime"] .hub-tile-summary');
+        await expect(date).toContainText('Leiden');
+        await expect(date).toContainText(/Time format: (23:59|11:59 PM)/);
+        const summaries = await page.locator('[data-hub-start="appearance"] .hub-tile-summary').allInnerTexts();
+        for (const text of summaries) {
+            expect(text).not.toMatch(/::|:\s*·|:\s*$/);
+        }
+
+        // Leave the shared data directory the way it was found.
+        await open(page, '#config/appearance/datetime');
+        await page.locator('#hub-text-weatherLocation').fill(before);
+        await page.locator('#hub-text-weatherLocation').press('Tab');
+    });
+});
+
 test.describe('searching from the start screen', () => {
     test('finds a field in another group and opens that group', async ({ page }) => {
         await open(page, '#config/appearance');

@@ -151,18 +151,22 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     // The cases above prove the mechanism against a fixture. This one asserts
-    // what the shipped files do with it: nothing is held back right now.
-    // v1.6.1 and v1.6.2 were hidden while v1.6.0 was the release worth
-    // reading; v1.7.0 released them from that hold and v1.11.0 leads now, so
-    // a reader following the notes back finds every version in between.
-    test('no shipped release is held back, and v1.11.0 leads the modal', async ({ page }) => {
+    // what the shipped files do with it: v1.11.1 is deliberately hidden. It
+    // counts toward the version number and shows up everywhere except the
+    // modal -- Config -> Overview, About -> News & features, the changelog --
+    // and the modal keeps leading with v1.11.0 rather than reopening for a
+    // round of corrections. v1.6.1 and v1.6.2 were hidden the same way once,
+    // and released from that hold by v1.7.0, so a reader following the notes
+    // back still finds them.
+    test('v1.11.1 is held back from the modal, and v1.11.0 still leads it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.11.0');
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
+        expect(index[0].tag).toBe('v1.11.1');
+        expect(index[0].hideFromModal).toBe(true);
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.11.1']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -176,9 +180,10 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // The modal leads with v1.11.0, and the two releases that used to be
-        // held back are reachable in it.
+        // The modal leads with v1.11.0, never shows the hidden v1.11.1, and
+        // the two releases that used to be held back are reachable in it.
         expect(await shownTags()).toContain('v1.11.0');
+        expect(await shownTags()).not.toContain('v1.11.1');
 
         await expect.poll(async () => {
             await modal.evaluate((m) => {
