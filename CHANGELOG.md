@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.7 — 19 September 2026](#v1117--19-september-2026)
 - [v1.11.6 — 19 September 2026](#v1116--19-september-2026)
 - [v1.11.5 — 19 September 2026](#v1115--19-september-2026)
 - [v1.11.4 — 18 September 2026](#v1114--18-september-2026)
@@ -214,6 +215,25 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
+## v1.11.7 — 19 September 2026
+
+The Log settings popover on screen and at its gear, and the Logs section versioned like the rest — held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.6, so v1.11.0 keeps leading it.
+
+### Logs
+
+- **fix — the Log settings popover opened far from its gear, scrolled inside itself, and slid under the header.** It is `position: fixed` inside the log panel, and under the Glass depth `.config-panel` carries a `backdrop-filter`, which makes the panel — not the window — what "fixed" is measured from: the popover landed a panel's offset below and to the right of the gear, past the window's edge. `bindLogSettingsPopover()` now measures that frame's origin with a zero-size probe and takes it off. The popover is laid out in two columns with the labels beside their selects and no height cap (about 400px instead of 760px behind a 320px scroll box), so it is on screen whole; it opens under the gear, or over it, never under the sticky header band; when neither fits the page scrolls just far enough to make room under the gear, and a `ResizeObserver` places it again when the live note fills in. The panel is lifted above the band while the popover is open (`config-view.css`), for a window too low to keep clear of it. `config-log-settings-popover.spec.js` covers the placement, the absence of a scroll box, the band, and the popover drawing over the band — each confirmed failing without its part of the fix.
+- **fix — the Logs section loaded without a version token.** `dashboard-config-logs.js`, split out of config, was missing from `lazyLoadedAssets`, so it loaded under its bare path and a browser went on running its old copy after an update. Listed now, and `TestConfigSectionModulesAreLazyAssets` fails for any `SECTION_MODULES` file left off the list.
+
+### Tests
+
+- **fix — six specs still pressed Escape twice to leave config**, once for the tiles and once to leave. With no start screen the first press leaves, and on CI the second landed while config was closing, so `action-bar-position.spec.js` failed to reopen config for its next placement. One press now (`action-bar-position`, `config-dashboard-view`, `favicon-harmonization-default`, `header-action-overflow`).
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.7.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v293`, `DASHBOARD_RELEASE` untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.7 alongside v1.11.1–v1.11.6. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
+
 ## v1.11.6 — 19 September 2026
 
 Config's Appearance and Behavior back on plain tabs, with a live preview beside Appearance — held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.5, so v1.11.0 keeps leading it.
@@ -227,14 +247,11 @@ Config's Appearance and Behavior back on plain tabs, with a live preview beside 
 - **new — the filter and *Only changed* say where else they find something.** "Also found on: Header 2" under the list, per other tab of the section (`renderFilterElsewhere()`, `countTabMatches()`), keeps the filter when clicked.
 - **new — each section opens on the tab you used last**, kept per browser (`nextdash:config-tab-v1`); the address now always names the tab, so a shared link opens what it shows.
 - **Custom themes is a page of Look** (*Make your own theme…*, back with *← Look*), not a tab on the strip; `[`/`]` step past it.
-- **fix — the Log settings popover opened far from its gear, scrolled inside itself, and slid under the header.** It is `position: fixed` inside the log panel, and under the Glass depth `.config-panel` carries a `backdrop-filter`, which makes the panel — not the window — what "fixed" is measured from: the popover landed a panel's offset below and to the right of the gear, past the window's edge. `bindLogSettingsPopover()` now measures that frame's origin with a zero-size probe and takes it off. The popover is laid out in two columns with the labels beside their selects and no height cap (about 400px instead of 760px behind a 320px scroll box), so it is on screen whole; it opens under the gear, or over it, never under the sticky header band; when neither fits the page scrolls just far enough to make room under the gear, and a `ResizeObserver` places it again when the live note fills in. The panel is lifted above the band while the popover is open (`config-view.css`), for a window too low to keep clear of it. `config-log-settings-popover.spec.js` covers the placement, the absence of a scroll box, the band, and the popover drawing over the band — each confirmed failing without its part of the fix.
-- **fix — the Logs section loaded without a version token.** `dashboard-config-logs.js`, split out of config, was missing from `lazyLoadedAssets`, so it loaded under its bare path and a browser went on running its old copy after an update. Listed now, and `TestConfigSectionModulesAreLazyAssets` fails for any `SECTION_MODULES` file left off the list.
 - **fix — a setting promo pulled the reader back to Look.** Its "chosen on purpose" check only knew the tab strip, so *Make your own theme…* was undone a moment later by `ensureSubTab`. It now counts the page buttons and the *Also found on* buttons too (`config-setting-promo.js`).
 
 ### Tests
 
 - `config-tabs.spec.js` replaces `config-hub.spec.js`: the strips, moved settings, old links, the remembered tab, the preview following tab and setting, the short line, and *Also found on* — each confirmed failing with its behaviour switched off. 24 existing specs follow the settings to their new tabs; `theme-glow.spec.js` measures a probe panel, since panels on these tabs are flat by design. The hub-era fold fixture in `tests/fixtures.js` is gone. `help-current-features.spec.js` looks for the new config help rather than the tiles' wording.
-- **fix — six specs still pressed Escape twice to leave config**, once for the tiles and once to leave. With no start screen the first press leaves, and on CI the second landed while config was closing, so `action-bar-position.spec.js` failed to reopen config for its next placement. One press now (`action-bar-position`, `config-dashboard-view`, `favicon-harmonization-default`, `header-action-overflow`).
 
 ### Docs
 

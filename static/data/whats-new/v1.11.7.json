@@ -1,0 +1,21 @@
+{
+  "tag": "v1.11.7",
+  "date": "19 September 2026",
+  "releasedAt": "2026-09-19",
+  "modalLead": "The Log settings menu opens at its gear and fits on screen.",
+  "sections": [
+    {
+      "title": "Logs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Log settings opens next to its gear</strong>, whole and on screen: no scroll box, and never under the header."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Logs picks up an update straight away</strong> rather than running the version your browser had before."
+        }
+      ]
+    }
+  ]
+}
