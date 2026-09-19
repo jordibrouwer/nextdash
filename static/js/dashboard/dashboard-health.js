@@ -2231,11 +2231,18 @@ class DashboardHealth {
                 menu.style.bottom = '';
                 return;
             }
-            // Neither side fits: sit against the top margin, in the menu's own
-            // coordinate space, so the whole list stays on screen.
+            // Neither side fits: as close to the row as the viewport allows,
+            // clamped so the whole menu still lands on screen -- the same
+            // clamp-toward-anchor positionMenuAtPoint already does for the
+            // right-click path. Pinning unconditionally to the top margin
+            // (the previous behaviour) put a menu with rows in the middle of
+            // a tall list at the very top of the viewport regardless of how
+            // far that was, drawing over the header and everything below it
+            // down to the row.
             menu.classList.remove('health-view-menu--up');
             menu.style.bottom = 'auto';
-            menu.style.top = `${margin - anchor.top}px`;
+            const clampedTop = Math.max(margin, Math.min(anchor.top, window.innerHeight - rect.height - margin));
+            menu.style.top = `${clampedTop - anchor.top}px`;
         });
     }
 

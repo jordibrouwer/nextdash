@@ -70,4 +70,48 @@ test.describe('the health row menu shows all of itself', () => {
         // below this, and would have scrolled a menu this window has room for.
         expect(menu.maxHeight).toBeGreaterThan(menu.viewport - 40);
     });
+
+    /**
+     * A short window (this test's) leaves a menu with many repair options no
+     * room above or below a row near the middle of the list. The fallback
+     * used to pin the menu to the very top of the viewport regardless of
+     * where the row was -- fine for a row already near the top, but for one
+     * further down it put the menu nowhere near what was clicked, drawing
+     * over the header and everything between it and the row. It now clamps
+     * toward the row instead, landing as close as the viewport allows.
+     */
+    test('a row with no room above or below still opens its menu near itself', async ({ page }) => {
+        await page.setViewportSize({ width: 1000, height: 750 });
+        await openHealth(page);
+
+        const rows = page.locator('.health-view-item');
+        const count = await rows.count();
+        const targetIndex = Math.min(Math.max(Math.floor(count / 2), 1), count - 1);
+
+        const result = await page.evaluate((idx) => {
+            const h = window.dashboardInstance.health;
+            const row = document.querySelectorAll('.health-view-item')[idx];
+            h.closeAllMenus();
+            h.toggleMenu(row.getAttribute('data-health-key'), 'more');
+            return row.getBoundingClientRect().top;
+        }, targetIndex);
+        await page.waitForTimeout(300);
+
+        const menu = await page.evaluate((rowTop) => {
+            const el = document.querySelector('.health-view-menu[data-menu-owner="more"]:not([hidden])');
+            if (!el) return null;
+            const box = el.getBoundingClientRect();
+            return {
+                onScreen: box.top >= -1 && box.bottom <= window.innerHeight + 1,
+                distanceFromRow: Math.abs(box.top - rowTop),
+                viewport: window.innerHeight,
+            };
+        }, result);
+
+        expect(menu, 'no row menu to measure').not.toBeNull();
+        expect(menu.onScreen).toBe(true);
+        // Landed within the window rather than pinned to its very top
+        // regardless of where the row was.
+        expect(menu.distanceFromRow).toBeLessThan(menu.viewport - 40);
+    });
 });
