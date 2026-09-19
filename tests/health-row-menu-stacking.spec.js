@@ -158,4 +158,47 @@ test.describe('a row menu draws above the rows below it', () => {
         expect(hitLandedInMenu, 'the point inside the open menu hit the row below it instead of the menu')
             .toBe(true);
     });
+
+    /*
+     * The sticky header band (.lvs-header) had its z-index lifted by 1300 to
+     * clear the teaching popovers, while the raised row stayed at
+     * --layer-row-raised (6) -- so a menu crossing the band drew behind it,
+     * its middle entries hidden under "Health / Bookmarks that need
+     * attention". A short window forces the menu up across the band.
+     */
+    test('a menu crossing the sticky header draws above it', async ({ page }) => {
+        await openHealth(page);
+        await page.setViewportSize({ width: 1200, height: 560 });
+        await page.evaluate(() => window.dashboardInstance.health.render());
+
+        const row = page.locator('.health-view-item').first();
+        await expect(row).toBeVisible();
+        const menu = await openMoreMenu(row);
+        await expect(menu).toBeVisible();
+
+        const point = await page.evaluate(() => {
+            const menuEl = document.querySelector(
+                '.health-view-item .health-view-menu[data-menu-owner="more"]:not([hidden])'
+            );
+            const header = document.querySelector('.lvs-header');
+            const m = menuEl.getBoundingClientRect();
+            const h = header.getBoundingClientRect();
+            const top = Math.max(m.top, h.top);
+            const bottom = Math.min(m.bottom, h.bottom);
+            const left = Math.max(m.left, h.left);
+            const right = Math.min(m.right, h.right);
+            if (bottom - top <= 4 || right - left <= 4) return null;
+            return { x: (left + right) / 2, y: (top + bottom) / 2 };
+        });
+        expect(point, 'setup: the open menu must cross the sticky header').not.toBeNull();
+
+        const hitLandedInMenu = await page.evaluate((p) => {
+            const menuEl = document.querySelector(
+                '.health-view-item .health-view-menu[data-menu-owner="more"]:not([hidden])'
+            );
+            const hit = document.elementFromPoint(p.x, p.y);
+            return Boolean(menuEl && hit && menuEl.contains(hit));
+        }, point);
+        expect(hitLandedInMenu, 'the sticky header drew over the open menu').toBe(true);
+    });
 });
