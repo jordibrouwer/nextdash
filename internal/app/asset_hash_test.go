@@ -152,6 +152,34 @@ func TestLazyLoadedAssetsExist(t *testing.T) {
 	}
 }
 
+// Every config section split into its own file loads through LazyScript, which
+// only gets a hashed URL for scripts in lazyLoadedAssets. The Logs section was
+// split out without an entry here, so it loaded under its bare path and a
+// browser went on running the copy it had from before a deploy.
+func TestConfigSectionModulesAreLazyAssets(t *testing.T) {
+	src, err := os.ReadFile(repoFile(t, "static", "js", "dashboard", "dashboard-config.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	block := regexp.MustCompile(`(?s)static SECTION_MODULES = \{(.*?)\n    \};`).FindSubmatch(src)
+	if block == nil {
+		t.Fatal("SECTION_MODULES not found in dashboard-config.js")
+	}
+	listed := make(map[string]bool, len(lazyLoadedAssets))
+	for _, rel := range lazyLoadedAssets {
+		listed[rel] = true
+	}
+	files := regexp.MustCompile(`file: '([^']+)'`).FindAllSubmatch(block[1], -1)
+	if len(files) == 0 {
+		t.Fatal("SECTION_MODULES names no files")
+	}
+	for _, m := range files {
+		if rel := string(m[1]); !listed[rel] {
+			t.Errorf("%s is a config section module but not in lazyLoadedAssets, so it loads unversioned", rel)
+		}
+	}
+}
+
 // A <link rel="preload"> only helps if it names the same URL the stylesheet
 // later requests. CSS is served static and cannot render the asset helper, so
 // preloaded fonts must stay unversioned in the template — a hashed URL there

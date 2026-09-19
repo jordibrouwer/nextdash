@@ -155,6 +155,10 @@ func assetURL(rel string) string {
 var lazyLoadedAssets = []string{
 	"js/whats-new-modal.js",
 	"js/dashboard/dashboard-config.js",
+	// The config sections split out of dashboard-config.js (SECTION_MODULES).
+	// Missing here, one loaded under its bare path, so a browser kept the copy
+	// it had from before a deploy and ran old code against new markup.
+	"js/dashboard/dashboard-config-logs.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
 	"js/dashboard/dashboard-config-bookmarks.js",
