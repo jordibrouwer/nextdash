@@ -4856,9 +4856,17 @@ body.no-animations .config-new-features-panel-star {
  * stacked fields below are its own, since it holds selects and hints rather
  * than a list of items.
  */
+/*
+ * Two columns and no height cap, so the whole popover is on screen at once
+ * rather than a scroll box: stacked in one column it was over 750px of
+ * settings behind the menus' shared 20rem limit. Left is what is collected
+ * and how much detail, right is how long it is kept.
+ */
 .config-log-settings-popover {
-    width: min(320px, calc(100vw - 24px));
-    max-width: min(320px, calc(100vw - 24px));
+    width: min(620px, calc(100vw - 16px));
+    max-width: min(620px, calc(100vw - 16px));
+    max-height: none;
+    overflow: visible;
     padding: 0;
 }
 
@@ -4866,22 +4874,53 @@ body.no-animations .config-new-features-panel-star {
     display: none;
 }
 
+/*
+ * The panel the popover lives in is a stacking context under Glass (its
+ * backdrop-filter), so the popover's own z-index only counts inside it and the
+ * sticky header band -- lifted by 1300 to clear the teaching popovers -- drew
+ * across it. While the popover is open the panel stands one above the band,
+ * the way an open Health row menu does (feed-row.css).
+ */
+.config-panel:has(.config-log-settings-popover:not([hidden])) {
+    position: relative;
+    z-index: calc(var(--layer-sticky-band, 5) + 1301);
+}
+
 .config-log-settings-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 20px;
     padding: 2px 14px 12px;
 }
 
-.config-log-settings-body .config-field {
-    grid-template-columns: 1fr;
-    gap: 4px;
-    margin-bottom: 12px;
+.config-log-settings-col {
+    min-width: 0;
 }
 
-.config-log-settings-body .config-field-label {
-    grid-column: 1 / -1;
+/* Label and select on one line: half the height of stacking them. */
+.config-log-settings-body .config-field {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .config-log-settings-body .config-select {
     width: 100%;
+    min-width: 0;
+}
+
+.config-log-settings-body .config-panel-note {
+    margin: 2px 0 10px;
+    font-size: calc(var(--font-size-text) * 0.857);
+    line-height: 1.4;
+}
+
+/* A narrow window gets one column again. */
+@media (max-width: 600px) {
+    .config-log-settings-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 /* ── Activity trail cards ─────────────────────────────────────────────────── */
