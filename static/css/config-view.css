@@ -304,9 +304,11 @@
 }
 
 /*
- * Help intro with the printable sheet beside it. The link sits at the top
- * because it answers the same question the page does, and someone reaching for
- * it should not have to read the tabs first.
+ * The printable sheet and the help search, sharing the row the tab note sits
+ * on. They used to stand above the strip, which put Help's tabs eighty pixels
+ * below every other section's. Help's opening line is in neither place: it is
+ * a direct child of the body, so the shell lifts it onto the view band like
+ * every other section's.
  */
 .config-help-header {
     display: flex;
@@ -316,7 +318,7 @@
     flex-wrap: wrap;
 }
 
-.config-help-header .config-view-intro {
+.config-help-header .config-tab-note {
     flex: 1 1 32ch;
 }
 
@@ -774,6 +776,18 @@
     color: var(--text-muted, #888);
     font-size: calc(var(--font-size-text) * 0.971);
     max-width: 60ch;
+}
+
+/*
+ * The line under a section's tab strip, saying what this tab is for.
+ *
+ * Same type as a panel's own note -- it is the same kind of sentence -- but it
+ * belongs to the strip above it rather than to whatever follows, so it keeps a
+ * little more room beneath it than between a panel title and its note.
+ */
+.config-tab-note {
+    margin-top: -4px;
+    margin-bottom: 16px;
 }
 
 /*
