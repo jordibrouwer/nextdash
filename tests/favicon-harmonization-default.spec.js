@@ -54,8 +54,7 @@ test.describe('favicon harmonisation defaults to on', () => {
         expect(before.themed).toBeGreaterThan(0);
 
         await pickTheme(page, 'absinthe-dark');
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
@@ -78,8 +77,7 @@ test.describe('favicon harmonisation defaults to on', () => {
         await pickTheme(page, 'absinthe-dark');
 
         await page.locator('[data-appearance-toggle-icons="off"]').click();
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 

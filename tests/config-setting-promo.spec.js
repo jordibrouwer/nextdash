@@ -51,7 +51,7 @@ test.describe('Config setting promo', () => {
 
         await page.keyboard.press('Escape');
         await expect(promo).toHaveCount(0);
-        // The same press took the group back to the tiles; the next leaves.
+        // That press belonged to the promo; the next one leaves config.
         await page.keyboard.press('Escape');
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 10_000 })

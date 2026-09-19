@@ -232,6 +232,7 @@ Config's Appearance and Behavior back on plain tabs, with a live preview beside 
 ### Tests
 
 - `config-tabs.spec.js` replaces `config-hub.spec.js`: the strips, moved settings, old links, the remembered tab, the preview following tab and setting, the short line, and *Also found on* — each confirmed failing with its behaviour switched off. 24 existing specs follow the settings to their new tabs; `theme-glow.spec.js` measures a probe panel, since panels on these tabs are flat by design. The hub-era fold fixture in `tests/fixtures.js` is gone. `help-current-features.spec.js` looks for the new config help rather than the tiles' wording.
+- **fix — six specs still pressed Escape twice to leave config**, once for the tiles and once to leave. With no start screen the first press leaves, and on CI the second landed while config was closing, so `action-bar-position.spec.js` failed to reopen config for its next placement. One press now (`action-bar-position`, `config-dashboard-view`, `favicon-harmonization-default`, `header-action-overflow`).
 
 ### Docs
 

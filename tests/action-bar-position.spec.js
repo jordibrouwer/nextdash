@@ -40,8 +40,9 @@ async function choosePlacement(page, value) {
     await page.click('[data-appearance-tab="buttonbar"]');
     await page.locator('select[data-behavior-field="actionBarPosition"]').selectOption(value);
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarPosition)).toBe(value);
-    // The first Escape goes from the group back to the tiles.
-    await page.keyboard.press('Escape');
+    // One Escape leaves config: the tab is the section, with no start
+    // screen in front of it any more. A second press used to leave the tiles;
+    // now it lands while config is still closing.
     await page.keyboard.press('Escape');
     await page.waitForSelector('.bookmark-link', { timeout: 10_000 });
 }

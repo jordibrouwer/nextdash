@@ -471,8 +471,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
@@ -493,8 +492,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
 
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
@@ -878,8 +876,7 @@ test.describe('config remembers last location', () => {
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
@@ -970,8 +967,7 @@ test.describe('config remembers last location', () => {
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
-        // The first Escape goes from the group back to the tiles.
-        await page.keyboard.press('Escape');
+        // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
