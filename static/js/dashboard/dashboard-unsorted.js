@@ -44,6 +44,24 @@ class DashboardUnsorted {
 
     async loadAndRender() {
         const d = this.dash;
+        // The row's context menu resolves a cross-page row by URL against
+        // d.bookmarks/d.allBookmarks (dashboard-context-menu.js's
+        // resolveRowBookmark) -- the same fallback the tag-filter view relies
+        // on, and the same call it makes before rendering, so a bookmark kept
+        // moments ago is findable rather than silently failing to resolve.
+        await d.loadAllBookmarks?.();
+        // render() below is a full innerHTML wipe, not an incremental patch --
+        // rebuilding while a row's context menu or Move to... popover is open
+        // detaches the row that popover is anchored to (getBoundingClientRect
+        // then reads 0x0, and _positionActionPopoverBeside gives up rather than
+        // guess, leaving the popover wherever the browser default puts it,
+        // usually the top-left corner). A background poll (refreshIfDataRevisionChanged,
+        // repaintBookmarkMutationSurfaces) can fire at any moment, so this is
+        // gated here rather than at each caller -- the same reason those two
+        // callers already skip while inline edit is active.
+        if (document.querySelector('#bookmark-context-menu, .move-popover')) {
+            return;
+        }
         let bookmarks = [];
         try {
             const res = await fetch('/api/unsorted');
