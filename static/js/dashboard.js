@@ -652,6 +652,10 @@ class Dashboard {
         return this.dateWeather.formatDateLine(...arguments);
     }
 
+    formatShortDate(date) {
+        return this.dateWeather.formatShortDate(...arguments);
+    }
+
     formatTimeLine(date) {
         return this.dateWeather.formatTimeLine(...arguments);
     }

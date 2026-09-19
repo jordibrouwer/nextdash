@@ -45,7 +45,10 @@
    --layer-sticky-band for exactly this: the row has to win against the
    sticky band above it, not just the plain rows beside it. */
 .feed-row:has(.health-view-menu:not([hidden])) {
-    z-index: var(--layer-row-raised, 6);
+    /* One above .lvs-header, whose own z-index was lifted by 1300 to clear
+       the teaching popovers (list-view-shell.css) -- at plain
+       --layer-row-raised the header drew over any menu crossing it again. */
+    z-index: calc(var(--layer-sticky-band, 5) + 1301);
 }
 
 /* Health keeps the checkbox in the grid rather than floating it over the icon:

@@ -3705,6 +3705,7 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
+            ${this.renderOverviewSiteNews()}
             ${this.renderOverviewUpdateNotice()}
             <div class="config-overview-tiles">
                 ${this.overviewSummaryTiles().map((t) => this.renderTile(t)).join('')}
@@ -3717,6 +3718,46 @@ class DashboardConfig {
             </div>
             ${this.renderOverviewFootnote()}
         `;
+    }
+
+    /**
+     * The two newest posts from nextdash.cc, one line each, above the tiles.
+     *
+     * Same stream About → News & features draws (loadNewsStream, already
+     * started by the overview's own load); only its site posts, and only the
+     * newest two. Nothing at all while it loads, when the reader switched the
+     * site's posts off, or when the feed could not be reached -- an empty
+     * band would only push the tiles down.
+     */
+    renderOverviewSiteNews() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const posts = (Array.isArray(this._newsStream) ? this._newsStream : [])
+            .filter((item) => item.source === 'site' && item.title)
+            .sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0))
+            .slice(0, 2);
+        if (!posts.length) return '';
+
+        const rows = posts.map((item) => {
+            const unread = (item.at || 0) > (this._newsSeenAt || 0);
+            const summary = String(item.summary || '').trim();
+            const title = `<span class="config-overview-news-title">${unread ? '<span class="config-news-dot" aria-hidden="true"></span>' : ''}${esc(item.title)}</span>`;
+            return `
+                <li class="config-overview-news-item">
+                    ${item.url
+                        ? `<a class="config-overview-news-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${title}${summary ? `<span class="config-overview-news-summary">${esc(summary)}</span>` : ''}</a>`
+                        : `<span class="config-overview-news-link">${title}${summary ? `<span class="config-overview-news-summary">${esc(summary)}</span>` : ''}</span>`}
+                    <span class="config-overview-news-when">${esc(this.formatNewsDate(item.at))}</span>
+                </li>`;
+        }).join('');
+
+        // Worn as a tile, the same card and stripe as the figures under it,
+        // with its heading in the tiles' label type.
+        const heading = esc(this.t('config.overviewSiteNewsTitle', 'Latest news'));
+        return `
+            <section class="stat-tile stat-tile--md config-tile config-tile--neutral config-overview-news" aria-label="${heading}">
+                <span class="stat-tile-label config-tile-label">${heading}</span>
+                <ul class="config-overview-news-list">${rows}</ul>
+            </section>`;
     }
 
     /**
@@ -4180,7 +4221,10 @@ class DashboardConfig {
         const at = Number(publishedAt || 0);
         if (!at) return '';
         const date = new Date(at);
-        const formatted = this.dash.formatDateLine?.(date);
+        // Day and month in the reader's date format rather than the header's
+        // full line: under "weekday only" every row read "Friday", which does
+        // not say which Friday.
+        const formatted = this.dash.formatShortDate?.(date);
         if (formatted) return formatted;
         // Without the dashboard's formatter — a config view opened before the
         // date module loaded — the ISO day is the one shape nobody misreads.
@@ -4396,6 +4440,10 @@ class DashboardConfig {
         body.innerHTML = this.renderOverview();
         const container = document.getElementById('dashboard-layout');
         if (container) {
+            // The intro belongs in the band; a repaint that re-renders the
+            // body without lifting it left the same sentence twice, once in
+            // the band and once above the tiles.
+            this._fillShellHeadFromSection(container);
             this.bindTileActions(container);
             this.bindOverviewActions(container);
         }
