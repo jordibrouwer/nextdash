@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.6 — 19 September 2026](#v1116--19-september-2026)
 - [v1.11.5 — 19 September 2026](#v1115--19-september-2026)
 - [v1.11.4 — 18 September 2026](#v1114--18-september-2026)
 - [v1.11.3 — 18 September 2026](#v1113--18-september-2026)
@@ -210,6 +211,32 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.6 — 19 September 2026
+
+Config's Appearance and Behavior back on plain tabs, with a live preview beside Appearance — held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.5, so v1.11.0 keeps leading it.
+
+### Config
+
+- **new — Appearance and Behavior open straight on their settings, in tabs.** The start screen of tiles (v1.11.0) and the split of each group into a few cards plus *More settings* are gone: an extra click in, a second layer inside, and settings that could only be found by guessing the tile. `static/js/shared/config-hub.js` and `static/css/config-hub.css` are removed; both sections draw `renderSectionTabStrip()` over one column of settings (`static/css/config-tabs.css` takes the boxes off the panels, so a tab reads as headings over a list).
+- **new — the tabs were regrouped by what a reader looks for.** Appearance: **Look** (theme, surfaces, animations, type, background), **Grid**, **Rows**, **Header** (now also the clock placement, the browser tab's page name and the custom title and favicon), **Action bar**, **Date & weather**. Behavior: **General**, **Keyboard & search** (the keys moved in from General), **Inbox & Fresh** (the two thin tabs merged), **Status & alerts**, **Privacy & sync** (onboarding and *Keep settings on this device only* moved in from General). Panels move with an `order` field in `behaviorSchema()`, sorted stably in `panelsFor()`; the tab ids in addresses are unchanged, and `fresh`, `branding`, `grid`, `look`, `rows`, `action-bar` and the old hub names still open the tab that holds their settings now (`APPEARANCE_TAB_ALIASES`, `BEHAVIOR_TAB_ALIASES`).
+- **new — a live preview beside Appearance.** `static/js/shared/config-preview.js` draws header, grid, three sample rows and the dock from the current settings, in the page's own theme and font, and dims all but the part the open tab is about (`data-preview-focus`). Below 900px it stands above the settings.
+- **new — a short line under every setting.** `fieldSummary()` takes a declared `hint`, else the first sentence of the setting's ℹ text, so the line and the dialog cannot disagree; ten settings without ℹ text got a hint of their own.
+- **new — the filter and *Only changed* say where else they find something.** "Also found on: Header 2" under the list, per other tab of the section (`renderFilterElsewhere()`, `countTabMatches()`), keeps the filter when clicked.
+- **new — each section opens on the tab you used last**, kept per browser (`nextdash:config-tab-v1`); the address now always names the tab, so a shared link opens what it shows.
+- **Custom themes is a page of Look** (*Make your own theme…*, back with *← Look*), not a tab on the strip; `[`/`]` step past it.
+- **fix — a setting promo pulled the reader back to Look.** Its "chosen on purpose" check only knew the tab strip, so *Make your own theme…* was undone a moment later by `ensureSubTab`. It now counts the page buttons and the *Also found on* buttons too (`config-setting-promo.js`).
+
+### Tests
+
+- `config-tabs.spec.js` replaces `config-hub.spec.js`: the strips, moved settings, old links, the remembered tab, the preview following tab and setting, the short line, and *Also found on* — each confirmed failing with its behaviour switched off. 24 existing specs follow the settings to their new tabs; `theme-glow.spec.js` measures a probe panel, since panels on these tabs are flat by design. The hub-era fold fixture in `tests/fixtures.js` is gone. `help-current-features.spec.js` looks for the new config help rather than the tiles' wording.
+
+### Docs
+
+- **docs — Help, tips and tours follow the new tabs in all six languages.** `helpConfigBody`, `helpAppearanceBody`, `helpBehaviorBody`, `helpConfigKeyboardBody`, `helpHeaderBody`, `tipConfigHub` and the *What has changed* tour's config step rewritten; every "Behavior → …" and "Appearance → …" pointer in Help, tips, tutorials, notices and hints renamed to the tab it lands on now (about forty strings per language), with the English fallbacks in the JS to match. The 37 `hub*` keys and eight tab labels nothing reads any more removed from all six locales. `MANUAL.md` §12 and §15 rewritten for the tabs and the preview, the rest of the manual's pointers renamed.
+- **docs — `static/data/whats-new/v1.11.6.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v292`, `DASHBOARD_RELEASE` untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.6 alongside v1.11.1–v1.11.5. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
