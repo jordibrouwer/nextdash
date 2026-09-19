@@ -1743,14 +1743,11 @@ class DashboardConfig {
         /*
          * The section's opening line, wherever that section chose to put it.
          *
-         * Most render a `.config-view-intro` as the body's first child;
-         * Bookmarks wraps its line in a header block of its own with a count
-         * beside it. Both are the same sentence -- "what this section is" --
-         * and both belong on the band. A panel's own intro deeper in the tree
-         * is not: that describes the panel, not the section.
+         * Every section renders a `.config-view-intro` as the body's first
+         * child, and it belongs on the band. A panel's own intro deeper in
+         * the tree does not: that describes the panel, not the section.
          */
-        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'))
-            || body.querySelector(':scope > .config-bm-header .config-bm-subtitle');
+        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'));
         /*
          * A repaint that renders no intro of its own must not wipe the line the
          * section already put there -- a sub-tab renders the body, not the
@@ -1774,7 +1771,13 @@ class DashboardConfig {
         // replaced mid-click and its handler went with it. One direction now:
         // the band draws the bar, the body draws the settings.
         const context = this._changedFilterContext();
-        const markup = context ? this.renderChangedFilterBar(context.section, context.tab) : '';
+        // Bookmarks has no changed-settings filter; it carries a count of what
+        // the section holds, the way Health and Inbox do on the same band.
+        const markup = context
+            ? this.renderChangedFilterBar(context.section, context.tab)
+            : (this.section === 'bookmarks'
+                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String((this.dash.allBookmarks || []).length))}</span>`
+                : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -20978,7 +20981,6 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const totalAll = (this.dash.allBookmarks || []).length;
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
             // Only this one carries a number: it is the tab whose whole point
@@ -20990,15 +20992,13 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}${badge}</button>`;
         }).join('');
 
+        // The opening line is a plain intro like every other section's: the
+        // shell lifts it onto the view band, and a wrapper of its own stayed
+        // behind once it left, standing the tab strip a row lower than the
+        // strip on every other section. The count goes to the band too, in
+        // the header actions, where Health and Inbox carry theirs.
         return `
-            <div class="config-bm-header">
-                <div class="config-bm-header-text">
-                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
-                </div>
-                <div class="config-bm-header-meta">
-                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
-                </div>
-            </div>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
         `;

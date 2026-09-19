@@ -158,23 +158,24 @@ test.describe('Config → Bookmarks opens like a view', () => {
         await openConfigBookmarks(page);
 
         const header = await page.evaluate(() => {
-            const h = document.querySelector('.config-bm-header');
+            const h = document.querySelector('.config-view-head');
             if (!h) return null;
+            const body = document.querySelector('#config-view-body');
             return {
-                // The section shell already prints "Bookmarks" above the
-                // breadcrumb, so the header carries no title of its own —
-                // two of them one line apart read as a mistake.
-                ownTitle: h.querySelector('h1, h2, h3') !== null,
                 // The opening line is lifted onto the view band, the way
                 // every section's intro is.
-                subtitle: Boolean(document.querySelector('.config-view-head .lvs-description')?.textContent.trim()),
+                subtitle: Boolean(h.querySelector('.lvs-description')?.textContent.trim()),
                 badge: h.querySelector('.config-bm-header-badge')?.textContent?.trim() || '',
+                // Nothing of the header stays behind in the body: a block
+                // left there stood the tab strip a row below every other
+                // section's strip.
+                firstBodyChild: body?.firstElementChild?.className || '',
             };
         });
 
         expect(header).not.toBeNull();
-        expect(header.ownTitle).toBe(false);
         expect(header.subtitle).toBe(true);
+        expect(header.firstBodyChild).toContain('config-subtabs');
         // The count is the number of bookmarks, not a placeholder.
         expect(Number(header.badge)).toBe(await page.evaluate(
             () => (window.dashboardInstance.allBookmarks || []).length));

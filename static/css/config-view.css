@@ -400,38 +400,6 @@
     line-height: 1.25;
 }
 
-/* Config → Bookmarks reads as a view, not a settings panel.
- *
- * It shows the same rows as Health and Inbox, has the same tiles above them and
- * the same right-click menu on them — but it opened with a bare panel title and
- * a paragraph, where those two open with a titled header carrying a count. Same
- * shape as .inbox-header / .health-view-header, deliberately, so moving between
- * the three does not feel like moving between two products.
- */
-.config-bm-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-4, 1rem);
-    padding: var(--space-1, 0.25rem) var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
-    margin-bottom: var(--space-3, 0.85rem);
-}
-
-.config-bm-subtitle {
-    margin: 0;
-    max-width: 62ch;
-    font-size: var(--font-size-controls);
-    line-height: 1.5;
-    color: var(--text-secondary);
-}
-
-.config-bm-header-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.45rem);
-    flex-shrink: 0;
-}
-
 /* Flags a control added this release, next to its label rather than the
    panel title — the What's New modal already says which release, so this
    only has to say "this one is new" at the point someone would look for it. */
@@ -451,6 +419,10 @@
     vertical-align: middle;
 }
 
+/* Config → Bookmarks reads as a view, not a settings panel: Health and Inbox
+ * head their rows with a count, and this is the same count on the same band.
+ * It is rendered into .lvs-header-actions rather than the body -- a block of
+ * its own in the body stood the tab strip a row below every other section's. */
 .config-bm-header-badge {
     display: inline-flex;
     align-items: center;
