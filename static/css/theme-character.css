@@ -126,7 +126,64 @@ html[data-theme] body[data-depth="glass"] {
      * --ink-dir zegt welke van de twee (1 donker, -1 licht), dus dit rekent het
      * uit in plaats van het per theme te herhalen: 1.06 tegen 0.98.
      */
-    --glass-brightness: calc(1.02 + 0.04 * var(--ink-dir, 1));
+    /*
+     * Was 1.02 + 0.04 -- 1.06 on a dark theme -- and that is a lamp, not a
+     * pane. Every surface at this depth lifted what was behind it by six per
+     * cent, so a column of tiles read as a column of lighter boxes instead of
+     * as the page seen through glass. What is left is a fifth of that: enough
+     * that the pane is not nothing, little enough that you notice the colour
+     * rather than the light.
+     */
+    --glass-brightness: calc(1.004 + 0.008 * var(--ink-dir, 1));
+
+    /*
+     * And the colour, which is the half that should do the work.
+     *
+     * Glass takes its character from what it lets through. Trading the
+     * brightness for saturation is the whole of this change: the same backdrop
+     * arrives with its hue intact instead of washed a step toward white.
+     */
+    --glass-saturate: 1.8;
+
+    /*
+     * The gloss, tinted and halved.
+     *
+     * A gloss theme sets `sheen` up to 1, and the base gloss paints white at
+     * 12% and 15% -- times sheen, times this depth's 1.5, so on Gloss Obsidian
+     * that is a 20% white band across the head of every surface. On a solid
+     * surface that reads as lacquer. On a pane it reads as a lamp pointed at
+     * the glass, and it is the single loudest thing in a column of tiles.
+     *
+     * Two changes, both in the same direction as the brightness above: the
+     * light is cut to about a third, and it carries the theme's own colour
+     * instead of being white. A reflection in tinted glass is tinted -- and
+     * the colour is the part worth noticing.
+     */
+    --glass-gloss-light: color-mix(in srgb, var(--accent-primary) 45%, white);
+
+    --surface-gloss:
+        radial-gradient(120% 70% at 18% 0%,
+            color-mix(in srgb, var(--glass-gloss-light) calc(4.5% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            transparent 62%),
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--glass-gloss-light) calc(5.5% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 0%,
+            color-mix(in srgb, var(--glass-gloss-light) calc(1.5% * var(--theme-sheen, 0) * var(--theme-depth)), transparent) 42%,
+            transparent 58%);
+
+    /*
+     * The lit edges, held back at this depth.
+     *
+     * They are written once for every depth as a percentage times
+     * --theme-depth, and glass sets that to 1.5 -- so the 16% top edge lands
+     * at 24% and every tile wears a bright rim. On a solid surface that rim is
+     * the depth cue; on a pane it is a reflection, and a reflection that
+     * strong on eight tiles in a column is what reads as "too present". Nine
+     * and five, before the multiplier, so glass keeps an edge without a stripe.
+     */
+    --edge-top: inset 0 1px 0 color-mix(in srgb,
+        var(--text-primary) calc((7% + 8% * var(--theme-sheen, 0)) * var(--theme-depth)), transparent);
+    --edge-side: inset 1px 0 0 color-mix(in srgb,
+        var(--text-primary) calc(5% * var(--theme-depth)), transparent);
 
     --glass-blur-page: calc(var(--theme-surface-blur, 0px) * 1.25);
     --glass-blur-slab: calc(var(--theme-surface-blur, 0px) * 0.6);
@@ -188,8 +245,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .btn-group,
     .tag-cloud-toggle-btn.search-button
 ) {
-    backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--glass-blur-page)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--glass-blur-page)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
 /* Kale kopknoppen zijn kaal: zonder vlak is er geen glas om door te kijken,
@@ -244,8 +301,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .health-view-item,
     .health-monitor-stat
 ) {
-    backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--glass-blur-slab)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--glass-blur-slab)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
 /* Overlays: bijna dekkend, en de blur alleen nog voor de randscheiding. */
@@ -254,8 +311,8 @@ html[data-theme] body[data-depth="glass"] :is(
     .search-container,
     .bookmark-form-modal-dialog
 ) {
-    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--glass-blur-overlay)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
 /*
@@ -281,15 +338,15 @@ html[data-theme] body[data-depth="glass"] :is(
 html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-cards .category {
     background-color: color-mix(in srgb,
         var(--surface-2) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
 html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .category {
     background-color: color-mix(in srgb,
         var(--surface-1) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
 /*
@@ -303,8 +360,8 @@ html[data-theme] body[data-depth="glass"] .dashboard-grid.layout-widgets .catego
 html[data-theme] body[data-depth="glass"] .dashboard-widget .dashboard-widget-body {
     background-color: color-mix(in srgb,
         var(--dashboard-widget-surface) calc(var(--theme-surface-alpha, 1) * 100%), transparent);
-    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
-    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(1.4) brightness(var(--glass-brightness, 1.06));
+    backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--theme-surface-blur, 0px)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
     box-shadow: var(--edge-light), var(--surface-cast);
 }
 
