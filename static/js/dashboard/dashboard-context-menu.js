@@ -948,7 +948,7 @@ class DashboardContextMenu {
                 d.showTagPopover?.(row, bookmark, bookmarkIndex);
                 break;
             case 'move':
-                d.showMovePopover?.(row, bookmark, bookmarkIndex);
+                void d.showMovePopover?.(row, bookmark, bookmarkIndex);
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });

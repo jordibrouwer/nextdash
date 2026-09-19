@@ -1276,7 +1276,7 @@ class DashboardBookmarkRows {
     }
 
 
-    showMovePopover(anchorEl, bookmark, bookmarkIndex) {
+    async showMovePopover(anchorEl, bookmark, bookmarkIndex) {
         const d = this.dash;
         if (d._movePopoverCleanup) {
             d._movePopoverCleanup();
@@ -1372,6 +1372,46 @@ class DashboardBookmarkRows {
                 pop.appendChild(item);
                 items.push(item);
             });
+        }
+
+        // Fetched once per session and cached on d -- same pattern as the
+        // Keep action in dashboard-inbox.js, both need "the id of the
+        // Unsorted page" and neither should pay for a GET on every popover open.
+        if (!d._unsortedPage) {
+            try {
+                const res = await fetch('/api/unsorted');
+                if (res.ok) {
+                    const data = await res.json();
+                    d._unsortedPage = data.page;
+                }
+            } catch (_error) {
+                // Best effort -- Unsorted just doesn't appear as a target this
+                // time; Move to... still works for categories and other pages.
+            }
+        }
+
+        if (d._unsortedPage && String(d._unsortedPage.id) !== String(d.currentPageId)) {
+            const divider = document.createElement('div');
+            divider.className = 'move-popover-divider';
+            pop.appendChild(divider);
+
+            const item = document.createElement('div');
+            item.className = 'move-popover-item';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-type', 'page');
+            item.setAttribute('data-id', String(d._unsortedPage.id));
+            item.setAttribute('aria-selected', 'false');
+
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            item.appendChild(check);
+
+            const label = document.createElement('span');
+            label.textContent = t('dashboard.unsortedPageName', 'Unsorted');
+            item.appendChild(label);
+
+            pop.appendChild(item);
+            items.push(item);
         }
 
         if (items.length === 0) return;
