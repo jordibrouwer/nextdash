@@ -5782,6 +5782,7 @@ class DashboardConfig {
                      role="dialog" aria-label="${esc(this.t('config.logsSettingsTitle', 'Log settings'))}" hidden>
                     <h4 class="move-popover-header">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h4>
                     <div class="config-log-settings-body">
+                        <div class="config-log-settings-col">
                         <label class="config-toggle">
                             <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
                             <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
@@ -5791,6 +5792,14 @@ class DashboardConfig {
                             <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
                             <select class="config-select" data-log-select="interval">${intervalOptions}</select>
                         </div>
+                        <div class="config-field">
+                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
+                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
+                        </div>
+                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
+                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
+                        </div>
+                        <div class="config-log-settings-col">
                         <div class="config-field">
                             <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
                             <select class="config-select" data-log-select="mode">${modeOptions}</select>
@@ -5806,12 +5815,7 @@ class DashboardConfig {
                         <p class="config-panel-note">${esc(byCount
                             ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
                             : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
-                        <div class="config-field">
-                            <span class="config-field-label">${esc(this.t('config.logDetailLabel', 'Detail level'))}</span>
-                            <select class="config-select" data-log-select="detail">${detailOptions}</select>
                         </div>
-                        <p class="config-panel-note">${esc(this.t('config.logDetailHint', 'What the server writes at all — to this log and to the container log (docker logs). Takes effect immediately, on the very next line: no restart, and nothing to change in your compose file. What is not written costs nothing.'))}</p>
-                        <p class="config-panel-note config-log-live-note" data-log-detail-live>${esc(this.serverLogLiveNote())}</p>
                     </div>
                 </div>
             </div>

@@ -346,20 +346,87 @@
         if (!toggle || !pop || toggle.dataset.bound === '1') return;
         toggle.dataset.bound = '1';
 
+        /*
+         * Under the gear, right edges lined up, and inside the window.
+         *
+         * The popover is position: fixed, but it lives inside the config
+         * panel, and a panel drawn with depth or glass carries a transform or
+         * a backdrop-filter -- which makes it, not the window, what "fixed"
+         * is measured from. Coordinates taken from getBoundingClientRect()
+         * then landed shifted by wherever that panel sits: far below and to
+         * the right of the gear, and past the window's edge. So the offset of
+         * that frame is measured first and taken off.
+         *
+         * Below the gear when it fits, above when that fits, otherwise wherever
+         * the whole of it is on screen. Left is clamped to the window either
+         * way. It only scrolls when it is taller than the window itself.
+         */
+        const MARGIN = 8;
+        const GAP = 6;
         const position = () => {
             const rect = toggle.getBoundingClientRect();
-            const popW = pop.offsetWidth || 280;
-            const popH = pop.offsetHeight || 200;
-            const left = Math.max(8, Math.min(rect.right - popW, window.innerWidth - popW - 8));
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const top = spaceBelow >= popH + 8 || rect.top < popH
-                ? rect.bottom + 6
-                : Math.max(8, rect.top - popH - 6);
-            pop.style.left = `${Math.round(left)}px`;
-            pop.style.top = `${Math.round(top)}px`;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            pop.style.maxHeight = '';
+            pop.style.overflowY = '';
+            const popW = Math.min(pop.offsetWidth || 280, vw - MARGIN * 2);
+            let popH = pop.offsetHeight || 200;
+
+            // The sticky header band covers the top of the window, so what is
+            // under it is not on screen: the popover's ceiling is the band's
+            // bottom edge, not the window's.
+            const band = document.querySelector('.config-view-head.lvs-header, .lvs-header');
+            const bandBottom = band ? band.getBoundingClientRect().bottom : 0;
+            const ceiling = Math.max(MARGIN, bandBottom + GAP);
+
+            const below = vh - rect.bottom - GAP - MARGIN;
+            const above = rect.top - GAP - ceiling;
+            let top;
+            if (popH <= below) {
+                top = rect.bottom + GAP;
+            } else if (popH <= above) {
+                top = rect.top - GAP - popH;
+            } else if (popH <= vh - MARGIN - ceiling) {
+                // Fits under the band but not on either side of the gear: the
+                // whole popover on screen beats keeping the gear uncovered.
+                top = vh - popH - MARGIN;
+            } else if (popH <= vh - MARGIN * 2) {
+                // Only fits by reaching over the band. It draws above it
+                // (config-view.css lifts the panel while it is open).
+                top = vh - popH - MARGIN;
+            } else {
+                // Taller than the window itself -- only on a very small
+                // screen. The one case left that has to scroll.
+                popH = vh - MARGIN * 2;
+                pop.style.maxHeight = `${Math.round(popH)}px`;
+                pop.style.overflowY = 'auto';
+                top = MARGIN;
+            }
+            top = Math.max(popH <= vh - MARGIN - ceiling ? ceiling : MARGIN, Math.min(top, vh - popH - MARGIN));
+            const left = Math.max(MARGIN, Math.min(rect.right - popW, vw - popW - MARGIN));
+
+            // Where "fixed 0,0" really is: a zero-size probe beside the
+            // popover shares its containing block. Measured on the probe
+            // rather than the popover, whose opening animation scales it and
+            // would skew the reading by a few percent of its width.
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none';
+            pop.parentNode.insertBefore(probe, pop);
+            const origin = probe.getBoundingClientRect();
+            probe.remove();
+            pop.style.left = `${Math.round(left - origin.left)}px`;
+            pop.style.top = `${Math.round(top - origin.top)}px`;
         };
 
         let onOutside = null;
+        /*
+         * Placed again whenever its own size changes: the live note under the
+         * detail level fills in after the popover opens, and a popover set
+         * above the gear from its first height then floated clear of it.
+         */
+        const resizeWatch = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+            if (!pop.hidden) position();
+        }) : null;
         const close = () => {
             if (pop.hidden) return;
             pop.hidden = true;
@@ -367,12 +434,38 @@
             document.removeEventListener('click', onOutside, true);
             window.removeEventListener('resize', position);
             window.removeEventListener('scroll', position, true);
+            resizeWatch?.disconnect();
             if (this._logSettingsPopoverClose === close) this._logSettingsPopoverClose = null;
             toggle.focus({ preventScroll: true });
+        };
+        /*
+         * Room under the gear before anything else.
+         *
+         * When the popover fits neither under nor over the gear, the page is
+         * scrolled just far enough for it to fit under -- the log below the
+         * toolbar is long, so there nearly always is room. Only when the page
+         * cannot scroll that far does the popover fall back to wherever it is
+         * wholly on screen.
+         */
+        const makeRoom = () => {
+            const rect = toggle.getBoundingClientRect();
+            const popH = pop.offsetHeight;
+            const vh = window.innerHeight;
+            const below = vh - rect.bottom - GAP - MARGIN;
+            if (popH <= below) return;
+            const band = document.querySelector('.config-view-head.lvs-header, .lvs-header');
+            const ceiling = Math.max(MARGIN, (band ? band.getBoundingClientRect().bottom : 0) + GAP);
+            if (popH <= rect.top - GAP - ceiling) return;
+            const need = popH - below;
+            const room = document.documentElement.scrollHeight - vh - window.scrollY;
+            // Not so far that the gear itself goes under the band.
+            const limit = rect.top - ceiling;
+            if (room >= need && limit >= need) window.scrollBy({ top: need, behavior: 'instant' });
         };
         const open = () => {
             pop.hidden = false;
             toggle.setAttribute('aria-expanded', 'true');
+            makeRoom();
             position();
             onOutside = (e) => {
                 if (pop.contains(e.target) || toggle.contains(e.target)) return;
@@ -383,6 +476,7 @@
             setTimeout(() => document.addEventListener('click', onOutside, true), 0);
             window.addEventListener('resize', position);
             window.addEventListener('scroll', position, true);
+            resizeWatch?.observe(pop);
             this._logSettingsPopoverClose = close;
         };
 
