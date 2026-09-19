@@ -268,7 +268,13 @@ test.describe('the bookmark panel', () => {
         await page.keyboard.press('e');
         const field = page.locator('#config-bm-panel [data-bm-field="tags"]');
         await field.click();
-        await page.keyboard.press('End');
+        // The caret goes to the end explicitly, not with End: on macOS that
+        // key scrolls rather than moving the caret inside a text field, so the
+        // click's mid-word caret survived and the tag was typed into the
+        // middle of the value. Linux moved it, which is why only this machine
+        // saw it. Typing itself stays real — the draft has to be dirty and
+        // uncommitted when the next row is clicked.
+        await field.evaluate((el) => el.setSelectionRange(el.value.length, el.value.length));
         await page.keyboard.type(', zzclicked');
         const second = page.locator('#config-bm-list .config-bm-row').nth(1);
         const secondKey = await second.getAttribute('data-bm-key');
