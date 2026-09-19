@@ -103,12 +103,12 @@
                 visual: `<div class="spread-tutorial-visual">
                     ${key('↔', t('spreadTutorialWhereRow', 'per row in Pages & tags → Categories'))}
                     <span class="spread-tutorial-hint">${esc(t('spreadTutorialWhereConfig',
-                        'Appearance → Layout → Categories across columns'))}</span>
+                        'Appearance → Grid → Categories across columns'))}</span>
                 </div>`,
                 body: `<p>${esc(t('spreadTutorialStep4Body1',
                     'Config → Pages & tags → Categories has the same switch as a ↔ button on every row, which is the quicker way to go through a page in one sitting.'))}</p>
                 <p>${esc(t('spreadTutorialStep4Body2',
-                    'Under Appearance → Layout you will find what applies to all of them: whether a new category starts out spread, and a button that switches spreading off again — for this page or for every page.'))}</p>`,
+                    'Under Appearance → Grid you will find what applies to all of them: whether a new category starts out spread, and a button that switches spreading off again — for this page or for every page.'))}</p>`,
             },
         ];
     }

@@ -107,12 +107,12 @@
             {
                 title: t('freshTutorialStep4Title', 'If nothing shows up'),
                 visual: `<div class="fresh-tutorial-visual">
-                    <span class="fresh-tutorial-note">${esc(t('freshTutorialNotReader', 'Most saved pages carry no feed at all. Config → Behavior → Fresh says how many of yours do.'))}</span>
+                    <span class="fresh-tutorial-note">${esc(t('freshTutorialNotReader', 'Most saved pages carry no feed at all. Config → Behavior → Inbox & Fresh says how many of yours do.'))}</span>
                 </div>`,
                 body: `<p>${esc(t('freshTutorialStep4Body1',
-                    'An empty dashboard is the usual answer, and it is not a fault: a shop, a wiki page, a login screen publishes nothing. The Fresh tab counts it out for you — “12 of 40 bookmarks asked · 2 publish a feed” — with Find feeds now to look again after you have saved something new.'))}</p>
+                    'An empty dashboard is the usual answer, and it is not a fault: a shop, a wiki page, a login screen publishes nothing. The Inbox & Fresh tab counts it out for you — “12 of 40 bookmarks asked · 2 publish a feed” — with Find feeds now to look again after you have saved something new.'))}</p>
                 <p>${esc(t('freshTutorialStep4Body2',
-                    'And Fresh is not a feed reader: no articles, no headlines, no read state of its own — only how many entries are newer than your last visit. The switch is under Config → Behavior → Fresh, a tab of its own between Inbox and Status & health.'))}</p>`,
+                    'And Fresh is not a feed reader: no articles, no headlines, no read state of its own — only how many entries are newer than your last visit. The switch is under Config → Behavior → Inbox & Fresh, on the tab it shares with the inbox.'))}</p>`,
             },
         ];
     }

@@ -122,7 +122,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 3. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§17](#17-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 4. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
 
-**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Behavior → Status & health. Everything else can wait until you know what you want.
+**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Behavior → Status & alerts. Everything else can wait until you know what you want.
 
 ---
 
@@ -238,13 +238,13 @@ The **★** button in the bottom-right corner opens the release notes.
 
 Categories and widgets stand in columns. Each category header shows `//`, its icon and name, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories.
 
-A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Grid** ([§12](#12-appearance)).
+A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Rows** ([§12](#12-appearance)).
 
-**A key legend** under the grid shows the four most useful keys once you start moving with the keyboard; switch it under Behavior → General.
+**A key legend** under the grid shows the four most useful keys once you start moving with the keyboard; switch it under Behavior → Keyboard & search.
 
-**Occasional tips.** Now and then the dashboard shows one keyboard tip, never the same one twice. Switch them off under Behavior → General → Onboarding.
+**Occasional tips.** Now and then the dashboard shows one keyboard tip, never the same one twice. Switch them off under Behavior → Privacy & sync → Onboarding.
 
-**Corner cards** offer things once, one card at a time: a round of link review, a round of tag suggestions, browser notifications, the theme browser, Fresh, spreading a category. Each can be dismissed, and each review card has a switch under Behavior → General → Onboarding.
+**Corner cards** offer things once, one card at a time: a round of link review, a round of tag suggestions, browser notifications, the theme browser, Fresh, spreading a category. Each can be dismissed, and each review card has a switch under Behavior → Privacy & sync → Onboarding.
 
 ### 🃏 The link preview card
 
@@ -254,7 +254,7 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. For video providers the card carries a player.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, the Fresh count, opens and last opened, shortcut and location.
 
-A row with nothing to say is left out. **Config → Appearance → Grid → Display → Link preview cards** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
+A row with nothing to say is left out. **Config → Appearance → Rows → Link preview cards** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
 The picture and the site icon are fetched **by your server** and stored under `data/preview-images/`, so hovering never tells the site you looked. The first hover shows the text at once and the picture a moment later. Untick **Image** and no picture is fetched or stored; set the cards to **Off** and nothing is fetched for them at all. **Data & backups → Icons & previews** caps the stored pictures at 50, 200 or 500 MB and can remove them all. Pictures are left out of backups; they are fetched again when needed.
 
@@ -288,7 +288,7 @@ The form has two groups: **what it is** (address, name, icon, note) and **where 
 
 ### 5.3 Paste a URL (`Ctrl + V`)
 
-With no field active, paste a URL on the dashboard. A dialog offers **Save to Inbox** (`1`) or **Add bookmark** (`2`). Set a fixed answer under **Config → Behavior → Inbox** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
+With no field active, paste a URL on the dashboard. A dialog offers **Save to Inbox** (`1`) or **Add bookmark** (`2`). Set a fixed answer under **Config → Behavior → Inbox & Fresh** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
 
 ### 5.4 Other routes
 
@@ -485,7 +485,7 @@ The dashboard's search line is always listening. Letters narrow the list; **`Ent
 
 With the panel empty, your recent and saved searches show as chips (`←`/`→` and `Enter`).
 
-**Typing a bookmark shortcut** (Behavior → Search) has three answers:
+**Typing a bookmark shortcut** (Behavior → Keyboard & search) has three answers:
 
 | Setting | What happens |
 |---------|--------------|
@@ -493,9 +493,9 @@ With the panel empty, your recent and saved searches show as chips (`←`/`→` 
 | **Open after a short pause** | The shortcut waits until you stop typing. |
 | **Press Enter to open** | Typing only narrows the list; the shortcut leads it. |
 
-**Switch search mode** (Behavior → Search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way.
+**Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way.
 
-**Behavior → Search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint.
+**Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint.
 
 ### 8.2 Filters
 
@@ -567,7 +567,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 
 `?shortcut query` sends the query to another site: `?g nextdash` searches Google. A fresh install has DuckDuckGo on `du`. `?w` without a query opens the site's own search page.
 
-**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used. **Include finders in search** (Behavior → Search) shows them among ordinary results.
+**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
 
 ---
 
@@ -627,7 +627,7 @@ The number of columns is not a setting: it follows from **items per category** a
 | 16–30 | 2 |
 | 31–45 | 3 |
 
-The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone every category is one column wide. **Appearance → Grid → Layout → Categories across columns** holds the limit, whether new categories start spread, and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
+The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread, and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
 
 ### 9.6 Smart collections
 
@@ -658,7 +658,7 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 - Set them in the bookmark form, the side panel in Config → Bookmarks, with `Shift + T`, or with `:tag +name`.
 - Stored in lower case, trimmed, without duplicates. Autocomplete offers the tags you already use.
-- **Tags on rows** (Appearance → Grid → Display) shows them as chips on the dashboard — the first few, then a count. Click a chip to filter.
+- **Tags on rows** (Appearance → Rows) shows them as chips on the dashboard — the first few, then a count. Click a chip to filter.
 
 ### 10.2 Filtering by tag
 
@@ -682,7 +682,7 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 Each row names its source and its count. The count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
 
-A corner card offers a round when ten proposals are waiting; it can be switched off under Behavior → General → Onboarding.
+A corner card offers a round when ten proposals are waiting; it can be switched off under Behavior → Privacy & sync → Onboarding.
 
 ### 10.5 Notes
 
@@ -853,13 +853,15 @@ A preset fills in a sample address, the useful path, the figures with labels and
 ---
 ## 12. 🎨 Appearance
 
-**Config → Appearance** opens on five tiles, each showing what it is set to now: **Theme**, **Grid**, **Header & buttons**, **Date & weather** and **Custom themes**. Behind the tiles are seven tabs: Theme, Layout, Header and buttons, Action bar, Date & weather, Display and Custom themes.
+**Config → Appearance** opens straight on its settings, on the tab you used last. Six tabs: **Look**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
+
+**The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
 ### 12.1 Themes
 
 nextDash ships **121 theme families**, each with a light and a dark half — 242 themes in all. A fresh install starts on **Retro CRT**.
 
-- **The theme browser** — **Browse…** under Appearance → Theme, or **`Shift + A`** on the dashboard. One card per family with a light/dark switch, a search box, segments for *All*, *Favourites*, *Light* and *Dark*, and a star per family. Moving through it previews each theme on the real dashboard; nothing is saved until you pick one, and **Esc** puts back what you had.
+- **The theme browser** — **Browse…** under Appearance → Look, or **`Shift + A`** on the dashboard. One card per family with a light/dark switch, a search box, segments for *All*, *Favourites*, *Light* and *Dark*, and a star per family. Moving through it previews each theme on the real dashboard; nothing is saved until you pick one, and **Esc** puts back what you had.
 - **Quick mode** — switches between the light and dark half of your family.
 - **Follow system dark mode** — shows the light half by day and the dark half by night, following the operating system, also in a background tab.
 - **Random theme** — **Off**, **On page refresh**, or **On view change** (switching between bookmarks, config, inbox, health or pages). Your saved theme stays underneath. With follow-system on, only halves that match the current mode are picked.
@@ -908,10 +910,11 @@ These change how any theme is drawn.
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
 - **Background** — **Auto** (follows the theme), **None**, **Gradient** or **Image URL**. **Opacity** fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
+- **Enable animations** — on the Look tab with the surfaces; off stills the motion across the app.
 
 ### 12.4 Custom themes
 
-**Appearance → Custom themes** builds your own theme.
+**Make your own theme…** on the Look tab opens the theme editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
 
 - **Your themes** — add, edit, reorder, delete, **⤓ export** to a JSON file, and **Import theme…**.
 - A custom theme can set everything a packaged theme can — colours, depth, glow, glass, corner radius and **Gloss** (the sheen) — and has a light and a dark half, like the built-in themes.
@@ -919,9 +922,9 @@ These change how any theme is drawn.
 - **Packaged themes** — recolour any theme that ships, or the base light and dark palettes. **Reset defaults** puts a theme back.
 - Changes preview live on the dashboard behind config; leaving the tab drops an unsaved preview. On a phone the editor is read-only.
 
-### 12.5 Grid: layout and display
+### 12.5 Grid and rows
 
-**Layout**
+**Grid**
 
 | Setting | What it does |
 |---|---|
@@ -939,37 +942,35 @@ These change how any theme is drawn.
 
 Small drawings beside the shape settings show what a value looks like.
 
-**Display**
+**Rows**
 
 | Setting | What it does |
 |---|---|
+| **Icons and status colour** | Bookmark icons on or off, and whether a broken row takes the status colour |
 | **Shortcut letters** | **Always** · **On the row I am on** · **Never** |
 | **Row highlight** | How far a row lights up when you move to it: subtle (default) or strong |
 | **Status and ping** | Status colours, a loading state, ping times |
-| **Page name in the browser title** | |
 | **Tags on rows** | And how many show before a count |
 | **Link preview cards** | Off · On hover · Keyboard only, the hover delay, and which rows the card shows ([§4](#4-the-dashboard)) |
-| **Branding** | The page title and favicon, also used when nextDash is installed as an app |
 
 ### 12.6 Header and action buttons
 
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
-- **Header and buttons** tab — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and the dashboard, inbox, health and config buttons.
+- **Header** tab — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and the dashboard, inbox, health and config buttons. Also **Clock & weather** — where they stand: beside the view name, in a column of their own, or on their own line — and **Browser tab**: the page name in the browser title, and **Branding**, the page title and favicon, also used when nextDash is installed as an app.
 - **Action bar** tab — where the fixed buttons stand (a column on the right by default), action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away (2 seconds by default), and one switch per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each group has **Show all / Hide all**.
 
 ### 12.7 Date and weather
 
-- **Date & time** — show date, show time, date format, 12- or 24-hour clock.
-- **Header** — where the clock and weather stand: beside the view name, in a column of their own, or on their own line.
+- **Date & time** — show date, show time, date format, 12- or 24-hour clock. Where the clock and weather stand in the header is set on the Header tab ([§12.6](#126-header-and-action-buttons)).
 - **Weather** — on or off, browser location or a city, Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
 ### 12.8 Finding and resetting
 
-Each tab has a filter beside **Only changed**. **More settings** in each group holds the less-used ones. **↺** resets one setting, **Reset panel** a whole group. `Ctrl/Cmd + Shift + K` finds any setting ([§15](#15-config)).
+Each tab has a filter beside **Only changed**. When the filter — or **Only changed** — finds something on another tab too, the line under the list names that tab with a count (*Also found on: Header 2*); a click opens it and keeps the filter. **↺** resets one setting, **Reset panel** a whole group. `Ctrl/Cmd + Shift + K` finds any setting ([§15](#15-config)).
 
 ---
 
@@ -989,7 +990,7 @@ Set the mode in the bookmark form, the side panel in Config → Bookmarks, the r
 
 **Nothing checked at all?** Once 20 or more bookmarks are set to **Off**, a card in the bottom-left corner offers to switch them all to **Periodic** in one go, naming the count. It shows at most once a month; declining once brings it back next month, declining a second time offers to stop asking for good.
 
-**Behavior → Status & health** holds the rest:
+**Behavior → Status & alerts** holds the rest:
 
 | Group | Settings |
 |---|---|
@@ -1077,7 +1078,7 @@ A filter with nothing in it hides until it fills; Broken, Content, Duplicates, U
 
 **Rot report** lists what has gone, what has moved or been rewritten, what has failed for over a month, what is broken and never opened, and what broke this week.
 
-**The tour.** The first visit to the health view plays a six-step tour around one worked example. Behavior → General → Onboarding can play it again.
+**The tour.** The first visit to the health view plays a six-step tour around one worked example. Behavior → Privacy & sync → Onboarding can play it again.
 
 **Deep links:**
 
@@ -1125,7 +1126,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 ### 13.7 Alerts
 
-**Downtime alerts** (Behavior → Status & health) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
+**Downtime alerts** (Behavior → Status & alerts) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
 
 | Service | Needs |
 |---|---|
@@ -1144,7 +1145,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 **Muting one bookmark.** Tick **Do not alert me about this bookmark** in its Expected response panel. It is still checked and shows as down with a *Muted* badge; only the message is held back. Un-muting during an outage still alerts. **Mute alerts** and **Unmute** in the selection bar change several rows at once.
 
-**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Behavior → Status & health, then press **Enable on this device** and allow notifications. A test notification follows.
+**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Behavior → Status & alerts, then press **Enable on this device** and allow notifications. A test notification follows.
 
 | Notifies about | Default |
 |---|---|
@@ -1164,7 +1165,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 **Fresh** shows whether a bookmarked site has published something since you last opened it.
 
-- Switch it on under **Behavior → Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
+- Switch it on under **Behavior → Inbox & Fresh**. It reads each saved page once for an RSS or Atom feed and remembers pages without one for a month. **Find feeds now** repeats the round and says how many bookmarks publish a feed.
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
 - Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
@@ -1188,7 +1189,7 @@ The inbox holds links you want to keep before you decide where they go. Items li
 
 ### 14.1 Getting links in
 
-- **Paste** a URL on the dashboard and choose **Save to Inbox** — or set **Always save to Inbox** under Behavior → Inbox.
+- **Paste** a URL on the dashboard and choose **Save to Inbox** — or set **Always save to Inbox** under Behavior → Inbox & Fresh.
 - **The extension** — **Save to Inbox** in its popup, the right-click entry, or `Ctrl/Cmd + Shift + U`.
 - **The share sheet, the bookmarklet and `/add`** — see [§19](#19-browser-extension-and-capture).
 - **The API** — `POST /api/inbox`.
@@ -1239,11 +1240,11 @@ Open it with **`Shift + I`**, **`0`**, the inbox icon or `:inbox`.
 
 ### 14.5 Settings
 
-- **Behavior → Inbox → Enable the inbox** — off removes the inbox from the header, stops its keys and command, and adds pasted URLs as bookmarks.
+- **Behavior → Inbox & Fresh → Enable the inbox** — off removes the inbox from the header, stops its keys and command, and adds pasted URLs as bookmarks.
 - **Paste destination** — ask each time, always add a bookmark, or always save to the inbox.
 - In `settings.json` only: `inboxMaxItems` (default 500; past it the oldest links are silently dropped) and deduplication by URL (on). Undoing a delete at the cap restores the link with its original date; with no room at all, the undo says the inbox is full.
 
-The first visit plays a seven-step tour. Behavior → General → Onboarding can play it again.
+The first visit plays a seven-step tour. Behavior → Privacy & sync → Onboarding can play it again.
 
 ---
 ## 15. ⚙️ Config
@@ -1254,17 +1255,17 @@ Config is a **view inside the dashboard**: same tab, no page load.
 |---------|----------|
 | **`Shift + S`**, **`<`**, the gear, or `/#config` | **`Escape`** (when nothing is open on top and you are not typing), **`Shift + S`**, **`<`**, `0`–`9`, or the browser's Back button |
 
-Config reopens on the section and tab you left, for five minutes after you leave. A link like `/#config/appearance/layout` opens a section and tab directly and wins over the remembered place; `/#config/bookmarks/<pageId>` opens Bookmarks for one page. Moving between sections is not a browser history step.
+Config reopens on the section and tab you left, for five minutes after you leave; after that, Appearance and Behavior still open on the tab you used last. A link like `/#config/appearance/layout` opens a section and tab directly and wins over the remembered place; `/#config/bookmarks/<pageId>` opens Bookmarks for one page. Moving between sections is not a browser history step.
 
 ### 15.1 The sections
 
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | The figures of your collection (bookmarks, pages, categories, tags, monitored, with shortcut, pinned, last edited), **Needs attention** with a button per item, **How you use this collection**, the **cleanup score**, and **Health at a glance**. The running version is at the foot. |
-| **Appearance** | Theme · Layout · Header and buttons · Action bar · Date & weather · Display · Custom themes ([§12](#12-appearance)) |
+| **Appearance** | Look · Grid · Rows · Header · Action bar · Date & weather ([§12](#12-appearance)) |
 | **Bookmarks** | List · Tags · Tag suggestions · Your rules · Settings · Local copies ([§15.4](#154-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
-| **Behavior** | General · Search · Inbox · Fresh · Status & health · Privacy ([§15.5](#155-behavior)) |
+| **Behavior** | General · Keyboard & search · Inbox & Fresh · Status & alerts · Privacy & sync ([§15.5](#155-behavior)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§17](#17-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§11](#11-widgets)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§16](#16-statistics)) |
@@ -1272,23 +1273,23 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Logs** | Server logs · Activity trail ([§18](#18-logs)) |
 | **About** | About nextDash · News & features |
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure and `/#config/data-backups/logs` opens Logs.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, and `/#config/behavior/fresh` opens Inbox & Fresh. The tab ids in addresses did not change when the tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
-### 15.2 Hubs, groups and saving
+### 15.2 Tabs and saving
 
-**Appearance** and **Behavior** open on **tiles**. Each tile names a group and shows what it is set to. Inside a group, the most-used settings come first and **More settings** holds the rest; the tab strip reaches the other groups without going back.
+**Appearance** and **Behavior** open straight on their settings, in tabs, on the tab you used last. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§12](#12-appearance)).
 
 **Every change saves the moment you make it**, confirmed by a short message. The exceptions are forms with their own **Save** button — the bookmark form and a widget's settings. Config only writes what changed.
 
 - **ℹ** beside a setting explains it.
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
-- **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option.
+- **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
 
 ### 15.3 Finding a setting
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
-**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → General) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections and the action bar position — carry an **all devices** mark.
+**Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections and the action bar position — carry an **all devices** mark.
 
 ### 15.4 Bookmarks
 
@@ -1315,14 +1316,13 @@ The other tabs:
 
 ### 15.5 Behavior
 
-| Group | Settings |
+| Tab | Settings |
 |---|---|
-| **General** | Language; remember where you were on a page; **Lock layout**; global shortcuts, shortcut tooltips, the key legend under the grid; open links in a new tab; allow localhost and private-network bookmarks; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*); **Hypr mode**; **Keep settings on this device only** |
-| **Search** | Typing a bookmark shortcut, switch search mode, include finders, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint |
-| **Inbox** | Paste to quick-add, enable the inbox, paste destination |
-| **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now |
-| **Status & health** | [§13.1](#131-availability-modes) |
-| **Privacy** | Analytics, the daily release check, posts from nextdash.cc |
+| **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode** |
+| **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
+| **Inbox & Fresh** | Paste to quick-add, enable the inbox, paste destination; show what is new since you last looked, mark rows that publish, find feeds now |
+| **Status & alerts** | [§13.1](#131-availability-modes) |
+| **Privacy & sync** | Analytics, the daily release check, posts from nextdash.cc; **Keep settings on this device only**; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*) |
 
 ### 15.6 Overview, Help and About
 
@@ -1334,7 +1334,7 @@ The other tabs:
 
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 
-**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy), a newer release adds a dot to ★ and a toast.
+**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
 
 ### 15.7 Config keys
 
@@ -1728,8 +1728,8 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | What | When | Switch |
 |---|---|---|
 | Your bookmarks' sites | Checks, previews, icons, Fresh, archives | Per feature |
-| GitHub Releases API | Once a day, to see whether a newer release exists | Behavior → Privacy → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
-| nextdash.cc feed | Every 90 minutes, by the server, for News & features | Behavior → Privacy → *Show posts from nextdash.cc*; `DISABLE_NEWS_FEED=true` |
+| GitHub Releases API | Once a day, to see whether a newer release exists | Behavior → Privacy & sync → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
+| nextdash.cc feed | Every 90 minutes, by the server, for News & features | Behavior → Privacy & sync → *Show posts from nextdash.cc*; `DISABLE_NEWS_FEED=true` |
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Your own services | Custom widgets, webhooks, alerts | Per widget or receiver |
 | Analytics | Only when switched on | See below |
@@ -1738,7 +1738,7 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 
 nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **off until you turn it on**. The aim is to learn which features are used and what can be improved.
 
-- **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
+- **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy & sync → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
 - **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch.
 - **When off** — the tracker is not in the page, nothing is downloaded and nothing is sent.
 
@@ -1783,7 +1783,7 @@ Open dashboard tabs poll `GET /api/data-revision` and refresh when bookmarks cha
 
 - Another bookmark may use the same shortcut — the health view lists shortcut conflicts.
 - With the cursor on the grid, `g`, `j`, `k`, `t` and `x` keep their grid meaning; use search for those shortcuts.
-- Check **Typing a bookmark shortcut** under Behavior → Search — it may be set to wait for a pause or for Enter.
+- Check **Typing a bookmark shortcut** under Behavior → Keyboard & search — it may be set to wait for a pause or for Enter.
 - Focus must not be in a text field.
 
 ### Bookmarks seem to be missing
@@ -1812,7 +1812,7 @@ An open tab keeps the files it loaded. Reload once.
 
 ### The quick-start card does not appear
 
-It shows once per install, and not on phones. After finishing or dismissing it, **Show quick-start card again** (Behavior → General → Onboarding) brings it back.
+It shows once per install, and not on phones. After finishing or dismissing it, **Show quick-start card again** (Behavior → Privacy & sync → Onboarding) brings it back.
 
 ### The weather does not show
 

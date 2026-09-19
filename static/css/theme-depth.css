@@ -932,8 +932,6 @@ html[data-theme="bone-china-light"] body {
 body:not([data-depth="flat"]) :is(
     .config-panel,
     .lvs-summary,
-    .hub-card,
-    .hub-tile,
     .search-container
 ) {
     background-image: var(--surface-gloss);
@@ -951,7 +949,7 @@ body:not([data-depth="flat"]):not([data-header-buttons="plain"]) .dashboard-sect
     background-image: var(--surface-gloss);
 }
 
-body:not([data-depth="flat"]) :is(.config-btn, .hub-choice, .dashboard-widget-health-row, .dashboard-widget-trend-row):hover,
+body:not([data-depth="flat"]) :is(.config-btn, .dashboard-widget-health-row, .dashboard-widget-trend-row):hover,
 body:not([data-depth="flat"]):is([data-action-bar="bottom"], [data-action-bar="left"], [data-action-bar="right"])
     .dashboard-section.section-controls .header-shortcuts .search-button:hover {
     background-image: var(--gloss-hover);

@@ -1,0 +1,33 @@
+{
+  "tag": "v1.11.6",
+  "date": "19 September 2026",
+  "releasedAt": "2026-09-19",
+  "modalLead": "Appearance and Behavior open straight on their settings again, in tabs, with a live preview of your dashboard beside Appearance.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Settings in tabs, no tiles first.</strong> Appearance and Behavior open straight on their settings, on the tab you used last."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tabs grouped by what you look for.</strong> Appearance: Look, Grid, Rows, Header, Action bar, Date &amp; weather. Behavior: General, Keyboard &amp; search, Inbox &amp; Fresh, Status &amp; alerts, Privacy &amp; sync."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A live preview beside Appearance.</strong> A small drawing of your dashboard follows every change and marks the part the open tab is about."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every setting says what it does</strong> in a short line under it, and the filter names the other tabs where it finds something."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Make your own theme stays open.</strong> A setting tip no longer pulls you back to Look a moment later."
+        }
+      ]
+    }
+  ]
+}

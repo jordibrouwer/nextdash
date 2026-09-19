@@ -146,7 +146,7 @@
         if (!isEnabled()) {
             return {
                 tone: 'neutral',
-                message: translate('config.updateCheckDisabledHint', 'Turn on “Check GitHub for new releases” under Config → Behavior → Privacy.'),
+                message: translate('config.updateCheckDisabledHint', 'Turn on “Check GitHub for new releases” under Config → Behavior → Privacy & sync.'),
             };
         }
         if (checking) {

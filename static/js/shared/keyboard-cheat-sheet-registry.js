@@ -290,7 +290,7 @@
                 {
                     keys: 'Shift + Q',
                     cheatKey: 'smToggleSearchMode',
-                    fallback: 'Switch search mode — whether letters find names or shortcuts; the same setting as Behavior → Search, changed where you are standing',
+                    fallback: 'Switch search mode — whether letters find names or shortcuts; the same setting as Behavior → Keyboard & search, changed where you are standing',
                     print: true,
                     printFallback: 'Switch search mode',
                 },

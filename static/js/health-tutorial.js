@@ -117,7 +117,7 @@
                 body: `<p>${esc(t('healthTutorialStep5Body1',
                     'The service restarts nightly at 3am for its backup. Without a maintenance window, that alone raises an incident and an alert every single night — and after a week of that, a real 3am outage reads exactly like the six before it that meant nothing.'))}</p>
                 <p>${esc(t('healthTutorialStep5Body2',
-                    'Config → Behavior → Status & health → Maintenance windows takes a day, a start time and an end time. Checks still run and the heartbeat still records what happened — only the alerting is held back.'))}</p>`,
+                    'Config → Behavior → Status & alerts → Maintenance windows takes a day, a start time and an end time. Checks still run and the heartbeat still records what happened — only the alerting is held back.'))}</p>`,
             },
             {
                 title: t('healthTutorialStep6Title', 'Get told when it actually breaks'),

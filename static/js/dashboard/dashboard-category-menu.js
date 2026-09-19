@@ -607,7 +607,7 @@ class DashboardCategoryMenu {
             return short
                 ? this.t('categorySpreadNeedsLimitShort', 'Needs an items-per-category limit')
                 : this.t('categorySpreadNeedsLimit',
-                    'Spreading needs a limit on items per category — that limit is what decides how many columns a category takes. Set one in Config → Appearance → Layout.');
+                    'Spreading needs a limit on items per category — that limit is what decides how many columns a category takes. Set one in Config → Appearance → Grid.');
         }
         return short
             ? this.t('categorySpreadUnavailableShort', 'One column per category here')
