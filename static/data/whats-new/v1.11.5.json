@@ -1,0 +1,30 @@
+{
+  "tag": "v1.11.5",
+  "date": "19 September 2026",
+  "releasedAt": "2026-09-19",
+  "modalLead": "The latest nextdash.cc posts on the config overview, shorter news dates, and two fixes to the Health row menu.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The overview shows the latest news.</strong> The two newest posts from nextdash.cc sit above the tiles, one line each."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>News dates say which day.</strong> Day and month in your own date format rather than a weekday that every row shared."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A row's menu opens next to the row</strong> and draws above the header rather than underneath it."
+        }
+      ]
+    }
+  ]
+}

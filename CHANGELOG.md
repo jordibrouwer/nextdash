@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.5 — 19 September 2026](#v1115--19-september-2026)
 - [v1.11.4 — 18 September 2026](#v1114--18-september-2026)
 - [v1.11.3 — 18 September 2026](#v1113--18-september-2026)
 - [v1.11.2 — 18 September 2026](#v1112--18-september-2026)
@@ -209,6 +210,32 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.5 — 19 September 2026
+
+Overview news, shorter news dates and two Health row-menu fixes, held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.4, so v1.11.0 keeps leading it.
+
+### Config
+
+- **new — the two newest nextdash.cc posts above the overview tiles.** `renderOverviewSiteNews()` takes the site posts from the stream About → News & features already loads (`loadNewsStream`), newest two, and draws them as a "Latest news" tile — the same `stat-tile config-tile` classes as the figures under it — one line each: title, clipped summary, date, and a link to the post. Nothing is drawn while it loads, when "Show posts from nextdash.cc" is off, or when the feed is unreachable. "Latest news" translated in all six locales.
+- **fix — the overview's intro line showed twice once the news arrived.** `_fillShellHeadFromSection()` lifts a section's `.config-view-intro` into the header band, but `repaintOverview()` — the repaint the news arrives with — re-rendered the body without lifting it again, so the sentence stood in the band and above the tiles. The repaint lifts it now.
+- **fix — news dates say which day.** Overview and About → News & features used the header's full date line, so under "weekday only" every row read "Friday". `formatShortDate()` gives day and month in the reader's date format — `18/09`, `18-09`, `09/18`, `09-18`; the two word formats follow the interface language — with the year only when it isn't this one.
+- **About → News & features: the way in moved under the summary.** "Read on nextdash.cc ↗", "Show what's new" and "Open … →" have their own line under the summary, in the title's column, rather than under the date at the far right; the summary now runs to the right edge.
+
+### Health
+
+- **fix — a row's menu pinned itself to the top of the viewport.** When a tall menu (many repair options) had no room above or below its row, `toggleMenu()`'s fallback set it flush against the top margin wherever the row was, drawing it over the header and everything down to the row. It now clamps toward the row, as `positionMenuAtPoint()` already did for right-click.
+- **fix — the sticky header band drew over an open row menu.** `.lvs-header`'s z-index was lifted by 1300 to clear the teaching popovers, while a row with an open menu stayed at `--layer-row-raised` (6). The row now sits one above the header while its menu is open (`feed-row.css`).
+
+### Tests
+
+- `config-overview-news.spec.js` covers the overview tile, the intro not repeating (with the posts held back so they arrive by repaint), and the short dates; `overview-news-row.spec.js` asserts the new row shape; `health-menu-height.spec.js` and `health-row-menu-stacking.spec.js` each gained a regression case, both confirmed failing without their fix.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.5.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v291`, `DASHBOARD_RELEASE` untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.5 alongside v1.11.1–v1.11.4. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
