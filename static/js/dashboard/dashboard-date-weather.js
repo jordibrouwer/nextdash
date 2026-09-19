@@ -156,6 +156,38 @@ class DashboardDateWeather {
     }
 
 
+    /**
+     * Day and month only, in the order and separator the date format uses:
+     * 18/09, 18-09, 09/18, 09-18. The two word formats have no numeric
+     * order of their own, so they take the reader's locale's. The year is
+     * added only when it is not this one -- "18-09" of last year would read
+     * as this September.
+     */
+    formatShortDate(date) {
+        const d = this.dash;
+        const safeDate = date instanceof Date ? date : new Date();
+        const fmt = String(d.settings.dateFormat || 'short-slash');
+        const locale = String(d.settings.language || document.documentElement.getAttribute('data-lang') || 'en');
+        const day = String(safeDate.getDate()).padStart(2, '0');
+        const month = String(safeDate.getMonth() + 1).padStart(2, '0');
+        const year = safeDate.getFullYear();
+        const otherYear = year !== new Date().getFullYear();
+
+        if (fmt === 'short-slash') return otherYear ? `${day}/${month}/${year}` : `${day}/${month}`;
+        if (fmt === 'short-dash') return otherYear ? `${day}-${month}-${year}` : `${day}-${month}`;
+        if (fmt === 'mm-slash') return otherYear ? `${month}/${day}/${year}` : `${month}/${day}`;
+        if (fmt === 'iso') return otherYear ? `${year}-${month}-${day}` : `${month}-${day}`;
+
+        try {
+            const options = { day: '2-digit', month: '2-digit' };
+            if (otherYear) options.year = 'numeric';
+            return new Intl.DateTimeFormat(locale, options).format(safeDate);
+        } catch (e) {
+            return otherYear ? `${day}-${month}-${year}` : `${day}-${month}`;
+        }
+    }
+
+
     formatTimeLine(date) {
         return window.NextDashClock.formatTime(date, this.dash.settings);
     }

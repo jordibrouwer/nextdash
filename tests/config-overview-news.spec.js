@@ -142,9 +142,14 @@ test.describe('the news stream', () => {
                 .first().innerText()).trim();
         };
 
-        expect(await withFormat('iso')).toBe('2026-08-21');
-        expect(await withFormat('short-slash')).toBe('21/08/2026');
-        expect(await withFormat('mm-slash')).toBe('08/21/2026');
+        // Day and month only, in the order and separator the format uses --
+        // the year is this one, so it would say nothing.
+        expect(await withFormat('iso')).toBe('08-21');
+        expect(await withFormat('short-slash')).toBe('21/08');
+        expect(await withFormat('short-dash')).toBe('21-08');
+        expect(await withFormat('mm-slash')).toBe('08/21');
+        // A word format still gives a date, not "Friday" on every row.
+        expect(await withFormat('weekday-only')).toMatch(/^\d{2}\D\d{2}$/);
     });
 
     test('the site being unreachable leaves the rest of the stream standing', async ({ page }) => {
@@ -304,5 +309,73 @@ test.describe('the switch under Behavior → Privacy', () => {
         // like it does not work.
         await expect(page.locator('.config-news-panel .config-news-item[data-news-source="site"]').first())
             .toBeVisible({ timeout: 15_000 });
+    });
+});
+
+test.describe('the overview', () => {
+    test('shows the two newest nextdash.cc posts above the tiles, one line each', async ({ page }) => {
+        // Held back so the posts arrive after the overview has drawn -- the
+        // repaint they come in with is the path that left the intro behind.
+        await page.route('**/api/site-news*', async (route) => {
+            await new Promise((r) => setTimeout(r, 1500));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify({ enabled: true, items: POSTS, fetchedAt: Date.now() }),
+            });
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+
+        const rows = page.locator('.config-overview-news-item');
+        await expect(rows).toHaveCount(2, { timeout: 15_000 });
+        await expect(rows.nth(0)).toContainText('Hover cards in nextDash v1.3.2');
+        await expect(rows.nth(1)).toContainText('Fresh: the bookmarks that have something new');
+        // Worn as a tile, headed like one.
+        await expect(page.locator('.config-overview-news.config-tile .config-tile-label')).toHaveText('Latest news');
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.dateFormat = 'short-dash';
+            window.dashboardInstance.config.repaintOverview();
+        });
+        await expect(rows.nth(0).locator('.config-overview-news-when')).toHaveText('21-08');
+
+        const layout = await page.evaluate(() => {
+            const news = document.querySelector('.config-overview-news').getBoundingClientRect();
+            const tiles = document.querySelector('.config-overview-tiles').getBoundingClientRect();
+            const lineHeights = [...document.querySelectorAll('.config-overview-news-item')]
+                .map((el) => el.getBoundingClientRect().height);
+            return { newsBottom: news.bottom, tilesTop: tiles.top, widthDelta: Math.abs(news.width - tiles.width), lineHeights };
+        });
+        // The section's opening line stays in the band, not repeated above
+        // the posts: the repaint the posts arrive with used to leave it in
+        // the body as well.
+        await expect(page.locator('#config-view-body .config-view-intro')).toHaveCount(0);
+        await expect(page.locator('.config-view-head .lvs-description')).toContainText('A snapshot of your setup');
+        expect(layout.newsBottom).toBeLessThanOrEqual(layout.tilesTop);
+        expect(layout.widthDelta).toBeLessThan(2);
+        // One line each, even for a long title and summary.
+        layout.lineHeights.forEach((h) => expect(h).toBeLessThan(40));
+    });
+
+    test('shows nothing when the site\'s posts are switched off', async ({ page }) => {
+        await page.route('**/api/site-news*', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({ enabled: true, items: POSTS, fetchedAt: Date.now() }),
+        }));
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', false, 'siteNews'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await expect(page.locator('.config-overview-tiles')).toBeVisible({ timeout: 15_000 });
+        await page.waitForTimeout(500);
+        await expect(page.locator('.config-overview-news')).toHaveCount(0);
+        await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));
     });
 });

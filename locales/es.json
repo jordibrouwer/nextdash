@@ -2447,6 +2447,7 @@
     "overviewNewsSourceFeatures": "Funciones",
     "overviewNewsFilterAria": "Filtrar las noticias por origen",
     "overviewNewsRead": "Leer en nextdash.cc ↗",
+    "overviewSiteNewsTitle": "Últimas noticias",
     "overviewNewsEmptyFilter": "Todavía no hay nada de este origen.",
     "overviewNewsUnreadAria": "{n} elementos nuevos",
     "overviewNewsEmpty": "Ahora mismo no hay publicaciones que mostrar.",

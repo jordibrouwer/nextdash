@@ -2005,6 +2005,72 @@
  * is new, a tip) has its own address in About and Help, so this section is
  * about your own collection and nothing else.
  */
+/* The two newest nextdash.cc posts, one line each, across the column -- a
+   tile like the figures under it (the classes come from the markup), set
+   the same gap above them as they keep between themselves. */
+.config-overview-news {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.config-overview-news-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.config-overview-news-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3, 0.75rem);
+    min-width: 0;
+}
+
+.config-overview-news-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    color: var(--text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.config-overview-news-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-overview-news-summary {
+    flex: 1 1 0;
+    min-width: 0;
+    color: var(--text-muted, #888);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+a.config-overview-news-link:hover .config-overview-news-title,
+a.config-overview-news-link:focus-visible .config-overview-news-title {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
+.config-overview-news-when {
+    flex: 0 0 auto;
+    color: var(--text-muted, #888);
+    font-size: 0.9em;
+}
+
 .config-overview-tiles {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2733,8 +2799,8 @@
 /*
  * Every cell placed by name, none left to auto-flow.
  *
- * The row is a two-by-two: what it is and when, then what it says and the way
- * in. One explicitly placed item used to be enough, because the rest fell into
+ * The row is three lines: what it is and when, what it says, and the way in.
+ * One explicitly placed item used to be enough, because the rest fell into
  * the gaps in DOM order -- but explicit placement runs first, so pinning the
  * action to the second row took the slot the date had been landing in and
  * pushed the date onto a line of its own under the title. Four names, no
@@ -2762,14 +2828,15 @@
  * hundred pixels apart in height is the mess, and the reader scrolls past
  * ragged white space to reach what is under the shorter one.
  *
- * A line each, with the action beside it rather than under it, puts the row at
- * about sixty and the two columns within a screen of each other. What the row
- * says is unchanged: where it came from, what it is, when, a line about it,
- * and the way in.
+ * A line of summary each keeps the row short. The action has a short line of
+ * its own under it, in the title's column, because at the far right under the
+ * date it read as belonging to the date rather than to the post.
  */
 .config-news-summary {
     grid-row: 2;
-    grid-column: 2;
+    /* Across to the right edge: the date column holds nothing on this line
+       now the action has moved under it. */
+    grid-column: 2 / -1;
     margin: 0;
     font-size: calc(var(--font-size-controls) * 0.88);
     color: var(--text-secondary);
@@ -2781,18 +2848,16 @@
 }
 
 /*
- * In the third column, under the date: the row's two right-hand things are
- * when it happened and where it goes, and stacking them there leaves the
- * summary the width it needs.
+ * The way in, on its own line under the words and in the title's column --
+ * read left to right as what it is, what it says, where to go. It used to
+ * stand under the date at the far right, a long way from the title it acts
+ * on.
  */
 .config-news-action {
-    /* Beside the summary, not under it. The row is two lines: what it is and
-       when, then what it says and the way in. Placed explicitly, because
-       auto-placement drops it onto a third row of its own. */
-    grid-row: 2;
-    grid-column: 3;
-    justify-self: end;
-    margin-top: 0;
+    grid-row: 3;
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 1px;
     white-space: nowrap;
 }
 

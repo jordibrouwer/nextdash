@@ -2447,6 +2447,7 @@
     "overviewNewsSourceFeatures": "Features",
     "overviewNewsFilterAria": "Filter news by source",
     "overviewNewsRead": "Read on nextdash.cc ↗",
+    "overviewSiteNewsTitle": "Latest news",
     "overviewNewsEmptyFilter": "Nothing from this source yet.",
     "overviewNewsUnreadAria": "{n} new items",
     "overviewNewsEmpty": "No posts to show right now.",
