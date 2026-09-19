@@ -158,14 +158,14 @@ test.describe('a release flagged hideFromModal', () => {
     // rather than reopening for rounds of corrections. v1.6.1 and v1.6.2 were
     // hidden the same way once, and released from that hold by v1.7.0, so a
     // reader following the notes back still finds them.
-    test('v1.11.1 through v1.11.4 are held back from the modal, and v1.11.0 still leads it', async ({ page }) => {
+    test('v1.11.1 through v1.11.4 are held back from the modal, and v1.12.0 leads it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.11.4');
-        expect(index[0].hideFromModal).toBe(true);
+        expect(index[0].tag).toBe('v1.12.0');
+        expect(index[0].hideFromModal).toBeFalsy();
         expect(index.filter((e) => e.hideFromModal).map((e) => e.tag))
             .toEqual(['v1.11.4', 'v1.11.3', 'v1.11.2', 'v1.11.1']);
 
@@ -181,10 +181,10 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        // The modal leads with v1.11.0, never shows the hidden v1.11.1 through
+        // The modal leads with v1.12.0, never shows the hidden v1.11.1 through
         // v1.11.4, and the older releases that used to be held back are
         // reachable in it.
-        expect(await shownTags()).toContain('v1.11.0');
+        expect(await shownTags()).toContain('v1.12.0');
         expect(await shownTags()).not.toContain('v1.11.1');
         expect(await shownTags()).not.toContain('v1.11.2');
         expect(await shownTags()).not.toContain('v1.11.3');
@@ -196,7 +196,8 @@ test.describe('a release flagged hideFromModal', () => {
                 body.scrollTop = body.scrollHeight;
             });
             return shownTags();
-        }, { timeout: 20_000 }).toContain('v1.6.1');
+        }, { timeout: 20_000 }).toContain('v1.11.0');
+        expect(await shownTags()).toContain('v1.6.1');
         expect(await shownTags()).toContain('v1.6.2');
 
         // And the ones before them are reachable rather than skipped.
@@ -209,17 +210,17 @@ test.describe('a release flagged hideFromModal', () => {
         }, { timeout: 20_000 }).toContain('v1.2.1');
     });
 
-    test('the release constants name v1.11.0, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.12.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
          * The release token names what the modal leads with. Nothing is hidden
-         * for v1.11.0, so it is also what index[0] names -- an install that
-         * already read v1.9.0's notes is reopened once for this release.
+         * for v1.12.0, so it is also what index[0] names -- an install that
+         * already read v1.11.0's notes is reopened once for this release.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.11.0'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.09-dashboard-release-v1.12.0'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.11.0 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v290'");
+        // holding its old copy would never learn v1.12.0 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v291'");
     });
 });
