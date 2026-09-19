@@ -7797,6 +7797,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * 28 + 2x5 of padding + 2x1 of border.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+.dashboard-section.section-controls .header-actions .unsorted-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7816,6 +7817,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 }
 
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .unsorted-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -7824,6 +7826,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
+.dashboard-section.section-controls .header-actions .unsorted-link-icon,
 .dashboard-section.section-controls .header-actions .health-link-icon,
 .dashboard-section.section-controls .header-actions .config-link-icon {
     width: 18px;
@@ -7924,6 +7927,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-btn,
 .header-track .page-nav-overflow,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+.dashboard-section.section-controls .header-actions .unsorted-link-anchor,
 .dashboard-section.section-controls .header-actions .health-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -7948,6 +7952,7 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
 .header-track .page-nav-btn:active,
 .header-track .page-nav-overflow:active,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
+.dashboard-section.section-controls .header-actions .unsorted-link-anchor:active,
 .dashboard-section.section-controls .header-actions .health-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
@@ -8117,6 +8122,7 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  * takes, because it says the same thing.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
+.dashboard-section.section-controls .header-actions .unsorted-link-anchor.active,
 .dashboard-section.section-controls .header-actions .health-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -8220,6 +8226,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-btn,
 body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .unsorted-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8237,6 +8244,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-btn:hover,
 body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .unsorted-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -8249,6 +8257,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 /* The page you are on, the view you are in: one rule, in the theme's accent. */
 body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .unsorted-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -8261,6 +8270,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 /* Pressed still says pressed, without a plate to sink into. */
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
 body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .unsorted-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .health-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
