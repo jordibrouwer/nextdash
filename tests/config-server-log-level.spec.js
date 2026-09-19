@@ -240,6 +240,42 @@ test('a search is only sent to the server once the search channel is on', async 
     expect(requests[0].query.toLowerCase()).toContain('search-on');
 });
 
+/*
+ * Leaving config while a settings save is still in flight used to swallow the
+ * first keys typed after it. closeConfigView() waits for the save before the
+ * grid comes back, and until then the view still read as config and the
+ * checkbox just ticked still held focus -- so ">" and the start of the query
+ * went nowhere. On CI this search arrived as "on" instead of "zzz-search-on".
+ * The CPU is throttled so the save is reliably still pending when typing starts.
+ */
+test('a query typed straight after leaving config arrives whole', async ({ page }) => {
+    await openActivityTrailTab(page);
+
+    const requests = [];
+    await page.route('**/api/track-search', async (route) => {
+        requests.push(route.request().postDataJSON());
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+    });
+
+    const searchChannel = page.locator('[data-activity-channel="search"]');
+    await expect(searchChannel).toBeVisible({ timeout: 15_000 });
+    await searchChannel.check();
+
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 8 });
+    try {
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+        await page.keyboard.press('>');
+        await page.keyboard.type('zzz-search-on', { delay: 10 });
+        await page.keyboard.press('Escape');
+    } finally {
+        await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    }
+
+    await expect.poll(() => requests.length, { timeout: 15_000 }).toBe(1);
+    expect(requests[0].query.toLowerCase()).toBe('zzz-search-on');
+});
+
 // '<' opens config — one of the global shortcuts nextdashRecordKey aggregates
 // rather than sending per press. pagehide is the flush this drives, since a
 // real 30s interval is too slow for a test.

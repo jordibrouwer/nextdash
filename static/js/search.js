@@ -683,6 +683,11 @@ class SearchComponent {
 
     _isConfigViewActive() {
         const dash = window.dashboardInstance;
+        // Closed, and only waiting on a settings save before the grid comes
+        // back (closeConfigView): the keys are the dashboard's already.
+        if (dash?._leavingConfig) {
+            return false;
+        }
         if (dash?.activeView === 'config') {
             return true;
         }
@@ -782,6 +787,7 @@ class SearchComponent {
         // popping dashboard chrome over inbox/health/config. isBookmarksView()
         // per its own docstring, rather than naming the views this is NOT.
         if (!this.searchActive && window.dashboardInstance && !window.dashboardInstance.isBookmarksView()
+                && !window.dashboardInstance._leavingConfig
                 && (key === '>' || key === ':' || key === '?' || e.key === '+')) {
             return;
         }
