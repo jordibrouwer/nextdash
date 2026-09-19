@@ -960,6 +960,7 @@ class DashboardConfig {
         // has to stop it or it keeps fetching over the dashboard.
         this.stopServerLogTimer();
         const finishRestore = () => {
+            d._leavingConfig = false;
             const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
             if (restored) {
                 d.keyboardNavigation?.scheduleUpdate?.();
@@ -968,6 +969,19 @@ class DashboardConfig {
         };
         const pendingSave = this._settingsSavePromise;
         if (pendingSave) {
+            // The reader has left even though the grid is not back yet: keys
+            // typed now (">" and the query after it) belong to the dashboard.
+            // Search reads this flag; without it they were dropped for as long
+            // as the save took, which under load was most of a query.
+            d._leavingConfig = true;
+            // And the control that was just changed must let go of focus: a
+            // focused checkbox still in the page is a text target as far as
+            // the key handlers are concerned, and swallowed them regardless.
+            const focused = document.activeElement;
+            if (focused && focused !== document.body
+                    && document.getElementById('dashboard-layout')?.contains(focused)) {
+                focused.blur();
+            }
             void pendingSave.finally(() => {
                 finishRestore();
             });
