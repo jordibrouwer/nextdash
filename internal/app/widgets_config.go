@@ -142,6 +142,9 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 		{Key: "showSource", Kind: "bool"},
 	},
+	WidgetTypeUnsorted: {
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+	},
 	WidgetTypeFeeds: {
 		{Key: "freshOnly", Kind: "bool"},
 		{Key: "showRetired", Kind: "bool"},
@@ -481,7 +484,7 @@ func widgetValueAllowed(value string, allowed []string) bool {
 func widgetTypeNames() []string {
 	ordered := []WidgetType{
 		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeTrend,
-		WidgetTypeInbox, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
+		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
 		WidgetTypeCPU, WidgetTypeMemory, WidgetTypeDisks, WidgetTypeDocker,
