@@ -1743,14 +1743,11 @@ class DashboardConfig {
         /*
          * The section's opening line, wherever that section chose to put it.
          *
-         * Most render a `.config-view-intro` as the body's first child;
-         * Bookmarks wraps its line in a header block of its own with a count
-         * beside it. Both are the same sentence -- "what this section is" --
-         * and both belong on the band. A panel's own intro deeper in the tree
-         * is not: that describes the panel, not the section.
+         * Every section renders a `.config-view-intro` as the body's first
+         * child, and it belongs on the band. A panel's own intro deeper in
+         * the tree does not: that describes the panel, not the section.
          */
-        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'))
-            || body.querySelector(':scope > .config-bm-header .config-bm-subtitle');
+        const intro = [...body.children].find((el) => el.classList?.contains('config-view-intro'));
         /*
          * A repaint that renders no intro of its own must not wipe the line the
          * section already put there -- a sub-tab renders the body, not the
@@ -1774,7 +1771,13 @@ class DashboardConfig {
         // replaced mid-click and its handler went with it. One direction now:
         // the band draws the bar, the body draws the settings.
         const context = this._changedFilterContext();
-        const markup = context ? this.renderChangedFilterBar(context.section, context.tab) : '';
+        // Bookmarks has no changed-settings filter; it carries a count of what
+        // the section holds, the way Health and Inbox do on the same band.
+        const markup = context
+            ? this.renderChangedFilterBar(context.section, context.tab)
+            : (this.section === 'bookmarks'
+                ? `<span class="config-bm-header-badge">${this.dash.escapeHtml(String((this.dash.allBookmarks || []).length))}</span>`
+                : '');
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -4942,6 +4945,7 @@ class DashboardConfig {
         return `
             <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
+            ${this.renderSectionTabNote('data-backups', this.dbTab)}
             <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>
         `;
     }
@@ -6571,6 +6575,12 @@ class DashboardConfig {
         const body = document.getElementById('config-view-body');
         if (!body) return;
         body.innerHTML = this.renderDataBackups();
+        // The section's opening line belongs on the band, and a repaint puts a
+        // fresh copy of it back in the body. Without lifting it again the
+        // reader saw the same sentence twice, once on the band and once above
+        // the tab strip -- which also stood the strip a line lower than every
+        // other section's.
+        this._fillShellHeadFromSection(document);
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindDataBackupsActions(container);
     }
@@ -14118,6 +14128,67 @@ class DashboardConfig {
      * it belongs to is the one lit, because that is where the reader came from
      * and where "← Look" takes them back to.
      */
+    /**
+     * The one line under a section's tab strip: what this tab is for.
+     *
+     * Structure and Widgets already wrote theirs into the tab body, so the
+     * strip there is followed by a sentence. Bookmarks, Statistics, Data &
+     * backups and Help had nothing, and their content started straight under
+     * the strip -- which is why the first row of a section sat at a different
+     * height depending on which section you opened.
+     *
+     * A table rather than a line in each render method: the four sections
+     * draw their tabs in four places, and a sentence hidden in the fifth
+     * branch of a tab dispatcher is a sentence nobody finds again.
+     */
+    static SECTION_TAB_NOTES = {
+        bookmarks: {
+            'list': ['config.bmNoteList', 'Every bookmark you have, from every page. Filter on the left, edit on the right.'],
+            'tags': ['config.bmNoteTags', 'Rename a tag everywhere it is used, merge two that mean the same, or remove one.'],
+            'tag-suggestions': ['config.bmNoteTagSuggestions', 'Tags nextDash would add, grouped so you can accept or refuse a whole group at once.'],
+            'tag-rules': ['config.bmNoteTagRules', 'Your own rules: match part of an address or a title, and tag what it catches.'],
+            'settings': ['config.bmNoteSettings', 'How this list opens, what a new bookmark starts out as, and when to confirm a bulk action.'],
+            'local-copies': ['config.bmNoteLocalCopies', 'Pages saved whole on this disk, grouped by the bookmark they belong to.'],
+        },
+        stats: {
+            'overview': ['config.statsNoteOverview', 'The size and shape of your collection, and what the figures add up to.'],
+            'activity': ['config.statsNoteActivity', 'What you opened and added over time, and which bookmarks have gone quiet.'],
+            'content': ['config.statsNoteContent', 'How the collection is divided: pages, categories, tags, and what carries a shortcut.'],
+            'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
+            'health': ['config.statsNoteHealth', 'How many links still answer, how many do not, and when that was last checked.'],
+        },
+        'data-backups': {
+            'backups': ['config.dbNoteBackups', 'Snapshots of everything, made on a schedule or by hand. Restore one, or download it.'],
+            'sources': ['config.dbNoteSources', 'Bring bookmarks in from a browser or a file, and send yours back out.'],
+            'webhooks': ['config.dbNoteWebhooks', 'Tell another service when something happens here. One address per event.'],
+            'icons': ['config.dbNoteIcons', 'The favicons and page previews kept on this disk, and when they are fetched again.'],
+            'trash': ['config.dbNoteTrash', 'What you deleted recently. Put it back, or empty the bin for good.'],
+            'reset': ['config.dbNoteReset', 'Undo a whole area at once — settings, bookmarks, or the install. None of it comes back.'],
+        },
+        help: {
+            'start': ['config.helpNoteStart', 'What nextDash is built around, and the first handful of things worth doing.'],
+            'tips': ['config.helpNoteTips', 'Small habits that save time once the basics are behind you.'],
+            'config': ['config.helpNoteConfig', 'How this config view is laid out, and where to look for a setting.'],
+            'appearance': ['config.helpNoteAppearance', 'Themes, type, and the choices that change how the dashboard looks.'],
+            'organizing': ['config.helpNoteOrganizing', 'Pages, categories, tags — how a bookmark finds its place.'],
+            'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
+            'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
+            'health': ['config.helpNoteHealth', 'How nextDash checks that your links still answer, and what to do with the ones that do not.'],
+            'monitoring': ['config.helpNoteMonitoring', 'Watching a service rather than a link, and being told when it stops responding.'],
+            'inbox': ['config.helpNoteInbox', 'Where links land when you save them in a hurry, and how to file them later.'],
+            'stats': ['config.helpNoteStats', 'What the figures in Statistics count, and what they do not.'],
+            'data': ['config.helpNoteData', 'Backups, imports, and running nextDash on your own machine.'],
+            'logs': ['config.helpNoteLogs', 'The server log and the activity trail: what is recorded, and for how long.'],
+        },
+    };
+
+    /** The line under one section's tab strip, or nothing if that tab has none. */
+    renderSectionTabNote(section, tab) {
+        const entry = DashboardConfig.SECTION_TAB_NOTES[section]?.[tab];
+        if (!entry) return '';
+        return `<p class="config-panel-note config-tab-note">${this.dash.escapeHtml(this.t(entry[0], entry[1]))}</p>`;
+    }
+
     renderSectionTabStrip(section) {
         const esc = (v) => this.dash.escapeHtml(v);
         const isAppearance = section === 'appearance';
@@ -20978,7 +21049,6 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const totalAll = (this.dash.allBookmarks || []).length;
         const tabs = DashboardConfig.BM_TABS.map((tab) => {
             const active = tab === this.bmTab;
             // Only this one carries a number: it is the tab whose whole point
@@ -20990,16 +21060,15 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}${badge}</button>`;
         }).join('');
 
+        // The opening line is a plain intro like every other section's: the
+        // shell lifts it onto the view band, and a wrapper of its own stayed
+        // behind once it left, standing the tab strip a row lower than the
+        // strip on every other section. The count goes to the band too, in
+        // the header actions, where Health and Inbox carry theirs.
         return `
-            <div class="config-bm-header">
-                <div class="config-bm-header-text">
-                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
-                </div>
-                <div class="config-bm-header-meta">
-                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
-                </div>
-            </div>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
+            ${this.renderSectionTabNote('bookmarks', this.bmTab)}
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
         `;
     }
@@ -24310,6 +24379,7 @@ class DashboardConfig {
                 ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
                 ${scope}
             </div>
+            ${this.renderSectionTabNote('stats', this.statsTab)}
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
             ${this.renderStatsTimestampSafe()}
         `;
@@ -25605,8 +25675,23 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
         }).join('');
         return `
+            <!--
+                The opening line is a direct child of the body so the shell
+                lifts it onto the view band, the way every other section's is.
+                Inside the header block it was invisible to that lift, which
+                left Help the one section whose band carried no line and whose
+                text stood above the tab strip instead of under it.
+            -->
+            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <!--
+                The sheet and the search share the tab note's row rather than
+                standing above the strip: a block above it put Help's tabs
+                eighty pixels below every other section's, so walking through
+                the rail moved the tabs under the pointer.
+            -->
             <div class="config-help-header">
-                <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+                ${this.renderSectionTabNote('help', this.helpTab)}
                 <div class="config-help-header-aside">
                     ${this.renderCheatSheetPdfLink()}
                     <input type="search" class="config-text config-help-search" id="config-help-search"
@@ -25615,7 +25700,6 @@ class DashboardConfig {
                            value="${esc(this.helpQuery || '')}">
                 </div>
             </div>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
     }

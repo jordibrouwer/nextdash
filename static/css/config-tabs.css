@@ -2,10 +2,17 @@
  * Config → Appearance and Behavior: one tab of settings, with the live
  * preview beside Appearance.
  *
- * A tab is one column of settings under small headings -- not a stack of
- * boxed panels -- so the eye runs down one list. The panel markup stays (it
- * carries the reset button, the bulk toggles and the changed filter); only
- * its box is taken away here.
+ * A tab is one column of groups, and a group is a tile: the panel keeps the
+ * surface, border and radius `.config-panel` already gives it, and the column
+ * only sets the width and the air between tiles. It was drawn flat for one
+ * release -- headings and hairlines, no boxes -- and with eighteen settings on
+ * a tab nothing said where a group ended. A border does say that, and a group
+ * of settings is exactly the "separate object" a border is for.
+ *
+ * So there is no panel rule here on purpose. The tile comes from
+ * config-view.css and from the theme (theme-depth and theme-character give
+ * every panel its surface), which is why a custom theme restyles these tiles
+ * along with every other panel in config without knowing about this file.
  */
 
 .config-tabpage {
@@ -24,37 +31,12 @@
 }
 
 /*
- * Flat panels. Doubled class so it outranks the depth and character rules,
- * which give every .config-panel a raised surface through a selector of
- * three attributes.
+ * The first tile sits straight under the tab note; `.config-panel`'s own
+ * top margin is what separates one tile from the next, so the column does
+ * not need to add anything above the first.
  */
-.config-tabpage .config-tabpage-main .config-panel.config-panel {
+.config-tabpage .config-tabpage-main > * > .config-panel:first-child {
     margin-top: 0;
-    padding: 0 0 18px;
-    border: 0;
-    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-}
-
-.config-tabpage .config-tabpage-main .config-panel.config-panel + .config-panel {
-    margin-top: 22px;
-}
-
-.config-tabpage .config-tabpage-main .config-panel.config-panel:last-child {
-    border-bottom: 0;
-}
-
-.config-tabpage .config-panel-title {
-    margin: 0 0 6px;
-    font-size: calc(var(--font-size-text) * 0.857);
-    font-weight: 600;
-    color: var(--text-muted, #888);
-}
-
-.config-tabpage .config-panel-note {
-    margin-bottom: 10px;
 }
 
 /* The short line under a setting sits close to it, not half-way to the next. */

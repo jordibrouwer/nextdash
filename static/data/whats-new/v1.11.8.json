@@ -1,0 +1,30 @@
+{
+  "tag": "v1.11.8",
+  "date": "19 September 2026",
+  "releasedAt": "2026-09-19",
+  "modalLead": "Settings stand in tiles again, and Glass lets the theme's colour through instead of a white light.",
+  "sections": [
+    {
+      "title": "Appearance & Behavior",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Each group of settings sits in a tile again.</strong> They were drawn as one flat list, and with eighteen settings on a tab nothing showed where one group ended and the next began."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Glass is quieter, and carries colour rather than light.</strong> Every pane lifted what was behind it and wore a bright rim, so a column of them read as a column of lighter boxes. The sheen is about a third of what it was and takes the theme's own colour, so you see through the glass instead of at it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The change reaches every theme</strong> on the Glass depth — the settings tiles, the search window, the menus and the card layouts alike."
+        }
+      ]
+    }
+  ]
+}

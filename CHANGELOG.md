@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.11.8 — 19 September 2026](#v1118--19-september-2026)
 - [v1.11.7 — 19 September 2026](#v1117--19-september-2026)
 - [v1.11.6 — 19 September 2026](#v1116--19-september-2026)
 - [v1.11.5 — 19 September 2026](#v1115--19-september-2026)
@@ -212,6 +213,28 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.11.8 — 19 September 2026
+
+Settings groups back in tiles, and the Glass depth trading its white light for the theme's own colour — held back from the What's new window (`hideFromModal`) like v1.11.1–v1.11.7, so v1.11.0 keeps leading it.
+
+### Config
+
+- **fix — Appearance and Behavior drew every settings group as one flat list.** v1.11.6 put both sections on tabs and had `config-tabs.css` strip the box off each `.config-panel`: no border, no surface, no radius, a hairline underneath and the panel title reduced to a small muted heading. On a tab carrying eighteen settings nothing marked where one group ended, and a border is exactly the "separate object" cue a group of settings wants. The flattening rules are gone, so the tile comes from `.config-panel` in `config-view.css` and from `theme-depth.css` / `theme-character.css` as it does everywhere else in config — which is also why a custom theme now restyles these tiles without knowing about `config-tabs.css`. The column, the preview beside Appearance and the tighter spacing under a field hint stay.
+
+### Themes
+
+- **fix — the Glass depth lit its surfaces instead of letting you see through them.** Three layers stacked: `--glass-brightness` raised the backdrop by six per cent on every pane, `--edge-top` and `--edge-side` are written as a percentage times `--theme-depth` and glass sets that to 1.5 (so a 16% line landed at 24%), and on a theme with `sheen` the gloss painted white at up to 20% across the head of each surface. Together a column of tiles read as a column of lighter boxes. Now, at `data-depth="glass"` only: brightness 1.06 → 1.012, the `saturate()` on the backdrop 1.4 → 1.8 through the new `--glass-saturate` (it was hard-coded in twelve places), the lit edges from 16%/10% to 7%/5% before the multiplier and their `sheen` term from 30% to 8%, and `--surface-gloss` redefined at about a third of its strength in `--glass-gloss-light` — `color-mix(accent 45%, white)` rather than white. On Gloss Obsidian [dark] (`sheen 0.9`) that is a top edge of 21% instead of 64%, and a gloss band of 7% instead of 20%. Every theme on Glass is affected, and every surface: the config tiles, the modals, the search window and the card layouts.
+
+### Tests
+
+- **fix — `config-bookmarks-panel.spec.js` placed a caret with the End key**, which on macOS scrolls rather than moving the caret inside a text field. The click before it left the caret mid-word, the tag was typed into the middle of the value, and the spec failed on macOS while passing on Linux CI. The caret is set with `setSelectionRange`; the typing stays real, since the draft has to be dirty and uncommitted when the next row is clicked.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.11.8.json` and its index entry, flagged `hideFromModal`**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v294`, `DASHBOARD_RELEASE` untouched. `tests/whats-new-hidden-release.spec.js` now pins v1.11.8 alongside v1.11.1–v1.11.7. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
