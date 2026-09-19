@@ -216,6 +216,7 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
+        this.unsorted = new DashboardUnsorted(this);
         this.multiSelect = new DashboardMultiSelect(this);
         // Narrowing the page you are on, as opposed to searching everything.
         this.gridFilter = typeof DashboardGridFilter === 'function'
@@ -616,6 +617,10 @@ class Dashboard {
         return this.visual.updateHealthDashboardVisibility(...arguments);
     }
 
+    updateUnsortedVisibility() {
+        return this.visual.updateUnsortedVisibility(...arguments);
+    }
+
     async updateHealthBadge() {
         return this.visual.updateHealthBadge(...arguments);
     }
@@ -1012,6 +1017,12 @@ class Dashboard {
             if (hash === 'health' || hash.startsWith('health/')) {
                 if (this.activeView !== 'health') {
                     return this.health?.openHealthView?.();
+                }
+                return;
+            }
+            if (hash === 'unsorted') {
+                if (this.activeView !== 'unsorted') {
+                    return this.unsorted?.openUnsortedView?.();
                 }
                 return;
             }

@@ -315,6 +315,16 @@
                         </a>
                     </div>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
+                    {{if .UnsortedEnabled}}<div class="unsorted-link unsorted-link--icon">
+                        <a href="/#unsorted" class="unsorted-link-anchor" data-i18n-aria="dashboard.unsorted" data-i18n-tooltip="dashboard.unsorted" aria-label="unsorted" title="unsorted">
+                            <svg class="unsorted-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <rect x="4" y="4" width="7" height="7" rx="1.5"/>
+                                <rect x="13" y="4" width="7" height="7" rx="1.5"/>
+                                <rect x="4" y="13" width="7" height="7" rx="1.5"/>
+                                <rect x="13" y="13" width="7" height="7" rx="1.5"/>
+                            </svg>
+                        </a>
+                    </div>{{end}}
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
                         <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
                             <svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -574,6 +584,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-uptime.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-trend.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-inbox.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-unsorted.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-neglected.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-archive.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-unchecked.js"}}" defer></script>
@@ -611,6 +622,7 @@
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard-trash.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-tag-filter.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-unsorted.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-multi-select.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-grid-filter.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-structure-create.js"}}" defer></script>

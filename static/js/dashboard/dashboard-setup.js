@@ -168,6 +168,9 @@ class DashboardSetup {
         // Control health beta link visibility dynamically
         d.updateHealthDashboardVisibility();
 
+        // Control unsorted link visibility dynamically
+        d.updateUnsortedVisibility();
+
         // Control page tabs visibility dynamically
         d.updatePageTabsVisibility();
         // After the three above: each of them decides whether one side of the
@@ -469,6 +472,16 @@ class DashboardSetup {
                     e.stopPropagation();
                     window.nextdashRecordKey?.('Shift + I');
                     void d.inbox.openInboxView();
+                }
+                return;
+            }
+
+            if (e.shiftKey && e.code === 'KeyU') {
+                if (d.unsorted?.isEnabled?.()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + U');
+                    void d.unsorted.openUnsortedView();
                 }
                 return;
             }

@@ -610,6 +610,10 @@ class DashboardData {
             await d.health.loadAndRender({ refresh: true });
             return true;
         }
+        if (d.activeView === 'unsorted' && d.unsorted?.isEnabled?.()) {
+            await d.unsorted.loadAndRender();
+            return true;
+        }
         if (d.needsCrossPageBookmarks?.()) {
             await this.loadAllBookmarks();
         }
@@ -775,6 +779,12 @@ class DashboardData {
             // match the prefix the way config's own deep links do.
             matchesHash: (hash) => hash === '#health' || hash.startsWith('#health/'),
             isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
+        },
+        {
+            view: 'unsorted',
+            layoutClass: 'unsorted-view',
+            matchesHash: (hash) => hash === '#unsorted',
+            isEnabled: (d) => Boolean(d.unsorted?.isEnabled?.()),
         },
         {
             view: 'config',
@@ -1261,6 +1271,13 @@ class DashboardData {
                 return;
             }
             d.inbox.render?.();
+            return;
+        }
+        if (d.activeView === 'unsorted' && d.unsorted?.isEnabled?.()) {
+            if (d.isInlineEditActive() && !despiteModal) {
+                return;
+            }
+            void d.unsorted.loadAndRender();
             return;
         }
         if (d.activeView === 'config' && d.config?.isEnabled?.()) {

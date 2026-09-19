@@ -11200,6 +11200,7 @@ class DashboardConfig {
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
+        unsortedEnabled: { def: true },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
@@ -11949,6 +11950,7 @@ class DashboardConfig {
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
                     chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
                     chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
+                    chrome('unsortedEnabled', 'config.unsortedEnabledLabel', 'Show the unsorted icon'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                 ],
@@ -14547,7 +14549,7 @@ class DashboardConfig {
      */
     static WIDGET_TYPE_GROUPS = [
         ['links', ['health', 'uptime', 'certs', 'trend']],
-        ['incoming', ['inbox', 'feeds', 'sources']],
+        ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker']],
         ['ambient', ['weather', 'calendar', 'rss']],
@@ -16832,7 +16834,7 @@ class DashboardConfig {
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
         'cpu', 'memory', 'disks', 'docker', 'weather', 'calendar', 'rss', 'custom'];
 
@@ -16935,6 +16937,9 @@ class DashboardConfig {
         inbox: [
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
             { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+        ],
+        unsorted: [
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         feeds: [
             { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
@@ -18883,6 +18888,7 @@ class DashboardConfig {
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
             trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
+            unsorted: 'Bookmarks kept from the inbox without picking a category, most recent first.',
             feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
             sources: 'What each import last did, so a failed import is not only visible in config.',
             neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',
