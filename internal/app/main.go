@@ -130,6 +130,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/categories", handlers.SaveCategories).Methods("POST")
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
+	r.HandleFunc("/api/unsorted", handlers.GetUnsorted).Methods("GET")
 	// A page's widgets and the order every block on it is drawn in -- category
 	// ids and widget ids in one list, so a widget can sit between categories.
 	r.HandleFunc("/api/pages/{id:[0-9]+}/blocks", handlers.GetPageBlocksHandler).Methods("GET", "OPTIONS")
