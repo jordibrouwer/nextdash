@@ -202,8 +202,8 @@
             },
             {
                 key: 'config',
-                title: t('changesTourConfigTitle', 'Config opens on tiles'),
-                body: t('changesTourConfigBody', 'Appearance and Behavior show groups first; a click opens one and Escape goes back. Date & weather now sits under Appearance, and there is a Logs section.'),
+                title: t('changesTourConfigTitle', 'Config opens on tabs'),
+                body: t('changesTourConfigBody', 'Appearance and Behavior show their settings straight away, in tabs, with a live preview beside Appearance. Date & weather sits under Appearance, and there is a Logs section.'),
                 art: 'config',
             },
             {

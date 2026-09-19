@@ -251,7 +251,7 @@
                 ${section(
                     t('dashboard.analyticsNoticeOnTitle', 'How to turn it on'),
                     `${escape(t('dashboard.analyticsNoticeOnBody',
-                        'Go to Config → Behavior → Privacy and tick "Privacy-friendly analytics", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.'))
+                        'Go to Config → Behavior → Privacy & sync and tick "Privacy-friendly analytics", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.'))
                     }<br><button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="open-privacy">${
                         escape(t('dashboard.analyticsNoticeOpenSettings', 'Open privacy settings'))
                     }</button>`

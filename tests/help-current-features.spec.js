@@ -39,7 +39,7 @@ const CASES = [
     { tab: 'search', needles: [/typing a bookmark shortcut/i, /short pause/i] },
     { tab: 'organizing', needles: [/already saved this on/i, /come back where you were/i, /Fresh/] },
     { tab: 'health', needles: [/ten links, two minutes/i, /rot report/i] },
-    { tab: 'config', needles: [/what it is set to/i, /all devices/i, /duplicate/i] },
+    { tab: 'config', needles: [/tab you used last/i, /all devices/i, /duplicate/i] },
     { tab: 'inbox', needles: [/integrations\//i, /share sheet/i] },
     // The log rebuild: a level and a component on every line, one control for
     // how much is written and another for what goes into the trail.
