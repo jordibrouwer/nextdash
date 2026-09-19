@@ -224,6 +224,8 @@ Overview news, shorter news dates and two Health row-menu fixes, held back from 
 - **fix — news dates say which day.** Overview and About → News & features used the header's full date line, so under "weekday only" every row read "Friday". `formatShortDate()` gives day and month in the reader's date format — `18/09`, `18-09`, `09/18`, `09-18`; the two word formats follow the interface language — with the year only when it isn't this one.
 - **About → News & features: the way in moved under the summary.** "Read on nextdash.cc ↗", "Show what's new" and "Open … →" have their own line under the summary, in the title's column, rather than under the date at the far right; the summary now runs to the right edge.
 
+- **fix — the release What's new opens on dropped out of About → News & features.** The stream shows the newest five releases (`RELEASES_IN_STREAM`), and five hidden patch releases (v1.11.1–v1.11.5) filled it, pushing out v1.11.0 — the release the modal still leads with. `buildStream()` now always adds the newest release not flagged `hideFromModal`. Caught by `config-overview-release.spec.js` on CI.
+
 ### Health
 
 - **fix — a row's menu pinned itself to the top of the viewport.** When a tall menu (many repair options) had no room above or below its row, `toggleMenu()`'s fallback set it flush against the top margin wherever the row was, drawing it over the header and everything down to the row. It now clamps toward the row, as `positionMenuAtPoint()` already did for right-click.

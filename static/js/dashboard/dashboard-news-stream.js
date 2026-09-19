@@ -122,7 +122,17 @@
             });
         });
 
-        (releases || []).slice(0, RELEASES_IN_STREAM).forEach((entry) => {
+        /*
+         * The newest few, plus the release What's new opens on -- the newest
+         * one not held back with hideFromModal. A run of hidden patch
+         * releases (v1.11.1 to v1.11.5) otherwise filled the window and
+         * pushed out the one release the modal still leads with.
+         */
+        const all = releases || [];
+        const shown = all.slice(0, RELEASES_IN_STREAM);
+        const leading = all.find((entry) => entry?.tag && !entry.hideFromModal);
+        if (leading && !shown.includes(leading)) shown.push(leading);
+        shown.forEach((entry) => {
             if (!entry?.tag) return;
             items.push({
                 source: 'release',
