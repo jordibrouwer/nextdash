@@ -194,6 +194,9 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
+            // Keep's own entry: the same silent promote-to-Unsorted the triage
+            // "r" key runs, reachable now without starting a triage run first.
+            { id: 'inbox-keep', label: this.t('dashboard.inboxKeep', 'Keep'), icon: '▣' },
             // Whichever way the row can still go: read, or back to unread. The
             // second was missing entirely — the server accepted it and nothing
             // ever sent it — so a link marked read by mistake could only be
@@ -919,6 +922,7 @@ class DashboardContextMenu {
             // buttons and keyboard shortcuts already call, so right-click cannot
             // drift from the other two routes.
             case 'inbox-promote':
+            case 'inbox-keep':
             case 'inbox-read':
             case 'inbox-unread':
             case 'inbox-snooze':
@@ -932,6 +936,7 @@ class DashboardContextMenu {
                 );
                 if (!inbox || !item) break;
                 if (action === 'inbox-promote') inbox.promoteItem(item);
+                else if (action === 'inbox-keep') void inbox.keepItem(item);
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
                 else if (action === 'inbox-unread') void inbox.markUnreadFromRow(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
